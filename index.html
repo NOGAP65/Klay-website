@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Klay Interiors — Made-to-Measure Window Coverings</title>
+    <meta name="description" content="Premium Australian made-to-measure blinds, curtains and shutters. Designed with you, installed by hand across Victoria." />
+    <meta property="og:image" content="https://bolt.new/static/og_default.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://bolt.new/static/og_default.png" />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap');
+
+      :root {
+        --parchment: #F2EDE4;
+        --cream: #FAF7F2;
+        --ink: #1E1A16;
+        --text-dark: #1E1A16;
+        --text-mid: #6B6157;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        background: #1A1A1A;
+        color: #F8F6F2;
+        font-family: 'Inter', sans-serif;
+        font-weight: 300;
+        line-height: 1.6;
+        cursor: none;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a { cursor: none; }
+      button { cursor: none; }
+
+      ::selection {
+        background: #C8973A;
+        color: #1A1A1A;
+      }
+
+      @keyframes klay-orb {
+        0%   { transform: translate(0, 0) scale(1); }
+        33%  { transform: translate(18vw, 8vh) scale(1.15); }
+        66%  { transform: translate(-10vw, 16vh) scale(0.9); }
+        100% { transform: translate(0, 0) scale(1); }
+      }
+
+      @keyframes klay-breathe {
+        0%   { transform: translateY(0); }
+        50%  { transform: translateY(6px); }
+        100% { transform: translateY(0); }
+      }
+
+      @keyframes klay-marquee {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+
+      @keyframes klay-testimonials {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+
+      @keyframes klay-scroll-hint {
+        0%   { transform: scaleY(0); transform-origin: top; }
+        50%  { transform: scaleY(1); transform-origin: top; }
+        50.1%{ transform: scaleY(1); transform-origin: bottom; }
+        100% { transform: scaleY(0); transform-origin: bottom; }
+      }
+
+      @keyframes klay-visualiser-blind {
+        0%   { height: 20%; }
+        50%  { height: 82%; }
+        100% { height: 20%; }
+      }
+
+      @keyframes klay-dawn {
+        0%   { opacity: 0.05; transform: scale(1); }
+        50%  { opacity: 0.5; transform: scale(1.08); }
+        100% { opacity: 0.05; transform: scale(1); }
+      }
+
+      @keyframes klay-starburst {
+        0%   { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      @keyframes klay-pulse {
+        0%   { opacity: 0.06; transform: scale(0.95); }
+        50%  { opacity: 0.16; transform: scale(1.05); }
+        100% { opacity: 0.06; transform: scale(0.95); }
+      }
+
+      @keyframes klay-orbit {
+        0%   { transform: translate(0, 0); }
+        25%  { transform: translate(8vw, -6vh); }
+        50%  { transform: translate(-6vw, 4vh); }
+        75%  { transform: translate(4vw, 8vh); }
+        100% { transform: translate(0, 0); }
+      }
+
+      @keyframes klay-testimonials {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        *, *::before, *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
