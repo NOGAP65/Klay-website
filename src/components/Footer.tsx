@@ -34,25 +34,12 @@ export function Footer() {
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <span
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 38,
-                height: 38,
-                border: `1px solid ${tokens.gold}`,
-                color: tokens.gold,
-                fontFamily: tokens.display,
-                fontSize: 22,
-              }}
-            >
-              K
-            </span>
-            <span style={{ fontFamily: tokens.display, fontSize: 22, color: tokens.warmWhite }}>
-              Klay Interiors
-            </span>
+          <div style={{ marginBottom: 20 }}>
+            <img
+              src="/images/klay%202.jpeg"
+              alt="Klay Interiors"
+              style={{ width: '170px', height: '74px', objectFit: 'cover', objectPosition: 'center' }}
+            />
           </div>
           <p
             style={{

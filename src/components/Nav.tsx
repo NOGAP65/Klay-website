@@ -36,36 +36,15 @@ export function Nav() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
           textDecoration: 'none',
           color: tokens.warmWhite,
         }}
       >
-        <span
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 38,
-            height: 38,
-            border: `1px solid ${tokens.gold}`,
-            color: tokens.gold,
-            fontFamily: tokens.display,
-            fontSize: 22,
-            fontWeight: 500,
-          }}
-        >
-          K
-        </span>
-        <span
-          style={{
-            fontFamily: tokens.display,
-            fontSize: 22,
-            letterSpacing: '0.02em',
-          }}
-        >
-          Klay Interiors
-        </span>
+        <img
+          src="/images/klay%202.jpeg"
+          alt="Klay Interiors"
+          style={{ width: '150px', height: '64px', objectFit: 'cover', objectPosition: 'center' }}
+        />
       </a>
 
       <div
