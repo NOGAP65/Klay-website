@@ -1,58 +1,26 @@
-import { useEffect } from 'react';
-import { useKlayStore } from './store';
-import { CustomCursor } from './components/CustomCursor';
-import { ScrollProgress } from './components/ScrollProgress';
-import { Nav } from './components/Nav';
-import { HeroScene } from './components/HeroScene';
-import { USPSection } from './components/USPSection';
-import { CollectionScene } from './components/CollectionScene';
-import { CurtainsScene } from './components/CurtainsScene';
-import { WardrobesScene } from './components/WardrobesScene';
-import { ProcessScene } from './components/ProcessScene';
-import { QuoteScene } from './components/QuoteScene';
-import { ReviewsScene } from './components/ReviewsScene';
-import { FinalScene } from './components/FinalScene';
-import { Footer } from './components/Footer';
-import { SectionCounter } from './components/SectionCounter';
+import { Routes, Route } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import ProductsPage from './pages/ProductsPage';
+import ProductCategoryPage from './pages/ProductCategoryPage';
+import ProductDetailPage from './pages/ProductDetailPage';
+import HowItWorksPage from './pages/HowItWorksPage';
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
+import VisualiserPage from './pages/VisualiserPage';
+import NotFoundPage from './pages/NotFoundPage';
 
-function App() {
-  const setScrollY = useKlayStore((s) => s.setScrollY);
-
-  useEffect(() => {
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        setScrollY(window.scrollY);
-        ticking = false;
-      });
-    };
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [setScrollY]);
-
+export default function App() {
   return (
-    <>
-      <CustomCursor />
-      <ScrollProgress />
-      <Nav />
-      <main>
-        <HeroScene />
-        <USPSection />
-        <CollectionScene />
-        <CurtainsScene />
-        <WardrobesScene />
-        <ProcessScene />
-        <QuoteScene />
-        <ReviewsScene />
-        <FinalScene />
-        <Footer />
-      </main>
-      <SectionCounter />
-    </>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/products" element={<ProductsPage />} />
+      <Route path="/products/:category" element={<ProductCategoryPage />} />
+      <Route path="/products/:category/:sku" element={<ProductDetailPage />} />
+      <Route path="/how-it-works" element={<HowItWorksPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/visualiser" element={<VisualiserPage />} />
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   );
 }
-
-export default App;

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { RevealWords } from './RevealWords';
 import { tokens, prefersReducedMotion } from '../theme';
 import { splitWords } from '../utils/splitWords';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const DOOR_SLIDE = 60; // px each door travels apart at full scroll progress
 
@@ -10,6 +11,7 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function WardrobesScene() {
+  const isMobile = useIsMobile();
   const sectionRef = useRef<HTMLElement>(null);
   const leftDoorRef = useRef<HTMLDivElement>(null);
   const rightDoorRef = useRef<HTMLDivElement>(null);
@@ -57,7 +59,7 @@ export function WardrobesScene() {
       style={{
         position: 'relative',
         background: '#141414',
-        padding: '80px 80px 0',
+        padding: isMobile ? '48px 24px 0' : '80px 80px 0',
         overflow: 'hidden',
       }}
     >
@@ -79,7 +81,7 @@ export function WardrobesScene() {
         style={{
           position: 'relative',
           maxWidth: 900,
-          height: 280,
+          height: isMobile ? 200 : 280,
           margin: '0 auto',
           display: 'flex',
           justifyContent: 'space-between',
@@ -98,7 +100,7 @@ export function WardrobesScene() {
             zIndex: 0,
           }}
         >
-          <span style={{ fontFamily: tokens.display, fontWeight: 300, fontSize: 48, color: tokens.warmWhite }}>
+          <span style={{ fontFamily: tokens.display, fontWeight: 300, fontSize: isMobile ? 30 : 48, color: tokens.warmWhite }}>
             Wardrobes
           </span>
           <span

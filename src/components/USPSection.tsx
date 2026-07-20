@@ -1,5 +1,6 @@
 import { tokens } from '../theme';
 import { useReveal } from '../hooks/useReveal';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const steps = [
   {
@@ -26,9 +27,10 @@ const steps = [
 
 export function USPSection() {
   const { ref, visible } = useReveal<HTMLDivElement>(0.15);
+  const isMobile = useIsMobile();
 
   return (
-    <section style={{ background: tokens.parchment, padding: '80px 80px' }}>
+    <section style={{ background: tokens.parchment, padding: isMobile ? '56px 24px' : '80px 80px' }}>
       <div style={{ textAlign: 'left' }}>
         <div
           style={{
@@ -60,7 +62,7 @@ export function USPSection() {
         ref={ref}
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4,1fr)',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(4,1fr)',
           gap: '2px',
           marginTop: '48px',
         }}

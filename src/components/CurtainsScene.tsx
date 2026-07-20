@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
 import { tokens, prefersReducedMotion } from '../theme';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface ManualState {
   active: boolean;
@@ -32,27 +33,29 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-function getCardStyle(offset: number): React.CSSProperties {
+function getCardStyle(offset: number, isMobile: boolean): React.CSSProperties {
   const abs = Math.abs(offset);
   const sign = offset > 0 ? 1 : -1;
+  const width = isMobile ? '280px' : '380px';
+  const height = isMobile ? '368px' : '500px';
 
   if (abs === 0) {
     return {
       transform: 'translateX(0) translateZ(0) scale(1)',
       opacity: 1,
       zIndex: 10,
-      width: '380px',
-      height: '500px',
+      width,
+      height,
       filter: 'none',
     };
   }
   if (abs === 1) {
     return {
-      transform: `translateX(${sign * 460}px) translateZ(-150px) scale(0.82)`,
-      opacity: 0.5,
+      transform: `translateX(${sign * (isMobile ? 240 : 460)}px) translateZ(-150px) scale(0.82)`,
+      opacity: isMobile ? 0.4 : 0.5,
       zIndex: 5,
-      width: '380px',
-      height: '500px',
+      width,
+      height,
       filter: 'brightness(0.6)',
     };
   }
@@ -61,8 +64,8 @@ function getCardStyle(offset: number): React.CSSProperties {
       transform: `translateX(${sign * 700}px) translateZ(-280px) scale(0.65)`,
       opacity: 0.25,
       zIndex: 1,
-      width: '340px',
-      height: '460px',
+      width: isMobile ? '260px' : '340px',
+      height: isMobile ? '335px' : '460px',
       filter: 'brightness(0.4)',
     };
   }
@@ -70,8 +73,8 @@ function getCardStyle(offset: number): React.CSSProperties {
     transform: `translateX(${sign * 700}px) translateZ(-280px) scale(0.65)`,
     opacity: 0,
     zIndex: 0,
-    width: '340px',
-    height: '460px',
+    width: isMobile ? '260px' : '340px',
+    height: isMobile ? '335px' : '460px',
     filter: 'brightness(0.4)',
     pointerEvents: 'none',
   };
@@ -79,6 +82,7 @@ function getCardStyle(offset: number): React.CSSProperties {
 
 export function CurtainsScene() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const isMobile = useIsMobile();
   const sectionRef = useRef<HTMLElement>(null);
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
@@ -124,9 +128,18 @@ export function CurtainsScene() {
         overflow: 'hidden',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '80px 80px 60px', gap: '120px' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'stretch' : 'center',
+          justifyContent: 'space-between',
+          padding: isMobile ? '40px 24px 32px' : '80px 80px 60px',
+          gap: isMobile ? '40px' : '120px',
+        }}
+      >
         {/* Left column */}
-        <div style={{ width: '40%', paddingLeft: '40px' }}>
+        <div style={{ width: isMobile ? '100%' : '40%', paddingLeft: isMobile ? 0 : '40px' }}>
           <div
             style={{
               fontFamily: tokens.body,
@@ -142,7 +155,7 @@ export function CurtainsScene() {
           <h2
             style={{
               fontFamily: tokens.display,
-              fontSize: 'clamp(80px, 10vw, 150px)',
+              fontSize: isMobile ? 'clamp(48px, 16vw, 80px)' : 'clamp(80px, 10vw, 150px)',
               fontWeight: 300,
               color: tokens.warmWhite,
               lineHeight: 0.85,
@@ -203,8 +216,8 @@ export function CurtainsScene() {
         </div>
 
         {/* Right column: large curtain preview, flush right */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ position: 'relative', width: '100%', maxWidth: '800px', height: '430px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+        <div style={{ flex: isMobile ? 'none' : 1, width: isMobile ? '100%' : 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: '800px', height: isMobile ? '220px' : '430px', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-end' }}>
             <div
               style={{
                 position: 'absolute',
@@ -221,8 +234,9 @@ export function CurtainsScene() {
             <div
               style={{
                 position: 'relative',
-                width: '800px',
-                height: '410px',
+                width: '100%',
+                maxWidth: isMobile ? '340px' : '800px',
+                height: isMobile ? '200px' : '410px',
                 overflow: 'hidden',
                 border: '1px solid rgba(200,151,58,0.2)',
                 boxShadow: '0 30px 60px -20px rgba(0,0,0,0.6)',
@@ -297,13 +311,15 @@ export function CurtainsScene() {
 
       {/* Section divider */}
       <div style={{ height: '2px', background: 'linear-gradient(90deg, transparent, rgba(200,151,58,0.4) 15%, #D9AE60 50%, rgba(200,151,58,0.4) 85%, transparent)', boxShadow: '0 0 12px rgba(217,174,96,0.5)', margin: '60px 0 0' }} />
-      <div style={{ padding: '40px 80px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ padding: isMobile ? '28px 24px 20px' : '40px 80px 32px', display: 'flex', flexWrap: 'wrap', rowGap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontFamily: tokens.body, fontSize: 11, color: '#C8973A', letterSpacing: '0.3em', textTransform: 'uppercase' }}>
           Our curtain range
         </div>
-        <div style={{ fontFamily: tokens.body, fontSize: 11, color: 'rgba(248,246,242,0.3)', letterSpacing: '0.1em' }}>
-          Drag or use arrows to explore
-        </div>
+        {!isMobile && (
+          <div style={{ fontFamily: tokens.body, fontSize: 11, color: 'rgba(248,246,242,0.3)', letterSpacing: '0.1em' }}>
+            Drag or use arrows to explore
+          </div>
+        )}
       </div>
 
       {/* 3D perspective carousel of curtain cards */}
@@ -311,12 +327,12 @@ export function CurtainsScene() {
         style={{
           position: 'relative',
           width: '100%',
-          height: '520px',
+          height: isMobile ? '400px' : '520px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           perspective: '1200px',
-          padding: '0 40px',
+          padding: isMobile ? '0 12px' : '0 40px',
         }}
       >
         {curtains.map((c, index) => {
@@ -330,7 +346,7 @@ export function CurtainsScene() {
                 transition: 'all 0.6s cubic-bezier(0.25,0.46,0.45,0.94)',
                 overflow: 'hidden',
                 cursor: offset === 0 ? 'default' : 'pointer',
-                ...getCardStyle(offset),
+                ...getCardStyle(offset, isMobile),
               }}
             >
               <div style={{ position: 'relative', height: '70%', overflow: 'hidden', background: c.fabric }}>
@@ -338,7 +354,7 @@ export function CurtainsScene() {
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '6px', background: '#A8A49E' }} />
               </div>
 
-              <div style={{ height: '30%', background: '#1a1208', padding: '18px 22px' }}>
+              <div style={{ height: '30%', background: '#1a1208', padding: isMobile ? '14px 16px' : '18px 22px' }}>
                 <div
                   style={{
                     fontFamily: tokens.body,
@@ -350,7 +366,7 @@ export function CurtainsScene() {
                 >
                   {c.label}
                 </div>
-                <div style={{ fontFamily: tokens.display, fontSize: 26, color: tokens.warmWhite, marginTop: 6 }}>
+                <div style={{ fontFamily: tokens.display, fontSize: isMobile ? 21 : 26, color: tokens.warmWhite, marginTop: 6 }}>
                   {c.name}
                 </div>
                 <div style={{ fontFamily: tokens.body, fontSize: 12, color: 'rgba(248,246,242,0.4)', marginTop: 4 }}>
