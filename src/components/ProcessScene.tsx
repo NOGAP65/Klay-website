@@ -1,6 +1,8 @@
 import { RevealWords } from './RevealWords';
 import { useReveal } from '../hooks/useReveal';
 import { tokens } from '../theme';
+import { splitWords } from '../utils/splitWords';
+import { BlindReveal } from './BlindReveal';
 
 const steps = [
   { n: '01', title: 'Design', body: 'Sketch your rooms and shortlist fabrics in minutes with our visualiser.', icon: 'blind' },
@@ -17,47 +19,57 @@ const guarantees = [
 ];
 
 function StepIcon({ type }: { type: string }) {
-  const box: React.CSSProperties = { width: 44, height: 44, position: 'relative', margin: '0 auto 18px' };
-  const gold = tokens.gold;
+  const wrap: React.CSSProperties = { height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' };
+  const gold = '#C8973A';
 
   if (type === 'blind') {
+    // Design — screen/monitor
     return (
-      <div style={box}>
-        <div style={{ position: 'absolute', top: 0, left: 6, right: 6, height: 4, background: gold }} />
-        {[...Array(5)].map((_, i) => (
-          <div key={i} style={{ position: 'absolute', top: 8 + i * 6, left: 6, right: 6, height: 1, background: gold, opacity: 0.5 }} />
-        ))}
+      <div style={wrap}>
+        <div>
+          <div style={{ width: '28px', height: '20px', border: `2px solid ${gold}`, borderRadius: '2px' }} />
+          <div style={{ width: '10px', height: '4px', background: gold, margin: '2px auto 0' }} />
+          <div style={{ width: '16px', height: '2px', background: gold, margin: '0 auto' }} />
+        </div>
       </div>
     );
   }
   if (type === 'ruler') {
+    // Measure — ruler
     return (
-      <div style={box}>
-        <div style={{ position: 'absolute', bottom: 6, left: 4, width: 36, height: 8, border: `1px solid ${gold}`, borderTop: 'none' }} />
-        {[...Array(5)].map((_, i) => (
-          <div key={i} style={{ position: 'absolute', bottom: 6, left: 6 + i * 7, width: 1, height: 4, background: gold }} />
-        ))}
+      <div style={wrap}>
+        <div style={{ width: '36px', height: '14px', border: `2px solid ${gold}`, borderRadius: '2px', position: 'relative' }}>
+          {['5px', '12px', '19px', '26px'].map((left) => (
+            <div key={left} style={{ width: '1px', height: '6px', background: gold, position: 'absolute', top: '2px', left }} />
+          ))}
+        </div>
       </div>
     );
   }
   if (type === 'scissors') {
+    // Make — scissors
     return (
-      <div style={box}>
-        <div style={{ position: 'absolute', top: 10, left: 8, width: 28, height: 1, background: gold, transform: 'rotate(15deg)' }} />
-        <div style={{ position: 'absolute', top: 16, left: 8, width: 28, height: 1, background: gold, transform: 'rotate(-15deg)' }} />
-        <div style={{ position: 'absolute', top: 4, left: 4, width: 10, height: 10, borderRadius: '50%', border: `1px solid ${gold}` }} />
-        <div style={{ position: 'absolute', top: 22, left: 4, width: 10, height: 10, borderRadius: '50%', border: `1px solid ${gold}` }} />
+      <div style={wrap}>
+        <div style={{ position: 'relative', width: '26px', height: '26px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
+            <div style={{ width: '10px', height: '10px', border: `2px solid ${gold}`, borderRadius: '50%' }} />
+            <div style={{ width: '10px', height: '10px', border: `2px solid ${gold}`, borderRadius: '50%' }} />
+          </div>
+          <div style={{ position: 'absolute', top: '8px', left: '11px', width: '2px', height: '16px', background: gold, transform: 'rotate(20deg)', transformOrigin: 'top center' }} />
+          <div style={{ position: 'absolute', top: '8px', left: '13px', width: '2px', height: '16px', background: gold, transform: 'rotate(-20deg)', transformOrigin: 'top center' }} />
+        </div>
       </div>
     );
   }
-  // hand
+  // hand — install checkmark
   return (
-    <div style={box}>
-      <div style={{ position: 'absolute', bottom: 4, left: 12, width: 20, height: 16, border: `1px solid ${gold}`, borderTop: 'none', borderRadius: '0 0 6px 6px' }} />
-      {[...Array(4)].map((_, i) => (
-        <div key={i} style={{ position: 'absolute', bottom: 18, left: 12 + i * 5, width: 3, height: 14, background: gold, borderRadius: 2 }} />
-      ))}
-      <div style={{ position: 'absolute', bottom: 28, left: 14, width: 12, height: 6, background: gold, borderRadius: '50% 50% 0 0' }} />
+    <div style={wrap}>
+      <div style={{ width: '32px', height: '32px', border: `2px solid ${gold}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'relative', width: '16px', height: '16px', transform: 'rotate(-45deg)' }}>
+          <div style={{ position: 'absolute', left: 0, bottom: 0, width: '8px', height: '2px', background: gold }} />
+          <div style={{ position: 'absolute', left: 0, bottom: 0, width: '2px', height: '16px', background: gold }} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -70,34 +82,30 @@ export function ProcessScene() {
       id="process"
       style={{
         position: 'relative',
-        minHeight: '100vh',
         background: tokens.parchment,
-        padding: '14vh 5vw',
+        padding: '80px 0',
         overflow: 'hidden',
       }}
     >
-      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-        <RevealWords
-          as="h2"
-          words={[{ text: 'Four' }, { text: 'steps.' }, { text: 'One', italic: true, color: tokens.gold }, { text: 'team.', italic: true, color: tokens.gold }]}
-          style={{ fontWeight: 300, fontSize: 'clamp(38px, 4.4vw, 66px)', color: tokens.ink, marginBottom: 64 }}
-        />
+      <BlindReveal>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 5vw' }}>
+        <div style={{ textAlign: 'center', marginBottom: 64 }}>
+          <RevealWords
+            as="h2"
+            words={[
+              ...splitWords('Four steps.'),
+              { text: 'One', italic: true, color: '#D9AE60' },
+              { text: 'team.', italic: true, color: '#D9AE60' },
+            ]}
+            style={{ fontWeight: 300, fontSize: 'clamp(52px, 6vw, 88px)', lineHeight: 0.92, color: tokens.ink, justifyContent: 'center' }}
+          />
+          <p style={{ fontFamily: tokens.body, fontSize: 15, color: 'rgba(30,26,22,0.55)', lineHeight: 1.75, maxWidth: 520, margin: '16px auto 0' }}>
+            From your first click to your last fitting — one Klay team handles everything.
+          </p>
+        </div>
 
         <div ref={ref} style={{ position: 'relative' }}>
-          {/* SVG connecting line with stroke-dashoffset draw animation */}
-          <svg
-            style={{ position: 'absolute', top: 44, left: '10%', right: '10%', width: '80%', height: 2, pointerEvents: 'none' }}
-            viewBox="0 0 1000 2"
-            preserveAspectRatio="none"
-          >
-            <line
-              x1="0" y1="1" x2="1000" y2="1"
-              stroke={tokens.gold} strokeWidth="1"
-              strokeDasharray="1000"
-              strokeDashoffset={visible ? 0 : 1000}
-              style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(0.22,1,0.36,1) 0.2s' }}
-            />
-          </svg>
+          <div style={{ position: 'absolute', top: 44, left: '10%', right: '10%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(200,151,58,0.4), transparent)' }} />
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 40, position: 'relative' }}>
             {steps.map((s, i) => (
@@ -111,13 +119,13 @@ export function ProcessScene() {
                 }}
               >
                 <StepIcon type={s.icon} />
-                <div style={{ fontFamily: tokens.display, fontSize: 13, color: tokens.gold, letterSpacing: '0.1em', marginBottom: 8 }}>
+                <div style={{ fontFamily: tokens.display, fontSize: 72, fontWeight: 300, lineHeight: 1, color: tokens.gold, letterSpacing: '0.1em', marginBottom: 8 }}>
                   {s.n}
                 </div>
-                <h3 style={{ fontFamily: tokens.display, fontWeight: 400, fontSize: 26, marginBottom: 12 }}>
+                <h3 style={{ fontFamily: tokens.display, fontSize: 28, fontWeight: 400, color: '#1E1A16', marginTop: 12 }}>
                   {s.title}
                 </h3>
-                <p style={{ fontFamily: tokens.body, fontWeight: 300, fontSize: 15, lineHeight: 1.6, color: tokens.textMid, maxWidth: 240, margin: '0 auto' }}>
+                <p style={{ fontFamily: tokens.body, fontSize: 14, color: 'rgba(30,26,22,0.6)', lineHeight: 1.8, maxWidth: 240, margin: '8px auto 0' }}>
                   {s.body}
                 </p>
               </div>
@@ -136,16 +144,18 @@ export function ProcessScene() {
                 transition: `opacity 0.6s ease ${i * 0.1 + 0.5}s, transform 0.6s ease ${i * 0.1 + 0.5}s`,
               }}
             >
-              <h4 style={{ fontFamily: tokens.display, fontWeight: 400, fontSize: 20, marginBottom: 8, color: tokens.ink }}>
+              <div style={{ width: '24px', height: '1px', background: '#C8973A', marginBottom: '12px' }} />
+              <h4 style={{ fontFamily: tokens.display, fontSize: 22, fontWeight: 500, color: '#1E1A16', margin: 0 }}>
                 {g.title}
               </h4>
-              <p style={{ fontFamily: tokens.body, fontWeight: 300, fontSize: 14, lineHeight: 1.6, color: tokens.textMid }}>
+              <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(30,26,22,0.55)', lineHeight: 1.7, marginTop: 6 }}>
                 {g.body}
               </p>
             </div>
           ))}
         </div>
       </div>
+      </BlindReveal>
     </section>
   );
 }

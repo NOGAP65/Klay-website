@@ -21,7 +21,7 @@ export function RevealWords({
   style,
   wordStyle,
   as = 'h2',
-  stagger = 70,
+  stagger = 80,
 }: RevealWordsProps) {
   const { ref, visible } = useReveal<HTMLHeadingElement>(0.25);
   const Tag = as;
@@ -52,9 +52,9 @@ export function RevealWords({
               display: 'inline-block',
               fontStyle: word.italic ? 'italic' : 'normal',
               color: word.color ?? 'inherit',
-              transform: visible ? 'translateY(0)' : 'translateY(110%)',
+              transform: visible ? 'translateY(0)' : 'translateY(100%)',
               opacity: visible ? 1 : 0,
-              transition: `transform 0.9s cubic-bezier(0.22,1,0.36,1) ${i * stagger}ms, opacity 0.9s ease ${i * stagger}ms`,
+              transition: `transform 0.7s cubic-bezier(0.22,1,0.36,1) ${i * stagger}ms, opacity 0.7s cubic-bezier(0.22,1,0.36,1) ${i * stagger}ms`,
               ...wordStyle,
             }}
           >

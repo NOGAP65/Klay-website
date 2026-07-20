@@ -1,5 +1,6 @@
 import { RevealWords } from './RevealWords';
 import { tokens } from '../theme';
+import { splitWords } from '../utils/splitWords';
 
 export function FinalScene() {
   return (
@@ -7,13 +8,12 @@ export function FinalScene() {
       id="final"
       style={{
         position: 'relative',
-        minHeight: '100vh',
         background: tokens.dark,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        padding: '14vh 5vw',
+        padding: '80px 0',
       }}
     >
       {/* Slow gold radial glow rising from bottom — dawn light under a door */}
@@ -29,14 +29,11 @@ export function FinalScene() {
         }}
       />
 
-      <div style={{ position: 'relative', maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+      <div style={{ position: 'relative', maxWidth: 900, margin: '0 auto', padding: '0 5vw', textAlign: 'center' }}>
         <RevealWords
           as="h2"
           words={[
-            { text: 'Ready' },
-            { text: 'to' },
-            { text: 'let' },
-            { text: 'the' },
+            ...splitWords('Ready to let the'),
             { text: 'light', italic: true, color: tokens.gold },
             { text: 'in?', italic: true, color: tokens.gold },
           ]}

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { RevealWords } from './RevealWords';
 import { tokens, prefersReducedMotion } from '../theme';
+import { splitWords } from '../utils/splitWords';
+import { BlindReveal } from './BlindReveal';
 
 const testimonials = [
   { quote: 'The measure was effortless and the shutters transformed our living room. Faultless from start to finish.', name: 'Amara Whitfield', suburb: 'Brighton, VIC' },
@@ -44,22 +46,26 @@ export function ReviewsScene() {
       id="reviews"
       style={{
         position: 'relative',
-        minHeight: '100vh',
         background: tokens.parchment,
-        padding: '14vh 0',
+        padding: '80px 0',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
       }}
     >
+      <BlindReveal>
       <div style={{ padding: '0 5vw', marginBottom: 52 }}>
         <span style={{ color: tokens.gold, fontFamily: tokens.body, fontSize: 12, fontWeight: 500, letterSpacing: '0.24em', textTransform: 'uppercase' }}>
           Loved across Victoria
         </span>
         <RevealWords
           as="h2"
-          words={[{ text: 'Homes' }, { text: 'that' }, { text: 'chose', italic: true, color: tokens.gold }, { text: 'Klay', italic: true, color: tokens.gold }]}
+          words={[
+            ...splitWords('Homes that'),
+            { text: 'chose', italic: true, color: tokens.gold },
+            { text: 'Klay', italic: true, color: tokens.gold },
+          ]}
           style={{ fontWeight: 300, fontSize: 'clamp(36px, 4.4vw, 64px)', color: tokens.ink, marginTop: 14 }}
         />
       </div>
@@ -80,6 +86,7 @@ export function ReviewsScene() {
           ))}
         </div>
       </div>
+      </BlindReveal>
     </section>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { tokens, prefersReducedMotion } from '../theme';
 
-const SECTION_IDS = ['top', 'collection', 'curtains', 'process', 'reviews', 'final'];
+const SECTION_IDS = ['top', 'collection', 'curtains', 'wardrobes', 'process', 'reviews', 'final'];
 
 export function SectionCounter() {
   const [index, setIndex] = useState(1);

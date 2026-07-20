@@ -4,8 +4,10 @@ import { CustomCursor } from './components/CustomCursor';
 import { ScrollProgress } from './components/ScrollProgress';
 import { Nav } from './components/Nav';
 import { HeroScene } from './components/HeroScene';
+import { USPSection } from './components/USPSection';
 import { CollectionScene } from './components/CollectionScene';
 import { CurtainsScene } from './components/CurtainsScene';
+import { WardrobesScene } from './components/WardrobesScene';
 import { ProcessScene } from './components/ProcessScene';
 import { QuoteScene } from './components/QuoteScene';
 import { ReviewsScene } from './components/ReviewsScene';
@@ -38,8 +40,10 @@ function App() {
       <Nav />
       <main>
         <HeroScene />
+        <USPSection />
         <CollectionScene />
         <CurtainsScene />
+        <WardrobesScene />
         <ProcessScene />
         <QuoteScene />
         <ReviewsScene />

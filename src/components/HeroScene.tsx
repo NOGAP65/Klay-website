@@ -1,264 +1,278 @@
-import { useEffect, useRef, useState } from 'react';
-import { tokens, prefersReducedMotion, lerp } from '../theme';
+import { useEffect, useRef } from 'react';
+import { tokens, prefersReducedMotion } from '../theme';
+import { RevealWords } from './RevealWords';
+import { splitWords } from '../utils/splitWords';
+
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 export function HeroScene() {
-  const fabricRef = useRef<HTMLDivElement>(null);
-  const railRef = useRef<HTMLDivElement>(null);
-  const skewTarget = useRef(0);
-  const skewCurrent = useRef(0);
-  const railCurrent = useRef(0);
-  const [mounted, setMounted] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const img1Ref = useRef<HTMLImageElement>(null);
+  const img2Ref = useRef<HTMLImageElement>(null);
+  const img3Ref = useRef<HTMLImageElement>(null);
+  const img4Ref = useRef<HTMLImageElement>(null);
+  const img5Ref = useRef<HTMLImageElement>(null);
+
+  const text1Ref = useRef<HTMLDivElement>(null);
+  const text2Ref = useRef<HTMLDivElement>(null);
+  const text3Ref = useRef<HTMLDivElement>(null);
+  const text4Ref = useRef<HTMLDivElement>(null);
+  const text5Ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 100);
-    return () => clearTimeout(t);
-  }, []);
+    if (prefersReducedMotion()) {
+      if (img5Ref.current) img5Ref.current.style.opacity = '1';
+      if (text1Ref.current) text1Ref.current.style.opacity = '1';
+      return;
+    }
 
-  useEffect(() => {
-    if (prefersReducedMotion()) return;
-    let raf = 0;
-    const onMove = (e: MouseEvent) => {
-      const pct = e.clientX / window.innerWidth;
-      skewTarget.current = (pct - 0.5) * 4;
+    const animate = () => {
+      if (!wrapperRef.current) return;
+      const p = clamp(window.scrollY / (wrapperRef.current.offsetHeight - window.innerHeight), 0, 1);
+
+      const set = (ref: React.RefObject<HTMLImageElement | HTMLDivElement>, val: number) => {
+        if (ref.current) ref.current.style.opacity = String(clamp(val, 0, 1));
+      };
+      const fi = (start: number, end: number) => (p - start) / (end - start);
+      const fo = (start: number, end: number) => 1 - (p - start) / (end - start);
+
+      set(img1Ref, clamp(fo(0.12, 0.20), 0, 1));
+      set(img2Ref, clamp(Math.min(fi(0.15, 0.22), fo(0.28, 0.36)), 0, 1));
+      set(img3Ref, clamp(Math.min(fi(0.32, 0.40), fo(0.48, 0.56)), 0, 1));
+      set(img4Ref, clamp(Math.min(fi(0.52, 0.60), fo(0.68, 0.76)), 0, 1));
+      set(img5Ref, clamp(fi(0.72, 0.82), 0, 1));
+
+      const setDiv = (ref: React.RefObject<HTMLDivElement>, o: number, ty: number) => {
+        if (ref.current) {
+          ref.current.style.opacity = String(clamp(o, 0, 1));
+          ref.current.style.transform =
+            ref === text5Ref
+              ? `translateX(-50%) translateY(calc(-50% + ${ty}px))`
+              : `translateY(${ty}px)`;
+        }
+      };
+
+      const t1 = clamp(fo(0.08, 0.16), 0, 1);
+      const t2 = clamp(Math.min(fi(0.14, 0.22), fo(0.28, 0.34)), 0, 1);
+      const t3 = clamp(Math.min(fi(0.32, 0.40), fo(0.46, 0.52)), 0, 1);
+      const t4 = clamp(Math.min(fi(0.50, 0.58), fo(0.64, 0.70)), 0, 1);
+      const t5 = clamp(fi(0.78, 0.88), 0, 1);
+
+      setDiv(text1Ref, t1, 10 * (1 - t1));
+      setDiv(text2Ref, t2, 10 * (1 - t2));
+      setDiv(text3Ref, t3, 10 * (1 - t3));
+      setDiv(text4Ref, t4, 10 * (1 - t4));
+      setDiv(text5Ref, t5, 10 * (1 - t5));
     };
-    const loop = () => {
-      skewCurrent.current = lerp(skewCurrent.current, skewTarget.current, 0.06);
-      railCurrent.current = lerp(railCurrent.current, skewTarget.current, 0.06);
-      if (fabricRef.current) fabricRef.current.style.transform = `skewX(${skewCurrent.current}deg)`;
-      if (railRef.current) railRef.current.style.transform = `skewX(${railCurrent.current}deg)`;
-      raf = requestAnimationFrame(loop);
+
+    let rafId: number;
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(animate);
     };
-    window.addEventListener('mousemove', onMove);
-    raf = requestAnimationFrame(loop);
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    animate();
     return () => {
-      window.removeEventListener('mousemove', onMove);
-      cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafId);
     };
   }, []);
-
-  const blindDown = mounted ? 66 : 0;
 
   return (
-    <section
-      id="top"
-      style={{
-        position: 'relative',
-        minHeight: '100vh',
-        background: tokens.dark,
-        overflow: 'hidden',
-      }}
-    >
-      {/* Dawn radial glow behind window */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          width: '60vw',
-          height: '60vw',
-          maxWidth: 800,
-          maxHeight: 800,
-          transform: 'translate(-50%, -55%)',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(200,151,58,0.15) 0%, rgba(200,151,58,0.04) 40%, transparent 70%)',
-          animation: prefersReducedMotion() ? 'none' : 'klay-dawn 8s ease-in-out infinite alternate',
-          pointerEvents: 'none',
-        }}
-      />
+    <div ref={wrapperRef} id="top" style={{ height: '280vh', position: 'relative' }}>
+      <div style={{ position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', background: '#0a0806' }}>
+        {/* Layer A — photo crossfade sequence */}
+        <img
+          ref={img1Ref}
+          src="/images/room-1.png"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: 1 }}
+        />
+        <img
+          ref={img2Ref}
+          src="/images/room-2.png"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: 0 }}
+        />
+        <img
+          ref={img3Ref}
+          src="/images/room-3.png"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: 0 }}
+        />
+        <img
+          ref={img4Ref}
+          src="/images/room-4.png"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: 0 }}
+        />
+        <img
+          ref={img5Ref}
+          src="/images/room-5.png"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', opacity: 0 }}
+        />
 
-      {/* Orbiting gold glow blob */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '20%',
-          left: '10%',
-          width: 300,
-          height: 300,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(200,151,58,0.12) 0%, transparent 65%)',
-          filter: 'blur(50px)',
-          animation: prefersReducedMotion() ? 'none' : 'klay-orbit 22s ease-in-out infinite',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Floor line — warm gradient strip at 70% height */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '70%',
-          left: 0,
-          right: 0,
-          height: 1,
-          background: 'linear-gradient(90deg, transparent, rgba(200,151,58,0.25) 20%, rgba(200,151,58,0.25) 80%, transparent)',
-          pointerEvents: 'none',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          top: '70%',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'linear-gradient(180deg, transparent, rgba(20,16,8,0.4))',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Window frame centered with roller blind */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 'min(320px, 28vw)',
-          height: 'min(480px, 56vh)',
-          border: '1px solid rgba(200,151,58,0.3)',
-          background: 'linear-gradient(180deg, rgba(217,174,96,0.06), rgba(20,20,20,0.3))',
-          overflow: 'hidden',
-          pointerEvents: 'none',
-        }}
-      >
-        {/* Roller blind — two-thirds down */}
+        {/* Layer B — dark overlay */}
         <div
           style={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: `${blindDown}%`,
-            transition: 'height 2.5s cubic-bezier(0.16,1,0.3,1)',
+            inset: 0,
+            background: 'linear-gradient(to right, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.1) 100%)',
+            zIndex: 5,
+            pointerEvents: 'none',
           }}
-        >
-          {/* cassette */}
-          <div
-            style={{
-              height: 14,
-              background: `linear-gradient(180deg, ${tokens.goldLight}, ${tokens.gold})`,
-              boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
-            }}
-          />
-          {/* fabric */}
-          <div
-            ref={fabricRef}
-            style={{
-              height: 'calc(100% - 22px)',
-              background: 'repeating-linear-gradient(180deg, rgba(200,151,58,0.55) 0px, rgba(200,151,58,0.55) 6px, rgba(217,174,96,0.42) 6px, rgba(217,174,96,0.42) 12px)',
-              boxShadow: 'inset 0 0 30px rgba(0,0,0,0.35)',
-              transformOrigin: 'top center',
-              willChange: 'transform',
-            }}
-          />
-          {/* bottom rail */}
-          <div
-            ref={railRef}
-            style={{
-              height: 8,
-              background: `linear-gradient(180deg, ${tokens.gold}, ${tokens.goldLight})`,
-              boxShadow: '0 3px 8px rgba(0,0,0,0.5)',
-              transformOrigin: 'top center',
-              willChange: 'transform',
-            }}
-          />
-        </div>
-      </div>
+        />
 
-      {/* Bottom-left content */}
-      <div
-        style={{
-          position: 'absolute',
-          left: '5vw',
-          bottom: '9vh',
-          maxWidth: 640,
-        }}
-      >
-        <span
+        {/* Layer C — text */}
+        <div ref={text1Ref} style={{ position: 'absolute', bottom: '12%', left: '6%', zIndex: 10, pointerEvents: 'none', opacity: 1 }}>
+          <div
+            style={{
+              color: tokens.gold,
+              fontFamily: tokens.body,
+              fontSize: 11,
+              fontWeight: 500,
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              marginBottom: 20,
+            }}
+          >
+            Australian Made-to-Measure
+          </div>
+          <RevealWords
+            as="h1"
+            words={[
+              ...splitWords('Light,'),
+              { text: 'curated', italic: true, color: '#D9AE60' },
+              ...splitWords('for you.'),
+            ]}
+            style={{
+              fontWeight: 300,
+              fontSize: 'clamp(56px, 8vw, 110px)',
+              lineHeight: 0.88,
+              color: tokens.warmWhite,
+            }}
+          />
+          <p
+            style={{
+              fontFamily: tokens.body,
+              fontWeight: 300,
+              fontSize: 14,
+              lineHeight: 1.6,
+              color: 'rgba(248,246,242,0.65)',
+              marginTop: 20,
+              maxWidth: 380,
+            }}
+          >
+            Blinds, curtains and shutters made precisely for your windows — designed
+            with you, and installed by hand across Victoria.
+          </p>
+          <div style={{ display: 'flex', gap: 18, marginTop: 32, flexWrap: 'wrap', pointerEvents: 'auto' }}>
+            <HeroButton href="#collection" primary>
+              Design Yours
+            </HeroButton>
+            <HeroButton href="#collection">Explore Collection</HeroButton>
+          </div>
+        </div>
+
+        <div
+          ref={text2Ref}
           style={{
-            display: 'block',
-            color: tokens.gold,
-            fontFamily: tokens.body,
-            fontSize: 13,
-            fontWeight: 500,
-            letterSpacing: '0.28em',
-            textTransform: 'uppercase',
-            marginBottom: 24,
-          }}
-        >
-          Australian Made-to-Measure
-        </span>
-        <h1
-          style={{
+            position: 'absolute',
+            bottom: '12%',
+            left: '6%',
+            zIndex: 10,
+            pointerEvents: 'none',
+            opacity: 0,
+            maxWidth: 500,
             fontFamily: tokens.display,
+            fontStyle: 'italic',
             fontWeight: 300,
-            fontSize: 'clamp(60px, 9vw, 130px)',
-            lineHeight: 1.02,
-            margin: 0,
+            fontSize: 'clamp(38px, 5vw, 68px)',
             color: tokens.warmWhite,
           }}
         >
-          Light,{' '}
-          <span style={{ fontStyle: 'italic', color: tokens.gold }}>curated</span>{' '}
-          for you.
-        </h1>
-        <p
+          Your blind, lowered.
+        </div>
+
+        <div
+          ref={text3Ref}
           style={{
-            fontFamily: tokens.body,
+            position: 'absolute',
+            bottom: '12%',
+            left: '6%',
+            zIndex: 10,
+            pointerEvents: 'none',
+            opacity: 0,
+            maxWidth: 500,
+            fontFamily: tokens.display,
+            fontStyle: 'italic',
             fontWeight: 300,
-            fontSize: 18,
-            lineHeight: 1.6,
-            color: tokens.textMuted,
-            marginTop: 26,
-            maxWidth: 460,
+            fontSize: 'clamp(38px, 5vw, 68px)',
+            color: tokens.warmWhite,
           }}
         >
-          Blinds, curtains and shutters made precisely for your windows — designed
-          with you, and installed by hand across Victoria.
-        </p>
-        <div style={{ display: 'flex', gap: 18, marginTop: 38, flexWrap: 'wrap' }}>
-          <HeroButton href="#collection" primary>
-            Design Yours
-          </HeroButton>
-          <HeroButton href="#collection">Explore Collection</HeroButton>
+          Your curtains, drawn.
+        </div>
+
+        <div
+          ref={text4Ref}
+          style={{
+            position: 'absolute',
+            bottom: '12%',
+            left: '6%',
+            zIndex: 10,
+            pointerEvents: 'none',
+            opacity: 0,
+            maxWidth: 500,
+            fontFamily: tokens.display,
+            fontStyle: 'italic',
+            fontWeight: 300,
+            fontSize: 'clamp(38px, 5vw, 68px)',
+            color: tokens.warmWhite,
+          }}
+        >
+          Your room, complete.
+        </div>
+
+        <div
+          ref={text5Ref}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translateX(-50%) translateY(-50%)',
+            textAlign: 'center',
+            zIndex: 10,
+            pointerEvents: 'none',
+            opacity: 0,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: tokens.display,
+              fontStyle: 'italic',
+              fontWeight: 300,
+              fontSize: 'clamp(40px, 5vw, 64px)',
+              lineHeight: 1.1,
+              color: tokens.warmWhite,
+              marginBottom: 24,
+            }}
+          >
+            This is what Klay does to a room.
+          </div>
+          <div
+            style={{
+              fontFamily: tokens.body,
+              fontSize: 11,
+              fontWeight: 500,
+              color: tokens.gold,
+              textTransform: 'uppercase',
+              letterSpacing: '0.3em',
+            }}
+          >
+            Scroll to explore the collection →
+          </div>
         </div>
       </div>
-
-      {/* Scroll hint */}
-      <div
-        style={{
-          position: 'absolute',
-          right: '4vw',
-          bottom: '9vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 16,
-        }}
-      >
-        <span
-          style={{
-            writingMode: 'vertical-rl',
-            fontFamily: tokens.body,
-            fontSize: 11,
-            letterSpacing: '0.28em',
-            textTransform: 'uppercase',
-            color: tokens.textMuted,
-          }}
-        >
-          Scroll to explore
-        </span>
-        <span
-          style={{
-            width: 1,
-            height: 70,
-            background: tokens.gold,
-            display: 'block',
-            animation: prefersReducedMotion() ? 'none' : 'klay-scroll-hint 2.4s ease-in-out infinite',
-          }}
-        />
-      </div>
-    </section>
+    </div>
   );
 }
 
