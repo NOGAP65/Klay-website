@@ -6,7 +6,7 @@ export default function VisualiserPage() {
   const [searchParams] = useSearchParams();
   const key = searchParams.get('key');
   const hostname = window.location.hostname;
-  const allowedHosts = ['localhost', 'klay-interiors.netlify.app', 'klayinteriors.com.au', 'www.klayinteriors.com.au'];
+  const allowedHosts = ['localhost', 'klay-website.netlify.app', 'klay-interiors.netlify.app', 'klayinteriors.com.au', 'www.klayinteriors.com.au'];
   const validKeys = ['klay-internal-2026', 'ella-embed-2026'];
   const isAllowed = allowedHosts.includes(hostname) || validKeys.includes(key ?? '');
 
