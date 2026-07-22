@@ -273,38 +273,6 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
         }}
       >
         <div style={{ padding: '24px 24px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                border: `1px solid ${tokens.gold}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: tokens.display,
-                fontSize: 18,
-                color: tokens.gold,
-              }}
-            >
-              K
-            </div>
-            <span style={{ fontFamily: tokens.body, fontSize: 14, color: '#FFFFFF' }}>Klay</span>
-          </div>
-          <h1
-            style={{
-              fontFamily: tokens.display,
-              fontSize: 24,
-              fontWeight: 300,
-              color: '#FFFFFF',
-              margin: '16px 0 0',
-            }}
-          >
-            Design your blind
-          </h1>
-        </div>
-
-        <div style={{ padding: '24px 24px 0' }}>
           {!store.lockedRange && (
             <div style={{ marginBottom: 24 }}>
               <SectionLabel>Range</SectionLabel>
