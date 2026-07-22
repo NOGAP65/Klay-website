@@ -2,21 +2,26 @@ import KlayConfigurator from '../visualiser/KlayConfigurator';
 
 export function VisualiserSection() {
   return (
-    <section id="visualiser" style={{ background: '#0f0d09' }}>
-      <div style={{ padding: '100px 80px 48px' }}>
-        <p style={{ fontFamily:"'Inter',sans-serif", fontSize:'11px', color:'#C8973A', letterSpacing:'0.3em', textTransform:'uppercase', marginBottom:'16px' }}>
-          THE KLAY VISUALISER
-        </p>
-        <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', gap:'60px' }}>
-          <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'clamp(42px,5vw,72px)', fontWeight:300, color:'#F8F6F2', lineHeight:0.92, letterSpacing:'-0.02em', flexShrink:0 }}>
-            See your blind<br />before you buy it.
-          </h2>
-          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:'14px', color:'rgba(248,246,242,0.5)', lineHeight:1.8, maxWidth:'420px', paddingBottom:'6px' }}>
-            Upload a photo of your window — or pick a preset room — and see your exact blind rendered live. Configure range, finish, size and operation. Instant pricing.
+    <section id="visualiser" style={{
+      background: '#0f0d09',
+      borderTop: '1px solid rgba(200,151,58,0.12)',
+      borderBottom: '1px solid rgba(200,151,58,0.12)',
+    }}>
+      {/* Section label */}
+      <div style={{ padding: '48px 80px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ width: '24px', height: '1px', background: '#C8973A' }} />
+          <p style={{ fontFamily: "'Inter',sans-serif", fontSize: '11px', color: '#C8973A', letterSpacing: '0.3em', textTransform: 'uppercase' }}>
+            The Klay Visualiser
           </p>
         </div>
+        <p style={{ fontFamily: "'Inter',sans-serif", fontSize: '12px', color: 'rgba(248,246,242,0.3)', letterSpacing: '0.1em' }}>
+          Upload your window photo — see your blind live
+        </p>
       </div>
-      <div style={{ height:'680px', borderTop:'1px solid rgba(200,151,58,0.12)' }}>
+
+      {/* Visualiser */}
+      <div style={{ height: '75vh', minHeight: '580px', maxHeight: '780px', marginTop: '24px' }}>
         <KlayConfigurator />
       </div>
     </section>
