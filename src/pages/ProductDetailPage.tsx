@@ -146,7 +146,7 @@ export default function ProductDetailPage() {
           ))}
         </div>
         <Link
-          to="/visualiser"
+          to={`/visualiser?range=${category}`}
           style={{
             display: 'block', textAlign: 'center', textDecoration: 'none', fontFamily: tokens.body, fontSize: 12,
             fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '14px', width: '100%',
