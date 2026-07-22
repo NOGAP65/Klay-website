@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { tokens } from '../theme';
@@ -5,6 +6,21 @@ import { tokens } from '../theme';
 const DARK = '#0f0d09';
 
 export default function VisualiserPage() {
+  const [searchParams] = useSearchParams();
+  const key = searchParams.get('key');
+  const hostname = window.location.hostname;
+  const allowedHosts = ['localhost', 'klay-interiors.netlify.app', 'klayinteriors.com.au', 'www.klayinteriors.com.au'];
+  const validKeys = ['klay-internal-2026', 'ella-embed-2026'];
+  const isAllowed = allowedHosts.includes(hostname) || validKeys.includes(key ?? '');
+
+  if (!isAllowed) {
+    return (
+      <div style={{ background: '#0a0806', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontFamily: "'Inter',sans-serif", fontSize: '13px', color: 'rgba(248,246,242,0.2)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Authorised access only.</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <Nav />

@@ -3,12 +3,9 @@ import { useKlayStore } from '../store';
 import { ScrollProgress } from '../components/ScrollProgress';
 import { Nav } from '../components/Nav';
 import { HeroScene } from '../components/HeroScene';
-import { USPSection } from '../components/USPSection';
-import { CollectionScene } from '../components/CollectionScene';
-import { CurtainsScene } from '../components/CurtainsScene';
-import { WardrobesScene } from '../components/WardrobesScene';
-import { ProcessScene } from '../components/ProcessScene';
-import { QuoteScene } from '../components/QuoteScene';
+import { VisualiserSection } from '../components/VisualiserSection';
+import { JobsSection } from '../components/JobsSection';
+import { ShopSection } from '../components/ShopSection';
 import { ReviewsScene } from '../components/ReviewsScene';
 import { FinalScene } from '../components/FinalScene';
 import { Footer } from '../components/Footer';
@@ -38,12 +35,9 @@ export default function HomePage() {
       <Nav />
       <main>
         <HeroScene />
-        <USPSection />
-        <CollectionScene />
-        <CurtainsScene />
-        <WardrobesScene />
-        <ProcessScene />
-        <QuoteScene />
+        <VisualiserSection />
+        <JobsSection />
+        <ShopSection />
         <ReviewsScene />
         <FinalScene />
         <Footer />
