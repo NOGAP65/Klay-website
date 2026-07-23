@@ -1,35 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { tokens } from '../theme';
 import { useVisualiserStore } from './useVisualiserStore';
 import { usePhotoUpload } from './usePhotoUpload';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
-
-interface KlayConfiguratorProps {
-  lockedRange?: string; // if passed, hides range switcher — customer can only configure this range
-  // Homepage embed only: widens the controls panel and folds the marketing
-  // copy (headline, bullets) into it, replacing the separate copy column
-  // VisualiserSection used to render alongside this component.
-  showMarketingCopy?: boolean;
-}
-
-const RANGE_OPTIONS = [
-  { id: 'blockout', label: 'Blockout' },
-  { id: 'sunscreen', label: 'Sunscreen' },
-  { id: 'dual', label: 'Dual' },
-];
-
-const SIZE_OPTIONS: { id: 'small' | 'medium' | 'large'; label: string; sub: string }[] = [
-  { id: 'small', label: 'Small', sub: 'up to 1m' },
-  { id: 'medium', label: 'Medium', sub: 'up to 2m' },
-  { id: 'large', label: 'Large', sub: 'up to 3m' },
-];
-
-const OPERATION_OPTIONS: { id: 'manual' | 'motorised'; label: string }[] = [
-  { id: 'manual', label: 'Manual' },
-  { id: 'motorised', label: 'Motorised (+$150)' },
-];
 
 // Hardware finish name -> actual render colour. Canvas2DBlindRenderer treats
 // hardwareColor as a hex string it feeds into lighten()/darken() (hexToRgb),
@@ -39,62 +13,6 @@ const HARDWARE_HEX: Record<string, string> = {
   Black: '#222222',
   Chrome: '#C0C0C0',
 };
-
-const HARDWARE_SWATCH_STYLE: Record<string, React.CSSProperties> = {
-  White: { background: '#F0EDE8' },
-  Black: { background: '#2A2A2A' },
-  Chrome: { background: 'linear-gradient(135deg,#e8e8e8,#a0a0a0)' },
-};
-
-function Pill({
-  label,
-  sub,
-  active,
-  onClick,
-}: {
-  label: string;
-  sub?: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        flex: 1,
-        padding: '10px 20px',
-        fontFamily: tokens.body,
-        fontSize: 12,
-        fontWeight: 500,
-        textAlign: 'center',
-        cursor: 'pointer',
-        border: active ? `1px solid ${tokens.gold}` : '1px solid rgba(200,151,58,0.3)',
-        background: active ? tokens.gold : 'transparent',
-        color: active ? tokens.dark : 'rgba(248,246,242,0.6)',
-      }}
-    >
-      <div>{label}</div>
-      {sub && <div style={{ fontSize: 10, marginTop: 2, opacity: 0.8 }}>{sub}</div>}
-    </button>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        fontFamily: tokens.body,
-        fontSize: 10,
-        color: tokens.gold,
-        textTransform: 'uppercase',
-        letterSpacing: '0.2em',
-        marginBottom: 10,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
 
 const ghostButtonStyle: React.CSSProperties = {
   background: 'rgba(0,0,0,0.45)',
@@ -122,30 +40,17 @@ const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
-export default function KlayConfigurator({ lockedRange: lockedRangeProp, showMarketingCopy = false }: KlayConfiguratorProps) {
-  const [searchParams] = useSearchParams();
+// Canvas-only: renders the upload / trace / rendered-blind states inside a
+// self-contained box. All configurator controls (Range, Hardware, Size,
+// Operation, Price, Book Installation) live in the caller's own layout —
+// see VisualiserControls — since callers place this box differently
+// (VisualiserSection's right column vs VisualiserPage's full-bleed canvas).
+export default function KlayConfigurator() {
   const store = useVisualiserStore();
   const { photoUrl: hookPhotoUrl, photoBitmap, handleUpload, handleTakePhoto, loadFromUrl, clear } = usePhotoUpload();
 
   const overlayRef = useRef<CornerPinOverlayHandle>(null);
   const rendererContainerRef = useRef<HTMLDivElement>(null);
-
-  const [toast, setToast] = useState<string | null>(null);
-  const showToast = (text: string) => {
-    setToast(text);
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  // Locks the range from either the `lockedRange` prop or a `?range=` URL
-  // param (e.g. arriving from a product page) — runs once on mount only.
-  useEffect(() => {
-    const range = lockedRangeProp ?? searchParams.get('range');
-    if (range) {
-      store.setLockedRange(range);
-      store.setRange(range);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // The hook owns photo acquisition; only photoUrl needs to live in the
   // shared store (photoBitmap stays local — it's only needed here for
@@ -266,357 +171,198 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp, showMar
   }));
 
   return (
-    <div style={{ display: 'flex', width: '100%', height: '100%' }}>
-      {/* ---------------------------------------------------------- LEFT PANEL */}
-      <aside
-        style={{
-          width: showMarketingCopy ? '400px' : '340px',
-          flexShrink: 0,
-          background: '#1a1208',
-          padding: showMarketingCopy ? '40px 48px' : '20px',
-          overflowY: 'hidden',
-        }}
-      >
-        <div style={{ padding: showMarketingCopy ? '32px 0 0' : '32px 24px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {!store.lockedRange && (
-            <div>
-              <SectionLabel>Range</SectionLabel>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {RANGE_OPTIONS.map(r => (
-                  <Pill
-                    key={r.id}
-                    label={r.label}
-                    active={store.selectedRange === r.id}
-                    onClick={() => store.setRange(r.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div>
-            <SectionLabel>Hardware finish</SectionLabel>
-            <div style={{ display: 'flex', gap: 12 }}>
-              {['White', 'Black', 'Chrome'].map(hw => (
-                <button
-                  key={hw}
-                  aria-label={hw}
-                  onClick={() => store.setHardware(hw)}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: '50%',
-                    cursor: 'pointer',
-                    border: store.selectedHardware === hw ? `2px solid ${tokens.gold}` : '1px solid rgba(255,255,255,0.2)',
-                    ...HARDWARE_SWATCH_STYLE[hw],
-                  }}
-                />
-              ))}
-            </div>
-            <div style={{ fontFamily: tokens.display, fontSize: 18, color: '#FFFFFF', marginTop: 12 }}>
-              {store.getCurrentSku()?.name ?? ''}
-            </div>
-          </div>
-
-          <div>
-            <SectionLabel>Window size</SectionLabel>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {SIZE_OPTIONS.map(s => (
-                <Pill
-                  key={s.id}
-                  label={s.label}
-                  sub={s.sub}
-                  active={store.windowSize === s.id}
-                  onClick={() => store.setWindowSize(s.id)}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <SectionLabel>Operation</SectionLabel>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {OPERATION_OPTIONS.map(o => (
-                <Pill
-                  key={o.id}
-                  label={o.label}
-                  active={store.controlType === o.id}
-                  onClick={() => store.setControlType(o.id)}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {showMarketingCopy && (
-          <div style={{ padding: '32px 0 0' }}>
-            <h2 style={{ fontFamily: tokens.display, fontSize: 48, fontWeight: 300, color: '#F5F2ED', lineHeight: 1.1, margin: 0 }}>
-              See your blind<br />in your room,<br /><em style={{ color: tokens.gold }}>before you order.</em>
-            </h2>
-            <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {['Real fabric textures rendered live', 'Instant price as you configure', 'Motorised blind animation', 'Download your design'].map(f => (
-                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 16, height: 1, background: tokens.gold, flexShrink: 0 }} />
-                  <span style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(245,242,237,0.6)' }}>{f}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div style={{ padding: showMarketingCopy ? '32px 0 0' : '20px 24px' }}>
-          <div
-            style={{
-              fontFamily: tokens.body,
-              fontSize: 10,
-              color: tokens.gold,
-              textTransform: 'uppercase',
-              letterSpacing: '0.2em',
-            }}
-          >
-            Estimated price
-          </div>
-          <div style={{ fontFamily: tokens.display, fontSize: 48, fontWeight: 300, color: '#FFFFFF' }}>
-            ${store.getCurrentPrice()}
-          </div>
-          <div style={{ fontFamily: tokens.body, fontSize: 11, color: 'rgba(248,246,242,0.4)', marginTop: 4 }}>
-            + professional installation across Victoria
-          </div>
-        </div>
-
-        <button
-          onClick={() => showToast('Coming soon — booking flow in progress')}
+    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#2C2824', borderRadius: 8, overflow: 'hidden' }}>
+      {!hasPhoto ? (
+        /* STATE 1 — no photo yet */
+        <div
           style={{
-            width: showMarketingCopy ? '100%' : 'calc(100% - 48px)',
-            margin: showMarketingCopy ? '24px 0 0' : '0 24px 24px',
-            padding: 16,
-            background: tokens.gold,
-            color: tokens.dark,
-            fontFamily: "'Inter',sans-serif",
-            fontSize: 12,
-            letterSpacing: '0.2em',
-            textTransform: 'uppercase',
-            border: 'none',
-            cursor: 'pointer',
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            padding: 24,
           }}
         >
-          Book Installation →
-        </button>
-      </aside>
-
-      {/* --------------------------------------------------------- RIGHT PANEL */}
-      <div style={{ flex: 1, position: 'relative', background: '#2C2824' }}>
-        {!hasPhoto ? (
-          /* STATE 1 — no photo yet */
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-              padding: 24,
-            }}
-          >
-            <div style={{ maxWidth: 360, margin: '0 auto' }}>
-              <h2 style={{ fontFamily: tokens.display, fontSize: 28, fontWeight: 300, color: '#F5F2ED', margin: 0 }}>
-                Upload a photo of your window
-              </h2>
-              <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(245,242,237,0.5)', marginTop: 8 }}>
-                or choose a preset room
-              </p>
-              <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'center' }}>
-                <button onClick={handleUpload} style={goldButtonStyle}>
-                  Upload Photo
-                </button>
-                <button onClick={handleTakePhoto} style={ghostButtonStyle}>
-                  Take Photo
-                </button>
-              </div>
-              <div style={{ display: 'flex', gap: 16, marginTop: 32, justifyContent: 'center' }}>
-                {PRESET_ROOMS.map(url => (
-                  <img
-                    key={url}
-                    src={url}
-                    onClick={() => {
-                      store.setPhotoUrl(url);
-                      loadFromUrl(url);
-                      store.clearTracedAreas();
-                    }}
-                    style={{ width: 140, height: 93, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
-                  />
-                ))}
-              </div>
+          <div style={{ maxWidth: 360, margin: '0 auto' }}>
+            <h2 style={{ fontFamily: tokens.display, fontSize: 28, fontWeight: 300, color: '#F5F2ED', margin: 0 }}>
+              Upload a photo of your window
+            </h2>
+            <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(245,242,237,0.5)', marginTop: 8 }}>
+              or choose a preset room
+            </p>
+            <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'center' }}>
+              <button onClick={handleUpload} style={goldButtonStyle}>
+                Upload Photo
+              </button>
+              <button onClick={handleTakePhoto} style={ghostButtonStyle}>
+                Take Photo
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 16, marginTop: 32, justifyContent: 'center' }}>
+              {PRESET_ROOMS.map(url => (
+                <img
+                  key={url}
+                  src={url}
+                  onClick={() => {
+                    store.setPhotoUrl(url);
+                    loadFromUrl(url);
+                    store.clearTracedAreas();
+                  }}
+                  style={{ width: 140, height: 93, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
+                />
+              ))}
             </div>
           </div>
-        ) : !confirmedArea ? (
-          /* STATE 2 — photo loaded, not yet traced */
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        </div>
+      ) : !confirmedArea ? (
+        /* STATE 2 — photo loaded, not yet traced */
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div
+            style={{
+              position: 'relative',
+              maxWidth: '100%',
+              maxHeight: '100%',
+              aspectRatio: `${photoBitmap!.width} / ${photoBitmap!.height}`,
+            }}
+          >
+            <img
+              src={store.photoUrl!}
+              alt="Your room"
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+            />
+            <CornerPinOverlay
+              ref={overlayRef}
+              imageWidth={photoBitmap!.width}
+              imageHeight={photoBitmap!.height}
+              onConfirm={handleConfirmTrace}
+            />
             <div
               style={{
-                position: 'relative',
-                maxWidth: '100%',
-                maxHeight: '100%',
-                aspectRatio: `${photoBitmap!.width} / ${photoBitmap!.height}`,
+                position: 'absolute',
+                bottom: 16,
+                left: 0,
+                right: 0,
+                display: 'flex',
+                justifyContent: 'center',
+                gap: 12,
               }}
             >
-              <img
-                src={store.photoUrl!}
-                alt="Your room"
-                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-              />
-              <CornerPinOverlay
-                ref={overlayRef}
-                imageWidth={photoBitmap!.width}
-                imageHeight={photoBitmap!.height}
-                onConfirm={handleConfirmTrace}
-              />
+              <button onClick={() => overlayRef.current?.confirm()} style={goldButtonStyle}>
+                Confirm window outline
+              </button>
+              <button onClick={handleChangePhoto} style={ghostButtonStyle}>
+                Change photo
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* STATE 3 — area traced and confirmed */
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div ref={rendererContainerRef} style={{ position: 'relative', maxWidth: '100%', maxHeight: '100%' }}>
+            <Canvas2DBlindRenderer
+              photoUrl={store.photoUrl!}
+              tracedAreas={canvasTracedAreas}
+              activeAreaId={store.activeAreaId ?? undefined}
+              rollPosition={store.rollPosition}
+              compareMode={false}
+              compareDivider={0.5}
+              compareBlindType="blockout"
+              compareFabricColor="#F0EDE8"
+            />
+
+            {/* Roll position control — right edge */}
+            {store.controlType !== 'motorised' ? (
+              <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', alignItems:'center', gap:'8px', zIndex:20 }}>
+                <button
+                  onClick={() => store.setRollPosition(Math.max(0, store.rollPosition - 0.1))}
+                  style={{ width:'32px', height:'32px', border:'1px solid rgba(200,151,58,0.4)', background:'rgba(28,24,16,0.8)', color:'#C8973A', fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+                >▲</button>
+                <input
+                  type="range" min="0" max="1" step="0.01"
+                  value={store.rollPosition}
+                  onChange={e => store.setRollPosition(parseFloat(e.target.value))}
+                  style={{ writingMode:'vertical-lr', direction:'rtl', height:'100px', accentColor:'#C8973A', cursor:'pointer' }}
+                />
+                <button
+                  onClick={() => store.setRollPosition(Math.min(1, store.rollPosition + 0.1))}
+                  style={{ width:'32px', height:'32px', border:'1px solid rgba(200,151,58,0.4)', background:'rgba(28,24,16,0.8)', color:'#C8973A', fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+                >▼</button>
+              </div>
+            ) : (
               <div
                 style={{
                   position: 'absolute',
-                  bottom: 16,
-                  left: 0,
-                  right: 0,
+                  right: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
                   display: 'flex',
-                  justifyContent: 'center',
-                  gap: 12,
+                  flexDirection: 'column',
+                  gap: 8,
                 }}
               >
-                <button onClick={() => overlayRef.current?.confirm()} style={goldButtonStyle}>
-                  Confirm window outline
+                <button
+                  onClick={() => { stopAuto(); animateRollTo(1, 1200); }}
+                  aria-label="Close blind"
+                  style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.9)', border: 'none', color: tokens.dark, fontSize: 16, cursor: 'pointer' }}
+                >
+                  ▲
                 </button>
-                <button onClick={handleChangePhoto} style={ghostButtonStyle}>
-                  Change photo
+                <button
+                  onClick={() => { stopAuto(); animateRollTo(0, 1200); }}
+                  aria-label="Open blind"
+                  style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.9)', border: 'none', color: tokens.dark, fontSize: 16, cursor: 'pointer' }}
+                >
+                  ▼
                 </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* STATE 3 — area traced and confirmed */
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-            <div ref={rendererContainerRef} style={{ position: 'relative', maxWidth: '100%', maxHeight: '100%' }}>
-              <Canvas2DBlindRenderer
-                photoUrl={store.photoUrl!}
-                tracedAreas={canvasTracedAreas}
-                activeAreaId={store.activeAreaId ?? undefined}
-                rollPosition={store.rollPosition}
-                compareMode={false}
-                compareDivider={0.5}
-                compareBlindType="blockout"
-                compareFabricColor="#F0EDE8"
-              />
-
-              {/* Roll position control — right edge */}
-              {store.controlType !== 'motorised' ? (
-                <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', alignItems:'center', gap:'8px', zIndex:20 }}>
-                  <button
-                    onClick={() => store.setRollPosition(Math.max(0, store.rollPosition - 0.1))}
-                    style={{ width:'32px', height:'32px', border:'1px solid rgba(200,151,58,0.4)', background:'rgba(28,24,16,0.8)', color:'#C8973A', fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
-                  >▲</button>
-                  <input
-                    type="range" min="0" max="1" step="0.01"
-                    value={store.rollPosition}
-                    onChange={e => store.setRollPosition(parseFloat(e.target.value))}
-                    style={{ writingMode:'vertical-lr', direction:'rtl', height:'100px', accentColor:'#C8973A', cursor:'pointer' }}
-                  />
-                  <button
-                    onClick={() => store.setRollPosition(Math.min(1, store.rollPosition + 0.1))}
-                    style={{ width:'32px', height:'32px', border:'1px solid rgba(200,151,58,0.4)', background:'rgba(28,24,16,0.8)', color:'#C8973A', fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
-                  >▼</button>
-                </div>
-              ) : (
-                <div
+                <button
+                  onClick={() => (autoRunning ? stopAuto() : startAuto())}
+                  aria-label={autoRunning ? 'Stop automatic movement' : 'Start automatic movement'}
                   style={{
-                    position: 'absolute',
-                    right: 12,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
+                    width: 40,
+                    height: 40,
+                    background: tokens.gold,
+                    border: 'none',
+                    color: tokens.dark,
+                    fontFamily: tokens.body,
+                    fontWeight: 700,
+                    fontSize: 9,
+                    cursor: 'pointer',
                   }}
                 >
-                  <button
-                    onClick={() => { stopAuto(); animateRollTo(1, 1200); }}
-                    aria-label="Close blind"
-                    style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.9)', border: 'none', color: tokens.dark, fontSize: 16, cursor: 'pointer' }}
-                  >
-                    ▲
-                  </button>
-                  <button
-                    onClick={() => { stopAuto(); animateRollTo(0, 1200); }}
-                    aria-label="Open blind"
-                    style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.9)', border: 'none', color: tokens.dark, fontSize: 16, cursor: 'pointer' }}
-                  >
-                    ▼
-                  </button>
-                  <button
-                    onClick={() => (autoRunning ? stopAuto() : startAuto())}
-                    aria-label={autoRunning ? 'Stop automatic movement' : 'Start automatic movement'}
-                    style={{
-                      width: 40,
-                      height: 40,
-                      background: tokens.gold,
-                      border: 'none',
-                      color: tokens.dark,
-                      fontFamily: tokens.body,
-                      fontWeight: 700,
-                      fontSize: 9,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    AUTO
-                  </button>
-                </div>
-              )}
-
-              {/* Bottom action bar */}
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 16,
-                  left: 0,
-                  right: 0,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  gap: 12,
-                }}
-              >
-                <button onClick={() => store.clearTracedAreas()} style={ghostButtonStyle}>
-                  Retrace
-                </button>
-                <button onClick={handleChangePhoto} style={ghostButtonStyle}>
-                  Change Photo
-                </button>
-                <button onClick={handleDownload} style={goldButtonStyle}>
-                  Download
+                  AUTO
                 </button>
               </div>
+            )}
+
+            {/* Bottom action bar */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 16,
+                left: 0,
+                right: 0,
+                display: 'flex',
+                justifyContent: 'center',
+                gap: 12,
+              }}
+            >
+              <button onClick={() => store.clearTracedAreas()} style={ghostButtonStyle}>
+                Retrace
+              </button>
+              <button onClick={handleChangePhoto} style={ghostButtonStyle}>
+                Change Photo
+              </button>
+              <button onClick={handleDownload} style={goldButtonStyle}>
+                Download
+              </button>
             </div>
           </div>
-        )}
-
-        {toast && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: 24,
-              right: 24,
-              background: tokens.dark,
-              color: '#FFFFFF',
-              fontFamily: tokens.body,
-              fontSize: 13,
-              fontWeight: 500,
-              padding: '14px 20px',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
-            }}
-          >
-            {toast}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
