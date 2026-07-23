@@ -2,8 +2,8 @@ import KlayConfigurator from '../visualiser/KlayConfigurator'
 
 export default function VisualiserSection() {
   return (
-    <section id="visualiser" style={{ background:'#F5F2ED', display:'flex', minHeight:'700px', borderTop:'1px solid rgba(28,24,20,0.08)', borderBottom:'1px solid rgba(28,24,20,0.08)' }}>
-      <div style={{ width:'320px', flexShrink:0, padding:'64px 48px', display:'flex', flexDirection:'column', justifyContent:'center', borderRight:'1px solid rgba(28,24,20,0.08)' }}>
+    <section id="visualiser" style={{ background:'#F5F2ED', display:'flex', width:'100%', minHeight:'100vh', borderTop:'1px solid rgba(28,24,20,0.08)', borderBottom:'1px solid rgba(28,24,20,0.08)' }}>
+      <div style={{ width:'320px', flexShrink:0, background:'#F5F2ED', padding:'60px 48px', display:'flex', flexDirection:'column', justifyContent:'center', borderRight:'1px solid rgba(28,24,20,0.08)' }}>
         <p style={{ fontFamily:"'Inter',sans-serif", fontSize:'10px', color:'#C8973A', letterSpacing:'0.3em', textTransform:'uppercase', marginBottom:'20px' }}>
           The Klay Visualiser
         </p>
@@ -23,7 +23,7 @@ export default function VisualiserSection() {
           Our technician confirms measurements on-site before your blind is made.
         </p>
       </div>
-      <div style={{ flex:1, position:'relative', overflow:'hidden', background:'#1C1810', minHeight:'700px' }}>
+      <div style={{ flex:1, position:'relative', overflow:'hidden', background:'#2C2824', minHeight:'100vh' }}>
         <KlayConfigurator />
       </div>
     </section>

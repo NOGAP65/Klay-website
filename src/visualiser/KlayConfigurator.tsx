@@ -385,7 +385,7 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
       </aside>
 
       {/* --------------------------------------------------------- RIGHT PANEL */}
-      <div style={{ flex: 1, position: 'relative', background: '#0f0d09' }}>
+      <div style={{ flex: 1, position: 'relative', background: '#2C2824' }}>
         {!hasPhoto ? (
           /* STATE 1 — no photo yet */
           <div
@@ -400,25 +400,10 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
               padding: 24,
             }}
           >
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                border: `1px solid ${tokens.gold}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: tokens.display,
-                fontSize: 36,
-                color: tokens.gold,
-              }}
-            >
-              K
-            </div>
-            <h2 style={{ fontFamily: tokens.display, fontSize: 32, fontWeight: 300, color: '#FFFFFF', margin: '24px 0 0' }}>
+            <h2 style={{ fontFamily: tokens.display, fontSize: 32, fontWeight: 300, color: '#F5F2ED', margin: 0 }}>
               Upload a photo of your window
             </h2>
-            <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(248,246,242,0.5)', marginTop: 8 }}>
+            <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(245,242,237,0.5)', marginTop: 8 }}>
               or choose a preset room
             </p>
             <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
@@ -429,7 +414,7 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
                 Take Photo
               </button>
             </div>
-            <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
+            <div style={{ display: 'flex', gap: 20, marginTop: 32 }}>
               {PRESET_ROOMS.map(url => (
                 <img
                   key={url}
