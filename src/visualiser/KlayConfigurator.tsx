@@ -58,13 +58,13 @@ function Pill({
       onClick={onClick}
       style={{
         flex: 1,
-        padding: '7px 12px',
+        padding: '10px 20px',
         fontFamily: tokens.body,
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 500,
         textAlign: 'center',
         cursor: 'pointer',
-        border: active ? `1px solid ${tokens.gold}` : '1px solid rgba(200,151,58,0.25)',
+        border: active ? `1px solid ${tokens.gold}` : '1px solid rgba(200,151,58,0.3)',
         background: active ? tokens.gold : 'transparent',
         color: active ? tokens.dark : 'rgba(248,246,242,0.6)',
       }}
@@ -266,16 +266,16 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
       {/* ---------------------------------------------------------- LEFT PANEL */}
       <aside
         style={{
-          width: '280px',
+          width: '340px',
           flexShrink: 0,
           background: '#1a1208',
           padding: '20px',
           overflowY: 'hidden',
         }}
       >
-        <div style={{ padding: '24px 24px 0' }}>
+        <div style={{ padding: '32px 24px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
           {!store.lockedRange && (
-            <div style={{ marginBottom: 24 }}>
+            <div>
               <SectionLabel>Range</SectionLabel>
               <div style={{ display: 'flex', gap: 8 }}>
                 {RANGE_OPTIONS.map(r => (
@@ -290,7 +290,7 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
             </div>
           )}
 
-          <div style={{ marginBottom: 24 }}>
+          <div>
             <SectionLabel>Hardware finish</SectionLabel>
             <div style={{ display: 'flex', gap: 12 }}>
               {['White', 'Black', 'Chrome'].map(hw => (
@@ -314,7 +314,7 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
             </div>
           </div>
 
-          <div style={{ marginBottom: 24 }}>
+          <div>
             <SectionLabel>Window size</SectionLabel>
             <div style={{ display: 'flex', gap: 8 }}>
               {SIZE_OPTIONS.map(s => (
@@ -329,7 +329,7 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
             </div>
           </div>
 
-          <div style={{ marginBottom: 8 }}>
+          <div>
             <SectionLabel>Operation</SectionLabel>
             <div style={{ display: 'flex', gap: 8 }}>
               {OPERATION_OPTIONS.map(o => (
@@ -400,33 +400,35 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
               padding: 24,
             }}
           >
-            <h2 style={{ fontFamily: tokens.display, fontSize: 32, fontWeight: 300, color: '#F5F2ED', margin: 0 }}>
-              Upload a photo of your window
-            </h2>
-            <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(245,242,237,0.5)', marginTop: 8 }}>
-              or choose a preset room
-            </p>
-            <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-              <button onClick={handleUpload} style={goldButtonStyle}>
-                Upload Photo
-              </button>
-              <button onClick={handleTakePhoto} style={ghostButtonStyle}>
-                Take Photo
-              </button>
-            </div>
-            <div style={{ display: 'flex', gap: 20, marginTop: 32 }}>
-              {PRESET_ROOMS.map(url => (
-                <img
-                  key={url}
-                  src={url}
-                  onClick={() => {
-                    store.setPhotoUrl(url);
-                    loadFromUrl(url);
-                    store.clearTracedAreas();
-                  }}
-                  style={{ width: 120, height: 80, objectFit: 'cover', cursor: 'pointer' }}
-                />
-              ))}
+            <div style={{ maxWidth: 360, margin: '0 auto' }}>
+              <h2 style={{ fontFamily: tokens.display, fontSize: 28, fontWeight: 300, color: '#F5F2ED', margin: 0 }}>
+                Upload a photo of your window
+              </h2>
+              <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(245,242,237,0.5)', marginTop: 8 }}>
+                or choose a preset room
+              </p>
+              <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'center' }}>
+                <button onClick={handleUpload} style={goldButtonStyle}>
+                  Upload Photo
+                </button>
+                <button onClick={handleTakePhoto} style={ghostButtonStyle}>
+                  Take Photo
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: 16, marginTop: 32, justifyContent: 'center' }}>
+                {PRESET_ROOMS.map(url => (
+                  <img
+                    key={url}
+                    src={url}
+                    onClick={() => {
+                      store.setPhotoUrl(url);
+                      loadFromUrl(url);
+                      store.clearTracedAreas();
+                    }}
+                    style={{ width: 140, height: 93, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         ) : !confirmedArea ? (
