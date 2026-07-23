@@ -8,6 +8,10 @@ import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 
 interface KlayConfiguratorProps {
   lockedRange?: string; // if passed, hides range switcher — customer can only configure this range
+  // Homepage embed only: widens the controls panel and folds the marketing
+  // copy (headline, bullets) into it, replacing the separate copy column
+  // VisualiserSection used to render alongside this component.
+  showMarketingCopy?: boolean;
 }
 
 const RANGE_OPTIONS = [
@@ -118,7 +122,7 @@ const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
-export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayConfiguratorProps) {
+export default function KlayConfigurator({ lockedRange: lockedRangeProp, showMarketingCopy = false }: KlayConfiguratorProps) {
   const [searchParams] = useSearchParams();
   const store = useVisualiserStore();
   const { photoUrl: hookPhotoUrl, photoBitmap, handleUpload, handleTakePhoto, loadFromUrl, clear } = usePhotoUpload();
@@ -266,14 +270,14 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
       {/* ---------------------------------------------------------- LEFT PANEL */}
       <aside
         style={{
-          width: '340px',
+          width: showMarketingCopy ? '400px' : '340px',
           flexShrink: 0,
           background: '#1a1208',
-          padding: '20px',
+          padding: showMarketingCopy ? '40px 48px' : '20px',
           overflowY: 'hidden',
         }}
       >
-        <div style={{ padding: '32px 24px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ padding: showMarketingCopy ? '32px 0 0' : '32px 24px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
           {!store.lockedRange && (
             <div>
               <SectionLabel>Range</SectionLabel>
@@ -344,7 +348,23 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
           </div>
         </div>
 
-        <div style={{ padding: '20px 24px' }}>
+        {showMarketingCopy && (
+          <div style={{ padding: '32px 0 0' }}>
+            <h2 style={{ fontFamily: tokens.display, fontSize: 48, fontWeight: 300, color: '#F5F2ED', lineHeight: 1.1, margin: 0 }}>
+              See your blind<br />in your room,<br /><em style={{ color: tokens.gold }}>before you order.</em>
+            </h2>
+            <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {['Real fabric textures rendered live', 'Instant price as you configure', 'Motorised blind animation', 'Download your design'].map(f => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 16, height: 1, background: tokens.gold, flexShrink: 0 }} />
+                  <span style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(245,242,237,0.6)' }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={{ padding: showMarketingCopy ? '32px 0 0' : '20px 24px' }}>
           <div
             style={{
               fontFamily: tokens.body,
@@ -367,8 +387,8 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
         <button
           onClick={() => showToast('Coming soon — booking flow in progress')}
           style={{
-            width: 'calc(100% - 48px)',
-            margin: '0 24px 24px',
+            width: showMarketingCopy ? '100%' : 'calc(100% - 48px)',
+            margin: showMarketingCopy ? '24px 0 0' : '0 24px 24px',
             padding: 16,
             background: tokens.gold,
             color: tokens.dark,
