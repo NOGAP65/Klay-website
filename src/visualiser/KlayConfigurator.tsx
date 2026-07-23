@@ -262,7 +262,7 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
   }));
 
   return (
-    <div style={{ display: 'flex', width: '100%' }}>
+    <div style={{ display: 'flex', width: '100%', height: '100%' }}>
       {/* ---------------------------------------------------------- LEFT PANEL */}
       <aside
         style={{
@@ -270,8 +270,7 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
           flexShrink: 0,
           background: '#1a1208',
           padding: '20px',
-          maxHeight: '75vh',
-          overflowY: 'auto',
+          overflowY: 'hidden',
         }}
       >
         <div style={{ padding: '24px 24px 0' }}>
@@ -386,17 +385,19 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
       </aside>
 
       {/* --------------------------------------------------------- RIGHT PANEL */}
-      <div style={{ flex: 1, position: 'relative', background: '#0f0d09', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ flex: 1, position: 'relative', background: '#0f0d09' }}>
         {!hasPhoto ? (
           /* STATE 1 — no photo yet */
           <div
             style={{
+              position: 'absolute',
+              inset: 0,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               textAlign: 'center',
-              minHeight: 480,
+              padding: 24,
             }}
           >
             <div
@@ -445,47 +446,50 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
           </div>
         ) : !confirmedArea ? (
           /* STATE 2 — photo loaded, not yet traced */
-          <div
-            style={{
-              position: 'relative',
-              maxWidth: '100%',
-              maxHeight: '75vh',
-              aspectRatio: `${photoBitmap!.width} / ${photoBitmap!.height}`,
-            }}
-          >
-            <img
-              src={store.photoUrl!}
-              alt="Your room"
-              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-            />
-            <CornerPinOverlay
-              ref={overlayRef}
-              imageWidth={photoBitmap!.width}
-              imageHeight={photoBitmap!.height}
-              onConfirm={handleConfirmTrace}
-            />
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
             <div
               style={{
-                position: 'absolute',
-                bottom: 16,
-                left: 0,
-                right: 0,
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 12,
+                position: 'relative',
+                maxWidth: '100%',
+                maxHeight: '100%',
+                aspectRatio: `${photoBitmap!.width} / ${photoBitmap!.height}`,
               }}
             >
-              <button onClick={() => overlayRef.current?.confirm()} style={goldButtonStyle}>
-                Confirm window outline
-              </button>
-              <button onClick={handleChangePhoto} style={ghostButtonStyle}>
-                Change photo
-              </button>
+              <img
+                src={store.photoUrl!}
+                alt="Your room"
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+              />
+              <CornerPinOverlay
+                ref={overlayRef}
+                imageWidth={photoBitmap!.width}
+                imageHeight={photoBitmap!.height}
+                onConfirm={handleConfirmTrace}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 16,
+                  left: 0,
+                  right: 0,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 12,
+                }}
+              >
+                <button onClick={() => overlayRef.current?.confirm()} style={goldButtonStyle}>
+                  Confirm window outline
+                </button>
+                <button onClick={handleChangePhoto} style={ghostButtonStyle}>
+                  Change photo
+                </button>
+              </div>
             </div>
           </div>
         ) : (
           /* STATE 3 — area traced and confirmed */
-          <div ref={rendererContainerRef} style={{ position: 'relative', maxWidth: '100%', maxHeight: '75vh' }}>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+            <div ref={rendererContainerRef} style={{ position: 'relative', maxWidth: '100%', maxHeight: '100%' }}>
               <Canvas2DBlindRenderer
                 photoUrl={store.photoUrl!}
                 tracedAreas={canvasTracedAreas}
@@ -583,6 +587,7 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
                   Download
                 </button>
               </div>
+            </div>
           </div>
         )}
 
