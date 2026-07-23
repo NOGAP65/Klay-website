@@ -18,8 +18,10 @@ export default function VisualiserSection() {
 
   return (
     <section id="visualiser" style={{ display:'flex', flexDirection:'row', width:'100%', minHeight:'90vh', background:'#F5F2ED', overflow:'hidden' }}>
-      <div style={{ flex:7, background:'#2C2824', padding:'48px', position:'relative' }}>
-        <KlayConfigurator />
+      <div style={{ flex:7, background:'#F5F2ED', padding:'48px', position:'relative' }}>
+        <div style={{ background:'#2C2824', borderRadius:'12px', overflow:'hidden', width:'100%', height:'100%' }}>
+          <KlayConfigurator />
+        </div>
       </div>
 
       <div style={{ flex:3, background:'#F5F2ED', padding:'56px 48px', display:'flex', flexDirection:'column', justifyContent:'flex-start', gap:'32px' }}>
