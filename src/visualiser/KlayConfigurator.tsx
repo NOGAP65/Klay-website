@@ -171,7 +171,7 @@ export default function KlayConfigurator() {
   }));
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#2C2824', borderRadius: 8, overflow: 'hidden' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#2C2824', borderRadius: 0, overflow: 'hidden' }}>
       {!hasPhoto ? (
         /* STATE 1 — no photo yet */
         <div
@@ -211,7 +211,7 @@ export default function KlayConfigurator() {
                     loadFromUrl(url);
                     store.clearTracedAreas();
                   }}
-                  style={{ width: 140, height: 93, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
+                  style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
                 />
               ))}
             </div>

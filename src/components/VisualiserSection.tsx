@@ -17,39 +17,40 @@ export default function VisualiserSection() {
   }
 
   return (
-    <section id="visualiser" style={{ display:'flex', flexDirection:'row', width:'100%', minHeight:'100vh', background:'#F5F2ED' }}>
-      <div style={{ flex:1, background:'#F5F2ED', padding:'80px 64px', display:'flex', flexDirection:'column', justifyContent:'space-between', position:'relative' }}>
+    <section id="visualiser" style={{ display:'flex', flexDirection:'row', width:'100%', minHeight:'90vh', background:'#F5F2ED', overflow:'hidden' }}>
+      <div style={{ flex:7, background:'#2C2824', padding:'48px', position:'relative' }}>
+        <KlayConfigurator />
+      </div>
+
+      <div style={{ flex:3, background:'#F5F2ED', padding:'56px 48px', display:'flex', flexDirection:'column', justifyContent:'flex-start', gap:'32px' }}>
         <p style={{ fontFamily:"'Inter',sans-serif", fontSize:'10px', color:'#C8973A', letterSpacing:'0.3em', textTransform:'uppercase', margin:0 }}>
           The Klay Visualiser
         </p>
 
-        <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'64px', fontWeight:300, lineHeight:1.05, color:'#1C1810', margin:0 }}>
+        <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'42px', fontWeight:300, lineHeight:1.1, color:'#1C1810', margin:0 }}>
           See your blind in your room, <em>before you order.</em>
         </h2>
 
-        <div style={{ marginTop:'40px', display:'flex', flexDirection:'column', gap:'14px' }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
           {FEATURES.map(f => (
             <div key={f} style={{ display:'flex', alignItems:'center', gap:'10px' }}>
               <div style={{ width:'16px', height:'1px', background:'#C8973A', flexShrink:0 }} />
-              <span style={{ fontFamily:"'Inter',sans-serif", fontSize:'13px', color:'#1C1810', opacity:0.55 }}>{f}</span>
+              <span style={{ fontFamily:"'Inter',sans-serif", fontSize:'12px', color:'#1C1810', opacity:0.55 }}>{f}</span>
             </div>
           ))}
         </div>
 
-        <div style={{ marginTop:'48px' }}>
-          <VisualiserControls />
-        </div>
+        <VisualiserControls />
 
         <button
           onClick={showToast}
           style={{
-            marginTop:'auto',
             width:'100%',
-            padding:'16px',
+            padding:'14px',
             background:'#C8973A',
             color:'#1C1810',
             fontFamily:"'Inter',sans-serif",
-            fontSize:'12px',
+            fontSize:'11px',
             fontWeight:700,
             letterSpacing:'0.2em',
             textTransform:'uppercase',
@@ -63,25 +64,17 @@ export default function VisualiserSection() {
         {toast && (
           <div
             style={{
-              position:'absolute',
-              bottom:'96px',
-              left:'64px',
-              right:'64px',
               background:'#1C1810',
               color:'#F5F2ED',
               fontFamily:"'Inter',sans-serif",
               fontSize:'13px',
               padding:'14px 20px',
               boxShadow:'0 4px 24px rgba(0,0,0,0.2)',
-              zIndex:10,
             }}
           >
             {toast}
           </div>
         )}
-      </div>
-      <div style={{ width:'52%', flexShrink:0, background:'#F5F2ED', padding:'48px 48px 48px 0' }}>
-        <KlayConfigurator />
       </div>
     </section>
   )

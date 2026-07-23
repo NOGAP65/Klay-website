@@ -32,12 +32,11 @@ export default function VisualiserPage() {
       {/* Nav is position:fixed (out of flow) — paddingTop reserves its height
           so it doesn't overlap the controls/canvas row below. */}
       <div style={{ flex: 1, overflow: 'hidden', paddingTop: 80, display: 'flex', background: '#F5F2ED' }}>
-        <div style={{ width: 340, flexShrink: 0, padding: 24, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ width: 340, flexShrink: 0, padding: 24, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column', gap: 20 }}>
           <VisualiserControls />
           <button
             onClick={showToast}
             style={{
-              marginTop: 24,
               width: '100%',
               padding: 16,
               background: '#C8973A',

@@ -45,14 +45,17 @@ function Pill({
     <button
       onClick={onClick}
       style={{
-        flex: 1,
-        padding: '10px 20px',
+        display: 'inline-flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        width: 'auto',
+        padding: '8px 16px',
         fontFamily: tokens.body,
         fontSize: 12,
         fontWeight: 500,
         textAlign: 'center',
         cursor: 'pointer',
-        border: active ? `1px solid ${tokens.gold}` : '1px solid rgba(200,151,58,0.3)',
+        border: active ? `1px solid ${tokens.gold}` : '1px solid rgba(28,24,16,0.2)',
         background: active ? tokens.gold : 'transparent',
         color: active ? tokens.dark : 'rgba(28,24,16,0.6)',
       }}
@@ -96,11 +99,11 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <>
       {!store.lockedRange && (
         <div>
           <SectionLabel>Range</SectionLabel>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {RANGE_OPTIONS.map(r => (
               <Pill
                 key={r.id}
@@ -115,7 +118,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
 
       <div>
         <SectionLabel>Hardware finish</SectionLabel>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
           {['White', 'Black', 'Chrome'].map(hw => (
             <button
               key={hw}
@@ -139,7 +142,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
 
       <div>
         <SectionLabel>Window size</SectionLabel>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {SIZE_OPTIONS.map(s => (
             <Pill
               key={s.id}
@@ -154,7 +157,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
 
       <div>
         <SectionLabel>Operation</SectionLabel>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {OPERATION_OPTIONS.map(o => (
             <Pill
               key={o.id}
@@ -178,13 +181,13 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
         >
           Estimated price
         </div>
-        <div style={{ fontFamily: tokens.display, fontSize: 48, fontWeight: 300, color: '#1C1810' }}>
+        <div style={{ fontFamily: tokens.display, fontSize: 36, fontWeight: 300, color: '#1C1810' }}>
           ${store.getCurrentPrice()}
         </div>
         <div style={{ fontFamily: tokens.body, fontSize: 11, color: 'rgba(28,24,16,0.4)', marginTop: 4 }}>
           + professional installation across Victoria
         </div>
       </div>
-    </div>
+    </>
   );
 }
