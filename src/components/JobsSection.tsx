@@ -45,7 +45,7 @@ export function JobsSection() {
   };
 
   return (
-    <section style={{ background: '#0f0d09', padding: '100px 80px' }}>
+    <section style={{ background: '#2C2824', padding: '100px 80px' }}>
       <div
         style={{
           fontFamily: tokens.body,

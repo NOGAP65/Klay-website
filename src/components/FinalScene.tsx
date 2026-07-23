@@ -8,7 +8,7 @@ export function FinalScene() {
       id="final"
       style={{
         position: 'relative',
-        background: tokens.dark,
+        background: '#1C1810',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

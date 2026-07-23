@@ -58,9 +58,9 @@ function Pill({
       onClick={onClick}
       style={{
         flex: 1,
-        padding: '10px 8px',
+        padding: '7px 12px',
         fontFamily: tokens.body,
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 500,
         textAlign: 'center',
         cursor: 'pointer',
@@ -266,21 +266,13 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
       {/* ---------------------------------------------------------- LEFT PANEL */}
       <aside
         style={{
-          width: '380px',
+          width: '280px',
           flexShrink: 0,
           background: '#1a1208',
-          overflowY: 'auto',
+          padding: '20px',
+          overflowY: 'hidden',
         }}
       >
-        <div style={{ padding: '28px 24px 24px', borderBottom: '1px solid rgba(200,151,58,0.1)', marginBottom: '24px' }}>
-          <h2 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '28px', fontWeight: 300, color: '#F8F6F2', lineHeight: 1.1, marginBottom: '10px' }}>
-            Design your blind.
-          </h2>
-          <p style={{ fontFamily: "'Inter',sans-serif", fontSize: '12px', color: 'rgba(248,246,242,0.45)', lineHeight: 1.7 }}>
-            Upload a photo of your window. Pick your range, finish and size. See it rendered live — instant price included.
-          </p>
-        </div>
-
         <div style={{ padding: '24px 24px 0' }}>
           {!store.lockedRange && (
             <div style={{ marginBottom: 24 }}>
@@ -445,6 +437,7 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
                   onClick={() => {
                     store.setPhotoUrl(url);
                     loadFromUrl(url);
+                    store.clearTracedAreas();
                   }}
                   style={{ width: 120, height: 80, objectFit: 'cover', cursor: 'pointer' }}
                 />
@@ -510,34 +503,21 @@ export default function KlayConfigurator({ lockedRange: lockedRangeProp }: KlayC
 
               {/* Roll position control — right edge */}
               {store.controlType !== 'motorised' ? (
-                <div
-                  style={{
-                    position: 'absolute',
-                    right: 12,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    height: '60%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <span style={{ fontFamily: tokens.body, fontSize: 12, color: '#FFFFFF', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-                    ▲
-                  </span>
+                <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', alignItems:'center', gap:'8px', zIndex:20 }}>
+                  <button
+                    onClick={() => store.setRollPosition(Math.max(0, store.rollPosition - 0.1))}
+                    style={{ width:'32px', height:'32px', border:'1px solid rgba(200,151,58,0.4)', background:'rgba(28,24,16,0.8)', color:'#C8973A', fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+                  >▲</button>
                   <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={store.rollPosition * 100}
-                    onChange={e => store.setRollPosition(Number(e.target.value) / 100)}
-                    aria-label="Blind position"
-                    style={{ writingMode: 'vertical-lr', direction: 'rtl', accentColor: tokens.gold, flex: 1 }}
+                    type="range" min="0" max="1" step="0.01"
+                    value={store.rollPosition}
+                    onChange={e => store.setRollPosition(parseFloat(e.target.value))}
+                    style={{ writingMode:'vertical-lr', direction:'rtl', height:'100px', accentColor:'#C8973A', cursor:'pointer' }}
                   />
-                  <span style={{ fontFamily: tokens.body, fontSize: 12, color: '#FFFFFF', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-                    ▼
-                  </span>
+                  <button
+                    onClick={() => store.setRollPosition(Math.min(1, store.rollPosition + 0.1))}
+                    style={{ width:'32px', height:'32px', border:'1px solid rgba(200,151,58,0.4)', background:'rgba(28,24,16,0.8)', color:'#C8973A', fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+                  >▼</button>
                 </div>
               ) : (
                 <div

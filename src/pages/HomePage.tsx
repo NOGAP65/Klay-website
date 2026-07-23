@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { useKlayStore } from '../store';
 import { ScrollProgress } from '../components/ScrollProgress';
 import { Nav } from '../components/Nav';
-import { HeroScene } from '../components/HeroScene';
-import { VisualiserSection } from '../components/VisualiserSection';
+import HeroScene from '../components/HeroScene';
+import VisualiserSection from '../components/VisualiserSection';
 import { JobsSection } from '../components/JobsSection';
 import { ShopSection } from '../components/ShopSection';
 import { ReviewsScene } from '../components/ReviewsScene';
@@ -33,7 +33,7 @@ export default function HomePage() {
     <>
       <ScrollProgress />
       <Nav />
-      <main>
+      <main style={{ background: '#F5F2ED' }}>
         <HeroScene />
         <VisualiserSection />
         <JobsSection />

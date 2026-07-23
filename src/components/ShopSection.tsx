@@ -8,7 +8,7 @@ export function ShopSection() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   return (
-    <section style={{ background: '#F2EDE4', padding: '100px 80px' }}>
+    <section style={{ background: '#EAE5DC', padding: '100px 80px' }}>
       <div
         style={{
           fontFamily: tokens.body,
@@ -79,7 +79,7 @@ export function ShopSection() {
                 />
               </div>
 
-              <div style={{ background: '#1E1A16', padding: '28px 32px' }}>
+              <div style={{ background: '#2C2824', padding: '28px 32px' }}>
                 <div
                   style={{
                     fontFamily: tokens.body,
