@@ -16,6 +16,23 @@ export const RANGES = [
   { name: 'Duo', range: 'Dual Roller', tagline: 'Day and night in one blind.', description: 'Sunscreen and blockout on the same window. Switch between them.', price: 'from $320', slug: 'dual', image: '/images/Eclipse%20Dual%20Roller%20product%20image.png', skus: SKU_CATALOGUE.filter(s => s.type === 'DUAL ROLLER') },
 ]
 
+export const RYNAMIC_COLOURS = [
+  { name: 'White', hex: '#FFFFFF' },
+  { name: 'Surfmist', hex: '#E4DFD3' },
+  { name: 'Light Grey', hex: '#C7C7C7' },
+  { name: 'Dune', hex: '#C7B899' },
+  { name: 'Cream', hex: '#F5EEDC' },
+  { name: 'Sand', hex: '#D9C7A3' },
+  { name: 'Beige', hex: '#D8CBB8' },
+  { name: 'Forest Green', hex: '#2F4A34' },
+  { name: 'Red', hex: '#A32020' },
+  { name: 'Brown', hex: '#5B3A29' },
+  { name: 'Black', hex: '#1A1A1A' },
+  { name: 'Deep Ocean Blue', hex: '#1B3A4B' },
+  { name: 'Woodland Grey', hex: '#5C5F5A' },
+  { name: 'Monument', hex: '#4A4A48' },
+]
+
 export const MOTORISED_ADDON = 150
 
 export const PRICING_NOTE = 'All prices include professional installation across Victoria. Motorised upgrade available on all products.'

@@ -74,9 +74,9 @@ export default function KlayConfigurator() {
     store.addTracedArea({
       id: crypto.randomUUID(),
       corners,
-      blindType: store.selectedRange,
+      blindType: store.getRange(),
       fabricColor: store.getFabricColor(),
-      hardwareColor: HARDWARE_HEX[store.selectedHardware] ?? '#EFEFEF',
+      hardwareColor: HARDWARE_HEX[store.getHardware()] ?? '#EFEFEF',
       controlType: store.controlType,
       showChain: false,
       confirmed: true,
@@ -86,7 +86,7 @@ export default function KlayConfigurator() {
   const handleDownload = () => {
     const canvas = rendererContainerRef.current?.querySelector('canvas');
     if (!canvas) return;
-    const sku = store.getCurrentSku()?.slug ?? store.selectedSku;
+    const sku = store.getCurrentSku()?.slug ?? store.sku;
     const link = document.createElement('a');
     link.download = `klay-blind-${sku}-${store.windowSize}.jpg`;
     link.href = canvas.toDataURL('image/jpeg', 0.95);
@@ -163,9 +163,9 @@ export default function KlayConfigurator() {
 
   const canvasTracedAreas: RenderedArea[] = store.tracedAreas.map(a => ({
     ...a,
-    blindType: store.selectedRange === 'blockout' ? 'blockout' : store.selectedRange === 'sunscreen' ? 'sunscreen' : 'dual',
+    blindType: store.getRange(),
     fabricColor: store.getFabricColor(),
-    hardwareColor: HARDWARE_HEX[store.selectedHardware] ?? '#EFEFEF',
+    hardwareColor: HARDWARE_HEX[store.getHardware()] ?? '#EFEFEF',
     controlType: store.controlType,
     showChain: false,
   }));
