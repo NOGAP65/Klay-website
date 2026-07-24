@@ -40,6 +40,7 @@ interface VisualiserStore {
   windowSize: 'small' | 'medium' | 'large';
   operation: 'manual' | 'motorised';
   lockedRange: string | null;   // if set from product page, blind type picker is hidden and locked
+  defaultWindowActive: boolean; // true until the user uploads/selects their own photo — locks the trace to the preset default-window pins
 
   // Visual state
   photoUrl: string | null;
@@ -62,6 +63,7 @@ interface VisualiserStore {
   setWindowSize: (size: 'small' | 'medium' | 'large') => void;
   setOperation: (op: 'manual' | 'motorised') => void;
   setLockedRange: (range: string | null) => void;
+  setDefaultWindowActive: (active: boolean) => void;
   setPhotoUrl: (url: string | null) => void;
   setRollPosition: (pos: number) => void;
   addTracedArea: (area: TracedArea) => void;
@@ -80,6 +82,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   windowSize: 'medium',
   operation: 'manual',
   lockedRange: null,
+  defaultWindowActive: true,
   photoUrl: null,
   rollPosition: 0.5,
   tracedAreas: [],
@@ -111,6 +114,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   setWindowSize: (size) => set({ windowSize: size }),
   setOperation: (op) => set({ operation: op }),
   setLockedRange: (range) => set({ lockedRange: range }),
+  setDefaultWindowActive: (active) => set({ defaultWindowActive: active }),
   setPhotoUrl: (url) => set({ photoUrl: url }),
   setRollPosition: (pos) => set({ rollPosition: pos }),
   addTracedArea: (area) => set(s => ({ tracedAreas: [...s.tracedAreas, area] })),

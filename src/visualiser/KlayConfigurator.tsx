@@ -27,7 +27,31 @@ const goldButtonStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
+const visualiseOwnRoomButtonStyle: React.CSSProperties = {
+  background: 'transparent',
+  border: '1px solid rgba(200,151,58,0.4)',
+  color: '#C8973A',
+  fontFamily: tokens.body,
+  fontSize: 11,
+  textTransform: 'uppercase',
+  letterSpacing: '0.2em',
+  padding: '10px 24px',
+  cursor: 'pointer',
+};
+
 const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-5.png'];
+
+// Loaded automatically on mount so the visualiser never shows an empty
+// upload prompt by default — the blind renders immediately against this
+// photo using a fixed set of corner pins (see DEFAULT_WINDOW_CORNERS_PCT),
+// with no CornerPinOverlay involved at all until the user replaces it.
+const DEFAULT_WINDOW_URL = '/images/static-imafge.png';
+const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
+  [0.28, 0.18], // top-left
+  [0.72, 0.18], // top-right
+  [0.72, 0.72], // bottom-right
+  [0.28, 0.72], // bottom-left
+];
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
@@ -38,22 +62,77 @@ const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2,
 // (VisualiserSection's right column vs VisualiserPage's full-bleed canvas).
 export default function KlayConfigurator() {
   const store = useVisualiserStore();
-  const { photoUrl: hookPhotoUrl, photoBitmap, handleUpload, handleTakePhoto, loadFromUrl, clear } = usePhotoUpload();
+  const { photoUrl: hookPhotoUrl, photoBitmap, uploadError, handleUpload, handleTakePhoto, loadFromUrl, clear } = usePhotoUpload();
 
   const overlayRef = useRef<CornerPinOverlayHandle>(null);
   const rendererContainerRef = useRef<HTMLDivElement>(null);
 
+  // Set once the default window's traced area has been seeded, so a later
+  // real upload/preset selection can be told apart from that initial load.
+  const hasSeededDefaultRef = useRef(false);
+  const [showUploadPrompt, setShowUploadPrompt] = useState(false);
+
+  // Kick off the default window photo once, on mount — only if the store
+  // doesn't already carry a real user photo from earlier in this session.
+  useEffect(() => {
+    if (store.defaultWindowActive) {
+      loadFromUrl(DEFAULT_WINDOW_URL);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // The hook owns photo acquisition; only photoUrl needs to live in the
   // shared store (photoBitmap stays local — it's only needed here for
   // pixel dimensions). A new photo always invalidates any existing trace.
+  // Once the default window has already been seeded once, any further
+  // photo change is a real user upload/preset — that ends default mode and
+  // hands control back to normal corner-pin tracing.
   useEffect(() => {
     store.setPhotoUrl(hookPhotoUrl);
-    if (hookPhotoUrl) store.clearTracedAreas();
+    if (hookPhotoUrl) {
+      store.clearTracedAreas();
+      if (hasSeededDefaultRef.current) {
+        store.setDefaultWindowActive(false);
+        setShowUploadPrompt(false);
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hookPhotoUrl]);
 
+  // Once the default window's bitmap is ready, seed its trace directly —
+  // no CornerPinOverlay, no user interaction, pins locked to the preset.
+  useEffect(() => {
+    if (
+      store.defaultWindowActive &&
+      !hasSeededDefaultRef.current &&
+      photoBitmap &&
+      hookPhotoUrl === DEFAULT_WINDOW_URL &&
+      store.tracedAreas.length === 0
+    ) {
+      const corners: Point[] = DEFAULT_WINDOW_CORNERS_PCT.map(([px, py]) => [
+        px * photoBitmap.width,
+        py * photoBitmap.height,
+      ]);
+      store.addTracedArea({
+        id: crypto.randomUUID(),
+        corners,
+        blindType: store.blindType,
+        fabricColor: store.getFabricColor(),
+        hardwareColor: store.getHardwareColor(),
+        controlType: store.operation,
+        showChain: false,
+        confirmed: true,
+      });
+      hasSeededDefaultRef.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoBitmap, hookPhotoUrl, store.defaultWindowActive]);
+
   const hasPhoto = !!(store.photoUrl && photoBitmap);
   const confirmedArea = store.tracedAreas.find(a => a.confirmed);
+  // Brief, near-instant window while the default photo's bitmap loads —
+  // rendered as nothing (not the upload prompt) so there's no empty state.
+  const isLoadingDefault = store.defaultWindowActive && !hasPhoto && !uploadError && !showUploadPrompt;
 
   const handleChangePhoto = () => {
     clear();
@@ -164,8 +243,8 @@ export default function KlayConfigurator() {
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', background: '#2C2824', borderRadius: 0, overflow: 'hidden' }}>
-      {!hasPhoto ? (
-        /* STATE 1 — no photo yet */
+      {isLoadingDefault ? null : (!hasPhoto || showUploadPrompt) ? (
+        /* STATE 1 — no photo yet, or the user asked to visualise their own room */
         <div
           style={{
             position: 'absolute',
@@ -342,15 +421,23 @@ export default function KlayConfigurator() {
                 gap: 12,
               }}
             >
-              <button onClick={() => store.clearTracedAreas()} style={ghostButtonStyle}>
-                Retrace
-              </button>
-              <button onClick={handleChangePhoto} style={ghostButtonStyle}>
-                Change Photo
-              </button>
-              <button onClick={handleDownload} style={goldButtonStyle}>
-                Download
-              </button>
+              {store.defaultWindowActive ? (
+                <button onClick={() => setShowUploadPrompt(true)} style={visualiseOwnRoomButtonStyle}>
+                  Visualise in your own room
+                </button>
+              ) : (
+                <>
+                  <button onClick={() => store.clearTracedAreas()} style={ghostButtonStyle}>
+                    Retrace
+                  </button>
+                  <button onClick={handleChangePhoto} style={ghostButtonStyle}>
+                    Change Photo
+                  </button>
+                  <button onClick={handleDownload} style={goldButtonStyle}>
+                    Download
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
