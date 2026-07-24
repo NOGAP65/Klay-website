@@ -93,8 +93,6 @@ const getTexturePath = (blindType: string): string => {
   }
 };
 
-const DUAL_OVERLAY_PATH = '/textures/sunscreen_white.jpg';
-
 const isLightColor = (hex: string): boolean => {
   const { r, g, b } = hexToRgb(hex);
   return (r * 299 + g * 587 + b * 114) / 1000 > 150;
@@ -296,8 +294,13 @@ const getOrUploadTexture = (state: GLState, key: string, img: HTMLImageElement):
   if (!texture) throw new Error('Failed to create WebGL texture');
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, potCanvas);
+  // Vertical (T) wrap is CLAMP_TO_EDGE, not REPEAT — these fabric photos
+  // aren't seamlessly tileable, so repeating them vertically produced a
+  // visible horizontal seam wherever the texture's own edge repeated
+  // partway down the drop. Clamping means the last row of pixels smears
+  // instead of hard-cutting back to row zero — one continuous fabric piece.
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.generateMipmap(gl.TEXTURE_2D);
@@ -411,14 +414,21 @@ const drawLightSheen = (ctx: CanvasRenderingContext2D, corners: Point[]) => {
   ctx.restore();
 };
 
-/** Ambient occlusion where the blind/curtain meets the frame — a shadow
- * band on all four sides, darkest at the edge and fading toward the centre
- * over 18% of that edge's own axis. Makes the fabric read as recessed into
- * the window opening rather than overlaid on top of the photo. Shared by
- * the roller and curtain render paths. */
-const drawAmbientOcclusion = (ctx: CanvasRenderingContext2D, corners: Point[]) => {
-  const [tl, tr, br, bl] = corners;
-  const depth = 0.22; // fraction of the edge's own axis the shadow reaches — deeper band reads as stronger occlusion (~18-22px at typical trace size)
+/** Ambient occlusion on the fabric's own left/right edges only — a shadow
+ * band 24px deep (as a fraction of the top edge's own length, so it holds
+ * at 24px for a typical trace), black at 20% fading to 0% inward. Takes the
+ * CURRENT fabric sub-quad (tl/tr down to whatever the roll position's
+ * bottom edge is), never the cassette or rail — those get their own
+ * dedicated shadow treatment instead. Fabric-only, roller path only. */
+const drawAmbientOcclusion = (
+  ctx: CanvasRenderingContext2D,
+  tl: Point,
+  tr: Point,
+  fabBR: Point,
+  fabBL: Point
+) => {
+  const topW = Math.hypot(tr[0] - tl[0], tr[1] - tl[1]);
+  const depthFrac = Math.min(0.45, 24 / Math.max(1, topW)); // 24px, capped so it can't eat a very narrow trace
 
   const lerp = (a: Point, b: Point, t: number): Point => [
     a[0] + (b[0] - a[0]) * t,
@@ -427,7 +437,7 @@ const drawAmbientOcclusion = (ctx: CanvasRenderingContext2D, corners: Point[]) =
 
   const fillBand = (outerA: Point, outerB: Point, innerB: Point, innerA: Point) => {
     const grad = ctx.createLinearGradient(outerA[0], outerA[1], innerA[0], innerA[1]);
-    grad.addColorStop(0, 'rgba(0,0,0,0.38)');
+    grad.addColorStop(0, 'rgba(0,0,0,0.2)');
     grad.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -443,15 +453,13 @@ const drawAmbientOcclusion = (ctx: CanvasRenderingContext2D, corners: Point[]) =
   ctx.beginPath();
   ctx.moveTo(tl[0], tl[1]);
   ctx.lineTo(tr[0], tr[1]);
-  ctx.lineTo(br[0], br[1]);
-  ctx.lineTo(bl[0], bl[1]);
+  ctx.lineTo(fabBR[0], fabBR[1]);
+  ctx.lineTo(fabBL[0], fabBL[1]);
   ctx.closePath();
   ctx.clip();
 
-  fillBand(tl, tr, lerp(tr, br, depth), lerp(tl, bl, depth)); // top
-  fillBand(bl, br, lerp(br, tr, depth), lerp(bl, tl, depth)); // bottom
-  fillBand(tl, bl, lerp(bl, br, depth), lerp(tl, tr, depth)); // left
-  fillBand(tr, br, lerp(br, bl, depth), lerp(tr, tl, depth)); // right
+  fillBand(tl, fabBL, lerp(fabBL, fabBR, depthFrac), lerp(tl, tr, depthFrac)); // left
+  fillBand(tr, fabBR, lerp(fabBR, fabBL, depthFrac), lerp(tr, tl, depthFrac)); // right
 
   ctx.restore();
 };
@@ -483,10 +491,7 @@ const drawContactShadow = (
   fabBR: Point,
   leftH: number
 ) => {
-  // Clamped to a roughly 8px-wide soft fade regardless of window size, so the
-  // rail always reads as casting a real shadow onto the wall rather than a
-  // shadow that vanishes on small windows or overwhelms large ones.
-  const shadowHeight = Math.max(6, Math.min(12, leftH * 0.04));
+  const shadowHeight = 8; // px, fixed — a soft downward fade onto the wall below the rail
   const shadowTL = fabBL;
   const shadowTR = fabBR;
   const shadowBL: Point = [bl[0], bl[1] + shadowHeight];
@@ -501,16 +506,27 @@ const drawContactShadow = (
   ctx.closePath();
 
   const shadowGrad = ctx.createLinearGradient(shadowTL[0], shadowTL[1], shadowBL[0], shadowBL[1]);
-  shadowGrad.addColorStop(0, 'rgba(0,0,0,0.24)');
+  shadowGrad.addColorStop(0, 'rgba(0,0,0,0.15)');
   shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = shadowGrad;
   ctx.fill();
   ctx.restore();
 };
 
-/** Real roller-blind fabric shows faint vertical fold lines where it was
- * rolled up. Drawn as soft-edged strokes (a horizontal gradient across each
- * line's own width) over the fabric quad. */
+/** Deterministic pseudo-random 0..1, stable across re-renders (no
+ * Math.random() — this repaints on every roll-position drag, and a true
+ * random value would make the weave visibly jitter frame to frame). */
+const pseudoRandom01 = (seed: number): number => {
+  const x = Math.sin(seed * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+};
+
+/** Real woven fabric's only visible "texture" here — soft vertical lines,
+ * evenly spaced (consistent weave spacing) but each with its own subtle
+ * opacity between 0.03 and 0.08 so it reads as breathing cloth rather than
+ * a uniform printed grid. This is the fabric's whole texture cue: the
+ * underlying photo no longer tiles (see CLAMP_TO_EDGE above), so there's
+ * no risk of these competing with a seam. */
 const drawFabricFoldLines = (
   ctx: CanvasRenderingContext2D,
   tl: Point,
@@ -528,32 +544,69 @@ const drawFabricFoldLines = (
   ctx.closePath();
   ctx.clip();
 
-  const foldCount = 5;
-  for (let i = 1; i < foldCount; i++) {
-    const t = i / foldCount;
+  const lineCount = 14;
+  for (let i = 1; i < lineCount; i++) {
+    const t = i / lineCount;
 
     const topX = tl[0] + (tr[0] - tl[0]) * t;
     const topY = tl[1] + (tr[1] - tl[1]) * t;
     const botX = fabBL[0] + (fabBR[0] - fabBL[0]) * t;
     const botY = fabBL[1] + (fabBR[1] - fabBL[1]) * t;
 
+    const lineAlpha = 0.03 + pseudoRandom01(i) * 0.05; // breathes between 0.03 and 0.08
+
     const foldGrad = ctx.createLinearGradient(
-      topX - avgW * 0.015, topY,
-      topX + avgW * 0.015, topY
+      topX - avgW * 0.01, topY,
+      topX + avgW * 0.01, topY
     );
     foldGrad.addColorStop(0, 'rgba(0,0,0,0)');
-    foldGrad.addColorStop(0.5, 'rgba(0,0,0,0.13)');
+    foldGrad.addColorStop(0.5, `rgba(0,0,0,${lineAlpha})`);
     foldGrad.addColorStop(1, 'rgba(0,0,0,0)');
 
     ctx.save();
     ctx.strokeStyle = foldGrad;
-    ctx.lineWidth = avgW * 0.016;
+    ctx.lineWidth = avgW * 0.01;
     ctx.beginPath();
     ctx.moveTo(topX, topY);
     ctx.lineTo(botX, botY);
     ctx.stroke();
     ctx.restore();
   }
+  ctx.restore();
+};
+
+/** Sunscreen / Light Filter read as semi-translucent — light bleeds through
+ * from behind, brightest at the fabric's centre and fading toward all four
+ * edges (a soft radial wash, not the linear left-right centre-light above). */
+const drawTranslucentLightBleed = (
+  ctx: CanvasRenderingContext2D,
+  tl: Point,
+  tr: Point,
+  fabBR: Point,
+  fabBL: Point
+) => {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tl[0], tl[1]);
+  ctx.lineTo(tr[0], tr[1]);
+  ctx.lineTo(fabBR[0], fabBR[1]);
+  ctx.lineTo(fabBL[0], fabBL[1]);
+  ctx.closePath();
+  ctx.clip();
+
+  const cx = (tl[0] + tr[0] + fabBL[0] + fabBR[0]) / 4;
+  const cy = (tl[1] + tr[1] + fabBL[1] + fabBR[1]) / 4;
+  const radius = Math.max(
+    Math.hypot(tr[0] - tl[0], tr[1] - tl[1]),
+    Math.hypot(fabBL[0] - tl[0], fabBL[1] - tl[1])
+  ) * 0.65;
+
+  const bleed = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+  bleed.addColorStop(0, 'rgba(255,255,255,0.1)');
+  bleed.addColorStop(0.6, 'rgba(255,255,255,0.03)');
+  bleed.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = bleed;
+  ctx.fill();
   ctx.restore();
 };
 
@@ -627,16 +680,15 @@ const drawCassetteMountShadow = (
   ctx.restore();
 };
 
-/** The bottom rail hangs in space — it casts a soft shadow up onto the
- * fabric behind it, and a contact shadow down past its bottom edge. */
+/** The rail hangs in space — it casts a soft shadow up onto the fabric
+ * directly behind/above it. (The wall-facing cast shadow below the rail is
+ * `drawContactShadow`'s job — kept separate so there's exactly one clean
+ * 8px wall shadow instead of two overlapping gradients.) */
 const drawRailDropShadow = (
   ctx: CanvasRenderingContext2D,
   railTL: Point,
   railTR: Point,
-  fabBL: Point,
-  fabBR: Point,
-  leftH: number,
-  avgW: number
+  leftH: number
 ) => {
   const railShadowH = leftH * 0.025;
   ctx.save();
@@ -655,32 +707,137 @@ const drawRailDropShadow = (
   ctx.closePath();
   ctx.fill();
   ctx.restore();
+};
 
-  const contactH = leftH * 0.03;
+// ---------------------------------------------------------------------------
+// Hardware finish — one shared fill so the cassette, rail, and brackets
+// always match exactly. Flat colour for white/black, a metallic 3-stop
+// gradient for chrome.
+// ---------------------------------------------------------------------------
+
+const HARDWARE_FLAT_HEX: Record<'white' | 'black', string> = {
+  white: '#E8E4DE',
+  black: '#2C2824',
+};
+const CHROME_GRADIENT_STOPS: [number, string][] = [
+  [0, '#B8B6B0'],
+  [0.5, '#D8D6D0'],
+  [1, '#A8A6A0'],
+];
+
+const setHardwareFill = (
+  ctx: CanvasRenderingContext2D,
+  hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
+  safeHardwareColor: string,
+  gradFrom: Point,
+  gradTo: Point
+) => {
+  if (hardwareColourName === 'chrome') {
+    const grad = ctx.createLinearGradient(gradFrom[0], gradFrom[1], gradTo[0], gradTo[1]);
+    CHROME_GRADIENT_STOPS.forEach(([stop, colour]) => grad.addColorStop(stop, colour));
+    ctx.fillStyle = grad;
+  } else if (hardwareColourName === 'white' || hardwareColourName === 'black') {
+    ctx.fillStyle = HARDWARE_FLAT_HEX[hardwareColourName];
+  } else {
+    ctx.fillStyle = safeHardwareColor;
+  }
+};
+
+const CASSETTE_HEIGHT_RATIO = 0.04; // ~4% of blind height — slim, not a thick bar
+const RAIL_HEIGHT_RATIO = 0.02; // ~2% of blind height — slim
+const CASSETTE_CORNER_RADIUS = 3; // px — top corners only
+
+/** Slim cassette (headrail) — flat/hardware-tinted fill, rounded top
+ * corners, a light top edge and a dark bottom edge for a touch of
+ * curvature and weight. Fixed height regardless of roll position (real
+ * cassettes don't visibly swell as fabric rolls up). Returns the half-
+ * height so callers can position the cassette-mount shadow right below it.
+ * One shared cassette also covers both layers of a dual blind — real
+ * twin-roller blinds mount both rolls in a single housing. */
+const drawCassette = (
+  ctx: CanvasRenderingContext2D,
+  tl: Point,
+  tr: Point,
+  leftH: number,
+  hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
+  safeHardwareColor: string
+): number => {
+  const halfH = (leftH * CASSETTE_HEIGHT_RATIO) / 2;
+  const r = CASSETTE_CORNER_RADIUS;
+
   ctx.save();
-  const lowerShadow = ctx.createLinearGradient(
-    fabBL[0], fabBL[1],
-    fabBL[0], fabBL[1] + contactH
-  );
-  lowerShadow.addColorStop(0, 'rgba(0,0,0,0.20)');
-  lowerShadow.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = lowerShadow;
+  setHardwareFill(ctx, hardwareColourName, safeHardwareColor, [tl[0], tl[1] - halfH], [tl[0], tl[1] + halfH]);
   ctx.beginPath();
-  ctx.moveTo(fabBL[0], fabBL[1]);
-  ctx.lineTo(fabBR[0], fabBR[1]);
-  ctx.lineTo(fabBR[0] + avgW * 0.02, fabBR[1] + contactH);
-  ctx.lineTo(fabBL[0] - avgW * 0.02, fabBL[1] + contactH);
+  ctx.moveTo(tl[0] + r, tl[1] - halfH);
+  ctx.lineTo(tr[0] - r, tr[1] - halfH);
+  ctx.quadraticCurveTo(tr[0], tr[1] - halfH, tr[0], tr[1] - halfH + r);
+  ctx.lineTo(tr[0], tr[1] + halfH);
+  ctx.lineTo(tl[0], tl[1] + halfH);
+  ctx.lineTo(tl[0], tl[1] - halfH + r);
+  ctx.quadraticCurveTo(tl[0], tl[1] - halfH, tl[0] + r, tl[1] - halfH);
   ctx.closePath();
   ctx.fill();
+
+  // Top edge highlight — suggests a curved top
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(tl[0] + r, tl[1] - halfH);
+  ctx.lineTo(tr[0] - r, tr[1] - halfH);
+  ctx.stroke();
+
+  // Bottom edge shadow — weight, separation from the fabric below
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(tl[0], tl[1] + halfH);
+  ctx.lineTo(tr[0], tr[1] + halfH);
+  ctx.stroke();
+  ctx.restore();
+
+  return halfH;
+};
+
+/** Slim bottom rail — flat/hardware-tinted fill matching the cassette, with
+ * a single top-edge highlight. `railTL`/`railTR` is where the rail begins;
+ * `fabBL`/`fabBR` is the fabric's true bottom edge, which the rail's
+ * underside follows. */
+const drawBottomRail = (
+  ctx: CanvasRenderingContext2D,
+  railTL: Point,
+  railTR: Point,
+  fabBL: Point,
+  fabBR: Point,
+  hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
+  safeHardwareColor: string
+) => {
+  ctx.save();
+  setHardwareFill(ctx, hardwareColourName, safeHardwareColor, railTL, fabBL);
+  ctx.beginPath();
+  ctx.moveTo(railTL[0], railTL[1]);
+  ctx.lineTo(railTR[0], railTR[1]);
+  ctx.lineTo(fabBR[0], fabBR[1]);
+  ctx.lineTo(fabBL[0], fabBL[1]);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(railTL[0], railTL[1]);
+  ctx.lineTo(railTR[0], railTR[1]);
+  ctx.stroke();
   ctx.restore();
 };
 
-/** Wall-mount side brackets — the small blocks that hold the cassette flush
- * against the wall, one at each end of the header tube. Sized as a ratio of
- * the traced window's own width (12x20 at a ~400px-wide reference blind) so
- * they scale correctly at any distance/zoom. Built along the tube's own
- * direction vector (not assumed horizontal) so they stay correct even when
- * the traced window is slightly rotated in the photo. */
+/** Wall-mount side brackets — small, discrete blocks that hold the cassette
+ * flush against the wall, one at each end. Sized as a ratio of the traced
+ * window's own width (10x16 at a ~400px-wide reference blind) so they scale
+ * correctly at any distance/zoom. Built along the cassette's own direction
+ * vector (not assumed horizontal) so they stay correct even when the traced
+ * window is slightly rotated in the photo. Hardware colour always matches
+ * the cassette; a single 1px shadow sits on the outer edge only (the edge
+ * facing away from the window, toward the wall). */
 const drawSideBrackets = (
   ctx: CanvasRenderingContext2D,
   tl: Point,
@@ -689,8 +846,8 @@ const drawSideBrackets = (
   hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
   safeHardwareColor: string
 ) => {
-  const bracketW = avgW * 0.03;
-  const bracketH = bracketW * 1.67;
+  const bracketW = avgW * 0.025;
+  const bracketH = bracketW * 1.6;
 
   const dirX = tr[0] - tl[0];
   const dirY = tr[1] - tl[1];
@@ -710,7 +867,7 @@ const drawSideBrackets = (
   const leftCentre: Point = [tl[0] - ux * (bracketW / 2), tl[1] - uy * (bracketW / 2)];
   const rightCentre: Point = [tr[0] + ux * (bracketW / 2), tr[1] + uy * (bracketW / 2)];
 
-  const drawOne = (rect: [Point, Point, Point, Point]) => {
+  const drawOne = (rect: [Point, Point, Point, Point], isLeft: boolean) => {
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(rect[0][0], rect[0][1]);
@@ -718,40 +875,22 @@ const drawSideBrackets = (
     ctx.lineTo(rect[2][0], rect[2][1]);
     ctx.lineTo(rect[3][0], rect[3][1]);
     ctx.closePath();
-
-    if (hardwareColourName === 'chrome') {
-      const grad = ctx.createLinearGradient(rect[0][0], rect[0][1], rect[2][0], rect[2][1]);
-      grad.addColorStop(0, '#C8C6C0');
-      grad.addColorStop(0.5, '#E8E6E0');
-      grad.addColorStop(1, '#B0AEA8');
-      ctx.fillStyle = grad;
-    } else {
-      ctx.fillStyle = safeHardwareColor;
-    }
+    setHardwareFill(ctx, hardwareColourName, safeHardwareColor, rect[0], rect[2]);
     ctx.fill();
 
-    if (hardwareColourName === 'white') {
-      // Subtle cast shadow along the underside of the bracket
-      ctx.strokeStyle = 'rgba(0,0,0,0.18)';
-      ctx.lineWidth = Math.max(1, bracketW * 0.18);
-      ctx.beginPath();
-      ctx.moveTo(rect[2][0], rect[2][1]);
-      ctx.lineTo(rect[3][0], rect[3][1]);
-      ctx.stroke();
-    } else if (hardwareColourName === 'black') {
-      // Subtle highlight along the top edge
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-      ctx.lineWidth = Math.max(1, bracketW * 0.18);
-      ctx.beginPath();
-      ctx.moveTo(rect[0][0], rect[0][1]);
-      ctx.lineTo(rect[1][0], rect[1][1]);
-      ctx.stroke();
-    }
+    // 1px shadow on the outer edge only — the edge furthest from the window
+    const [oa, ob] = isLeft ? [rect[0], rect[3]] : [rect[1], rect[2]];
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(oa[0], oa[1]);
+    ctx.lineTo(ob[0], ob[1]);
+    ctx.stroke();
     ctx.restore();
   };
 
-  drawOne(buildRect(leftCentre));
-  drawOne(buildRect(rightCentre));
+  drawOne(buildRect(leftCentre), true);
+  drawOne(buildRect(rightCentre), false);
 };
 
 const drawBlindArea = (
@@ -761,12 +900,15 @@ const drawBlindArea = (
   W: number,
   H: number,
   params: AreaParams,
-  fabricImg: HTMLImageElement,
-  dualOverlayImg: HTMLImageElement | null
+  fabricImg: HTMLImageElement
 ) => {
   const { blindType } = params;
   if (blindType === 'sheer-curtains' || blindType === 'blockout-curtains') {
     drawCurtainArea(ctx, glStateRef, glUnavailableRef, W, H, params, fabricImg);
+    return;
+  }
+  if (blindType === 'dual') {
+    drawDualBlindArea(ctx, glStateRef, glUnavailableRef, W, H, params, fabricImg);
     return;
   }
 
@@ -779,6 +921,7 @@ const drawBlindArea = (
     baseRailShape,
     chainSide,
   } = params;
+  void baseRailShape; // kept for API compatibility — every real rail is now the same slim, flat-top shape
   const safeHardwareColor = params.hardwareColor ?? '#EFEFEF';
   const hardwareColourName = params.hardwareColourName;
   const type = blindType;
@@ -788,13 +931,6 @@ const drawBlindArea = (
   const bottomW = Math.hypot(br[0] - bl[0], br[1] - bl[1]);
   const avgW = (topW + bottomW) / 2;
   const leftH = Math.hypot(bl[0] - tl[0], bl[1] - tl[1]);
-
-  // Hardware dimensions are ratios of the traced window's own size,
-  // recomputed every render from the current corner positions — not fixed
-  // pixel constants — so the tube/rail scale correctly whether the window
-  // is near or far away in the photo.
-  const tubeHeight = leftH * 0.008;
-  const railHeight = leftH * 0.02;
 
   // Interpolate a point along the left or right edge at fraction t
   const leftEdge = (t: number): Point => [
@@ -815,7 +951,7 @@ const drawBlindArea = (
   ];
 
   // Roller position: fraction of the drop covered by fabric. Below 5%
-  // the fabric/rail are hidden but the (fat) fabric roll remains.
+  // the fabric/rail are hidden but the cassette remains.
   const p = Math.max(0, Math.min(1, rollPosition));
   const showBlind = p >= 0.05;
   const fabBL = leftEdge(p);
@@ -851,8 +987,12 @@ const drawBlindArea = (
       const fabricTexture = getOrUploadTexture(state, getTexturePath(type), fabricImg);
       const tint = hexToRgb(fabricColor);
 
-      // ~2 texture repeats across the width, square texels down the drop
-      const uvScale: [number, number] = [2, 2 * ((leftH * p) / avgW)];
+      // ~2 texture repeats across the width. Vertical scale is capped at 2x
+      // — with CLAMP_TO_EDGE wrapping (see getOrUploadTexture) anything
+      // beyond that just smears the edge pixel rather than hard-repeating,
+      // so this keeps the fabric reading as one continuous piece even on a
+      // very tall trace instead of visibly tiling.
+      const uvScale: [number, number] = [2, Math.min(2, (leftH * p) / avgW)];
 
       if (type === 'sheer') {
         // Two panels with a centre gap, like a pair of sheer curtains
@@ -872,7 +1012,7 @@ const drawBlindArea = (
           tint,
           tintStrength: 0.7,
           opacity: 0.38,
-          uvScale: [1, (leftH * p) / (avgW / 2)],
+          uvScale: [1, Math.min(2, (leftH * p) / (avgW / 2))],
           shade: true,
           folds: 8,
         };
@@ -900,7 +1040,7 @@ const drawBlindArea = (
           folds: 0,
         });
       } else {
-        // Blockout / dual — solid fabric
+        // Blockout — solid fabric, one continuous piece top to bottom
         drawQuad(state, [tl, tr, fabBR, fabBL], fabricTexture, {
           tint,
           tintStrength: 0.7,
@@ -909,25 +1049,6 @@ const drawBlindArea = (
           shade: true,
           folds: 0,
         });
-
-        // Dual: translucent sunscreen layer over the top 38% of the fabric
-        if (type === 'dual' && dualOverlayImg) {
-          const overlayTexture = getOrUploadTexture(state, DUAL_OVERLAY_PATH, dualOverlayImg);
-          const lightTint = hexToRgb(lighten(fabricColor, 25));
-          drawQuad(
-            state,
-            [tl, tr, rightEdge(0.38 * p), leftEdge(0.38 * p)],
-            overlayTexture,
-            {
-              tint: lightTint,
-              tintStrength: 0.5,
-              opacity: 0.45,
-              uvScale: [2, 2 * ((leftH * 0.38 * p) / avgW)],
-              shade: false,
-              folds: 0,
-            }
-          );
-        }
       }
 
       ctx.drawImage(state.canvas, 0, 0);
@@ -945,125 +1066,41 @@ const drawBlindArea = (
       ctx.restore();
     }
 
-    // --- FABRIC REALISM — centre light, then fold lines on top ---
+    // --- FABRIC REALISM — centre light, then vertical weave lines on top ---
     drawFabricCentreLight(ctx, tl, tr, fabBL, fabBR);
     drawFabricFoldLines(ctx, tl, tr, fabBL, fabBR, avgW);
+    if (type === 'sunscreen' || type === 'lightfilter') {
+      drawTranslucentLightBleed(ctx, tl, tr, fabBR, fabBL);
+    }
 
     // --- LIGHTING (post-fabric) ---
     drawLightSheen(ctx, corners);
-    drawAmbientOcclusion(ctx, corners);
+    drawAmbientOcclusion(ctx, tl, tr, fabBR, fabBL);
   } // end showBlind (depth + fabric)
 
-  // --- HEADER TUBE — accumulates rolled-up fabric like a paper roll ---
-  // Fully closed: thin cassette in hardware colour. Any amount rolled up:
-  // radius grows toward a capped tubeRadiusMax so the rolled-up tube never
-  // becomes a big visible cylinder.
-  const fullyClosed = p >= 0.999;
-  const tubeRadiusClosed = tubeHeight;
-  const tubeRadiusMax = leftH * 0.018;
-  const tubeRadius = fullyClosed
-    ? tubeRadiusClosed
-    : Math.min(tubeRadiusMax, tubeRadiusClosed + (1 - p) * tubeRadiusMax);
-  ctx.save();
-  const tg = ctx.createLinearGradient(tl[0], tl[1] - tubeRadius, tl[0], tl[1] + tubeRadius);
-  if (fullyClosed) {
-    tg.addColorStop(0, lighten(safeHardwareColor, 35));
-    tg.addColorStop(0.35, lighten(safeHardwareColor, 12));
-    tg.addColorStop(0.7, safeHardwareColor);
-    tg.addColorStop(1, darken(safeHardwareColor, 22));
-  } else {
-    tg.addColorStop(0, lighten(fabricColor, 20));
-    tg.addColorStop(0.5, fabricColor);
-    tg.addColorStop(1, darken(fabricColor, 30));
-  }
-  ctx.fillStyle = tg;
-  ctx.beginPath();
-  ctx.moveTo(tl[0], tl[1] - tubeRadius);
-  ctx.lineTo(tr[0], tr[1] - tubeRadius);
-  ctx.lineTo(tr[0], tr[1] + tubeRadius);
-  ctx.lineTo(tl[0], tl[1] + tubeRadius);
-  ctx.closePath();
-  ctx.fill();
-  // Specular line along the top of the roll
-  ctx.strokeStyle = rgba(lighten(fullyClosed ? safeHardwareColor : fabricColor, 45), 0.55);
-  ctx.lineWidth = Math.max(1, tubeRadius * 0.15);
-  ctx.beginPath();
-  ctx.moveTo(tl[0], tl[1] - tubeRadius * 0.55);
-  ctx.lineTo(tr[0], tr[1] - tubeRadius * 0.55);
-  ctx.stroke();
-
-  // Top highlight — a thin lighter line right at the very top edge, selling
-  // a curved cassette top rather than a flat-shaded block.
-  ctx.strokeStyle = rgba(lighten(fullyClosed ? safeHardwareColor : fabricColor, 55), 0.4);
-  ctx.lineWidth = Math.max(1, tubeRadius * 0.12);
-  ctx.beginPath();
-  ctx.moveTo(tl[0], tl[1] - tubeRadius);
-  ctx.lineTo(tr[0], tr[1] - tubeRadius);
-  ctx.stroke();
-
-  // Bottom shadow line — grounds the cassette's underside with real weight.
-  ctx.strokeStyle = rgba(darken(fullyClosed ? safeHardwareColor : fabricColor, 45), 0.5);
-  ctx.lineWidth = Math.max(2, tubeRadius * 0.25);
-  ctx.beginPath();
-  ctx.moveTo(tl[0], tl[1] + tubeRadius);
-  ctx.lineTo(tr[0], tr[1] + tubeRadius);
-  ctx.stroke();
-  ctx.restore();
-
-  // --- SIDE BRACKETS — wall-mount blocks holding the cassette, one at each
-  // end of the tube. Always drawn (not gated on showBlind) since the
-  // cassette itself is always present regardless of roll position. ---
+  // --- CASSETTE + BRACKETS — always drawn (not gated on showBlind) since
+  // the hardware itself is always present regardless of roll position. ---
+  const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor);
   drawSideBrackets(ctx, tl, tr, avgW, hardwareColourName, safeHardwareColor);
 
   // --- CASSETTE MOUNT SHADOW — the headrail casts a shadow onto the
   // fabric below it, like a physical bracket blocking light. ---
   if (showBlind) {
-    drawCassetteMountShadow(ctx, tl, tr, fabBL, fabBR, tubeHeight, leftH, avgW);
+    drawCassetteMountShadow(ctx, tl, tr, fabBL, fabBR, cassetteHalfH, leftH, avgW);
   }
 
   // --- BOTTOM RAIL (Canvas 2D overlay) — rides the fabric bottom ---
   if (showBlind && type !== 'sheer') {
+    const railHeight = leftH * RAIL_HEIGHT_RATIO;
     const railT = Math.max(0, p - railHeight / leftH);
     const railTL = leftEdge(railT);
     const railTR = rightEdge(railT);
-    ctx.save();
-    const rg = ctx.createLinearGradient(railTL[0], railTL[1], railTL[0], fabBR[1]);
-    rg.addColorStop(0, lighten(safeHardwareColor, 18));
-    rg.addColorStop(0.4, safeHardwareColor);
-    rg.addColorStop(1, darken(safeHardwareColor, 28));
-    ctx.fillStyle = rg;
-    ctx.beginPath();
-    if (baseRailShape === 'oval') {
-      // Rounded profile: bow the top edge of the rail slightly
-      const mid = [
-        (railTL[0] + railTR[0]) / 2,
-        (railTL[1] + railTR[1]) / 2 - railHeight * 0.35,
-      ];
-      ctx.moveTo(railTL[0], railTL[1]);
-      ctx.quadraticCurveTo(mid[0], mid[1], railTR[0], railTR[1]);
-    } else {
-      ctx.moveTo(railTL[0], railTL[1]);
-      ctx.lineTo(railTR[0], railTR[1]);
-    }
-    ctx.lineTo(fabBR[0], fabBR[1]);
-    ctx.lineTo(fabBL[0], fabBL[1]);
-    ctx.closePath();
-    ctx.fill();
-    if (baseRailShape === 'oval') {
-      // Specular strip along the curved face
-      ctx.strokeStyle = rgba(lighten(safeHardwareColor, 40), 0.5);
-      ctx.lineWidth = railHeight * 0.2;
-      ctx.beginPath();
-      ctx.moveTo(railTL[0], railTL[1] + railHeight * 0.3);
-      ctx.lineTo(railTR[0], railTR[1] + railHeight * 0.3);
-      ctx.stroke();
-    }
-    ctx.restore();
+    drawBottomRail(ctx, railTL, railTR, fabBL, fabBR, hardwareColourName, safeHardwareColor);
 
     // --- BOTTOM RAIL DROP SHADOW — the rail hangs in space; it casts a
-    // shadow up onto the fabric behind it and a contact shadow below. ---
+    // shadow up onto the fabric directly behind it. ---
     if (p > 0.1) {
-      drawRailDropShadow(ctx, railTL, railTR, fabBL, fabBR, leftH, avgW);
+      drawRailDropShadow(ctx, railTL, railTR, leftH);
     }
   }
 
@@ -1074,17 +1111,164 @@ const drawBlindArea = (
     drawContactShadow(ctx, bl, br, fabBL, fabBR, leftH);
   }
 
-  // --- CHAIN — rendering removed. showChain/chainSide/controlType are
-  // kept as valid params for API compatibility, but nothing is drawn.
+  // --- CHAIN — not rendered. showChain/chainSide/controlType are kept as
+  // valid params for API compatibility, but nothing is drawn.
   void chainSide;
-  if (showChain && controlType === 'manual' && type !== 'sheer') {
-    // Intentionally empty — chain drawing removed.
-  }
+  void showChain;
+  void controlType;
 
   // --- VIGNETTE (perimeter stroke) — always last, grounds the frame ---
   if (showBlind) {
     drawVignette(ctx, corners);
   }
+};
+
+// ---------------------------------------------------------------------------
+// Dual / day-night blind — two fabric layers sharing one cassette housing,
+// exactly how real twin-roller blinds are built. The back layer is always
+// fully down; the front layer raises with the roll slider but is capped
+// short of the bottom, so a sliver of the back layer always stays visible
+// as the gap between the two rollers.
+// ---------------------------------------------------------------------------
+
+const FRONT_LAYER_MAX_DROP = 0.7; // front layer never fully covers the back one — keeps the gap visible
+
+const drawDualBlindArea = (
+  ctx: CanvasRenderingContext2D,
+  glStateRef: React.MutableRefObject<GLState | null>,
+  glUnavailableRef: React.MutableRefObject<boolean>,
+  W: number,
+  H: number,
+  params: AreaParams,
+  fabricImg: HTMLImageElement
+) => {
+  const { corners, fabricColor, rollPosition = 1 } = params;
+  const safeHardwareColor = params.hardwareColor ?? '#EFEFEF';
+  const hardwareColourName = params.hardwareColourName;
+
+  const [tl, tr, br, bl] = corners;
+  const topW = Math.hypot(tr[0] - tl[0], tr[1] - tl[1]);
+  const bottomW = Math.hypot(br[0] - bl[0], br[1] - bl[1]);
+  const avgW = (topW + bottomW) / 2;
+  const leftH = Math.hypot(bl[0] - tl[0], bl[1] - tl[1]);
+
+  const leftEdge = (t: number): Point => [tl[0] + (bl[0] - tl[0]) * t, tl[1] + (bl[1] - tl[1]) * t];
+  const rightEdge = (t: number): Point => [tr[0] + (br[0] - tr[0]) * t, tr[1] + (br[1] - tr[1]) * t];
+
+  const p = Math.max(0, Math.min(1, rollPosition));
+  const backP = 1; // back layer always fully down
+  const frontP = Math.min(p, FRONT_LAYER_MAX_DROP); // front layer partially raised
+
+  drawPreFabricDepth(ctx, corners);
+
+  /** Draws one fabric layer's quad (solid, opaque — both layers share the
+   * same fabric colour) plus its own fold-line texture, returning its
+   * bottom-left/right so the caller can position that layer's own rail. */
+  const drawFabricLayer = (dropP: number): { layerBL: Point; layerBR: Point } => {
+    const layerBL = leftEdge(dropP);
+    const layerBR = rightEdge(dropP);
+
+    if (!glStateRef.current && !glUnavailableRef.current) {
+      try {
+        glStateRef.current = createGLState();
+      } catch {
+        glStateRef.current = null;
+      }
+      if (!glStateRef.current) glUnavailableRef.current = true;
+    }
+    const state = glStateRef.current;
+
+    if (state) {
+      const { gl } = state;
+      if (state.canvas.width !== W || state.canvas.height !== H) {
+        state.canvas.width = W;
+        state.canvas.height = H;
+      }
+      gl.viewport(0, 0, W, H);
+      gl.useProgram(state.program);
+      gl.uniform2f(state.loc.resolution, W, H);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      const fabricTexture = getOrUploadTexture(state, getTexturePath('dual'), fabricImg);
+      const tint = hexToRgb(fabricColor);
+      const uvScale: [number, number] = [2, Math.min(2, (leftH * dropP) / avgW)];
+      drawQuad(state, [tl, tr, layerBR, layerBL], fabricTexture, {
+        tint, tintStrength: 0.7, opacity: 1, uvScale, shade: true, folds: 0,
+      });
+      ctx.drawImage(state.canvas, 0, 0);
+    } else {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(tl[0], tl[1]);
+      ctx.lineTo(tr[0], tr[1]);
+      ctx.lineTo(layerBR[0], layerBR[1]);
+      ctx.lineTo(layerBL[0], layerBL[1]);
+      ctx.closePath();
+      ctx.fillStyle = rgba(fabricColor, 0.92);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    drawFabricFoldLines(ctx, tl, tr, layerBL, layerBR, avgW);
+    return { layerBL, layerBR };
+  };
+
+  // --- BACK LAYER — fully down ---
+  const { layerBL: backBL, layerBR: backBR } = drawFabricLayer(backP);
+  drawFabricCentreLight(ctx, tl, tr, backBL, backBR);
+
+  // --- FRONT LAYER — partially raised, drawn on top; the back layer's
+  // lower portion stays visible as the gap between the two rollers ---
+  const { layerBL: frontBL, layerBR: frontBR } = drawFabricLayer(frontP);
+  drawFabricCentreLight(ctx, tl, tr, frontBL, frontBR);
+
+  // --- GAP SHADOW — the front rail (drawn below) sits above the exposed
+  // back-layer fabric; cast a small soft shadow onto it. ---
+  const gapDepth = backP - frontP;
+  if (gapDepth > 0.02) {
+    const gapShadowH = Math.min(10, leftH * gapDepth * 0.25);
+    ctx.save();
+    const gapGrad = ctx.createLinearGradient(frontBL[0], frontBL[1], frontBL[0], frontBL[1] + gapShadowH);
+    gapGrad.addColorStop(0, 'rgba(0,0,0,0.22)');
+    gapGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gapGrad;
+    ctx.beginPath();
+    ctx.moveTo(frontBL[0], frontBL[1]);
+    ctx.lineTo(frontBR[0], frontBR[1]);
+    ctx.lineTo(frontBR[0], frontBR[1] + gapShadowH);
+    ctx.lineTo(frontBL[0], frontBL[1] + gapShadowH);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // --- LIGHTING — once, across the full window (back layer reaches the
+  // true bottom, so the fabric-only AO band spans the whole drop) ---
+  drawLightSheen(ctx, corners);
+  drawAmbientOcclusion(ctx, tl, tr, br, bl);
+
+  // --- SHARED CASSETTE + BRACKETS — one housing for both rollers ---
+  const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor);
+  drawSideBrackets(ctx, tl, tr, avgW, hardwareColourName, safeHardwareColor);
+  drawCassetteMountShadow(ctx, tl, tr, frontBL, frontBR, cassetteHalfH, leftH, avgW);
+
+  // --- RAILS — front layer's rail (higher up) and back layer's rail
+  // (at the true bottom) ---
+  const railHeight = leftH * RAIL_HEIGHT_RATIO;
+  const frontRailT = Math.max(0, frontP - railHeight / leftH);
+  const frontRailTL = leftEdge(frontRailT);
+  const frontRailTR = rightEdge(frontRailT);
+  drawBottomRail(ctx, frontRailTL, frontRailTR, frontBL, frontBR, hardwareColourName, safeHardwareColor);
+  drawRailDropShadow(ctx, frontRailTL, frontRailTR, leftH);
+
+  const backRailT = Math.max(0, backP - railHeight / leftH);
+  const backRailTL = leftEdge(backRailT);
+  const backRailTR = rightEdge(backRailT);
+  drawBottomRail(ctx, backRailTL, backRailTR, backBL, backBR, hardwareColourName, safeHardwareColor);
+  drawContactShadow(ctx, bl, br, backBL, backBR, leftH);
+
+  drawVignette(ctx, corners);
 };
 
 // ---------------------------------------------------------------------------
@@ -1216,7 +1400,7 @@ const drawCurtainArea = (
 
   // --- LIGHTING (post-fabric) ---
   drawLightSheen(ctx, corners);
-  drawAmbientOcclusion(ctx, corners);
+  drawAmbientOcclusion(ctx, tl, tr, br, bl);
 
   // --- TRACK — thin solid bar at the very top, hardware colour. Unlike the
   // roller tube it never grows: tracks don't accumulate fabric. ---
@@ -1309,12 +1493,10 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
         ...confirmedAreas.map(a => textureKeyFor(a.blindType, a.fabricColor)),
         ...(compareMode && compareBlindType ? [compareBlindType] : []),
       ]));
-      const needsDualOverlay = uniqueTypes.includes('dual');
 
-      const [photo, fabricEntries, dualOverlayImg] = await Promise.all([
+      const [photo, fabricEntries] = await Promise.all([
         loadImage(photoUrl),
         Promise.all(uniqueTypes.map(async t => [t, await loadImage(getTexturePath(t))] as const)),
-        needsDualOverlay ? loadImage(DUAL_OVERLAY_PATH) : Promise.resolve(null),
       ]);
       if (cancelled) return;
 
@@ -1331,7 +1513,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
           const texKey = textureKeyFor(area.blindType, area.fabricColor);
           const fabricImg = fabricImgByType.get(texKey);
           if (!fabricImg) continue;
-          drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, buildAreaParams(area, rollPosition), fabricImg, dualOverlayImg);
+          drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, buildAreaParams(area, rollPosition), fabricImg);
         }
       } else {
         // Every confirmed area splits across the same shared divider.
@@ -1345,7 +1527,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
           ctx.rect(0, 0, W * divider, H);
           ctx.clip();
           if (primaryFabricImg) {
-            drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, buildAreaParams(area, rollPosition), primaryFabricImg, dualOverlayImg);
+            drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, buildAreaParams(area, rollPosition), primaryFabricImg);
           }
           ctx.restore();
 
@@ -1362,7 +1544,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
               blindType: compareBlindTypeValue,
               fabricColor: compareFabricColor ?? area.fabricColor,
             };
-            drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, compareParams, compareFabricImg, dualOverlayImg);
+            drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, compareParams, compareFabricImg);
           }
           ctx.restore();
         }
