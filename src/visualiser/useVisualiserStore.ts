@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SKU_CATALOGUE, MOTORISED_ADDON, RYNAMIC_COLOURS } from '../data/products';
+import { MOTORISED_ADDON, RYNAMIC_COLOURS } from '../data/products';
 
 type Point = [number, number];
 
@@ -14,14 +14,32 @@ interface TracedArea {
   confirmed: boolean;
 }
 
+export type BlindType = 'blockout' | 'sunscreen' | 'lightfilter' | 'dual';
+export type HardwareColour = 'white' | 'black' | 'chrome';
+
+const HARDWARE_HEX: Record<HardwareColour, string> = {
+  white: '#E8E4DE',
+  black: '#2C2824',
+  chrome: '#B0AEA8',
+};
+
+// Base price by blind type and window size — Light Filter has no catalogue
+// pricing yet, so it's set to match Sunscreen until a real price is supplied.
+const BASE_PRICE: Record<BlindType, { small: number; medium: number; large: number }> = {
+  blockout: { small: 220, medium: 260, large: 330 },
+  sunscreen: { small: 220, medium: 260, large: 330 },
+  lightfilter: { small: 220, medium: 260, large: 330 },
+  dual: { small: 320, medium: 380, large: 480 },
+};
+
 interface VisualiserStore {
   // Product selection
-  sku: string;                  // e.g. 'dusk-white'
+  blindType: BlindType;
   fabricColour: string;         // Rynamic colour name, e.g. 'White'
-  isDual: boolean;              // true for Duo White/Black/Chrome — read by Canvas2DBlindRenderer via blindType
+  hardwareColour: HardwareColour;
   windowSize: 'small' | 'medium' | 'large';
-  controlType: 'manual' | 'motorised';
-  lockedRange: string | null;   // if set from product page, picker is filtered to this range
+  operation: 'manual' | 'motorised';
+  lockedRange: string | null;   // if set from product page, blind type picker is hidden and locked
 
   // Visual state
   photoUrl: string | null;
@@ -33,17 +51,16 @@ interface VisualiserStore {
 
   // Computed
   getCurrentPrice: () => number;
-  getCurrentSku: () => typeof SKU_CATALOGUE[0] | undefined;
-  getRange: () => string;
-  getHardware: () => string;
   getFabricColor: () => string;
+  getHardwareColor: () => string;
   isConfigComplete: () => boolean;
 
   // Actions
-  setSku: (sku: string) => void;
+  setBlindType: (type: BlindType) => void;
   setFabricColour: (colour: string) => void;
+  setHardwareColour: (colour: HardwareColour) => void;
   setWindowSize: (size: 'small' | 'medium' | 'large') => void;
-  setControlType: (type: 'manual' | 'motorised') => void;
+  setOperation: (op: 'manual' | 'motorised') => void;
   setLockedRange: (range: string | null) => void;
   setPhotoUrl: (url: string | null) => void;
   setRollPosition: (pos: number) => void;
@@ -56,21 +73,12 @@ interface VisualiserStore {
   setCompareDivider: (divider: number) => void;
 }
 
-export const RANGE_TYPE_MAP: Record<string, string> = {
-  blockout: 'BLOCKOUT ROLLER',
-  sunscreen: 'SUNSCREEN ROLLER',
-  dual: 'DUAL ROLLER',
-};
-
-const rangeSlugForType = (type: string | undefined): string =>
-  Object.keys(RANGE_TYPE_MAP).find(slug => RANGE_TYPE_MAP[slug] === type) ?? 'blockout';
-
 export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
-  sku: 'dusk-white',
+  blindType: 'blockout',
   fabricColour: 'White',
-  isDual: false,
+  hardwareColour: 'white',
   windowSize: 'medium',
-  controlType: 'manual',
+  operation: 'manual',
   lockedRange: null,
   photoUrl: null,
   rollPosition: 0.5,
@@ -81,38 +89,27 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
 
   getCurrentPrice: () => {
     const state = get();
-    const sku = SKU_CATALOGUE.find(s => s.slug === state.sku);
-    if (!sku) return 0;
-    const base = sku.price[state.windowSize];
-    return base + (state.controlType === 'motorised' ? MOTORISED_ADDON : 0);
+    const base = BASE_PRICE[state.blindType][state.windowSize];
+    return base + (state.operation === 'motorised' ? MOTORISED_ADDON : 0);
   },
-
-  getCurrentSku: () => {
-    const state = get();
-    return SKU_CATALOGUE.find(s => s.slug === state.sku);
-  },
-
-  getRange: () => rangeSlugForType(get().getCurrentSku()?.type),
-
-  getHardware: () => get().getCurrentSku()?.hardware ?? 'White',
 
   getFabricColor: () => {
     const state = get();
     return RYNAMIC_COLOURS.find(c => c.name === state.fabricColour)?.hex ?? '#FFFFFF';
   },
 
+  getHardwareColor: () => HARDWARE_HEX[get().hardwareColour],
+
   isConfigComplete: () => {
     const state = get();
     return state.tracedAreas.some(a => a.confirmed) && state.photoUrl !== null;
   },
 
-  setSku: (sku) => {
-    const found = SKU_CATALOGUE.find(s => s.slug === sku);
-    set({ sku, isDual: found?.type === 'DUAL ROLLER' });
-  },
+  setBlindType: (type) => set({ blindType: type }),
   setFabricColour: (colour) => set({ fabricColour: colour }),
+  setHardwareColour: (colour) => set({ hardwareColour: colour }),
   setWindowSize: (size) => set({ windowSize: size }),
-  setControlType: (type) => set({ controlType: type }),
+  setOperation: (op) => set({ operation: op }),
   setLockedRange: (range) => set({ lockedRange: range }),
   setPhotoUrl: (url) => set({ photoUrl: url }),
   setRollPosition: (pos) => set({ rollPosition: pos }),

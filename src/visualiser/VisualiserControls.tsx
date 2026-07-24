@@ -1,12 +1,25 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { tokens } from '../theme';
-import { SKU_CATALOGUE, RYNAMIC_COLOURS } from '../data/products';
-import { useVisualiserStore, RANGE_TYPE_MAP } from './useVisualiserStore';
+import { RYNAMIC_COLOURS } from '../data/products';
+import { useVisualiserStore, BlindType, HardwareColour } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
-  lockedRange?: string; // if passed, filters the product picker to this range only
+  lockedRange?: string; // if passed, hides the blind type row — customer can only configure this type
 }
+
+const BLIND_TYPE_OPTIONS: { id: BlindType; label: string }[] = [
+  { id: 'blockout', label: 'Blockout' },
+  { id: 'sunscreen', label: 'Sunscreen' },
+  { id: 'lightfilter', label: 'Light Filter' },
+  { id: 'dual', label: 'Dual' },
+];
+
+const HARDWARE_OPTIONS: { id: HardwareColour; label: string; hex: string }[] = [
+  { id: 'white', label: 'White', hex: '#E8E4DE' },
+  { id: 'black', label: 'Black', hex: '#2C2824' },
+  { id: 'chrome', label: 'Chrome', hex: '#B0AEA8' },
+];
 
 const SIZE_OPTIONS: { id: 'small' | 'medium' | 'large'; label: string; sub: string }[] = [
   { id: 'small', label: 'Small', sub: 'up to 1m' },
@@ -76,68 +89,36 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
   const [searchParams] = useSearchParams();
   const store = useVisualiserStore();
 
-  // Locks the picker to the `lockedRange` prop or a `?range=` URL param
-  // (e.g. arriving from a product page) — runs once on mount only.
+  // Locks the blind type from either the `lockedRange` prop or a `?range=`
+  // URL param (e.g. arriving from a product page) — runs once on mount only.
   useEffect(() => {
     const range = lockedRangeProp ?? searchParams.get('range');
     if (range) {
       store.setLockedRange(range);
-      const firstSku = SKU_CATALOGUE.find(s => s.type === RANGE_TYPE_MAP[range]);
-      if (firstSku) store.setSku(firstSku.slug);
+      store.setBlindType(range as BlindType);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const skuOptions = store.lockedRange
-    ? SKU_CATALOGUE.filter(s => s.type === RANGE_TYPE_MAP[store.lockedRange!])
-    : SKU_CATALOGUE;
 
   const selectedColour = RYNAMIC_COLOURS.find(c => c.name === store.fabricColour);
 
   return (
     <>
-      <div>
-        <SectionLabel>Product</SectionLabel>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-          {skuOptions.map(s => {
-            const active = store.sku === s.slug;
-            return (
-              <button
-                key={s.slug}
-                onClick={() => store.setSku(s.slug)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: 6,
-                  cursor: 'pointer',
-                  background: active ? 'rgba(200,151,58,0.1)' : 'transparent',
-                  border: active ? `1px solid ${tokens.gold}` : '1px solid rgba(28,24,16,0.15)',
-                }}
-              >
-                <img
-                  src={s.image}
-                  alt={s.name}
-                  style={{ width: '100%', aspectRatio: '1 / 1', objectFit: 'cover' }}
-                />
-                <span
-                  style={{
-                    fontFamily: tokens.body,
-                    fontSize: 10,
-                    fontWeight: 500,
-                    color: active ? tokens.dark : 'rgba(28,24,16,0.6)',
-                    textAlign: 'center',
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {s.name}
-                </span>
-              </button>
-            );
-          })}
+      {!store.lockedRange && (
+        <div>
+          <SectionLabel>Blind type</SectionLabel>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {BLIND_TYPE_OPTIONS.map(t => (
+              <Pill
+                key={t.id}
+                label={t.label}
+                active={store.blindType === t.id}
+                onClick={() => store.setBlindType(t.id)}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div>
         <SectionLabel>Fabric colour</SectionLabel>
@@ -165,6 +146,30 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
       </div>
 
       <div>
+        <SectionLabel>Hardware colour</SectionLabel>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          {HARDWARE_OPTIONS.map(h => (
+            <button
+              key={h.id}
+              aria-label={h.label}
+              onClick={() => store.setHardwareColour(h.id)}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                cursor: 'pointer',
+                background: h.hex,
+                border: store.hardwareColour === h.id ? `2px solid ${tokens.gold}` : '1px solid rgba(28,24,16,0.15)',
+              }}
+            />
+          ))}
+        </div>
+        <div style={{ fontFamily: tokens.body, fontSize: 11, color: '#1C1810', marginTop: 10 }}>
+          {HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour)?.label ?? ''}
+        </div>
+      </div>
+
+      <div>
         <SectionLabel>Window size</SectionLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {SIZE_OPTIONS.map(s => (
@@ -186,8 +191,8 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
             <Pill
               key={o.id}
               label={o.label}
-              active={store.controlType === o.id}
-              onClick={() => store.setControlType(o.id)}
+              active={store.operation === o.id}
+              onClick={() => store.setOperation(o.id)}
             />
           ))}
         </div>

@@ -5,15 +5,6 @@ import { usePhotoUpload } from './usePhotoUpload';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 
-// Hardware finish name -> actual render colour. Canvas2DBlindRenderer treats
-// hardwareColor as a hex string it feeds into lighten()/darken() (hexToRgb),
-// so the display label ('White'/'Black'/'Chrome') can't be passed directly.
-const HARDWARE_HEX: Record<string, string> = {
-  White: '#EFEFEF',
-  Black: '#222222',
-  Chrome: '#C0C0C0',
-};
-
 const ghostButtonStyle: React.CSSProperties = {
   background: 'rgba(0,0,0,0.45)',
   color: '#FFFFFF',
@@ -74,10 +65,10 @@ export default function KlayConfigurator() {
     store.addTracedArea({
       id: crypto.randomUUID(),
       corners,
-      blindType: store.getRange(),
+      blindType: store.blindType,
       fabricColor: store.getFabricColor(),
-      hardwareColor: HARDWARE_HEX[store.getHardware()] ?? '#EFEFEF',
-      controlType: store.controlType,
+      hardwareColor: store.getHardwareColor(),
+      controlType: store.operation,
       showChain: false,
       confirmed: true,
     });
@@ -86,9 +77,9 @@ export default function KlayConfigurator() {
   const handleDownload = () => {
     const canvas = rendererContainerRef.current?.querySelector('canvas');
     if (!canvas) return;
-    const sku = store.getCurrentSku()?.slug ?? store.sku;
+    const colourSlug = store.fabricColour.toLowerCase().replace(/\s+/g, '-');
     const link = document.createElement('a');
-    link.download = `klay-blind-${sku}-${store.windowSize}.jpg`;
+    link.download = `klay-blind-${store.blindType}-${colourSlug}-${store.windowSize}.jpg`;
     link.href = canvas.toDataURL('image/jpeg', 0.95);
     link.click();
   };
@@ -155,18 +146,19 @@ export default function KlayConfigurator() {
   };
 
   useEffect(() => {
-    if (store.controlType !== 'motorised') stopAuto();
+    if (store.operation !== 'motorised') stopAuto();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.controlType]);
+  }, [store.operation]);
 
   useEffect(() => () => stopAuto(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const canvasTracedAreas: RenderedArea[] = store.tracedAreas.map(a => ({
     ...a,
-    blindType: store.getRange(),
+    blindType: store.blindType,
     fabricColor: store.getFabricColor(),
-    hardwareColor: HARDWARE_HEX[store.getHardware()] ?? '#EFEFEF',
-    controlType: store.controlType,
+    hardwareColor: store.getHardwareColor(),
+    hardwareColourName: store.hardwareColour,
+    controlType: store.operation,
     showChain: false,
   }));
 
@@ -275,7 +267,7 @@ export default function KlayConfigurator() {
             />
 
             {/* Roll position control — right edge */}
-            {store.controlType !== 'motorised' ? (
+            {store.operation !== 'motorised' ? (
               <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', alignItems:'center', gap:'8px', zIndex:20 }}>
                 <button
                   onClick={() => store.setRollPosition(Math.max(0, store.rollPosition - 0.1))}

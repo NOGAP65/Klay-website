@@ -11,6 +11,11 @@ export interface RenderedArea {
   blindType: string;
   fabricColor: string;
   hardwareColor: string;
+  /** Named hardware finish — drives the side-bracket render (flat shadow/
+   * highlight for white/black, metallic gradient for chrome). Optional so
+   * older callers passing only a hex `hardwareColor` still render (plain
+   * fill, no special shading). */
+  hardwareColourName?: 'white' | 'black' | 'chrome';
   controlType: string;
   showChain: boolean;
 }
@@ -76,6 +81,9 @@ const getTexturePath = (blindType: string): string => {
   switch (blindType) {
     case 'blockout': return '/textures/blockout_charcoal.jpg';
     case 'sunscreen': return '/textures/sunscreen_white.jpg';
+    // No dedicated Light Filter photo yet — reuses the sunscreen weave at a
+    // higher opacity (see drawBlindArea) to sit visually between sunscreen and blockout.
+    case 'lightfilter': return '/textures/sunscreen_white.jpg';
     case 'dual': return '/textures/blockout_charcoal.jpg';
     case 'sheer':
     case 'sheer-curtains': return '/textures/sheer_fabric.jpg';
@@ -354,6 +362,7 @@ interface AreaParams {
   blindType: string;
   fabricColor: string;
   hardwareColor?: string | null;
+  hardwareColourName?: 'white' | 'black' | 'chrome';
   controlType: string;
   showChain?: boolean;
   rollPosition?: number;
@@ -373,7 +382,7 @@ const drawPreFabricDepth = (ctx: CanvasRenderingContext2D, corners: Point[]) => 
   ctx.lineTo(br[0], br[1]);
   ctx.lineTo(bl[0], bl[1]);
   ctx.closePath();
-  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.fillStyle = 'rgba(0,0,0,0.16)';
   ctx.fill();
   ctx.restore();
 };
@@ -409,7 +418,7 @@ const drawLightSheen = (ctx: CanvasRenderingContext2D, corners: Point[]) => {
  * the roller and curtain render paths. */
 const drawAmbientOcclusion = (ctx: CanvasRenderingContext2D, corners: Point[]) => {
   const [tl, tr, br, bl] = corners;
-  const depth = 0.18; // fraction of the edge's own axis the shadow reaches
+  const depth = 0.22; // fraction of the edge's own axis the shadow reaches — deeper band reads as stronger occlusion (~18-22px at typical trace size)
 
   const lerp = (a: Point, b: Point, t: number): Point => [
     a[0] + (b[0] - a[0]) * t,
@@ -418,7 +427,7 @@ const drawAmbientOcclusion = (ctx: CanvasRenderingContext2D, corners: Point[]) =
 
   const fillBand = (outerA: Point, outerB: Point, innerB: Point, innerA: Point) => {
     const grad = ctx.createLinearGradient(outerA[0], outerA[1], innerA[0], innerA[1]);
-    grad.addColorStop(0, 'rgba(0,0,0,0.28)');
+    grad.addColorStop(0, 'rgba(0,0,0,0.38)');
     grad.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -451,7 +460,7 @@ const drawAmbientOcclusion = (ctx: CanvasRenderingContext2D, corners: Point[]) =
 const drawVignette = (ctx: CanvasRenderingContext2D, corners: Point[]) => {
   const [tl, tr, br, bl] = corners;
   ctx.save();
-  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.36)';
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(tl[0], tl[1]);
@@ -474,7 +483,10 @@ const drawContactShadow = (
   fabBR: Point,
   leftH: number
 ) => {
-  const shadowHeight = leftH * 0.04;
+  // Clamped to a roughly 8px-wide soft fade regardless of window size, so the
+  // rail always reads as casting a real shadow onto the wall rather than a
+  // shadow that vanishes on small windows or overwhelms large ones.
+  const shadowHeight = Math.max(6, Math.min(12, leftH * 0.04));
   const shadowTL = fabBL;
   const shadowTR = fabBR;
   const shadowBL: Point = [bl[0], bl[1] + shadowHeight];
@@ -489,7 +501,7 @@ const drawContactShadow = (
   ctx.closePath();
 
   const shadowGrad = ctx.createLinearGradient(shadowTL[0], shadowTL[1], shadowBL[0], shadowBL[1]);
-  shadowGrad.addColorStop(0, 'rgba(0,0,0,0.18)');
+  shadowGrad.addColorStop(0, 'rgba(0,0,0,0.24)');
   shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = shadowGrad;
   ctx.fill();
@@ -530,12 +542,12 @@ const drawFabricFoldLines = (
       topX + avgW * 0.015, topY
     );
     foldGrad.addColorStop(0, 'rgba(0,0,0,0)');
-    foldGrad.addColorStop(0.5, 'rgba(0,0,0,0.07)');
+    foldGrad.addColorStop(0.5, 'rgba(0,0,0,0.13)');
     foldGrad.addColorStop(1, 'rgba(0,0,0,0)');
 
     ctx.save();
     ctx.strokeStyle = foldGrad;
-    ctx.lineWidth = avgW * 0.012;
+    ctx.lineWidth = avgW * 0.016;
     ctx.beginPath();
     ctx.moveTo(topX, topY);
     ctx.lineTo(botX, botY);
@@ -663,6 +675,85 @@ const drawRailDropShadow = (
   ctx.restore();
 };
 
+/** Wall-mount side brackets — the small blocks that hold the cassette flush
+ * against the wall, one at each end of the header tube. Sized as a ratio of
+ * the traced window's own width (12x20 at a ~400px-wide reference blind) so
+ * they scale correctly at any distance/zoom. Built along the tube's own
+ * direction vector (not assumed horizontal) so they stay correct even when
+ * the traced window is slightly rotated in the photo. */
+const drawSideBrackets = (
+  ctx: CanvasRenderingContext2D,
+  tl: Point,
+  tr: Point,
+  avgW: number,
+  hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
+  safeHardwareColor: string
+) => {
+  const bracketW = avgW * 0.03;
+  const bracketH = bracketW * 1.67;
+
+  const dirX = tr[0] - tl[0];
+  const dirY = tr[1] - tl[1];
+  const dirLen = Math.hypot(dirX, dirY) || 1;
+  const ux = dirX / dirLen;
+  const uy = dirY / dirLen;
+  const px = -uy;
+  const py = ux;
+
+  const buildRect = (centre: Point): [Point, Point, Point, Point] => [
+    [centre[0] - ux * (bracketW / 2) + px * (bracketH / 2), centre[1] - uy * (bracketW / 2) + py * (bracketH / 2)],
+    [centre[0] + ux * (bracketW / 2) + px * (bracketH / 2), centre[1] + uy * (bracketW / 2) + py * (bracketH / 2)],
+    [centre[0] + ux * (bracketW / 2) - px * (bracketH / 2), centre[1] + uy * (bracketW / 2) - py * (bracketH / 2)],
+    [centre[0] - ux * (bracketW / 2) - px * (bracketH / 2), centre[1] - uy * (bracketW / 2) - py * (bracketH / 2)],
+  ];
+
+  const leftCentre: Point = [tl[0] - ux * (bracketW / 2), tl[1] - uy * (bracketW / 2)];
+  const rightCentre: Point = [tr[0] + ux * (bracketW / 2), tr[1] + uy * (bracketW / 2)];
+
+  const drawOne = (rect: [Point, Point, Point, Point]) => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(rect[0][0], rect[0][1]);
+    ctx.lineTo(rect[1][0], rect[1][1]);
+    ctx.lineTo(rect[2][0], rect[2][1]);
+    ctx.lineTo(rect[3][0], rect[3][1]);
+    ctx.closePath();
+
+    if (hardwareColourName === 'chrome') {
+      const grad = ctx.createLinearGradient(rect[0][0], rect[0][1], rect[2][0], rect[2][1]);
+      grad.addColorStop(0, '#C8C6C0');
+      grad.addColorStop(0.5, '#E8E6E0');
+      grad.addColorStop(1, '#B0AEA8');
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = safeHardwareColor;
+    }
+    ctx.fill();
+
+    if (hardwareColourName === 'white') {
+      // Subtle cast shadow along the underside of the bracket
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+      ctx.lineWidth = Math.max(1, bracketW * 0.18);
+      ctx.beginPath();
+      ctx.moveTo(rect[2][0], rect[2][1]);
+      ctx.lineTo(rect[3][0], rect[3][1]);
+      ctx.stroke();
+    } else if (hardwareColourName === 'black') {
+      // Subtle highlight along the top edge
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = Math.max(1, bracketW * 0.18);
+      ctx.beginPath();
+      ctx.moveTo(rect[0][0], rect[0][1]);
+      ctx.lineTo(rect[1][0], rect[1][1]);
+      ctx.stroke();
+    }
+    ctx.restore();
+  };
+
+  drawOne(buildRect(leftCentre));
+  drawOne(buildRect(rightCentre));
+};
+
 const drawBlindArea = (
   ctx: CanvasRenderingContext2D,
   glStateRef: React.MutableRefObject<GLState | null>,
@@ -689,6 +780,7 @@ const drawBlindArea = (
     chainSide,
   } = params;
   const safeHardwareColor = params.hardwareColor ?? '#EFEFEF';
+  const hardwareColourName = params.hardwareColourName;
   const type = blindType;
 
   const [tl, tr, br, bl] = corners;
@@ -702,7 +794,7 @@ const drawBlindArea = (
   // pixel constants — so the tube/rail scale correctly whether the window
   // is near or far away in the photo.
   const tubeHeight = leftH * 0.008;
-  const railHeight = leftH * 0.012;
+  const railHeight = leftH * 0.02;
 
   // Interpolate a point along the left or right edge at fraction t
   const leftEdge = (t: number): Point => [
@@ -796,6 +888,17 @@ const drawBlindArea = (
           shade: true,
           folds: 0,
         });
+      } else if (type === 'lightfilter') {
+        // Light Filter sits between sunscreen and blockout — softens light
+        // without fully blocking it, so it's more opaque than sunscreen.
+        drawQuad(state, [tl, tr, fabBR, fabBL], fabricTexture, {
+          tint,
+          tintStrength: 0.72,
+          opacity: 0.78,
+          uvScale,
+          shade: true,
+          folds: 0,
+        });
       } else {
         // Blockout / dual — solid fabric
         drawQuad(state, [tl, tr, fabBR, fabBL], fabricTexture, {
@@ -837,7 +940,7 @@ const drawBlindArea = (
       ctx.lineTo(fabBR[0], fabBR[1]);
       ctx.lineTo(fabBL[0], fabBL[1]);
       ctx.closePath();
-      ctx.fillStyle = rgba(fabricColor, type === 'sunscreen' ? 0.55 : type === 'sheer' ? 0.4 : 0.92);
+      ctx.fillStyle = rgba(fabricColor, type === 'sunscreen' ? 0.55 : type === 'sheer' ? 0.4 : type === 'lightfilter' ? 0.78 : 0.92);
       ctx.fill();
       ctx.restore();
     }
@@ -888,7 +991,29 @@ const drawBlindArea = (
   ctx.moveTo(tl[0], tl[1] - tubeRadius * 0.55);
   ctx.lineTo(tr[0], tr[1] - tubeRadius * 0.55);
   ctx.stroke();
+
+  // Top highlight — a thin lighter line right at the very top edge, selling
+  // a curved cassette top rather than a flat-shaded block.
+  ctx.strokeStyle = rgba(lighten(fullyClosed ? safeHardwareColor : fabricColor, 55), 0.4);
+  ctx.lineWidth = Math.max(1, tubeRadius * 0.12);
+  ctx.beginPath();
+  ctx.moveTo(tl[0], tl[1] - tubeRadius);
+  ctx.lineTo(tr[0], tr[1] - tubeRadius);
+  ctx.stroke();
+
+  // Bottom shadow line — grounds the cassette's underside with real weight.
+  ctx.strokeStyle = rgba(darken(fullyClosed ? safeHardwareColor : fabricColor, 45), 0.5);
+  ctx.lineWidth = Math.max(2, tubeRadius * 0.25);
+  ctx.beginPath();
+  ctx.moveTo(tl[0], tl[1] + tubeRadius);
+  ctx.lineTo(tr[0], tr[1] + tubeRadius);
+  ctx.stroke();
   ctx.restore();
+
+  // --- SIDE BRACKETS — wall-mount blocks holding the cassette, one at each
+  // end of the tube. Always drawn (not gated on showBlind) since the
+  // cassette itself is always present regardless of roll position. ---
+  drawSideBrackets(ctx, tl, tr, avgW, hardwareColourName, safeHardwareColor);
 
   // --- CASSETTE MOUNT SHADOW — the headrail casts a shadow onto the
   // fabric below it, like a physical bracket blocking light. ---
@@ -1124,6 +1249,7 @@ const buildAreaParams = (area: RenderedArea, rollPosition: number): AreaParams =
   blindType: area.blindType,
   fabricColor: area.fabricColor,
   hardwareColor: area.hardwareColor,
+  hardwareColourName: area.hardwareColourName,
   controlType: area.controlType,
   showChain: area.showChain,
   rollPosition,
