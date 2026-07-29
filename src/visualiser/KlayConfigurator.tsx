@@ -46,18 +46,29 @@ const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-
 // photo using a fixed set of corner pins (see DEFAULT_WINDOW_CORNERS_PCT),
 // with no CornerPinOverlay involved at all until the user replaces it.
 const DEFAULT_WINDOW_URL = '/images/static-imafge.png';
-// Pinned to the full GLASS area of the window in static-imafge.png
-// (1448 x 1086) — top of the upper sash down to the sill, spanning both
-// sashes and the mullion between them. Inner edge of the glass, not the
-// outer frame. Measured off the decoded pixels rather than estimated: the
-// painted frame is a warm off-white (R-B around +14) while glass is neutral
-// or cool (sky -33, foliage -12), so the boundary is the sign flip in that
-// warmth. Left glass edge x=408, right x=1035, top y=173, sill y=788.
+// Face-mounted (outside mount) on the window in static-imafge.png
+// (1448 x 1086) — how a roller blind is actually hung: the fabric overlaps
+// the casing rather than sitting inside the glass, leaving about half the
+// casing visible on every side.
+//
+// Measured off the decoded pixels. Glass runs x 408..1035, y 173..788; the
+// casing's outer edge is the contact-shadow dip against the wall at x=348 /
+// x=1096, y=103, and the sill nose at y=838. Each blind edge is the midpoint
+// of that casing band — a 30px overlap left/right, 35px top, 25px bottom:
+//
+//   side     glass  casing  blind   band  overlap
+//   left       408     348    378     60       30
+//   right     1035    1096   1065     61       30
+//   top        173     103    138     70       35
+//   bottom     788     838    813     50       25
+//
+// Centre lands on x=721.5 against the casing's own 722, so the blind hangs
+// square to the window rather than drifting to one side.
 const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
-  [0.2818, 0.1593], // top-left     — x 408/1448,  y 173/1086
-  [0.7148, 0.1593], // top-right    — x 1035/1448
-  [0.7148, 0.7256], // bottom-right — y 788/1086
-  [0.2818, 0.7256], // bottom-left
+  [0.2610, 0.1271], // top-left     — x 378/1448,  y 138/1086
+  [0.7355, 0.1271], // top-right    — x 1065/1448
+  [0.7355, 0.7486], // bottom-right — y 813/1086
+  [0.2610, 0.7486], // bottom-left
 ];
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
