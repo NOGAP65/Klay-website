@@ -46,15 +46,16 @@ const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-
 // photo using a fixed set of corner pins (see DEFAULT_WINDOW_CORNERS_PCT),
 // with no CornerPinOverlay involved at all until the user replaces it.
 const DEFAULT_WINDOW_URL = '/images/static-imafge.png';
-// Pinned to the GLASS of the lower sash in static-imafge.png (1448 x 1086),
-// not the outer frame and not the upper sashes. Measured off the decoded
-// pixels rather than estimated: the glass is chromatic (sky, foliage, lawn)
-// where the frame and rail are near-neutral white, so the boundary is the
-// step in per-pixel chroma. Left glass edge x=408, right x=1035, meeting
-// rail ends / lower glass begins y=485, glass meets the sill y=788.
+// Pinned to the full GLASS area of the window in static-imafge.png
+// (1448 x 1086) — top of the upper sash down to the sill, spanning both
+// sashes and the mullion between them. Inner edge of the glass, not the
+// outer frame. Measured off the decoded pixels rather than estimated: the
+// painted frame is a warm off-white (R-B around +14) while glass is neutral
+// or cool (sky -33, foliage -12), so the boundary is the sign flip in that
+// warmth. Left glass edge x=408, right x=1035, top y=173, sill y=788.
 const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
-  [0.2818, 0.4466], // top-left     — x 408/1448, y 485/1086
-  [0.7148, 0.4466], // top-right    — x 1035/1448
+  [0.2818, 0.1593], // top-left     — x 408/1448,  y 173/1086
+  [0.7148, 0.1593], // top-right    — x 1035/1448
   [0.7148, 0.7256], // bottom-right — y 788/1086
   [0.2818, 0.7256], // bottom-left
 ];
