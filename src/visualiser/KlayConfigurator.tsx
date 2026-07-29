@@ -46,13 +46,17 @@ const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-
 // photo using a fixed set of corner pins (see DEFAULT_WINDOW_CORNERS_PCT),
 // with no CornerPinOverlay involved at all until the user replaces it.
 const DEFAULT_WINDOW_URL = '/images/static-imafge.png';
-// Measured against the window frame in static-imafge.png — the blind fills
-// the opening rather than floating undersized inside it.
+// Pinned to the GLASS of the lower sash in static-imafge.png (1448 x 1086),
+// not the outer frame and not the upper sashes. Measured off the decoded
+// pixels rather than estimated: the glass is chromatic (sky, foliage, lawn)
+// where the frame and rail are near-neutral white, so the boundary is the
+// step in per-pixel chroma. Left glass edge x=408, right x=1035, meeting
+// rail ends / lower glass begins y=485, glass meets the sill y=788.
 const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
-  [0.22, 0.20], // top-left
-  [0.74, 0.20], // top-right
-  [0.74, 0.78], // bottom-right
-  [0.22, 0.78], // bottom-left
+  [0.2818, 0.4466], // top-left     — x 408/1448, y 485/1086
+  [0.7148, 0.4466], // top-right    — x 1035/1448
+  [0.7148, 0.7256], // bottom-right — y 788/1086
+  [0.2818, 0.7256], // bottom-left
 ];
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
