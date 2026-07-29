@@ -29,6 +29,7 @@ export const tokens = {
   textDark: INK,
 
   goldLight: '#D9AE60',
+  goldDeep: '#A87F2F', // bottom stop of the raised-button gradient
 
   // --- warm neutrals, spaced a real step apart rather than near-identical ---
   parchment: '#F2EDE4', // section bands, one step below warmWhite

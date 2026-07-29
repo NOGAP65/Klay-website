@@ -10,11 +10,17 @@ import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 // which is what made the panel read as assembled rather than designed.
 const RADIUS = 2;
 
+/** Caps how tall the media box can get. Width is capped instead of height so
+ * the photo's aspect ratio is never violated — see the root style. */
+const MAX_MEDIA_VH = 72;
+
 // --- Buttons ---------------------------------------------------------------
-// Every control shares one base: same face, same tracking, same height, same
-// radius. Variants change only fill and border, so a row of mixed buttons
-// still lines up. Previously there were three unrelated button styles plus
-// two more inline on the roll controls.
+// Raised, with real press feedback. Inline styles can't express :hover or
+// :active, so the Button component tracks both in state and swaps the
+// shadow — a lit top edge and a cast shadow when up, an inset shadow and a
+// 1px nudge down when pressed.
+
+type ButtonVariant = 'primary' | 'ghost' | 'accent';
 
 const buttonBase: React.CSSProperties = {
   fontFamily: tokens.body,
@@ -30,54 +36,193 @@ const buttonBase: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   whiteSpace: 'nowrap',
-  transition: 'background 0.2s ease, border-color 0.2s ease, color 0.2s ease',
+  userSelect: 'none',
+  transition: 'box-shadow 0.12s ease, transform 0.12s ease, background 0.2s ease',
 };
 
-/** Solid gold — the one affirmative action in any given state. */
-const primaryButtonStyle: React.CSSProperties = {
-  ...buttonBase,
-  background: tokens.gold,
-  color: tokens.ink,
-  border: `1px solid ${tokens.gold}`,
+const RAISED_SHADOW = '0 1px 0 rgba(255,255,255,0.18) inset, 0 -1px 0 rgba(0,0,0,0.28) inset, 0 3px 6px rgba(0,0,0,0.38)';
+const RAISED_SHADOW_HOVER = '0 1px 0 rgba(255,255,255,0.24) inset, 0 -1px 0 rgba(0,0,0,0.28) inset, 0 5px 12px rgba(0,0,0,0.44)';
+const PRESSED_SHADOW = '0 2px 5px rgba(0,0,0,0.5) inset, 0 1px 0 rgba(255,255,255,0.08)';
+
+const VARIANT_FILL: Record<ButtonVariant, { background: string; color: string; border: string }> = {
+  primary: {
+    background: `linear-gradient(180deg, ${tokens.goldLight} 0%, ${tokens.gold} 52%, ${tokens.goldDeep} 100%)`,
+    color: tokens.ink,
+    border: `1px solid ${tokens.goldDeep}`,
+  },
+  ghost: {
+    background: 'linear-gradient(180deg, rgba(245,242,237,0.14) 0%, rgba(245,242,237,0.05) 100%)',
+    color: tokens.onDark,
+    border: `1px solid ${tokens.onDarkLine}`,
+  },
+  accent: {
+    background: 'linear-gradient(180deg, rgba(200,151,58,0.22) 0%, rgba(200,151,58,0.08) 100%)',
+    color: tokens.gold,
+    border: `1px solid ${tokens.goldLine}`,
+  },
 };
 
-/** Outline on the charcoal canvas — secondary actions. */
-const ghostButtonStyle: React.CSSProperties = {
-  ...buttonBase,
-  background: 'transparent',
-  color: tokens.onDark,
-  border: `1px solid ${tokens.onDarkLine}`,
-};
+function Button({
+  variant = 'ghost',
+  onClick,
+  children,
+  style,
+  ariaLabel,
+}: {
+  variant?: ButtonVariant;
+  onClick: () => void;
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+  ariaLabel?: string;
+}) {
+  const [hover, setHover] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  const fill = VARIANT_FILL[variant];
+  return (
+    <button
+      onClick={onClick}
+      aria-label={ariaLabel}
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => { setHover(false); setPressed(false); }}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerCancel={() => setPressed(false)}
+      style={{
+        ...buttonBase,
+        ...fill,
+        boxShadow: pressed ? PRESSED_SHADOW : hover ? RAISED_SHADOW_HOVER : RAISED_SHADOW,
+        transform: pressed ? 'translateY(1px)' : 'translateY(0)',
+        ...style,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
-/** Gold outline — the one route out to the user's own photo. */
-const accentButtonStyle: React.CSSProperties = {
-  ...buttonBase,
-  background: 'transparent',
-  color: tokens.gold,
-  border: `1px solid ${tokens.goldLine}`,
-};
-
-/** Square, for the icon-only roll controls. Same height and border language
- * as the text buttons so they sit on one baseline. */
-const iconButtonStyle: React.CSSProperties = {
-  ...buttonBase,
-  width: 34,
-  height: 34,
-  padding: 0,
-  fontSize: 13,
-  letterSpacing: 0,
-  background: 'transparent',
-  color: tokens.onDark,
-  border: `1px solid ${tokens.onDarkLine}`,
-};
-
-const footerLabelStyle: React.CSSProperties = {
+const controlLabelStyle: React.CSSProperties = {
   fontFamily: tokens.body,
-  fontSize: 9,
-  letterSpacing: '0.2em',
+  fontSize: 8.5,
+  letterSpacing: '0.18em',
   textTransform: 'uppercase',
   color: tokens.onDarkMuted,
+  userSelect: 'none',
 };
+
+// --- Roll slider -----------------------------------------------------------
+// Hand-built rather than an <input type="range">: styling a range thumb
+// needs ::-webkit-slider-thumb, which inline styles can't reach, and the
+// vertical variant previously relied on writingMode:'vertical-lr' (unreliable
+// in Safari). Pointer capture makes the drag survive leaving the track.
+// Top of the track is open, bottom is closed — the way the blind moves.
+
+function RollSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const applyFromY = (clientY: number) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (r.height <= 0) return;
+    onChange(Math.max(0, Math.min(1, (clientY - r.top) / r.height)));
+  };
+
+  const pct = Math.max(0, Math.min(1, value)) * 100;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 9,
+        padding: '12px 9px',
+        borderRadius: RADIUS,
+        background: 'linear-gradient(180deg, rgba(44,40,36,0.92) 0%, rgba(28,24,16,0.92) 100%)',
+        border: `1px solid ${tokens.onDarkLine}`,
+        boxShadow: RAISED_SHADOW,
+        backdropFilter: 'blur(6px)',
+      }}
+    >
+      <span style={controlLabelStyle}>Open</span>
+      <div
+        ref={trackRef}
+        role="slider"
+        aria-label="Blind position"
+        aria-orientation="vertical"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(pct)}
+        tabIndex={0}
+        onPointerDown={e => {
+          e.preventDefault();
+          e.currentTarget.setPointerCapture(e.pointerId);
+          setDragging(true);
+          applyFromY(e.clientY);
+        }}
+        onPointerMove={e => { if (dragging) applyFromY(e.clientY); }}
+        onPointerUp={e => {
+          setDragging(false);
+          if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+          }
+        }}
+        onPointerCancel={() => setDragging(false)}
+        onKeyDown={e => {
+          const step = e.shiftKey ? 0.1 : 0.02;
+          if (e.key === 'ArrowUp') { e.preventDefault(); onChange(Math.max(0, value - step)); }
+          else if (e.key === 'ArrowDown') { e.preventDefault(); onChange(Math.min(1, value + step)); }
+          else if (e.key === 'Home') { e.preventDefault(); onChange(0); }
+          else if (e.key === 'End') { e.preventDefault(); onChange(1); }
+        }}
+        style={{
+          position: 'relative',
+          width: 12,
+          height: 148,
+          borderRadius: 999,
+          cursor: 'pointer',
+          // Groove: dark inside with a lit lower lip, so it reads as cut in.
+          background: 'rgba(0,0,0,0.5)',
+          boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.1)',
+          touchAction: 'none',
+        }}
+      >
+        {/* Travelled portion, filling from the top down */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: `${pct}%`,
+            borderRadius: 999,
+            background: `linear-gradient(180deg, ${tokens.goldDeep} 0%, ${tokens.gold} 100%)`,
+            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.35)',
+            pointerEvents: 'none',
+          }}
+        />
+        {/* Thumb */}
+        <div
+          style={{
+            position: 'absolute',
+            top: `${pct}%`,
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 24,
+            height: 15,
+            borderRadius: 3,
+            background: `linear-gradient(180deg, ${tokens.goldLight} 0%, ${tokens.gold} 55%, ${tokens.goldDeep} 100%)`,
+            border: `1px solid ${tokens.goldDeep}`,
+            boxShadow: dragging ? PRESSED_SHADOW : RAISED_SHADOW,
+            pointerEvents: 'none',
+          }}
+        />
+      </div>
+      <span style={controlLabelStyle}>Shut</span>
+    </div>
+  );
+}
 
 const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-5.png'];
 
@@ -311,95 +456,88 @@ export default function KlayConfigurator() {
     // Opened from the default window — offer a way back to it, otherwise the
     // upload prompt is a one-way door out of a perfectly good render.
     store.defaultWindowActive && hasPhoto ? (
-      <button onClick={() => setShowUploadPrompt(false)} style={ghostButtonStyle}>
-        Cancel
-      </button>
+      <Button onClick={() => setShowUploadPrompt(false)}>Cancel</Button>
     ) : null
   ) : showTraceState ? (
     // In the footer rather than over the image: at bottom:16 these sat on
     // top of the photo and could cover the very corner pins being dragged.
     <>
-      <button onClick={handleChangePhoto} style={ghostButtonStyle}>
-        Change photo
-      </button>
-      <button onClick={() => overlayRef.current?.confirm()} style={primaryButtonStyle}>
+      <Button onClick={handleChangePhoto}>Change photo</Button>
+      <Button variant="primary" onClick={() => overlayRef.current?.confirm()}>
         Confirm outline
-      </button>
+      </Button>
     </>
   ) : showRenderState ? (
     store.defaultWindowActive ? (
-      <button onClick={() => setShowUploadPrompt(true)} style={accentButtonStyle}>
+      <Button variant="accent" onClick={() => setShowUploadPrompt(true)}>
         Visualise in your own room
-      </button>
+      </Button>
     ) : (
       <>
-        <button onClick={() => store.clearTracedAreas()} style={ghostButtonStyle}>
-          Retrace
-        </button>
-        <button onClick={handleChangePhoto} style={ghostButtonStyle}>
-          Change photo
-        </button>
-        <button onClick={handleDownload} style={primaryButtonStyle}>
-          Download
-        </button>
+        <Button onClick={() => store.clearTracedAreas()}>Retrace</Button>
+        <Button onClick={handleChangePhoto}>Change photo</Button>
+        <Button variant="primary" onClick={handleDownload}>Download</Button>
       </>
     )
   ) : null;
 
-  // Roll control. Lives in the footer beside the actions rather than floating
-  // over the artwork, which also drops the vertical <input type="range"> —
-  // writingMode:'vertical-lr' is unreliable in Safari and it was the only
-  // control on the page rotated 90 degrees.
-  const rollControl = !showRenderState ? null : store.operation === 'motorised' ? (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <span style={footerLabelStyle}>Motor</span>
-      <button onClick={() => { stopAuto(); animateRollTo(0, 1200); }} style={ghostButtonStyle}>
+  // Roll control, on the right edge of the render. Manual gets the slider;
+  // motorised gets the three motor actions in the same raised housing, so
+  // both modes read as one physical control rather than two layouts.
+  const sideControl = !showRenderState ? null : store.operation === 'motorised' ? (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        padding: '12px 10px',
+        borderRadius: RADIUS,
+        background: 'linear-gradient(180deg, rgba(44,40,36,0.92) 0%, rgba(28,24,16,0.92) 100%)',
+        border: `1px solid ${tokens.onDarkLine}`,
+        boxShadow: RAISED_SHADOW,
+        backdropFilter: 'blur(6px)',
+      }}
+    >
+      <span style={{ ...controlLabelStyle, textAlign: 'center' }}>Motor</span>
+      <Button onClick={() => { stopAuto(); animateRollTo(0, 1200); }} style={{ height: 32, padding: '0 12px' }}>
         Open
-      </button>
-      <button onClick={() => { stopAuto(); animateRollTo(1, 1200); }} style={ghostButtonStyle}>
-        Close
-      </button>
-      <button
+      </Button>
+      <Button onClick={() => { stopAuto(); animateRollTo(1, 1200); }} style={{ height: 32, padding: '0 12px' }}>
+        Shut
+      </Button>
+      <Button
+        variant={autoRunning ? 'primary' : 'accent'}
         onClick={() => (autoRunning ? stopAuto() : startAuto())}
-        style={autoRunning ? primaryButtonStyle : ghostButtonStyle}
+        style={{ height: 32, padding: '0 12px' }}
       >
         {autoRunning ? 'Stop' : 'Auto'}
-      </button>
+      </Button>
     </div>
   ) : (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <span style={footerLabelStyle}>Open</span>
-      <button
-        onClick={() => store.setRollPosition(Math.max(0, store.rollPosition - 0.1))}
-        aria-label="Raise blind"
-        style={iconButtonStyle}
-      >
-        −
-      </button>
-      <input
-        type="range"
-        min="0"
-        max="1"
-        step="0.01"
-        value={store.rollPosition}
-        onChange={e => store.setRollPosition(parseFloat(e.target.value))}
-        aria-label="Blind position"
-        style={{ width: 150, accentColor: tokens.gold, cursor: 'pointer' }}
-      />
-      <button
-        onClick={() => store.setRollPosition(Math.min(1, store.rollPosition + 0.1))}
-        aria-label="Lower blind"
-        style={iconButtonStyle}
-      >
-        +
-      </button>
-      <span style={footerLabelStyle}>Closed</span>
-    </div>
+    <RollSlider value={store.rollPosition} onChange={v => store.setRollPosition(v)} />
   );
 
+  // The box takes the photo's own shape instead of sitting in a fixed panel
+  // and letterboxing the image inside it. Height is capped by capping WIDTH
+  // (maxWidth = maxHeight x ratio) — capping height directly would fight the
+  // aspect-ratio and reintroduce the empty charcoal margins.
+  const photoRatio = photoBitmap ? photoBitmap.width / photoBitmap.height : 4 / 3;
+
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: tokens.charcoal, borderRadius: 0, overflow: 'hidden' }}>
-      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+    <div
+      style={{
+        width: '100%',
+        maxWidth: `calc(${MAX_MEDIA_VH}vh * ${photoRatio})`,
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column',
+        background: tokens.charcoal,
+        borderRadius: RADIUS,
+        overflow: 'hidden',
+        boxShadow: '0 16px 40px rgba(28,24,16,0.22)',
+      }}
+    >
+      <div style={{ position: 'relative', width: '100%', aspectRatio: String(photoRatio) }}>
       {isLoadingDefault ? null : showUploadState ? (
         /* STATE 1 — no photo yet, or the user asked to visualise their own room */
         <div
@@ -422,12 +560,8 @@ export default function KlayConfigurator() {
               or choose a preset room
             </p>
             <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'center' }}>
-              <button onClick={handleUpload} style={primaryButtonStyle}>
-                Upload photo
-              </button>
-              <button onClick={handleTakePhoto} style={ghostButtonStyle}>
-                Take photo
-              </button>
+              <Button variant="primary" onClick={handleUpload}>Upload photo</Button>
+              <Button onClick={handleTakePhoto}>Take photo</Button>
             </div>
             <div style={{ display: 'flex', gap: 16, marginTop: 32, justifyContent: 'center' }}>
               {PRESET_ROOMS.map(url => (
@@ -453,67 +587,63 @@ export default function KlayConfigurator() {
           </div>
         </div>
       ) : showTraceState ? (
-        /* STATE 2 — photo loaded, not yet traced */
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div
-            style={{
-              position: 'relative',
-              maxWidth: '100%',
-              maxHeight: '100%',
-              aspectRatio: `${photoBitmap!.width} / ${photoBitmap!.height}`,
-            }}
-          >
-            <img
-              src={store.photoUrl!}
-              alt="Your room"
-              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-            />
-            <CornerPinOverlay
-              ref={overlayRef}
-              imageWidth={photoBitmap!.width}
-              imageHeight={photoBitmap!.height}
-              onConfirm={handleConfirmTrace}
-            />
-            {/* Confirm / Change photo live in the footer — see footerButtons. */}
-          </div>
+        /* STATE 2 — photo loaded, not yet traced. The media box already
+           carries the photo's aspect ratio, so the image fills it exactly
+           and the overlay's pin coordinates line up with what's on screen. */
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <img
+            src={store.photoUrl!}
+            alt="Your room"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+          <CornerPinOverlay
+            ref={overlayRef}
+            imageWidth={photoBitmap!.width}
+            imageHeight={photoBitmap!.height}
+            onConfirm={handleConfirmTrace}
+          />
+          {/* Confirm / Change photo live in the footer — see footerButtons. */}
         </div>
       ) : (
         /* STATE 3 — area traced and confirmed */
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div ref={rendererContainerRef} style={{ position: 'relative', maxWidth: '100%', maxHeight: '100%' }}>
-            <Canvas2DBlindRenderer
-              photoUrl={store.photoUrl!}
-              tracedAreas={canvasTracedAreas}
-              activeAreaId={store.activeAreaId ?? undefined}
-              rollPosition={store.rollPosition}
-            />
+        <div ref={rendererContainerRef} style={{ position: 'absolute', inset: 0 }}>
+          <Canvas2DBlindRenderer
+            photoUrl={store.photoUrl!}
+            tracedAreas={canvasTracedAreas}
+            activeAreaId={store.activeAreaId ?? undefined}
+            rollPosition={store.rollPosition}
+          />
 
-            {/* Nothing floats over the render. The roll control and every
-                action live in the footer below — see rollControl /
-                footerButtons. */}
-          </div>
+          {sideControl && (
+            <div
+              style={{
+                position: 'absolute',
+                right: 14,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 20,
+              }}
+            >
+              {sideControl}
+            </div>
+          )}
         </div>
       )}
       </div>
 
-      {(rollControl || footerButtons) && (
+      {footerButtons && (
         <div
           style={{
             flexShrink: 0,
             display: 'flex',
             flexWrap: 'wrap',
-            // Two zones when both are present; a single centred group when
-            // only the actions are, so a lone button isn't shoved right.
-            justifyContent: rollControl ? 'space-between' : 'center',
+            justifyContent: 'center',
             alignItems: 'center',
-            gap: 16,
-            padding: '14px 20px',
+            gap: 10,
+            padding: '13px 18px',
             borderTop: `1px solid ${tokens.onDarkLine}`,
           }}
         >
-          {/* Left: how the blind sits. Right: what you do next. Empty spans
-              keep the two zones anchored when only one of them is present. */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>{rollControl}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>{footerButtons}</div>
         </div>
       )}

@@ -75,7 +75,10 @@ export default function VisualiserPage() {
             </div>
           )}
         </div>
-        <div style={{ flex: 1, padding: 24 }}>
+        {/* alignItems via the parent would stretch this column; instead the
+            configurator sizes itself to the photo and this scrolls if the
+            result is taller than the viewport. */}
+        <div style={{ flex: 1, padding: 28, overflowY: 'auto', alignSelf: 'stretch' }}>
           <KlayConfigurator />
         </div>
       </div>

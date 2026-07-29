@@ -18,13 +18,14 @@ export default function VisualiserSection() {
   }
 
   return (
-    <section id="visualiser" style={{ display:'flex', flexDirection:'row', width:'100%', minHeight:'90vh', background:tokens.warmWhite, overflow:'hidden' }}>
+    // alignItems:flex-start so the media column is free to be exactly as tall
+    // as the photo. Stretching it (the flex default) is what produced the
+    // fixed grey panel with the image floating in the middle of it.
+    <section id="visualiser" style={{ display:'flex', flexDirection:'row', alignItems:'flex-start', width:'100%', background:tokens.warmWhite, overflow:'hidden' }}>
       <div style={{ flex:7, background:tokens.warmWhite, padding:'48px', position:'relative' }}>
-        {/* 2px, matching the configurator and the control panel. This was
-            12px while everything inside it was square. */}
-        <div style={{ background:tokens.charcoal, borderRadius:'2px', overflow:'hidden', width:'100%', height:'100%' }}>
-          <KlayConfigurator />
-        </div>
+        {/* No wrapper panel — the configurator supplies its own charcoal
+            surface, sized to the photo, so there is no excess to show. */}
+        <KlayConfigurator />
       </div>
 
       <div style={{ flex:3, background:tokens.warmWhite, padding:'48px', display:'flex', flexDirection:'column', justifyContent:'flex-start', gap:'28px' }}>
