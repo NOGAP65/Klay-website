@@ -11,11 +11,24 @@ const links = [
   { label: 'Contact', to: '/contact' },
 ];
 
-export function Nav() {
+interface NavProps {
+  /** Set on pages whose background is light. The nav is transparent until it
+   * compresses, and its links are warmWhite — the same value as the light
+   * pages' background — so without this they are invisible above the fold.
+   * Optional and off by default: every dark-hero page keeps today's look. */
+  onLight?: boolean;
+}
+
+export function Nav({ onLight = false }: NavProps = {}) {
   const scrollY = useKlayStore((s) => s.scrollY);
   const compressed = scrollY > 60;
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Only while transparent. Once compressed the nav has its own dark backdrop
+  // and warmWhite is correct again on every page.
+  const overLight = onLight && !compressed && !menuOpen;
+  const linkColor = overLight ? tokens.ink : tokens.warmWhite;
 
   return (
     <nav
@@ -42,7 +55,7 @@ export function Nav() {
           display: 'flex',
           alignItems: 'center',
           textDecoration: 'none',
-          color: tokens.warmWhite,
+          color: linkColor,
         }}
       >
         <img
@@ -70,7 +83,7 @@ export function Nav() {
                 key={l.to}
                 to={l.to}
                 style={{
-                  color: tokens.warmWhite,
+                  color: linkColor,
                   textDecoration: 'none',
                   fontFamily: tokens.body,
                   fontSize: 13,
@@ -78,6 +91,7 @@ export function Nav() {
                   letterSpacing: '0.08em',
                   textTransform: 'uppercase',
                   opacity: 0.82,
+                  transition: 'color 0.5s ease',
                 }}
               >
                 {l.label}
