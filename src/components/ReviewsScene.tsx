@@ -18,8 +18,11 @@ function Card({ t }: { t: (typeof testimonials)[number] }) {
       style={{
         flex: '0 0 auto',
         width: 380,
-        background: '#FFFFFF',
-        border: '1px solid rgba(28,24,20,0.08)',
+        // Cream, not pure white — it's the warm card tone that belongs on a
+        // warm-white ground, and it keeps the palette off pure values.
+        background: tokens.cream,
+        border: `1px solid ${tokens.lineFaint}`,
+        borderRadius: 2,
         padding: '34px 32px',
         display: 'flex',
         flexDirection: 'column',
@@ -27,10 +30,10 @@ function Card({ t }: { t: (typeof testimonials)[number] }) {
       }}
     >
       <div style={{ color: tokens.gold, fontSize: 15, letterSpacing: '0.2em' }}>★★★★★</div>
-      <p style={{ fontFamily: tokens.display, fontStyle: 'italic', fontWeight: 400, fontSize: 23, lineHeight: 1.4, color: 'rgba(28,24,20,0.65)' }}>
+      <p style={{ fontFamily: tokens.display, fontStyle: 'italic', fontWeight: 400, fontSize: 23, lineHeight: 1.4, color: tokens.textMid }}>
         “{t.quote}”
       </p>
-      <div style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(28,24,20,0.45)', marginTop: 'auto' }}>
+      <div style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: tokens.inkFaint, marginTop: 'auto' }}>
         {t.name} · {t.suburb}
       </div>
     </div>
@@ -46,8 +49,8 @@ export function ReviewsScene() {
       id="reviews"
       style={{
         position: 'relative',
-        background: '#F5F2ED',
-        padding: '80px 0',
+        background: tokens.warmWhite,
+        padding: '96px 0',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -66,7 +69,7 @@ export function ReviewsScene() {
             { text: 'chose', italic: true, color: tokens.gold },
             { text: 'Klay', italic: true, color: tokens.gold },
           ]}
-          style={{ fontWeight: 300, fontSize: 'clamp(36px, 4.4vw, 64px)', color: '#1C1810', marginTop: 14 }}
+          style={{ fontWeight: 300, fontSize: 'clamp(36px, 4.4vw, 64px)', color: tokens.ink, marginTop: 14 }}
         />
       </div>
 

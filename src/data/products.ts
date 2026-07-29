@@ -8,13 +8,27 @@ export const SKU_CATALOGUE = [
   { sku: 'DR-01', name: 'Duo White', type: 'DUAL ROLLER', hardware: 'White', price: { small: 320, medium: 380, large: 480 }, slug: 'duo-white', image: '/images/Eclipse%20Dual%20Roller%20product%20image.png' },
   { sku: 'DR-02', name: 'Duo Black', type: 'DUAL ROLLER', hardware: 'Black', price: { small: 320, medium: 380, large: 480 }, slug: 'duo-black', image: '/images/Eclipse%20Dual%20Roller%20product%20image.png' },
   { sku: 'DR-03', name: 'Duo Chrome', type: 'DUAL ROLLER', hardware: 'Chrome', price: { small: 320, medium: 380, large: 480 }, slug: 'duo-chrome', image: '/images/Eclipse%20Dual%20Roller%20product%20image.png' },
+  // PLACEHOLDER DATA — Light Filter is the fourth blind type the visualiser
+  // already renders, but it has no catalogue entry yet. Name, imagery and
+  // price all need confirming: pricing mirrors Sunscreen (as BASE_PRICE in
+  // useVisualiserStore already does) and the imagery reuses the Sunscreen
+  // shot, the same stand-in the renderer uses for its texture.
+  { sku: 'LF-01', name: 'Haze White', type: 'LIGHT FILTER ROLLER', hardware: 'White', price: { small: 220, medium: 260, large: 330 }, slug: 'haze-white', image: '/images/Soleil%20Sunscreen%20product%20image.png' },
+  { sku: 'LF-02', name: 'Haze Noir', type: 'LIGHT FILTER ROLLER', hardware: 'Black', price: { small: 220, medium: 260, large: 330 }, slug: 'haze-noir', image: '/images/Soleil%20Sunscreen%20product%20image.png' },
+  { sku: 'LF-03', name: 'Haze Chrome', type: 'LIGHT FILTER ROLLER', hardware: 'Chrome', price: { small: 220, medium: 260, large: 330 }, slug: 'haze-chrome', image: '/images/Soleil%20Sunscreen%20product%20image.png' },
 ]
 
 export const RANGES = [
   { name: 'Dusk', range: 'Blockout Roller', tagline: 'Complete darkness. Total privacy.', description: 'Three hardware finishes. Made to measure for every window.', price: 'from $220', slug: 'blockout', image: '/images/Phoenix%20Blockout%20product%20image.png', skus: SKU_CATALOGUE.filter(s => s.type === 'BLOCKOUT ROLLER') },
   { name: 'Veil', range: 'Sunscreen Roller', tagline: 'Soften the light. Keep the view.', description: 'Reduces glare without closing off the outside world.', price: 'from $220', slug: 'sunscreen', image: '/images/Soleil%20Sunscreen%20product%20image.png', skus: SKU_CATALOGUE.filter(s => s.type === 'SUNSCREEN ROLLER') },
   { name: 'Duo', range: 'Dual Roller', tagline: 'Day and night in one blind.', description: 'Sunscreen and blockout on the same window. Switch between them.', price: 'from $320', slug: 'dual', image: '/images/Eclipse%20Dual%20Roller%20product%20image.png', skus: SKU_CATALOGUE.filter(s => s.type === 'DUAL ROLLER') },
+  // See the LF SKUs above — the whole Light Filter range is placeholder.
+  { name: 'Haze', range: 'Light Filter Roller', tagline: 'Daylight, quietly diffused.', description: 'Softens harsh sun to an even glow while keeping the room bright.', price: 'from $220', slug: 'lightfilter', image: '/images/Soleil%20Sunscreen%20product%20image.png', skus: SKU_CATALOGUE.filter(s => s.type === 'LIGHT FILTER ROLLER') },
 ]
+
+/** Total configurable products, so copy like "view all N" can't drift out of
+ * step with the catalogue the way a hardcoded count did. */
+export const SKU_COUNT = SKU_CATALOGUE.length
 
 // The authoritative Rynamic colour map. These hexes are the literal base
 // colour the visualiser renders the fabric as (see Canvas2DBlindRenderer's

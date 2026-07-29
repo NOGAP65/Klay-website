@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { useKlayStore } from '../store';
+import { tokens } from '../theme';
 import { ScrollProgress } from '../components/ScrollProgress';
 import { Nav } from '../components/Nav';
 import HeroScene from '../components/HeroScene';
 import VisualiserSection from '../components/VisualiserSection';
-import { JobsSection } from '../components/JobsSection';
 import { ShopSection } from '../components/ShopSection';
+import { SocialSection } from '../components/SocialSection';
 import { ReviewsScene } from '../components/ReviewsScene';
 import { FinalScene } from '../components/FinalScene';
 import { Footer } from '../components/Footer';
@@ -33,11 +34,15 @@ export default function HomePage() {
     <>
       <ScrollProgress />
       <Nav />
-      <main style={{ background: '#F5F2ED' }}>
+      {/* Tonal rhythm, top to bottom: charcoal, warm white, parchment,
+          charcoal, warm white, ink, ink. Light and dark alternate the whole
+          way down and the two closing sections darken into the footer, so
+          the page builds instead of flickering between tones. */}
+      <main style={{ background: tokens.warmWhite }}>
         <HeroScene />
         <VisualiserSection />
-        <JobsSection />
         <ShopSection />
+        <SocialSection />
         <ReviewsScene />
         <FinalScene />
         <Footer />

@@ -8,12 +8,12 @@ export function FinalScene() {
       id="final"
       style={{
         position: 'relative',
-        background: '#1C1810',
+        background: tokens.ink,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        padding: '80px 0',
+        padding: '112px 0',
       }}
     >
       {/* Slow gold radial glow rising from bottom — dawn light under a door */}
@@ -49,12 +49,15 @@ export function FinalScene() {
           Design your blinds in minutes. We measure. We install. You live in it.
         </p>
         <div style={{ display: 'flex', gap: 18, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {/* The copy above promises designing your blinds — that happens in
+              the visualiser, so this points there rather than at the range. */}
           <a
-            href="#collection"
+            href="#visualiser"
             style={{
               textDecoration: 'none', fontFamily: tokens.body, fontSize: 13, fontWeight: 500,
               letterSpacing: '0.1em', textTransform: 'uppercase', padding: '17px 36px',
-              background: tokens.gold, color: tokens.dark, transition: 'background 0.3s ease',
+              borderRadius: 2, background: tokens.gold, color: tokens.ink,
+              transition: 'background 0.3s ease',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = tokens.goldLight)}
             onMouseLeave={(e) => (e.currentTarget.style.background = tokens.gold)}
@@ -66,11 +69,12 @@ export function FinalScene() {
             style={{
               textDecoration: 'none', fontFamily: tokens.body, fontSize: 13, fontWeight: 500,
               letterSpacing: '0.1em', textTransform: 'uppercase', padding: '17px 36px',
-              background: 'transparent', color: tokens.warmWhite, border: '1px solid rgba(248,246,242,0.3)',
+              borderRadius: 2, background: 'transparent', color: tokens.warmWhite,
+              border: `1px solid ${tokens.onDarkEdge}`,
               transition: 'border-color 0.3s ease, color 0.3s ease',
             }}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = tokens.gold; e.currentTarget.style.color = tokens.gold; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(248,246,242,0.3)'; e.currentTarget.style.color = tokens.warmWhite; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = tokens.onDarkEdge; e.currentTarget.style.color = tokens.warmWhite; }}
           >
             Call 1300 00 KLAY
           </a>

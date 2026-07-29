@@ -47,7 +47,8 @@ export const tokens = {
   // --- on charcoal surfaces (the visualiser canvas box) ---
   onDark: WARM_WHITE,
   onDarkMuted: 'rgba(245,242,237,0.5)',
-  onDarkLine: 'rgba(245,242,237,0.08)',
+  onDarkLine: 'rgba(245,242,237,0.08)', // hairlines and dividers
+  onDarkEdge: 'rgba(245,242,237,0.28)', // visible borders, e.g. outline buttons
   scrim: 'rgba(28,24,16,0.8)',
   scrimSoft: 'rgba(28,24,16,0.45)',
   goldLine: 'rgba(200,151,58,0.4)',

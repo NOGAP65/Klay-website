@@ -23,7 +23,9 @@ export function Footer() {
   };
 
   return (
-    <footer style={{ background: '#0F0E0B', borderTop: '1px solid rgba(200,151,58,0.16)', padding: '9vh 5vw 4vh' }}>
+    // Ink, continuing FinalScene's ground rather than dropping to a colder
+    // near-black (#0F0E0B) at the very bottom of the page.
+    <footer style={{ background: tokens.ink, borderTop: `1px solid ${tokens.goldLine}`, padding: '9vh 5vw 4vh' }}>
       <div
         style={{
           display: 'grid',
@@ -121,7 +123,7 @@ export function Footer() {
           margin: '0 auto',
           marginTop: 56,
           paddingTop: 26,
-          borderTop: '1px solid rgba(248,246,242,0.08)',
+          borderTop: `1px solid ${tokens.onDarkLine}`,
         }}
       >
         <span style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.textMuted }}>
