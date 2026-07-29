@@ -16,21 +16,25 @@ export const RANGES = [
   { name: 'Duo', range: 'Dual Roller', tagline: 'Day and night in one blind.', description: 'Sunscreen and blockout on the same window. Switch between them.', price: 'from $320', slug: 'dual', image: '/images/Eclipse%20Dual%20Roller%20product%20image.png', skus: SKU_CATALOGUE.filter(s => s.type === 'DUAL ROLLER') },
 ]
 
+// The authoritative Rynamic colour map. These hexes are the literal base
+// colour the visualiser renders the fabric as (see Canvas2DBlindRenderer's
+// fragment shader) as well as the swatch shown in VisualiserControls — the
+// two must never drift apart, so there is exactly one list.
 export const RYNAMIC_COLOURS = [
-  { name: 'White', hex: '#FFFFFF' },
-  { name: 'Surfmist', hex: '#E4DFD3' },
-  { name: 'Light Grey', hex: '#C7C7C7' },
-  { name: 'Dune', hex: '#C7B899' },
-  { name: 'Cream', hex: '#F5EEDC' },
-  { name: 'Sand', hex: '#D9C7A3' },
-  { name: 'Beige', hex: '#D8CBB8' },
-  { name: 'Forest Green', hex: '#2F4A34' },
-  { name: 'Red', hex: '#A32020' },
-  { name: 'Brown', hex: '#5B3A29' },
-  { name: 'Black', hex: '#1A1A1A' },
-  { name: 'Deep Ocean Blue', hex: '#1B3A4B' },
-  { name: 'Woodland Grey', hex: '#5C5F5A' },
-  { name: 'Monument', hex: '#4A4A48' },
+  { name: 'White', hex: '#F2F0EC' },
+  { name: 'Surfmist', hex: '#E8E4DC' },
+  { name: 'Light Grey', hex: '#C8C4BC' },
+  { name: 'Dune', hex: '#C4A882' },
+  { name: 'Cream', hex: '#EDE0C8' },
+  { name: 'Sand', hex: '#D4BC98' },
+  { name: 'Beige', hex: '#C8B090' },
+  { name: 'Forest Green', hex: '#2C4A30' },
+  { name: 'Red', hex: '#8C2820' },
+  { name: 'Brown', hex: '#6C4830' },
+  { name: 'Black', hex: '#2C2824' },
+  { name: 'Deep Ocean Blue', hex: '#1C3048' },
+  { name: 'Woodland Grey', hex: '#686460' },
+  { name: 'Monument', hex: '#4C4844' },
 ]
 
 export const MOTORISED_ADDON = 150

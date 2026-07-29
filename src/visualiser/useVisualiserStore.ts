@@ -98,7 +98,9 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
 
   getFabricColor: () => {
     const state = get();
-    return RYNAMIC_COLOURS.find(c => c.name === state.fabricColour)?.hex ?? '#FFFFFF';
+    // Falls back to the White swatch's own hex, not pure #FFFFFF — an
+    // unrecognised colour name should still render as a real Rynamic white.
+    return RYNAMIC_COLOURS.find(c => c.name === state.fabricColour)?.hex ?? '#F2F0EC';
   },
 
   getHardwareColor: () => HARDWARE_HEX[get().hardwareColour],

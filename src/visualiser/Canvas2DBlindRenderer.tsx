@@ -155,9 +155,10 @@ const FRAGMENT_SHADER = `
 precision mediump float;
 
 uniform sampler2D u_texture;
-uniform mat3 u_pixelToUv;     // homography: photo pixels -> quad UV (0..1)
-uniform vec4 u_tintColor;
-uniform float u_tintStrength; // 0 = raw texture, 1 = fully tinted
+uniform mat3 u_pixelToUv;      // homography: photo pixels -> quad UV (0..1)
+uniform vec4 u_tintColor;      // the selected Rynamic colour — the fabric's true base
+uniform float u_textureAmount; // how strongly the weave modulates that base (low)
+uniform float u_textureMean;   // this texture photo's own mean luminance
 uniform float u_opacity;
 uniform vec2 u_uvScale;       // texture tiling repeats across the quad
 uniform float u_shade;        // 1 = recess shading on, 0 = off
@@ -171,9 +172,16 @@ void main() {
 
   vec4 texColor = texture2D(u_texture, uv * u_uvScale);
 
-  // Multiply blend for colour tinting, preserving texture detail
-  vec3 tinted = texColor.rgb * u_tintColor.rgb;
-  vec3 col = mix(texColor.rgb, tinted, u_tintStrength);
+  // The selected colour IS the fabric — never a tint blended over the photo.
+  // A multiply blend (what this used to do) meant White multiplied by the
+  // charcoal texture photo and came out grey. Instead the photo contributes
+  // only its WEAVE: each texel's deviation from that photo's own mean
+  // luminance, scaled down hard. Averaged over the quad the deviation is
+  // zero, so the rendered fabric averages to exactly u_tintColor whatever
+  // the underlying photo's brightness happens to be.
+  float luma = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
+  float detail = clamp(luma - u_textureMean, -0.5, 0.5);
+  vec3 col = u_tintColor.rgb * (1.0 + detail * u_textureAmount);
 
   // Soft vertical fold ripples for sheer fabric
   if (u_folds > 0.5) {
@@ -206,13 +214,22 @@ interface GLState {
     texture: WebGLUniformLocation | null;
     pixelToUv: WebGLUniformLocation | null;
     tintColor: WebGLUniformLocation | null;
-    tintStrength: WebGLUniformLocation | null;
+    textureAmount: WebGLUniformLocation | null;
+    textureMean: WebGLUniformLocation | null;
     opacity: WebGLUniformLocation | null;
     uvScale: WebGLUniformLocation | null;
     shade: WebGLUniformLocation | null;
     folds: WebGLUniformLocation | null;
   };
-  textures: Map<string, WebGLTexture>;
+  textures: Map<string, FabricTexture>;
+}
+
+/** An uploaded fabric photo plus its own mean luminance, measured once at
+ * upload. The shader subtracts that mean so the photo contributes weave
+ * detail only and never shifts the selected colour lighter or darker. */
+interface FabricTexture {
+  texture: WebGLTexture;
+  meanLuma: number;
 }
 
 const compileShader = (gl: WebGLRenderingContext, type: number, source: string): WebGLShader => {
@@ -264,7 +281,8 @@ const createGLState = (): GLState | null => {
       texture: gl.getUniformLocation(program, 'u_texture'),
       pixelToUv: gl.getUniformLocation(program, 'u_pixelToUv'),
       tintColor: gl.getUniformLocation(program, 'u_tintColor'),
-      tintStrength: gl.getUniformLocation(program, 'u_tintStrength'),
+      textureAmount: gl.getUniformLocation(program, 'u_textureAmount'),
+      textureMean: gl.getUniformLocation(program, 'u_textureMean'),
       opacity: gl.getUniformLocation(program, 'u_opacity'),
       uvScale: gl.getUniformLocation(program, 'u_uvScale'),
       shade: gl.getUniformLocation(program, 'u_shade'),
@@ -278,7 +296,28 @@ const createGLState = (): GLState | null => {
 // so fabric photos are resampled onto a 512x512 canvas before upload.
 const POT_SIZE = 512;
 
-const getOrUploadTexture = (state: GLState, key: string, img: HTMLImageElement): WebGLTexture => {
+/** Mean luminance of the resampled texture, 0..1. Sampled every 4th pixel —
+ * plenty for an average over 512x512, and keeps this cheap enough to run
+ * inline on the one upload per texture. Falls back to mid-grey if the pixel
+ * data can't be read, which leaves the weave slightly off-centre but never
+ * breaks the render. */
+const measureMeanLuma = (ctx: CanvasRenderingContext2D): number => {
+  let data: Uint8ClampedArray;
+  try {
+    data = ctx.getImageData(0, 0, POT_SIZE, POT_SIZE).data;
+  } catch {
+    return 0.5;
+  }
+  let sum = 0;
+  let n = 0;
+  for (let i = 0; i < data.length; i += 16) { // every 4th pixel (4 bytes each)
+    sum += (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255;
+    n++;
+  }
+  return n > 0 ? sum / n : 0.5;
+};
+
+const getOrUploadTexture = (state: GLState, key: string, img: HTMLImageElement): FabricTexture => {
   const existing = state.textures.get(key);
   if (existing) return existing;
 
@@ -286,9 +325,10 @@ const getOrUploadTexture = (state: GLState, key: string, img: HTMLImageElement):
   const potCanvas = document.createElement('canvas');
   potCanvas.width = POT_SIZE;
   potCanvas.height = POT_SIZE;
-  const potCtx = potCanvas.getContext('2d');
+  const potCtx = potCanvas.getContext('2d', { willReadFrequently: true });
   if (!potCtx) throw new Error('Failed to create texture resampling context');
   potCtx.drawImage(img, 0, 0, POT_SIZE, POT_SIZE);
+  const meanLuma = measureMeanLuma(potCtx);
 
   const texture = gl.createTexture();
   if (!texture) throw new Error('Failed to create WebGL texture');
@@ -305,15 +345,21 @@ const getOrUploadTexture = (state: GLState, key: string, img: HTMLImageElement):
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.generateMipmap(gl.TEXTURE_2D);
 
-  state.textures.set(key, texture);
-  return texture;
+  const entry: FabricTexture = { texture, meanLuma };
+  state.textures.set(key, entry);
+  return entry;
 };
 
 const UNIT_SQUARE: Point[] = [[0, 0], [1, 0], [1, 1], [0, 1]];
 
+/** How strongly the texture photo's weave modulates the base colour. Low by
+ * design — the selected Rynamic colour has to survive intact, so the weave
+ * reads as surface, never as a wash over the top of it. */
+const FABRIC_TEXTURE_AMOUNT = 0.5;
+
 interface QuadOptions {
   tint: { r: number; g: number; b: number };
-  tintStrength: number;
+  textureAmount: number;
   opacity: number;
   uvScale: [number, number];
   shade: boolean;
@@ -324,7 +370,7 @@ interface QuadOptions {
 const drawQuad = (
   state: GLState,
   quad: Point[],
-  texture: WebGLTexture,
+  fabric: FabricTexture,
   opts: QuadOptions
 ) => {
   const { gl, loc, positionBuffer } = state;
@@ -332,14 +378,15 @@ const drawQuad = (
   const h = computeHomography(quad, UNIT_SQUARE);
   gl.uniformMatrix3fv(loc.pixelToUv, false, toColumnMajor(h));
   gl.uniform4f(loc.tintColor, opts.tint.r / 255, opts.tint.g / 255, opts.tint.b / 255, 1);
-  gl.uniform1f(loc.tintStrength, opts.tintStrength);
+  gl.uniform1f(loc.textureAmount, opts.textureAmount);
+  gl.uniform1f(loc.textureMean, fabric.meanLuma);
   gl.uniform1f(loc.opacity, opts.opacity);
   gl.uniform2f(loc.uvScale, opts.uvScale[0], opts.uvScale[1]);
   gl.uniform1f(loc.shade, opts.shade ? 1 : 0);
   gl.uniform1f(loc.folds, opts.folds);
 
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.bindTexture(gl.TEXTURE_2D, fabric.texture);
   gl.uniform1i(loc.texture, 0);
 
   const [tl, tr, br, bl] = quad;
@@ -488,8 +535,7 @@ const drawContactShadow = (
   bl: Point,
   br: Point,
   fabBL: Point,
-  fabBR: Point,
-  leftH: number
+  fabBR: Point
 ) => {
   const shadowHeight = 8; // px, fixed — a soft downward fade onto the wall below the rail
   const shadowTL = fabBL;
@@ -1010,7 +1056,7 @@ const drawBlindArea = (
         const midB2p = lerpP(midT2, midB2);
         const panelOpts: QuadOptions = {
           tint,
-          tintStrength: 0.7,
+          textureAmount: FABRIC_TEXTURE_AMOUNT,
           opacity: 0.38,
           uvScale: [1, Math.min(2, (leftH * p) / (avgW / 2))],
           shade: true,
@@ -1022,7 +1068,7 @@ const drawBlindArea = (
         // Semi-transparent so the view survives behind the mesh
         drawQuad(state, [tl, tr, fabBR, fabBL], fabricTexture, {
           tint,
-          tintStrength: 0.7,
+          textureAmount: FABRIC_TEXTURE_AMOUNT,
           opacity: 0.55,
           uvScale,
           shade: true,
@@ -1033,7 +1079,7 @@ const drawBlindArea = (
         // without fully blocking it, so it's more opaque than sunscreen.
         drawQuad(state, [tl, tr, fabBR, fabBL], fabricTexture, {
           tint,
-          tintStrength: 0.72,
+          textureAmount: FABRIC_TEXTURE_AMOUNT,
           opacity: 0.78,
           uvScale,
           shade: true,
@@ -1043,7 +1089,7 @@ const drawBlindArea = (
         // Blockout — solid fabric, one continuous piece top to bottom
         drawQuad(state, [tl, tr, fabBR, fabBL], fabricTexture, {
           tint,
-          tintStrength: 0.7,
+          textureAmount: FABRIC_TEXTURE_AMOUNT,
           opacity: 1,
           uvScale,
           shade: true,
@@ -1061,7 +1107,10 @@ const drawBlindArea = (
       ctx.lineTo(fabBR[0], fabBR[1]);
       ctx.lineTo(fabBL[0], fabBL[1]);
       ctx.closePath();
-      ctx.fillStyle = rgba(fabricColor, type === 'sunscreen' ? 0.55 : type === 'sheer' ? 0.4 : type === 'lightfilter' ? 0.78 : 0.92);
+      // Opacities mirror the WebGL path's exactly — blockout is fully opaque
+      // so the selected colour renders as itself, not blended with the
+      // darkened window opening underneath.
+      ctx.fillStyle = rgba(fabricColor, type === 'sunscreen' ? 0.55 : type === 'sheer' ? 0.4 : type === 'lightfilter' ? 0.78 : 1);
       ctx.fill();
       ctx.restore();
     }
@@ -1108,7 +1157,7 @@ const drawBlindArea = (
   // once the blind is nearly fully open (p <= 0.1): with almost nothing
   // hanging down, there's nothing to cast one. ---
   if (showBlind && p > 0.1) {
-    drawContactShadow(ctx, bl, br, fabBL, fabBR, leftH);
+    drawContactShadow(ctx, bl, br, fabBL, fabBR);
   }
 
   // --- CHAIN — not rendered. showChain/chainSide/controlType are kept as
@@ -1194,7 +1243,7 @@ const drawDualBlindArea = (
       const tint = hexToRgb(fabricColor);
       const uvScale: [number, number] = [2, Math.min(2, (leftH * dropP) / avgW)];
       drawQuad(state, [tl, tr, layerBR, layerBL], fabricTexture, {
-        tint, tintStrength: 0.7, opacity: 1, uvScale, shade: true, folds: 0,
+        tint, textureAmount: FABRIC_TEXTURE_AMOUNT, opacity: 1, uvScale, shade: true, folds: 0,
       });
       ctx.drawImage(state.canvas, 0, 0);
     } else {
@@ -1205,7 +1254,7 @@ const drawDualBlindArea = (
       ctx.lineTo(layerBR[0], layerBR[1]);
       ctx.lineTo(layerBL[0], layerBL[1]);
       ctx.closePath();
-      ctx.fillStyle = rgba(fabricColor, 0.92);
+      ctx.fillStyle = rgba(fabricColor, 1);
       ctx.fill();
       ctx.restore();
     }
@@ -1266,7 +1315,7 @@ const drawDualBlindArea = (
   const backRailTL = leftEdge(backRailT);
   const backRailTR = rightEdge(backRailT);
   drawBottomRail(ctx, backRailTL, backRailTR, backBL, backBR, hardwareColourName, safeHardwareColor);
-  drawContactShadow(ctx, bl, br, backBL, backBR, leftH);
+  drawContactShadow(ctx, bl, br, backBL, backBR);
 
   drawVignette(ctx, corners);
 };
@@ -1350,7 +1399,7 @@ const drawCurtainArea = (
     const tint = hexToRgb(fabricColor);
     const panelOpts: QuadOptions = {
       tint,
-      tintStrength: isSheer ? 0.7 : 0.75,
+      textureAmount: FABRIC_TEXTURE_AMOUNT,
       opacity: isSheer ? 0.4 : 1,
       uvScale: [1, leftH / Math.max(1, panelW)],
       shade: true,
@@ -1363,7 +1412,7 @@ const drawCurtainArea = (
   } else {
     // WebGL unavailable — flat-colour fallback so the preview still works
     ctx.save();
-    ctx.fillStyle = rgba(fabricColor, isSheer ? 0.4 : 0.92);
+    ctx.fillStyle = rgba(fabricColor, isSheer ? 0.4 : 1);
     for (const quad of [leftPanelQuad, rightPanelQuad]) {
       const [a, b, c, d] = quad;
       ctx.beginPath();

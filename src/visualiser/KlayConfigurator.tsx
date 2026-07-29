@@ -46,11 +46,13 @@ const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-
 // photo using a fixed set of corner pins (see DEFAULT_WINDOW_CORNERS_PCT),
 // with no CornerPinOverlay involved at all until the user replaces it.
 const DEFAULT_WINDOW_URL = '/images/static-imafge.png';
+// Measured against the window frame in static-imafge.png — the blind fills
+// the opening rather than floating undersized inside it.
 const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
-  [0.28, 0.18], // top-left
-  [0.72, 0.18], // top-right
-  [0.72, 0.72], // bottom-right
-  [0.28, 0.72], // bottom-left
+  [0.22, 0.20], // top-left
+  [0.74, 0.20], // top-right
+  [0.74, 0.78], // bottom-right
+  [0.22, 0.78], // bottom-left
 ];
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
@@ -241,9 +243,46 @@ export default function KlayConfigurator() {
     showChain: false,
   }));
 
+  // The three canvas states, resolved once so the canvas area and the
+  // persistent footer below it can never disagree about which one is showing.
+  const showUploadState = !isLoadingDefault && (!hasPhoto || showUploadPrompt);
+  const showTraceState = !isLoadingDefault && !showUploadState && !confirmedArea;
+  const showRenderState = !isLoadingDefault && !showUploadState && !!confirmedArea;
+
+  // Footer sits BELOW the canvas rather than floating over it, so "Visualise
+  // in your own room" is always reachable while the default window shows.
+  const footerButtons = showUploadState ? (
+    // Opened from the default window — offer a way back to it, otherwise the
+    // upload prompt is a one-way door out of a perfectly good render.
+    store.defaultWindowActive && hasPhoto ? (
+      <button onClick={() => setShowUploadPrompt(false)} style={ghostButtonStyle}>
+        Cancel
+      </button>
+    ) : null
+  ) : showRenderState ? (
+    store.defaultWindowActive ? (
+      <button onClick={() => setShowUploadPrompt(true)} style={visualiseOwnRoomButtonStyle}>
+        Visualise in your own room
+      </button>
+    ) : (
+      <>
+        <button onClick={() => store.clearTracedAreas()} style={ghostButtonStyle}>
+          Retrace
+        </button>
+        <button onClick={handleChangePhoto} style={ghostButtonStyle}>
+          Change Photo
+        </button>
+        <button onClick={handleDownload} style={goldButtonStyle}>
+          Download
+        </button>
+      </>
+    )
+  ) : null;
+
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#2C2824', borderRadius: 0, overflow: 'hidden' }}>
-      {isLoadingDefault ? null : (!hasPhoto || showUploadPrompt) ? (
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#2C2824', borderRadius: 0, overflow: 'hidden' }}>
+      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+      {isLoadingDefault ? null : showUploadState ? (
         /* STATE 1 — no photo yet, or the user asked to visualise their own room */
         <div
           style={{
@@ -288,7 +327,7 @@ export default function KlayConfigurator() {
             </div>
           </div>
         </div>
-      ) : !confirmedArea ? (
+      ) : showTraceState ? (
         /* STATE 2 — photo loaded, not yet traced */
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div
@@ -409,37 +448,26 @@ export default function KlayConfigurator() {
               </div>
             )}
 
-            {/* Bottom action bar */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 16,
-                left: 0,
-                right: 0,
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 12,
-              }}
-            >
-              {store.defaultWindowActive ? (
-                <button onClick={() => setShowUploadPrompt(true)} style={visualiseOwnRoomButtonStyle}>
-                  Visualise in your own room
-                </button>
-              ) : (
-                <>
-                  <button onClick={() => store.clearTracedAreas()} style={ghostButtonStyle}>
-                    Retrace
-                  </button>
-                  <button onClick={handleChangePhoto} style={ghostButtonStyle}>
-                    Change Photo
-                  </button>
-                  <button onClick={handleDownload} style={goldButtonStyle}>
-                    Download
-                  </button>
-                </>
-              )}
-            </div>
+            {/* Actions for this state live in the persistent footer below
+                the canvas, not floating over it — see footerButtons. */}
           </div>
+        </div>
+      )}
+      </div>
+
+      {footerButtons && (
+        <div
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 12,
+            padding: '16px 24px',
+            borderTop: '1px solid rgba(245,242,237,0.08)',
+          }}
+        >
+          {footerButtons}
         </div>
       )}
     </div>
