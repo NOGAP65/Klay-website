@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { computeHomography, toColumnMajor, Point } from './homography';
+import { HARDWARE_HEX } from '../data/products';
+import { tokens } from '../theme';
 
 /** One traced, confirmed window area to render — the shape VisualizerConfigurator
  * maps its (store-owned) TracedArea + linked WindowCard into before passing it
@@ -780,10 +782,16 @@ const drawRailDropShadow = (
 // gradient for chrome.
 // ---------------------------------------------------------------------------
 
+// Shares the one hardware palette with the swatch UI and the store, so a
+// finish can never render as a different colour than the swatch that picked
+// it. Chrome is the exception — it is a gradient, not a flat fill.
 const HARDWARE_FLAT_HEX: Record<'white' | 'black', string> = {
-  white: '#E8E4DE',
-  black: '#2C2824',
+  white: HARDWARE_HEX.white,
+  black: HARDWARE_HEX.black,
 };
+
+/** Used when a caller supplies no hardware colour at all. */
+const HARDWARE_FALLBACK = HARDWARE_HEX.white;
 const CHROME_GRADIENT_STOPS: [number, string][] = [
   [0, '#B8B6B0'],
   [0.5, '#D8D6D0'],
@@ -987,7 +995,7 @@ const drawBlindArea = (
     chainSide,
   } = params;
   void baseRailShape; // kept for API compatibility — every real rail is now the same slim, flat-top shape
-  const safeHardwareColor = params.hardwareColor ?? '#EFEFEF';
+  const safeHardwareColor = params.hardwareColor ?? HARDWARE_FALLBACK;
   const hardwareColourName = params.hardwareColourName;
   const type = blindType;
 
@@ -1223,7 +1231,7 @@ const drawDualBlindArea = (
   fabricImg: HTMLImageElement
 ) => {
   const { corners, fabricColor, rollPosition = 1 } = params;
-  const safeHardwareColor = params.hardwareColor ?? '#EFEFEF';
+  const safeHardwareColor = params.hardwareColor ?? HARDWARE_FALLBACK;
   const hardwareColourName = params.hardwareColourName;
 
   const [tl, tr, br, bl] = corners;
@@ -1390,7 +1398,7 @@ const drawCurtainArea = (
   fabricImg: HTMLImageElement
 ) => {
   const { corners, blindType, fabricColor, rollPosition = 1 } = params;
-  const safeHardwareColor = params.hardwareColor ?? '#EFEFEF';
+  const safeHardwareColor = params.hardwareColor ?? HARDWARE_FALLBACK;
   const isSheer = blindType === 'sheer-curtains';
 
   const [tl, tr, br, bl] = corners;
@@ -1656,7 +1664,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
         ctx.save();
         ctx.shadowColor = 'rgba(0,0,0,0.3)';
         ctx.shadowBlur = 6;
-        ctx.strokeStyle = '#FFFFFF';
+        ctx.strokeStyle = tokens.onDark;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(divX, 0);
@@ -1664,11 +1672,14 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
         ctx.stroke();
         ctx.restore();
 
-        ctx.fillStyle = 'rgba(28,28,28,0.85)';
+        ctx.fillStyle = tokens.scrim;
         ctx.fillRect(divX - 60, 12, 54, 22);
         ctx.fillRect(divX + 6, 12, 54, 22);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 11px "DM Sans"';
+        ctx.fillStyle = tokens.onDark;
+        // Inter, matching the rest of the UI — this label was set in DM Sans,
+        // which isn't one of the two brand faces and isn't loaded, so it was
+        // silently falling back to the system sans.
+        ctx.font = 'bold 11px Inter, sans-serif';
         ctx.fillText('Primary', divX - 56, 27);
         ctx.fillText('Compare', divX + 10, 27);
       }
@@ -1678,7 +1689,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
         const [tl, tr, br, bl] = activeArea.corners;
         ctx.save();
         ctx.setLineDash([10, 6]);
-        ctx.strokeStyle = 'rgba(74,191,181,0.9)';
+        ctx.strokeStyle = rgba(tokens.traceTeal, 0.9);
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(tl[0], tl[1]);
@@ -1694,7 +1705,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
       // while some other area is actively being traced.
       if (activeAreaId) {
         ctx.save();
-        ctx.fillStyle = '#4ABFB5';
+        ctx.fillStyle = tokens.traceTeal;
         for (const area of confirmedAreas) {
           for (const [x, y] of area.corners) {
             ctx.beginPath();

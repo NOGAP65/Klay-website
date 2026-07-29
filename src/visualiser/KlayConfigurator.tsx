@@ -6,8 +6,8 @@ import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOver
 import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 
 const ghostButtonStyle: React.CSSProperties = {
-  background: 'rgba(0,0,0,0.45)',
-  color: '#FFFFFF',
+  background: tokens.scrimSoft,
+  color: tokens.onDark,
   fontFamily: tokens.body,
   fontWeight: 600,
   fontSize: 12,
@@ -29,8 +29,8 @@ const goldButtonStyle: React.CSSProperties = {
 
 const visualiseOwnRoomButtonStyle: React.CSSProperties = {
   background: 'transparent',
-  border: '1px solid rgba(200,151,58,0.4)',
-  color: '#C8973A',
+  border: `1px solid ${tokens.goldLine}`,
+  color: tokens.gold,
   fontFamily: tokens.body,
   fontSize: 11,
   textTransform: 'uppercase',
@@ -296,7 +296,7 @@ export default function KlayConfigurator() {
   ) : null;
 
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#2C2824', borderRadius: 0, overflow: 'hidden' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: tokens.charcoal, borderRadius: 0, overflow: 'hidden' }}>
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
       {isLoadingDefault ? null : showUploadState ? (
         /* STATE 1 — no photo yet, or the user asked to visualise their own room */
@@ -313,10 +313,10 @@ export default function KlayConfigurator() {
           }}
         >
           <div style={{ maxWidth: 360, margin: '0 auto' }}>
-            <h2 style={{ fontFamily: tokens.display, fontSize: 28, fontWeight: 300, color: '#F5F2ED', margin: 0 }}>
+            <h2 style={{ fontFamily: tokens.display, fontSize: 28, fontWeight: 300, color: tokens.onDark, margin: 0 }}>
               Upload a photo of your window
             </h2>
-            <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(245,242,237,0.5)', marginTop: 8 }}>
+            <p style={{ fontFamily: tokens.body, fontSize: 13, color: tokens.onDarkMuted, marginTop: 8 }}>
               or choose a preset room
             </p>
             <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'center' }}>
@@ -394,10 +394,6 @@ export default function KlayConfigurator() {
               tracedAreas={canvasTracedAreas}
               activeAreaId={store.activeAreaId ?? undefined}
               rollPosition={store.rollPosition}
-              compareMode={false}
-              compareDivider={0.5}
-              compareBlindType="blockout"
-              compareFabricColor="#F0EDE8"
             />
 
             {/* Roll position control — right edge */}
@@ -405,17 +401,17 @@ export default function KlayConfigurator() {
               <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', alignItems:'center', gap:'8px', zIndex:20 }}>
                 <button
                   onClick={() => store.setRollPosition(Math.max(0, store.rollPosition - 0.1))}
-                  style={{ width:'32px', height:'32px', border:'1px solid rgba(200,151,58,0.4)', background:'rgba(28,24,16,0.8)', color:'#C8973A', fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+                  style={{ width:'32px', height:'32px', border:`1px solid ${tokens.goldLine}`, background:tokens.scrim, color:tokens.gold, fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
                 >▲</button>
                 <input
                   type="range" min="0" max="1" step="0.01"
                   value={store.rollPosition}
                   onChange={e => store.setRollPosition(parseFloat(e.target.value))}
-                  style={{ writingMode:'vertical-lr', direction:'rtl', height:'100px', accentColor:'#C8973A', cursor:'pointer' }}
+                  style={{ writingMode:'vertical-lr', direction:'rtl', height:'100px', accentColor:tokens.gold, cursor:'pointer' }}
                 />
                 <button
                   onClick={() => store.setRollPosition(Math.min(1, store.rollPosition + 0.1))}
-                  style={{ width:'32px', height:'32px', border:'1px solid rgba(200,151,58,0.4)', background:'rgba(28,24,16,0.8)', color:'#C8973A', fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+                  style={{ width:'32px', height:'32px', border:`1px solid ${tokens.goldLine}`, background:tokens.scrim, color:tokens.gold, fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
                 >▼</button>
               </div>
             ) : (

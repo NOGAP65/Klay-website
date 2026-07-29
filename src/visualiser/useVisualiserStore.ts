@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { MOTORISED_ADDON, RYNAMIC_COLOURS } from '../data/products';
+import { HARDWARE_HEX, MOTORISED_ADDON, RYNAMIC_COLOURS } from '../data/products';
 
 type Point = [number, number];
 
@@ -16,12 +16,6 @@ interface TracedArea {
 
 export type BlindType = 'blockout' | 'sunscreen' | 'lightfilter' | 'dual';
 export type HardwareColour = 'white' | 'black' | 'chrome';
-
-const HARDWARE_HEX: Record<HardwareColour, string> = {
-  white: '#E8E4DE',
-  black: '#2C2824',
-  chrome: '#B0AEA8',
-};
 
 // Base price by blind type and window size — Light Filter has no catalogue
 // pricing yet, so it's set to match Sunscreen until a real price is supplied.
@@ -98,9 +92,10 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
 
   getFabricColor: () => {
     const state = get();
-    // Falls back to the White swatch's own hex, not pure #FFFFFF — an
-    // unrecognised colour name should still render as a real Rynamic white.
-    return RYNAMIC_COLOURS.find(c => c.name === state.fabricColour)?.hex ?? '#F2F0EC';
+    // Falls back to the first Rynamic colour rather than an invented hex, so
+    // an unrecognised name still renders as a real catalogue fabric and the
+    // White swatch's value stays defined in exactly one place.
+    return RYNAMIC_COLOURS.find(c => c.name === state.fabricColour)?.hex ?? RYNAMIC_COLOURS[0].hex;
   },
 
   getHardwareColor: () => HARDWARE_HEX[get().hardwareColour],

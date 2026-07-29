@@ -37,6 +37,21 @@ export const RYNAMIC_COLOURS = [
   { name: 'Monument', hex: '#4C4844' },
 ]
 
+// The three hardware finishes. Single source for the swatch UI, the store's
+// hex lookup and the canvas renderer's flat fill — these were previously
+// written out separately in all three places. Black is the brand charcoal.
+export const HARDWARE_HEX = {
+  white: '#E8E4DE',
+  black: '#2C2824',
+  chrome: '#B0AEA8',
+} as const
+
+export const HARDWARE_OPTIONS = [
+  { id: 'white', label: 'White' },
+  { id: 'black', label: 'Black' },
+  { id: 'chrome', label: 'Chrome' },
+] as const
+
 export const MOTORISED_ADDON = 150
 
 export const PRICING_NOTE = 'All prices include professional installation across Victoria. Motorised upgrade available on all products.'

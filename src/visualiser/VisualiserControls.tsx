@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { tokens } from '../theme';
-import { RYNAMIC_COLOURS } from '../data/products';
-import { useVisualiserStore, BlindType, HardwareColour } from './useVisualiserStore';
+import { HARDWARE_HEX, HARDWARE_OPTIONS, RYNAMIC_COLOURS } from '../data/products';
+import { useVisualiserStore, BlindType } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
   lockedRange?: string; // if passed, hides the blind type row — customer can only configure this type
@@ -13,12 +13,6 @@ const BLIND_TYPE_OPTIONS: { id: BlindType; label: string }[] = [
   { id: 'sunscreen', label: 'Sunscreen' },
   { id: 'lightfilter', label: 'Light Filter' },
   { id: 'dual', label: 'Dual' },
-];
-
-const HARDWARE_OPTIONS: { id: HardwareColour; label: string; hex: string }[] = [
-  { id: 'white', label: 'White', hex: '#E8E4DE' },
-  { id: 'black', label: 'Black', hex: '#2C2824' },
-  { id: 'chrome', label: 'Chrome', hex: '#B0AEA8' },
 ];
 
 const SIZE_OPTIONS: { id: 'small' | 'medium' | 'large'; label: string; sub: string }[] = [
@@ -57,9 +51,9 @@ function Pill({
         fontWeight: 500,
         textAlign: 'center',
         cursor: 'pointer',
-        border: active ? `1px solid ${tokens.gold}` : '1px solid rgba(28,24,16,0.2)',
+        border: `1px solid ${active ? tokens.gold : tokens.lineStrong}`,
         background: active ? tokens.gold : 'transparent',
-        color: active ? tokens.dark : 'rgba(28,24,16,0.6)',
+        color: active ? tokens.ink : tokens.inkSoft,
       }}
     >
       <div>{label}</div>
@@ -134,13 +128,13 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
                 borderRadius: '50%',
                 cursor: 'pointer',
                 background: c.hex,
-                border: store.fabricColour === c.name ? `2px solid ${tokens.gold}` : '1px solid rgba(28,24,16,0.15)',
-                boxShadow: c.name === 'White' ? 'inset 0 0 0 1px rgba(28,24,16,0.08)' : 'none',
+                border: store.fabricColour === c.name ? `2px solid ${tokens.gold}` : `1px solid ${tokens.line}`,
+                boxShadow: c.name === 'White' ? `inset 0 0 0 1px ${tokens.lineFaint}` : 'none',
               }}
             />
           ))}
         </div>
-        <div style={{ fontFamily: tokens.body, fontSize: 11, color: '#1C1810', marginTop: 10 }}>
+        <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.ink, marginTop: 10 }}>
           {selectedColour?.name ?? ''}
         </div>
       </div>
@@ -158,13 +152,13 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
                 height: 28,
                 borderRadius: '50%',
                 cursor: 'pointer',
-                background: h.hex,
-                border: store.hardwareColour === h.id ? `2px solid ${tokens.gold}` : '1px solid rgba(28,24,16,0.15)',
+                background: HARDWARE_HEX[h.id],
+                border: store.hardwareColour === h.id ? `2px solid ${tokens.gold}` : `1px solid ${tokens.line}`,
               }}
             />
           ))}
         </div>
-        <div style={{ fontFamily: tokens.body, fontSize: 11, color: '#1C1810', marginTop: 10 }}>
+        <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.ink, marginTop: 10 }}>
           {HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour)?.label ?? ''}
         </div>
       </div>
@@ -210,10 +204,10 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
         >
           Estimated price
         </div>
-        <div style={{ fontFamily: tokens.display, fontSize: 36, fontWeight: 300, color: '#1C1810' }}>
+        <div style={{ fontFamily: tokens.display, fontSize: 36, fontWeight: 300, color: tokens.ink }}>
           ${store.getCurrentPrice()}
         </div>
-        <div style={{ fontFamily: tokens.body, fontSize: 11, color: 'rgba(28,24,16,0.4)', marginTop: 4 }}>
+        <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkFaint, marginTop: 4 }}>
           + professional installation across Victoria
         </div>
       </div>
