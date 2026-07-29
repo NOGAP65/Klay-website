@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { tokens } from '../theme';
-import { useVisualiserStore } from './useVisualiserStore';
+import { useVisualiserStore, BlindType } from './useVisualiserStore';
 import { usePhotoUpload } from './usePhotoUpload';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
@@ -258,13 +258,40 @@ const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
+interface KlayConfiguratorProps {
+  /** Pre-selects a blind type and locks it, for callers that already know
+   * which product the customer is looking at — a product page has no reason
+   * to offer the type switcher, since the URL already answered that. Setting
+   * `lockedRange` is what hides the switcher in VisualiserControls. */
+  defaultBlindType?: BlindType;
+  /** Height cap for the media box, in vh. Defaults to MAX_MEDIA_VH; a
+   * full-height column can afford more than a section on a scrolling page. */
+  mediaMaxVh?: number;
+}
+
 // Canvas-only: renders the upload / trace / rendered-blind states inside a
 // self-contained box. All configurator controls (Range, Hardware, Size,
 // Operation, Price, Book Installation) live in the caller's own layout —
 // see VisualiserControls — since callers place this box differently
 // (VisualiserSection's right column vs VisualiserPage's full-bleed canvas).
-export default function KlayConfigurator() {
+export default function KlayConfigurator({
+  defaultBlindType,
+  mediaMaxVh = MAX_MEDIA_VH,
+}: KlayConfiguratorProps = {}) {
   const store = useVisualiserStore();
+
+  // Before anything else, so the seeded trace and the first render both see
+  // the right type. The store is module-global and outlives this component,
+  // so the lock is released on unmount — otherwise the general visualiser
+  // page would come up with its type switcher still hidden.
+  useEffect(() => {
+    if (!defaultBlindType) return;
+    store.setBlindType(defaultBlindType);
+    store.setLockedRange(defaultBlindType);
+    return () => store.setLockedRange(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultBlindType]);
+
   const { photoUrl: hookPhotoUrl, photoBitmap, uploadError, handleUpload, handleTakePhoto, loadFromUrl, clear } = usePhotoUpload();
 
   const overlayRef = useRef<CornerPinOverlayHandle>(null);
@@ -527,7 +554,7 @@ export default function KlayConfigurator() {
     <div
       style={{
         width: '100%',
-        maxWidth: `calc(${MAX_MEDIA_VH}vh * ${photoRatio})`,
+        maxWidth: `calc(${mediaMaxVh}vh * ${photoRatio})`,
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',

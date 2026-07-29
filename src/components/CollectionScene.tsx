@@ -404,7 +404,7 @@ export function CollectionScene() {
                   {p.price}
                 </div>
                 <a
-                  href={`/products/${p.slug}`}
+                  href={`/products/${p.productSlug}`}
                   onClick={(e) => e.stopPropagation()}
                   style={{ display: 'inline-block', fontFamily: tokens.body, fontSize: 11, fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: tokens.gold, marginTop: 8 }}
                 >

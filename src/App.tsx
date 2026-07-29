@@ -1,7 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
-import ProductCategoryPage from './pages/ProductCategoryPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import AboutPage from './pages/AboutPage';
@@ -14,8 +13,11 @@ export default function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/products" element={<ProductsPage />} />
-      <Route path="/products/:category" element={<ProductCategoryPage />} />
-      <Route path="/products/:category/:sku" element={<ProductDetailPage />} />
+      {/* One page per product, carrying the whole configurator. The old
+          category tier (/products/blockout) and per-SKU tier
+          (/products/blockout/dusk-white) are gone; ProductDetailPage
+          redirects the blind-type slugs to their product. */}
+      <Route path="/products/:slug" element={<ProductDetailPage />} />
       <Route path="/how-it-works" element={<HowItWorksPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />

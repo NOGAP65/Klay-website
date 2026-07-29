@@ -78,7 +78,7 @@ export function ShopSection() {
             return (
               <article
                 key={range.slug}
-                onClick={() => navigate(`/products/${range.slug}`)}
+                onClick={() => navigate(`/products/${range.productSlug}`)}
                 onMouseEnter={() => setHoveredIndex(index)}
                 onMouseLeave={() => setHoveredIndex(i => (i === index ? null : i))}
                 style={{
