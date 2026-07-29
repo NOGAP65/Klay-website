@@ -109,6 +109,23 @@ const textureKeyFor = (blindType: string, fabricColor: string): string =>
     ? (isLightColor(fabricColor) ? 'blockout-curtains-light' : 'blockout-curtains-dark')
     : blindType;
 
+// A dual roller is two independent rollers sharing one cassette: a sunscreen
+// at the back against the glass, and a blockout in front on the room side.
+// The front one hangs shorter so both fabrics read at once — drop the
+// blockout past the sunscreen and it would simply hide it.
+const DUAL_FRONT_TEXTURE = getTexturePath('blockout');
+const DUAL_BACK_TEXTURE = getTexturePath('sunscreen');
+
+/** Every texture path a blind type needs, so the caller can preload them all
+ * before drawing. Dual is the only type that needs two. */
+const texturePathsFor = (blindType: string, fabricColor: string): string[] =>
+  blindType === 'dual'
+    ? [DUAL_FRONT_TEXTURE, DUAL_BACK_TEXTURE]
+    : [getTexturePath(textureKeyFor(blindType, fabricColor))];
+
+/** Fabric photos already decoded, keyed by texture path. */
+type FabricImages = Map<string, HTMLImageElement>;
+
 const imageCache = new Map<string, Promise<HTMLImageElement>>();
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -350,6 +367,18 @@ const getOrUploadTexture = (state: GLState, key: string, img: HTMLImageElement):
   const entry: FabricTexture = { texture, meanLuma };
   state.textures.set(key, entry);
   return entry;
+};
+
+/** Uploads (or reuses) the GL texture for one already-decoded fabric photo.
+ * Returns null when that path wasn't preloaded, so a caller can skip drawing
+ * rather than throw mid-frame. */
+const uploadTexture = (
+  state: GLState,
+  images: FabricImages,
+  path: string
+): FabricTexture | null => {
+  const img = images.get(path);
+  return img ? getOrUploadTexture(state, path, img) : null;
 };
 
 const UNIT_SQUARE: Point[] = [[0, 0], [1, 0], [1, 1], [0, 1]];
@@ -973,15 +1002,15 @@ const drawBlindArea = (
   W: number,
   H: number,
   params: AreaParams,
-  fabricImg: HTMLImageElement
+  fabricImgs: FabricImages
 ) => {
   const { blindType } = params;
   if (blindType === 'sheer-curtains' || blindType === 'blockout-curtains') {
-    drawCurtainArea(ctx, glStateRef, glUnavailableRef, W, H, params, fabricImg);
+    drawCurtainArea(ctx, glStateRef, glUnavailableRef, W, H, params, fabricImgs);
     return;
   }
   if (blindType === 'dual') {
-    drawDualBlindArea(ctx, glStateRef, glUnavailableRef, W, H, params, fabricImg);
+    drawDualBlindArea(ctx, glStateRef, glUnavailableRef, W, H, params, fabricImgs);
     return;
   }
 
@@ -1067,8 +1096,9 @@ const drawBlindArea = (
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
-      const fabricTexture = getOrUploadTexture(state, getTexturePath(type), fabricImg);
+      const fabricTexture = uploadTexture(state, fabricImgs, getTexturePath(type));
       const tint = hexToRgb(fabricColor);
+      if (!fabricTexture) return;
 
       // ~2 texture repeats across the width. Vertical scale is capped at 2x
       // — with CLAMP_TO_EDGE wrapping (see getOrUploadTexture) anything
@@ -1212,14 +1242,23 @@ const drawBlindArea = (
 };
 
 // ---------------------------------------------------------------------------
-// Dual / day-night blind — two fabric layers sharing one cassette housing,
-// exactly how real twin-roller blinds are built. The back layer is always
-// fully down; the front layer raises with the roll slider but is capped
-// short of the bottom, so a sliver of the back layer always stays visible
-// as the gap between the two rollers.
+// Dual roller — two independent rollers sharing one cassette, which is how a
+// real twin-roller is built. Back layer is the SUNSCREEN, sitting against the
+// glass: translucent, so the view still reads through it. Front layer, on the
+// room side, is the BLOCKOUT: opaque, in the selected fabric colour. Both
+// were previously drawn with the same blockout texture at full opacity, so a
+// dual looked like one thick sheet rather than two distinct fabrics.
+//
+// The blockout hangs proportionally shorter than the sunscreen so both are
+// visible at once — being in front, at equal drop it would hide the
+// sunscreen entirely.
 // ---------------------------------------------------------------------------
 
-const FRONT_LAYER_MAX_DROP = 0.7; // front layer never fully covers the back one — keeps the gap visible
+const FRONT_LAYER_MAX_DROP = 0.7; // blockout stops short of the sunscreen, keeping both readable
+
+/** Sunscreen back layer — translucent enough to read as a mesh with the view
+ * behind it, matching the standalone sunscreen render path's opacity. */
+const DUAL_BACK_OPACITY = 0.55;
 
 const drawDualBlindArea = (
   ctx: CanvasRenderingContext2D,
@@ -1228,7 +1267,7 @@ const drawDualBlindArea = (
   W: number,
   H: number,
   params: AreaParams,
-  fabricImg: HTMLImageElement
+  fabricImgs: FabricImages
 ) => {
   const { corners, fabricColor, rollPosition = 1 } = params;
   const safeHardwareColor = params.hardwareColor ?? HARDWARE_FALLBACK;
@@ -1244,11 +1283,10 @@ const drawDualBlindArea = (
   const rightEdge = (t: number): Point => [tr[0] + (br[0] - tr[0]) * t, tr[1] + (br[1] - tr[1]) * t];
 
   const p = Math.max(0, Math.min(1, rollPosition));
-  // Both rollers ride the slider. The back layer follows it directly; the
-  // front one stays proportionally short of it so the gap between the two
-  // rollers reads at every position and closes only when fully raised.
-  // (The back layer used to be pinned at 1, which meant a dual blind could
-  // never be rolled up — the slider left a full-drop layer over the glass.)
+  // Both rollers ride the slider. The sunscreen follows it directly; the
+  // blockout stays proportionally short of it so the pair reads at every
+  // position and closes only when fully raised. (The back layer used to be
+  // pinned at 1, which meant a dual could never be rolled up at all.)
   const backP = p;
   const frontP = p * FRONT_LAYER_MAX_DROP;
   const fabricDrop = leftH * backP;
@@ -1262,10 +1300,11 @@ const drawDualBlindArea = (
 
   if (showBlind) drawPreFabricDepth(ctx, fabricQuad);
 
-  /** Draws one fabric layer's quad (solid, opaque — both layers share the
-   * same fabric colour) plus its own fold-line texture, returning its
-   * bottom-left/right so the caller can position that layer's own rail. */
-  const drawFabricLayer = (dropP: number): { layerBL: Point; layerBR: Point } => {
+  /** Draws one roller's fabric quad plus its fold-line texture. The two
+   * layers share the selected colour but not the fabric: `texturePath` and
+   * `opacity` are what make the back read as sunscreen mesh and the front as
+   * solid blockout. */
+  const drawFabricLayer = (dropP: number, texturePath: string, opacity: number) => {
     const layerBL = leftEdge(dropP);
     const layerBR = rightEdge(dropP);
 
@@ -1291,13 +1330,15 @@ const drawDualBlindArea = (
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
-      const fabricTexture = getOrUploadTexture(state, getTexturePath('dual'), fabricImg);
+      const fabricTexture = uploadTexture(state, fabricImgs, texturePath);
       const tint = hexToRgb(fabricColor);
       const uvScale: [number, number] = [2, clampUvScale((leftH * dropP) / avgW)];
-      drawQuad(state, [tl, tr, layerBR, layerBL], fabricTexture, {
-        tint, textureAmount: FABRIC_TEXTURE_AMOUNT, opacity: 1, uvScale, shade: true, folds: 0,
-      });
-      ctx.drawImage(state.canvas, 0, 0);
+      if (fabricTexture) {
+        drawQuad(state, [tl, tr, layerBR, layerBL], fabricTexture, {
+          tint, textureAmount: FABRIC_TEXTURE_AMOUNT, opacity, uvScale, shade: true, folds: 0,
+        });
+        ctx.drawImage(state.canvas, 0, 0);
+      }
     } else {
       ctx.save();
       ctx.beginPath();
@@ -1306,28 +1347,31 @@ const drawDualBlindArea = (
       ctx.lineTo(layerBR[0], layerBR[1]);
       ctx.lineTo(layerBL[0], layerBL[1]);
       ctx.closePath();
-      ctx.fillStyle = rgba(fabricColor, 1);
+      ctx.fillStyle = rgba(fabricColor, opacity);
       ctx.fill();
       ctx.restore();
     }
 
     drawFabricFoldLines(ctx, tl, tr, layerBL, layerBR, avgW);
-    return { layerBL, layerBR };
   };
 
-  // --- BACK LAYER — the lower of the two ---
   const backBL = backBLEdge;
   const backBR = backBREdge;
   const frontBL = leftEdge(frontP);
   const frontBR = rightEdge(frontP);
 
   if (showBlind) {
-    drawFabricLayer(backP);
+    // --- BACK LAYER — sunscreen against the glass, translucent. Drawn first
+    // and hanging lower, so its exposed portion sits below the blockout. ---
+    drawFabricLayer(backP, DUAL_BACK_TEXTURE, DUAL_BACK_OPACITY);
     drawFabricCentreLight(ctx, tl, tr, backBL, backBR);
+    // Light bleeding through the mesh, same treatment the standalone
+    // sunscreen gets — this is what sells it as a screen rather than cloth.
+    drawTranslucentLightBleed(ctx, tl, tr, backBR, backBL);
 
-    // --- FRONT LAYER — sits proportionally higher, drawn on top; the back
-    // layer's lower portion stays visible as the gap between the rollers ---
-    drawFabricLayer(frontP);
+    // --- FRONT LAYER — blockout on the room side, opaque, drawn on top and
+    // stopping short so the sunscreen stays visible beneath it. ---
+    drawFabricLayer(frontP, DUAL_FRONT_TEXTURE, 1);
     drawFabricCentreLight(ctx, tl, tr, frontBL, frontBR);
   }
 
@@ -1395,7 +1439,7 @@ const drawCurtainArea = (
   W: number,
   H: number,
   params: AreaParams,
-  fabricImg: HTMLImageElement
+  fabricImgs: FabricImages
 ) => {
   const { corners, blindType, fabricColor, rollPosition = 1 } = params;
   const safeHardwareColor = params.hardwareColor ?? HARDWARE_FALLBACK;
@@ -1456,8 +1500,9 @@ const drawCurtainArea = (
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     const texKey = textureKeyFor(blindType, fabricColor);
-    const fabricTexture = getOrUploadTexture(state, getTexturePath(texKey), fabricImg);
+    const fabricTexture = uploadTexture(state, fabricImgs, getTexturePath(texKey));
     const tint = hexToRgb(fabricColor);
+    if (!fabricTexture) return;
     const panelOpts: QuadOptions = {
       tint,
       textureAmount: FABRIC_TEXTURE_AMOUNT,
@@ -1599,18 +1644,25 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
       const confirmedAreas = tracedAreas.filter(a => a.id !== activeAreaId && a.corners.length >= 4);
       const activeArea = activeAreaId ? tracedAreas.find(a => a.id === activeAreaId) : undefined;
 
-      const uniqueTypes = Array.from(new Set([
-        ...confirmedAreas.map(a => textureKeyFor(a.blindType, a.fabricColor)),
-        ...(compareMode && compareBlindType ? [compareBlindType] : []),
+      // Collected as texture PATHS rather than blind types, because a single
+      // blind type can need more than one texture — a dual roller draws a
+      // blockout over a sunscreen.
+      const uniquePaths = Array.from(new Set([
+        ...confirmedAreas.flatMap(a => texturePathsFor(a.blindType, a.fabricColor)),
+        ...(compareMode && compareBlindType
+          // The colour only matters for curtains, where it picks a light vs
+          // dark texture base; warm white keeps that on the light variant.
+          ? texturePathsFor(compareBlindType, compareFabricColor ?? tokens.warmWhite)
+          : []),
       ]));
 
       const [photo, fabricEntries] = await Promise.all([
         loadImage(photoUrl),
-        Promise.all(uniqueTypes.map(async t => [t, await loadImage(getTexturePath(t))] as const)),
+        Promise.all(uniquePaths.map(async path => [path, await loadImage(path)] as const)),
       ]);
       if (cancelled) return;
 
-      const fabricImgByType = new Map(fabricEntries);
+      const fabricImgs: FabricImages = new Map(fabricEntries);
 
       const W = photo.naturalWidth;
       const H = photo.naturalHeight;
@@ -1620,42 +1672,30 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
 
       if (!compareMode) {
         for (const area of confirmedAreas) {
-          const texKey = textureKeyFor(area.blindType, area.fabricColor);
-          const fabricImg = fabricImgByType.get(texKey);
-          if (!fabricImg) continue;
-          drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, buildAreaParams(area, rollPosition), fabricImg);
+          drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, buildAreaParams(area, rollPosition), fabricImgs);
         }
       } else {
         // Every confirmed area splits across the same shared divider.
         const divider = Math.max(0, Math.min(1, compareDivider));
 
         for (const area of confirmedAreas) {
-          const primaryType = area.blindType === 'sheer-curtains' ? 'sheer' : area.blindType;
-          const primaryFabricImg = fabricImgByType.get(primaryType);
           ctx.save();
           ctx.beginPath();
           ctx.rect(0, 0, W * divider, H);
           ctx.clip();
-          if (primaryFabricImg) {
-            drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, buildAreaParams(area, rollPosition), primaryFabricImg);
-          }
+          drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, buildAreaParams(area, rollPosition), fabricImgs);
           ctx.restore();
 
-          const compareBlindTypeValue = compareBlindType ?? area.blindType;
-          const compareType = compareBlindTypeValue === 'sheer-curtains' ? 'sheer' : compareBlindTypeValue;
-          const compareFabricImg = fabricImgByType.get(compareType);
+          const compareParams: AreaParams = {
+            ...buildAreaParams(area, rollPosition),
+            blindType: compareBlindType ?? area.blindType,
+            fabricColor: compareFabricColor ?? area.fabricColor,
+          };
           ctx.save();
           ctx.beginPath();
           ctx.rect(W * divider, 0, W, H);
           ctx.clip();
-          if (compareFabricImg) {
-            const compareParams: AreaParams = {
-              ...buildAreaParams(area, rollPosition),
-              blindType: compareBlindTypeValue,
-              fabricColor: compareFabricColor ?? area.fabricColor,
-            };
-            drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, compareParams, compareFabricImg);
-          }
+          drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, compareParams, fabricImgs);
           ctx.restore();
         }
 

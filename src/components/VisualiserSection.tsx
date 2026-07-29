@@ -20,12 +20,14 @@ export default function VisualiserSection() {
   return (
     <section id="visualiser" style={{ display:'flex', flexDirection:'row', width:'100%', minHeight:'90vh', background:tokens.warmWhite, overflow:'hidden' }}>
       <div style={{ flex:7, background:tokens.warmWhite, padding:'48px', position:'relative' }}>
-        <div style={{ background:tokens.charcoal, borderRadius:'12px', overflow:'hidden', width:'100%', height:'100%' }}>
+        {/* 2px, matching the configurator and the control panel. This was
+            12px while everything inside it was square. */}
+        <div style={{ background:tokens.charcoal, borderRadius:'2px', overflow:'hidden', width:'100%', height:'100%' }}>
           <KlayConfigurator />
         </div>
       </div>
 
-      <div style={{ flex:3, background:tokens.warmWhite, padding:'56px 48px', display:'flex', flexDirection:'column', justifyContent:'flex-start', gap:'32px' }}>
+      <div style={{ flex:3, background:tokens.warmWhite, padding:'48px', display:'flex', flexDirection:'column', justifyContent:'flex-start', gap:'28px' }}>
         <p style={{ fontFamily:tokens.body, fontSize:'10px', color:tokens.gold, letterSpacing:'0.3em', textTransform:'uppercase', margin:0 }}>
           The Klay Visualiser
         </p>
@@ -49,15 +51,16 @@ export default function VisualiserSection() {
           onClick={showToast}
           style={{
             width:'100%',
-            padding:'14px',
+            padding:'15px 16px',
             background:tokens.gold,
             color:tokens.ink,
             fontFamily:tokens.body,
             fontSize:'11px',
-            fontWeight:700,
-            letterSpacing:'0.2em',
+            fontWeight:600,
+            letterSpacing:'0.14em',
             textTransform:'uppercase',
             border:'none',
+            borderRadius:'2px',
             cursor:'pointer',
           }}
         >

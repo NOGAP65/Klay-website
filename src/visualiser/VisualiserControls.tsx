@@ -8,6 +8,8 @@ interface VisualiserControlsProps {
   lockedRange?: string; // if passed, hides the blind type row — customer can only configure this type
 }
 
+const RADIUS = 2;
+
 const BLIND_TYPE_OPTIONS: { id: BlindType; label: string }[] = [
   { id: 'blockout', label: 'Blockout' },
   { id: 'sunscreen', label: 'Sunscreen' },
@@ -16,15 +18,25 @@ const BLIND_TYPE_OPTIONS: { id: BlindType; label: string }[] = [
 ];
 
 const SIZE_OPTIONS: { id: 'small' | 'medium' | 'large'; label: string; sub: string }[] = [
-  { id: 'small', label: 'Small', sub: 'up to 1m' },
-  { id: 'medium', label: 'Medium', sub: 'up to 2m' },
-  { id: 'large', label: 'Large', sub: 'up to 3m' },
+  { id: 'small', label: 'Small', sub: 'to 1m' },
+  { id: 'medium', label: 'Medium', sub: 'to 2m' },
+  { id: 'large', label: 'Large', sub: 'to 3m' },
 ];
 
 const OPERATION_OPTIONS: { id: 'manual' | 'motorised'; label: string }[] = [
   { id: 'manual', label: 'Manual' },
-  { id: 'motorised', label: 'Motorised (+$150)' },
+  { id: 'motorised', label: 'Motorised +$150' },
 ];
+
+// ---------------------------------------------------------------------------
+// Primitives
+//
+// One selection language throughout: the active thing gains a gold border,
+// everything else carries a hairline. Pills additionally fill, because they
+// have no colour of their own to show. Previously pills and swatches each
+// had their own idiom and the labels were all gold, which left six equally
+// loud blocks and no sense of what mattered.
+// ---------------------------------------------------------------------------
 
 function Pill({
   label,
@@ -44,25 +56,61 @@ function Pill({
         display: 'inline-flex',
         flexDirection: 'column',
         alignItems: 'center',
-        width: 'auto',
-        padding: '8px 16px',
+        padding: sub ? '7px 14px' : '9px 14px',
+        borderRadius: RADIUS,
         fontFamily: tokens.body,
-        fontSize: 12,
+        fontSize: 11.5,
         fontWeight: 500,
+        lineHeight: 1.25,
         textAlign: 'center',
         cursor: 'pointer',
         border: `1px solid ${active ? tokens.gold : tokens.lineStrong}`,
         background: active ? tokens.gold : 'transparent',
         color: active ? tokens.ink : tokens.inkSoft,
+        transition: 'background 0.2s ease, border-color 0.2s ease, color 0.2s ease',
       }}
     >
-      <div>{label}</div>
-      {sub && <div style={{ fontSize: 10, marginTop: 2, opacity: 0.8 }}>{sub}</div>}
+      <span>{label}</span>
+      {sub && <span style={{ fontSize: 9.5, marginTop: 1, opacity: 0.75 }}>{sub}</span>}
     </button>
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function Swatch({
+  hex,
+  label,
+  active,
+  onClick,
+}: {
+  hex: string;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      style={{
+        width: 26,
+        height: 26,
+        borderRadius: '50%',
+        cursor: 'pointer',
+        padding: 0,
+        background: hex,
+        // Ring sits outside the swatch rather than thickening its edge, so
+        // selecting a colour doesn't visibly shrink the colour itself.
+        border: `1px solid ${tokens.line}`,
+        boxShadow: active ? `0 0 0 2px ${tokens.gold}` : `inset 0 0 0 1px ${tokens.lineFaint}`,
+        transition: 'box-shadow 0.2s ease',
+      }}
+    />
+  );
+}
+
+/** Gold, uppercase — used twice, for the two tiers only. */
+function GroupHeading({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
@@ -71,9 +119,47 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
         color: tokens.gold,
         textTransform: 'uppercase',
         letterSpacing: '0.2em',
-        marginBottom: 10,
+        paddingBottom: 10,
+        marginBottom: 18,
+        borderBottom: `1px solid ${tokens.line}`,
       }}
     >
+      {children}
+    </div>
+  );
+}
+
+/** Ink, sentence case — one per control. Deliberately quieter than the tier
+ * heading above it, so the eye reads groups first and fields second. */
+function Field({
+  label,
+  caption,
+  children,
+}: {
+  label: string;
+  caption?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: 12,
+          marginBottom: 9,
+        }}
+      >
+        <span style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, color: tokens.ink }}>
+          {label}
+        </span>
+        {caption && (
+          <span style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkFaint }}>
+            {caption}
+          </span>
+        )}
+      </div>
       {children}
     </div>
   );
@@ -95,104 +181,104 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
   }, []);
 
   const selectedColour = RYNAMIC_COLOURS.find(c => c.name === store.fabricColour);
+  const selectedHardware = HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour);
 
   return (
-    <>
-      {!store.lockedRange && (
-        <div>
-          <SectionLabel>Blind type</SectionLabel>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {BLIND_TYPE_OPTIONS.map(t => (
-              <Pill
-                key={t.id}
-                label={t.label}
-                active={store.blindType === t.id}
-                onClick={() => store.setBlindType(t.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+    // Owns its own vertical rhythm rather than inheriting whatever gap the
+    // host happens to set — the homepage used 32 and the full page 20, so the
+    // same panel read differently in each.
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 30 }}>
+      {/* --- TIER 1: the decisions that change what you see ---------------- */}
+      <section>
+        <GroupHeading>Your blind</GroupHeading>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {!store.lockedRange && (
+            <Field label="Type">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {BLIND_TYPE_OPTIONS.map(t => (
+                  <Pill
+                    key={t.id}
+                    label={t.label}
+                    active={store.blindType === t.id}
+                    onClick={() => store.setBlindType(t.id)}
+                  />
+                ))}
+              </div>
+            </Field>
+          )}
 
-      <div>
-        <SectionLabel>Fabric colour</SectionLabel>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          {RYNAMIC_COLOURS.map(c => (
-            <button
-              key={c.name}
-              aria-label={c.name}
-              onClick={() => store.setFabricColour(c.name)}
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                cursor: 'pointer',
-                background: c.hex,
-                border: store.fabricColour === c.name ? `2px solid ${tokens.gold}` : `1px solid ${tokens.line}`,
-                boxShadow: c.name === 'White' ? `inset 0 0 0 1px ${tokens.lineFaint}` : 'none',
-              }}
-            />
-          ))}
+          <Field label="Fabric colour" caption={selectedColour?.name}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
+              {RYNAMIC_COLOURS.map(c => (
+                <Swatch
+                  key={c.name}
+                  hex={c.hex}
+                  label={c.name}
+                  active={store.fabricColour === c.name}
+                  onClick={() => store.setFabricColour(c.name)}
+                />
+              ))}
+            </div>
+          </Field>
         </div>
-        <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.ink, marginTop: 10 }}>
-          {selectedColour?.name ?? ''}
-        </div>
-      </div>
+      </section>
 
-      <div>
-        <SectionLabel>Hardware colour</SectionLabel>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          {HARDWARE_OPTIONS.map(h => (
-            <button
-              key={h.id}
-              aria-label={h.label}
-              onClick={() => store.setHardwareColour(h.id)}
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                cursor: 'pointer',
-                background: HARDWARE_HEX[h.id],
-                border: store.hardwareColour === h.id ? `2px solid ${tokens.gold}` : `1px solid ${tokens.line}`,
-              }}
-            />
-          ))}
-        </div>
-        <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.ink, marginTop: 10 }}>
-          {HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour)?.label ?? ''}
-        </div>
-      </div>
+      {/* --- TIER 2: specification, quieter ------------------------------- */}
+      <section>
+        <GroupHeading>Details</GroupHeading>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <Field label="Hardware" caption={selectedHardware?.label}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
+              {HARDWARE_OPTIONS.map(h => (
+                <Swatch
+                  key={h.id}
+                  hex={HARDWARE_HEX[h.id]}
+                  label={h.label}
+                  active={store.hardwareColour === h.id}
+                  onClick={() => store.setHardwareColour(h.id)}
+                />
+              ))}
+            </div>
+          </Field>
 
-      <div>
-        <SectionLabel>Window size</SectionLabel>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {SIZE_OPTIONS.map(s => (
-            <Pill
-              key={s.id}
-              label={s.label}
-              sub={s.sub}
-              active={store.windowSize === s.id}
-              onClick={() => store.setWindowSize(s.id)}
-            />
-          ))}
-        </div>
-      </div>
+          <Field label="Window size">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {SIZE_OPTIONS.map(s => (
+                <Pill
+                  key={s.id}
+                  label={s.label}
+                  sub={s.sub}
+                  active={store.windowSize === s.id}
+                  onClick={() => store.setWindowSize(s.id)}
+                />
+              ))}
+            </div>
+          </Field>
 
-      <div>
-        <SectionLabel>Operation</SectionLabel>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {OPERATION_OPTIONS.map(o => (
-            <Pill
-              key={o.id}
-              label={o.label}
-              active={store.operation === o.id}
-              onClick={() => store.setOperation(o.id)}
-            />
-          ))}
+          <Field label="Operation">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {OPERATION_OPTIONS.map(o => (
+                <Pill
+                  key={o.id}
+                  label={o.label}
+                  active={store.operation === o.id}
+                  onClick={() => store.setOperation(o.id)}
+                />
+              ))}
+            </div>
+          </Field>
         </div>
-      </div>
+      </section>
 
-      <div>
+      {/* --- PRICE: boxed, so the conversion anchor isn't just more text --- */}
+      <div
+        style={{
+          background: tokens.cream,
+          border: `1px solid ${tokens.line}`,
+          borderRadius: RADIUS,
+          padding: '16px 18px',
+        }}
+      >
         <div
           style={{
             fontFamily: tokens.body,
@@ -204,13 +290,22 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
         >
           Estimated price
         </div>
-        <div style={{ fontFamily: tokens.display, fontSize: 36, fontWeight: 300, color: tokens.ink }}>
+        <div
+          style={{
+            fontFamily: tokens.display,
+            fontSize: 38,
+            fontWeight: 300,
+            lineHeight: 1.1,
+            color: tokens.ink,
+            marginTop: 6,
+          }}
+        >
           ${store.getCurrentPrice()}
         </div>
         <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkFaint, marginTop: 4 }}>
           + professional installation across Victoria
         </div>
       </div>
-    </>
+    </div>
   );
 }

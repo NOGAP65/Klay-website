@@ -5,38 +5,78 @@ import { usePhotoUpload } from './usePhotoUpload';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 
-const ghostButtonStyle: React.CSSProperties = {
-  background: tokens.scrimSoft,
-  color: tokens.onDark,
-  fontFamily: tokens.body,
-  fontWeight: 600,
-  fontSize: 12,
-  padding: '11px 20px',
-  border: `1px solid ${tokens.gold}`,
-  cursor: 'pointer',
-};
+// One radius for every surface in the visualiser. The three files used to
+// disagree (0 here, 12px on the homepage wrapper, 4px on the thumbnails),
+// which is what made the panel read as assembled rather than designed.
+const RADIUS = 2;
 
-const goldButtonStyle: React.CSSProperties = {
-  background: tokens.gold,
-  color: tokens.dark,
-  fontFamily: tokens.body,
-  fontWeight: 700,
-  fontSize: 12,
-  padding: '11px 24px',
-  border: 'none',
-  cursor: 'pointer',
-};
+// --- Buttons ---------------------------------------------------------------
+// Every control shares one base: same face, same tracking, same height, same
+// radius. Variants change only fill and border, so a row of mixed buttons
+// still lines up. Previously there were three unrelated button styles plus
+// two more inline on the roll controls.
 
-const visualiseOwnRoomButtonStyle: React.CSSProperties = {
-  background: 'transparent',
-  border: `1px solid ${tokens.goldLine}`,
-  color: tokens.gold,
+const buttonBase: React.CSSProperties = {
   fontFamily: tokens.body,
   fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.14em',
   textTransform: 'uppercase',
-  letterSpacing: '0.2em',
-  padding: '10px 24px',
+  height: 38,
+  padding: '0 20px',
+  borderRadius: RADIUS,
   cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  whiteSpace: 'nowrap',
+  transition: 'background 0.2s ease, border-color 0.2s ease, color 0.2s ease',
+};
+
+/** Solid gold — the one affirmative action in any given state. */
+const primaryButtonStyle: React.CSSProperties = {
+  ...buttonBase,
+  background: tokens.gold,
+  color: tokens.ink,
+  border: `1px solid ${tokens.gold}`,
+};
+
+/** Outline on the charcoal canvas — secondary actions. */
+const ghostButtonStyle: React.CSSProperties = {
+  ...buttonBase,
+  background: 'transparent',
+  color: tokens.onDark,
+  border: `1px solid ${tokens.onDarkLine}`,
+};
+
+/** Gold outline — the one route out to the user's own photo. */
+const accentButtonStyle: React.CSSProperties = {
+  ...buttonBase,
+  background: 'transparent',
+  color: tokens.gold,
+  border: `1px solid ${tokens.goldLine}`,
+};
+
+/** Square, for the icon-only roll controls. Same height and border language
+ * as the text buttons so they sit on one baseline. */
+const iconButtonStyle: React.CSSProperties = {
+  ...buttonBase,
+  width: 34,
+  height: 34,
+  padding: 0,
+  fontSize: 13,
+  letterSpacing: 0,
+  background: 'transparent',
+  color: tokens.onDark,
+  border: `1px solid ${tokens.onDarkLine}`,
+};
+
+const footerLabelStyle: React.CSSProperties = {
+  fontFamily: tokens.body,
+  fontSize: 9,
+  letterSpacing: '0.2em',
+  textTransform: 'uppercase',
+  color: tokens.onDarkMuted,
 };
 
 const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-5.png'];
@@ -275,9 +315,20 @@ export default function KlayConfigurator() {
         Cancel
       </button>
     ) : null
+  ) : showTraceState ? (
+    // In the footer rather than over the image: at bottom:16 these sat on
+    // top of the photo and could cover the very corner pins being dragged.
+    <>
+      <button onClick={handleChangePhoto} style={ghostButtonStyle}>
+        Change photo
+      </button>
+      <button onClick={() => overlayRef.current?.confirm()} style={primaryButtonStyle}>
+        Confirm outline
+      </button>
+    </>
   ) : showRenderState ? (
     store.defaultWindowActive ? (
-      <button onClick={() => setShowUploadPrompt(true)} style={visualiseOwnRoomButtonStyle}>
+      <button onClick={() => setShowUploadPrompt(true)} style={accentButtonStyle}>
         Visualise in your own room
       </button>
     ) : (
@@ -286,14 +337,65 @@ export default function KlayConfigurator() {
           Retrace
         </button>
         <button onClick={handleChangePhoto} style={ghostButtonStyle}>
-          Change Photo
+          Change photo
         </button>
-        <button onClick={handleDownload} style={goldButtonStyle}>
+        <button onClick={handleDownload} style={primaryButtonStyle}>
           Download
         </button>
       </>
     )
   ) : null;
+
+  // Roll control. Lives in the footer beside the actions rather than floating
+  // over the artwork, which also drops the vertical <input type="range"> —
+  // writingMode:'vertical-lr' is unreliable in Safari and it was the only
+  // control on the page rotated 90 degrees.
+  const rollControl = !showRenderState ? null : store.operation === 'motorised' ? (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span style={footerLabelStyle}>Motor</span>
+      <button onClick={() => { stopAuto(); animateRollTo(0, 1200); }} style={ghostButtonStyle}>
+        Open
+      </button>
+      <button onClick={() => { stopAuto(); animateRollTo(1, 1200); }} style={ghostButtonStyle}>
+        Close
+      </button>
+      <button
+        onClick={() => (autoRunning ? stopAuto() : startAuto())}
+        style={autoRunning ? primaryButtonStyle : ghostButtonStyle}
+      >
+        {autoRunning ? 'Stop' : 'Auto'}
+      </button>
+    </div>
+  ) : (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span style={footerLabelStyle}>Open</span>
+      <button
+        onClick={() => store.setRollPosition(Math.max(0, store.rollPosition - 0.1))}
+        aria-label="Raise blind"
+        style={iconButtonStyle}
+      >
+        −
+      </button>
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        value={store.rollPosition}
+        onChange={e => store.setRollPosition(parseFloat(e.target.value))}
+        aria-label="Blind position"
+        style={{ width: 150, accentColor: tokens.gold, cursor: 'pointer' }}
+      />
+      <button
+        onClick={() => store.setRollPosition(Math.min(1, store.rollPosition + 0.1))}
+        aria-label="Lower blind"
+        style={iconButtonStyle}
+      >
+        +
+      </button>
+      <span style={footerLabelStyle}>Closed</span>
+    </div>
+  );
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: tokens.charcoal, borderRadius: 0, overflow: 'hidden' }}>
@@ -320,11 +422,11 @@ export default function KlayConfigurator() {
               or choose a preset room
             </p>
             <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'center' }}>
-              <button onClick={handleUpload} style={goldButtonStyle}>
-                Upload Photo
+              <button onClick={handleUpload} style={primaryButtonStyle}>
+                Upload photo
               </button>
               <button onClick={handleTakePhoto} style={ghostButtonStyle}>
-                Take Photo
+                Take photo
               </button>
             </div>
             <div style={{ display: 'flex', gap: 16, marginTop: 32, justifyContent: 'center' }}>
@@ -337,7 +439,14 @@ export default function KlayConfigurator() {
                     loadFromUrl(url);
                     store.clearTracedAreas();
                   }}
-                  style={{ width: 120, height: 80, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
+                  style={{
+                    width: 116,
+                    height: 78,
+                    objectFit: 'cover',
+                    borderRadius: RADIUS,
+                    border: `1px solid ${tokens.onDarkLine}`,
+                    cursor: 'pointer',
+                  }}
                 />
               ))}
             </div>
@@ -365,24 +474,7 @@ export default function KlayConfigurator() {
               imageHeight={photoBitmap!.height}
               onConfirm={handleConfirmTrace}
             />
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 16,
-                left: 0,
-                right: 0,
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 12,
-              }}
-            >
-              <button onClick={() => overlayRef.current?.confirm()} style={goldButtonStyle}>
-                Confirm window outline
-              </button>
-              <button onClick={handleChangePhoto} style={ghostButtonStyle}>
-                Change photo
-              </button>
-            </div>
+            {/* Confirm / Change photo live in the footer — see footerButtons. */}
           </div>
         </div>
       ) : (
@@ -396,90 +488,33 @@ export default function KlayConfigurator() {
               rollPosition={store.rollPosition}
             />
 
-            {/* Roll position control — right edge */}
-            {store.operation !== 'motorised' ? (
-              <div style={{ position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', display:'flex', flexDirection:'column', alignItems:'center', gap:'8px', zIndex:20 }}>
-                <button
-                  onClick={() => store.setRollPosition(Math.max(0, store.rollPosition - 0.1))}
-                  style={{ width:'32px', height:'32px', border:`1px solid ${tokens.goldLine}`, background:tokens.scrim, color:tokens.gold, fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
-                >▲</button>
-                <input
-                  type="range" min="0" max="1" step="0.01"
-                  value={store.rollPosition}
-                  onChange={e => store.setRollPosition(parseFloat(e.target.value))}
-                  style={{ writingMode:'vertical-lr', direction:'rtl', height:'100px', accentColor:tokens.gold, cursor:'pointer' }}
-                />
-                <button
-                  onClick={() => store.setRollPosition(Math.min(1, store.rollPosition + 0.1))}
-                  style={{ width:'32px', height:'32px', border:`1px solid ${tokens.goldLine}`, background:tokens.scrim, color:tokens.gold, fontSize:'14px', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
-                >▼</button>
-              </div>
-            ) : (
-              <div
-                style={{
-                  position: 'absolute',
-                  right: 12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                }}
-              >
-                <button
-                  onClick={() => { stopAuto(); animateRollTo(1, 1200); }}
-                  aria-label="Close blind"
-                  style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.9)', border: 'none', color: tokens.dark, fontSize: 16, cursor: 'pointer' }}
-                >
-                  ▲
-                </button>
-                <button
-                  onClick={() => { stopAuto(); animateRollTo(0, 1200); }}
-                  aria-label="Open blind"
-                  style={{ width: 40, height: 40, background: 'rgba(255,255,255,0.9)', border: 'none', color: tokens.dark, fontSize: 16, cursor: 'pointer' }}
-                >
-                  ▼
-                </button>
-                <button
-                  onClick={() => (autoRunning ? stopAuto() : startAuto())}
-                  aria-label={autoRunning ? 'Stop automatic movement' : 'Start automatic movement'}
-                  style={{
-                    width: 40,
-                    height: 40,
-                    background: tokens.gold,
-                    border: 'none',
-                    color: tokens.dark,
-                    fontFamily: tokens.body,
-                    fontWeight: 700,
-                    fontSize: 9,
-                    cursor: 'pointer',
-                  }}
-                >
-                  AUTO
-                </button>
-              </div>
-            )}
-
-            {/* Actions for this state live in the persistent footer below
-                the canvas, not floating over it — see footerButtons. */}
+            {/* Nothing floats over the render. The roll control and every
+                action live in the footer below — see rollControl /
+                footerButtons. */}
           </div>
         </div>
       )}
       </div>
 
-      {footerButtons && (
+      {(rollControl || footerButtons) && (
         <div
           style={{
             flexShrink: 0,
             display: 'flex',
-            justifyContent: 'center',
+            flexWrap: 'wrap',
+            // Two zones when both are present; a single centred group when
+            // only the actions are, so a lone button isn't shoved right.
+            justifyContent: rollControl ? 'space-between' : 'center',
             alignItems: 'center',
-            gap: 12,
-            padding: '16px 24px',
-            borderTop: '1px solid rgba(245,242,237,0.08)',
+            gap: 16,
+            padding: '14px 20px',
+            borderTop: `1px solid ${tokens.onDarkLine}`,
           }}
         >
-          {footerButtons}
+          {/* Left: how the blind sits. Right: what you do next. Empty spans
+              keep the two zones anchored when only one of them is present. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>{rollControl}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>{footerButtons}</div>
         </div>
       )}
     </div>
