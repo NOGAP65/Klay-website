@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { tokens } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {
-  HARDWARE_HEX,
   HARDWARE_OPTIONS,
   MOTORISED_ADDON,
+  ProductBlindType,
   RYNAMIC_COLOURS,
   productByBlindType,
   productBySlug,
@@ -13,12 +13,26 @@ import {
 import KlayConfigurator from '../visualiser/KlayConfigurator';
 import { useVisualiserStore } from '../visualiser/useVisualiserStore';
 
-const RADIUS = 2;
+// Section 4's background. Off-palette on purpose because the brief asks for
+// it — theme.ts documents removing this exact value as "a fourth off-white
+// outside the palette", and tokens.parchment (#F2EDE4) is the sanctioned step
+// below warmWhite if this is ever brought back in line.
+const SHELL = '#EAE5DC';
 
-const SIZE_OPTIONS: { id: 'small' | 'medium' | 'large'; label: string }[] = [
-  { id: 'small', label: 'Small' },
-  { id: 'medium', label: 'Medium' },
-  { id: 'large', label: 'Large' },
+const LINE_FAINT = 'rgba(28,24,16,0.08)';
+const LINE = 'rgba(28,24,16,0.1)';
+const INK_55 = 'rgba(28,24,16,0.55)';
+const INK_40 = 'rgba(28,24,16,0.4)';
+
+/** Chrome reads as a finish rather than a grey only if it has a highlight.
+ * The flat HARDWARE_HEX.chrome is what the canvas fills with; this is the
+ * swatch the customer picks from. */
+const CHROME_GRADIENT = 'linear-gradient(135deg, #E8E8E8, #A0A0A0)';
+
+const SIZE_OPTIONS: { id: 'small' | 'medium' | 'large'; label: string; sub: string }[] = [
+  { id: 'small', label: 'Small', sub: 'up to 1m' },
+  { id: 'medium', label: 'Medium', sub: 'up to 2m' },
+  { id: 'large', label: 'Large', sub: 'up to 3m' },
 ];
 
 const OPERATION_OPTIONS: { id: 'manual' | 'motorised'; label: string }[] = [
@@ -26,8 +40,135 @@ const OPERATION_OPTIONS: { id: 'manual' | 'motorised'; label: string }[] = [
   { id: 'motorised', label: `Motorised (+$${MOTORISED_ADDON})` },
 ];
 
-/** Gold, uppercase, letterspaced — one per control group. */
-function GroupLabel({ children }: { children: React.ReactNode }) {
+// --- Specifications --------------------------------------------------------
+// The three that differ by blind type lead, so the detail that actually
+// distinguishes one product from another isn't buried under nine rows every
+// product shares.
+
+const SPEC_BY_TYPE: Record<ProductBlindType, { label: string; value: string }[]> = {
+  blockout: [
+    { label: 'Composition', value: '100% Polyester with acrylic foam backing' },
+    { label: 'Light control', value: 'Complete blockout' },
+    { label: 'Privacy', value: 'Total' },
+  ],
+  sunscreen: [
+    { label: 'Composition', value: 'PVC coated fibreglass' },
+    { label: 'Light control', value: 'Filters 85%' },
+    { label: 'Privacy', value: 'Daytime only' },
+  ],
+  dual: [
+    { label: 'Composition', value: 'Blockout + Sunscreen paired' },
+    { label: 'Light control', value: 'Switchable' },
+    { label: 'Privacy', value: 'Switchable' },
+  ],
+  lightfilter: [
+    { label: 'Composition', value: '100% Polyester' },
+    { label: 'Light control', value: 'Softens and diffuses' },
+    { label: 'Privacy', value: 'Partial' },
+  ],
+};
+
+const SHARED_SPECS: { label: string; value: string }[] = [
+  { label: 'Made in', value: 'Australia' },
+  { label: 'Warranty', value: '5 years' },
+  { label: 'Operation', value: 'Chain drive (Manual) or 24V Motor (Motorised)' },
+  { label: 'Hardware finish', value: 'White / Black / Chrome' },
+  { label: 'Minimum width', value: '400mm' },
+  { label: 'Maximum width', value: '3000mm' },
+  { label: 'Minimum drop', value: '400mm' },
+  { label: 'Maximum drop', value: '3300mm' },
+  { label: 'Cleaning', value: 'Wipe with damp cloth' },
+];
+
+// --- FAQs ------------------------------------------------------------------
+
+const FAQ_BY_TYPE: Record<ProductBlindType, { q: string; a: string }[]> = {
+  blockout: [
+    {
+      q: 'Will it completely block all light?',
+      a: 'Yes. Our blockout fabric has an acrylic foam backing that eliminates light bleed, including at the edges when properly installed.',
+    },
+    {
+      q: 'Can I still use it in a living room?',
+      a: 'Absolutely. Blockout blinds work in any room — many customers use them in living areas for afternoon glare and privacy.',
+    },
+  ],
+  sunscreen: [
+    {
+      q: 'Can I still see outside during the day?',
+      a: 'Yes. Sunscreen fabric filters glare while preserving your view. At night the effect reverses — interior lighting makes you visible from outside.',
+    },
+    {
+      q: 'What percentage of UV does it block?',
+      a: 'Our Veil sunscreen fabric blocks up to 85% of UV radiation while maintaining natural light.',
+    },
+  ],
+  dual: [
+    {
+      q: 'How does the dual roller work?',
+      a: 'Two blinds on one bracket — a sunscreen for daytime and a blockout for night. Each operates independently on the same headrail.',
+    },
+    {
+      q: 'Is it harder to install than a single blind?',
+      a: 'No. Our technician handles measurement and installation. The dual system installs in the same time as a single blind.',
+    },
+  ],
+  lightfilter: [
+    {
+      q: 'What is the difference between light filter and sunscreen?',
+      a: 'Light filter softly diffuses daylight into a warm glow. Sunscreen preserves your view through the fabric. Light filter is more opaque and better for privacy.',
+    },
+    {
+      q: 'Is it good for bedrooms?',
+      a: 'Yes — it creates a soft ambient light during the day while maintaining privacy, making it ideal for bedrooms and nurseries.',
+    },
+  ],
+};
+
+// The brief supplied one shared FAQ and asked for five in total. These two
+// make up the difference and are composed only from facts already stated
+// elsewhere — the 5-year warranty from the specs table above, and the free
+// technician measure and 7–10 day window from the site's existing process
+// copy. NEEDS COPY REVIEW before this is treated as published policy.
+const SHARED_FAQS: { q: string; a: string }[] = [
+  {
+    q: 'How long does installation take?',
+    a: 'A typical single window takes 15–20 minutes. Our technician will measure, then return to install once your blind is manufactured.',
+  },
+  {
+    q: 'How does measuring work?',
+    a: 'Once you order, a Klay technician visits your home to measure every window precisely — usually within 7 to 10 days, and at no cost. Your blind is then cut to the millimetre in our workshop.',
+  },
+  {
+    q: 'What warranty do I get?',
+    a: 'Every blind carries a 5 year warranty covering the fabric, the hardware and the motor. Installation by our own technicians is what lets us stand behind it.',
+  },
+];
+
+const QUALITY_COPY: Record<ProductBlindType, string[]> = {
+  blockout: [
+    'Every Dusk blind is cut to the millimetre for the window it will hang in. Nothing is trimmed on site to fit — the measurement happens first, the fabric is cut to it, and the blind arrives already correct.',
+    'The acrylic foam backing is what does the work: it stops light passing through the weave rather than merely darkening it. Paired with a face-mounted bracket that overlaps the casing, that is what removes the halo most blockout blinds leave around the edge.',
+  ],
+  sunscreen: [
+    'Every Veil blind is cut to the millimetre for the window it will hang in. Nothing is trimmed on site to fit — the measurement happens first, the fabric is cut to it, and the blind arrives already correct.',
+    'The PVC coated fibreglass mesh holds its shape and its openness for the life of the blind. It will not stretch, sag or yellow the way an untreated fabric does in a west-facing window.',
+  ],
+  dual: [
+    'Every Duo blind is cut to the millimetre for the window it will hang in. Nothing is trimmed on site to fit — the measurement happens first, the fabric is cut to it, and the blind arrives already correct.',
+    'Both layers run on a single headrail machined to carry the pair. That is what keeps a dual system as slim on the wall as a single blind, and why it takes our technician no longer to fit.',
+  ],
+  lightfilter: [
+    'Every Haze blind is cut to the millimetre for the window it will hang in. Nothing is trimmed on site to fit — the measurement happens first, the fabric is cut to it, and the blind arrives already correct.',
+    'The polyester weave is chosen for how evenly it spreads light rather than how much it blocks. Harsh direct sun arrives as a flat warm glow instead of a bright band across the floor.',
+  ],
+};
+
+// ---------------------------------------------------------------------------
+// Primitives
+// ---------------------------------------------------------------------------
+
+function GoldLabel({ children, spacing = '0.2em' }: { children: React.ReactNode; spacing?: string }) {
   return (
     <div
       style={{
@@ -35,8 +176,7 @@ function GroupLabel({ children }: { children: React.ReactNode }) {
         fontSize: 10,
         color: tokens.gold,
         textTransform: 'uppercase',
-        letterSpacing: '0.2em',
-        marginBottom: 12,
+        letterSpacing: spacing,
       }}
     >
       {children}
@@ -44,38 +184,60 @@ function GroupLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Pill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function Pill({
+  label,
+  sub,
+  active,
+  onClick,
+}: {
+  label: string;
+  sub?: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const [hover, setHover] = useState(false);
   return (
     <button
       onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
-        padding: '9px 18px',
-        borderRadius: 999,
+        display: 'inline-flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 2,
         fontFamily: tokens.body,
-        fontSize: 11.5,
-        fontWeight: 500,
+        fontSize: 11,
+        textTransform: 'uppercase',
+        letterSpacing: '0.15em',
+        padding: '10px 20px',
         cursor: 'pointer',
         whiteSpace: 'nowrap',
-        border: `1px solid ${active ? tokens.gold : tokens.lineStrong}`,
-        background: active ? tokens.gold : 'transparent',
-        color: active ? tokens.ink : tokens.inkSoft,
-        transition: 'background 0.2s ease, border-color 0.2s ease, color 0.2s ease',
+        background: active ? tokens.ink : 'transparent',
+        border: `1px solid ${active ? tokens.ink : hover ? tokens.gold : 'rgba(28,24,16,0.2)'}`,
+        color: active ? tokens.warmWhite : hover ? tokens.gold : 'rgba(28,24,16,0.6)',
+        transition: 'background 0.25s ease, border-color 0.25s ease, color 0.25s ease',
       }}
     >
-      {label}
+      <span>{label}</span>
+      {sub && (
+        <span style={{ fontSize: 9, letterSpacing: '0.08em', textTransform: 'none', opacity: 0.7 }}>
+          {sub}
+        </span>
+      )}
     </button>
   );
 }
 
-/** Circle swatch. The selected ring sits outside the circle rather than
- * thickening its edge, so picking a colour doesn't visibly shrink it. */
+/** 32px circle. The selected ring sits 2px outside the swatch rather than
+ * thickening its edge, so choosing a colour doesn't visibly shrink it. */
 function Swatch({
-  hex,
+  background,
   label,
   active,
   onClick,
 }: {
-  hex: string;
+  background: string;
   label: string;
   active: boolean;
   onClick: () => void;
@@ -83,32 +245,250 @@ function Swatch({
   return (
     <button
       aria-label={label}
+      aria-pressed={active}
       title={label}
       onClick={onClick}
       style={{
-        width: 28,
-        height: 28,
+        width: 32,
+        height: 32,
         borderRadius: '50%',
         padding: 0,
+        flexShrink: 0,
         cursor: 'pointer',
-        background: hex,
-        border: `1px solid ${tokens.line}`,
-        boxShadow: active ? `0 0 0 2px ${tokens.gold}` : `inset 0 0 0 1px ${tokens.lineFaint}`,
+        background,
+        border: `1px solid ${LINE}`,
+        boxShadow: active ? `0 0 0 2px ${tokens.warmWhite}, 0 0 0 4px ${tokens.gold}` : 'none',
         transition: 'box-shadow 0.2s ease',
       }}
     />
   );
 }
 
+/** The fabric / hardware / size / operation stack. Rendered twice — beside the
+ * hero and beside the visualiser canvas — and bound to the shared visualiser
+ * store in both places, so the two can never fall out of step with each other
+ * or with the blind on the canvas. `onDark` only swaps the text colours. */
+function ConfiguratorControls({ onDark = false }: { onDark?: boolean }) {
+  const store = useVisualiserStore();
+  const nameColor = onDark ? tokens.warmWhite : tokens.ink;
+
+  return (
+    <>
+      <div>
+        <GoldLabel>Fabric Colour</GoldLabel>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+          {RYNAMIC_COLOURS.map(c => (
+            <Swatch
+              key={c.name}
+              background={c.hex}
+              label={c.name}
+              active={store.fabricColour === c.name}
+              onClick={() => store.setFabricColour(c.name)}
+            />
+          ))}
+        </div>
+        <div style={{ fontFamily: tokens.body, fontSize: 11, color: nameColor, marginTop: 8 }}>
+          {store.fabricColour}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 24 }}>
+        <GoldLabel>Hardware Colour</GoldLabel>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+          {HARDWARE_OPTIONS.map(h => (
+            <Swatch
+              key={h.id}
+              background={h.id === 'chrome' ? CHROME_GRADIENT : (h.id === 'white' ? '#E8E4DE' : '#2C2824')}
+              label={h.label}
+              active={store.hardwareColour === h.id}
+              onClick={() => store.setHardwareColour(h.id)}
+            />
+          ))}
+        </div>
+        <div style={{ fontFamily: tokens.body, fontSize: 11, color: nameColor, marginTop: 8 }}>
+          {HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour)?.label}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 24 }}>
+        <GoldLabel>Window Size</GoldLabel>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+          {SIZE_OPTIONS.map(s => (
+            <Pill
+              key={s.id}
+              label={s.label}
+              sub={s.sub}
+              active={store.windowSize === s.id}
+              onClick={() => store.setWindowSize(s.id)}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginTop: 24 }}>
+        <GoldLabel>Operation</GoldLabel>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+          {OPERATION_OPTIONS.map(o => (
+            <Pill
+              key={o.id}
+              label={o.label}
+              active={store.operation === o.id}
+              onClick={() => store.setOperation(o.id)}
+            />
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** Accordion row. Height is animated off the measured content rather than a
+ * guessed max-height, so a two-line answer and a five-line answer both open
+ * at the same speed and neither gets clipped. Re-measured on resize, since
+ * the answer reflows with the column. */
+function FaqRow({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(0);
+  const [hover, setHover] = useState(false);
+
+  useEffect(() => {
+    const measure = () => setHeight(open ? (bodyRef.current?.scrollHeight ?? 0) : 0);
+    measure();
+    if (!open) return;
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [open, a]);
+
+  return (
+    <div style={{ borderBottom: '1px solid rgba(28,24,16,0.12)' }}>
+      <button
+        onClick={onToggle}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        aria-expanded={open}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 24,
+          width: '100%',
+          padding: '20px 0',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: tokens.body,
+            fontSize: 14,
+            fontWeight: 400,
+            color: hover ? tokens.gold : tokens.ink,
+            transition: 'color 0.25s ease',
+          }}
+        >
+          {q}
+        </span>
+        <span
+          aria-hidden="true"
+          style={{
+            flexShrink: 0,
+            color: tokens.gold,
+            fontSize: 11,
+            lineHeight: 1,
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.3s ease',
+          }}
+        >
+          ▼
+        </span>
+      </button>
+      <div
+        style={{
+          height,
+          overflow: 'hidden',
+          transition: 'height 0.3s ease',
+        }}
+      >
+        <p
+          ref={bodyRef}
+          style={{
+            fontFamily: tokens.body,
+            fontSize: 14,
+            lineHeight: 1.8,
+            color: 'rgba(28,24,16,0.65)',
+            paddingTop: 12,
+            paddingBottom: 20,
+            margin: 0,
+            maxWidth: 760,
+          }}
+        >
+          {a}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function SpecTable({ rows }: { rows: { label: string; value: string }[] }) {
+  return (
+    <div>
+      {rows.map((row, i) => (
+        <div
+          key={row.label}
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            gap: 24,
+            padding: '16px 0',
+            borderBottom: `1px solid ${LINE_FAINT}`,
+            background: i % 2 === 1 ? 'rgba(28,24,16,0.03)' : tokens.warmWhite,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: tokens.body,
+              fontSize: 11,
+              color: tokens.gold,
+              textTransform: 'uppercase',
+              letterSpacing: '0.15em',
+              flexShrink: 0,
+            }}
+          >
+            {row.label}
+          </span>
+          <span
+            style={{
+              fontFamily: tokens.body,
+              fontSize: 14,
+              color: tokens.ink,
+              textAlign: 'right',
+            }}
+          >
+            {row.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const store = useVisualiserStore();
+
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | null>(null);
 
   const product = productBySlug(slug);
-  // The section used to live at /products/:category using blind-type slugs
+  // The section used to live at /products/:category on blind-type slugs
   // (blockout, sunscreen…). Those URLs are still in the wild, so send them to
   // the product they became instead of bouncing everyone to the index.
   const legacy = product ? undefined : productByBlindType(slug);
@@ -118,267 +498,432 @@ export default function ProductDetailPage() {
     navigate(legacy ? `/products/${legacy.slug}` : '/products', { replace: true });
   }, [product, legacy, navigate]);
 
+  useEffect(
+    () => () => {
+      if (toastTimer.current !== null) clearTimeout(toastTimer.current);
+    },
+    [],
+  );
+
   if (!product) return null;
 
-  const selectedColour = RYNAMIC_COLOURS.find(c => c.name === store.fabricColour);
-
   const showToast = () => {
+    if (toastTimer.current !== null) clearTimeout(toastTimer.current);
     setToast('Coming soon — booking flow in progress');
-    setTimeout(() => setToast(null), 3000);
+    toastTimer.current = window.setTimeout(() => setToast(null), 3000);
   };
 
+  // One source for the price. BASE_PRICE in the visualiser store already holds
+  // exactly the figures in the brief — 220/260/330, dual 320/380/480, plus
+  // MOTORISED_ADDON — and the canvas prices off the same call, so a second
+  // table here could only ever drift from it.
+  const price = store.getCurrentPrice();
+
+  const specRows = [...SPEC_BY_TYPE[product.blindType], ...SHARED_SPECS];
+  const faqs = [...FAQ_BY_TYPE[product.blindType], ...SHARED_FAQS];
+  const quality = QUALITY_COPY[product.blindType];
+
+  const sectionPad = isMobile ? '72px 24px' : '120px 160px';
+  // Clears the fixed bottom bar so the last row of content isn't sitting
+  // underneath it.
+  const BAR_CLEARANCE = 96;
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        minHeight: '100vh',
-        alignItems: 'stretch',
-      }}
-    >
-      {/* LEFT — the visualiser, full height. The configurator sizes itself to
-          the photo's aspect ratio, so it is centred in the column rather than
-          stretched: stretching it would violate the photo's proportions and
-          misalign the blind from the window it is drawn onto. */}
-      <div
+    <div style={{ background: tokens.warmWhite }}>
+      {/* ---- SECTION 1 — PRODUCT HERO ---- */}
+      <section
         style={{
-          width: isMobile ? '100%' : '55%',
-          flexShrink: 0,
-          background: tokens.ink,
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: isMobile ? '24px 20px' : 40,
-          boxSizing: 'border-box',
-        }}
-      >
-        <KlayConfigurator defaultBlindType={product.blindType} mediaMaxVh={isMobile ? 60 : 84} />
-      </div>
-
-      {/* RIGHT — product identity, then the configurator controls */}
-      <div
-        style={{
-          width: isMobile ? '100%' : '45%',
+          flexDirection: isMobile ? 'column' : 'row',
+          minHeight: isMobile ? undefined : '90vh',
           background: tokens.warmWhite,
-          padding: isMobile ? '48px 24px' : '64px 56px',
-          boxSizing: 'border-box',
-          position: 'relative',
         }}
       >
-        <Link
-          to="/products"
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 11,
-            color: tokens.gold,
-            textTransform: 'uppercase',
-            letterSpacing: '0.16em',
-            textDecoration: 'none',
-          }}
-        >
-          ← Collection
-        </Link>
-
         <div
           style={{
-            fontFamily: tokens.body,
-            fontSize: 10,
-            color: tokens.gold,
-            textTransform: 'uppercase',
-            letterSpacing: '0.2em',
-            marginTop: 32,
+            width: isMobile ? '100%' : '58%',
+            flexShrink: 0,
+            overflow: 'hidden',
+            minHeight: isMobile ? '60vh' : '90vh',
           }}
         >
-          {product.type}
+          <img
+            src={product.image}
+            alt={`${product.name} — ${product.type}`}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              display: 'block',
+            }}
+          />
         </div>
-        <h1
-          style={{
-            fontFamily: tokens.display,
-            fontSize: isMobile ? 'clamp(44px, 13vw, 64px)' : 64,
-            fontWeight: 300,
-            lineHeight: 1.0,
-            color: tokens.ink,
-            margin: '8px 0 0',
-          }}
-        >
-          {product.name}
-        </h1>
-        <p
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 15,
-            lineHeight: 1.6,
-            color: tokens.ink,
-            opacity: 0.55,
-            margin: '12px 0 0',
-          }}
-        >
-          {product.tagline}
-        </p>
 
         <div
           style={{
-            height: 1,
-            background: 'rgba(28,24,16,0.1)',
-            marginTop: 32,
-            marginBottom: 32,
+            width: isMobile ? '100%' : '42%',
+            boxSizing: 'border-box',
+            padding: isMobile ? '48px 24px' : '80px 64px',
+            display: 'flex',
+            flexDirection: 'column',
+            background: tokens.warmWhite,
+            ...(isMobile
+              ? {}
+              : { position: 'sticky', top: 0, height: '100vh', overflowY: 'auto' as const }),
           }}
-        />
+        >
+          <Link
+            to="/products"
+            style={{
+              fontFamily: tokens.body,
+              fontSize: 11,
+              color: tokens.gold,
+              textTransform: 'uppercase',
+              letterSpacing: '0.15em',
+              textDecoration: 'none',
+              alignSelf: 'flex-start',
+            }}
+          >
+            ← Collection
+          </Link>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-          {/* 1 — Fabric colour */}
-          <section>
-            <GroupLabel>Fabric Colour</GroupLabel>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-              {RYNAMIC_COLOURS.map(c => (
-                <Swatch
-                  key={c.name}
-                  hex={c.hex}
-                  label={c.name}
-                  active={store.fabricColour === c.name}
-                  onClick={() => store.setFabricColour(c.name)}
-                />
-              ))}
-            </div>
-            <div
-              style={{
-                fontFamily: tokens.body,
-                fontSize: 12,
-                color: tokens.ink,
-                opacity: 0.55,
-                marginTop: 12,
-              }}
-            >
-              {selectedColour?.name ?? store.fabricColour}
-            </div>
-          </section>
+          <div style={{ marginTop: 40 }}>
+            <GoldLabel spacing="0.25em">{product.type}</GoldLabel>
+          </div>
+          <h1
+            style={{
+              fontFamily: tokens.display,
+              // Clamped rather than a flat 72px: at 72px "Haze" is fine but
+              // the 42% column gets narrow on a laptop, and this is the first
+              // thing on the page.
+              fontSize: isMobile ? 'clamp(44px, 14vw, 64px)' : 'clamp(52px, 5.2vw, 72px)',
+              fontWeight: 300,
+              lineHeight: 0.95,
+              color: tokens.ink,
+              margin: '8px 0 0',
+            }}
+          >
+            {product.name}
+          </h1>
+          <p
+            style={{
+              fontFamily: tokens.body,
+              fontSize: 15,
+              lineHeight: 1.7,
+              color: INK_55,
+              margin: '16px 0 0',
+              maxWidth: 340,
+            }}
+          >
+            {product.tagline}
+          </p>
 
-          {/* 2 — Hardware colour */}
-          <section>
-            <GroupLabel>Hardware Colour</GroupLabel>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-              {HARDWARE_OPTIONS.map(h => (
-                <Swatch
-                  key={h.id}
-                  hex={HARDWARE_HEX[h.id]}
-                  label={h.label}
-                  active={store.hardwareColour === h.id}
-                  onClick={() => store.setHardwareColour(h.id)}
-                />
-              ))}
-            </div>
-            <div
-              style={{
-                fontFamily: tokens.body,
-                fontSize: 12,
-                color: tokens.ink,
-                opacity: 0.55,
-                marginTop: 12,
-              }}
-            >
-              {HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour)?.label}
-            </div>
-          </section>
+          <div style={{ height: 1, background: LINE, marginTop: 32, marginBottom: 32 }} />
 
-          {/* 3 — Window size */}
-          <section>
-            <GroupLabel>Window Size</GroupLabel>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {SIZE_OPTIONS.map(s => (
-                <Pill
-                  key={s.id}
-                  label={s.label}
-                  active={store.windowSize === s.id}
-                  onClick={() => store.setWindowSize(s.id)}
-                />
-              ))}
-            </div>
-          </section>
+          <ConfiguratorControls />
 
-          {/* 4 — Operation */}
-          <section>
-            <GroupLabel>Operation</GroupLabel>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {OPERATION_OPTIONS.map(o => (
-                <Pill
-                  key={o.id}
-                  label={o.label}
-                  active={store.operation === o.id}
-                  onClick={() => store.setOperation(o.id)}
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* 5 — Price */}
-          <section>
-            <GroupLabel>Estimated Price</GroupLabel>
+          <div style={{ marginTop: 32 }}>
+            <GoldLabel>Estimated Price</GoldLabel>
             <div
               style={{
                 fontFamily: tokens.display,
-                fontSize: 42,
+                fontSize: 52,
                 fontWeight: 300,
-                lineHeight: 1.1,
+                lineHeight: 1,
                 color: tokens.ink,
+                marginTop: 8,
               }}
             >
-              ${store.getCurrentPrice()}
+              ${price}
             </div>
-            <div
-              style={{
-                fontFamily: tokens.body,
-                fontSize: 12,
-                color: tokens.ink,
-                opacity: 0.55,
-                marginTop: 6,
-              }}
-            >
+            <div style={{ fontFamily: tokens.body, fontSize: 11, color: INK_40, marginTop: 8 }}>
               + professional installation across Victoria
             </div>
-          </section>
+          </div>
 
-          {/* 6 — Book installation */}
           <button
             onClick={showToast}
             style={{
               width: '100%',
-              padding: '17px 20px',
+              marginTop: 24,
+              padding: 18,
               background: tokens.gold,
               color: tokens.ink,
               fontFamily: tokens.body,
               fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: '0.14em',
               textTransform: 'uppercase',
+              letterSpacing: '0.25em',
               border: 'none',
-              borderRadius: RADIUS,
+              borderRadius: 0,
               cursor: 'pointer',
             }}
           >
-            Book Installation →
+            Book Installation
           </button>
         </div>
+      </section>
 
-        {toast && (
-          <div
+      {/* ---- SECTION 2 — VISUALISER ---- */}
+      <section
+        style={{
+          background: tokens.charcoal,
+          paddingTop: isMobile ? 64 : 80,
+          paddingBottom: isMobile ? 64 : 80,
+          paddingLeft: isMobile ? 24 : 40,
+          paddingRight: isMobile ? 24 : 40,
+        }}
+      >
+        <div style={{ textAlign: 'center' }}>
+          <GoldLabel spacing="0.3em">See It In Your Room</GoldLabel>
+          <h2
             style={{
-              position: 'fixed',
-              bottom: 24,
-              right: 24,
-              zIndex: 100,
-              background: tokens.ink,
+              fontFamily: tokens.display,
+              fontSize: isMobile ? 'clamp(32px, 9vw, 40px)' : 'clamp(38px, 4.4vw, 52px)',
+              fontWeight: 300,
+              lineHeight: 1.05,
               color: tokens.warmWhite,
-              fontFamily: tokens.body,
-              fontSize: 13,
-              padding: '14px 20px',
-              borderRadius: RADIUS,
-              boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
+              margin: '12px 0 0',
             }}
           >
-            {toast}
+            Your window. Your blind.
+          </h2>
+          <p
+            style={{
+              fontFamily: tokens.body,
+              fontSize: 13,
+              lineHeight: 1.7,
+              color: 'rgba(245,242,237,0.5)',
+              margin: '12px auto 0',
+              maxWidth: 460,
+            }}
+          >
+            Upload a photo of your window and see exactly how it looks.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'flex-start',
+            gap: isMobile ? 40 : 32,
+            maxWidth: 1100,
+            margin: '48px auto 0',
+          }}
+        >
+          {/* Ink surround, because KlayConfigurator's own box is charcoal —
+              the same value as this section — so without it the canvas has no
+              edge to sit against. */}
+          <div
+            style={{
+              width: isMobile ? '100%' : '65%',
+              boxSizing: 'border-box',
+              background: tokens.ink,
+              padding: isMobile ? 12 : 16,
+            }}
+          >
+            <KlayConfigurator
+              defaultBlindType={product.blindType}
+              mediaMaxVh={isMobile ? 56 : 66}
+            />
           </div>
-        )}
+
+          <div style={{ width: isMobile ? '100%' : '35%', boxSizing: 'border-box' }}>
+            <ConfiguratorControls onDark />
+            <div
+              style={{
+                marginTop: 28,
+                paddingTop: 20,
+                borderTop: '1px solid rgba(245,242,237,0.12)',
+              }}
+            >
+              <GoldLabel>Estimated Price</GoldLabel>
+              <div
+                style={{
+                  fontFamily: tokens.display,
+                  fontSize: 42,
+                  fontWeight: 300,
+                  lineHeight: 1,
+                  color: tokens.warmWhite,
+                  marginTop: 8,
+                }}
+              >
+                ${price}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- SECTION 3 — PRODUCT SPECS ---- */}
+      <section style={{ background: tokens.warmWhite, padding: sectionPad }}>
+        <GoldLabel spacing="0.3em">Product Details</GoldLabel>
+        <h2
+          style={{
+            fontFamily: tokens.display,
+            fontSize: isMobile ? 'clamp(32px, 9vw, 40px)' : 'clamp(36px, 4vw, 48px)',
+            fontWeight: 300,
+            lineHeight: 1.05,
+            color: tokens.ink,
+            margin: '14px 0 0',
+          }}
+        >
+          Built to last.
+        </h2>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.15fr) minmax(0, 1fr)',
+            gap: isMobile ? 48 : 80,
+            marginTop: isMobile ? 40 : 56,
+            alignItems: 'start',
+          }}
+        >
+          <SpecTable rows={specRows} />
+
+          <div>
+            {quality.map((para, i) => (
+              <p
+                key={para}
+                style={{
+                  fontFamily: tokens.body,
+                  fontSize: 15,
+                  lineHeight: 1.9,
+                  color: INK_55,
+                  margin: i === 0 ? 0 : '20px 0 0',
+                }}
+              >
+                {para}
+              </p>
+            ))}
+            <div
+              style={{
+                marginTop: 28,
+                paddingTop: 20,
+                borderTop: `1px solid ${LINE_FAINT}`,
+              }}
+            >
+              <GoldLabel>Warranty</GoldLabel>
+              <div
+                style={{
+                  fontFamily: tokens.display,
+                  fontSize: 32,
+                  fontWeight: 300,
+                  color: tokens.ink,
+                  marginTop: 6,
+                }}
+              >
+                5 years
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- SECTION 4 — FAQs ---- */}
+      <section
+        style={{
+          background: SHELL,
+          padding: sectionPad,
+          paddingBottom: (isMobile ? 72 : 120) + BAR_CLEARANCE,
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: tokens.display,
+            fontSize: isMobile ? 'clamp(32px, 9vw, 40px)' : 'clamp(36px, 4vw, 48px)',
+            fontWeight: 300,
+            lineHeight: 1.05,
+            color: tokens.ink,
+            margin: 0,
+          }}
+        >
+          Common questions.
+        </h2>
+        <div style={{ marginTop: isMobile ? 32 : 48, maxWidth: 900 }}>
+          {faqs.map((f, i) => (
+            <FaqRow
+              key={f.q}
+              q={f.q}
+              a={f.a}
+              open={openFaq === i}
+              onToggle={() => setOpenFaq(cur => (cur === i ? null : i))}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* ---- STICKY BOTTOM BAR ---- */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          width: '100%',
+          boxSizing: 'border-box',
+          zIndex: 100,
+          background: 'rgba(245,242,237,0.95)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          borderTop: `1px solid ${LINE_FAINT}`,
+          padding: isMobile ? '12px 24px' : '16px 80px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 16,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: tokens.display,
+            fontSize: isMobile ? 24 : 32,
+            fontWeight: 300,
+            lineHeight: 1,
+            color: tokens.ink,
+          }}
+        >
+          from ${price}
+        </div>
+        <button
+          onClick={showToast}
+          style={{
+            background: tokens.gold,
+            color: tokens.ink,
+            fontFamily: tokens.body,
+            fontSize: 11,
+            textTransform: 'uppercase',
+            letterSpacing: '0.2em',
+            padding: isMobile ? '12px 20px' : '14px 40px',
+            border: 'none',
+            borderRadius: 0,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Book Installation →
+        </button>
       </div>
+
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: BAR_CLEARANCE,
+            right: 24,
+            zIndex: 101,
+            background: tokens.ink,
+            color: tokens.warmWhite,
+            fontFamily: tokens.body,
+            fontSize: 13,
+            padding: '14px 20px',
+            boxShadow: '0 4px 24px rgba(28,24,16,0.28)',
+          }}
+        >
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
