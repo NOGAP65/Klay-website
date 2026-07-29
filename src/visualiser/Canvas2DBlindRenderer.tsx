@@ -357,6 +357,11 @@ const UNIT_SQUARE: Point[] = [[0, 0], [1, 0], [1, 1], [0, 1]];
  * reads as surface, never as a wash over the top of it. */
 const FABRIC_TEXTURE_AMOUNT = 0.5;
 
+/** Vertical texture repeats, bounded at both ends. The upper bound stops a
+ * tall trace visibly tiling; the lower bound stops a nearly rolled-up blind
+ * collapsing to a single smeared texture row. */
+const clampUvScale = (scale: number): number => Math.max(0.25, Math.min(2, scale));
+
 interface QuadOptions {
   tint: { r: number; g: number; b: number };
   textureAmount: number;
@@ -527,21 +532,21 @@ const drawVignette = (ctx: CanvasRenderingContext2D, corners: Point[]) => {
   ctx.restore();
 };
 
-/** Soft shadow the blind casts downward onto the wall/sill below the
- * bottom rail, grounding it physically in the scene. Only meaningful once
- * there's fabric hanging to cast it. */
+/** Soft shadow the blind casts downward onto whatever sits below the bottom
+ * rail, grounding it physically in the scene. Anchored to the RAIL's own
+ * position rather than the window's bottom edge — otherwise a half-raised
+ * blind stretches one shadow gradient all the way down over the open glass
+ * instead of casting a short one just beneath itself. */
 const drawContactShadow = (
   ctx: CanvasRenderingContext2D,
-  bl: Point,
-  br: Point,
   fabBL: Point,
   fabBR: Point
 ) => {
-  const shadowHeight = 8; // px, fixed — a soft downward fade onto the wall below the rail
+  const shadowHeight = 8; // px, fixed — a soft downward fade below the rail
   const shadowTL = fabBL;
   const shadowTR = fabBR;
-  const shadowBL: Point = [bl[0], bl[1] + shadowHeight];
-  const shadowBR: Point = [br[0], br[1] + shadowHeight];
+  const shadowBL: Point = [fabBL[0], fabBL[1] + shadowHeight];
+  const shadowBR: Point = [fabBR[0], fabBR[1] + shadowHeight];
 
   ctx.save();
   ctx.beginPath();
@@ -732,12 +737,26 @@ const drawCassetteMountShadow = (
  * 8px wall shadow instead of two overlapping gradients.) */
 const drawRailDropShadow = (
   ctx: CanvasRenderingContext2D,
+  tl: Point,
+  tr: Point,
   railTL: Point,
   railTR: Point,
   leftH: number
 ) => {
   const railShadowH = leftH * 0.025;
   ctx.save();
+  // Clipped to the fabric between the blind's top and the rail. Without
+  // this the gradient reaches a fixed distance above the rail regardless of
+  // where the rail is, so a nearly rolled-up blind smudged a dark band
+  // across its own cassette and the wall above it.
+  ctx.beginPath();
+  ctx.moveTo(tl[0], tl[1]);
+  ctx.lineTo(tr[0], tr[1]);
+  ctx.lineTo(railTR[0], railTR[1]);
+  ctx.lineTo(railTL[0], railTL[1]);
+  ctx.closePath();
+  ctx.clip();
+
   const upperShadow = ctx.createLinearGradient(
     railTL[0], railTL[1],
     railTL[0], railTL[1] - railShadowH
@@ -996,16 +1015,26 @@ const drawBlindArea = (
     bl[1] + (br[1] - bl[1]) * t,
   ];
 
-  // Roller position: fraction of the drop covered by fabric. Below 5%
-  // the fabric/rail are hidden but the cassette remains.
+  // Roller position: fraction of the drop covered by fabric. The fabric
+  // shrinks continuously into the cassette as this approaches zero — there
+  // is no threshold below which the blind pops out of existence. The only
+  // thing skipped is a sub-pixel drop, where the quad has no height left to
+  // build a homography from.
   const p = Math.max(0, Math.min(1, rollPosition));
-  const showBlind = p >= 0.05;
+  const fabricDrop = leftH * p;
+  const showBlind = fabricDrop >= 1;
   const fabBL = leftEdge(p);
   const fabBR = rightEdge(p);
 
+  // Everything that shades, lights or outlines the fabric works off THIS
+  // quad, never the full window quad. Using `corners` meant a half-raised
+  // blind still washed the whole opening in shadow and stroked a border
+  // around the empty glass below it.
+  const fabricQuad: Point[] = [tl, tr, fabBR, fabBL];
+
   if (showBlind) {
     // --- DEPTH (pre-fabric) ---
-    drawPreFabricDepth(ctx, corners);
+    drawPreFabricDepth(ctx, fabricQuad);
 
     // --- FABRIC via WebGL (perspective-correct texture mapping) ---
     if (!glStateRef.current && !glUnavailableRef.current) {
@@ -1037,8 +1066,11 @@ const drawBlindArea = (
       // — with CLAMP_TO_EDGE wrapping (see getOrUploadTexture) anything
       // beyond that just smears the edge pixel rather than hard-repeating,
       // so this keeps the fabric reading as one continuous piece even on a
-      // very tall trace instead of visibly tiling.
-      const uvScale: [number, number] = [2, Math.min(2, (leftH * p) / avgW)];
+      // very tall trace instead of visibly tiling. The lower clamp matters
+      // just as much while rolling up: as the drop approaches zero so does
+      // this scale, and at zero every pixel samples the same texture row,
+      // streaking the fabric as it disappears.
+      const uvScale: [number, number] = [2, clampUvScale(fabricDrop / avgW)];
 
       if (type === 'sheer') {
         // Two panels with a centre gap, like a pair of sheer curtains
@@ -1058,7 +1090,7 @@ const drawBlindArea = (
           tint,
           textureAmount: FABRIC_TEXTURE_AMOUNT,
           opacity: 0.38,
-          uvScale: [1, Math.min(2, (leftH * p) / (avgW / 2))],
+          uvScale: [1, clampUvScale(fabricDrop / (avgW / 2))],
           shade: true,
           folds: 8,
         };
@@ -1123,7 +1155,7 @@ const drawBlindArea = (
     }
 
     // --- LIGHTING (post-fabric) ---
-    drawLightSheen(ctx, corners);
+    drawLightSheen(ctx, fabricQuad);
     drawAmbientOcclusion(ctx, tl, tr, fabBR, fabBL);
   } // end showBlind (depth + fabric)
 
@@ -1148,16 +1180,15 @@ const drawBlindArea = (
 
     // --- BOTTOM RAIL DROP SHADOW — the rail hangs in space; it casts a
     // shadow up onto the fabric directly behind it. ---
-    if (p > 0.1) {
-      drawRailDropShadow(ctx, railTL, railTR, leftH);
-    }
+    drawRailDropShadow(ctx, tl, tr, railTL, railTR, leftH);
   }
 
-  // --- CONTACT SHADOW — cast onto the wall/sill below the rail. Skipped
-  // once the blind is nearly fully open (p <= 0.1): with almost nothing
-  // hanging down, there's nothing to cast one. ---
-  if (showBlind && p > 0.1) {
-    drawContactShadow(ctx, bl, br, fabBL, fabBR);
+  // --- CONTACT SHADOW — cast just below the rail, wherever the rail
+  // currently sits. No roll-position threshold: now that it is anchored to
+  // the rail rather than the sill it stays correct at every position, and
+  // gating it caused a visible pop partway through the roll. ---
+  if (showBlind) {
+    drawContactShadow(ctx, fabBL, fabBR);
   }
 
   // --- CHAIN — not rendered. showChain/chainSide/controlType are kept as
@@ -1168,7 +1199,7 @@ const drawBlindArea = (
 
   // --- VIGNETTE (perimeter stroke) — always last, grounds the frame ---
   if (showBlind) {
-    drawVignette(ctx, corners);
+    drawVignette(ctx, fabricQuad);
   }
 };
 
@@ -1205,10 +1236,23 @@ const drawDualBlindArea = (
   const rightEdge = (t: number): Point => [tr[0] + (br[0] - tr[0]) * t, tr[1] + (br[1] - tr[1]) * t];
 
   const p = Math.max(0, Math.min(1, rollPosition));
-  const backP = 1; // back layer always fully down
-  const frontP = Math.min(p, FRONT_LAYER_MAX_DROP); // front layer partially raised
+  // Both rollers ride the slider. The back layer follows it directly; the
+  // front one stays proportionally short of it so the gap between the two
+  // rollers reads at every position and closes only when fully raised.
+  // (The back layer used to be pinned at 1, which meant a dual blind could
+  // never be rolled up — the slider left a full-drop layer over the glass.)
+  const backP = p;
+  const frontP = p * FRONT_LAYER_MAX_DROP;
+  const fabricDrop = leftH * backP;
+  const showBlind = fabricDrop >= 1;
 
-  drawPreFabricDepth(ctx, corners);
+  const backBLEdge = leftEdge(backP);
+  const backBREdge = rightEdge(backP);
+  // Scoped to the back layer (the lower of the two), never the full window
+  // quad — otherwise a raised dual blind shades and outlines empty glass.
+  const fabricQuad: Point[] = [tl, tr, backBREdge, backBLEdge];
+
+  if (showBlind) drawPreFabricDepth(ctx, fabricQuad);
 
   /** Draws one fabric layer's quad (solid, opaque — both layers share the
    * same fabric colour) plus its own fold-line texture, returning its
@@ -1241,7 +1285,7 @@ const drawDualBlindArea = (
 
       const fabricTexture = getOrUploadTexture(state, getTexturePath('dual'), fabricImg);
       const tint = hexToRgb(fabricColor);
-      const uvScale: [number, number] = [2, Math.min(2, (leftH * dropP) / avgW)];
+      const uvScale: [number, number] = [2, clampUvScale((leftH * dropP) / avgW)];
       drawQuad(state, [tl, tr, layerBR, layerBL], fabricTexture, {
         tint, textureAmount: FABRIC_TEXTURE_AMOUNT, opacity: 1, uvScale, shade: true, folds: 0,
       });
@@ -1263,19 +1307,26 @@ const drawDualBlindArea = (
     return { layerBL, layerBR };
   };
 
-  // --- BACK LAYER — fully down ---
-  const { layerBL: backBL, layerBR: backBR } = drawFabricLayer(backP);
-  drawFabricCentreLight(ctx, tl, tr, backBL, backBR);
+  // --- BACK LAYER — the lower of the two ---
+  const backBL = backBLEdge;
+  const backBR = backBREdge;
+  const frontBL = leftEdge(frontP);
+  const frontBR = rightEdge(frontP);
 
-  // --- FRONT LAYER — partially raised, drawn on top; the back layer's
-  // lower portion stays visible as the gap between the two rollers ---
-  const { layerBL: frontBL, layerBR: frontBR } = drawFabricLayer(frontP);
-  drawFabricCentreLight(ctx, tl, tr, frontBL, frontBR);
+  if (showBlind) {
+    drawFabricLayer(backP);
+    drawFabricCentreLight(ctx, tl, tr, backBL, backBR);
+
+    // --- FRONT LAYER — sits proportionally higher, drawn on top; the back
+    // layer's lower portion stays visible as the gap between the rollers ---
+    drawFabricLayer(frontP);
+    drawFabricCentreLight(ctx, tl, tr, frontBL, frontBR);
+  }
 
   // --- GAP SHADOW — the front rail (drawn below) sits above the exposed
   // back-layer fabric; cast a small soft shadow onto it. ---
   const gapDepth = backP - frontP;
-  if (gapDepth > 0.02) {
+  if (showBlind && gapDepth > 0.02) {
     const gapShadowH = Math.min(10, leftH * gapDepth * 0.25);
     ctx.save();
     const gapGrad = ctx.createLinearGradient(frontBL[0], frontBL[1], frontBL[0], frontBL[1] + gapShadowH);
@@ -1292,32 +1343,34 @@ const drawDualBlindArea = (
     ctx.restore();
   }
 
-  // --- LIGHTING — once, across the full window (back layer reaches the
-  // true bottom, so the fabric-only AO band spans the whole drop) ---
-  drawLightSheen(ctx, corners);
-  drawAmbientOcclusion(ctx, tl, tr, br, bl);
+  // --- LIGHTING — over the back layer, which is the lower of the two, so
+  // the fabric-only AO band spans exactly the fabric that is showing ---
+  if (showBlind) {
+    drawLightSheen(ctx, fabricQuad);
+    drawAmbientOcclusion(ctx, tl, tr, backBR, backBL);
+  }
 
-  // --- SHARED CASSETTE + BRACKETS — one housing for both rollers ---
+  // --- SHARED CASSETTE + BRACKETS — one housing for both rollers. Always
+  // drawn: the hardware stays put however far the fabric is wound up. ---
   const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor);
   drawSideBrackets(ctx, tl, tr, avgW, hardwareColourName, safeHardwareColor);
-  drawCassetteMountShadow(ctx, tl, tr, frontBL, frontBR, cassetteHalfH, leftH, avgW);
 
-  // --- RAILS — front layer's rail (higher up) and back layer's rail
-  // (at the true bottom) ---
-  const railHeight = leftH * RAIL_HEIGHT_RATIO;
-  const frontRailT = Math.max(0, frontP - railHeight / leftH);
-  const frontRailTL = leftEdge(frontRailT);
-  const frontRailTR = rightEdge(frontRailT);
-  drawBottomRail(ctx, frontRailTL, frontRailTR, frontBL, frontBR, hardwareColourName, safeHardwareColor);
-  drawRailDropShadow(ctx, frontRailTL, frontRailTR, leftH);
+  if (showBlind) {
+    drawCassetteMountShadow(ctx, tl, tr, frontBL, frontBR, cassetteHalfH, leftH, avgW);
 
-  const backRailT = Math.max(0, backP - railHeight / leftH);
-  const backRailTL = leftEdge(backRailT);
-  const backRailTR = rightEdge(backRailT);
-  drawBottomRail(ctx, backRailTL, backRailTR, backBL, backBR, hardwareColourName, safeHardwareColor);
-  drawContactShadow(ctx, bl, br, backBL, backBR);
+    // --- RAILS — the front layer's rail sits higher; the back layer's rail
+    // rides its own bottom edge. Both wind up with their layer. ---
+    const railHeight = leftH * RAIL_HEIGHT_RATIO;
+    const frontRailT = Math.max(0, frontP - railHeight / leftH);
+    drawBottomRail(ctx, leftEdge(frontRailT), rightEdge(frontRailT), frontBL, frontBR, hardwareColourName, safeHardwareColor);
+    drawRailDropShadow(ctx, tl, tr, leftEdge(frontRailT), rightEdge(frontRailT), leftH);
 
-  drawVignette(ctx, corners);
+    const backRailT = Math.max(0, backP - railHeight / leftH);
+    drawBottomRail(ctx, leftEdge(backRailT), rightEdge(backRailT), backBL, backBR, hardwareColourName, safeHardwareColor);
+    drawContactShadow(ctx, backBL, backBR);
+
+    drawVignette(ctx, fabricQuad);
+  }
 };
 
 // ---------------------------------------------------------------------------
