@@ -90,7 +90,7 @@ const shadowRgba = (a: number): string => `rgba(20,16,10,${a})`;
 
 /** Daylight leaking around an opaque fabric — the warm cast of sun through a
  * window rather than neutral white. */
-const leakRgba = (a: number): string => `rgba(255,240,200,${a})`;
+const leakRgba = (a: number): string => `rgba(255,242,210,${a})`;
 
 /** Fills a gradient band in N passes at a fraction of the target opacity
  * instead of one hard fill. Overlapping low-alpha passes accumulate into a
@@ -305,8 +305,11 @@ void main() {
   // source and the far corner falls away. This is the only cue that a
   // blockout blind is a surface and not a flat colour swatch.
   if (u_blindType < 0.5) {
+    // +8% at the top-left corner falling to -6% at the bottom-right. diag runs
+    // 1 at top-left to 0 at bottom-right, so the ramp is 0.14 wide and offset
+    // by -0.06 to put the crossover on the leading diagonal.
     float diag = 1.0 - clamp((uv.x + uv.y) * 0.5, 0.0, 1.0);
-    col *= 1.0 + diag * 0.07 - 0.03;
+    col *= 1.0 + diag * 0.14 - 0.06;
   }
 
   // SUNSCREEN — open-weave mesh. Fine horizontal bands catch the light along
@@ -512,24 +515,30 @@ const getOrUploadTexture = (
   if (!texture) throw new Error('Failed to create WebGL texture');
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, potCanvas);
-  // Horizontal always repeats. Vertical depends on whether this particular
-  // photo tiles.
+  // MIRRORED_REPEAT, not REPEAT — this is what actually removes the tile
+  // seams, and plain REPEAT is what caused them.
   //
-  // The purpose-shot roller textures do, and they have to: repeating
-  // horizontally without repeating vertically stretches every texel by the
-  // blind's aspect ratio, which is exactly the "mesh looks stretched" failure.
-  // uvScaleFor sets both counts together to keep texels square, and that is
-  // only meaningful if both axes wrap.
+  // These textures are photographs, not seamless tiles: the pixels down the
+  // left edge have no relationship to the pixels down the right. Under REPEAT
+  // every tile boundary butts those two unrelated edges together and the
+  // discontinuity reads as a hard line, laying a visible grid over the fabric.
+  // Mipmapping does not help — it averages the discontinuity into the lower
+  // levels, turning a hard line into a soft band that is still a line.
   //
-  // The legacy curtain scans do not tile — repeating them vertically put a
-  // hard horizontal seam partway down the drop, which is why this was
-  // CLAMP_TO_EDGE for everything. They keep the clamp, so the last row smears
-  // instead and a curtain still reads as one continuous piece.
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  // MIRRORED_REPEAT flips the sampling direction at each boundary, so the
+  // texture always meets itself edge-pixel to edge-pixel. The join is
+  // continuous by construction whatever the source image looks like, so the
+  // seam cannot exist rather than being masked. The mirroring itself is
+  // invisible here: a woven fabric at this scale has no directional content
+  // for the eye to catch a reflection in.
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+  // Vertical still depends on the photo. The purpose-shot roller textures
+  // mirror cleanly; the legacy curtain scans stay clamped so the last row
+  // smears down the drop and a curtain reads as one continuous piece.
   gl.texParameteri(
     gl.TEXTURE_2D,
     gl.TEXTURE_WRAP_T,
-    tileable ? gl.REPEAT : gl.CLAMP_TO_EDGE,
+    tileable ? gl.MIRRORED_REPEAT : gl.CLAMP_TO_EDGE,
   );
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -783,20 +792,32 @@ const drawAmbientOcclusion = (
   fabBL: Point
 ) => {
   const topW = Math.hypot(tr[0] - tl[0], tr[1] - tl[1]);
-  // 20px at the reference blind, capped so it can't eat a very narrow trace.
-  const depthFrac = Math.min(0.45, scaleToBlind(20, topW) / Math.max(1, topW));
+
+  // Asymmetric, because the light source is assumed top-left everywhere in
+  // this renderer — the shader's directional sheen, the cassette highlight and
+  // the bracket top face all agree on it. A matched pair of edge shadows
+  // quietly contradicted all three and flattened the fabric back out. The
+  // left edge is deeper and reaches further; the right is shallower.
+  const reachFrac = (px: number) =>
+    Math.min(0.45, scaleToBlind(px, topW) / Math.max(1, topW));
+  const leftFrac = reachFrac(18);
+  const rightFrac = reachFrac(14);
 
   const lerp = (a: Point, b: Point, t: number): Point => [
     a[0] + (b[0] - a[0]) * t,
     a[1] + (b[1] - a[1]) * t,
   ];
 
-  const fillBand = (outerA: Point, outerB: Point, innerB: Point, innerA: Point) => {
+  const fillBand = (
+    outerA: Point,
+    outerB: Point,
+    innerB: Point,
+    innerA: Point,
+    alpha: number,
+  ) => {
     const grad = ctx.createLinearGradient(outerA[0], outerA[1], innerA[0], innerA[1]);
-    // 22%, warm. This is the band that makes the fabric read as hanging in a
-    // recess rather than lying flat against the photo.
-    grad.addColorStop(0, shadowRgba(0.22));
-    grad.addColorStop(0.45, shadowRgba(0.07));
+    grad.addColorStop(0, shadowRgba(alpha));
+    grad.addColorStop(0.45, shadowRgba(alpha * 0.32));
     grad.addColorStop(1, shadowRgba(0));
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -817,8 +838,8 @@ const drawAmbientOcclusion = (
   ctx.closePath();
   ctx.clip();
 
-  fillBand(tl, fabBL, lerp(fabBL, fabBR, depthFrac), lerp(tl, tr, depthFrac)); // left
-  fillBand(tr, fabBR, lerp(fabBR, fabBL, depthFrac), lerp(tr, tl, depthFrac)); // right
+  fillBand(tl, fabBL, lerp(fabBL, fabBR, leftFrac), lerp(tl, tr, leftFrac), 0.16);
+  fillBand(tr, fabBR, lerp(fabBR, fabBL, rightFrac), lerp(tr, tl, rightFrac), 0.12);
 
   ctx.restore();
 };
@@ -837,33 +858,47 @@ const drawAmbientOcclusion = (
 // and wall, and the shader can only write pixels inside the quad it rasterises.
 // ---------------------------------------------------------------------------
 
+interface LeakEdge {
+  /** Outward reach in reference px, and peak alpha. */
+  reach: number;
+  alpha: number;
+}
+
+/** Left and right are specified separately, not mirrored. The light source is
+ * top-left throughout this renderer, so more spills down the near side than
+ * the far one; a symmetric pair reads as a glowing outline rather than as a
+ * lit room. */
 interface LeakSpec {
-  /** Side glow: outward reach in reference px, and peak alpha. */
-  side: { reach: number; alpha: number };
-  /** Under the bottom rail. */
-  bottom: { reach: number; alpha: number };
-  /** Between the cassette and the wall above it. */
-  top: { reach: number; alpha: number };
+  left: LeakEdge;
+  right: LeakEdge;
+  bottom: LeakEdge;
+  top: LeakEdge;
 }
 
 const LEAK_BY_TYPE: Record<string, LeakSpec> = {
-  // Opaque: everything escapes at the perimeter.
+  // Opaque, so every photon that reaches the window escapes at the perimeter.
+  // This is the strongest leak of the three and the main cue that the fabric
+  // is stopping light rather than passing it.
   blockout: {
-    side: { reach: 8, alpha: 0.12 },
-    bottom: { reach: 4, alpha: 0.15 },
-    top: { reach: 3, alpha: 0.1 },
+    left: { reach: 10, alpha: 0.18 },
+    right: { reach: 8, alpha: 0.14 },
+    top: { reach: 4, alpha: 0.12 },
+    bottom: { reach: 6, alpha: 0.1 },
   },
-  // Transmits most light through the weave, and seals better at the edge.
+  // Transmits most light through the weave and seals better at the edge, so
+  // there is very little left over to spill.
   sunscreen: {
-    side: { reach: 4, alpha: 0.06 },
-    bottom: { reach: 3, alpha: 0.05 },
+    left: { reach: 4, alpha: 0.06 },
+    right: { reach: 3, alpha: 0.05 },
     top: { reach: 2, alpha: 0.04 },
+    bottom: { reach: 3, alpha: 0.05 },
   },
   // Between the two.
   lightfilter: {
-    side: { reach: 6, alpha: 0.14 },
-    bottom: { reach: 5, alpha: 0.12 },
+    left: { reach: 6, alpha: 0.14 },
+    right: { reach: 5, alpha: 0.11 },
     top: { reach: 3, alpha: 0.08 },
+    bottom: { reach: 5, alpha: 0.12 },
   },
 };
 
@@ -910,9 +945,8 @@ const drawLightLeak = (
     ctx.fill();
   };
 
-  const sideReach = scaleToBlind(spec.side.reach, avgW);
-  band(tl, fabBL, -ux, -uy, sideReach, spec.side.alpha);   // left, spilling outward
-  band(tr, fabBR, ux, uy, sideReach, spec.side.alpha);     // right, mirrored
+  band(tl, fabBL, -ux, -uy, scaleToBlind(spec.left.reach, avgW), spec.left.alpha);
+  band(tr, fabBR, ux, uy, scaleToBlind(spec.right.reach, avgW), spec.right.alpha);
   band(fabBL, fabBR, -px, -py, scaleToBlind(spec.bottom.reach, avgW), spec.bottom.alpha);
   band(tl, tr, px, py, scaleToBlind(spec.top.reach, avgW), spec.top.alpha);
 
@@ -1009,6 +1043,50 @@ const drawTranslucentLightBleed = (
   ctx.restore();
 };
 
+/** A very soft darkening toward the fabric's own perimeter, inside the quad.
+ *
+ * Belt and braces over MIRRORED_REPEAT: the mirroring removes the seam
+ * geometrically, and this breaks up any residual regularity in the repeat by
+ * making the tile grid's brightness non-uniform across the drop, so the eye
+ * has no constant rhythm to lock onto. Deliberately weaker than the edge AO
+ * it sits under — at this strength it is felt, not seen. */
+const drawFabricVignette = (
+  ctx: CanvasRenderingContext2D,
+  tl: Point,
+  tr: Point,
+  fabBL: Point,
+  fabBR: Point,
+) => {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tl[0], tl[1]);
+  ctx.lineTo(tr[0], tr[1]);
+  ctx.lineTo(fabBR[0], fabBR[1]);
+  ctx.lineTo(fabBL[0], fabBL[1]);
+  ctx.closePath();
+  ctx.clip();
+
+  const cx = (tl[0] + tr[0] + fabBL[0] + fabBR[0]) / 4;
+  const cy = (tl[1] + tr[1] + fabBL[1] + fabBR[1]) / 4;
+  const radius = Math.max(
+    Math.hypot(tr[0] - tl[0], tr[1] - tl[1]),
+    Math.hypot(fabBL[0] - tl[0], fabBL[1] - tl[1]),
+  ) * 0.72;
+
+  // Clear through the middle, easing in over the outer 15%.
+  const g = ctx.createRadialGradient(cx, cy, radius * 0.85, cx, cy, radius);
+  g.addColorStop(0, shadowRgba(0));
+  g.addColorStop(1, shadowRgba(0.06));
+  ctx.fillStyle = g;
+  ctx.fillRect(
+    Math.min(tl[0], fabBL[0]) - radius,
+    Math.min(tl[1], tr[1]) - radius,
+    radius * 4,
+    radius * 4,
+  );
+  ctx.restore();
+};
+
 /** Very subtle centre-bright gradient across the fabric's width — real
  * fabric catches light more directly near the centre than at the edges. */
 const drawFabricCentreLight = (
@@ -1051,9 +1129,9 @@ const drawCassetteMountShadow = (
   leftH: number,
   avgW: number
 ) => {
-  // 18px at the reference blind, floored against leftH so a short blind's
+  // 16px at the reference blind, floored against leftH so a short blind's
   // cassette doesn't cast a shadow longer than the fabric it falls on.
-  const mountShadowH = Math.min(scaleToBlind(18, avgW), leftH * 0.09);
+  const mountShadowH = Math.min(scaleToBlind(16, avgW), leftH * 0.09);
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(tl[0], tl[1]);
@@ -1066,7 +1144,7 @@ const drawCassetteMountShadow = (
   // Four overlapping passes from 25% rather than one three-stop gradient —
   // the cassette is a thick object close to the fabric, so its shadow should
   // be dense right under the tube and dissolve without a terminating edge.
-  multiPassShadow(4, mountShadowH, 0.25, (reach, alpha) => {
+  multiPassShadow(4, mountShadowH, 0.2, (reach, alpha) => {
     const g = ctx.createLinearGradient(
       tl[0], tl[1] + tubeHeight,
       tl[0], tl[1] + tubeHeight + reach,
@@ -1706,14 +1784,10 @@ const drawBlindArea = (
       const tint = hexToRgb(fabricColor);
       if (!fabricTexture) return;
 
-      // ~2 texture repeats across the width. Vertical scale is capped at 2x
-      // — with CLAMP_TO_EDGE wrapping (see getOrUploadTexture) anything
-      // beyond that just smears the edge pixel rather than hard-repeating,
-      // so this keeps the fabric reading as one continuous piece even on a
-      // very tall trace instead of visibly tiling. The lower clamp matters
-      // just as much while rolling up: as the drop approaches zero so does
-      // this scale, and at zero every pixel samples the same texture row,
-      // streaking the fabric as it disappears.
+      // Repeat counts come from this fabric's own tuning; uvScaleFor derives
+      // the vertical count from the horizontal one so texels stay square.
+      // Both axes mirror rather than repeat (see getOrUploadTexture), so a
+      // high count tiles without seams.
       const surface = surfaceFor(type);
       const uvScale = uvScaleFor(surface.tileX, fabricDrop, avgW);
 
@@ -1776,9 +1850,11 @@ const drawBlindArea = (
       ctx.restore();
     }
 
-    // --- FABRIC REALISM — centre light only. The weave itself comes from the
-    // texture now; there are no synthetic stripes drawn over it. ---
+    // --- FABRIC REALISM — centre light, then a soft perimeter vignette that
+    // keeps the tile repeat from reading as a regular grid. The weave itself
+    // comes from the texture; no synthetic stripes are drawn over it. ---
     drawFabricCentreLight(ctx, tl, tr, fabBL, fabBR);
+    drawFabricVignette(ctx, tl, tr, fabBL, fabBR);
     if (type === 'sunscreen' || type === 'lightfilter') {
       drawTranslucentLightBleed(ctx, tl, tr, fabBR, fabBL);
     }
@@ -2241,6 +2317,60 @@ const drawCurtainArea = (
 // Component
 // ---------------------------------------------------------------------------
 
+/** The quad an area's fabric currently covers, given the roll position. Used
+ * to punch the blinds out of the room-dimming pass, so the dimming lands on
+ * the room and not on the fabric that is causing it. Curtains use their full
+ * opening: their panels slide rather than roll, and an 8% wash does not
+ * warrant reproducing the panel geometry. */
+const coveredQuadFor = (area: RenderedArea, rollPosition: number): Point[] => {
+  const [tl, tr, br, bl] = area.corners;
+  if (area.blindType === 'sheer-curtains' || area.blindType === 'blockout-curtains') {
+    return [tl, tr, br, bl];
+  }
+  const p = Math.max(0, Math.min(1, rollPosition));
+  return [
+    tl,
+    tr,
+    [tr[0] + (br[0] - tr[0]) * p, tr[1] + (br[1] - tr[1]) * p],
+    [tl[0] + (bl[0] - tl[0]) * p, tl[1] + (bl[1] - tl[1]) * p],
+  ];
+};
+
+/** A faint cool-down over everything the blinds are NOT covering.
+ *
+ * A blind that is down is removing light from the room, and rendering it
+ * against a photograph exposed for an undressed window quietly contradicts
+ * that — the fabric reads as a sticker over an unchanged room. Dimming the
+ * surroundings very slightly restores the causal relationship.
+ *
+ * Scaled by how far the blinds are actually down, so raising them lifts the
+ * room back up rather than leaving it dim with nothing blocking the light.
+ * Filled even-odd so the blinds themselves are punched out. */
+const ROOM_DIM_MAX = 0.08;
+
+const drawRoomDimming = (
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  coveredQuads: Point[][],
+  coverage: number,
+) => {
+  const strength = ROOM_DIM_MAX * Math.max(0, Math.min(1, coverage));
+  if (coveredQuads.length === 0 || strength < 0.005) return;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, W, H);
+  for (const quad of coveredQuads) {
+    ctx.moveTo(quad[0][0], quad[0][1]);
+    for (let i = 1; i < quad.length; i++) ctx.lineTo(quad[i][0], quad[i][1]);
+    ctx.closePath();
+  }
+  ctx.fillStyle = shadowRgba(strength);
+  ctx.fill('evenodd');
+  ctx.restore();
+};
+
 const buildAreaParams = (area: RenderedArea, rollPosition: number): AreaParams => ({
   corners: area.corners,
   blindType: area.blindType,
@@ -2406,6 +2536,18 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
         ctx.fillText('Primary', divX - 56, 27);
         ctx.fillText('Compare', divX + 10, 27);
       }
+
+      // Room lighting — after every blind is down, so the wash sits over the
+      // finished scene, and once for the whole canvas rather than per area
+      // (per area it would stack, darkening a two-window room twice as much
+      // as a one-window room for no reason).
+      drawRoomDimming(
+        ctx,
+        W,
+        H,
+        confirmedAreas.map(a => coveredQuadFor(a, rollPosition)),
+        rollPosition,
+      );
 
       // Active area (being traced) — subtle dashed teal outline, no fabric.
       if (activeArea && activeArea.corners.length >= 4) {
