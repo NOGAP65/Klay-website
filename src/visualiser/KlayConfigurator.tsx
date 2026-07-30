@@ -327,13 +327,26 @@ export default function KlayConfigurator({
 
   // Once the default window's bitmap is ready, seed its trace directly —
   // no CornerPinOverlay, no user interaction, pins locked to the preset.
+  //
+  // The emptiness check reads LIVE store state rather than this render's
+  // snapshot. loadFromUrl sets the bitmap and the url together, so React
+  // batches them into one commit and both effects run in the same flush: the
+  // effect above clears the trace, and this one used to still see the
+  // pre-clear array. On a first load that was harmless because the array was
+  // already empty — but arriving from another page that had seeded (homepage
+  // to a product page, where the store is shared and nothing had cleared it)
+  // it read a stale length of 1, failed the guard, and never retried, because
+  // none of this effect's dependencies change when the clear lands. That left
+  // the configurator permanently unseeded, which renders as an empty box.
+  // tracedAreas.length is a dependency for the same reason — belt and braces
+  // if the two updates ever land in separate commits.
   useEffect(() => {
     if (
       store.defaultWindowActive &&
       !hasSeededDefaultRef.current &&
       photoBitmap &&
       hookPhotoUrl === DEFAULT_WINDOW_URL &&
-      store.tracedAreas.length === 0
+      useVisualiserStore.getState().tracedAreas.length === 0
     ) {
       const corners: Point[] = DEFAULT_WINDOW_CORNERS_PCT.map(([px, py]) => [
         px * photoBitmap.width,
@@ -352,7 +365,7 @@ export default function KlayConfigurator({
       hasSeededDefaultRef.current = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoBitmap, hookPhotoUrl, store.defaultWindowActive]);
+  }, [photoBitmap, hookPhotoUrl, store.defaultWindowActive, store.tracedAreas.length]);
 
   const hasPhoto = !!(store.photoUrl && photoBitmap);
   const confirmedArea = store.tracedAreas.find(a => a.confirmed);
