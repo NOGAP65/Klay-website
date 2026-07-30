@@ -15,11 +15,11 @@ import {
 } from '../data/products';
 
 /** Nav is position:fixed and out of flow. Compressed it measures
- * 14 + 64 (logo) + 14 = 92px on desktop, 14 + 47 + 14 = 75px on mobile — the
+ * 14 + 79 (logo) + 14 = 107px on desktop, 14 + 59 + 14 = 87px on mobile — the
  * sticky filter bar has to clear that, or it slides under the nav (which wins
  * at zIndex 9000) and gets clipped. */
-const NAV_HEIGHT = 92;
-const NAV_HEIGHT_MOBILE = 75;
+const NAV_HEIGHT = 107;
+const NAV_HEIGHT_MOBILE = 87;
 
 /** How long the filtered cards take to clear out before the list is swapped
  * and the survivors fade back in. Kept in step with CARD_TRANSITION. */

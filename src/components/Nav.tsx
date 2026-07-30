@@ -78,12 +78,12 @@ export function Nav({ onLight = false }: NavProps = {}) {
         }}
       >
         <img
-          src="/images/klay%202.jpeg"
+          src="/images/klay-logo.png"
           alt="Klay Interiors"
           style={
             isMobile
-              ? { width: '110px', height: '47px', objectFit: 'cover', objectPosition: 'center' }
-              : { width: '150px', height: '64px', objectFit: 'cover', objectPosition: 'center' }
+              ? { width: '150px', height: '59px', objectFit: 'contain', display: 'block' }
+              : { width: '200px', height: '79px', objectFit: 'contain', display: 'block' }
           }
         />
       </Link>

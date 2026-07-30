@@ -65,9 +65,9 @@ export function Footer() {
         <div>
           <div style={{ marginBottom: 20 }}>
             <img
-              src="/images/klay%202.jpeg"
+              src="/images/klay-logo.png"
               alt="Klay Interiors"
-              style={{ width: '170px', height: '74px', objectFit: 'cover', objectPosition: 'center' }}
+              style={{ width: '240px', height: '95px', objectFit: 'contain', display: 'block' }}
             />
           </div>
           <p
