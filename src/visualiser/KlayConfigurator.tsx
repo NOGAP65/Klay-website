@@ -241,11 +241,14 @@ const DEFAULT_WINDOW_URL = '/images/Preview.png';
 // Each corner therefore has its own x AND y — an axis-aligned rectangle cannot
 // sit on this window. Order is TL, TR, BR, BL, which is what the renderer
 // destructures positionally.
+// Measured by dragging the corner pins onto the glass in the browser, then
+// reading back the confirmed quad — so these are the renderer's own numbers,
+// not an estimate off the image.
 const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
-  [0.204, 0.205], // top-left     — x 256, y 257
-  [0.574, 0.260], // top-right    — x 720, y 326
-  [0.572, 0.633], // bottom-right — x 717, y 794
-  [0.200, 0.651], // bottom-left  — x 251, y 816
+  [0.1873, 0.1932], // top-left     — x 235, y 242
+  [0.5903, 0.2465], // top-right    — x 740, y 309
+  [0.5903, 0.6434], // bottom-right — x 740, y 807
+  [0.1829, 0.6784], // bottom-left  — x 229, y 851
 ];
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
