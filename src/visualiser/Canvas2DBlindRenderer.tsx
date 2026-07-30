@@ -822,11 +822,35 @@ const HARDWARE_FLAT_HEX: Record<'white' | 'black', string> = {
 /** Used when a caller supplies no hardware colour at all. */
 const HARDWARE_FALLBACK = HARDWARE_HEX.white;
 const CHROME_GRADIENT_STOPS: [number, string][] = [
-  [0, '#B8B6B0'],
-  [0.5, '#D8D6D0'],
-  [1, '#A8A6A0'],
+  [0, '#C0BEBB'],
+  [0.5, '#E0DEDA'],
+  [1, '#A8A6A2'],
 ];
 
+/** Shifts a hex toward white (f > 0) or black (f < 0) by a fraction. Used to
+ * derive the cylinder gradient and the bracket's shaded plate from whatever
+ * the base finish is, so a new finish needs no new constants. */
+const shadeHex = (hex: string, f: number): string => {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(c =>
+    Math.max(0, Math.min(255, Math.round(f >= 0 ? c + (255 - c) * f : c * (1 + f)))),
+  );
+  return `#${ch.map(c => c.toString(16).padStart(2, '0')).join('')}`;
+};
+
+/** The base hex for a finish, before any shading. */
+const hardwareBaseHex = (
+  hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
+  safeHardwareColor: string,
+): string =>
+  hardwareColourName === 'white' || hardwareColourName === 'black'
+    ? HARDWARE_FLAT_HEX[hardwareColourName]
+    : hardwareColourName === 'chrome'
+      ? CHROME_GRADIENT_STOPS[1][1]
+      : safeHardwareColor;
+
+/** Flat fill — for faces that must not read as curved (bracket plates, end
+ * caps). Chrome still gets its metallic gradient. */
 const setHardwareFill = (
   ctx: CanvasRenderingContext2D,
   hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
@@ -845,17 +869,96 @@ const setHardwareFill = (
   }
 };
 
-const CASSETTE_HEIGHT_RATIO = 0.04; // ~4% of blind height — slim, not a thick bar
-const RAIL_HEIGHT_RATIO = 0.02; // ~2% of blind height — slim
-const CASSETTE_CORNER_RADIUS = 3; // px — top corners only
+/** Cylinder fill: 15% lighter at the top, 15% darker at the bottom, so a
+ * tube reads as round rather than as a flat bar. Previously only chrome got
+ * any gradient at all, which is why white and black cassettes looked like
+ * boxes. Chrome keeps its own 3-stop metallic ramp — it already implies a
+ * curved surface and doubling up on it turns it muddy. */
+const setCylinderFill = (
+  ctx: CanvasRenderingContext2D,
+  hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
+  safeHardwareColor: string,
+  gradFrom: Point,
+  gradTo: Point
+) => {
+  if (hardwareColourName === 'chrome') {
+    setHardwareFill(ctx, hardwareColourName, safeHardwareColor, gradFrom, gradTo);
+    return;
+  }
+  const base = hardwareBaseHex(hardwareColourName, safeHardwareColor);
+  const grad = ctx.createLinearGradient(gradFrom[0], gradFrom[1], gradTo[0], gradTo[1]);
+  grad.addColorStop(0, shadeHex(base, 0.15));
+  grad.addColorStop(0.45, base);
+  grad.addColorStop(1, shadeHex(base, -0.15));
+  ctx.fillStyle = grad;
+};
 
-/** Slim cassette (headrail) — flat/hardware-tinted fill, rounded top
- * corners, a light top edge and a dark bottom edge for a touch of
- * curvature and weight. Fixed height regardless of roll position (real
- * cassettes don't visibly swell as fabric rolls up). Returns the half-
- * height so callers can position the cassette-mount shadow right below it.
- * One shared cassette also covers both layers of a dual blind — real
- * twin-roller blinds mount both rolls in a single housing. */
+const CASSETTE_HEIGHT_RATIO = 0.04; // ~4% of blind height — slim, not a thick bar
+const RAIL_HEIGHT_RATIO = 0.02; // ~2% of blind height — half the cassette
+
+/** Builds the outline of a horizontal tube between two points: a straight
+ * body with a semicircular cap at each end, in the quad's own coordinate
+ * frame so it stays correct when the traced window is slightly rotated.
+ *
+ * `u` runs along the tube, `pv` is its perpendicular. The caps are drawn with
+ * arc-to-arc quadratics rather than ctx.arc, since the tube is not necessarily
+ * axis-aligned and ctx.arc cannot be rotated without a transform. */
+const tracePill = (
+  ctx: CanvasRenderingContext2D,
+  a: Point,
+  b: Point,
+  halfH: number,
+  u: Point,
+  pv: Point,
+) => {
+  const [ux, uy] = u;
+  const [px, py] = pv;
+  // Cap control-point reach — 4/3 · tan(π/8) approximates a semicircle with
+  // two quadratics closely enough at this scale.
+  const k = halfH * 1.3333;
+
+  const aTop: Point = [a[0] + px * halfH, a[1] + py * halfH];
+  const aBot: Point = [a[0] - px * halfH, a[1] - py * halfH];
+  const bTop: Point = [b[0] + px * halfH, b[1] + py * halfH];
+  const bBot: Point = [b[0] - px * halfH, b[1] - py * halfH];
+
+  ctx.beginPath();
+  ctx.moveTo(aTop[0], aTop[1]);
+  ctx.lineTo(bTop[0], bTop[1]);
+  // Right cap, top -> bottom, bulging outward along +u
+  ctx.bezierCurveTo(
+    bTop[0] + ux * k, bTop[1] + uy * k,
+    bBot[0] + ux * k, bBot[1] + uy * k,
+    bBot[0], bBot[1],
+  );
+  ctx.lineTo(aBot[0], aBot[1]);
+  // Left cap, bottom -> top, bulging outward along -u
+  ctx.bezierCurveTo(
+    aBot[0] - ux * k, aBot[1] - uy * k,
+    aTop[0] - ux * k, aTop[1] - uy * k,
+    aTop[0], aTop[1],
+  );
+  ctx.closePath();
+};
+
+/** Unit direction along tl->tr plus its perpendicular. */
+const axesFor = (tl: Point, tr: Point): { u: Point; pv: Point } => {
+  const dx = tr[0] - tl[0];
+  const dy = tr[1] - tl[1];
+  const len = Math.hypot(dx, dy) || 1;
+  const u: Point = [dx / len, dy / len];
+  // Perpendicular pointing UP the image (negative y) for a left-to-right tube.
+  const pv: Point = [u[1], -u[0]];
+  return { u, pv };
+};
+
+/** Cassette (top roller housing) — a rounded cylindrical tube: straight body,
+ * semicircular ends, and a vertical light-to-dark face gradient that makes it
+ * read as round. Fixed height regardless of roll position (real cassettes
+ * don't visibly swell as fabric rolls up). Returns the half-height so callers
+ * can position the cassette-mount shadow right below it. One shared cassette
+ * also covers both layers of a dual blind — real twin-roller blinds mount both
+ * rolls in a single housing. */
 const drawCassette = (
   ctx: CanvasRenderingContext2D,
   tl: Point,
@@ -865,45 +968,48 @@ const drawCassette = (
   safeHardwareColor: string
 ): number => {
   const halfH = (leftH * CASSETTE_HEIGHT_RATIO) / 2;
-  const r = CASSETTE_CORNER_RADIUS;
+  const { u, pv } = axesFor(tl, tr);
+  const top: Point = [tl[0] + pv[0] * halfH, tl[1] + pv[1] * halfH];
+  const bot: Point = [tl[0] - pv[0] * halfH, tl[1] - pv[1] * halfH];
 
   ctx.save();
-  setHardwareFill(ctx, hardwareColourName, safeHardwareColor, [tl[0], tl[1] - halfH], [tl[0], tl[1] + halfH]);
-  ctx.beginPath();
-  ctx.moveTo(tl[0] + r, tl[1] - halfH);
-  ctx.lineTo(tr[0] - r, tr[1] - halfH);
-  ctx.quadraticCurveTo(tr[0], tr[1] - halfH, tr[0], tr[1] - halfH + r);
-  ctx.lineTo(tr[0], tr[1] + halfH);
-  ctx.lineTo(tl[0], tl[1] + halfH);
-  ctx.lineTo(tl[0], tl[1] - halfH + r);
-  ctx.quadraticCurveTo(tl[0], tl[1] - halfH, tl[0] + r, tl[1] - halfH);
-  ctx.closePath();
+
+  // --- Body: pill outline, cylinder gradient ---
+  tracePill(ctx, tl, tr, halfH, u, pv);
+  setCylinderFill(ctx, hardwareColourName, safeHardwareColor, top, bot);
   ctx.fill();
 
-  // Top edge highlight — suggests a curved top
-  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(tl[0] + r, tl[1] - halfH);
-  ctx.lineTo(tr[0] - r, tr[1] - halfH);
-  ctx.stroke();
+  // Clip subsequent strokes to the tube so the caps stay clean.
+  tracePill(ctx, tl, tr, halfH, u, pv);
+  ctx.clip();
 
-  // Bottom edge shadow — weight, separation from the fabric below
-  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+  // --- Top highlight: 2px arc at 25% white, just inside the crown ---
+  const hi = halfH * 0.62;
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(tl[0], tl[1] + halfH);
-  ctx.lineTo(tr[0], tr[1] + halfH);
+  ctx.moveTo(tl[0] + pv[0] * hi, tl[1] + pv[1] * hi);
+  ctx.lineTo(tr[0] + pv[0] * hi, tr[1] + pv[1] * hi);
   ctx.stroke();
+
+  // --- Bottom shadow: 2px at 35% black, separating tube from fabric ---
+  ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(tl[0] - pv[0] * hi, tl[1] - pv[1] * hi);
+  ctx.lineTo(tr[0] - pv[0] * hi, tr[1] - pv[1] * hi);
+  ctx.stroke();
+
   ctx.restore();
 
   return halfH;
 };
 
-/** Slim bottom rail — flat/hardware-tinted fill matching the cassette, with
- * a single top-edge highlight. `railTL`/`railTR` is where the rail begins;
- * `fabBL`/`fabBR` is the fabric's true bottom edge, which the rail's
- * underside follows. */
+/** Bottom rail — the cassette's cylindrical treatment at half the height,
+ * plus end caps and a soft underside shadow. `railTL`/`railTR` is where the
+ * rail begins; `fabBL`/`fabBR` is the fabric's true bottom edge, which the
+ * rail's underside follows, so the rail always rides the fabric no matter
+ * where the roll sits. */
 const drawBottomRail = (
   ctx: CanvasRenderingContext2D,
   railTL: Point,
@@ -913,22 +1019,75 @@ const drawBottomRail = (
   hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
   safeHardwareColor: string
 ) => {
+  const { u, pv } = axesFor(railTL, railTR);
+  // Centreline between the rail's top and the fabric's bottom edge, so the
+  // tube sits exactly in the band the caller allocated for it.
+  const midL: Point = [(railTL[0] + fabBL[0]) / 2, (railTL[1] + fabBL[1]) / 2];
+  const midR: Point = [(railTR[0] + fabBR[0]) / 2, (railTR[1] + fabBR[1]) / 2];
+  const halfH = Math.max(1, Math.hypot(fabBL[0] - railTL[0], fabBL[1] - railTL[1]) / 2);
+  const base = hardwareBaseHex(hardwareColourName, safeHardwareColor);
+
   ctx.save();
-  setHardwareFill(ctx, hardwareColourName, safeHardwareColor, railTL, fabBL);
+
+  // --- UNDERSIDE SHADOW — 10px, black 18% -> transparent, below the rail.
+  // Drawn before the rail so the rail's own edge stays crisp on top of it.
+  const underH = 10;
+  const uTL: Point = [fabBL[0], fabBL[1]];
+  const uTR: Point = [fabBR[0], fabBR[1]];
+  const uBL: Point = [fabBL[0] - pv[0] * underH, fabBL[1] - pv[1] * underH];
+  const uBR: Point = [fabBR[0] - pv[0] * underH, fabBR[1] - pv[1] * underH];
   ctx.beginPath();
-  ctx.moveTo(railTL[0], railTL[1]);
-  ctx.lineTo(railTR[0], railTR[1]);
-  ctx.lineTo(fabBR[0], fabBR[1]);
-  ctx.lineTo(fabBL[0], fabBL[1]);
+  ctx.moveTo(uTL[0], uTL[1]);
+  ctx.lineTo(uTR[0], uTR[1]);
+  ctx.lineTo(uBR[0], uBR[1]);
+  ctx.lineTo(uBL[0], uBL[1]);
   ctx.closePath();
+  const underGrad = ctx.createLinearGradient(uTL[0], uTL[1], uBL[0], uBL[1]);
+  underGrad.addColorStop(0, 'rgba(0,0,0,0.18)');
+  underGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = underGrad;
   ctx.fill();
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-  ctx.lineWidth = 1;
+  // --- BODY: pill outline, same top-light / bottom-dark ramp as the cassette
+  const top: Point = [midL[0] + pv[0] * halfH, midL[1] + pv[1] * halfH];
+  const bot: Point = [midL[0] - pv[0] * halfH, midL[1] - pv[1] * halfH];
+  tracePill(ctx, midL, midR, halfH, u, pv);
+  setCylinderFill(ctx, hardwareColourName, safeHardwareColor, top, bot);
+  ctx.fill();
+
+  // --- END CAPS: 3px each side, slightly darker than the face
+  ctx.save();
+  tracePill(ctx, midL, midR, halfH, u, pv);
+  ctx.clip();
+  ctx.fillStyle = shadeHex(base, -0.18);
+  const capW = 3;
+  [
+    [midL, 1] as const,  // left cap extends inward along +u
+    [midR, -1] as const, // right cap extends inward along -u
+  ].forEach(([end, dir]) => {
+    const e0: Point = [end[0] + pv[0] * halfH, end[1] + pv[1] * halfH];
+    const e1: Point = [end[0] - pv[0] * halfH, end[1] - pv[1] * halfH];
+    const e2: Point = [e1[0] + u[0] * capW * dir, e1[1] + u[1] * capW * dir];
+    const e3: Point = [e0[0] + u[0] * capW * dir, e0[1] + u[1] * capW * dir];
+    ctx.beginPath();
+    ctx.moveTo(e0[0], e0[1]);
+    ctx.lineTo(e1[0], e1[1]);
+    ctx.lineTo(e2[0], e2[1]);
+    ctx.lineTo(e3[0], e3[1]);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  // Top highlight, inside the clip so it stops at the caps
+  const hi = halfH * 0.55;
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(railTL[0], railTL[1]);
-  ctx.lineTo(railTR[0], railTR[1]);
+  ctx.moveTo(midL[0] + pv[0] * hi, midL[1] + pv[1] * hi);
+  ctx.lineTo(midR[0] + pv[0] * hi, midR[1] + pv[1] * hi);
   ctx.stroke();
+  ctx.restore();
+
   ctx.restore();
 };
 
@@ -948,51 +1107,88 @@ const drawSideBrackets = (
   hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
   safeHardwareColor: string
 ) => {
-  const bracketW = avgW * 0.025;
-  const bracketH = bracketW * 1.6;
+  // Proportional to the blind, and clamped so a very wide or very narrow
+  // window still gets a bracket that reads as hardware rather than as a slab
+  // or a speck.
+  const plateW = Math.max(4, Math.min(14, avgW * 0.022));
+  const plateH = plateW * 2.1; // vertical wall plate — taller than deep
+  const armH = plateH * 0.44;  // horizontal arm — the part under the cassette
 
-  const dirX = tr[0] - tl[0];
-  const dirY = tr[1] - tl[1];
-  const dirLen = Math.hypot(dirX, dirY) || 1;
-  const ux = dirX / dirLen;
-  const uy = dirY / dirLen;
-  const px = -uy;
-  const py = ux;
+  const { u, pv } = axesFor(tl, tr);
+  const [ux, uy] = u;
+  const [px, py] = pv;
+  const base = hardwareBaseHex(hardwareColourName, safeHardwareColor);
 
-  const buildRect = (centre: Point): [Point, Point, Point, Point] => [
-    [centre[0] - ux * (bracketW / 2) + px * (bracketH / 2), centre[1] - uy * (bracketW / 2) + py * (bracketH / 2)],
-    [centre[0] + ux * (bracketW / 2) + px * (bracketH / 2), centre[1] + uy * (bracketW / 2) + py * (bracketH / 2)],
-    [centre[0] + ux * (bracketW / 2) - px * (bracketH / 2), centre[1] + uy * (bracketW / 2) - py * (bracketH / 2)],
-    [centre[0] - ux * (bracketW / 2) - px * (bracketH / 2), centre[1] - uy * (bracketW / 2) - py * (bracketH / 2)],
-  ];
+  /** One L-bracket. `dir` is +1 for the right end (arm projects inward, i.e.
+   * along -u) and -1 for the left. The vertical plate sits against the wall
+   * just outside the blind; the arm runs inward beneath the cassette. */
+  const drawOne = (anchor: Point, dir: 1 | -1) => {
+    // Plate spans the full height, sitting outboard of the cassette end.
+    const pOuter: Point = [anchor[0] + ux * plateW * dir, anchor[1] + uy * plateW * dir];
+    const plate: [Point, Point, Point, Point] = [
+      [anchor[0] + px * (plateH / 2), anchor[1] + py * (plateH / 2)],
+      [pOuter[0] + px * (plateH / 2), pOuter[1] + py * (plateH / 2)],
+      [pOuter[0] - px * (plateH / 2), pOuter[1] - py * (plateH / 2)],
+      [anchor[0] - px * (plateH / 2), anchor[1] - py * (plateH / 2)],
+    ];
 
-  const leftCentre: Point = [tl[0] - ux * (bracketW / 2), tl[1] - uy * (bracketW / 2)];
-  const rightCentre: Point = [tr[0] + ux * (bracketW / 2), tr[1] + uy * (bracketW / 2)];
-
-  const drawOne = (rect: [Point, Point, Point, Point], isLeft: boolean) => {
     ctx.save();
+
+    // --- CAST SHADOW — offset outboard and down, so the bracket sits off the
+    // wall rather than being painted onto it.
+    ctx.save();
+    ctx.translate(ux * 2 * dir - px * 2, uy * 2 * dir - py * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.beginPath();
-    ctx.moveTo(rect[0][0], rect[0][1]);
-    ctx.lineTo(rect[1][0], rect[1][1]);
-    ctx.lineTo(rect[2][0], rect[2][1]);
-    ctx.lineTo(rect[3][0], rect[3][1]);
+    ctx.moveTo(plate[0][0], plate[0][1]);
+    ctx.lineTo(plate[1][0], plate[1][1]);
+    ctx.lineTo(plate[2][0], plate[2][1]);
+    ctx.lineTo(plate[3][0], plate[3][1]);
     ctx.closePath();
-    setHardwareFill(ctx, hardwareColourName, safeHardwareColor, rect[0], rect[2]);
+    ctx.fill();
+    ctx.restore();
+
+    // --- VERTICAL PLATE against the wall — multiply 0.7, so the recessed
+    // face reads as shaded rather than lit.
+    ctx.fillStyle = shadeHex(base, -0.3);
+    ctx.beginPath();
+    ctx.moveTo(plate[0][0], plate[0][1]);
+    ctx.lineTo(plate[1][0], plate[1][1]);
+    ctx.lineTo(plate[2][0], plate[2][1]);
+    ctx.lineTo(plate[3][0], plate[3][1]);
+    ctx.closePath();
     ctx.fill();
 
-    // 1px shadow on the outer edge only — the edge furthest from the window
-    const [oa, ob] = isLeft ? [rect[0], rect[3]] : [rect[1], rect[2]];
-    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    // --- HORIZONTAL ARM projecting forward, under the cassette — base colour
+    const armInner: Point = [anchor[0] - ux * plateW * 1.5 * dir, anchor[1] - uy * plateW * 1.5 * dir];
+    const arm: [Point, Point, Point, Point] = [
+      [anchor[0] + px * (armH / 2), anchor[1] + py * (armH / 2)],
+      [armInner[0] + px * (armH / 2), armInner[1] + py * (armH / 2)],
+      [armInner[0] - px * (armH / 2), armInner[1] - py * (armH / 2)],
+      [anchor[0] - px * (armH / 2), anchor[1] - py * (armH / 2)],
+    ];
+    setHardwareFill(ctx, hardwareColourName, safeHardwareColor, arm[0], arm[3]);
+    ctx.beginPath();
+    ctx.moveTo(arm[0][0], arm[0][1]);
+    ctx.lineTo(arm[1][0], arm[1][1]);
+    ctx.lineTo(arm[2][0], arm[2][1]);
+    ctx.lineTo(arm[3][0], arm[3][1]);
+    ctx.closePath();
+    ctx.fill();
+
+    // Top highlight along the arm — the lit upper surface
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(oa[0], oa[1]);
-    ctx.lineTo(ob[0], ob[1]);
+    ctx.moveTo(arm[0][0], arm[0][1]);
+    ctx.lineTo(arm[1][0], arm[1][1]);
     ctx.stroke();
+
     ctx.restore();
   };
 
-  drawOne(buildRect(leftCentre), true);
-  drawOne(buildRect(rightCentre), false);
+  drawOne([tl[0], tl[1]], -1);
+  drawOne([tr[0], tr[1]], 1);
 };
 
 const drawBlindArea = (
