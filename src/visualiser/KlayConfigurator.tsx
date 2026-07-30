@@ -466,10 +466,23 @@ export default function KlayConfigurator({
     showChain: false,
   }));
 
+  // The default window's pins are seeded in an effect, but these states are
+  // resolved during render — so on a cold load there is one painted frame
+  // where the bitmap has arrived (hasPhoto true) and the seed has not yet
+  // committed (tracedAreas still empty). Without this guard that frame
+  // resolved to showTraceState, flashing the corner-pin overlay and a
+  // "Confirm outline" button at every first-time visitor: the default window
+  // is supposed to need no interaction at all, and for that frame it looked
+  // like tracing your own window was a required step before anything rendered.
+  // Holding the loading state through the gap means it goes straight from
+  // blank to the rendered blind.
+  const awaitingDefaultSeed = store.defaultWindowActive && !hasSeededDefaultRef.current;
+
   // The three canvas states, resolved once so the canvas area and the
   // persistent footer below it can never disagree about which one is showing.
   const showUploadState = !isLoadingDefault && (!hasPhoto || showUploadPrompt);
-  const showTraceState = !isLoadingDefault && !showUploadState && !confirmedArea;
+  const showTraceState =
+    !isLoadingDefault && !showUploadState && !confirmedArea && !awaitingDefaultSeed;
   const showRenderState = !isLoadingDefault && !showUploadState && !!confirmedArea;
 
   // Footer sits BELOW the canvas rather than floating over it, so "Visualise
