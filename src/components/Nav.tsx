@@ -82,8 +82,8 @@ export function Nav({ onLight = false }: NavProps = {}) {
           alt="Klay Interiors"
           style={
             isMobile
-              ? { width: '135px', height: '53px', objectFit: 'contain', display: 'block', marginLeft: 8 }
-              : { width: '180px', height: '71px', objectFit: 'contain', display: 'block', marginLeft: 14 }
+              ? { width: '112px', height: '44px', objectFit: 'contain', display: 'block', marginLeft: 12 }
+              : { width: '140px', height: '55px', objectFit: 'contain', display: 'block', marginLeft: 14 }
           }
         />
       </Link>
