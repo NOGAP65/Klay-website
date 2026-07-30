@@ -237,54 +237,20 @@ const DEFAULT_WINDOW_URL = '/images/Preview.png';
 // DEFAULT_WINDOW_URL without re-measuring will hang the blind off its window.
 //
 // A true quad, not a rectangle: the window is photographed in perspective, so
-// the top edge falls ~53px from left to right and the bottom edge rises ~23px.
-// Each corner therefore has its own x AND y — an axis-aligned rectangle cannot
-// sit on this window. Order is TL, TR, BR, BL, which is what the renderer
-// destructures positionally.
+// the top edge falls ~63px from left to right while the bottom edge rises
+// ~40px, and the left edge stands ~103px taller than the right. Each corner
+// therefore has its own x AND y — an axis-aligned rectangle cannot sit on this
+// window. Order is TL, TR, BR, BL, which is what the renderer destructures
+// positionally.
 // Measured by dragging the corner pins onto the glass in the browser, then
 // reading back the confirmed quad — so these are the renderer's own numbers,
 // not an estimate off the image.
 const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
-  [0.1873, 0.1932], // top-left     — x 235, y 242
-  [0.5903, 0.2465], // top-right    — x 740, y 309
-  [0.5903, 0.6434], // bottom-right — x 740, y 807
-  [0.1829, 0.6784], // bottom-left  — x 229, y 851
+  [0.1918, 0.1989], // top-left     — x 241, y 249
+  [0.5841, 0.2492], // top-right    — x 732, y 312
+  [0.5830, 0.6382], // bottom-right — x 731, y 800
+  [0.1864, 0.6699], // bottom-left  — x 234, y 840
 ];
-
-// ---------------------------------------------------------------------------
-// PIN MEASURING MODE — opt-in, via ?measure in the URL.
-//
-// The default window's pins above have to be measured against the actual
-// rendered photo rather than guessed off the image, which means dragging them
-// in a real browser and reading the confirmed quad back. This turns that on.
-//
-// Deliberately a query flag rather than commented-out code: an earlier round
-// of measuring disabled the seeding effect outright, which meant the branch
-// carrying it could not be deployed without every real visitor landing on an
-// untraced window. Gated like this, production behaviour is untouched and the
-// measuring rig is reachable on the live site at /?measure=1.
-//
-// Read once at module load: it never changes within a session, and re-reading
-// it per render would let a client-side route change silently flip the mode.
-//
-// TO REMOVE: delete this block, the PIN_MEASURE_MODE references in the seeding
-// effect / awaitingDefaultSeed / handleConfirmTrace, and the readout panel.
-const PIN_MEASURE_MODE =
-  typeof window !== 'undefined' &&
-  new URLSearchParams(window.location.search).has('measure');
-
-/** Formats a confirmed quad as the literal that belongs in
- * DEFAULT_WINDOW_CORNERS_PCT — percentages plus the pixel values they came
- * from, in TL/TR/BR/BL order, ready to paste over the array above. */
-const formatPinReadout = (corners: Point[], width: number, height: number): string => {
-  const names = ['top-left    ', 'top-right   ', 'bottom-right', 'bottom-left '];
-  return corners
-    .map(
-      ([x, y], i) =>
-        `  [${(x / width).toFixed(4)}, ${(y / height).toFixed(4)}], // ${names[i]} — x ${Math.round(x)}, y ${Math.round(y)}`,
-    )
-    .join('\n');
-};
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
@@ -331,9 +297,6 @@ export default function KlayConfigurator({
   // real upload/preset selection can be told apart from that initial load.
   const hasSeededDefaultRef = useRef(false);
   const [showUploadPrompt, setShowUploadPrompt] = useState(false);
-  // Measuring mode only — the confirmed quad, formatted for pasting. Null
-  // until the first Confirm outline. See PIN_MEASURE_MODE.
-  const [pinReadout, setPinReadout] = useState<string | null>(null);
 
   // Kick off the default window photo once, on mount — only if the store
   // doesn't already carry a real user photo from earlier in this session.
@@ -366,11 +329,6 @@ export default function KlayConfigurator({
   // no CornerPinOverlay, no user interaction, pins locked to the preset.
   useEffect(() => {
     if (
-      // Measuring mode skips the seed on purpose: seeding marks the area
-      // confirmed, which is exactly what keeps CornerPinOverlay off the
-      // default window. No seed, no confirmed area, so the pins mount and
-      // become draggable.
-      !PIN_MEASURE_MODE &&
       store.defaultWindowActive &&
       !hasSeededDefaultRef.current &&
       photoBitmap &&
@@ -419,18 +377,6 @@ export default function KlayConfigurator({
       showChain: false,
       confirmed: true,
     });
-
-    // Measuring mode: print the confirmed quad to the console AND onto the
-    // page. On the page as well as the console because the numbers are most
-    // often read off a screenshot or a phone, where devtools is not available.
-    if (PIN_MEASURE_MODE && photoBitmap) {
-      const readout = formatPinReadout(corners, photoBitmap.width, photoBitmap.height);
-      // eslint-disable-next-line no-console
-      console.log(
-        `\nDEFAULT_WINDOW_CORNERS_PCT — ${photoBitmap.width}x${photoBitmap.height}\n${readout}\n`,
-      );
-      setPinReadout(readout);
-    }
   };
 
   const handleDownload = () => {
@@ -531,10 +477,7 @@ export default function KlayConfigurator({
   // like tracing your own window was a required step before anything rendered.
   // Holding the loading state through the gap means it goes straight from
   // blank to the rendered blind.
-  // Never in measuring mode — nothing is going to seed, so holding the loading
-  // state would suppress the very trace UI the mode exists to expose.
-  const awaitingDefaultSeed =
-    !PIN_MEASURE_MODE && store.defaultWindowActive && !hasSeededDefaultRef.current;
+  const awaitingDefaultSeed = store.defaultWindowActive && !hasSeededDefaultRef.current;
 
   // The three canvas states, resolved once so the canvas area and the
   // persistent footer below it can never disagree about which one is showing.
@@ -723,29 +666,6 @@ export default function KlayConfigurator({
         </div>
       )}
       </div>
-
-      {/* MEASURING MODE readout — formatted to paste straight over
-          DEFAULT_WINDOW_CORNERS_PCT. userSelect:'all' so one click selects the
-          whole block. Only ever rendered under ?measure. */}
-      {pinReadout && (
-        <div
-          style={{
-            flexShrink: 0,
-            padding: '12px 14px',
-            background: tokens.ink,
-            borderTop: `1px solid ${tokens.gold}`,
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-            fontSize: 12,
-            lineHeight: 1.6,
-            color: tokens.goldLight,
-            whiteSpace: 'pre',
-            overflowX: 'auto',
-            userSelect: 'all',
-          }}
-        >
-          {pinReadout}
-        </div>
-      )}
 
       {footerButtons && (
         <div
