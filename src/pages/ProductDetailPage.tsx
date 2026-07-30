@@ -583,11 +583,10 @@ export default function ProductDetailPage() {
         }}
       >
         {/* The visualiser, not a photograph — the blind renders against the
-            default window immediately on load. It sizes itself to that photo's
-            aspect ratio rather than filling a box: the ratio is what keeps the
-            rendered blind registered to the window in the shot, so forcing both
-            dimensions would pull the blind off the frame it is drawn onto. The
-            480px cap is what makes it read as a contained object. */}
+            default window immediately on load. It fills the column's full
+            width; its height then follows the default window photo's aspect
+            ratio, because that ratio is what keeps the rendered blind
+            registered to the window in the shot. */}
         <div
           style={{
             width: isMobile ? '100%' : '52%',
@@ -597,24 +596,22 @@ export default function ProductDetailPage() {
             padding: isMobile ? '32px 24px' : '64px 48px',
           }}
         >
-          <div style={{ maxWidth: 480, margin: '0 auto' }}>
-            {/* position:relative + overflow:hidden so the motor controls, which
-                are absolutely positioned against the canvas inside
-                KlayConfigurator, clip to this box's rounded corners rather than
-                spilling into the page layout. */}
-            <div
-              style={{
-                position: 'relative',
-                overflow: 'hidden',
-                borderRadius: 8,
-                background: tokens.charcoal,
-              }}
-            >
-              <KlayConfigurator
-                defaultBlindType={product.blindType}
-                mediaMaxVh={isMobile ? 56 : 90}
-              />
-            </div>
+          {/* position:relative + overflow:hidden so the motor controls, which
+              are absolutely positioned against the canvas inside
+              KlayConfigurator, clip to this box's rounded corners rather than
+              spilling into the page layout. */}
+          <div
+            style={{
+              position: 'relative',
+              overflow: 'hidden',
+              borderRadius: 8,
+              background: tokens.charcoal,
+            }}
+          >
+            <KlayConfigurator
+              defaultBlindType={product.blindType}
+              mediaMaxVh={isMobile ? 56 : 90}
+            />
           </div>
         </div>
 
