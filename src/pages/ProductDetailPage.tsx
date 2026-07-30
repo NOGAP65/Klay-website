@@ -384,15 +384,24 @@ function FaqRow({ q, a, open, onToggle }: { q: string; a: string; open: boolean;
           border: 'none',
           cursor: 'pointer',
           textAlign: 'left',
+          // A <button> inherits neither the page's font nor its colour on all
+          // browsers — it falls back to the UA's own button colour, which is
+          // what let a foreign colour into this row.
+          font: 'inherit',
+          color: tokens.ink,
         }}
       >
+        {/* Explicit ink, never gold. The question used to turn gold on hover,
+            which read as a stray link colour mixed into the copy; the chevron
+            is the affordance instead. */}
         <span
           style={{
             fontFamily: tokens.body,
             fontSize: 14,
             fontWeight: 400,
-            color: hover ? tokens.gold : tokens.ink,
-            transition: 'color 0.25s ease',
+            color: tokens.ink,
+            opacity: hover ? 0.7 : 1,
+            transition: 'opacity 0.25s ease',
           }}
         >
           {q}
@@ -424,6 +433,7 @@ function FaqRow({ q, a, open, onToggle }: { q: string; a: string; open: boolean;
             fontFamily: tokens.body,
             fontSize: 14,
             lineHeight: 1.8,
+            // Explicit, and not inherited from the button above it.
             color: 'rgba(28,24,16,0.65)',
             paddingTop: 12,
             paddingBottom: 20,
@@ -448,7 +458,7 @@ function SpecTable({ rows }: { rows: { label: string; value: string }[] }) {
             alignItems: 'baseline',
             justifyContent: 'space-between',
             gap: 24,
-            padding: '16px 0',
+            padding: '20px 0',
             borderBottom: `1px solid ${LINE_FAINT}`,
             background: i % 2 === 1 ? 'rgba(28,24,16,0.03)' : tokens.warmWhite,
           }}
@@ -753,49 +763,34 @@ export default function ProductDetailPage() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.15fr) minmax(0, 1fr)',
-            gap: isMobile ? 48 : 80,
+            // 55 / 45. minmax(0, …) so a long spec value wraps inside its
+            // column instead of forcing the track wider than its share.
+            gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 55fr) minmax(0, 45fr)',
+            gap: isMobile ? 48 : 72,
             marginTop: isMobile ? 40 : 56,
             alignItems: 'start',
           }}
         >
           <SpecTable rows={specRows} />
 
-          <div>
+          {/* Paragraphs only. Warranty is a row in the table like every other
+              spec — it was duplicated here as a display figure, which left it
+              stranded at the bottom of the column. */}
+          <div style={{ paddingTop: 4 }}>
             {quality.map((para, i) => (
               <p
                 key={para}
                 style={{
                   fontFamily: tokens.body,
-                  fontSize: 15,
+                  fontSize: 16,
                   lineHeight: 1.9,
                   color: INK_55,
-                  margin: i === 0 ? 0 : '20px 0 0',
+                  margin: i === 0 ? 0 : '24px 0 0',
                 }}
               >
                 {para}
               </p>
             ))}
-            <div
-              style={{
-                marginTop: 28,
-                paddingTop: 20,
-                borderTop: `1px solid ${LINE_FAINT}`,
-              }}
-            >
-              <GoldLabel>Warranty</GoldLabel>
-              <div
-                style={{
-                  fontFamily: tokens.display,
-                  fontSize: 32,
-                  fontWeight: 300,
-                  color: tokens.ink,
-                  marginTop: 6,
-                }}
-              >
-                5 years
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -804,39 +799,47 @@ export default function ProductDetailPage() {
       <section
         style={{
           background: SHELL,
-          padding: sectionPad,
+          paddingTop: isMobile ? 72 : 120,
+          paddingBottom: isMobile ? 72 : 120,
+          paddingLeft: isMobile ? 24 : 80,
+          paddingRight: isMobile ? 24 : 80,
         }}
       >
-        <h2
-          style={{
-            fontFamily: tokens.display,
-            fontSize: isMobile ? 'clamp(32px, 9vw, 40px)' : 'clamp(36px, 4vw, 48px)',
-            fontWeight: 300,
-            lineHeight: 1.05,
-            color: tokens.ink,
-            margin: 0,
-          }}
-        >
-          Common questions.
-        </h2>
-        <div style={{ marginTop: isMobile ? 32 : 48, maxWidth: 720 }}>
-          {faqs.map((f, i) => (
-            <FaqRow
-              key={f.q}
-              q={f.q}
-              a={f.a}
-              open={openFaq === i}
-              onToggle={() => setOpenFaq(cur => (cur === i ? null : i))}
-            />
-          ))}
+        {/* Headline and rows share one centred container, so the heading sits
+            over the questions rather than out at the section's own edge. */}
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <h2
+            style={{
+              fontFamily: tokens.display,
+              fontSize: isMobile ? 'clamp(32px, 9vw, 40px)' : 'clamp(36px, 4vw, 48px)',
+              fontWeight: 300,
+              lineHeight: 1.05,
+              color: tokens.ink,
+              margin: 0,
+            }}
+          >
+            Common questions.
+          </h2>
+          <div style={{ marginTop: isMobile ? 32 : 48 }}>
+            {faqs.map((f, i) => (
+              <FaqRow
+                key={f.q}
+                q={f.q}
+                a={f.a}
+                open={openFaq === i}
+                onToggle={() => setOpenFaq(cur => (cur === i ? null : i))}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
       <Footer />
 
-      {/* The fixed bar overlays whatever is at the bottom of the document, so
-          the page ends in a strip of the footer's own ink rather than letting
-          the bar sit on top of footer content. */}
+      {/* The bar is fixed, so it covers whatever the document ends on. This
+          strip of the footer's own ink is what the bar floats over at the
+          bottom of the page, leaving every row of the footer itself visible.
+          It has to be at least the bar's height — hence one shared constant. */}
       <div style={{ height: BAR_CLEARANCE, background: tokens.ink }} />
 
       {/* ---- STICKY BOTTOM BAR ---- */}
@@ -847,7 +850,7 @@ export default function ProductDetailPage() {
           left: 0,
           width: '100%',
           boxSizing: 'border-box',
-          zIndex: 100,
+          zIndex: 50,
           background: 'rgba(245,242,237,0.95)',
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
@@ -896,7 +899,8 @@ export default function ProductDetailPage() {
             position: 'fixed',
             bottom: BAR_CLEARANCE + 16,
             right: 24,
-            zIndex: 101,
+            // Above the bar, which is 50.
+            zIndex: 60,
             background: tokens.ink,
             color: tokens.warmWhite,
             fontFamily: tokens.body,
