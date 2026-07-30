@@ -235,17 +235,20 @@ const DEFAULT_WINDOW_URL = '/images/Preview.png';
 // (1254 x 1254) — how a roller blind is actually hung: the fabric overlaps
 // the frame rather than sitting inside the glass.
 //
-// These pins are paired to this photo and only this photo. On a 1254px square
-// they resolve to x 220..751, y 220..833, which lands between the glass
-// (x 235..727, y 255..817) and the outer edge of the white frame
-// (x 205..757, y 213..877) — i.e. on the frame band, as a face mount should.
-// Swapping DEFAULT_WINDOW_URL without re-measuring will hang the blind off
-// its window.
+// These pins are paired to this photo and only this photo. Swapping
+// DEFAULT_WINDOW_URL without re-measuring will hang the blind off its window.
+//
+// On a 1254px square they resolve to x 220..751, y 220..1103. The sides and
+// top sit on the white frame band — between the glass (x 235..727, y 255..817)
+// and the frame's outer edge (x 205..757, y 213..877) — which is where a face
+// mount belongs. The bottom edge is deliberately well past the frame: at
+// y=1103 the fabric runs about 225px below the sill and onto the wall, so the
+// blind reads as a long drop rather than stopping at the glass.
 const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
   [0.1754, 0.1754], // top-left     — x 220/1254, y 220/1254
   [0.5989, 0.1754], // top-right    — x 751/1254
-  [0.5989, 0.6643], // bottom-right — y 833/1254
-  [0.1754, 0.6643], // bottom-left
+  [0.5989, 0.8800], // bottom-right — y 1103/1254
+  [0.1754, 0.8800], // bottom-left
 ];
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
