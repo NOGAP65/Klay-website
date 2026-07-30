@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Nav } from '../components/Nav';
+import { Footer } from '../components/Footer';
+import { useKlayStore } from '../store';
 import { tokens } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {
@@ -264,13 +267,17 @@ function Swatch({
   );
 }
 
-/** The fabric / hardware / size / operation stack. Rendered twice — beside the
- * hero and beside the visualiser canvas — and bound to the shared visualiser
- * store in both places, so the two can never fall out of step with each other
- * or with the blind on the canvas. `onDark` only swaps the text colours. */
-function ConfiguratorControls({ onDark = false }: { onDark?: boolean }) {
+/** The fabric / hardware / size / operation stack, bound to the shared
+ * visualiser store so the selections and the blind on the canvas beside it can
+ * never fall out of step.
+ *
+ * Deliberately no blind type control. The customer is on the Dusk page; the
+ * URL already answered that question. The only type switcher in the app lives
+ * in VisualiserControls, which this page does not use, and KlayConfigurator's
+ * defaultBlindType locks the store's type on top of that. */
+function ConfiguratorControls() {
   const store = useVisualiserStore();
-  const nameColor = onDark ? tokens.warmWhite : tokens.ink;
+  const nameColor = tokens.ink;
 
   return (
     <>
@@ -421,7 +428,6 @@ function FaqRow({ q, a, open, onToggle }: { q: string; a: string; open: boolean;
             paddingTop: 12,
             paddingBottom: 20,
             margin: 0,
-            maxWidth: 760,
           }}
         >
           {a}
@@ -464,6 +470,11 @@ function SpecTable({ rows }: { rows: { label: string; value: string }[] }) {
               fontFamily: tokens.body,
               fontSize: 14,
               color: tokens.ink,
+              // flex:1 as well as textAlign — space-between already pushes a
+              // single-line value to the right edge, but a value long enough to
+              // wrap (Operation) shrink-wraps and its second line was landing
+              // ragged-left. Claiming the space makes both lines align right.
+              flex: 1,
               textAlign: 'right',
             }}
           >
@@ -482,6 +493,7 @@ export default function ProductDetailPage() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const store = useVisualiserStore();
+  const setScrollY = useKlayStore(s => s.setScrollY);
 
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [toast, setToast] = useState<string | null>(null);
@@ -497,6 +509,25 @@ export default function ProductDetailPage() {
     if (product) return;
     navigate(legacy ? `/products/${legacy.slug}` : '/products', { replace: true });
   }, [product, legacy, navigate]);
+
+  // Nav's transparent/compressed state is driven by the shared store, and only
+  // HomePage and ProductsPage were feeding it — without this the nav here never
+  // darkens on scroll and inherits whatever offset the previous page left
+  // behind. Same rAF-throttled shape HomePage uses.
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setScrollY(window.scrollY);
+        ticking = false;
+      });
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [setScrollY]);
 
   useEffect(
     () => () => {
@@ -524,12 +555,14 @@ export default function ProductDetailPage() {
   const quality = QUALITY_COPY[product.blindType];
 
   const sectionPad = isMobile ? '72px 24px' : '120px 160px';
-  // Clears the fixed bottom bar so the last row of content isn't sitting
-  // underneath it.
-  const BAR_CLEARANCE = 96;
+  /** The fixed bar's own height, used to keep the toast clear of it and to
+   * float it over footer-toned space rather than over footer content. */
+  const BAR_CLEARANCE = 80;
 
   return (
-    <div style={{ background: tokens.warmWhite }}>
+    <>
+      <Nav />
+      <div style={{ background: tokens.warmWhite }}>
       {/* ---- SECTION 1 — PRODUCT HERO ---- */}
       <section
         style={{
@@ -539,24 +572,29 @@ export default function ProductDetailPage() {
           background: tokens.warmWhite,
         }}
       >
+        {/* The visualiser, not a photograph — the blind renders against the
+            default window immediately on load. It sizes itself to that photo's
+            aspect ratio rather than stretching to the column: the ratio is what
+            keeps the rendered blind registered to the window in the shot, so
+            forcing it to fill both dimensions would pull the blind off the
+            frame it is drawn onto. Centred on charcoal instead. */}
         <div
           style={{
             width: isMobile ? '100%' : '58%',
             flexShrink: 0,
+            boxSizing: 'border-box',
             overflow: 'hidden',
-            minHeight: isMobile ? '60vh' : '90vh',
+            minHeight: isMobile ? undefined : '90vh',
+            background: tokens.charcoal,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: isMobile ? '24px 20px' : 32,
           }}
         >
-          <img
-            src={product.image}
-            alt={`${product.name} — ${product.type}`}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'center',
-              display: 'block',
-            }}
+          <KlayConfigurator
+            defaultBlindType={product.blindType}
+            mediaMaxVh={isMobile ? 56 : 90}
           />
         </div>
 
@@ -564,7 +602,9 @@ export default function ProductDetailPage() {
           style={{
             width: isMobile ? '100%' : '42%',
             boxSizing: 'border-box',
-            padding: isMobile ? '48px 24px' : '80px 64px',
+            // paddingTop clears the fixed nav (92px compressed, 116px before it
+            // shrinks) — at 80 the back link sat underneath it.
+            padding: isMobile ? '96px 24px 48px' : '120px 64px 80px',
             display: 'flex',
             flexDirection: 'column',
             background: tokens.warmWhite,
@@ -664,96 +704,22 @@ export default function ProductDetailPage() {
         </div>
       </section>
 
-      {/* ---- SECTION 2 — VISUALISER ---- */}
-      <section
-        style={{
-          background: tokens.charcoal,
-          paddingTop: isMobile ? 64 : 80,
-          paddingBottom: isMobile ? 64 : 80,
-          paddingLeft: isMobile ? 24 : 40,
-          paddingRight: isMobile ? 24 : 40,
-        }}
-      >
-        <div style={{ textAlign: 'center' }}>
-          <GoldLabel spacing="0.3em">See It In Your Room</GoldLabel>
-          <h2
-            style={{
-              fontFamily: tokens.display,
-              fontSize: isMobile ? 'clamp(32px, 9vw, 40px)' : 'clamp(38px, 4.4vw, 52px)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              color: tokens.warmWhite,
-              margin: '12px 0 0',
-            }}
-          >
-            Your window. Your blind.
-          </h2>
-          <p
-            style={{
-              fontFamily: tokens.body,
-              fontSize: 13,
-              lineHeight: 1.7,
-              color: 'rgba(245,242,237,0.5)',
-              margin: '12px auto 0',
-              maxWidth: 460,
-            }}
-          >
-            Upload a photo of your window and see exactly how it looks.
-          </p>
-        </div>
-
-        <div
+      {/* ---- SECTION 2 — ROOM IMAGE ---- */}
+      {/* A visual break between the configurator above and the specifications
+          below. No overlay: the configurator already carries every word this
+          page needs, and text here would compete with it. */}
+      <section style={{ height: '70vh', overflow: 'hidden', background: tokens.charcoal }}>
+        <img
+          src={product.image}
+          alt={`${product.name} — ${product.type}`}
           style={{
-            display: 'flex',
-            flexDirection: isMobile ? 'column' : 'row',
-            alignItems: 'flex-start',
-            gap: isMobile ? 40 : 32,
-            maxWidth: 1100,
-            margin: '48px auto 0',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+            display: 'block',
           }}
-        >
-          {/* Ink surround, because KlayConfigurator's own box is charcoal —
-              the same value as this section — so without it the canvas has no
-              edge to sit against. */}
-          <div
-            style={{
-              width: isMobile ? '100%' : '65%',
-              boxSizing: 'border-box',
-              background: tokens.ink,
-              padding: isMobile ? 12 : 16,
-            }}
-          >
-            <KlayConfigurator
-              defaultBlindType={product.blindType}
-              mediaMaxVh={isMobile ? 56 : 66}
-            />
-          </div>
-
-          <div style={{ width: isMobile ? '100%' : '35%', boxSizing: 'border-box' }}>
-            <ConfiguratorControls onDark />
-            <div
-              style={{
-                marginTop: 28,
-                paddingTop: 20,
-                borderTop: '1px solid rgba(245,242,237,0.12)',
-              }}
-            >
-              <GoldLabel>Estimated Price</GoldLabel>
-              <div
-                style={{
-                  fontFamily: tokens.display,
-                  fontSize: 42,
-                  fontWeight: 300,
-                  lineHeight: 1,
-                  color: tokens.warmWhite,
-                  marginTop: 8,
-                }}
-              >
-                ${price}
-              </div>
-            </div>
-          </div>
-        </div>
+        />
       </section>
 
       {/* ---- SECTION 3 — PRODUCT SPECS ---- */}
@@ -827,7 +793,6 @@ export default function ProductDetailPage() {
         style={{
           background: SHELL,
           padding: sectionPad,
-          paddingBottom: (isMobile ? 72 : 120) + BAR_CLEARANCE,
         }}
       >
         <h2
@@ -842,7 +807,7 @@ export default function ProductDetailPage() {
         >
           Common questions.
         </h2>
-        <div style={{ marginTop: isMobile ? 32 : 48, maxWidth: 900 }}>
+        <div style={{ marginTop: isMobile ? 32 : 48, maxWidth: 720 }}>
           {faqs.map((f, i) => (
             <FaqRow
               key={f.q}
@@ -854,6 +819,13 @@ export default function ProductDetailPage() {
           ))}
         </div>
       </section>
+
+      <Footer />
+
+      {/* The fixed bar overlays whatever is at the bottom of the document, so
+          the page ends in a strip of the footer's own ink rather than letting
+          the bar sit on top of footer content. */}
+      <div style={{ height: BAR_CLEARANCE, background: tokens.ink }} />
 
       {/* ---- STICKY BOTTOM BAR ---- */}
       <div
@@ -910,7 +882,7 @@ export default function ProductDetailPage() {
         <div
           style={{
             position: 'fixed',
-            bottom: BAR_CLEARANCE,
+            bottom: BAR_CLEARANCE + 16,
             right: 24,
             zIndex: 101,
             background: tokens.ink,
@@ -924,6 +896,7 @@ export default function ProductDetailPage() {
           {toast}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
