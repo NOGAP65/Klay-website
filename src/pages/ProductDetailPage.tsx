@@ -561,56 +561,71 @@ export default function ProductDetailPage() {
 
   return (
     <>
-      <Nav />
+      {/* onLight: the hero is warmWhite to both edges now, and the nav's own
+          links are warmWhite — without this they are invisible until the page
+          is scrolled far enough for the nav to darken. */}
+      <Nav onLight />
       <div style={{ background: tokens.warmWhite }}>
+      {/* Reserves the fixed nav's height. The hero used to open on a
+          full-bleed charcoal column that the nav could sit over; on a light
+          background it needs real space, and putting it here keeps both hero
+          columns on the specified 64px padding. */}
+      <div style={{ height: isMobile ? 76 : 96 }} />
+
       {/* ---- SECTION 1 — PRODUCT HERO ---- */}
       <section
         style={{
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
-          minHeight: isMobile ? undefined : '90vh',
+          // Height comes from the content now, not the viewport.
+          alignItems: 'flex-start',
           background: tokens.warmWhite,
         }}
       >
         {/* The visualiser, not a photograph — the blind renders against the
             default window immediately on load. It sizes itself to that photo's
-            aspect ratio rather than stretching to the column: the ratio is what
-            keeps the rendered blind registered to the window in the shot, so
-            forcing it to fill both dimensions would pull the blind off the
-            frame it is drawn onto. Centred on charcoal instead. */}
+            aspect ratio rather than filling a box: the ratio is what keeps the
+            rendered blind registered to the window in the shot, so forcing both
+            dimensions would pull the blind off the frame it is drawn onto. The
+            480px cap is what makes it read as a contained object. */}
         <div
           style={{
-            width: isMobile ? '100%' : '58%',
+            width: isMobile ? '100%' : '52%',
             flexShrink: 0,
             boxSizing: 'border-box',
-            overflow: 'hidden',
-            minHeight: isMobile ? undefined : '90vh',
-            background: tokens.charcoal,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: isMobile ? '24px 20px' : 32,
+            background: tokens.warmWhite,
+            padding: isMobile ? '32px 24px' : '64px 48px',
           }}
         >
-          <KlayConfigurator
-            defaultBlindType={product.blindType}
-            mediaMaxVh={isMobile ? 56 : 90}
-          />
+          <div style={{ maxWidth: 480, margin: '0 auto' }}>
+            {/* position:relative + overflow:hidden so the motor controls, which
+                are absolutely positioned against the canvas inside
+                KlayConfigurator, clip to this box's rounded corners rather than
+                spilling into the page layout. */}
+            <div
+              style={{
+                position: 'relative',
+                overflow: 'hidden',
+                borderRadius: 8,
+                background: tokens.charcoal,
+              }}
+            >
+              <KlayConfigurator
+                defaultBlindType={product.blindType}
+                mediaMaxVh={isMobile ? 56 : 90}
+              />
+            </div>
+          </div>
         </div>
 
         <div
           style={{
-            width: isMobile ? '100%' : '42%',
+            width: isMobile ? '100%' : '48%',
             boxSizing: 'border-box',
-            // paddingTop clears the fixed nav (92px compressed, 116px before it
-            // shrinks) — at 80 the back link sat underneath it.
-            padding: isMobile ? '96px 24px 48px' : '120px 64px 80px',
+            padding: isMobile ? '32px 24px 48px' : '64px 48px',
             display: 'flex',
             flexDirection: 'column',
             background: tokens.warmWhite,
-            ...(isMobile
-              ? {}
-              : { position: 'sticky', top: 0, height: '100vh', overflowY: 'auto' as const }),
           }}
         >
           <Link
