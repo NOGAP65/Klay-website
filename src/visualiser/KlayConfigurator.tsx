@@ -231,22 +231,21 @@ const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-
 // photo using a fixed set of corner pins (see DEFAULT_WINDOW_CORNERS_PCT),
 // with no CornerPinOverlay involved at all until the user replaces it.
 const DEFAULT_WINDOW_URL = '/images/Preview.png';
-// Face-mounted (outside mount) on the double window in Preview.png
-// (1254 x 1254) — how a roller blind is actually hung: the fabric overlaps
-// the frame rather than sitting inside the glass.
+// The glass aperture of the double window in Preview.png (1254 x 1254).
 //
 // These pins are paired to this photo and only this photo. Swapping
 // DEFAULT_WINDOW_URL without re-measuring will hang the blind off its window.
 //
-// Reveal fit (inside mount): on Preview.png's 1254px square these resolve to
-// x 235..727, y 255..816, which is the glass aperture itself — the fabric sits
-// inside the white frame rather than overlapping it, so the frame stays fully
-// visible on all four sides.
+// A true quad, not a rectangle: the window is photographed in perspective, so
+// the top edge falls ~53px from left to right and the bottom edge rises ~23px.
+// Each corner therefore has its own x AND y — an axis-aligned rectangle cannot
+// sit on this window. Order is TL, TR, BR, BL, which is what the renderer
+// destructures positionally.
 const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
-  [0.187, 0.203], // top-left     — x 235/1254, y 255/1254
-  [0.580, 0.203], // top-right    — x 727/1254
-  [0.580, 0.651], // bottom-right — y 816/1254
-  [0.187, 0.651], // bottom-left
+  [0.188995, 0.216108], // top-left     — x 237, y 271
+  [0.559809, 0.258373], // top-right    — x 702, y 324
+  [0.558214, 0.631579], // bottom-right — x 700, y 792
+  [0.185008, 0.649123], // bottom-left  — x 232, y 814
 ];
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
