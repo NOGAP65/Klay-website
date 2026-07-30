@@ -238,17 +238,15 @@ const DEFAULT_WINDOW_URL = '/images/Preview.png';
 // These pins are paired to this photo and only this photo. Swapping
 // DEFAULT_WINDOW_URL without re-measuring will hang the blind off its window.
 //
-// On a 1254px square they resolve to x 220..751, y 220..1103. The sides and
-// top sit on the white frame band — between the glass (x 235..727, y 255..817)
-// and the frame's outer edge (x 205..757, y 213..877) — which is where a face
-// mount belongs. The bottom edge is deliberately well past the frame: at
-// y=1103 the fabric runs about 225px below the sill and onto the wall, so the
-// blind reads as a long drop rather than stopping at the glass.
+// Reveal fit (inside mount): on Preview.png's 1254px square these resolve to
+// x 235..727, y 255..816, which is the glass aperture itself — the fabric sits
+// inside the white frame rather than overlapping it, so the frame stays fully
+// visible on all four sides.
 const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
-  [0.1754, 0.1754], // top-left     — x 220/1254, y 220/1254
-  [0.5989, 0.1754], // top-right    — x 751/1254
-  [0.5989, 0.8800], // bottom-right — y 1103/1254
-  [0.1754, 0.8800], // bottom-left
+  [0.187, 0.203], // top-left     — x 235/1254, y 255/1254
+  [0.580, 0.203], // top-right    — x 727/1254
+  [0.580, 0.651], // bottom-right — y 816/1254
+  [0.187, 0.651], // bottom-left
 ];
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
