@@ -2254,43 +2254,22 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
   // control being broken. Pulling them through the same imageCache the
   // renderer uses makes the swap a cache hit.
   //
-  // Deferred to idle rather than fired on mount. The three textures total
-  // ~9MB, and starting all of them immediately would contend with the window
-  // photo and the page's own assets for bandwidth — making the FIRST render
-  // slower in order to make a LATER swap faster, which is the wrong trade on
-  // a mobile connection. By the time the visitor reaches for the type control
-  // the browser has long been idle.
+  // Fired on mount, not deferred. All three textures together are ~384KB now
+  // that they are exported at 512x512 — less than the window photo alone — so
+  // there is nothing to protect the first render from and no reason to make
+  // the first type change wait. (While they were 1254x1254 and ~9MB this ran
+  // on requestIdleCallback, because racing them against the window photo
+  // slowed the first render to speed up a later swap.)
+  //
+  // 512x512 is exactly POT_SIZE, so getOrUploadTexture's resample is now a
+  // 1:1 copy rather than a downsample.
   //
   // Failures are ignored on purpose: this is a warm-up, and the render path
   // does its own loading and error handling.
   useEffect(() => {
-    let cancelled = false;
-    const warm = () => {
-      if (cancelled) return;
-      for (const path of ALL_ROLLER_TEXTURES) {
-        loadImage(path).catch(() => {});
-      }
-    };
-
-    // requestIdleCallback is unavailable in Safari; a timeout is the standard
-    // stand-in and is late enough to be past first paint either way.
-    const ric = (window as Window & {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      cancelIdleCallback?: (handle: number) => void;
-    });
-    let idleHandle: number | undefined;
-    let timeoutHandle: number | undefined;
-    if (typeof ric.requestIdleCallback === 'function') {
-      idleHandle = ric.requestIdleCallback(warm, { timeout: 4000 });
-    } else {
-      timeoutHandle = window.setTimeout(warm, 1500);
+    for (const path of ALL_ROLLER_TEXTURES) {
+      loadImage(path).catch(() => {});
     }
-
-    return () => {
-      cancelled = true;
-      if (idleHandle !== undefined) ric.cancelIdleCallback?.(idleHandle);
-      if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
-    };
   }, []);
 
   // Serialized so the effect only re-runs when the actual area data changes,
