@@ -490,7 +490,12 @@ const measureMeanLuma = (ctx: CanvasRenderingContext2D): number => {
  * Nothing carries over from the previous fabric: there is no accumulated
  * surface to tint, because the colour is rebuilt per pixel every frame from
  * u_tintColor and this texture's deviation. */
-const getOrUploadTexture = (state: GLState, key: string, img: HTMLImageElement): FabricTexture => {
+const getOrUploadTexture = (
+  state: GLState,
+  key: string,
+  img: HTMLImageElement,
+  tileable: boolean,
+): FabricTexture => {
   const existing = state.textures.get(key);
   if (existing) return existing;
 
@@ -507,13 +512,25 @@ const getOrUploadTexture = (state: GLState, key: string, img: HTMLImageElement):
   if (!texture) throw new Error('Failed to create WebGL texture');
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, potCanvas);
-  // Vertical (T) wrap is CLAMP_TO_EDGE, not REPEAT — these fabric photos
-  // aren't seamlessly tileable, so repeating them vertically produced a
-  // visible horizontal seam wherever the texture's own edge repeated
-  // partway down the drop. Clamping means the last row of pixels smears
-  // instead of hard-cutting back to row zero — one continuous fabric piece.
+  // Horizontal always repeats. Vertical depends on whether this particular
+  // photo tiles.
+  //
+  // The purpose-shot roller textures do, and they have to: repeating
+  // horizontally without repeating vertically stretches every texel by the
+  // blind's aspect ratio, which is exactly the "mesh looks stretched" failure.
+  // uvScaleFor sets both counts together to keep texels square, and that is
+  // only meaningful if both axes wrap.
+  //
+  // The legacy curtain scans do not tile — repeating them vertically put a
+  // hard horizontal seam partway down the drop, which is why this was
+  // CLAMP_TO_EDGE for everything. They keep the clamp, so the last row smears
+  // instead and a curtain still reads as one continuous piece.
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(
+    gl.TEXTURE_2D,
+    gl.TEXTURE_WRAP_T,
+    tileable ? gl.REPEAT : gl.CLAMP_TO_EDGE,
+  );
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.generateMipmap(gl.TEXTURE_2D);
@@ -532,7 +549,11 @@ const uploadTexture = (
   path: string
 ): FabricTexture | null => {
   const img = images.get(path);
-  return img ? getOrUploadTexture(state, path, img) : null;
+  // Only the purpose-shot roller textures are seamless. Derived from the path
+  // rather than passed in, so a caller cannot accidentally declare a legacy
+  // scan tileable and reintroduce the seam.
+  const tileable = ALL_ROLLER_TEXTURES.includes(path);
+  return img ? getOrUploadTexture(state, path, img, tileable) : null;
 };
 
 const UNIT_SQUARE: Point[] = [[0, 0], [1, 0], [1, 1], [0, 1]];
@@ -542,10 +563,59 @@ const UNIT_SQUARE: Point[] = [[0, 0], [1, 0], [1, 1], [0, 1]];
  * reads as surface, never as a wash over the top of it. */
 const FABRIC_TEXTURE_AMOUNT = 0.5;
 
+/** Per-fabric surface tuning. Both numbers are properties of the specific
+ * photograph, not of the fabric in the abstract, so they move if a texture is
+ * re-shot.
+ *
+ * `textureAmount` — how hard the weave modulates the selected colour.
+ * Blockout's photo is a mid-grey with a subtle weave, so its deviation from
+ * its own mean is small and needs amplifying before the surface reads at all;
+ * at 0.5 it rendered as near-flat colour. Sunscreen and light filter are much
+ * lighter photos with pronounced structure, and pushing them to 0.85 blows the
+ * weave into hard black-and-white banding.
+ *
+ * `tileX` — horizontal repeats across the blind's width. Set from how fine
+ * each weave is: the sunscreen's tight grid disappears into a flat wash unless
+ * it repeats often enough to be resolved at normal viewing distance, while the
+ * other two are coarser and would turn to noise at the same density. */
+interface FabricSurface {
+  textureAmount: number;
+  tileX: number;
+}
+
+const FABRIC_SURFACE: Record<string, FabricSurface> = {
+  blockout: { textureAmount: 0.85, tileX: 2 },
+  sunscreen: { textureAmount: 0.5, tileX: 3 },
+  lightfilter: { textureAmount: 0.5, tileX: 2 },
+};
+
+const DEFAULT_SURFACE: FabricSurface = { textureAmount: FABRIC_TEXTURE_AMOUNT, tileX: 1 };
+
+const surfaceFor = (blindType: string): FabricSurface =>
+  FABRIC_SURFACE[blindType] ?? DEFAULT_SURFACE;
+
 /** Vertical texture repeats, bounded at both ends. The upper bound stops a
  * tall trace visibly tiling; the lower bound stops a nearly rolled-up blind
  * collapsing to a single smeared texture row. */
 const clampUvScale = (scale: number): number => Math.max(0.25, Math.min(2, scale));
+
+/** Texture repeats for a fabric quad, kept square.
+ *
+ * Vertical repeats are derived from horizontal ones times the quad's aspect
+ * ratio, so one texture repeat covers the same number of pixels down as it
+ * does across. Setting the two independently — which is what the old fixed
+ * `[2, drop/width]` did — stretches the weave by the blind's aspect: on a
+ * typical taller-than-wide window that squashed every texel to half height.
+ *
+ * The lower bound matters while rolling up. As the drop approaches zero so
+ * does the vertical repeat count, and at zero every row of the quad samples
+ * the same texture row, streaking the fabric as it disappears. The upper
+ * bound is generous rather than tight — mipmapping handles the density — and
+ * exists only to stop a pathologically tall trace aliasing. */
+const uvScaleFor = (tileX: number, drop: number, width: number): [number, number] => {
+  const aspect = drop / Math.max(1, width);
+  return [tileX, Math.max(0.25, Math.min(16, tileX * aspect))];
+};
 
 interface QuadOptions {
   tint: { r: number; g: number; b: number };
@@ -895,67 +965,14 @@ const drawContactShadow = (
   ctx.restore();
 };
 
-/** Deterministic pseudo-random 0..1, stable across re-renders (no
- * Math.random() — this repaints on every roll-position drag, and a true
- * random value would make the weave visibly jitter frame to frame). */
-const pseudoRandom01 = (seed: number): number => {
-  const x = Math.sin(seed * 12.9898) * 43758.5453;
-  return x - Math.floor(x);
-};
-
-/** Real woven fabric's only visible "texture" here — soft vertical lines,
- * evenly spaced (consistent weave spacing) but each with its own subtle
- * opacity between 0.03 and 0.08 so it reads as breathing cloth rather than
- * a uniform printed grid. This is the fabric's whole texture cue: the
- * underlying photo no longer tiles (see CLAMP_TO_EDGE above), so there's
- * no risk of these competing with a seam. */
-const drawFabricFoldLines = (
-  ctx: CanvasRenderingContext2D,
-  tl: Point,
-  tr: Point,
-  fabBL: Point,
-  fabBR: Point,
-  avgW: number
-) => {
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(tl[0], tl[1]);
-  ctx.lineTo(tr[0], tr[1]);
-  ctx.lineTo(fabBR[0], fabBR[1]);
-  ctx.lineTo(fabBL[0], fabBL[1]);
-  ctx.closePath();
-  ctx.clip();
-
-  const lineCount = 14;
-  for (let i = 1; i < lineCount; i++) {
-    const t = i / lineCount;
-
-    const topX = tl[0] + (tr[0] - tl[0]) * t;
-    const topY = tl[1] + (tr[1] - tl[1]) * t;
-    const botX = fabBL[0] + (fabBR[0] - fabBL[0]) * t;
-    const botY = fabBL[1] + (fabBR[1] - fabBL[1]) * t;
-
-    const lineAlpha = 0.03 + pseudoRandom01(i) * 0.05; // breathes between 0.03 and 0.08
-
-    const foldGrad = ctx.createLinearGradient(
-      topX - avgW * 0.01, topY,
-      topX + avgW * 0.01, topY
-    );
-    foldGrad.addColorStop(0, shadowRgba(0));
-    foldGrad.addColorStop(0.5, shadowRgba(lineAlpha));
-    foldGrad.addColorStop(1, shadowRgba(0));
-
-    ctx.save();
-    ctx.strokeStyle = foldGrad;
-    ctx.lineWidth = avgW * 0.01;
-    ctx.beginPath();
-    ctx.moveTo(topX, topY);
-    ctx.lineTo(botX, botY);
-    ctx.stroke();
-    ctx.restore();
-  }
-  ctx.restore();
-};
+// drawFabricFoldLines and its pseudoRandom01 helper lived here: fourteen
+// evenly spaced vertical gradient strokes painted over the fabric to stand in
+// for a weave, back when the underlying photo was clamped rather than tiled
+// and contributed almost no surface detail of its own. The real fabric
+// photography supersedes it completely — the weave is now in the texture, at
+// the correct scale and orientation for each fabric, and drawing synthetic
+// stripes on top of a real weave produced a moiré against the sunscreen's
+// grid and a visible second rhythm on the other two.
 
 /** Sunscreen / Light Filter read as semi-translucent — light bleeds through
  * from behind, brightest at the fabric's centre and fading toward all four
@@ -1697,7 +1714,8 @@ const drawBlindArea = (
       // just as much while rolling up: as the drop approaches zero so does
       // this scale, and at zero every pixel samples the same texture row,
       // streaking the fabric as it disappears.
-      const uvScale: [number, number] = [2, clampUvScale(fabricDrop / avgW)];
+      const surface = surfaceFor(type);
+      const uvScale = uvScaleFor(surface.tileX, fabricDrop, avgW);
 
       if (type === 'sheer') {
         // Two panels with a centre gap, like a pair of sheer curtains
@@ -1731,7 +1749,7 @@ const drawBlindArea = (
         // directional sheen, weave bands, or a warm centre bloom.
         drawQuad(state, [tl, tr, fabBR, fabBL], fabricTexture, {
           tint,
-          textureAmount: FABRIC_TEXTURE_AMOUNT,
+          textureAmount: surface.textureAmount,
           opacity: FABRIC_OPACITY[type] ?? 1,
           uvScale,
           shade: true,
@@ -1758,9 +1776,9 @@ const drawBlindArea = (
       ctx.restore();
     }
 
-    // --- FABRIC REALISM — centre light, then vertical weave lines on top ---
+    // --- FABRIC REALISM — centre light only. The weave itself comes from the
+    // texture now; there are no synthetic stripes drawn over it. ---
     drawFabricCentreLight(ctx, tl, tr, fabBL, fabBR);
-    drawFabricFoldLines(ctx, tl, tr, fabBL, fabBR, avgW);
     if (type === 'sunscreen' || type === 'lightfilter') {
       drawTranslucentLightBleed(ctx, tl, tr, fabBR, fabBL);
     }
@@ -1889,9 +1907,18 @@ const drawDualBlindArea = (
    * layers share the selected colour but not the fabric: `texturePath` and
    * `opacity` are what make the back read as sunscreen mesh and the front as
    * solid blockout. */
-  const drawFabricLayer = (dropP: number, texturePath: string, opacity: number, shaderType: number) => {
+  /** `surfaceType` names which fabric this layer actually IS, so each half of
+   * a dual gets its own weave density and deviation amount — the front is a
+   * blockout and the back a sunscreen, and they are tuned differently. */
+  const drawFabricLayer = (
+    dropP: number,
+    texturePath: string,
+    opacity: number,
+    surfaceType: string,
+  ) => {
     const layerBL = leftEdge(dropP);
     const layerBR = rightEdge(dropP);
+    const surface = surfaceFor(surfaceType);
 
     if (!glStateRef.current && !glUnavailableRef.current) {
       try {
@@ -1917,10 +1944,16 @@ const drawDualBlindArea = (
 
       const fabricTexture = uploadTexture(state, fabricImgs, texturePath);
       const tint = hexToRgb(fabricColor);
-      const uvScale: [number, number] = [2, clampUvScale((leftH * dropP) / avgW)];
+      const uvScale = uvScaleFor(surface.tileX, leftH * dropP, avgW);
       if (fabricTexture) {
         drawQuad(state, [tl, tr, layerBR, layerBL], fabricTexture, {
-          tint, textureAmount: FABRIC_TEXTURE_AMOUNT, opacity, uvScale, shade: true, folds: 0, shaderType,
+          tint,
+          textureAmount: surface.textureAmount,
+          opacity,
+          uvScale,
+          shade: true,
+          folds: 0,
+          shaderType: shaderTypeFor(surfaceType),
         });
         ctx.drawImage(state.canvas, 0, 0);
       }
@@ -1936,8 +1969,6 @@ const drawDualBlindArea = (
       ctx.fill();
       ctx.restore();
     }
-
-    drawFabricFoldLines(ctx, tl, tr, layerBL, layerBR, avgW);
   };
 
   const backBL = backBLEdge;
@@ -1950,7 +1981,7 @@ const drawDualBlindArea = (
     // and hanging lower, so its exposed portion sits below the blockout. The
     // view behind it was diffused above, for the same reason a standalone
     // sunscreen's is: through a mesh it is a ghost, not a sharp image. ---
-    drawFabricLayer(backP, DUAL_BACK_TEXTURE, DUAL_BACK_OPACITY, shaderTypeFor('sunscreen'));
+    drawFabricLayer(backP, DUAL_BACK_TEXTURE, DUAL_BACK_OPACITY, 'sunscreen');
     drawFabricCentreLight(ctx, tl, tr, backBL, backBR);
     // Light bleeding through the mesh, same treatment the standalone
     // sunscreen gets — this is what sells it as a screen rather than cloth.
@@ -1958,7 +1989,7 @@ const drawDualBlindArea = (
 
     // --- FRONT LAYER — blockout on the room side, opaque, drawn on top and
     // stopping short so the sunscreen stays visible beneath it. ---
-    drawFabricLayer(frontP, DUAL_FRONT_TEXTURE, 1, shaderTypeFor('blockout'));
+    drawFabricLayer(frontP, DUAL_FRONT_TEXTURE, 1, 'blockout');
     drawFabricCentreLight(ctx, tl, tr, frontBL, frontBR);
   }
 
