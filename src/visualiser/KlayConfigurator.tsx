@@ -242,10 +242,10 @@ const DEFAULT_WINDOW_URL = '/images/Preview.png';
 // sit on this window. Order is TL, TR, BR, BL, which is what the renderer
 // destructures positionally.
 const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
-  [0.188995, 0.210], // top-left     — x 237, y 263
-  [0.559809, 0.265], // top-right    — x 702, y 332
-  [0.558214, 0.638], // bottom-right — x 700, y 800
-  [0.185008, 0.656], // bottom-left  — x 232, y 823
+  [0.204, 0.205], // top-left     — x 256, y 257
+  [0.574, 0.260], // top-right    — x 720, y 326
+  [0.572, 0.633], // bottom-right — x 717, y 794
+  [0.200, 0.651], // bottom-left  — x 251, y 816
 ];
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
