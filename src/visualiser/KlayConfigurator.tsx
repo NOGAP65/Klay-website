@@ -230,30 +230,22 @@ const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-
 // upload prompt by default — the blind renders immediately against this
 // photo using a fixed set of corner pins (see DEFAULT_WINDOW_CORNERS_PCT),
 // with no CornerPinOverlay involved at all until the user replaces it.
-const DEFAULT_WINDOW_URL = '/images/static-imafge.png';
-// Face-mounted (outside mount) on the window in static-imafge.png
-// (1448 x 1086) — how a roller blind is actually hung: the fabric overlaps
-// the casing rather than sitting inside the glass, leaving about half the
-// casing visible on every side.
+const DEFAULT_WINDOW_URL = '/images/Preview.png';
+// Face-mounted (outside mount) on the double window in Preview.png
+// (1254 x 1254) — how a roller blind is actually hung: the fabric overlaps
+// the frame rather than sitting inside the glass.
 //
-// Measured off the decoded pixels. Glass runs x 408..1035, y 173..788; the
-// casing's outer edge is the contact-shadow dip against the wall at x=348 /
-// x=1096, y=103, and the sill nose at y=838. Each blind edge is the midpoint
-// of that casing band — a 30px overlap left/right, 35px top, 25px bottom:
-//
-//   side     glass  casing  blind   band  overlap
-//   left       408     348    378     60       30
-//   right     1035    1096   1065     61       30
-//   top        173     103    138     70       35
-//   bottom     788     838    813     50       25
-//
-// Centre lands on x=721.5 against the casing's own 722, so the blind hangs
-// square to the window rather than drifting to one side.
+// These pins are paired to this photo and only this photo. On a 1254px square
+// they resolve to x 220..751, y 220..833, which lands between the glass
+// (x 235..727, y 255..817) and the outer edge of the white frame
+// (x 205..757, y 213..877) — i.e. on the frame band, as a face mount should.
+// Swapping DEFAULT_WINDOW_URL without re-measuring will hang the blind off
+// its window.
 const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
-  [0.2610, 0.1271], // top-left     — x 378/1448,  y 138/1086
-  [0.7355, 0.1271], // top-right    — x 1065/1448
-  [0.7355, 0.7486], // bottom-right — y 813/1086
-  [0.2610, 0.7486], // bottom-left
+  [0.1754, 0.1754], // top-left     — x 220/1254, y 220/1254
+  [0.5989, 0.1754], // top-right    — x 751/1254
+  [0.5989, 0.6643], // bottom-right — y 833/1254
+  [0.1754, 0.6643], // bottom-left
 ];
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);

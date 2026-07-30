@@ -726,25 +726,7 @@ export default function ProductDetailPage() {
         </div>
       </section>
 
-      {/* ---- SECTION 2 — ROOM IMAGE ---- */}
-      {/* A visual break between the configurator above and the specifications
-          below. No overlay: the configurator already carries every word this
-          page needs, and text here would compete with it. */}
-      <section style={{ height: '70vh', overflow: 'hidden', background: tokens.charcoal }}>
-        <img
-          src={product.image}
-          alt={`${product.name} — ${product.type}`}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center',
-            display: 'block',
-          }}
-        />
-      </section>
-
-      {/* ---- SECTION 3 — PRODUCT SPECS ---- */}
+      {/* ---- SECTION 2 — PRODUCT SPECS ---- */}
       <section style={{ background: tokens.warmWhite, padding: sectionPad }}>
         <GoldLabel spacing="0.3em">Product Details</GoldLabel>
         <h2
@@ -795,7 +777,7 @@ export default function ProductDetailPage() {
         </div>
       </section>
 
-      {/* ---- SECTION 4 — FAQs ---- */}
+      {/* ---- SECTION 3 — FAQs ---- */}
       <section
         style={{
           background: SHELL,
