@@ -1,19 +1,27 @@
+import { useState } from 'react';
 import { RevealWords } from './RevealWords';
-import { tokens } from '../theme';
+import { tokens, headline, motion, supporting } from '../theme';
 import { splitWords } from '../utils/splitWords';
 
 export function FinalScene() {
+  const [primaryHover, setPrimaryHover] = useState(false);
+  const [secondaryHover, setSecondaryHover] = useState(false);
+
   return (
     <section
       id="final"
       style={{
         position: 'relative',
-        background: tokens.ink,
+        // Charcoal — the conviction close, and the same ground the Footer
+        // below now uses, so the page ends on one continuous dark block that
+        // bookends the charcoal hero at the top. Previously ink, which made
+        // this and the footer two subtly different darks stacked together.
+        background: tokens.charcoal,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        padding: '112px 0',
+        padding: '140px 0',
       }}
     >
       {/* Slow gold radial glow rising from bottom — dawn light under a door */}
@@ -38,43 +46,48 @@ export function FinalScene() {
             { text: 'in?', italic: true, color: tokens.gold },
           ]}
           style={{
-            fontWeight: 300,
-            fontSize: 'clamp(44px, 6.5vw, 96px)',
+            ...headline.section,
             lineHeight: 1.05,
             color: tokens.warmWhite,
             justifyContent: 'center',
           }}
         />
-        <p style={{ fontFamily: tokens.body, fontWeight: 300, fontSize: 18, color: tokens.textMuted, margin: '26px auto 40px', maxWidth: 520 }}>
+        <p style={{ ...supporting.onDark, fontSize: 18, fontWeight: 300, margin: '28px auto 44px', maxWidth: 520 }}>
           Design your blinds in minutes. We measure. We install. You live in it.
         </p>
+        {/* Two CTAs by design: the gold button is the primary path and carries
+            all the visual weight, but a made-to-measure trade purchase has a
+            real cohort who will only ever convert by phone. The ghost button
+            keeps that path open without competing for the eye. */}
         <div style={{ display: 'flex', gap: 18, justifyContent: 'center', flexWrap: 'wrap' }}>
           {/* The copy above promises designing your blinds — that happens in
               the visualiser, so this points there rather than at the range. */}
           <a
             href="#visualiser"
+            onMouseEnter={() => setPrimaryHover(true)}
+            onMouseLeave={() => setPrimaryHover(false)}
             style={{
               textDecoration: 'none', fontFamily: tokens.body, fontSize: 13, fontWeight: 500,
-              letterSpacing: '0.1em', textTransform: 'uppercase', padding: '17px 36px',
-              borderRadius: 2, background: tokens.gold, color: tokens.ink,
-              transition: 'background 0.3s ease',
+              letterSpacing: '0.1em', textTransform: 'uppercase', padding: '18px 40px',
+              borderRadius: 2, background: primaryHover ? tokens.goldLight : tokens.gold,
+              color: tokens.ink,
+              transition: motion.button,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = tokens.goldLight)}
-            onMouseLeave={(e) => (e.currentTarget.style.background = tokens.gold)}
           >
             Design Yours
           </a>
           <a
             href="tel:1300005529"
+            onMouseEnter={() => setSecondaryHover(true)}
+            onMouseLeave={() => setSecondaryHover(false)}
             style={{
               textDecoration: 'none', fontFamily: tokens.body, fontSize: 13, fontWeight: 500,
-              letterSpacing: '0.1em', textTransform: 'uppercase', padding: '17px 36px',
-              borderRadius: 2, background: 'transparent', color: tokens.warmWhite,
-              border: `1px solid ${tokens.onDarkEdge}`,
-              transition: 'border-color 0.3s ease, color 0.3s ease',
+              letterSpacing: '0.1em', textTransform: 'uppercase', padding: '18px 40px',
+              borderRadius: 2, background: 'transparent',
+              color: secondaryHover ? tokens.gold : tokens.warmWhite,
+              border: `1px solid ${secondaryHover ? tokens.gold : tokens.onDarkEdge}`,
+              transition: motion.button,
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = tokens.gold; e.currentTarget.style.color = tokens.gold; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = tokens.onDarkEdge; e.currentTarget.style.color = tokens.warmWhite; }}
           >
             Call 1300 00 KLAY
           </a>

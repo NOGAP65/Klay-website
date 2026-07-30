@@ -34,16 +34,30 @@ export default function HomePage() {
     <>
       <ScrollProgress />
       <Nav />
-      {/* Tonal rhythm, top to bottom: charcoal, warm white, parchment,
-          charcoal, warm white, ink, ink. Light and dark alternate the whole
-          way down and the two closing sections darken into the footer, so
-          the page builds instead of flickering between tones. */}
+      {/* Order is the argument, and each section only works once the one above
+          it has done its job:
+            Hero        — the promise. What your life could look like.
+            Visualiser  — proof of concept. See it in your own room first.
+            Social      — validation, placed AFTER desire exists. Proof shown
+                          before someone wants the thing is just noise.
+            Reviews     — validation in words, straight after it in pictures.
+            Shop        — now they want it, show them what to buy.
+            Final       — the close. Dark, one dominant CTA.
+          Shop used to sit above the two proof sections, which asked people to
+          choose a product before anything had established the product was
+          worth choosing.
+
+          Tonal rhythm that falls out of it: charcoal, warm white, parchment,
+          parchment, warm white, charcoal, charcoal. Light resets attention
+          after each dark moment, the two proof sections share one warm tone
+          so they read as a single body of evidence, and the close and footer
+          land as one continuous dark block. */}
       <main style={{ background: tokens.warmWhite }}>
         <HeroScene />
         <VisualiserSection />
-        <ShopSection />
         <SocialSection />
         <ReviewsScene />
+        <ShopSection />
         <FinalScene />
         <Footer />
       </main>

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { useKlayStore } from '../store';
-import { tokens } from '../theme';
+import { tokens, eyebrow, headline, motion, supporting } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {
   HARDWARE_OPTIONS,
@@ -16,16 +16,15 @@ import {
 import KlayConfigurator from '../visualiser/KlayConfigurator';
 import { useVisualiserStore } from '../visualiser/useVisualiserStore';
 
-// Section 4's background. Off-palette on purpose because the brief asks for
-// it — theme.ts documents removing this exact value as "a fourth off-white
-// outside the palette", and tokens.parchment (#F2EDE4) is the sanctioned step
-// below warmWhite if this is ever brought back in line.
-const SHELL = '#EAE5DC';
+// The FAQ band uses tokens.parchment. It was hardcoded here as
+// SHELL = '#EAE5DC' while theme.ts set parchment to #F2EDE4 — one colour role
+// written down twice with two different values. theme.ts is now #EAE5DC, so
+// this page's tone is unchanged and the off-palette literal is gone.
 
-const LINE_FAINT = 'rgba(28,24,16,0.08)';
+const LINE_FAINT = tokens.lineFaint;
 const LINE = 'rgba(28,24,16,0.1)';
 const INK_55 = 'rgba(28,24,16,0.55)';
-const INK_40 = 'rgba(28,24,16,0.4)';
+const INK_40 = tokens.inkFaint;
 
 /** Chrome reads as a finish rather than a grey only if it has a highlight.
  * The flat HARDWARE_HEX.chrome is what the canvas fills with; this is the
@@ -171,15 +170,29 @@ const QUALITY_COPY: Record<ProductBlindType, string[]> = {
 // Primitives
 // ---------------------------------------------------------------------------
 
-function GoldLabel({ children, spacing = '0.2em' }: { children: React.ReactNode; spacing?: string }) {
+/** The section eyebrow — gold, and therefore rationed to one per section.
+ *
+ * This page used to carry about a dozen: two in the hero, four labelling the
+ * configurator controls, one over the specs, and one on every row of the spec
+ * table. Gold is the accent that marks what matters; when a dozen things wear
+ * it, none of them do. Only true section eyebrows stay gold now. */
+function GoldLabel({ children, spacing = '0.3em' }: { children: React.ReactNode; spacing?: string }) {
+  return <div style={{ ...eyebrow, letterSpacing: spacing }}>{children}</div>;
+}
+
+/** Labels one control in the configurator stack. Ink, not gold — these are
+ * field labels inside a single section rather than section headers, and giving
+ * each of them the accent colour is most of what diluted it. */
+function ControlLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
         fontFamily: tokens.body,
         fontSize: 10,
-        color: tokens.gold,
+        fontWeight: 500,
+        color: tokens.inkSoft,
         textTransform: 'uppercase',
-        letterSpacing: spacing,
+        letterSpacing: '0.2em',
       }}
     >
       {children}
@@ -245,12 +258,15 @@ function Swatch({
   active: boolean;
   onClick: () => void;
 }) {
+  const [hover, setHover] = useState(false);
   return (
     <button
       aria-label={label}
       aria-pressed={active}
       title={label}
       onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
         width: 32,
         height: 32,
@@ -260,8 +276,16 @@ function Swatch({
         cursor: 'pointer',
         background,
         border: `1px solid ${LINE}`,
-        boxShadow: active ? `0 0 0 2px ${tokens.warmWhite}, 0 0 0 4px ${tokens.gold}` : 'none',
-        transition: 'box-shadow 0.2s ease',
+        // Active wins. Hover previews the same ring at half strength, so a
+        // swatch reads as selectable before it is clicked — fourteen circles
+        // with no hover state gave no signal that they were controls at all.
+        boxShadow: active
+          ? `0 0 0 2px ${tokens.warmWhite}, 0 0 0 4px ${tokens.gold}`
+          : hover
+            ? `0 0 0 2px ${tokens.warmWhite}, 0 0 0 4px ${tokens.goldLine}`
+            : 'none',
+        transform: hover && !active ? 'scale(1.08)' : 'scale(1)',
+        transition: 'box-shadow 0.2s ease, transform 0.2s ease',
       }}
     />
   );
@@ -282,7 +306,7 @@ function ConfiguratorControls() {
   return (
     <>
       <div>
-        <GoldLabel>Fabric Colour</GoldLabel>
+        <ControlLabel>Fabric Colour</ControlLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
           {RYNAMIC_COLOURS.map(c => (
             <Swatch
@@ -300,7 +324,7 @@ function ConfiguratorControls() {
       </div>
 
       <div style={{ marginTop: 24 }}>
-        <GoldLabel>Hardware Colour</GoldLabel>
+        <ControlLabel>Hardware Colour</ControlLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
           {HARDWARE_OPTIONS.map(h => (
             <Swatch
@@ -318,7 +342,7 @@ function ConfiguratorControls() {
       </div>
 
       <div style={{ marginTop: 24 }}>
-        <GoldLabel>Window Size</GoldLabel>
+        <ControlLabel>Window Size</ControlLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
           {SIZE_OPTIONS.map(s => (
             <Pill
@@ -333,7 +357,7 @@ function ConfiguratorControls() {
       </div>
 
       <div style={{ marginTop: 24 }}>
-        <GoldLabel>Operation</GoldLabel>
+        <ControlLabel>Operation</ControlLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
           {OPERATION_OPTIONS.map(o => (
             <Pill
@@ -463,11 +487,16 @@ function SpecTable({ rows }: { rows: { label: string; value: string }[] }) {
             background: i % 2 === 1 ? 'rgba(28,24,16,0.03)' : tokens.warmWhite,
           }}
         >
+          {/* Ink, not gold. Twelve gold row labels in one table spent the
+              accent on the least persuasive content on the page — minimum
+              drop, cleaning instructions — and left nothing to distinguish
+              the price or the CTA. A spec label's job is to be scannable,
+              which uppercase and letter-spacing already achieve. */}
           <span
             style={{
               fontFamily: tokens.body,
               fontSize: 11,
-              color: tokens.gold,
+              color: tokens.inkSoft,
               textTransform: 'uppercase',
               letterSpacing: '0.15em',
               flexShrink: 0,
@@ -507,6 +536,9 @@ export default function ProductDetailPage() {
 
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [toast, setToast] = useState<string | null>(null);
+  const [heroCtaHover, setHeroCtaHover] = useState(false);
+  const [barCtaHover, setBarCtaHover] = useState(false);
+  const [backHover, setBackHover] = useState(false);
   const toastTimer = useRef<number | null>(null);
 
   const product = productBySlug(slug);
@@ -637,14 +669,19 @@ export default function ProductDetailPage() {
         >
           <Link
             to="/products"
+            onMouseEnter={() => setBackHover(true)}
+            onMouseLeave={() => setBackHover(false)}
             style={{
               fontFamily: tokens.body,
               fontSize: 11,
-              color: tokens.gold,
+              color: backHover ? tokens.goldLight : tokens.gold,
               textTransform: 'uppercase',
               letterSpacing: '0.15em',
               textDecoration: 'none',
               alignSelf: 'flex-start',
+              paddingBottom: 3,
+              borderBottom: `1px solid ${backHover ? tokens.gold : 'transparent'}`,
+              transition: motion.link,
             }}
           >
             ← Collection
@@ -653,28 +690,23 @@ export default function ProductDetailPage() {
           <div style={{ marginTop: 40 }}>
             <GoldLabel spacing="0.25em">{product.type}</GoldLabel>
           </div>
+          {/* Hero scale, but capped by the column rather than the viewport:
+              this sits in a 48% column, so the shared headline.hero clamp
+              (8vw) would overflow it on a laptop. */}
           <h1
             style={{
-              fontFamily: tokens.display,
-              // Clamped rather than a flat 72px: at 72px "Haze" is fine but
-              // the 42% column gets narrow on a laptop, and this is the first
-              // thing on the page.
-              fontSize: isMobile ? 'clamp(44px, 14vw, 64px)' : 'clamp(52px, 5.2vw, 72px)',
-              fontWeight: 300,
-              lineHeight: 0.95,
+              ...headline.hero,
+              fontSize: isMobile ? 'clamp(44px, 14vw, 64px)' : 'clamp(52px, 5.2vw, 80px)',
               color: tokens.ink,
-              margin: '8px 0 0',
+              margin: '10px 0 0',
             }}
           >
             {product.name}
           </h1>
           <p
             style={{
-              fontFamily: tokens.body,
-              fontSize: 15,
-              lineHeight: 1.7,
-              color: INK_55,
-              margin: '16px 0 0',
+              ...supporting.onLight,
+              margin: '18px 0 0',
               maxWidth: 340,
             }}
           >
@@ -686,7 +718,7 @@ export default function ProductDetailPage() {
           <ConfiguratorControls />
 
           <div style={{ marginTop: 32 }}>
-            <GoldLabel>Estimated Price</GoldLabel>
+            <ControlLabel>Estimated Price</ControlLabel>
             <div
               style={{
                 fontFamily: tokens.display,
@@ -706,11 +738,13 @@ export default function ProductDetailPage() {
 
           <button
             onClick={showToast}
+            onMouseEnter={() => setHeroCtaHover(true)}
+            onMouseLeave={() => setHeroCtaHover(false)}
             style={{
               width: '100%',
-              marginTop: 24,
-              padding: 18,
-              background: tokens.gold,
+              marginTop: 28,
+              padding: 20,
+              background: heroCtaHover ? tokens.goldLight : tokens.gold,
               color: tokens.ink,
               fontFamily: tokens.body,
               fontSize: 11,
@@ -719,6 +753,7 @@ export default function ProductDetailPage() {
               border: 'none',
               borderRadius: 0,
               cursor: 'pointer',
+              transition: motion.button,
             }}
           >
             Book Installation
@@ -729,16 +764,7 @@ export default function ProductDetailPage() {
       {/* ---- SECTION 2 — PRODUCT SPECS ---- */}
       <section style={{ background: tokens.warmWhite, padding: sectionPad }}>
         <GoldLabel spacing="0.3em">Product Details</GoldLabel>
-        <h2
-          style={{
-            fontFamily: tokens.display,
-            fontSize: isMobile ? 'clamp(32px, 9vw, 40px)' : 'clamp(36px, 4vw, 48px)',
-            fontWeight: 300,
-            lineHeight: 1.05,
-            color: tokens.ink,
-            margin: '14px 0 0',
-          }}
-        >
+        <h2 style={{ ...headline.section, color: tokens.ink, margin: '16px 0 0' }}>
           Built to last.
         </h2>
 
@@ -778,11 +804,14 @@ export default function ProductDetailPage() {
       </section>
 
       {/* ---- SECTION 3 — FAQs ---- */}
+      {/* Parchment — the softer, conversational tone. FAQs are where doubt gets
+          answered, and a step off the specs' clinical warm white signals the
+          register change before a word is read. */}
       <section
         style={{
-          background: SHELL,
-          paddingTop: isMobile ? 72 : 120,
-          paddingBottom: isMobile ? 72 : 120,
+          background: tokens.parchment,
+          paddingTop: isMobile ? 80 : 120,
+          paddingBottom: isMobile ? 80 : 120,
           paddingLeft: isMobile ? 24 : 80,
           paddingRight: isMobile ? 24 : 80,
         }}
@@ -790,16 +819,7 @@ export default function ProductDetailPage() {
         {/* Headline and rows share one centred container, so the heading sits
             over the questions rather than out at the section's own edge. */}
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <h2
-            style={{
-              fontFamily: tokens.display,
-              fontSize: isMobile ? 'clamp(32px, 9vw, 40px)' : 'clamp(36px, 4vw, 48px)',
-              fontWeight: 300,
-              lineHeight: 1.05,
-              color: tokens.ink,
-              margin: 0,
-            }}
-          >
+          <h2 style={{ ...headline.section, color: tokens.ink }}>
             Common questions.
           </h2>
           <div style={{ marginTop: isMobile ? 32 : 48 }}>
@@ -857,8 +877,10 @@ export default function ProductDetailPage() {
         </div>
         <button
           onClick={showToast}
+          onMouseEnter={() => setBarCtaHover(true)}
+          onMouseLeave={() => setBarCtaHover(false)}
           style={{
-            background: tokens.gold,
+            background: barCtaHover ? tokens.goldLight : tokens.gold,
             color: tokens.ink,
             fontFamily: tokens.body,
             fontSize: 11,
@@ -869,6 +891,7 @@ export default function ProductDetailPage() {
             borderRadius: 0,
             cursor: 'pointer',
             whiteSpace: 'nowrap',
+            transition: motion.button,
           }}
         >
           Book Installation →

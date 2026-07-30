@@ -1,4 +1,5 @@
-import { tokens } from '../theme';
+import { useState } from 'react';
+import { tokens, eyebrow, layout, motion, supporting } from '../theme';
 
 const columns = [
   {
@@ -11,27 +12,53 @@ const columns = [
   },
 ];
 
-export function Footer() {
-  const linkStyle: React.CSSProperties = {
-    color: tokens.textMuted,
-    textDecoration: 'none',
-    fontFamily: tokens.body,
-    fontWeight: 300,
-    fontSize: 14,
-    lineHeight: 2.2,
-    display: 'block',
-  };
+const linkStyle: React.CSSProperties = {
+  color: tokens.onDarkMuted,
+  textDecoration: 'none',
+  fontFamily: tokens.body,
+  fontWeight: 300,
+  fontSize: 14,
+  lineHeight: 2.2,
+  display: 'block',
+  width: 'fit-content',
+  transition: motion.link,
+};
 
+/** Every footer link, so hover can't be present on some columns and missing
+ * on others — which is exactly what had happened: the Products and Company
+ * columns lit up, the Contact column's phone and email did not. */
+function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const [hover, setHover] = useState(false);
   return (
-    // Ink, continuing FinalScene's ground rather than dropping to a colder
-    // near-black (#0F0E0B) at the very bottom of the page.
-    <footer style={{ background: tokens.ink, borderTop: `1px solid ${tokens.goldLine}`, padding: '9vh 5vw 4vh' }}>
+    <a
+      href={href}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{ ...linkStyle, color: hover ? tokens.gold : tokens.onDarkMuted }}
+    >
+      {children}
+    </a>
+  );
+}
+
+export function Footer() {
+  return (
+    // Charcoal — the same ground as FinalScene above it, so the page closes on
+    // one continuous dark block rather than stepping down into a second,
+    // darker tone. Bookends the charcoal hero at the top of the page.
+    <footer
+      style={{
+        background: tokens.charcoal,
+        borderTop: `1px solid ${tokens.goldLine}`,
+        padding: '120px 80px 48px',
+      }}
+    >
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-          gap: 48,
-          maxWidth: 1280,
+          gap: 56,
+          maxWidth: layout.containerMax,
           margin: '0 auto',
         }}
       >
@@ -45,11 +72,10 @@ export function Footer() {
           </div>
           <p
             style={{
-              fontFamily: tokens.body,
+              ...supporting.onDark,
               fontWeight: 300,
               fontSize: 14,
               lineHeight: 1.7,
-              color: tokens.textMuted,
               maxWidth: 280,
               marginBottom: 18,
             }}
@@ -57,58 +83,31 @@ export function Footer() {
             Australian made-to-measure window coverings. Designed with you, installed
             by hand across Victoria.
           </p>
-          <p style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.textMuted }}>
+          <p style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.textMuted, margin: 0 }}>
             ABN 98 151 010 007 · Grand Kaman Pty Ltd
           </p>
         </div>
 
         {columns.map((col) => (
           <div key={col.heading}>
-            <h4
-              style={{
-                fontFamily: tokens.body,
-                fontSize: 12,
-                fontWeight: 500,
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
-                color: tokens.gold,
-                marginBottom: 12,
-              }}
-            >
-              {col.heading}
-            </h4>
+            <h4 style={{ ...eyebrow, marginBottom: 14 }}>{col.heading}</h4>
             {col.links.map((l) => (
-              <a
-                key={l}
-                href="#collection"
-                style={linkStyle}
-                onMouseEnter={(e) => (e.currentTarget.style.color = tokens.warmWhite)}
-                onMouseLeave={(e) => (e.currentTarget.style.color = tokens.textMuted)}
-              >
+              <FooterLink key={l} href="/products">
                 {l}
-              </a>
+              </FooterLink>
             ))}
           </div>
         ))}
 
         <div>
-          <h4
-            style={{
-              fontFamily: tokens.body,
-              fontSize: 12,
-              fontWeight: 500,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              color: tokens.gold,
-              marginBottom: 12,
-            }}
-          >
-            Contact
-          </h4>
-          <a href="tel:1300005529" style={linkStyle}>1300 00 KLAY</a>
-          <a href="mailto:hello@klayinteriors.com.au" style={linkStyle}>hello@klayinteriors.com.au</a>
-          <span style={{ ...linkStyle, cursor: 'none' }}>18 Maltings Cct, Epping VIC 3076</span>
-          <span style={{ ...linkStyle }}>Mon–Fri 8am–6pm</span>
+          <h4 style={{ ...eyebrow, marginBottom: 14 }}>Contact</h4>
+          <FooterLink href="tel:1300005529">1300 00 KLAY</FooterLink>
+          <FooterLink href="mailto:hello@klayinteriors.com.au">hello@klayinteriors.com.au</FooterLink>
+          {/* Not links, so no hover and no pointer — but cursor:'none' hid the
+              mouse pointer outright on hover, which reads as the page having
+              crashed. */}
+          <span style={{ ...linkStyle, cursor: 'default' }}>18 Maltings Cct, Epping VIC 3076</span>
+          <span style={{ ...linkStyle, cursor: 'default' }}>Mon–Fri 8am–6pm</span>
         </div>
       </div>
 
@@ -119,10 +118,10 @@ export function Footer() {
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: 14,
-          maxWidth: 1280,
+          maxWidth: layout.containerMax,
           margin: '0 auto',
-          marginTop: 56,
-          paddingTop: 26,
+          marginTop: 72,
+          paddingTop: 30,
           borderTop: `1px solid ${tokens.onDarkLine}`,
         }}
       >
@@ -131,15 +130,9 @@ export function Footer() {
         </span>
         <div style={{ display: 'flex', gap: 26 }}>
           {['Privacy', 'Terms', 'Warranty'].map((l) => (
-            <a
-              key={l}
-              href="#top"
-              style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.textMuted, textDecoration: 'none' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = tokens.gold)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = tokens.textMuted)}
-            >
-              {l}
-            </a>
+            <FooterLink key={l} href="/contact">
+              <span style={{ fontSize: 12, lineHeight: 1 }}>{l}</span>
+            </FooterLink>
           ))}
         </div>
       </div>

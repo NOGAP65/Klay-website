@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
-import { tokens } from '../theme';
+import { tokens, eyebrow, headline, motion, supporting } from '../theme';
 
-const GOLD = '#C8973A';
-const DARK = '#0f0d09';
-const PARCHMENT = '#F2EDE4';
+// GOLD / DARK / PARCHMENT used to be declared here as local literals. DARK was
+// '#0f0d09' — a near-black darker than ink and outside the palette entirely —
+// and PARCHMENT restated a token with a value that had since diverged from it.
+// Everything below reads from theme.ts, so this page can no longer drift.
 
 const FAQS = [
   {
@@ -34,63 +36,95 @@ const FAQS = [
   },
 ];
 
+/** A still of the configurator, for the step that describes it. Rebuilt on a
+ * light card: the steps are warm white and parchment now, and a near-black
+ * panel dropped onto them read as a hole in the page rather than as a device.
+ * The window itself stays dark — that is a photograph of a view, not a
+ * surface, and it is what makes the blind above it legible. */
 function VisualiserMock() {
   return (
-    <div style={{ background: '#1a1208', border: '1px solid rgba(200,151,58,0.2)', padding: 28, maxWidth: 420 }}>
+    <div style={{ background: tokens.cream, border: `1px solid ${tokens.line}`, padding: 28, maxWidth: 420 }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         {['White', 'Black', 'Chrome'].map((h) => (
           <span
             key={h}
             style={{
-              fontFamily: tokens.body, fontSize: 10, color: 'rgba(248,246,242,0.5)', textTransform: 'uppercase',
-              letterSpacing: '0.1em', border: '1px solid rgba(248,246,242,0.2)', padding: '6px 12px',
+              fontFamily: tokens.body, fontSize: 10, color: tokens.inkSoft, textTransform: 'uppercase',
+              letterSpacing: '0.1em', border: `1px solid ${tokens.line}`, padding: '6px 12px',
             }}
           >
             {h}
           </span>
         ))}
       </div>
-      <div style={{ position: 'relative', height: 220, border: '1px solid rgba(255,255,255,0.15)', overflow: 'hidden', background: 'linear-gradient(180deg, #2a3a4a, #4a5a6a)' }}>
-        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'rgba(255,255,255,0.2)' }} />
-        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.2)' }} />
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%', background: 'repeating-linear-gradient(180deg, rgba(228,224,218,0.85) 0px, rgba(228,224,218,0.85) 1px, transparent 1px, transparent 3px), #EDEAE4' }} />
+      <div style={{ position: 'relative', height: 220, border: `1px solid ${tokens.line}`, overflow: 'hidden', background: 'linear-gradient(180deg, #2a3a4a, #4a5a6a)' }}>
+        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'rgba(245,242,237,0.2)' }} />
+        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(245,242,237,0.2)' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%', background: 'repeating-linear-gradient(180deg, rgba(232,228,222,0.85) 0px, rgba(232,228,222,0.85) 1px, transparent 1px, transparent 3px), #E8E4DE' }} />
       </div>
-      <div style={{ fontFamily: tokens.body, fontSize: 11, color: GOLD, marginTop: 16, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+      <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.gold, marginTop: 16, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
         Blockout Roller — from $220
       </div>
     </div>
   );
 }
 
+/** The four steps share one shape, so the only thing that varies between them
+ * is content and which side the image sits on. Alternating grounds is what
+ * makes each one read as a discrete step rather than as one long page. */
+const STEP_NUMBER: React.CSSProperties = {
+  fontFamily: tokens.display,
+  fontSize: 120,
+  fontWeight: 300,
+  color: tokens.gold,
+  lineHeight: 1,
+};
+
+const stepSection = (ground: string): React.CSSProperties => ({
+  background: ground,
+  padding: '120px 80px',
+  display: 'flex',
+  gap: 80,
+  flexWrap: 'wrap',
+  alignItems: 'center',
+});
+
 export default function HowItWorksPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [hoveredFaq, setHoveredFaq] = useState<number | null>(null);
+  const [ctaHover, setCtaHover] = useState(false);
 
   return (
     <>
       <Nav />
 
-      {/* Hero */}
-      <section style={{ background: DARK, padding: '160px 80px 100px' }}>
-        <div style={{ fontFamily: tokens.body, fontSize: 11, color: GOLD, textTransform: 'uppercase', letterSpacing: '0.3em', marginBottom: 20 }}>
-          The Klay Process
-        </div>
-        <h1 style={{ fontFamily: tokens.display, fontSize: 'clamp(48px, 6vw, 88px)', fontWeight: 300, color: tokens.warmWhite, margin: 0, lineHeight: 1.05, maxWidth: 900 }}>
+      {/* Hero — charcoal. The one dark moment on the page: a confident opening
+          statement, and the contrast that makes the first step feel like the
+          page opening up. */}
+      <section style={{ background: tokens.charcoal, padding: '200px 80px 120px' }}>
+        <div style={{ ...eyebrow, marginBottom: 22 }}>The Klay Process</div>
+        <h1 style={{ ...headline.hero, color: tokens.warmWhite, maxWidth: 900 }}>
           Four steps to a perfectly dressed window.
         </h1>
-        <p style={{ fontFamily: tokens.body, fontSize: 15, color: 'rgba(248,246,242,0.5)', maxWidth: 520, marginTop: 20 }}>
+        <p style={{ ...supporting.onDark, maxWidth: 520, marginTop: 24 }}>
           No showrooms. No sales reps. Just a clear, simple process from your first click to your finished window.
         </p>
       </section>
 
-      {/* Step 1 — dark */}
-      <section style={{ background: DARK, padding: '100px 80px', display: 'flex', gap: 80, flexWrap: 'wrap', alignItems: 'center' }}>
+      {/* Steps alternate parchment / warm white. Starting on parchment is what
+          lets the alternation run unbroken through the FAQ and land the closing
+          CTA on warm white. Both were dark before, which made the process — the
+          friction-removal part of the page — feel heavier than the promise. */}
+
+      {/* Step 1 — parchment */}
+      <section style={stepSection(tokens.parchment)}>
         <div style={{ flex: '1 1 400px' }}>
-          <div style={{ fontFamily: tokens.display, fontSize: 120, fontWeight: 300, color: GOLD, lineHeight: 1 }}>01</div>
-          <h2 style={{ fontFamily: tokens.display, fontSize: 52, fontWeight: 300, color: tokens.warmWhite, margin: '8px 0 0' }}>Design online</h2>
-          <p style={{ fontFamily: tokens.body, fontSize: 15, color: 'rgba(248,246,242,0.55)', lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
+          <div style={STEP_NUMBER}>01</div>
+          <h2 style={{ ...headline.section, color: tokens.ink, margin: '8px 0 0' }}>Design online</h2>
+          <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
             Our visualiser lets you see your exact blind, in your room, before you spend a cent. Pick a range, choose your hardware finish and preview it against a photo of your own window.
           </p>
-          <p style={{ fontFamily: tokens.body, fontSize: 15, color: 'rgba(248,246,242,0.55)', lineHeight: 1.8, marginTop: 16, maxWidth: 480 }}>
+          <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 16, maxWidth: 480 }}>
             No measurements needed yet — that comes later, in person, at no charge. This step is just about landing on the look you want.
           </p>
         </div>
@@ -99,92 +133,102 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Step 2 — parchment */}
-      <section style={{ background: PARCHMENT, padding: '100px 80px', display: 'flex', gap: 80, flexWrap: 'wrap', alignItems: 'center' }}>
+      {/* Step 2 — warm white */}
+      <section style={stepSection(tokens.warmWhite)}>
         <div style={{ flex: '1 1 360px' }}>
-          <div style={{ height: 320, overflow: 'hidden', border: '1px solid rgba(30,26,22,0.1)' }}>
+          <div style={{ height: 320, overflow: 'hidden', border: `1px solid ${tokens.line}` }}>
             <img src="/images/room-2.png" alt="A Klay technician measuring a window" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
           </div>
         </div>
         <div style={{ flex: '1 1 400px' }}>
-          <div style={{ fontFamily: tokens.display, fontSize: 120, fontWeight: 300, color: GOLD, lineHeight: 1 }}>02</div>
-          <h2 style={{ fontFamily: tokens.display, fontSize: 52, fontWeight: 300, color: tokens.ink, margin: '8px 0 0' }}>We come to you</h2>
-          <p style={{ fontFamily: tokens.body, fontSize: 15, color: tokens.textMid, lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
+          <div style={STEP_NUMBER}>02</div>
+          <h2 style={{ ...headline.section, color: tokens.ink, margin: '8px 0 0' }}>We come to you</h2>
+          <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
             A Klay technician visits your home within 7–10 days to measure every window precisely — no guesswork, no relying on your own tape measure. They will also talk through hardware and fabric options in person.
           </p>
-          <div style={{ fontFamily: tokens.display, fontStyle: 'italic', fontSize: 20, color: GOLD, marginTop: 20 }}>
+          <div style={{ fontFamily: tokens.display, fontStyle: 'italic', fontSize: 20, color: tokens.gold, marginTop: 20 }}>
             Free measure — no charge, ever.
           </div>
         </div>
       </section>
 
-      {/* Step 3 — dark */}
-      <section style={{ background: DARK, padding: '100px 80px', display: 'flex', gap: 80, flexWrap: 'wrap', alignItems: 'center' }}>
+      {/* Step 3 — parchment */}
+      <section style={stepSection(tokens.parchment)}>
         <div style={{ flex: '1 1 400px' }}>
-          <div style={{ fontFamily: tokens.display, fontSize: 120, fontWeight: 300, color: GOLD, lineHeight: 1 }}>03</div>
-          <h2 style={{ fontFamily: tokens.display, fontSize: 52, fontWeight: 300, color: tokens.warmWhite, margin: '8px 0 0' }}>Made precisely</h2>
-          <p style={{ fontFamily: tokens.body, fontSize: 15, color: 'rgba(248,246,242,0.55)', lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
+          <div style={STEP_NUMBER}>03</div>
+          <h2 style={{ ...headline.section, color: tokens.ink, margin: '8px 0 0' }}>Made precisely</h2>
+          <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
             Your exact measurements go straight to our manufacturing partner, Rynamic Industries SA, where every blind is cut and finished to the millimetre. Nothing is made until your window has been measured.
           </p>
-          <p style={{ fontFamily: tokens.body, fontSize: 15, color: 'rgba(248,246,242,0.55)', lineHeight: 1.8, marginTop: 16, maxWidth: 480 }}>
+          <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 16, maxWidth: 480 }}>
             Finished blinds are freighted to Melbourne in as little as 2 business days, then quality checked again before your installation is booked.
           </p>
         </div>
         <div style={{ flex: '1 1 360px', display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: '100%', maxWidth: 360, height: 220, border: '1px solid rgba(200,151,58,0.2)', background: 'linear-gradient(180deg, #1a1208, #241c10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontFamily: tokens.display, fontSize: 14, color: 'rgba(248,246,242,0.35)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+          <div style={{ width: '100%', maxWidth: 360, height: 220, border: `1px solid ${tokens.line}`, background: tokens.cream, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontFamily: tokens.display, fontSize: 14, color: tokens.textMid, letterSpacing: '0.2em', textTransform: 'uppercase' }}>
               Cut to the millimetre
             </span>
           </div>
         </div>
       </section>
 
-      {/* Step 4 — parchment */}
-      <section style={{ background: PARCHMENT, padding: '100px 80px', display: 'flex', gap: 80, flexWrap: 'wrap', alignItems: 'center' }}>
+      {/* Step 4 — warm white */}
+      <section style={stepSection(tokens.warmWhite)}>
         <div style={{ flex: '1 1 400px' }}>
-          <div style={{ fontFamily: tokens.display, fontSize: 120, fontWeight: 300, color: GOLD, lineHeight: 1 }}>04</div>
-          <h2 style={{ fontFamily: tokens.display, fontSize: 52, fontWeight: 300, color: tokens.ink, margin: '8px 0 0' }}>Installed perfectly</h2>
-          <p style={{ fontFamily: tokens.body, fontSize: 15, color: tokens.textMid, lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
+          <div style={STEP_NUMBER}>04</div>
+          <h2 style={{ ...headline.section, color: tokens.ink, margin: '8px 0 0' }}>Installed perfectly</h2>
+          <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
             The same technician who measured your windows comes back to install them — no handoffs, no re-explaining what you want. They know your home already.
           </p>
-          <p style={{ fontFamily: tokens.body, fontSize: 15, color: tokens.textMid, lineHeight: 1.8, marginTop: 16, maxWidth: 480 }}>
+          <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 16, maxWidth: 480 }}>
             Before and after photos are sent to you the same day, and every installation is covered by our 5-year warranty on top of standard product cover.
           </p>
         </div>
         <div style={{ flex: '1 1 360px', display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: '100%', maxWidth: 360, height: 220, border: '1px solid rgba(30,26,22,0.12)', background: tokens.cream, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontFamily: tokens.display, fontSize: 14, color: tokens.textMuted, letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+          <div style={{ width: '100%', maxWidth: 360, height: 220, border: `1px solid ${tokens.goldLine}`, background: tokens.cream, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontFamily: tokens.display, fontSize: 14, color: tokens.gold, letterSpacing: '0.2em', textTransform: 'uppercase' }}>
               5-Year Warranty
             </span>
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section style={{ background: DARK, padding: '100px 80px' }}>
-        <h2 style={{ fontFamily: tokens.display, fontSize: 52, fontWeight: 300, color: tokens.warmWhite, marginBottom: 48 }}>
+      {/* FAQ — parchment, keeping the alternation running and matching the
+          softer register the product pages use for the same content. */}
+      <section style={{ background: tokens.parchment, padding: '120px 80px' }}>
+        <h2 style={{ ...headline.section, color: tokens.ink, marginBottom: 56 }}>
           Common questions.
         </h2>
         <div style={{ maxWidth: 800 }}>
           {FAQS.map((f, i) => {
             const open = openFaq === i;
+            const hot = hoveredFaq === i;
             return (
-              <div key={f.q} style={{ borderBottom: '1px solid rgba(248,246,242,0.12)' }}>
+              <div key={f.q} style={{ borderBottom: `1px solid ${tokens.line}` }}>
                 <button
                   onClick={() => setOpenFaq(open ? null : i)}
+                  onMouseEnter={() => setHoveredFaq(i)}
+                  onMouseLeave={() => setHoveredFaq(cur => (cur === i ? null : cur))}
+                  aria-expanded={open}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     background: 'transparent', border: 'none', cursor: 'pointer', padding: '24px 0',
-                    fontFamily: tokens.display, fontSize: 20, color: tokens.warmWhite, textAlign: 'left',
+                    fontFamily: tokens.display, fontSize: 20, textAlign: 'left',
+                    // The row responds, not just the icon. Opacity rather than
+                    // a colour shift so the question never reads as a link.
+                    color: tokens.ink,
+                    opacity: hot ? 0.7 : 1,
+                    transition: 'opacity 0.2s ease',
                   }}
                 >
                   {f.q}
-                  <span style={{ color: GOLD, fontSize: 20, marginLeft: 24, flexShrink: 0, transform: open ? 'rotate(45deg)' : 'none', transition: 'transform 0.25s ease' }}>
+                  <span style={{ color: tokens.gold, fontSize: 20, marginLeft: 24, flexShrink: 0, transform: open ? 'rotate(45deg)' : 'none', transition: 'transform 0.25s ease' }}>
                     +
                   </span>
                 </button>
                 {open && (
-                  <p style={{ fontFamily: tokens.body, fontSize: 15, color: 'rgba(248,246,242,0.55)', lineHeight: 1.8, margin: '0 0 24px', maxWidth: 640 }}>
+                  <p style={{ ...supporting.onLight, lineHeight: 1.8, margin: '0 0 24px', maxWidth: 640 }}>
                     {f.a}
                   </p>
                 )}
@@ -192,6 +236,41 @@ export default function HowItWorksPage() {
             );
           })}
         </div>
+      </section>
+
+      {/* Closing — warm white with one gold CTA. The page previously ended on
+          the last FAQ, which left someone who had just read the entire process
+          with nothing to act on at the exact moment their objections had been
+          answered. */}
+      <section style={{ background: tokens.warmWhite, padding: '120px 80px', textAlign: 'center' }}>
+        <h2 style={{ ...headline.section, color: tokens.ink, maxWidth: 720, margin: '0 auto' }}>
+          Start with the part that costs nothing.
+        </h2>
+        <p style={{ ...supporting.onLight, maxWidth: 480, margin: '24px auto 40px' }}>
+          Design your blind in the visualiser, then book a free measure. Two to
+          three weeks from first click to a finished window.
+        </p>
+        <Link
+          to="/visualiser"
+          onMouseEnter={() => setCtaHover(true)}
+          onMouseLeave={() => setCtaHover(false)}
+          style={{
+            display: 'inline-block',
+            textDecoration: 'none',
+            fontFamily: tokens.body,
+            fontSize: 13,
+            fontWeight: 500,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            padding: '18px 40px',
+            borderRadius: 2,
+            background: ctaHover ? tokens.goldLight : tokens.gold,
+            color: tokens.ink,
+            transition: motion.button,
+          }}
+        >
+          Design Yours
+        </Link>
       </section>
 
       <Footer />

@@ -152,6 +152,12 @@ export const RYNAMIC_COLOURS = [
   { name: 'Monument', hex: '#4C4844' },
 ]
 
+/** Fabric colours offered — cited in marketing copy on the homepage and the
+ * collection page. Derived rather than written down twice: a literal would go
+ * stale the first time a colour is added or retired, and a marketing figure
+ * that contradicts the swatch grid below it is worse than no figure. */
+export const COLOUR_COUNT = RYNAMIC_COLOURS.length
+
 // The three hardware finishes. Single source for the swatch UI, the store's
 // hex lookup and the canvas renderer's flat fill — these were previously
 // written out separately in all three places. Black is the brand charcoal.

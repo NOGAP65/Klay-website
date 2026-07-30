@@ -3,9 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { useKlayStore } from '../store';
-import { tokens } from '../theme';
+import { tokens, eyebrow, headline, motion, supporting } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { HARDWARE_HEX, HARDWARE_OPTIONS, PRODUCTS, ProductBlindType } from '../data/products';
+import {
+  COLOUR_COUNT,
+  HARDWARE_HEX,
+  HARDWARE_OPTIONS,
+  PRODUCTS,
+  PRODUCT_COUNT,
+  ProductBlindType,
+} from '../data/products';
 
 /** Nav is position:fixed and out of flow. Compressed it measures
  * 14 + 64 (logo) + 14 = 92px on desktop, 14 + 47 + 14 = 75px on mobile — the
@@ -47,7 +54,7 @@ function FilterPill({
 
   // Active wins over hover: once selected, the pill shouldn't flicker to the
   // gold outline just because the cursor is still sitting on it.
-  const border = active ? tokens.ink : hover ? tokens.gold : 'rgba(28,24,16,0.2)';
+  const border = active ? tokens.ink : hover ? tokens.gold : tokens.lineStrong;
   const color = active ? tokens.warmWhite : hover ? tokens.gold : tokens.ink;
 
   return (
@@ -69,7 +76,7 @@ function FilterPill({
         // Opacity rather than a blended hex, per the brief — but only when the
         // pill is idle, since 0.6 on the active pill would mute the reversal.
         opacity: active || hover ? 1 : 0.6,
-        transition: 'background 0.25s ease, border-color 0.25s ease, color 0.25s ease, opacity 0.25s ease',
+        transition: `${motion.button}, opacity 0.2s ease`,
       }}
     >
       {label}
@@ -103,7 +110,13 @@ function ProductCard({
         cursor: 'pointer',
         background: tokens.warmWhite,
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(8px)',
+        // The filter fade and the hover lift share one transform, so a card
+        // can't be mid-fade and mid-hover with two competing values.
+        transform: visible
+          ? hover
+            ? 'translateY(0) scale(1.02)'
+            : 'translateY(0) scale(1)'
+          : 'translateY(8px) scale(1)',
         transition: CARD_TRANSITION,
       }}
     >
@@ -130,7 +143,12 @@ function ProductCard({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(28,24,16,0.3)',
+            // Charcoal at 0.85, not 0.3. At 0.3 the photograph stayed fully
+            // legible and the label fought it for attention; at 0.85 the image
+            // recedes to a silhouette and the call to action is the only thing
+            // left to read, which is what makes the hover feel like a decision
+            // point rather than a tint.
+            background: 'rgba(44,40,36,0.85)',
             opacity: hover ? 1 : 0,
             // Not just invisible — unhittable, so it can never intercept the
             // pointer and cancel the hover it depends on.
@@ -142,7 +160,7 @@ function ProductCard({
             style={{
               fontFamily: tokens.body,
               fontSize: 10,
-              color: tokens.warmWhite,
+              color: tokens.gold,
               textTransform: 'uppercase',
               letterSpacing: '0.3em',
             }}
@@ -192,27 +210,10 @@ function ProductCard({
           </span>
         </div>
 
-        <h2
-          style={{
-            fontFamily: tokens.display,
-            fontSize: 34,
-            fontWeight: 300,
-            lineHeight: 1.0,
-            color: tokens.ink,
-            margin: '8px 0 0',
-          }}
-        >
+        <h2 style={{ ...headline.card, color: tokens.ink, margin: '10px 0 0' }}>
           {product.name}
         </h2>
-        <p
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 12,
-            lineHeight: 1.5,
-            color: 'rgba(28,24,16,0.5)',
-            margin: '4px 0 0',
-          }}
-        >
+        <p style={{ ...supporting.onLight, fontSize: 12.5, lineHeight: 1.5, margin: '6px 0 0' }}>
           {product.tagline}
         </p>
 
@@ -227,7 +228,9 @@ function ProductCard({
             borderTop: '1px solid rgba(28,24,16,0.08)',
           }}
         >
-          <span style={{ fontFamily: tokens.body, fontSize: 13, fontWeight: 400, color: tokens.ink }}>
+          {/* Full-strength ink at 14px — the price is the most-scanned element
+              on the card and has to read as stated, not as a footnote. */}
+          <span style={{ fontFamily: tokens.body, fontSize: 14, fontWeight: 400, color: tokens.ink }}>
             from ${product.priceFrom}
           </span>
           <span
@@ -300,60 +303,40 @@ export default function ProductsPage() {
 
   return (
     <>
-      {/* onLight: this page's background is warmWhite, the same value as the
-          nav's own link colour — without it the links are invisible until the
-          page is scrolled far enough for the nav to darken. */}
-      <Nav onLight />
+      {/* No onLight: the hero is charcoal now, so the nav's default
+          warmWhite-while-transparent is correct here. Passing it would put ink
+          links on a charcoal ground. */}
+      <Nav />
 
       <main style={{ background: tokens.warmWhite, minHeight: '100vh' }}>
+        {/* Charcoal — a bold opening statement, and the contrast that makes the
+            warm-white grid below it feel like the page opening up. A light
+            hero running straight into a light grid gave the page no entrance
+            at all. */}
         <section
           style={{
-            paddingTop: isMobile ? 96 : 120,
-            paddingBottom: isMobile ? 40 : 64,
+            background: tokens.charcoal,
+            paddingTop: isMobile ? 128 : 180,
+            paddingBottom: isMobile ? 80 : 120,
             paddingLeft: inlinePad,
             paddingRight: inlinePad,
           }}
         >
-          <div
-            style={{
-              fontFamily: tokens.body,
-              fontSize: 10,
-              color: tokens.gold,
-              textTransform: 'uppercase',
-              letterSpacing: '0.3em',
-            }}
-          >
-            Made to Measure
-          </div>
+          <div style={eyebrow}>Made to Measure</div>
           <h1
             style={{
-              fontFamily: tokens.display,
-              // Clamped rather than a flat 72px: at 72px this headline
-              // overflows a narrow viewport, and it is the first thing on
-              // the page.
-              fontSize: isMobile ? 'clamp(40px, 12vw, 56px)' : 'clamp(52px, 6vw, 72px)',
-              fontWeight: 300,
-              lineHeight: 1.0,
-              color: tokens.ink,
-              margin: '18px 0 0',
+              ...headline.hero,
+              color: tokens.warmWhite,
+              margin: '20px 0 0',
               maxWidth: 900,
             }}
           >
             Every blind, built for your window.
           </h1>
-          <p
-            style={{
-              fontFamily: tokens.body,
-              fontSize: 15,
-              lineHeight: 1.7,
-              color: 'rgba(28,24,16,0.5)',
-              margin: '16px 0 0',
-              maxWidth: 560,
-            }}
-          >
-            Four ranges. Fourteen fabric colours. One size that fits exactly.
+          <p style={{ ...supporting.onDark, margin: '20px 0 0', maxWidth: 560 }}>
+            {PRODUCT_COUNT} ranges. {COLOUR_COUNT} fabric colours. Every one cut
+            to the millimetre for the window it hangs in, and covered for 5 years.
           </p>
-          <div style={{ height: 1, background: 'rgba(28,24,16,0.1)', marginTop: isMobile ? 40 : 64 }} />
         </section>
 
         <div
@@ -361,12 +344,14 @@ export default function ProductsPage() {
             position: 'sticky',
             top: navHeight,
             zIndex: 10,
+            // Warm white and opaque — it has to hide the cards scrolling
+            // beneath it, so this one is not translucent like the nav above.
             background: tokens.warmWhite,
-            borderBottom: '1px solid rgba(28,24,16,0.08)',
+            borderBottom: `1px solid ${tokens.lineFaint}`,
             paddingLeft: inlinePad,
             paddingRight: inlinePad,
-            paddingTop: 20,
-            paddingBottom: 20,
+            paddingTop: 24,
+            paddingBottom: 24,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -388,7 +373,7 @@ export default function ProductsPage() {
             style={{
               fontFamily: tokens.body,
               fontSize: 11,
-              color: 'rgba(28,24,16,0.4)',
+              color: tokens.inkFaint,
               whiteSpace: 'nowrap',
             }}
           >
@@ -399,14 +384,17 @@ export default function ProductsPage() {
         <div
           style={{
             display: 'grid',
-            // 2px gutters — the photographs almost touch, which is what gives
-            // the grid its editorial density.
+            // 24px, matching the homepage's collection grid. This was 2px —
+            // deliberately, for editorial density — but 2px gutters against
+            // 20px of caption padding inside each card read as a rendering
+            // error rather than as a choice, and the two product grids on the
+            // site disagreeing with each other undercut both.
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-            gap: 2,
+            gap: isMobile ? 20 : 24,
             paddingLeft: inlinePad,
             paddingRight: inlinePad,
-            paddingTop: isMobile ? 40 : 56,
-            paddingBottom: isMobile ? 80 : 120,
+            paddingTop: isMobile ? 48 : 72,
+            paddingBottom: isMobile ? 96 : 140,
             // Holds the row height steady while a filter is mid-transition, so
             // the footer doesn't jump up and back down as cards swap.
             alignItems: 'start',

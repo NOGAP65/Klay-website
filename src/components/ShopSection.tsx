@@ -1,65 +1,39 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { tokens } from '../theme';
+import { tokens, eyebrow, headline, layout, motion, shadow, supporting } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { RANGES, SKU_COUNT } from '../data/products';
+import { COLOUR_COUNT, PRODUCT_COUNT, RANGES, SKU_COUNT } from '../data/products';
 
 export function ShopSection() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [linkHover, setLinkHover] = useState(false);
 
   return (
-    // Parchment: one deliberate step deeper than the visualiser's warm white
-    // above it, so the two light sections separate without needing another
-    // dark band. (Was #EAE5DC — a fourth off-white outside the palette.)
-    // id="collection" — FinalScene's "Design Yours" and the Footer both link
-    // to #collection, which previously only existed on CollectionScene, a
-    // component the homepage doesn't render. Both anchors were dead.
+    // Warm white — the consideration moment. This is where desire, already
+    // built by the visualiser and validated by the installs above, turns into
+    // "which one". The photographs have to carry it, and they read cleanest on
+    // the lightest ground the palette has.
+    // id="collection" — FinalScene's CTA and the Footer both used to link to
+    // #collection, which only existed on CollectionScene, a component the
+    // homepage doesn't render. Both anchors were dead.
     <section
       id="collection"
       style={{
-        background: tokens.parchment,
-        padding: isMobile ? '72px 24px' : '108px 80px',
+        background: tokens.warmWhite,
+        padding: layout.sectionPad(isMobile),
       }}
     >
-      <div style={{ maxWidth: 1440, margin: '0 auto' }}>
-        <div
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 11,
-            color: tokens.gold,
-            textTransform: 'uppercase',
-            letterSpacing: '0.3em',
-            marginBottom: 16,
-          }}
-        >
-          The Collection
-        </div>
-        <h2
-          style={{
-            fontFamily: tokens.display,
-            fontSize: isMobile ? 'clamp(38px, 11vw, 52px)' : 'clamp(42px, 5vw, 68px)',
-            fontWeight: 300,
-            color: tokens.ink,
-            lineHeight: 0.94,
-            margin: 0,
-          }}
-        >
+      <div style={{ maxWidth: layout.gridMax, margin: '0 auto' }}>
+        <div style={{ ...eyebrow, marginBottom: 18 }}>The Collection</div>
+        <h2 style={{ ...headline.section, color: tokens.ink }}>
           Shop the range.
         </h2>
-        <p
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 15,
-            lineHeight: 1.6,
-            color: tokens.inkSoft,
-            marginTop: 18,
-            maxWidth: 520,
-          }}
-        >
-          Four made-to-measure blinds. Every one built to your window and
-          installed by hand across Victoria.
+        <p style={{ ...supporting.onLight, marginTop: 20, maxWidth: 520 }}>
+          {PRODUCT_COUNT} made-to-measure blinds, {COLOUR_COUNT} fabric colours,
+          a 5 year warranty. Every one built to your window and installed by
+          hand across Victoria.
         </p>
 
         <div
@@ -89,13 +63,12 @@ export function ShopSection() {
                   borderRadius: 2,
                   cursor: 'pointer',
                   background: tokens.charcoal,
-                  // Lifts on hover rather than only darkening the photo —
-                  // the whole card responds, which reads as a real object.
-                  transform: hovered ? 'translateY(-6px)' : 'translateY(0)',
-                  boxShadow: hovered
-                    ? '0 22px 44px rgba(28,24,16,0.26)'
-                    : '0 8px 20px rgba(28,24,16,0.12)',
-                  transition: 'transform 0.4s ease, box-shadow 0.4s ease',
+                  // Lifts AND scales on hover rather than only darkening the
+                  // photo — the whole card responds, which reads as a real
+                  // object being picked up.
+                  transform: hovered ? 'translateY(-6px) scale(1.02)' : 'translateY(0) scale(1)',
+                  boxShadow: hovered ? shadow.lift : shadow.rest,
+                  transition: motion.card,
                 }}
               >
                 <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '4 / 5' }}>
@@ -144,15 +117,7 @@ export function ShopSection() {
                   >
                     {range.range}
                   </div>
-                  <div
-                    style={{
-                      fontFamily: tokens.display,
-                      fontSize: 32,
-                      fontWeight: 300,
-                      lineHeight: 1,
-                      color: tokens.onDark,
-                    }}
-                  >
+                  <div style={{ ...headline.card, color: tokens.onDark }}>
                     {range.name}
                   </div>
                   <div
@@ -178,7 +143,12 @@ export function ShopSection() {
                       borderTop: `1px solid ${tokens.onDarkLine}`,
                     }}
                   >
-                    <span style={{ fontFamily: tokens.body, fontSize: 12.5, color: tokens.onDarkMuted }}>
+                    {/* Price at full strength, not muted. It is the single
+                        most-scanned element on a product card, and at
+                        onDarkMuted it was quieter than the tagline above it —
+                        a confident price is a trust signal, a hidden one
+                        reads as something to be negotiated. */}
+                    <span style={{ fontFamily: tokens.body, fontSize: 13.5, color: tokens.onDark }}>
                       {range.price}
                     </span>
                     <span
@@ -201,19 +171,22 @@ export function ShopSection() {
           })}
         </div>
 
-        <div style={{ marginTop: 48, textAlign: 'center' }}>
+        <div style={{ marginTop: 64, textAlign: 'center' }}>
           <Link
             to="/products"
+            onMouseEnter={() => setLinkHover(true)}
+            onMouseLeave={() => setLinkHover(false)}
             style={{
               textDecoration: 'none',
               display: 'inline-block',
-              borderBottom: `1px solid ${tokens.goldLine}`,
+              borderBottom: `1px solid ${linkHover ? tokens.gold : tokens.goldLine}`,
               paddingBottom: 5,
               fontFamily: tokens.body,
               fontSize: 11,
-              color: tokens.gold,
+              color: linkHover ? tokens.goldLight : tokens.gold,
               textTransform: 'uppercase',
               letterSpacing: '0.2em',
+              transition: motion.link,
             }}
           >
             View all {SKU_COUNT} products →

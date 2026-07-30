@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { RevealWords } from './RevealWords';
-import { tokens, prefersReducedMotion } from '../theme';
+import { tokens, prefersReducedMotion, eyebrow, headline, motion, shadow } from '../theme';
 import { splitWords } from '../utils/splitWords';
 import { BlindReveal } from './BlindReveal';
 
@@ -13,20 +13,30 @@ const testimonials = [
 ];
 
 function Card({ t }: { t: (typeof testimonials)[number] }) {
+  const [hover, setHover] = useState(false);
   return (
     <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
         flex: '0 0 auto',
         width: 380,
-        // Cream, not pure white — it's the warm card tone that belongs on a
-        // warm-white ground, and it keeps the palette off pure values.
+        // Cream, and now on parchment rather than warm white — a full step of
+        // separation, so each testimonial reads as its own card instead of a
+        // bordered region of the section behind it.
         background: tokens.cream,
-        border: `1px solid ${tokens.lineFaint}`,
+        border: `1px solid ${hover ? tokens.goldLine : tokens.lineFaint}`,
         borderRadius: 2,
         padding: '34px 32px',
         display: 'flex',
         flexDirection: 'column',
         gap: 18,
+        // The rail already pauses on hover; lifting the card under the cursor
+        // is what makes that pause legible as "this one is yours to read"
+        // rather than as the animation having stalled.
+        transform: hover ? 'scale(1.02)' : 'scale(1)',
+        boxShadow: hover ? shadow.rest : 'none',
+        transition: motion.card,
       }}
     >
       <div style={{ color: tokens.gold, fontSize: 15, letterSpacing: '0.2em' }}>★★★★★</div>
@@ -49,8 +59,15 @@ export function ReviewsScene() {
       id="reviews"
       style={{
         position: 'relative',
-        background: tokens.warmWhite,
-        padding: '96px 0',
+        // Parchment — trust is warm, not cold. Testimonials on the same warm
+        // white as the collection above made the two sections bleed into one
+        // long light stretch; the step down separates them, and it pairs this
+        // with SocialSection as one tonal family of proof.
+        background: tokens.parchment,
+        // Vertical only — the card rail deliberately runs to both edges so it
+        // reads as continuing past the viewport, which is what sells it as a
+        // scroll rather than a row of five.
+        padding: '120px 0',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -58,10 +75,8 @@ export function ReviewsScene() {
       }}
     >
       <BlindReveal>
-      <div style={{ padding: '0 5vw', marginBottom: 52 }}>
-        <span style={{ color: tokens.gold, fontFamily: tokens.body, fontSize: 12, fontWeight: 500, letterSpacing: '0.24em', textTransform: 'uppercase' }}>
-          Loved across Victoria
-        </span>
+      <div style={{ padding: '0 80px', marginBottom: 64 }}>
+        <span style={eyebrow}>Loved across Victoria</span>
         <RevealWords
           as="h2"
           words={[
@@ -69,7 +84,7 @@ export function ReviewsScene() {
             { text: 'chose', italic: true, color: tokens.gold },
             { text: 'Klay', italic: true, color: tokens.gold },
           ]}
-          style={{ fontWeight: 300, fontSize: 'clamp(36px, 4.4vw, 64px)', color: tokens.ink, marginTop: 14 }}
+          style={{ ...headline.section, color: tokens.ink, marginTop: 16 }}
         />
       </div>
 
@@ -78,7 +93,9 @@ export function ReviewsScene() {
           style={{
             display: 'flex',
             gap: 24,
-            padding: '0 5vw',
+            // Matches the headline's own 80px inset, so the first card starts
+            // on the same vertical line the section's type does.
+            padding: '0 80px',
             width: 'max-content',
             animation: prefersReducedMotion() ? 'none' : 'klay-testimonials 42s linear infinite',
             animationPlayState: paused ? 'paused' : 'running',

@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { tokens } from '../theme'
+import { tokens, eyebrow, headline, motion } from '../theme'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const buttonBase: React.CSSProperties = {
-  padding: '15px 36px',
+  padding: '17px 40px',
   borderRadius: 2,
   fontFamily: tokens.body,
   fontSize: '12px',
@@ -11,12 +12,14 @@ const buttonBase: React.CSSProperties = {
   letterSpacing: '0.18em',
   textTransform: 'uppercase',
   cursor: 'pointer',
-  transition: 'background 0.3s ease, border-color 0.3s ease, color 0.3s ease',
+  transition: motion.button,
 }
 
 export default function HeroScene() {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
+  const [ctaHover, setCtaHover] = useState(false)
+  const [linkHover, setLinkHover] = useState(false)
   const scrollToVisualiser = () => {
     document.getElementById('visualiser')?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -41,31 +44,60 @@ export default function HeroScene() {
       />
 
       <div style={{ position:'absolute', bottom:'10%', left:isMobile ? '24px' : '80px', right:isMobile ? '24px' : undefined, zIndex:2, maxWidth:'560px' }}>
-        <p style={{ fontFamily:tokens.body, fontSize:'11px', color:tokens.gold, letterSpacing:'0.3em', textTransform:'uppercase', marginBottom:'20px' }}>
+        <p style={{ ...eyebrow, marginBottom:'22px' }}>
           Australian Made-to-Measure
         </p>
-        <h1 style={{ fontFamily:tokens.display, fontSize:'clamp(56px,9vw,130px)', fontWeight:300, lineHeight:0.88, margin:0 }}>
+        {/* Capped at 100px, down from 130. Above ~100 the three stacked lines
+            pushed the subtext and CTA below the fold on a laptop, which is the
+            one thing a hero cannot do — the promise has to arrive with its
+            action already visible. */}
+        <h1 style={{ ...headline.hero, lineHeight:0.88 }}>
           <span style={{ display:'block', color:tokens.warmWhite }}>Light,</span>
           <span style={{ display:'block', color:tokens.goldLight, fontStyle:'italic' }}>curated</span>
           <span style={{ display:'block', color:tokens.warmWhite }}>for you.</span>
         </h1>
-        <p style={{ fontFamily:tokens.body, fontSize:'15px', color:'rgba(245,242,237,0.68)', lineHeight:1.75, marginTop:'22px', maxWidth:'420px' }}>
+        {/* 0.65 — the top of the muted band rather than its middle, because
+            this one sits over moving video rather than a flat ground. */}
+        <p style={{ fontFamily:tokens.body, fontSize:'15px', color:'rgba(245,242,237,0.65)', lineHeight:1.75, marginTop:'26px', maxWidth:'420px' }}>
           Blinds, curtains and shutters made precisely for your windows — designed with you, installed by hand across Victoria.
         </p>
-        <div style={{ display:'flex', gap:'14px', marginTop:'34px', flexWrap:'wrap' }}>
+        {/* One gold button. The second CTA was a bordered ghost button of near
+            equal visual weight, which split the eye at the exact moment the
+            hero is meant to point at one thing; demoted to a text link, it
+            stays available without competing. */}
+        <div style={{ display:'flex', gap:'28px', marginTop:'40px', flexWrap:'wrap', alignItems:'center' }}>
           <button
             onClick={scrollToVisualiser}
-            style={{ ...buttonBase, background:tokens.gold, color:tokens.ink, border:`1px solid ${tokens.gold}` }}
-            onMouseEnter={e => { e.currentTarget.style.background = tokens.goldLight }}
-            onMouseLeave={e => { e.currentTarget.style.background = tokens.gold }}
+            onMouseEnter={() => setCtaHover(true)}
+            onMouseLeave={() => setCtaHover(false)}
+            style={{
+              ...buttonBase,
+              background: ctaHover ? tokens.goldLight : tokens.gold,
+              color: tokens.ink,
+              border: `1px solid ${ctaHover ? tokens.goldLight : tokens.gold}`,
+            }}
           >
-            Design Yours
+            See It In Your Room
           </button>
           <button
             onClick={() => navigate('/products')}
-            style={{ ...buttonBase, background:'transparent', color:tokens.warmWhite, border:`1px solid ${tokens.onDarkEdge}` }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = tokens.gold; e.currentTarget.style.color = tokens.gold }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = tokens.onDarkEdge; e.currentTarget.style.color = tokens.warmWhite }}
+            onMouseEnter={() => setLinkHover(true)}
+            onMouseLeave={() => setLinkHover(false)}
+            style={{
+              background:'transparent',
+              border:'none',
+              padding:0,
+              cursor:'pointer',
+              fontFamily:tokens.body,
+              fontSize:'12px',
+              fontWeight:500,
+              letterSpacing:'0.18em',
+              textTransform:'uppercase',
+              color: linkHover ? tokens.gold : tokens.warmWhite,
+              paddingBottom:4,
+              borderBottom:`1px solid ${linkHover ? tokens.gold : tokens.onDarkEdge}`,
+              transition: motion.link,
+            }}
           >
             Explore Collection
           </button>

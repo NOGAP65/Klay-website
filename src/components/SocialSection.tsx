@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { tokens } from '../theme';
+import { tokens, eyebrow, headline, layout, motion, shadow, supporting } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
 
 // ---------------------------------------------------------------------------
@@ -76,10 +76,12 @@ function SocialIcon({ social }: { social: Social }) {
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: 2,
-        border: `1px solid ${hover ? tokens.gold : tokens.onDarkLine}`,
+        // Light-ground values now the section is parchment — onDarkLine and
+        // onDark are warmWhite-derived and were invisible against it.
+        border: `1px solid ${hover ? tokens.gold : tokens.line}`,
         background: hover ? 'rgba(200,151,58,0.12)' : 'transparent',
-        color: hover ? tokens.gold : tokens.onDark,
-        transition: 'color 0.25s ease, border-color 0.25s ease, background 0.25s ease, transform 0.25s ease',
+        color: hover ? tokens.gold : tokens.ink,
+        transition: `${motion.link}, background 0.2s ease, transform 0.25s ease`,
         transform: hover ? 'translateY(-2px)' : 'translateY(0)',
       }}
     >
@@ -113,9 +115,11 @@ function PostTile({ post }: { post: Post }) {
         overflow: 'hidden',
         borderRadius: 2,
         cursor: 'pointer',
-        boxShadow: hover ? '0 20px 40px rgba(0,0,0,0.4)' : '0 6px 16px rgba(0,0,0,0.22)',
-        transform: hover ? 'translateY(-5px)' : 'translateY(0)',
-        transition: 'transform 0.4s ease, box-shadow 0.4s ease',
+        // Ink-mixed rather than pure black: on parchment a black shadow greys
+        // the ground around the tile instead of warming it.
+        boxShadow: hover ? shadow.lift : shadow.rest,
+        transform: hover ? 'translateY(-5px) scale(1.02)' : 'translateY(0) scale(1)',
+        transition: motion.card,
       }}
     >
       <img
@@ -173,13 +177,18 @@ export function SocialSection() {
   const isMobile = useIsMobile();
 
   return (
+    // Parchment. Social proof is a warm, human moment — the trust tone, not a
+    // conviction one. As charcoal this sat as a second dark slab in the middle
+    // of the page and made the installs read as advertising rather than as
+    // other people's homes. It also now separates the visualiser above it from
+    // the collection below without either needing a dark band between them.
     <section
       style={{
-        background: tokens.charcoal,
-        padding: isMobile ? '72px 24px' : '108px 80px',
+        background: tokens.parchment,
+        padding: layout.sectionPad(isMobile),
       }}
     >
-      <div style={{ maxWidth: 1440, margin: '0 auto' }}>
+      <div style={{ maxWidth: layout.gridMax, margin: '0 auto' }}>
         <div
           style={{
             display: 'flex',
@@ -190,40 +199,11 @@ export function SocialSection() {
           }}
         >
           <div>
-            <div
-              style={{
-                fontFamily: tokens.body,
-                fontSize: 11,
-                color: tokens.gold,
-                textTransform: 'uppercase',
-                letterSpacing: '0.3em',
-                marginBottom: 16,
-              }}
-            >
-              Follow along
-            </div>
-            <h2
-              style={{
-                fontFamily: tokens.display,
-                fontSize: isMobile ? 'clamp(38px, 11vw, 52px)' : 'clamp(42px, 5vw, 68px)',
-                fontWeight: 300,
-                color: tokens.onDark,
-                lineHeight: 0.94,
-                margin: 0,
-              }}
-            >
+            <div style={{ ...eyebrow, marginBottom: 18 }}>Follow along</div>
+            <h2 style={{ ...headline.section, color: tokens.ink }}>
               Light, in real homes.
             </h2>
-            <p
-              style={{
-                fontFamily: tokens.body,
-                fontSize: 15,
-                lineHeight: 1.6,
-                color: tokens.onDarkMuted,
-                marginTop: 18,
-                maxWidth: 460,
-              }}
-            >
+            <p style={{ ...supporting.onLight, marginTop: 20, maxWidth: 460 }}>
               Every install we finish across Victoria, as we finish it. Follow{' '}
               <span style={{ color: tokens.gold }}>{HANDLE}</span> for rooms,
               fabrics and the occasional before-and-after.
@@ -241,8 +221,8 @@ export function SocialSection() {
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-            gap: isMobile ? 12 : 20,
-            marginTop: 56,
+            gap: isMobile ? 12 : 24,
+            marginTop: 72,
           }}
         >
           {POSTS.map(p => (

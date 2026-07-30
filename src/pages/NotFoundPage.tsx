@@ -1,18 +1,22 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
-import { tokens } from '../theme';
+import { tokens, motion, supporting } from '../theme';
 
-const DARK = '#0f0d09';
+// DARK ('#0f0d09') removed — this page is routed at path="*", so the one
+// near-black left on the site was the page a lost visitor lands on.
 
 export default function NotFoundPage() {
+  const [ctaHover, setCtaHover] = useState(false);
+
   return (
     <>
       <Nav />
 
       <section
         style={{
-          background: DARK,
+          background: tokens.charcoal,
           minHeight: 'calc(100vh - 80px)',
           display: 'flex',
           flexDirection: 'column',
@@ -28,16 +32,21 @@ export default function NotFoundPage() {
         <h1 style={{ fontFamily: tokens.display, fontSize: 32, fontWeight: 300, color: tokens.warmWhite, marginTop: 16, margin: '16px 0 0' }}>
           This page doesn't exist.
         </h1>
-        <p style={{ fontFamily: tokens.body, fontSize: 14, color: 'rgba(248,246,242,0.5)', marginTop: 12 }}>
+        <p style={{ ...supporting.onDark, fontSize: 14, marginTop: 12 }}>
           The window you're looking for may have been moved or removed.
         </p>
         <Link
           to="/"
+          onMouseEnter={() => setCtaHover(true)}
+          onMouseLeave={() => setCtaHover(false)}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 10, marginTop: 32,
             fontFamily: tokens.body, fontSize: 12, fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase',
-            padding: '16px 32px', border: `1px solid ${tokens.gold}`, background: 'transparent', color: tokens.gold,
+            padding: '18px 40px', border: `1px solid ${tokens.gold}`,
+            background: ctaHover ? tokens.gold : 'transparent',
+            color: ctaHover ? tokens.ink : tokens.gold,
             textDecoration: 'none',
+            transition: motion.button,
           }}
         >
           Back to Klay →
