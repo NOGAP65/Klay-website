@@ -129,21 +129,42 @@ const scaleToBlind = (px: number, avgW: number, min = 0.6, max = 3.2): number =>
 // Textures — real fabric photos in public/textures/, tinted in the shader
 // ---------------------------------------------------------------------------
 
+// CASE-SENSITIVE. These paths are served verbatim from public/ by a Linux
+// host, where /images/textures/... and /images/Textures/... are different
+// URLs. The directory on disk is `Textures` with a capital T, and
+// `Light-filter` with a capital L and a hyphen. A lowercase path resolves
+// fine on a Windows dev machine and 404s in production, which is the worst
+// possible failure shape — it only appears after deploy. Do not "tidy" the
+// capitalisation here without renaming the directories to match.
+const TEXTURE_ROOT = '/images/Textures';
+
 const getTexturePath = (blindType: string): string => {
   switch (blindType) {
-    case 'blockout': return '/textures/blockout_charcoal.jpg';
-    case 'sunscreen': return '/textures/sunscreen_white.jpg';
-    // No dedicated Light Filter photo yet — reuses the sunscreen weave at a
-    // higher opacity (see drawBlindArea) to sit visually between sunscreen and blockout.
-    case 'lightfilter': return '/textures/sunscreen_white.jpg';
-    case 'dual': return '/textures/blockout_charcoal.jpg';
+    case 'blockout': return `${TEXTURE_ROOT}/Blockout/Blockout_fabric.png`;
+    case 'sunscreen': return `${TEXTURE_ROOT}/Sunscreen/Sunscreen.png`;
+    case 'lightfilter': return `${TEXTURE_ROOT}/Light-filter/light_filter.png`;
+    // A dual roller is a blockout in front of a sunscreen; both come from the
+    // real photos above via DUAL_FRONT_TEXTURE / DUAL_BACK_TEXTURE.
+    case 'dual': return `${TEXTURE_ROOT}/Blockout/Blockout_fabric.png`;
+    // Curtains have no dedicated photography yet and keep the older weave
+    // scans under public/textures/. They are a different product line, not a
+    // roller blind, so they are unaffected by the roller texture swap.
     case 'sheer':
     case 'sheer-curtains': return '/textures/sheer_fabric.jpg';
     case 'blockout-curtains-light': return '/textures/blockout_white.jpg';
     case 'blockout-curtains-dark': return '/textures/blockout_charcoal.jpg';
-    default: return '/textures/blockout_charcoal.jpg';
+    default: return `${TEXTURE_ROOT}/Blockout/Blockout_fabric.png`;
   }
 };
+
+/** Every roller texture, for preloading. Switching blind type must not show a
+ * blank frame while a 3MB PNG decodes, and the surest way to guarantee that is
+ * for the texture to already be in the cache before the type changes. */
+const ALL_ROLLER_TEXTURES = [
+  getTexturePath('blockout'),
+  getTexturePath('sunscreen'),
+  getTexturePath('lightfilter'),
+];
 
 const isLightColor = (hex: string): boolean => {
   const { r, g, b } = hexToRgb(hex);
@@ -251,7 +272,21 @@ void main() {
   // the underlying photo's brightness happens to be.
   float luma = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
   float detail = clamp(luma - u_textureMean, -0.5, 0.5);
-  vec3 col = u_tintColor.rgb * (1.0 + detail * u_textureAmount);
+
+  // Two terms, and both are needed.
+  //
+  // The multiplicative term is what makes the colour survive: the weave scales
+  // the selected colour rather than being mixed into it, so the fabric always
+  // averages to exactly u_tintColor and White stays white instead of turning
+  // grey. On its own, though, it scales toward zero as the colour darkens —
+  // Black at ±10% is a ±0.017 swing, which is invisible, so dark fabrics
+  // rendered as flat colour with no discernible weave at all.
+  //
+  // The additive term is a fixed absolute swing that does not shrink with the
+  // base colour. It is small enough to be imperceptible against a light
+  // colour and is what carries the entire weave on a dark one.
+  vec3 col = u_tintColor.rgb * (1.0 + detail * u_textureAmount)
+           + vec3(detail * u_textureAmount * 0.12);
 
   // Soft vertical fold ripples for sheer fabric
   if (u_folds > 0.5) {
@@ -445,6 +480,16 @@ const measureMeanLuma = (ctx: CanvasRenderingContext2D): number => {
   return n > 0 ? sum / n : 0.5;
 };
 
+/** Uploads one fabric photo as a GL texture, keyed by its own path.
+ *
+ * Keying on the path is what makes a blind-type change a genuine texture swap
+ * rather than a re-tint. Each path gets its own GL texture AND its own
+ * meanLuma, measured from that photo at upload — so when the type changes the
+ * shader is handed a different weave and a different mean to subtract, and
+ * reconstructs the fabric from the selected colour against the new texture.
+ * Nothing carries over from the previous fabric: there is no accumulated
+ * surface to tint, because the colour is rebuilt per pixel every frame from
+ * u_tintColor and this texture's deviation. */
 const getOrUploadTexture = (state: GLState, key: string, img: HTMLImageElement): FabricTexture => {
   const existing = state.textures.get(key);
   if (existing) return existing;
@@ -2199,6 +2244,52 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
         state.gl.getExtension('WEBGL_lose_context')?.loseContext();
         glStateRef.current = null;
       }
+    };
+  }, []);
+
+  // Warm the roller textures so changing blind type never waits on a decode.
+  // The render effect already awaits what it needs before touching the canvas
+  // — so a cold swap holds the previous frame rather than flashing blank — but
+  // these are multi-megabyte PNGs and a frozen frame for a second reads as the
+  // control being broken. Pulling them through the same imageCache the
+  // renderer uses makes the swap a cache hit.
+  //
+  // Deferred to idle rather than fired on mount. The three textures total
+  // ~9MB, and starting all of them immediately would contend with the window
+  // photo and the page's own assets for bandwidth — making the FIRST render
+  // slower in order to make a LATER swap faster, which is the wrong trade on
+  // a mobile connection. By the time the visitor reaches for the type control
+  // the browser has long been idle.
+  //
+  // Failures are ignored on purpose: this is a warm-up, and the render path
+  // does its own loading and error handling.
+  useEffect(() => {
+    let cancelled = false;
+    const warm = () => {
+      if (cancelled) return;
+      for (const path of ALL_ROLLER_TEXTURES) {
+        loadImage(path).catch(() => {});
+      }
+    };
+
+    // requestIdleCallback is unavailable in Safari; a timeout is the standard
+    // stand-in and is late enough to be past first paint either way.
+    const ric = (window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    });
+    let idleHandle: number | undefined;
+    let timeoutHandle: number | undefined;
+    if (typeof ric.requestIdleCallback === 'function') {
+      idleHandle = ric.requestIdleCallback(warm, { timeout: 4000 });
+    } else {
+      timeoutHandle = window.setTimeout(warm, 1500);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleHandle !== undefined) ric.cancelIdleCallback?.(idleHandle);
+      if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
     };
   }, []);
 
