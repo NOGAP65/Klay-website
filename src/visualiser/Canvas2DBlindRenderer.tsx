@@ -1393,28 +1393,45 @@ const drawCassette = (
   const halfH = fullH / 2;
   const { u, pv } = axesFor(tl, tr);
   const base = hardwareBaseHex(hardwareColourName, safeHardwareColor);
-  const top: Point = [tl[0] + pv[0] * halfH, tl[1] + pv[1] * halfH];
-  const bot: Point = [tl[0] - pv[0] * halfH, tl[1] - pv[1] * halfH];
+
+  // ==========================================================================
+  // TRUE 3D PERSPECTIVE: Tube terminates at bracket inner edges
+  // ==========================================================================
+  // Bracket width (matches drawSideBrackets)
+  const BRACKET_W = avgW * 0.045;
+
+  // Tube body terminates at bracket inner edges — it runs INTO the brackets,
+  // not past them. The FAR end (away from viewer) is completely hidden.
+  // The NEAR end (toward viewer) shows an end cap peeking out.
+  //
+  // yRotation < 0: viewer is to the RIGHT, looking left at window
+  //   - Left side is NEAR (visible), right side is FAR (hidden)
+  //   - Left end cap visible, right end hidden behind bracket
+  // yRotation > 0: viewer is to the LEFT, looking right at window
+  //   - Right side is NEAR (visible), left side is FAR (hidden)
+  //   - Right end cap visible, left end hidden behind bracket
+  // yRotation ≈ 0: flat on, both ends equally visible
+  //
+  // BEFORE: tubeLeft = tl, tubeRight = tr (tube extends full width)
+  // AFTER:  tubeLeft = tl + u * BRACKET_W, tubeRight = tr - u * BRACKET_W
+  const tubeLeft: Point = [tl[0] + u[0] * BRACKET_W, tl[1] + u[1] * BRACKET_W];
+  const tubeRight: Point = [tr[0] - u[0] * BRACKET_W, tr[1] - u[1] * BRACKET_W];
+
+  const top: Point = [tubeLeft[0] + pv[0] * halfH, tubeLeft[1] + pv[1] * halfH];
+  const bot: Point = [tubeLeft[0] - pv[0] * halfH, tubeLeft[1] - pv[1] * halfH];
 
   ctx.save();
 
   // --- BODY: true cylinder profile matching the 49mm aluminium roller tube.
-  // The metallic gradient has a prominent highlight band in the upper third,
-  // matching the product photo (Top_tube.jpg).
-  traceCylinderBody(ctx, tl, tr, halfH, u, pv);
+  // Terminates at bracket inner edges — no overhang past brackets.
+  traceCylinderBody(ctx, tubeLeft, tubeRight, halfH, u, pv);
   if (hardwareColourName === 'chrome') {
     setHardwareFill(ctx, hardwareColourName, safeHardwareColor, top, bot);
   } else {
-    // 5-stop gradient for metallic cylinder appearance:
-    // - top edge: slightly lighter
-    // - upper third: prominent highlight band (the key visual from product photo)
-    // - center: base color
-    // - lower third: darker as it curves away
-    // - bottom edge: darkest, facing away from light
     const grad = ctx.createLinearGradient(top[0], top[1], bot[0], bot[1]);
     grad.addColorStop(0, shadeHex(base, 0.15));
-    grad.addColorStop(0.15, shadeHex(base, 0.28));  // highlight band start
-    grad.addColorStop(0.35, shadeHex(base, 0.22));  // highlight band end
+    grad.addColorStop(0.15, shadeHex(base, 0.28));
+    grad.addColorStop(0.35, shadeHex(base, 0.22));
     grad.addColorStop(0.6, base);
     grad.addColorStop(1, shadeHex(base, -0.25));
     ctx.fillStyle = grad;
@@ -1423,86 +1440,90 @@ const drawCassette = (
 
   // Everything below is clipped to the body so no detail escapes the outline.
   ctx.save();
-  traceCylinderBody(ctx, tl, tr, halfH, u, pv);
+  traceCylinderBody(ctx, tubeLeft, tubeRight, halfH, u, pv);
   ctx.clip();
 
-  // --- FABRIC ROLL visible on the tube: a subtle band where fabric wraps
-  // around the cylinder. Positioned in the lower portion of the tube.
+  // --- FABRIC ROLL visible on the tube
   const rollTop = halfH * -0.1;
   const rollBot = halfH * -0.7;
   const rollGrad = ctx.createLinearGradient(
-    tl[0] + pv[0] * rollTop, tl[1] + pv[1] * rollTop,
-    tl[0] + pv[0] * rollBot, tl[1] + pv[1] * rollBot
+    tubeLeft[0] + pv[0] * rollTop, tubeLeft[1] + pv[1] * rollTop,
+    tubeLeft[0] + pv[0] * rollBot, tubeLeft[1] + pv[1] * rollBot
   );
   rollGrad.addColorStop(0, shadowRgba(0.08));
   rollGrad.addColorStop(0.5, shadowRgba(0.12));
   rollGrad.addColorStop(1, shadowRgba(0.06));
   ctx.fillStyle = rollGrad;
   ctx.beginPath();
-  ctx.moveTo(tl[0] + pv[0] * rollTop, tl[1] + pv[1] * rollTop);
-  ctx.lineTo(tr[0] + pv[0] * rollTop, tr[1] + pv[1] * rollTop);
-  ctx.lineTo(tr[0] + pv[0] * rollBot, tr[1] + pv[1] * rollBot);
-  ctx.lineTo(tl[0] + pv[0] * rollBot, tl[1] + pv[1] * rollBot);
+  ctx.moveTo(tubeLeft[0] + pv[0] * rollTop, tubeLeft[1] + pv[1] * rollTop);
+  ctx.lineTo(tubeRight[0] + pv[0] * rollTop, tubeRight[1] + pv[1] * rollTop);
+  ctx.lineTo(tubeRight[0] + pv[0] * rollBot, tubeRight[1] + pv[1] * rollBot);
+  ctx.lineTo(tubeLeft[0] + pv[0] * rollBot, tubeLeft[1] + pv[1] * rollBot);
   ctx.closePath();
   ctx.fill();
 
-  // --- END CAPS: cream/white circular caps at each end of the tube, matching
-  // the product photo. Always cream-white regardless of hardware finish.
-  // TUNING: end cap visibility based on yRotation
-  // - Left cap (tl): visible when yRot < -0.05 OR nearly flat (|yRot| < 0.05)
-  // - Right cap (tr): visible when yRot > 0.05 OR nearly flat (|yRot| < 0.05)
-  // When window faces left (yRot < 0), right end recedes → hide right cap
-  // When window faces right (yRot > 0), left end recedes → hide left cap
+  // --- END CAPS: Only visible on the NEAR side (toward viewer)
+  // BEFORE: showLeftCap = yRotation < -0.05 || Math.abs(yRotation) < 0.05
+  //         showRightCap = yRotation > 0.05 || Math.abs(yRotation) < 0.05
+  // AFTER:  showLeftCap = yRotation < -0.05 (viewer to RIGHT sees left end)
+  //         showRightCap = yRotation > 0.05 (viewer to LEFT sees right end)
+  //         When flat (|yRot| < 0.05): both caps show as tiny ellipses
   const capW = Math.max(3, scaleToBlind(6, avgW));
-  const capColor = '#F5F2ED'; // cream white matching product photo
-  const showLeftCap = yRotation < -0.05 || Math.abs(yRotation) < 0.05;
-  const showRightCap = yRotation > 0.05 || Math.abs(yRotation) < 0.05;
+  const capColor = '#F5F2ED';
+  const isFlat = Math.abs(yRotation) < 0.05;
+  const showLeftCap = yRotation < -0.05 || isFlat;  // viewer to right, or flat
+  const showRightCap = yRotation > 0.05 || isFlat;  // viewer to left, or flat
+
+  // End cap width scales with viewing angle — more foreshortened when flat
+  const depthScale = Math.abs(yRotation);
+  const leftCapW = isFlat ? capW * 0.5 : capW * Math.max(0.4, depthScale * 1.5);
+  const rightCapW = isFlat ? capW * 0.5 : capW * Math.max(0.4, depthScale * 1.5);
 
   ctx.fillStyle = capColor;
   if (showLeftCap) {
-    traceEndCapOval(ctx, tl, halfH * 0.92, capW, u, pv);
+    traceEndCapOval(ctx, tubeLeft, halfH * 0.92, leftCapW, u, pv);
     ctx.fill();
   }
   if (showRightCap) {
-    traceEndCapOval(ctx, tr, halfH * 0.92, capW, u, pv);
+    traceEndCapOval(ctx, tubeRight, halfH * 0.92, rightCapW, u, pv);
     ctx.fill();
   }
   // Subtle shadow on the inner edge of each cap
   ctx.strokeStyle = shadowRgba(0.15);
   ctx.lineWidth = 1;
   if (showLeftCap) {
-    traceEndCapOval(ctx, tl, halfH * 0.92, capW * 0.7, u, pv);
+    traceEndCapOval(ctx, tubeLeft, halfH * 0.92, leftCapW * 0.7, u, pv);
     ctx.stroke();
   }
   if (showRightCap) {
-    traceEndCapOval(ctx, tr, halfH * 0.92, capW * 0.7, u, pv);
+    traceEndCapOval(ctx, tubeRight, halfH * 0.92, rightCapW * 0.7, u, pv);
     ctx.stroke();
   }
 
-  // --- TOP HIGHLIGHT: bright line riding the crown of the cylinder
+  // --- TOP HIGHLIGHT
   const hi = halfH * 0.75;
   ctx.strokeStyle = 'rgba(255,255,255,0.35)';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(tl[0] + pv[0] * hi, tl[1] + pv[1] * hi);
-  ctx.lineTo(tr[0] + pv[0] * hi, tr[1] + pv[1] * hi);
+  ctx.moveTo(tubeLeft[0] + pv[0] * hi, tubeLeft[1] + pv[1] * hi);
+  ctx.lineTo(tubeRight[0] + pv[0] * hi, tubeRight[1] + pv[1] * hi);
   ctx.stroke();
 
-  // --- SECONDARY HIGHLIGHT: the prominent horizontal band from product photo
+  // --- SECONDARY HIGHLIGHT
   const hi2 = halfH * 0.35;
   ctx.strokeStyle = 'rgba(255,255,255,0.18)';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(tl[0] + pv[0] * hi2, tl[1] + pv[1] * hi2);
-  ctx.lineTo(tr[0] + pv[0] * hi2, tr[1] + pv[1] * hi2);
+  ctx.moveTo(tubeLeft[0] + pv[0] * hi2, tubeLeft[1] + pv[1] * hi2);
+  ctx.lineTo(tubeRight[0] + pv[0] * hi2, tubeRight[1] + pv[1] * hi2);
   ctx.stroke();
 
-  // --- BOTTOM SHADOW: dark line where the tube meets the fabric below
+  // --- BOTTOM SHADOW
   ctx.strokeStyle = shadowRgba(0.4);
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(tl[0] - pv[0] * halfH * 0.85, tl[1] - pv[1] * halfH * 0.85);
-  ctx.lineTo(tr[0] - pv[0] * halfH * 0.85, tr[1] - pv[1] * halfH * 0.85);
+  ctx.moveTo(tubeLeft[0] - pv[0] * halfH * 0.85, tubeLeft[1] - pv[1] * halfH * 0.85);
+  ctx.lineTo(tubeRight[0] - pv[0] * halfH * 0.85, tubeRight[1] - pv[1] * halfH * 0.85);
   ctx.stroke();
 
   ctx.restore();
