@@ -15,6 +15,7 @@ import {
 } from '../data/products';
 import KlayConfigurator from '../visualiser/KlayConfigurator';
 import { useVisualiserStore } from '../visualiser/useVisualiserStore';
+import { bookingLink } from '../lib/bookingLink';
 
 // The FAQ band uses tokens.parchment. It was hardcoded here as
 // SHELL = '#EAE5DC' while theme.ts set parchment to #F2EDE4 — one colour role
@@ -535,11 +536,9 @@ export default function ProductDetailPage() {
   const setScrollY = useKlayStore(s => s.setScrollY);
 
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [toast, setToast] = useState<string | null>(null);
   const [heroCtaHover, setHeroCtaHover] = useState(false);
   const [barCtaHover, setBarCtaHover] = useState(false);
   const [backHover, setBackHover] = useState(false);
-  const toastTimer = useRef<number | null>(null);
 
   const product = productBySlug(slug);
   // The section used to live at /products/:category on blind-type slugs
@@ -571,20 +570,18 @@ export default function ProductDetailPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, [setScrollY]);
 
-  useEffect(
-    () => () => {
-      if (toastTimer.current !== null) clearTimeout(toastTimer.current);
-    },
-    [],
-  );
-
   if (!product) return null;
 
-  const showToast = () => {
-    if (toastTimer.current !== null) clearTimeout(toastTimer.current);
-    setToast('Coming soon — booking flow in progress');
-    toastTimer.current = window.setTimeout(() => setToast(null), 3000);
-  };
+  // Both CTAs on this page carry the configuration the customer has been
+  // playing with in the hero configurator through to /book, so the blind they
+  // priced is the blind they end up paying for.
+  const bookHref = bookingLink({
+    blindType: store.blindType,
+    windowSize: store.windowSize,
+    operation: store.operation,
+    fabricColour: store.fabricColour,
+    hardwareColour: store.hardwareColour,
+  });
 
   // One source for the price. BASE_PRICE in the visualiser store already holds
   // exactly the figures in the brief — 220/260/330, dual 320/380/480, plus
@@ -736,11 +733,12 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          <button
-            onClick={showToast}
+          <Link
+            to={bookHref}
             onMouseEnter={() => setHeroCtaHover(true)}
             onMouseLeave={() => setHeroCtaHover(false)}
             style={{
+              display: 'block',
               width: '100%',
               marginTop: 28,
               padding: 20,
@@ -754,10 +752,13 @@ export default function ProductDetailPage() {
               borderRadius: 0,
               cursor: 'pointer',
               transition: motion.button,
+              textAlign: 'center',
+              textDecoration: 'none',
+              boxSizing: 'border-box',
             }}
           >
             Book Installation
-          </button>
+          </Link>
         </div>
       </section>
 
@@ -875,8 +876,8 @@ export default function ProductDetailPage() {
         >
           from ${price}
         </div>
-        <button
-          onClick={showToast}
+        <Link
+          to={bookHref}
           onMouseEnter={() => setBarCtaHover(true)}
           onMouseLeave={() => setBarCtaHover(false)}
           style={{
@@ -892,31 +893,12 @@ export default function ProductDetailPage() {
             cursor: 'pointer',
             whiteSpace: 'nowrap',
             transition: motion.button,
+            textDecoration: 'none',
           }}
         >
           Book Installation →
-        </button>
+        </Link>
       </div>
-
-      {toast && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: BAR_CLEARANCE + 16,
-            right: 24,
-            // Above the bar, which is 50.
-            zIndex: 60,
-            background: tokens.ink,
-            color: tokens.warmWhite,
-            fontFamily: tokens.body,
-            fontSize: 13,
-            padding: '14px 20px',
-            boxShadow: '0 4px 24px rgba(28,24,16,0.28)',
-          }}
-        >
-          {toast}
-        </div>
-      )}
       </div>
     </>
   );

@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { tokens } from '../theme';
 import VisualiserControls from '../visualiser/VisualiserControls';
 import KlayConfigurator from '../visualiser/KlayConfigurator';
+import { useVisualiserStore } from '../visualiser/useVisualiserStore';
+import { bookingLink } from '../lib/bookingLink';
 
 export default function VisualiserPage() {
   const [searchParams] = useSearchParams();
@@ -13,11 +14,12 @@ export default function VisualiserPage() {
   const validKeys = ['klay-internal-2026', 'ella-embed-2026'];
   const isAllowed = allowedHosts.includes(hostname) || validKeys.includes(key ?? '');
 
-  const [toast, setToast] = useState<string | null>(null);
-  const showToast = () => {
-    setToast('Coming soon — booking flow in progress');
-    setTimeout(() => setToast(null), 3000);
-  };
+  // The whole configuration goes into the /book link, so what the customer
+  // configured here is what gets quoted or paid for there. Each traced window
+  // is one blind, which seeds the quantity; before anything is traced it is 1.
+  const { blindType, windowSize, operation, fabricColour, hardwareColour, tracedAreas } =
+    useVisualiserStore();
+  const confirmedWindows = tracedAreas.filter((a) => a.confirmed).length;
 
   if (!isAllowed) {
     return (
@@ -37,9 +39,17 @@ export default function VisualiserPage() {
             differently on the homepage and here. */}
         <div style={{ width: 348, flexShrink: 0, padding: 28, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column', gap: 28 }}>
           <VisualiserControls />
-          <button
-            onClick={showToast}
+          <Link
+            to={bookingLink({
+              blindType,
+              windowSize,
+              operation,
+              quantity: Math.max(confirmedWindows, 1),
+              fabricColour,
+              hardwareColour,
+            })}
             style={{
+              display: 'block',
               width: '100%',
               padding: '15px 16px',
               background: tokens.gold,
@@ -52,28 +62,13 @@ export default function VisualiserPage() {
               border: 'none',
               borderRadius: 2,
               cursor: 'pointer',
+              textAlign: 'center',
+              textDecoration: 'none',
+              boxSizing: 'border-box',
             }}
           >
             Book Installation →
-          </button>
-          {toast && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 24,
-                left: 24,
-                right: 24,
-                background: tokens.ink,
-                color: tokens.warmWhite,
-                fontFamily: tokens.body,
-                fontSize: 13,
-                padding: '14px 20px',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
-              }}
-            >
-              {toast}
-            </div>
-          )}
+          </Link>
         </div>
         {/* alignItems via the parent would stretch this column; instead the
             configurator sizes itself to the photo and this scrolls if the

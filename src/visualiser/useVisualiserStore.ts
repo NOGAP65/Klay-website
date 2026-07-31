@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { HARDWARE_HEX, MOTORISED_ADDON, RYNAMIC_COLOURS } from '../data/products';
+import { HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
+import { pricePerBlind, type BlindType } from '../lib/pricing';
 
 type Point = [number, number];
 
@@ -14,17 +15,11 @@ interface TracedArea {
   confirmed: boolean;
 }
 
-export type BlindType = 'blockout' | 'sunscreen' | 'lightfilter' | 'dual';
+// BlindType is defined by lib/pricing (money and product identity are the same
+// vocabulary) and re-exported here so the many components importing it from the
+// store keep working.
+export type { BlindType };
 export type HardwareColour = 'white' | 'black' | 'chrome';
-
-// Base price by blind type and window size — Light Filter has no catalogue
-// pricing yet, so it's set to match Sunscreen until a real price is supplied.
-const BASE_PRICE: Record<BlindType, { small: number; medium: number; large: number }> = {
-  blockout: { small: 220, medium: 260, large: 330 },
-  sunscreen: { small: 220, medium: 260, large: 330 },
-  lightfilter: { small: 220, medium: 260, large: 330 },
-  dual: { small: 320, medium: 380, large: 480 },
-};
 
 interface VisualiserStore {
   // Product selection
@@ -84,10 +79,11 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   compareMode: false,
   compareDivider: 0.5,
 
+  // Per blind, excluding installation — the sidebar labels it as such. The
+  // whole-job total (install included) is priceOrder() in lib/pricing.
   getCurrentPrice: () => {
     const state = get();
-    const base = BASE_PRICE[state.blindType][state.windowSize];
-    return base + (state.operation === 'motorised' ? MOTORISED_ADDON : 0);
+    return pricePerBlind(state);
   },
 
   getFabricColor: () => {

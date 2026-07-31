@@ -2,6 +2,31 @@
   command = "npm run build"
   publish = "dist"
 
+[functions]
+  directory = "netlify/functions"
+  # esbuild so the TypeScript functions — and the src/lib/pricing module they
+  # share with the browser — get bundled rather than shipped as raw .ts.
+  node_bundler = "esbuild"
+
+# The webhook needs Stripe's exact bytes to verify the signature, so it must not
+# be parsed or re-encoded on the way in.
+[functions."stripe-webhook"]
+  included_files = []
+
+# --- routing -----------------------------------------------------------------
+# ORDER MATTERS. Netlify evaluates redirects top-down, and the SPA catch-all
+# below would otherwise swallow /api/* and hand back index.html — the classic
+# "my function returns HTML" symptom on a single-page app.
+#
+# Each function also declares its own `config.path` (Functions 2.0), which the
+# routing layer matches ahead of redirects. This rule is the belt to that
+# braces: whichever mechanism wins, /api/<name> reaches the same handler.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# SPA fallback — must stay last.
 [[redirects]]
   from = "/*"
   to = "/index.html"

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
+import { FormField, DANGER } from '../components/FormField';
 import { tokens, eyebrow, headline, motion, supporting } from '../theme';
+import { requestQuote, type FieldErrors } from '../lib/api';
 
 // DARK ('#0f0d09') and PARCHMENT used to be declared here. Contact is a
 // service moment, not a sales one — there is no dark section on this page now,
@@ -15,76 +17,63 @@ const DETAILS = [
   { label: 'Coverage', value: 'Victoria-wide — Melbourne metro and surrounds' },
 ];
 
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontFamily: tokens.body,
-  fontSize: 11,
-  color: tokens.inkSoft,
-  textTransform: 'uppercase',
-  letterSpacing: '0.1em',
-  marginBottom: 8,
-};
-
-/** Inputs carry the only focus state on the site that matters for
- * accessibility: outline:'none' removes the browser's own focus ring, so
- * without a replacement a keyboard user has no idea which field they are in.
- * A gold border is that replacement, and it doubles as the brand's one accent
- * doing real work rather than decoration. */
-function Field({
-  label,
-  type,
-  required,
-  textarea,
-}: {
-  label: string;
-  type?: string;
-  required?: boolean;
-  textarea?: boolean;
-}) {
-  const [focused, setFocused] = useState(false);
-
-  const style: React.CSSProperties = {
-    width: '100%',
-    padding: '15px 16px',
-    // Was background:'white' — pure white on a warm palette, and the one value
-    // the brand explicitly rules out at the opposite end from pure black.
-    background: tokens.cream,
-    border: `1px solid ${focused ? tokens.gold : tokens.line}`,
-    fontFamily: tokens.body,
-    fontSize: 14,
-    color: tokens.ink,
-    marginBottom: 20,
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: motion.link,
-  };
-
-  return (
-    <>
-      <label style={labelStyle}>{label}</label>
-      {textarea ? (
-        <textarea
-          rows={5}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          style={{ ...style, resize: 'vertical' }}
-        />
-      ) : (
-        <input
-          type={type}
-          required={required}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          style={style}
-        />
-      )}
-    </>
-  );
-}
+// The local `Field` that used to live here has moved to components/FormField
+// as a controlled input. It took no value/onChange, which is precisely why this
+// form could never send anything — it flipped to a thank-you message and threw
+// the enquiry away. The booking form uses the same component now, so both
+// behave identically.
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [ctaHover, setCtaHover] = useState(false);
+
+  const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '' });
+  const set = (key: keyof typeof form) => (value: string) =>
+    setForm((f) => ({ ...f, [key]: value }));
+
+  const [busy, setBusy] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
+
+  async function handleSubmit() {
+    setFormError(null);
+
+    const errors: FieldErrors = {};
+    if (!form.name.trim()) errors.name = 'Please tell us your name.';
+    if (!form.email.trim()) errors.email = 'We need an email to reply to.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      errors.email = "That email doesn't look right.";
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+    setBusy(true);
+
+    // A contact enquiry is a quote request without a configuration, so it goes
+    // to the same endpoint and lands in the same table Klay already watches
+    // rather than needing a second inbox. The blind fields fall back to the
+    // configurator's defaults server-side; `notes` carries the real message.
+    const result = await requestQuote({
+      name: form.name,
+      email: form.email,
+      phone: form.phone,
+      notes: form.notes || 'Sent via the contact form (no configuration).',
+      blindType: 'blockout',
+      windowSize: 'medium',
+      operation: 'manual',
+      quantity: 1,
+    });
+
+    setBusy(false);
+    if (result.ok) {
+      setSubmitted(true);
+    } else {
+      setFormError(result.message);
+      if (result.fields) setFieldErrors(result.fields);
+    }
+  }
 
   return (
     <>
@@ -142,31 +131,85 @@ export default function ContactPage() {
               </p>
             ) : (
               <form
+                noValidate
                 onSubmit={(e) => {
                   e.preventDefault();
-                  setSubmitted(true);
+                  void handleSubmit();
                 }}
               >
-                <Field label="Name" type="text" required />
-                <Field label="Email" type="email" required />
-                <Field label="Phone" type="tel" />
-                <Field label="Message" textarea />
+                <FormField
+                  label="Name"
+                  value={form.name}
+                  onChange={set('name')}
+                  required
+                  autoComplete="name"
+                  error={fieldErrors.name}
+                  maxLength={120}
+                />
+                <FormField
+                  label="Email"
+                  type="email"
+                  value={form.email}
+                  onChange={set('email')}
+                  required
+                  autoComplete="email"
+                  inputMode="email"
+                  error={fieldErrors.email}
+                  maxLength={200}
+                />
+                <FormField
+                  label="Phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={set('phone')}
+                  autoComplete="tel"
+                  inputMode="tel"
+                  error={fieldErrors.phone}
+                  maxLength={40}
+                />
+                <FormField
+                  label="Message"
+                  value={form.notes}
+                  onChange={set('notes')}
+                  textarea
+                  rows={5}
+                  error={fieldErrors.notes}
+                  maxLength={2000}
+                />
+
+                {formError && (
+                  <p
+                    role="alert"
+                    style={{
+                      fontFamily: tokens.body,
+                      fontSize: 13,
+                      color: DANGER,
+                      background: 'rgba(160,58,40,0.06)',
+                      border: '1px solid rgba(160,58,40,0.2)',
+                      padding: '12px 14px',
+                      margin: '0 0 20px',
+                    }}
+                  >
+                    {formError}
+                  </p>
+                )}
 
                 <button
                   type="submit"
+                  disabled={busy}
                   onMouseEnter={() => setCtaHover(true)}
                   onMouseLeave={() => setCtaHover(false)}
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: 10,
                     fontFamily: tokens.body, fontSize: 12, fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase',
                     padding: '18px 40px', border: 'none',
-                    background: ctaHover ? tokens.goldLight : tokens.gold,
+                    background: busy ? tokens.inkFaint : ctaHover ? tokens.goldLight : tokens.gold,
                     color: tokens.ink,
-                    cursor: 'pointer',
+                    cursor: busy ? 'progress' : 'pointer',
                     transition: motion.button,
                   }}
                 >
-                  Send Message
+                  {busy ? 'Sending…' : 'Send Message'}
                 </button>
               </form>
             )}

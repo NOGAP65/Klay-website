@@ -21,3 +21,6 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# tsc -b incremental build cache (the typecheck gate)
+*.tsbuildinfo

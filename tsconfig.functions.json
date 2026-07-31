@@ -1,0 +1,28 @@
+{
+  /* The Netlify functions. Separate from tsconfig.app.json because they run in
+     Node on the server, not in the browser — but still referenced from the root
+     tsconfig so `tsc --noEmit` (the project's only pre-commit gate) checks
+     them. Without this they would ship entirely untypechecked.
+
+     DOM is in `lib` for the web-standard globals Netlify Functions 2.0 hands
+     the handler — Request, Response, Headers — not for any browser API. */
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["netlify/**/*.ts", "src/lib/pricing.ts"]
+}

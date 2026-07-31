@@ -6,6 +6,8 @@ import HowItWorksPage from './pages/HowItWorksPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import VisualiserPage from './pages/VisualiserPage';
+import BookInstallPage from './pages/BookInstallPage';
+import BookingConfirmedPage from './pages/BookingConfirmedPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
@@ -22,6 +24,11 @@ export default function App() {
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/visualiser" element={<VisualiserPage />} />
+      {/* Booking. /book takes the configuration as query params (type, size,
+          op, qty, fabric, hw) so a refreshed or shared link still quotes for
+          the right blind; /booking/confirmed is Stripe's return URL. */}
+      <Route path="/book" element={<BookInstallPage />} />
+      <Route path="/booking/confirmed" element={<BookingConfirmedPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

@@ -1,7 +1,10 @@
 import { useState } from 'react'
-import { tokens, eyebrow, headline, motion, shadow } from '../theme'
+import { Link } from 'react-router-dom'
+import { tokens, eyebrow, headline, motion } from '../theme'
 import VisualiserControls from '../visualiser/VisualiserControls'
 import KlayConfigurator from '../visualiser/KlayConfigurator'
+import { useVisualiserStore } from '../visualiser/useVisualiserStore'
+import { bookingLink } from '../lib/bookingLink'
 
 const FEATURES = [
   'Real fabric textures rendered live',
@@ -11,12 +14,10 @@ const FEATURES = [
 ]
 
 export default function VisualiserSection() {
-  const [toast, setToast] = useState<string | null>(null)
   const [ctaHover, setCtaHover] = useState(false)
-  const showToast = () => {
-    setToast('Coming soon — booking flow in progress')
-    setTimeout(() => setToast(null), 3000)
-  }
+  // The homepage configurator feeds /book the same way the full-page one does,
+  // so whatever the visitor has just configured here carries through.
+  const { blindType, windowSize, operation, fabricColour, hardwareColour } = useVisualiserStore()
 
   return (
     // alignItems:flex-start so the media column is free to be exactly as tall
@@ -52,11 +53,12 @@ export default function VisualiserSection() {
 
         <VisualiserControls />
 
-        <button
-          onClick={showToast}
+        <Link
+          to={bookingLink({ blindType, windowSize, operation, fabricColour, hardwareColour })}
           onMouseEnter={() => setCtaHover(true)}
           onMouseLeave={() => setCtaHover(false)}
           style={{
+            display:'block',
             width:'100%',
             padding:'17px 16px',
             background: ctaHover ? tokens.goldLight : tokens.gold,
@@ -70,25 +72,13 @@ export default function VisualiserSection() {
             borderRadius:'2px',
             cursor:'pointer',
             transition: motion.button,
+            textAlign:'center',
+            textDecoration:'none',
+            boxSizing:'border-box',
           }}
         >
           Book Installation →
-        </button>
-
-        {toast && (
-          <div
-            style={{
-              background:tokens.ink,
-              color:tokens.warmWhite,
-              fontFamily:tokens.body,
-              fontSize:'13px',
-              padding:'14px 20px',
-              boxShadow: shadow.lift,
-            }}
-          >
-            {toast}
-          </div>
-        )}
+        </Link>
       </div>
     </section>
   )
