@@ -1519,7 +1519,8 @@ const drawBottomRail = (
   fabBR: Point,
   hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
   safeHardwareColor: string,
-  avgW: number
+  avgW: number,
+  yRotation = 0, // window rotation for end cap visibility
 ) => {
   const { u, pv } = axesFor(railTL, railTR);
   // Centreline between the rail's top and the fabric's bottom edge, so the
@@ -1576,22 +1577,41 @@ const drawBottomRail = (
   traceCylinderBody(ctx, midL, midR, halfH, u, pv);
   ctx.clip();
 
-  // --- END CAPS: ALWAYS WHITE regardless of rail color, matching product
-  // photo (Bottom_bar.jpg shows white oval end caps on black rail).
+  // --- END CAPS: ALWAYS WHITE regardless of rail color, matching product photo.
+  // TRUE 3D PERSPECTIVE (same logic as cassette):
+  // yRot > 0 (viewer to LEFT): see LEFT end cap, right end hidden
+  // yRot < 0 (viewer to RIGHT): see RIGHT end cap, left end hidden
+  // yRot ≈ 0 (flat): both caps show as small ellipses
   const capW = Math.max(2, scaleToBlind(4, avgW));
   const endCapColor = '#FAFAFA'; // pure white end caps
+  const isFlat = Math.abs(yRotation) < 0.05;
+  const showLeftCap = yRotation > 0.05 || isFlat;   // viewer to LEFT sees left end
+  const showRightCap = yRotation < -0.05 || isFlat; // viewer to RIGHT sees right end
+
+  // End cap width scales with viewing angle
+  const depthScale = Math.abs(yRotation);
+  const capScale = isFlat ? 0.4 : Math.min(1.0, 0.3 + depthScale * 1.5);
+
   ctx.fillStyle = endCapColor;
-  traceEndCapOval(ctx, midL, halfH * 0.92, capW, u, pv);
-  ctx.fill();
-  traceEndCapOval(ctx, midR, halfH * 0.92, capW, u, pv);
-  ctx.fill();
+  if (showLeftCap) {
+    traceEndCapOval(ctx, midL, halfH * 0.92, capW * capScale, u, pv);
+    ctx.fill();
+  }
+  if (showRightCap) {
+    traceEndCapOval(ctx, midR, halfH * 0.92, capW * capScale, u, pv);
+    ctx.fill();
+  }
   // Subtle inner shadow on caps
   ctx.strokeStyle = shadowRgba(0.12);
   ctx.lineWidth = 1;
-  traceEndCapOval(ctx, midL, halfH * 0.92, capW * 0.6, u, pv);
-  ctx.stroke();
-  traceEndCapOval(ctx, midR, halfH * 0.92, capW * 0.6, u, pv);
-  ctx.stroke();
+  if (showLeftCap) {
+    traceEndCapOval(ctx, midL, halfH * 0.92, capW * capScale * 0.6, u, pv);
+    ctx.stroke();
+  }
+  if (showRightCap) {
+    traceEndCapOval(ctx, midR, halfH * 0.92, capW * capScale * 0.6, u, pv);
+    ctx.stroke();
+  }
 
   // --- TOP FACE HIGHLIGHT: bright line along the crown
   const hi = halfH * 0.7;
@@ -2171,7 +2191,7 @@ const drawBlindArea = (
     const railT = Math.max(0, p - railHeight / leftH);
     const railTL = leftEdge(railT);
     const railTR = rightEdge(railT);
-    drawBottomRail(ctx, railTL, railTR, fabBL, fabBR, hardwareColourName, safeHardwareColor, avgW);
+    drawBottomRail(ctx, railTL, railTR, fabBL, fabBR, hardwareColourName, safeHardwareColor, avgW, yRotation);
 
     // --- BOTTOM RAIL DROP SHADOW — the rail hangs in space; it casts a
     // shadow up onto the fabric directly behind it. ---
@@ -2437,11 +2457,11 @@ const drawDualBlindArea = (
     // rides its own bottom edge. Both wind up with their layer. ---
     const railHeight = leftH * RAIL_HEIGHT_RATIO;
     const frontRailT = Math.max(0, frontP - railHeight / leftH);
-    drawBottomRail(ctx, leftEdge(frontRailT), rightEdge(frontRailT), frontBL, frontBR, hardwareColourName, safeHardwareColor, avgW);
+    drawBottomRail(ctx, leftEdge(frontRailT), rightEdge(frontRailT), frontBL, frontBR, hardwareColourName, safeHardwareColor, avgW, yRotation);
     drawRailDropShadow(ctx, tl, tr, leftEdge(frontRailT), rightEdge(frontRailT), leftH);
 
     const backRailT = Math.max(0, backP - railHeight / leftH);
-    drawBottomRail(ctx, leftEdge(backRailT), rightEdge(backRailT), backBL, backBR, hardwareColourName, safeHardwareColor, avgW);
+    drawBottomRail(ctx, leftEdge(backRailT), rightEdge(backRailT), backBL, backBR, hardwareColourName, safeHardwareColor, avgW, yRotation);
     drawContactShadow(ctx, backBL, backBR);
 
     drawVignette(ctx, fabricQuad);
