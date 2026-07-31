@@ -1710,20 +1710,23 @@ const drawSideBrackets = (
 
     // --- PHYSICS-BASED FACE DIMENSIONS ---
 
-    // FRONT FACE width: foreshortened when window rotates away from this side
-    // yRotation > 0 (window faces right): left bracket full, right bracket thin
-    // yRotation < 0 (window faces left): right bracket full, left bracket thin
-    // TUNING: multiplier 3.0 (was 1.2) — at yRot = -0.3 right bracket is ~10% width
+    // FRONT FACE width: foreshortened when bracket is on FAR side from viewer
+    // yRot > 0 (viewer to LEFT): LEFT bracket NEAR (full), RIGHT bracket FAR (thin)
+    // yRot < 0 (viewer to RIGHT): RIGHT bracket NEAR (full), LEFT bracket FAR (thin)
+    //
+    // Left thins when yRot < 0 (viewer to RIGHT, left bracket is FAR)
+    // Right thins when yRot > 0 (viewer to LEFT, right bracket is FAR)
+    // Multiplier 5.0 makes FAR bracket very thin (nearly edge-on)
     const frontForeshorten = isLeft
-      ? Math.max(0.08, 1.0 - Math.max(0, -yRotation) * 3.0)
-      : Math.max(0.08, 1.0 - Math.max(0, yRotation) * 3.0);
+      ? Math.max(0.04, 1.0 - Math.max(0, -yRotation) * 5.0)  // left thins when yRot < 0
+      : Math.max(0.04, 1.0 - Math.max(0, yRotation) * 5.0);  // right thins when yRot > 0
     const frontWidth = BRACKET_W * frontForeshorten;
     const halfW = frontWidth / 2;
     const halfH = BRACKET_H / 2;
 
-    // SIDE FACE width: visible when we can see around the bracket
-    // Left bracket shows RIGHT side face when yRotation > 0 (viewing from right)
-    // Right bracket shows LEFT side face when yRotation < 0 (viewing from left)
+    // SIDE FACE width: visible on NEAR bracket (facing viewer)
+    // yRot > 0 (viewer to LEFT): LEFT bracket shows its right side face
+    // yRot < 0 (viewer to RIGHT): RIGHT bracket shows its left side face
     const sideVisible = isLeft ? yRotation > 0.02 : yRotation < -0.02;
     const sideWidth = sideVisible
       ? Math.min(BRACKET_D, BRACKET_D * Math.abs(yRotation) * 2.5)
