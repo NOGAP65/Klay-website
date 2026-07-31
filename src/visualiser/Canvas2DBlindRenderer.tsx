@@ -2155,10 +2155,9 @@ const drawBlindArea = (
     drawLightLeak(ctx, type, tl, tr, fabBL, fabBR, avgW);
   } // end showBlind (depth + fabric)
 
-  // --- CASSETTE + BRACKETS — always drawn (not gated on showBlind) since
+  // --- CASSETTE — always drawn (not gated on showBlind) since
   // the hardware itself is always present regardless of roll position. ---
   const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation);
-  drawSideBrackets(ctx, tl, tr, bl, br, avgW, hardwareColourName, safeHardwareColor);
 
   // --- CASSETTE MOUNT SHADOW — the headrail casts a shadow onto the
   // fabric below it, like a physical bracket blocking light. ---
@@ -2430,7 +2429,6 @@ const drawDualBlindArea = (
   const backCassetteTR: Point = [tr[0] + cassettePv[0] * cassetteOffset, tr[1] + cassettePv[1] * cassetteOffset];
   drawCassette(ctx, backCassetteTL, backCassetteTR, leftH * 0.85, hardwareColourName, safeHardwareColor, avgW, yRotation);
   const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation);
-  drawSideBrackets(ctx, tl, tr, bl, br, avgW, hardwareColourName, safeHardwareColor);
 
   if (showBlind) {
     drawCassetteMountShadow(ctx, tl, tr, frontBL, frontBR, cassetteHalfH, leftH, avgW);
