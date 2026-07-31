@@ -25,6 +25,10 @@ export interface BookingPayload {
   quantity: number
   fabricColour?: string
   hardwareColour?: string
+  /** Honeypot field — should be empty for real submissions. */
+  website?: string
+  /** Cloudflare Turnstile verification token. */
+  turnstileToken?: string
 }
 
 /** Field-level messages keyed by field name, as returned by the server's

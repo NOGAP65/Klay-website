@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { FormField, DANGER } from '../components/FormField';
+import { Honeypot } from '../components/Honeypot';
+import { Turnstile, useTurnstileEnabled } from '../components/Turnstile';
 import { tokens, eyebrow, headline, motion, supporting } from '../theme';
 import { requestQuote, type FieldErrors } from '../lib/api';
 
@@ -35,6 +37,10 @@ export default function ContactPage() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
 
+  const [honeypot, setHoneypot] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const turnstileEnabled = useTurnstileEnabled();
+
   async function handleSubmit() {
     setFormError(null);
 
@@ -43,6 +49,10 @@ export default function ContactPage() {
     if (!form.email.trim()) errors.email = 'We need an email to reply to.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       errors.email = "That email doesn't look right.";
+    }
+    if (turnstileEnabled && !turnstileToken) {
+      setFormError('Please complete the verification challenge.');
+      return;
     }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -64,6 +74,8 @@ export default function ContactPage() {
       windowSize: 'medium',
       operation: 'manual',
       quantity: 1,
+      website: honeypot,
+      turnstileToken,
     });
 
     setBusy(false);
@@ -176,6 +188,9 @@ export default function ContactPage() {
                   error={fieldErrors.notes}
                   maxLength={2000}
                 />
+
+                <Honeypot value={honeypot} onChange={setHoneypot} />
+                <Turnstile onVerify={setTurnstileToken} />
 
                 {formError && (
                   <p

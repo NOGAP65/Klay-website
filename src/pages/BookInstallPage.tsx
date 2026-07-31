@@ -3,6 +3,8 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { FormField, DANGER } from '../components/FormField';
+import { Honeypot } from '../components/Honeypot';
+import { Turnstile, useTurnstileEnabled } from '../components/Turnstile';
 import { tokens, eyebrow, headline, motion, layout } from '../theme';
 import { createCheckoutSession, requestQuote, type BookingPayload, type FieldErrors } from '../lib/api';
 import {
@@ -90,6 +92,10 @@ export default function BookInstallPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [quoteSent, setQuoteSent] = useState(false);
 
+  const [honeypot, setHoneypot] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const turnstileEnabled = useTurnstileEnabled();
+
   const payload = (): BookingPayload => ({
     ...form,
     blindType: config.blindType,
@@ -98,6 +104,8 @@ export default function BookInstallPage() {
     quantity: config.quantity,
     fabricColour,
     hardwareColour,
+    website: honeypot,
+    turnstileToken,
   });
 
   /** Cheap pre-flight so an obviously incomplete form does not need a round
@@ -120,6 +128,10 @@ export default function BookInstallPage() {
     setFormError(null);
 
     const errors = localErrors();
+    if (turnstileEnabled && !turnstileToken) {
+      setFormError('Please complete the verification challenge.');
+      return;
+    }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -324,6 +336,9 @@ export default function BookInstallPage() {
                   error={fieldErrors.notes}
                   maxLength={2000}
                 />
+
+                <Honeypot value={honeypot} onChange={setHoneypot} />
+                <Turnstile onVerify={setTurnstileToken} />
               </form>
             </div>
 

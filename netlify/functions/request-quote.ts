@@ -8,20 +8,31 @@
 // ---------------------------------------------------------------------------
 
 import type { Config } from '@netlify/functions'
+import { checkHoneypot, verifyTurnstile } from '../lib/antispam'
 import { bookingRow, parseBooking } from '../lib/booking'
 import { db } from '../lib/db'
 import { env, missing } from '../lib/env'
 import { badRequest, json, methodNotAllowed, notConfigured, readJson, serverError } from '../lib/http'
 import { acknowledgeQuoteRequest, notifyQuoteRequest } from '../lib/notify'
+import { checkRateLimit, getClientIp } from '../lib/rateLimit'
 
 export default async (req: Request): Promise<Response> => {
   if (req.method !== 'POST') return methodNotAllowed('POST')
+
+  const rateLimited = checkRateLimit(req)
+  if (rateLimited) return rateLimited
 
   const gaps = missing(env(), 'database')
   if (gaps.length > 0) return notConfigured(gaps)
 
   const body = await readJson(req)
   if (!body) return badRequest('Expected a JSON body.')
+
+  const honeypot = checkHoneypot(body)
+  if (honeypot) return honeypot
+
+  const turnstileError = await verifyTurnstile(body, getClientIp(req))
+  if (turnstileError) return turnstileError
 
   const parsed = parseBooking(body)
   if (!parsed.ok) return badRequest(parsed.message, parsed.fields)

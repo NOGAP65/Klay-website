@@ -28,11 +28,18 @@ export interface ParsedBooking {
   priced: PricedOrder
 }
 
-/** Trim, collapse whitespace, and cap length so a hostile payload cannot store
- *  a megabyte of text or break the notification email's layout. */
+/** Strip HTML tags to prevent stored XSS in downstream systems (admin panels,
+ *  CRM imports, etc). This is defence in depth — email templates already escape,
+ *  but data that lands in the database should be clean too. */
+function stripHtml(s: string): string {
+  return s.replace(/<[^>]*>/g, '')
+}
+
+/** Trim, collapse whitespace, strip HTML, and cap length so a hostile payload
+ *  cannot store a megabyte of text or inject scripts. */
 function text(value: unknown, maxLength: number): string | null {
   if (typeof value !== 'string') return null
-  const cleaned = value.replace(/\s+/g, ' ').trim().slice(0, maxLength)
+  const cleaned = stripHtml(value).replace(/\s+/g, ' ').trim().slice(0, maxLength)
   return cleaned.length > 0 ? cleaned : null
 }
 
@@ -45,6 +52,10 @@ const POSTCODE_RE = /^\d{4}$/
 
 /** ISO yyyy-mm-dd, which is what <input type="date"> submits. */
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+/** Phone: digits, spaces, plus, parentheses, hyphens only. Anything else is
+ *  suspicious and rejected outright. */
+const PHONE_RE = /^[\d\s+().-]+$/
 
 export type ValidationResult =
   | { ok: true; booking: ParsedBooking }
@@ -59,6 +70,9 @@ export function parseBooking(body: Record<string, unknown>): ValidationResult {
   const email = text(body.email, 200)?.toLowerCase() ?? null
   if (!email) fields.email = 'We need an email to reply to.'
   else if (!EMAIL_RE.test(email)) fields.email = "That email doesn't look right."
+
+  const phone = text(body.phone, 40)
+  if (phone && !PHONE_RE.test(phone)) fields.phone = 'Please enter a valid phone number.'
 
   const postcode = text(body.postcode, 8)
   if (postcode && !POSTCODE_RE.test(postcode)) fields.postcode = 'Australian postcodes are four digits.'
@@ -87,7 +101,7 @@ export function parseBooking(body: Record<string, unknown>): ValidationResult {
         // either was missing.
         name: name!,
         email: email!,
-        phone: text(body.phone, 40),
+        phone,
         address: text(body.address, 240),
         suburb: text(body.suburb, 120),
         postcode,
