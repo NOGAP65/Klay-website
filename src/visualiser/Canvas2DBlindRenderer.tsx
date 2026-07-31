@@ -1386,7 +1386,8 @@ const drawCassette = (
   leftH: number,
   hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
   safeHardwareColor: string,
-  avgW: number
+  avgW: number,
+  yRotation = 0, // window rotation for end cap visibility
 ): number => {
   const fullH = leftH * CASSETTE_HEIGHT_RATIO;
   const halfH = fullH / 2;
@@ -1447,20 +1448,36 @@ const drawCassette = (
 
   // --- END CAPS: cream/white circular caps at each end of the tube, matching
   // the product photo. Always cream-white regardless of hardware finish.
+  // TUNING: end cap visibility based on yRotation
+  // - Left cap (tl): visible when yRot < -0.05 OR nearly flat (|yRot| < 0.05)
+  // - Right cap (tr): visible when yRot > 0.05 OR nearly flat (|yRot| < 0.05)
+  // When window faces left (yRot < 0), right end recedes → hide right cap
+  // When window faces right (yRot > 0), left end recedes → hide left cap
   const capW = Math.max(3, scaleToBlind(6, avgW));
   const capColor = '#F5F2ED'; // cream white matching product photo
+  const showLeftCap = yRotation < -0.05 || Math.abs(yRotation) < 0.05;
+  const showRightCap = yRotation > 0.05 || Math.abs(yRotation) < 0.05;
+
   ctx.fillStyle = capColor;
-  traceEndCapOval(ctx, tl, halfH * 0.92, capW, u, pv);
-  ctx.fill();
-  traceEndCapOval(ctx, tr, halfH * 0.92, capW, u, pv);
-  ctx.fill();
+  if (showLeftCap) {
+    traceEndCapOval(ctx, tl, halfH * 0.92, capW, u, pv);
+    ctx.fill();
+  }
+  if (showRightCap) {
+    traceEndCapOval(ctx, tr, halfH * 0.92, capW, u, pv);
+    ctx.fill();
+  }
   // Subtle shadow on the inner edge of each cap
   ctx.strokeStyle = shadowRgba(0.15);
   ctx.lineWidth = 1;
-  traceEndCapOval(ctx, tl, halfH * 0.92, capW * 0.7, u, pv);
-  ctx.stroke();
-  traceEndCapOval(ctx, tr, halfH * 0.92, capW * 0.7, u, pv);
-  ctx.stroke();
+  if (showLeftCap) {
+    traceEndCapOval(ctx, tl, halfH * 0.92, capW * 0.7, u, pv);
+    ctx.stroke();
+  }
+  if (showRightCap) {
+    traceEndCapOval(ctx, tr, halfH * 0.92, capW * 0.7, u, pv);
+    ctx.stroke();
+  }
 
   // --- TOP HIGHLIGHT: bright line riding the crown of the cylinder
   const hi = halfH * 0.75;
@@ -1699,9 +1716,10 @@ const drawSideBrackets = (
     // FRONT FACE width: foreshortened when window rotates away from this side
     // yRotation > 0 (window faces right): left bracket full, right bracket thin
     // yRotation < 0 (window faces left): right bracket full, left bracket thin
+    // TUNING: multiplier 3.0 (was 1.2) — at yRot = -0.3 right bracket is ~10% width
     const frontForeshorten = isLeft
-      ? Math.max(0.15, 1.0 - Math.max(0, -yRotation) * 1.2)
-      : Math.max(0.15, 1.0 - Math.max(0, yRotation) * 1.2);
+      ? Math.max(0.08, 1.0 - Math.max(0, -yRotation) * 3.0)
+      : Math.max(0.08, 1.0 - Math.max(0, yRotation) * 3.0);
     const frontWidth = BRACKET_W * frontForeshorten;
     const halfW = frontWidth / 2;
     const halfH = BRACKET_H / 2;
@@ -1748,11 +1766,15 @@ const drawSideBrackets = (
     ];
 
     // --- CAST SHADOW ON WALL ---
+    // Shadow offset follows yRotation: light is top-left, so shadows shift
+    // right as window angles left (yRot < 0) and left as window angles right
+    // TUNING: yRotation factor 0.6 (was 0) — shadow shifts with window angle
     const shadowReach = scaleToBlind(6, avgW);
+    const shadowYRotOffset = yRotation * -0.6; // negative yRot → positive offset (rightward)
     multiPassShadow(3, shadowReach, 0.2, (reach, alpha) => {
       const shadowCentre: Point = [
-        centre[0] + ux * reach * 0.4 * dir - px * reach * 0.25,
-        centre[1] + uy * reach * 0.4 * dir - py * reach * 0.25,
+        centre[0] + ux * reach * (0.4 * dir + shadowYRotOffset) - px * reach * 0.25,
+        centre[1] + uy * reach * (0.4 * dir + shadowYRotOffset) - py * reach * 0.25,
       ];
       ctx.fillStyle = shadowRgba(alpha);
       ctx.beginPath();
@@ -1883,30 +1905,35 @@ const drawSideBrackets = (
     ctx.stroke();
 
     // --- SCREW HOLES ---
-    const holeRadius = scaleToBlind(1.2, avgW);
-    const holeInsetX = frontWidth * 0.26;
-    const holeInsetY = BRACKET_H * 0.22;
+    // TUNING: only show screws when front face is > 60% width (was always shown)
+    // At strong yRot the front face is too foreshortened for screws to be visible
+    const showScrews = frontForeshorten > 0.6;
+    if (showScrews) {
+      const holeRadius = scaleToBlind(1.2, avgW);
+      const holeInsetX = frontWidth * 0.26;
+      const holeInsetY = BRACKET_H * 0.22;
 
-    drawScrewHole(
-      centre[0] + ux * holeInsetX * dir + px * holeInsetY,
-      centre[1] + uy * holeInsetX * dir + py * holeInsetY,
-      holeRadius
-    );
-    drawScrewHole(
-      centre[0] - ux * holeInsetX * dir + px * holeInsetY,
-      centre[1] - uy * holeInsetX * dir + py * holeInsetY,
-      holeRadius
-    );
-    drawScrewHole(
-      centre[0] + ux * holeInsetX * dir - px * (holeInsetY * 0.7),
-      centre[1] + uy * holeInsetX * dir - py * (holeInsetY * 0.7),
-      holeRadius
-    );
-    drawScrewHole(
-      centre[0] - ux * holeInsetX * dir - px * (holeInsetY * 0.7),
-      centre[1] - uy * holeInsetX * dir - py * (holeInsetY * 0.7),
-      holeRadius
-    );
+      drawScrewHole(
+        centre[0] + ux * holeInsetX * dir + px * holeInsetY,
+        centre[1] + uy * holeInsetX * dir + py * holeInsetY,
+        holeRadius
+      );
+      drawScrewHole(
+        centre[0] - ux * holeInsetX * dir + px * holeInsetY,
+        centre[1] - uy * holeInsetX * dir + py * holeInsetY,
+        holeRadius
+      );
+      drawScrewHole(
+        centre[0] + ux * holeInsetX * dir - px * (holeInsetY * 0.7),
+        centre[1] + uy * holeInsetX * dir - py * (holeInsetY * 0.7),
+        holeRadius
+      );
+      drawScrewHole(
+        centre[0] - ux * holeInsetX * dir - px * (holeInsetY * 0.7),
+        centre[1] - uy * holeInsetX * dir - py * (holeInsetY * 0.7),
+        holeRadius
+      );
+    }
 
     ctx.restore();
   };
@@ -1955,6 +1982,12 @@ const drawBlindArea = (
   const bottomW = Math.hypot(br[0] - bl[0], br[1] - bl[1]);
   const avgW = (topW + bottomW) / 2;
   const leftH = Math.hypot(bl[0] - tl[0], bl[1] - tl[1]);
+  const rightH = Math.hypot(br[0] - tr[0], br[1] - tr[1]);
+
+  // Y-axis rotation for end cap visibility (same formula as brackets)
+  const yRotation = Math.max(-1, Math.min(1,
+    (leftH - rightH) / (leftH + rightH) * 3
+  ));
 
   // Interpolate a point along the left or right edge at fraction t
   const leftEdge = (t: number): Point => [
@@ -2124,7 +2157,7 @@ const drawBlindArea = (
 
   // --- CASSETTE + BRACKETS — always drawn (not gated on showBlind) since
   // the hardware itself is always present regardless of roll position. ---
-  const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW);
+  const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation);
   drawSideBrackets(ctx, tl, tr, bl, br, avgW, hardwareColourName, safeHardwareColor);
 
   // --- CASSETTE MOUNT SHADOW — the headrail casts a shadow onto the
@@ -2204,6 +2237,12 @@ const drawDualBlindArea = (
   const bottomW = Math.hypot(br[0] - bl[0], br[1] - bl[1]);
   const avgW = (topW + bottomW) / 2;
   const leftH = Math.hypot(bl[0] - tl[0], bl[1] - tl[1]);
+  const rightH = Math.hypot(br[0] - tr[0], br[1] - tr[1]);
+
+  // Y-axis rotation for end cap visibility (same formula as brackets)
+  const yRotation = Math.max(-1, Math.min(1,
+    (leftH - rightH) / (leftH + rightH) * 3
+  ));
 
   const leftEdge = (t: number): Point => [tl[0] + (bl[0] - tl[0]) * t, tl[1] + (bl[1] - tl[1]) * t];
   const rightEdge = (t: number): Point => [tr[0] + (br[0] - tr[0]) * t, tr[1] + (br[1] - tr[1]) * t];
@@ -2389,8 +2428,8 @@ const drawDualBlindArea = (
   const cassetteOffset = scaleToBlind(4, avgW);
   const backCassetteTL: Point = [tl[0] + cassettePv[0] * cassetteOffset, tl[1] + cassettePv[1] * cassetteOffset];
   const backCassetteTR: Point = [tr[0] + cassettePv[0] * cassetteOffset, tr[1] + cassettePv[1] * cassetteOffset];
-  drawCassette(ctx, backCassetteTL, backCassetteTR, leftH * 0.85, hardwareColourName, safeHardwareColor, avgW);
-  const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW);
+  drawCassette(ctx, backCassetteTL, backCassetteTR, leftH * 0.85, hardwareColourName, safeHardwareColor, avgW, yRotation);
+  const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation);
   drawSideBrackets(ctx, tl, tr, bl, br, avgW, hardwareColourName, safeHardwareColor);
 
   if (showBlind) {
