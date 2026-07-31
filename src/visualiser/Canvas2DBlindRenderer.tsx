@@ -1601,15 +1601,22 @@ const drawBottomRail = (
   ctx.restore();
 };
 
-/** Wall-mount side brackets with PERSPECTIVE-CORRECT rendering.
+/** Wall-mount side brackets with PHYSICS-BASED 3D PROJECTION.
  *
- * The brackets follow the same perspective transform as the blind quad:
- * - The 4 corner points (tl, tr, br, bl) define the perspective
- * - The skew of edges determines which bracket faces are visible
- * - Side face width is proportional to horizontal perspective angle
- * - Top face follows the same tilt as the blind's top edge
+ * The homography gives us 4 real-world corner points projected onto the 2D
+ * canvas: tl, tr, bl, br. These encode the complete 3D orientation of the
+ * window plane.
  *
- * Real bracket is ~35mm deep, expressed as fraction of blind width. */
+ * From the quad we extract:
+ * - yRotation: how much the plane turns left/right (-1 to +1)
+ * - xTilt: how much the plane tilts toward/away from viewer
+ *
+ * Each bracket has 3 potentially visible faces:
+ * - FRONT FACE: always visible, width varies with foreshortening
+ * - SIDE FACE: visible when window rotates away (perpendicular to wall)
+ * - TOP FACE: visible when window tilts toward viewer (faces ceiling)
+ *
+ * Real bracket dimensions: ~35mm wide, ~55mm tall, ~20mm deep */
 const drawSideBrackets = (
   ctx: CanvasRenderingContext2D,
   tl: Point,
@@ -1620,53 +1627,109 @@ const drawSideBrackets = (
   hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
   safeHardwareColor: string
 ) => {
-  // Sizes per spec: 14x22px at reference, scaled to the trace
-  const plateW = scaleToBlind(14, avgW);  // bracket front face width
-  const plateH = scaleToBlind(22, avgW);  // bracket height
-  const cornerRadius = scaleToBlind(3, avgW); // rounded bottom corners
+  // =========================================================================
+  // STEP 1: EXTRACT 3D ORIENTATION FROM QUAD
+  // =========================================================================
 
-  // Real bracket depth ~35mm, scaled relative to blind width
-  // At standard viewing angle this creates ~6px of visible side face
-  const BRACKET_DEPTH_RATIO = 0.015; // 1.5% of blind width
-  const bracketDepth = avgW * BRACKET_DEPTH_RATIO;
+  // Edge vectors
+  const topVec: Point = [tr[0] - tl[0], tr[1] - tl[1]];
+  const topLen = Math.hypot(topVec[0], topVec[1]) || 1;
+
+  const leftVec: Point = [bl[0] - tl[0], bl[1] - tl[1]];
+  const leftLen = Math.hypot(leftVec[0], leftVec[1]) || 1;
+
+  const rightVec: Point = [br[0] - tr[0], br[1] - tr[1]];
+  const rightLen = Math.hypot(rightVec[0], rightVec[1]) || 1;
+
+  // Y-axis rotation (left-right turn):
+  // Derived from asymmetry between left edge length and right edge length
+  // leftLen > rightLen → window turns away to the right →
+  //   left bracket faces viewer, right bracket edge-on
+  // rightLen > leftLen → window turns away to the left →
+  //   right bracket faces viewer, left bracket edge-on
+  const yRotation = Math.max(-1, Math.min(1,
+    (leftLen - rightLen) / (leftLen + rightLen) * 3 // amplify for visibility
+  ));
+
+  // X-axis rotation (tilt up/down):
+  // topVec.y offset tells us if window tilts toward or away from viewer
+  // Negative = top tilts toward viewer (we see top faces)
+  const xTilt = topVec[1] / topLen;
+
+  // =========================================================================
+  // STEP 2: BRACKET 3D GEOMETRY
+  // =========================================================================
+
+  // Base dimensions scaled to blind width
+  const BRACKET_W = avgW * 0.045;  // front face width
+  const BRACKET_H = avgW * 0.08;   // front face height
+  const BRACKET_D = BRACKET_W * 0.6; // depth (into wall)
 
   const { u, pv } = axesFor(tl, tr);
   const [ux, uy] = u;
   const [px, py] = pv;
   const base = hardwareBaseHex(hardwareColourName, safeHardwareColor);
-  const halfH = plateH / 2;
-  const halfW = plateW / 2;
 
-  // --- PERSPECTIVE CALCULATION ---
-  // Calculate viewing angle from quad geometry
-  const leftEdgeVec: Point = [bl[0] - tl[0], bl[1] - tl[1]];
-  const rightEdgeVec: Point = [br[0] - tr[0], br[1] - tr[1]];
+  // =========================================================================
+  // STEP 3 & 4: DRAW BRACKETS WITH PHYSICS-BASED FACE VISIBILITY
+  // =========================================================================
 
-  // Horizontal perspective: how much the quad leans left or right
-  // If left edge leans more left than right edge, we're viewing from the right
-  // This determines which side faces are visible on each bracket
-  const leftEdgeAngle = Math.atan2(leftEdgeVec[1], leftEdgeVec[0]);
-  const rightEdgeAngle = Math.atan2(rightEdgeVec[1], rightEdgeVec[0]);
+  /** Draws a screw hole at a position */
+  const drawScrewHole = (cx: number, cy: number, radius: number) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fillStyle = shadowRgba(0.5);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy + radius * 0.3, radius * 0.6, 0, Math.PI * 2);
+    ctx.fillStyle = shadowRgba(0.3);
+    ctx.fill();
+  };
 
-  // The difference between edge angles indicates horizontal skew
-  // Positive skew = viewing from right, negative = viewing from left
-  const horizontalSkew = (rightEdgeAngle - leftEdgeAngle);
+  /**
+   * Draw one bracket at anchor point.
+   * @param anchor - corner position (tl or tr)
+   * @param isLeft - true for left bracket, false for right bracket
+   */
+  const drawBracket = (anchor: Point, isLeft: boolean) => {
+    ctx.save();
 
-  // Side face visibility based on perspective
-  // When viewing from right (positive skew): left bracket shows right face
-  // When viewing from left (negative skew): right bracket shows left face
-  const perspectiveFactor = Math.sin(horizontalSkew) * 2; // amplify for visibility
-  const clampedPerspective = Math.max(-1, Math.min(1, perspectiveFactor));
+    // --- PHYSICS-BASED FACE DIMENSIONS ---
 
-  // Side face width in pixels, derived from perspective angle
-  // Minimum 2px so there's always some depth, max ~10px at extreme angles
-  const baseSideWidth = Math.max(2, Math.min(10, Math.abs(bracketDepth * (1 + Math.abs(clampedPerspective) * 2))));
+    // FRONT FACE width: foreshortened when window rotates away from this side
+    // yRotation > 0 (window faces right): left bracket full, right bracket thin
+    // yRotation < 0 (window faces left): right bracket full, left bracket thin
+    const frontForeshorten = isLeft
+      ? Math.max(0.15, 1.0 - Math.max(0, -yRotation) * 1.2)
+      : Math.max(0.15, 1.0 - Math.max(0, yRotation) * 1.2);
+    const frontWidth = BRACKET_W * frontForeshorten;
+    const halfW = frontWidth / 2;
+    const halfH = BRACKET_H / 2;
 
-  /** Traces the front face of a bracket — rounded-bottom rectangle */
-  const traceFrontFace = (
-    centre: Point,
-    dir: 1 | -1  // -1 for left bracket, +1 for right
-  ) => {
+    // SIDE FACE width: visible when we can see around the bracket
+    // Left bracket shows RIGHT side face when yRotation > 0 (viewing from right)
+    // Right bracket shows LEFT side face when yRotation < 0 (viewing from left)
+    const sideVisible = isLeft ? yRotation > 0.02 : yRotation < -0.02;
+    const sideWidth = sideVisible
+      ? Math.min(BRACKET_D, BRACKET_D * Math.abs(yRotation) * 2.5)
+      : 0;
+
+    // TOP FACE depth: visible when xTilt < 0 (top tilts toward viewer)
+    const topVisible = xTilt < -0.02;
+    const topDepth = topVisible
+      ? Math.min(BRACKET_D, BRACKET_D * Math.abs(xTilt) * 2.0)
+      : 0;
+
+    // Direction multiplier: -1 for left bracket (outboard is left), +1 for right
+    const dir = isLeft ? -1 : 1;
+
+    // Centre the bracket slightly outboard from the tube end
+    const centre: Point = [
+      anchor[0] + ux * (BRACKET_W * 0.5) * dir,
+      anchor[1] + uy * (BRACKET_W * 0.5) * dir,
+    ];
+
+    // Corner points of front face
     const topOuter: Point = [
       centre[0] + ux * halfW * dir + px * halfH,
       centre[1] + uy * halfW * dir + py * halfH,
@@ -1684,156 +1747,135 @@ const drawSideBrackets = (
       centre[1] - uy * halfW * dir - py * halfH,
     ];
 
-    const r = cornerRadius;
-    const k = r * 0.5523;
-
-    ctx.beginPath();
-    ctx.moveTo(topOuter[0], topOuter[1]);
-    ctx.lineTo(topInner[0], topInner[1]);
-    ctx.lineTo(botInner[0] + px * r, botInner[1] + py * r);
-    ctx.bezierCurveTo(
-      botInner[0] + px * (r - k), botInner[1] + py * (r - k),
-      botInner[0] - ux * (k * dir), botInner[1] - uy * (k * dir),
-      botInner[0] - ux * r * dir, botInner[1] - uy * r * dir
-    );
-    ctx.lineTo(botOuter[0] + ux * r * dir, botOuter[1] + uy * r * dir);
-    ctx.bezierCurveTo(
-      botOuter[0] + ux * (k * dir), botOuter[1] + uy * (k * dir),
-      botOuter[0] + px * (r - k), botOuter[1] + py * (r - k),
-      botOuter[0] + px * r, botOuter[1] + py * r
-    );
-    ctx.lineTo(topOuter[0], topOuter[1]);
-    ctx.closePath();
-  };
-
-  /** Draws a screw hole at a position */
-  const drawScrewHole = (cx: number, cy: number, radius: number) => {
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fillStyle = shadowRgba(0.5);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(cx, cy + radius * 0.3, radius * 0.6, 0, Math.PI * 2);
-    ctx.fillStyle = shadowRgba(0.3);
-    ctx.fill();
-  };
-
-  const drawOne = (anchor: Point, dir: 1 | -1) => {
-    // Centre the bracket slightly outboard from the tube end
-    const centre: Point = [
-      anchor[0] + ux * (plateW * 0.6) * dir,
-      anchor[1] + uy * (plateW * 0.6) * dir,
-    ];
-
-    ctx.save();
-
-    // --- PERSPECTIVE-DERIVED SIDE FACE VISIBILITY ---
-    // Left bracket (dir=-1): shows RIGHT face when viewing from right (positive skew)
-    // Right bracket (dir=+1): shows LEFT face when viewing from left (negative skew)
-    const showSideFace = (dir === -1 && clampedPerspective > 0.05) ||
-                         (dir === 1 && clampedPerspective < -0.05);
-    const sideWidth = showSideFace ? baseSideWidth * Math.abs(clampedPerspective) : 0;
-
-    // Side face offset direction: outboard from the front face
-    // For left bracket showing right face: offset is +u direction
-    // For right bracket showing left face: offset is -u direction
-    const sideFaceDir = dir === -1 ? 1 : -1;
-
     // --- CAST SHADOW ON WALL ---
-    multiPassShadow(3, scaleToBlind(6, avgW), 0.2, (reach, alpha) => {
+    const shadowReach = scaleToBlind(6, avgW);
+    multiPassShadow(3, shadowReach, 0.2, (reach, alpha) => {
       const shadowCentre: Point = [
-        centre[0] + ux * reach * 0.5 * dir - px * reach * 0.3,
-        centre[1] + uy * reach * 0.5 * dir - py * reach * 0.3,
+        centre[0] + ux * reach * 0.4 * dir - px * reach * 0.25,
+        centre[1] + uy * reach * 0.4 * dir - py * reach * 0.25,
       ];
-      traceFrontFace(shadowCentre, dir);
       ctx.fillStyle = shadowRgba(alpha);
+      ctx.beginPath();
+      ctx.moveTo(shadowCentre[0] + ux * halfW * dir + px * halfH,
+                 shadowCentre[1] + uy * halfW * dir + py * halfH);
+      ctx.lineTo(shadowCentre[0] - ux * halfW * dir + px * halfH,
+                 shadowCentre[1] - uy * halfW * dir + py * halfH);
+      ctx.lineTo(shadowCentre[0] - ux * halfW * dir - px * halfH,
+                 shadowCentre[1] - uy * halfW * dir - py * halfH);
+      ctx.lineTo(shadowCentre[0] + ux * halfW * dir - px * halfH,
+                 shadowCentre[1] + uy * halfW * dir - py * halfH);
+      ctx.closePath();
       ctx.fill();
     });
 
-    // --- SIDE FACE (if visible) --- drawn first so front face overlaps it
+    // --- SIDE FACE (if visible) --- drawn first so front face overlaps
     if (sideWidth > 1) {
-      // The side face is a parallelogram: front edge matches bracket edge,
-      // back edge is offset by sideWidth in the viewing direction
-      const topFront: Point = [
-        centre[0] + ux * halfW * dir + px * halfH,
-        centre[1] + uy * halfW * dir + py * halfH,
+      // Side face direction: left bracket's right face goes in +u direction
+      // Right bracket's left face goes in -u direction
+      const sideFaceDir = isLeft ? 1 : -1;
+
+      // The visible side edge is the OUTER edge of the front face
+      // (the edge facing away from centre of blind)
+      const sideTopFront = topOuter;
+      const sideBotFront = botOuter;
+
+      // Back edge offset by sideWidth in the side face direction
+      const sideTopBack: Point = [
+        sideTopFront[0] + ux * sideWidth * sideFaceDir,
+        sideTopFront[1] + uy * sideWidth * sideFaceDir,
       ];
-      const botFront: Point = [
-        centre[0] + ux * halfW * dir - px * halfH,
-        centre[1] + uy * halfW * dir - py * halfH,
-      ];
-      // Back edge offset by sideWidth, following the perspective skew
-      // The offset direction follows the top edge tilt
-      const topBack: Point = [
-        topFront[0] + ux * sideWidth * sideFaceDir,
-        topFront[1] + uy * sideWidth * sideFaceDir,
-      ];
-      const botBack: Point = [
-        botFront[0] + ux * sideWidth * sideFaceDir,
-        botFront[1] + uy * sideWidth * sideFaceDir,
+      const sideBotBack: Point = [
+        sideBotFront[0] + ux * sideWidth * sideFaceDir,
+        sideBotFront[1] + uy * sideWidth * sideFaceDir,
       ];
 
-      // Side face is darker (facing away from assumed light source)
-      ctx.fillStyle = shadeHex(base, -0.25);
+      // Side face is darker (perpendicular to viewer, in shadow)
+      ctx.fillStyle = shadeHex(base, -0.30);
       ctx.beginPath();
-      ctx.moveTo(topFront[0], topFront[1]);
-      ctx.lineTo(topBack[0], topBack[1]);
-      ctx.lineTo(botBack[0], botBack[1]);
-      ctx.lineTo(botFront[0], botFront[1]);
+      ctx.moveTo(sideTopFront[0], sideTopFront[1]);
+      ctx.lineTo(sideTopBack[0], sideTopBack[1]);
+      ctx.lineTo(sideBotBack[0], sideBotBack[1]);
+      ctx.lineTo(sideBotFront[0], sideBotFront[1]);
       ctx.closePath();
       ctx.fill();
+
+      // Subtle edge line where side meets front
+      ctx.strokeStyle = shadowRgba(0.15);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(sideTopFront[0], sideTopFront[1]);
+      ctx.lineTo(sideBotFront[0], sideBotFront[1]);
+      ctx.stroke();
     }
 
-    // --- TOP FACE (follows blind's top edge tilt) ---
-    // The top face is visible when looking down at the bracket
-    // Its angle matches the top edge of the blind quad
-    const topFaceDepth = Math.max(2, bracketDepth * 0.8);
-    const topOuter: Point = [
-      centre[0] + ux * halfW * dir + px * halfH,
-      centre[1] + uy * halfW * dir + py * halfH,
-    ];
-    const topInner: Point = [
-      centre[0] - ux * halfW * dir + px * halfH,
-      centre[1] - uy * halfW * dir + py * halfH,
-    ];
-    // Back edge of top face, offset along the perpendicular (into the wall)
-    // The offset follows the same tilt as the blind's top edge
-    const topOuterBack: Point = [
-      topOuter[0] + px * topFaceDepth,
-      topOuter[1] + py * topFaceDepth,
-    ];
-    const topInnerBack: Point = [
-      topInner[0] + px * topFaceDepth,
-      topInner[1] + py * topFaceDepth,
-    ];
+    // --- TOP FACE (if visible) --- when camera looks down at bracket
+    if (topDepth > 1) {
+      // Top face: from front face top edge, going back (into wall)
+      // The back edge is offset in the pv direction (perpendicular to top edge)
+      const topOuterBack: Point = [
+        topOuter[0] + px * topDepth,
+        topOuter[1] + py * topDepth,
+      ];
+      const topInnerBack: Point = [
+        topInner[0] + px * topDepth,
+        topInner[1] + py * topDepth,
+      ];
 
-    // Top face is brighter (facing the light source from above)
-    ctx.fillStyle = shadeHex(base, 0.15);
+      // Top face is brighter (lit from above)
+      ctx.fillStyle = shadeHex(base, 0.20);
+      ctx.beginPath();
+      ctx.moveTo(topOuter[0], topOuter[1]);
+      ctx.lineTo(topInner[0], topInner[1]);
+      ctx.lineTo(topInnerBack[0], topInnerBack[1]);
+      ctx.lineTo(topOuterBack[0], topOuterBack[1]);
+      ctx.closePath();
+      ctx.fill();
+
+      // If both top and side are visible, draw the corner edge
+      if (sideWidth > 1) {
+        const sideFaceDir = isLeft ? 1 : -1;
+        const cornerBack: Point = [
+          topOuter[0] + px * topDepth + ux * sideWidth * sideFaceDir,
+          topOuter[1] + py * topDepth + uy * sideWidth * sideFaceDir,
+        ];
+        // Small triangle to connect top and side at the back corner
+        ctx.fillStyle = shadeHex(base, -0.15);
+        ctx.beginPath();
+        ctx.moveTo(topOuterBack[0], topOuterBack[1]);
+        ctx.lineTo(cornerBack[0], cornerBack[1]);
+        ctx.lineTo(topOuter[0] + ux * sideWidth * sideFaceDir,
+                   topOuter[1] + uy * sideWidth * sideFaceDir);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    // --- FRONT FACE --- the main visible face
+    const gradTop: Point = [centre[0] + px * halfH, centre[1] + py * halfH];
+    const gradBot: Point = [centre[0] - px * halfH, centre[1] - py * halfH];
+
     ctx.beginPath();
     ctx.moveTo(topOuter[0], topOuter[1]);
     ctx.lineTo(topInner[0], topInner[1]);
-    ctx.lineTo(topInnerBack[0], topInnerBack[1]);
-    ctx.lineTo(topOuterBack[0], topOuterBack[1]);
+    ctx.lineTo(botInner[0], botInner[1]);
+    ctx.lineTo(botOuter[0], botOuter[1]);
     ctx.closePath();
-    ctx.fill();
 
-    // --- FRONT FACE --- the main visible face
-    traceFrontFace(centre, dir);
-    const gradTop: Point = [centre[0] + px * halfH, centre[1] + py * halfH];
-    const gradBot: Point = [centre[0] - px * halfH, centre[1] - py * halfH];
     if (hardwareColourName === 'chrome') {
       setHardwareFill(ctx, hardwareColourName, safeHardwareColor, gradTop, gradBot);
     } else {
+      // Vertical gradient: lighter at top, darker at bottom
       const g = ctx.createLinearGradient(gradTop[0], gradTop[1], gradBot[0], gradBot[1]);
-      g.addColorStop(0, shadeHex(base, 0.08));
-      g.addColorStop(0.5, base);
-      g.addColorStop(1, shadeHex(base, -0.1));
+      g.addColorStop(0, shadeHex(base, 0.10));
+      g.addColorStop(0.1, shadeHex(base, 0.05));
+      g.addColorStop(0.9, shadeHex(base, -0.05));
+      g.addColorStop(1, shadeHex(base, -0.12));
       ctx.fillStyle = g;
     }
     ctx.fill();
 
     // --- EDGE HIGHLIGHT on front face top ---
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.28)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(topOuter[0], topOuter[1]);
@@ -1842,8 +1884,8 @@ const drawSideBrackets = (
 
     // --- SCREW HOLES ---
     const holeRadius = scaleToBlind(1.2, avgW);
-    const holeInsetX = plateW * 0.28;
-    const holeInsetY = plateH * 0.25;
+    const holeInsetX = frontWidth * 0.26;
+    const holeInsetY = BRACKET_H * 0.22;
 
     drawScrewHole(
       centre[0] + ux * holeInsetX * dir + px * holeInsetY,
@@ -1856,21 +1898,22 @@ const drawSideBrackets = (
       holeRadius
     );
     drawScrewHole(
-      centre[0] + ux * holeInsetX * dir - px * (holeInsetY * 0.6),
-      centre[1] + uy * holeInsetX * dir - py * (holeInsetY * 0.6),
+      centre[0] + ux * holeInsetX * dir - px * (holeInsetY * 0.7),
+      centre[1] + uy * holeInsetX * dir - py * (holeInsetY * 0.7),
       holeRadius
     );
     drawScrewHole(
-      centre[0] - ux * holeInsetX * dir - px * (holeInsetY * 0.6),
-      centre[1] - uy * holeInsetX * dir - py * (holeInsetY * 0.6),
+      centre[0] - ux * holeInsetX * dir - px * (holeInsetY * 0.7),
+      centre[1] - uy * holeInsetX * dir - py * (holeInsetY * 0.7),
       holeRadius
     );
 
     ctx.restore();
   };
 
-  drawOne([tl[0], tl[1]], -1);
-  drawOne([tr[0], tr[1]], 1);
+  // Draw both brackets
+  drawBracket(tl, true);   // Left bracket at tl
+  drawBracket(tr, false);  // Right bracket at tr
 };
 
 const drawBlindArea = (
