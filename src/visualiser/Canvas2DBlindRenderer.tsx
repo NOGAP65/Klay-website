@@ -1388,29 +1388,44 @@ const drawCassette = (
   safeHardwareColor: string,
   avgW: number,
   yRotation = 0, // window rotation for end cap visibility
+  rollPosition = 1, // 1 = fully down, 0 = fully rolled up
 ): number => {
   const fullH = leftH * CASSETTE_HEIGHT_RATIO;
   const halfH = fullH / 2;
   const { u, pv } = axesFor(tl, tr);
+  const [ux, uy] = u;
+  const [px, py] = pv;
   const base = hardwareBaseHex(hardwareColourName, safeHardwareColor);
-  const top: Point = [tl[0] + pv[0] * halfH, tl[1] + pv[1] * halfH];
-  const bot: Point = [tl[0] - pv[0] * halfH, tl[1] - pv[1] * halfH];
+
+  // Bracket width for clipping tube ends (matches drawSideBrackets)
+  const BRACKET_W = avgW * 0.045;
+
+  // When yRot < -0.05 (window faces left), clip the right tube end at bracket inner edge
+  // When yRot > 0.05 (window faces right), clip the left tube end at bracket inner edge
+  const clipRightEnd = yRotation < -0.05;
+  const clipLeftEnd = yRotation > 0.05;
+
+  // Tube endpoints, potentially inset to hide inside brackets
+  const tubeLeft: Point = clipLeftEnd
+    ? [tl[0] + ux * BRACKET_W * 0.8, tl[1] + uy * BRACKET_W * 0.8]
+    : tl;
+  const tubeRight: Point = clipRightEnd
+    ? [tr[0] - ux * BRACKET_W * 0.8, tr[1] - uy * BRACKET_W * 0.8]
+    : tr;
+
+  const top: Point = [tubeLeft[0] + px * halfH, tubeLeft[1] + py * halfH];
+  const bot: Point = [tubeLeft[0] - px * halfH, tubeLeft[1] - py * halfH];
 
   ctx.save();
 
   // --- BODY: true cylinder profile matching the 49mm aluminium roller tube.
   // The metallic gradient has a prominent highlight band in the upper third,
   // matching the product photo (Top_tube.jpg).
-  traceCylinderBody(ctx, tl, tr, halfH, u, pv);
+  traceCylinderBody(ctx, tubeLeft, tubeRight, halfH, u, pv);
   if (hardwareColourName === 'chrome') {
     setHardwareFill(ctx, hardwareColourName, safeHardwareColor, top, bot);
   } else {
-    // 5-stop gradient for metallic cylinder appearance:
-    // - top edge: slightly lighter
-    // - upper third: prominent highlight band (the key visual from product photo)
-    // - center: base color
-    // - lower third: darker as it curves away
-    // - bottom edge: darkest, facing away from light
+    // 5-stop gradient for metallic cylinder appearance
     const grad = ctx.createLinearGradient(top[0], top[1], bot[0], bot[1]);
     grad.addColorStop(0, shadeHex(base, 0.15));
     grad.addColorStop(0.15, shadeHex(base, 0.28));  // highlight band start
@@ -1423,34 +1438,13 @@ const drawCassette = (
 
   // Everything below is clipped to the body so no detail escapes the outline.
   ctx.save();
-  traceCylinderBody(ctx, tl, tr, halfH, u, pv);
+  traceCylinderBody(ctx, tubeLeft, tubeRight, halfH, u, pv);
   ctx.clip();
 
-  // --- FABRIC ROLL visible on the tube: a subtle band where fabric wraps
-  // around the cylinder. Positioned in the lower portion of the tube.
-  const rollTop = halfH * -0.1;
-  const rollBot = halfH * -0.7;
-  const rollGrad = ctx.createLinearGradient(
-    tl[0] + pv[0] * rollTop, tl[1] + pv[1] * rollTop,
-    tl[0] + pv[0] * rollBot, tl[1] + pv[1] * rollBot
-  );
-  rollGrad.addColorStop(0, shadowRgba(0.08));
-  rollGrad.addColorStop(0.5, shadowRgba(0.12));
-  rollGrad.addColorStop(1, shadowRgba(0.06));
-  ctx.fillStyle = rollGrad;
-  ctx.beginPath();
-  ctx.moveTo(tl[0] + pv[0] * rollTop, tl[1] + pv[1] * rollTop);
-  ctx.lineTo(tr[0] + pv[0] * rollTop, tr[1] + pv[1] * rollTop);
-  ctx.lineTo(tr[0] + pv[0] * rollBot, tr[1] + pv[1] * rollBot);
-  ctx.lineTo(tl[0] + pv[0] * rollBot, tl[1] + pv[1] * rollBot);
-  ctx.closePath();
-  ctx.fill();
-
-  // --- END CAPS: cream/white circular caps at each end of the tube, matching
-  // the product photo. Always cream-white regardless of hardware finish.
+  // --- END CAPS: cream/white circular caps at each end of the tube
   // TUNING: end cap visibility based on yRotation
-  // - Left cap (tl): visible when yRot < -0.05 OR nearly flat (|yRot| < 0.05)
-  // - Right cap (tr): visible when yRot > 0.05 OR nearly flat (|yRot| < 0.05)
+  // - Left cap: visible when yRot < -0.05 OR nearly flat (|yRot| < 0.05)
+  // - Right cap: visible when yRot > 0.05 OR nearly flat (|yRot| < 0.05)
   // When window faces left (yRot < 0), right end recedes → hide right cap
   // When window faces right (yRot > 0), left end recedes → hide left cap
   const capW = Math.max(3, scaleToBlind(6, avgW));
@@ -1459,23 +1453,23 @@ const drawCassette = (
   const showRightCap = yRotation > 0.05 || Math.abs(yRotation) < 0.05;
 
   ctx.fillStyle = capColor;
-  if (showLeftCap) {
-    traceEndCapOval(ctx, tl, halfH * 0.92, capW, u, pv);
+  if (showLeftCap && !clipLeftEnd) {
+    traceEndCapOval(ctx, tubeLeft, halfH * 0.92, capW, u, pv);
     ctx.fill();
   }
-  if (showRightCap) {
-    traceEndCapOval(ctx, tr, halfH * 0.92, capW, u, pv);
+  if (showRightCap && !clipRightEnd) {
+    traceEndCapOval(ctx, tubeRight, halfH * 0.92, capW, u, pv);
     ctx.fill();
   }
   // Subtle shadow on the inner edge of each cap
   ctx.strokeStyle = shadowRgba(0.15);
   ctx.lineWidth = 1;
-  if (showLeftCap) {
-    traceEndCapOval(ctx, tl, halfH * 0.92, capW * 0.7, u, pv);
+  if (showLeftCap && !clipLeftEnd) {
+    traceEndCapOval(ctx, tubeLeft, halfH * 0.92, capW * 0.7, u, pv);
     ctx.stroke();
   }
-  if (showRightCap) {
-    traceEndCapOval(ctx, tr, halfH * 0.92, capW * 0.7, u, pv);
+  if (showRightCap && !clipRightEnd) {
+    traceEndCapOval(ctx, tubeRight, halfH * 0.92, capW * 0.7, u, pv);
     ctx.stroke();
   }
 
@@ -1484,8 +1478,8 @@ const drawCassette = (
   ctx.strokeStyle = 'rgba(255,255,255,0.35)';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(tl[0] + pv[0] * hi, tl[1] + pv[1] * hi);
-  ctx.lineTo(tr[0] + pv[0] * hi, tr[1] + pv[1] * hi);
+  ctx.moveTo(tubeLeft[0] + px * hi, tubeLeft[1] + py * hi);
+  ctx.lineTo(tubeRight[0] + px * hi, tubeRight[1] + py * hi);
   ctx.stroke();
 
   // --- SECONDARY HIGHLIGHT: the prominent horizontal band from product photo
@@ -1493,20 +1487,97 @@ const drawCassette = (
   ctx.strokeStyle = 'rgba(255,255,255,0.18)';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(tl[0] + pv[0] * hi2, tl[1] + pv[1] * hi2);
-  ctx.lineTo(tr[0] + pv[0] * hi2, tr[1] + pv[1] * hi2);
+  ctx.moveTo(tubeLeft[0] + px * hi2, tubeLeft[1] + py * hi2);
+  ctx.lineTo(tubeRight[0] + px * hi2, tubeRight[1] + py * hi2);
   ctx.stroke();
 
   // --- BOTTOM SHADOW: dark line where the tube meets the fabric below
   ctx.strokeStyle = shadowRgba(0.4);
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(tl[0] - pv[0] * halfH * 0.85, tl[1] - pv[1] * halfH * 0.85);
-  ctx.lineTo(tr[0] - pv[0] * halfH * 0.85, tr[1] - pv[1] * halfH * 0.85);
+  ctx.moveTo(tubeLeft[0] - px * halfH * 0.85, tubeLeft[1] - py * halfH * 0.85);
+  ctx.lineTo(tubeRight[0] - px * halfH * 0.85, tubeRight[1] - py * halfH * 0.85);
   ctx.stroke();
 
-  ctx.restore();
-  ctx.restore();
+  ctx.restore(); // end tube body clip
+
+  // --- FABRIC ROLL: cylinder sitting ON TOP of the tube, grows as fabric accumulates
+  // rollRadius = tubeRadius * (1 + (1 - rollPosition) * 2.5)
+  // At rollPosition 1.0: radius = halfH (no extra fabric, just the tube)
+  // At rollPosition 0.5: radius = halfH * 2.25
+  // At rollPosition 0.0: radius = halfH * 3.5
+  const p = Math.max(0, Math.min(1, rollPosition));
+  const rollMultiplier = 1 + (1 - p) * 2.5;
+
+  // Only draw visible roll when fabric is accumulating (rollPosition < 0.98)
+  if (rollMultiplier > 1.05) {
+    const rollHalfH = halfH * rollMultiplier;
+    // Roll centre is offset upward from tube centre by the difference in radii
+    // so the roll sits ON TOP of the tube rather than centered on it
+    const rollOffset = (rollHalfH - halfH) * 0.5;
+    const rollCentreL: Point = [tubeLeft[0] + px * rollOffset, tubeLeft[1] + py * rollOffset];
+    const rollCentreR: Point = [tubeRight[0] + px * rollOffset, tubeRight[1] + py * rollOffset];
+
+    const rollTop: Point = [rollCentreL[0] + px * rollHalfH, rollCentreL[1] + py * rollHalfH];
+    const rollBot: Point = [rollCentreL[0] - px * rollHalfH, rollCentreL[1] - py * rollHalfH];
+
+    // Draw the fabric roll cylinder
+    traceCylinderBody(ctx, rollCentreL, rollCentreR, rollHalfH, u, pv);
+
+    // Fabric roll gradient: warmer tone than metal tube (fabric wrapped around)
+    const fabricBase = shadeHex(base, 0.05); // slightly lighter, warmer
+    const rollGrad = ctx.createLinearGradient(rollTop[0], rollTop[1], rollBot[0], rollBot[1]);
+    rollGrad.addColorStop(0, shadeHex(fabricBase, 0.12));
+    rollGrad.addColorStop(0.2, shadeHex(fabricBase, 0.18));  // highlight band
+    rollGrad.addColorStop(0.4, shadeHex(fabricBase, 0.08));
+    rollGrad.addColorStop(0.7, fabricBase);
+    rollGrad.addColorStop(1, shadeHex(fabricBase, -0.18));
+    ctx.fillStyle = rollGrad;
+    ctx.fill();
+
+    // Clip for roll details
+    ctx.save();
+    traceCylinderBody(ctx, rollCentreL, rollCentreR, rollHalfH, u, pv);
+    ctx.clip();
+
+    // Roll end caps follow same visibility logic as tube
+    const rollCapW = Math.max(3, scaleToBlind(5, avgW));
+    ctx.fillStyle = shadeHex(fabricBase, -0.1); // slightly darker end
+    if (showLeftCap && !clipLeftEnd) {
+      traceEndCapOval(ctx, rollCentreL, rollHalfH * 0.92, rollCapW, u, pv);
+      ctx.fill();
+    }
+    if (showRightCap && !clipRightEnd) {
+      traceEndCapOval(ctx, rollCentreR, rollHalfH * 0.92, rollCapW, u, pv);
+      ctx.fill();
+    }
+
+    // Roll highlight
+    const rollHi = rollHalfH * 0.7;
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(rollCentreL[0] + px * rollHi, rollCentreL[1] + py * rollHi);
+    ctx.lineTo(rollCentreR[0] + px * rollHi, rollCentreR[1] + py * rollHi);
+    ctx.stroke();
+
+    // Subtle fabric texture lines (horizontal bands suggesting wrapped layers)
+    const layerCount = Math.floor(3 + (1 - p) * 4); // more layers as roll grows
+    ctx.strokeStyle = shadowRgba(0.06);
+    ctx.lineWidth = 1;
+    for (let i = 1; i < layerCount; i++) {
+      const t = i / layerCount;
+      const layerY = rollHalfH * (1 - t * 2); // from top to bottom
+      ctx.beginPath();
+      ctx.moveTo(rollCentreL[0] + px * layerY, rollCentreL[1] + py * layerY);
+      ctx.lineTo(rollCentreR[0] + px * layerY, rollCentreR[1] + py * layerY);
+      ctx.stroke();
+    }
+
+    ctx.restore(); // end roll clip
+  }
+
+  ctx.restore(); // end main save
 
   return halfH;
 };
@@ -2157,7 +2228,7 @@ const drawBlindArea = (
 
   // --- CASSETTE + BRACKETS — always drawn (not gated on showBlind) since
   // the hardware itself is always present regardless of roll position. ---
-  const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation);
+  const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation, p);
   drawSideBrackets(ctx, tl, tr, bl, br, avgW, hardwareColourName, safeHardwareColor);
 
   // --- CASSETTE MOUNT SHADOW — the headrail casts a shadow onto the
@@ -2428,8 +2499,8 @@ const drawDualBlindArea = (
   const cassetteOffset = scaleToBlind(4, avgW);
   const backCassetteTL: Point = [tl[0] + cassettePv[0] * cassetteOffset, tl[1] + cassettePv[1] * cassetteOffset];
   const backCassetteTR: Point = [tr[0] + cassettePv[0] * cassetteOffset, tr[1] + cassettePv[1] * cassetteOffset];
-  drawCassette(ctx, backCassetteTL, backCassetteTR, leftH * 0.85, hardwareColourName, safeHardwareColor, avgW, yRotation);
-  const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation);
+  drawCassette(ctx, backCassetteTL, backCassetteTR, leftH * 0.85, hardwareColourName, safeHardwareColor, avgW, yRotation, backP);
+  const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation, frontP);
   drawSideBrackets(ctx, tl, tr, bl, br, avgW, hardwareColourName, safeHardwareColor);
 
   if (showBlind) {
