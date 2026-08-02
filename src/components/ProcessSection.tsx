@@ -6,28 +6,110 @@ const STEPS = [
   {
     number: '1',
     title: 'Configure',
+    image: '/images/lifestyle/step-1-configure.png',
     description:
       'Choose your blind type, fabric colour and hardware finish. See it rendered live in your room before you commit to anything.',
   },
   {
     number: '2',
     title: 'We Measure',
+    image: '/images/lifestyle/step-2-measure.png',
     description:
       'A Klay technician visits your home within 7–10 days. They take precise measurements — down to the millimetre.',
   },
   {
     number: '3',
     title: 'Made for You',
+    image: '/images/lifestyle/step-3-manufacture.png',
     description:
       'Your blind is manufactured to your exact measurements by Rynamic Industries in South Australia. No stock. No compromise.',
   },
   {
     number: '4',
     title: 'Installed',
+    image: '/images/lifestyle/step-4-install.png',
     description:
       "The same technician returns to install. Perfectly fitted, every time. We don't leave until it's right.",
   },
 ]
+
+function StepCard({ step }: { step: (typeof STEPS)[number] }) {
+  const [hover, setHover] = useState(false)
+
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: 2,
+        background: tokens.warmWhite,
+      }}
+    >
+      {/* Image */}
+      <div style={{ overflow: 'hidden', height: 240 }}>
+        <img
+          src={step.image}
+          alt={step.title}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+            transition: 'transform 0.4s ease',
+            transform: hover ? 'scale(1.03)' : 'scale(1)',
+          }}
+        />
+      </div>
+
+      {/* Text content */}
+      <div style={{ padding: '24px 0' }}>
+        {/* Step number */}
+        <span
+          style={{
+            fontFamily: tokens.display,
+            fontSize: 14,
+            fontWeight: 400,
+            color: tokens.gold,
+            display: 'block',
+          }}
+        >
+          Step {step.number}
+        </span>
+
+        {/* Title */}
+        <h3
+          style={{
+            fontFamily: tokens.display,
+            fontSize: 32,
+            fontWeight: 300,
+            color: tokens.ink,
+            margin: 0,
+            marginTop: 8,
+            lineHeight: 1.1,
+          }}
+        >
+          {step.title}
+        </h3>
+
+        {/* Description */}
+        <p
+          style={{
+            fontFamily: tokens.body,
+            fontSize: 13,
+            color: 'rgba(28,24,16,0.6)',
+            lineHeight: 1.7,
+            margin: 0,
+            marginTop: 12,
+          }}
+        >
+          {step.description}
+        </p>
+      </div>
+    </div>
+  )
+}
 
 export function ProcessSection() {
   const isMobile = useIsMobile()
@@ -81,56 +163,12 @@ export function ProcessSection() {
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-            gap: isMobile ? 48 : 48,
-            marginTop: 80,
+            gap: isMobile ? 32 : 32,
+            marginTop: 64,
           }}
         >
           {STEPS.map((step) => (
-            <div key={step.number} style={{ position: 'relative' }}>
-              {/* Large decorative number */}
-              <span
-                style={{
-                  fontFamily: tokens.display,
-                  fontSize: isMobile ? 72 : 96,
-                  fontWeight: 300,
-                  color: tokens.gold,
-                  opacity: 0.3,
-                  lineHeight: 1,
-                  display: 'block',
-                  marginBottom: -20,
-                }}
-              >
-                {step.number}
-              </span>
-
-              {/* Step title */}
-              <h3
-                style={{
-                  fontFamily: tokens.display,
-                  fontSize: isMobile ? 28 : 32,
-                  fontWeight: 300,
-                  color: tokens.ink,
-                  margin: 0,
-                  marginTop: 8,
-                }}
-              >
-                {step.title}
-              </h3>
-
-              {/* Description */}
-              <p
-                style={{
-                  fontFamily: tokens.body,
-                  fontSize: 14,
-                  color: 'rgba(28,24,16,0.6)',
-                  lineHeight: 1.7,
-                  margin: 0,
-                  marginTop: 12,
-                }}
-              >
-                {step.description}
-              </p>
-            </div>
+            <StepCard key={step.number} step={step} />
           ))}
         </div>
 

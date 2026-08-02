@@ -25,104 +25,123 @@ export function DifferentiatorsSection() {
   return (
     <section
       style={{
-        background: tokens.charcoal,
-        padding: isMobile ? '80px 24px' : '120px 80px',
+        position: 'relative',
+        backgroundImage: "url('/images/lifestyle/room-living.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        {/* Eyebrow */}
-        <p
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 10,
-            fontWeight: 500,
-            color: tokens.gold,
-            textTransform: 'uppercase',
-            letterSpacing: '0.3em',
-            margin: 0,
-          }}
-        >
-          What Makes Klay Different
-        </p>
+      {/* Dark overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(28,24,16,0.82)',
+          pointerEvents: 'none',
+        }}
+      />
 
-        {/* Headline */}
-        <h2
-          style={{
-            fontFamily: tokens.display,
-            fontSize: isMobile ? 36 : 56,
-            fontWeight: 300,
-            color: tokens.warmWhite,
-            lineHeight: 1.1,
-            margin: 0,
-            marginTop: 18,
-          }}
-        >
-          We do something no one else does.
-        </h2>
+      <div
+        style={{
+          position: 'relative',
+          padding: isMobile ? '80px 24px' : '120px 80px',
+        }}
+      >
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          {/* Eyebrow */}
+          <p
+            style={{
+              fontFamily: tokens.body,
+              fontSize: 10,
+              fontWeight: 500,
+              color: tokens.gold,
+              textTransform: 'uppercase',
+              letterSpacing: '0.3em',
+              margin: 0,
+            }}
+          >
+            What Makes Klay Different
+          </p>
 
-        {/* Cards */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-            gap: 32,
-            marginTop: 80,
-          }}
-        >
-          {DIFFERENTIATORS.map((diff) => (
-            <div
-              key={diff.number}
-              style={{
-                background: 'rgba(245,242,237,0.05)',
-                border: '1px solid rgba(245,242,237,0.1)',
-                padding: isMobile ? '36px 28px' : '48px 40px',
-              }}
-            >
-              {/* Large number */}
-              <span
+          {/* Headline */}
+          <h2
+            style={{
+              fontFamily: tokens.display,
+              fontSize: isMobile ? 36 : 56,
+              fontWeight: 300,
+              color: tokens.warmWhite,
+              lineHeight: 1.1,
+              margin: 0,
+              marginTop: 18,
+            }}
+          >
+            We do something no one else does.
+          </h2>
+
+          {/* Cards */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+              gap: 32,
+              marginTop: 80,
+            }}
+          >
+            {DIFFERENTIATORS.map((diff) => (
+              <div
+                key={diff.number}
                 style={{
-                  fontFamily: tokens.display,
-                  fontSize: isMobile ? 48 : 56,
-                  fontWeight: 300,
-                  color: tokens.gold,
-                  opacity: 0.4,
-                  lineHeight: 1,
-                  display: 'block',
+                  background: 'rgba(245,242,237,0.06)',
+                  border: '1px solid rgba(245,242,237,0.12)',
+                  padding: isMobile ? '36px 28px' : '48px 40px',
                 }}
               >
-                {diff.number}
-              </span>
+                {/* Large number */}
+                <span
+                  style={{
+                    fontFamily: tokens.display,
+                    fontSize: isMobile ? 48 : 56,
+                    fontWeight: 300,
+                    color: tokens.gold,
+                    opacity: 0.4,
+                    lineHeight: 1,
+                    display: 'block',
+                  }}
+                >
+                  {diff.number}
+                </span>
 
-              {/* Title */}
-              <h3
-                style={{
-                  fontFamily: tokens.display,
-                  fontSize: isMobile ? 26 : 32,
-                  fontWeight: 300,
-                  color: tokens.warmWhite,
-                  margin: 0,
-                  marginTop: 16,
-                  lineHeight: 1.15,
-                }}
-              >
-                {diff.title}
-              </h3>
+                {/* Title */}
+                <h3
+                  style={{
+                    fontFamily: tokens.display,
+                    fontSize: isMobile ? 26 : 32,
+                    fontWeight: 300,
+                    color: tokens.warmWhite,
+                    margin: 0,
+                    marginTop: 16,
+                    lineHeight: 1.15,
+                  }}
+                >
+                  {diff.title}
+                </h3>
 
-              {/* Body */}
-              <p
-                style={{
-                  fontFamily: tokens.body,
-                  fontSize: 14,
-                  color: 'rgba(245,242,237,0.55)',
-                  lineHeight: 1.7,
-                  margin: 0,
-                  marginTop: 16,
-                }}
-              >
-                {diff.body}
-              </p>
-            </div>
-          ))}
+                {/* Body */}
+                <p
+                  style={{
+                    fontFamily: tokens.body,
+                    fontSize: 14,
+                    color: 'rgba(245,242,237,0.55)',
+                    lineHeight: 1.7,
+                    margin: 0,
+                    marginTop: 16,
+                  }}
+                >
+                  {diff.body}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
