@@ -61,7 +61,7 @@ export function ShopSection() {
               fontFamily: tokens.display,
               fontSize: isMobile ? 36 : 56,
               fontWeight: 300,
-              color: '#F5F2ED',
+              color: tokens.warmWhite,
               lineHeight: 1.1,
               margin: 0,
               marginTop: 18,
@@ -75,7 +75,7 @@ export function ShopSection() {
       {/* Product cards on warm white */}
       <div
         style={{
-          background: '#F5F2ED',
+          background: tokens.warmWhite,
           padding: layout.sectionPad(isMobile),
         }}
       >

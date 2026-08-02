@@ -6,9 +6,9 @@ import { tokens } from '../theme';
 import { RANGES, SKU_CATALOGUE } from '../data/products';
 
 const GOLD = '#C8973A';
-const DARK = '#0f0d09';
-const PARCHMENT = '#F2EDE4';
-const INK = '#1E1A16';
+const CHARCOAL = '#2C2824';
+const PARCHMENT = '#EAE5DC';
+const INK = '#1C1810';
 
 const CATEGORY_CONTENT: Record<string, { quote: string; body: string; lightLabel: string; lightPercent: number }> = {
   blockout: {
@@ -40,7 +40,7 @@ const HARDWARE_INFO = [
 function hardwareDotStyle(name: string): React.CSSProperties {
   const base: React.CSSProperties = { borderRadius: '50%' };
   if (name === 'White') return { ...base, background: '#F0EDE8', border: '1px solid rgba(248,246,242,0.3)' };
-  if (name === 'Black') return { ...base, background: '#1a1a1a', border: '1px solid rgba(248,246,242,0.2)' };
+  if (name === 'Black') return { ...base, background: '#2C2824', border: '1px solid rgba(248,246,242,0.2)' };
   return { ...base, background: 'linear-gradient(135deg, #e8e8e8, #a0a0a0)', border: '1px solid rgba(248,246,242,0.2)' };
 }
 
@@ -72,7 +72,7 @@ export default function ProductCategoryPage() {
       <Nav />
 
       {/* Hero */}
-      <section style={{ background: DARK, padding: '160px 80px 80px' }}>
+      <section style={{ background: CHARCOAL, padding: '160px 80px 80px' }}>
         <div style={{ fontFamily: tokens.body, fontSize: 11, color: 'rgba(248,246,242,0.3)', marginBottom: 24 }}>
           <Link to="/products" style={{ color: 'rgba(248,246,242,0.3)', textDecoration: 'none' }}>
             Blinds
@@ -136,12 +136,12 @@ export default function ProductCategoryPage() {
       </section>
 
       {/* SKU cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '2px', padding: '0 80px 80px', background: DARK }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '2px', padding: '0 80px 80px', background: CHARCOAL }}>
         {skus.map((s) => (
           <div
             key={s.sku}
             onClick={() => navigate(`/products/${category}/${s.slug}`)}
-            style={{ background: '#1a1208', cursor: 'pointer' }}
+            style={{ background: CHARCOAL, cursor: 'pointer' }}
           >
             <div style={{ height: '320px', overflow: 'hidden' }}>
               <img src={s.image} alt={s.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
@@ -186,7 +186,7 @@ export default function ProductCategoryPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ background: DARK, padding: '80px', textAlign: 'center' }}>
+      <section style={{ background: CHARCOAL, padding: '80px', textAlign: 'center' }}>
         <h2 style={{ fontFamily: tokens.display, fontSize: 'clamp(36px, 4vw, 60px)', fontWeight: 300, color: tokens.warmWhite, margin: 0 }}>
           Ready to design your {range.name}?
         </h2>
@@ -196,7 +196,7 @@ export default function ProductCategoryPage() {
             style={{
               textDecoration: 'none', fontFamily: tokens.body, fontSize: 13, fontWeight: 500,
               letterSpacing: '0.1em', textTransform: 'uppercase', padding: '17px 36px',
-              background: GOLD, color: DARK,
+              background: GOLD, color: INK,
             }}
           >
             Open Visualiser →

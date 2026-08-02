@@ -103,7 +103,7 @@ export function CollectionScene() {
       id="collection"
       style={{
         position: 'relative',
-        background: 'linear-gradient(180deg, #141414 0%, #1a1208 60%, #1e1a0f 100%)',
+        background: 'linear-gradient(180deg, #2C2824 0%, #2C2824 60%, #2C2824 100%)',
         padding: '4vh 0 0',
         overflow: 'hidden',
       }}
@@ -382,7 +382,7 @@ export function CollectionScene() {
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '6px', background: '#A8A49E', zIndex: 2 }} />
               </div>
 
-              <div style={{ position: 'relative', height: '30%', background: '#1a1208', padding: isMobile ? '14px 16px' : '18px 22px' }}>
+              <div style={{ position: 'relative', height: '30%', background: '#2C2824', padding: isMobile ? '14px 16px' : '18px 22px' }}>
                 <div
                   style={{
                     fontFamily: tokens.body,

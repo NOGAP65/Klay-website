@@ -10,7 +10,7 @@ export function BlindReveal({ children }: { children: React.ReactNode }) {
         style={{
           position: 'absolute',
           inset: 0,
-          background: '#141414',
+          background: '#2C2824',
           zIndex: 10,
           transformOrigin: 'top',
           transform: visible ? 'scaleY(0)' : 'scaleY(1)',

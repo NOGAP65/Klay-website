@@ -123,7 +123,7 @@ export function CurtainsScene() {
       id="curtains"
       style={{
         position: 'relative',
-        background: '#1a1208',
+        background: '#2C2824',
         padding: 0,
         overflow: 'hidden',
       }}
@@ -354,7 +354,7 @@ export function CurtainsScene() {
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '6px', background: '#A8A49E' }} />
               </div>
 
-              <div style={{ height: '30%', background: '#1a1208', padding: isMobile ? '14px 16px' : '18px 22px' }}>
+              <div style={{ height: '30%', background: '#2C2824', padding: isMobile ? '14px 16px' : '18px 22px' }}>
                 <div
                   style={{
                     fontFamily: tokens.body,

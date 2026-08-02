@@ -58,7 +58,7 @@ export function WardrobesScene() {
       ref={sectionRef}
       style={{
         position: 'relative',
-        background: '#141414',
+        background: '#2C2824',
         padding: isMobile ? '48px 24px 0' : '80px 80px 0',
         overflow: 'hidden',
       }}

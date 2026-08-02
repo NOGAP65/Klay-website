@@ -89,7 +89,7 @@ export function ReviewsSection() {
               <div
                 key={index}
                 style={{
-                  background: '#F5F2ED',
+                  background: tokens.warmWhite,
                   padding: isMobile ? '32px 24px' : 40,
                   boxShadow: '0 2px 24px rgba(28,24,16,0.08)',
                 }}
