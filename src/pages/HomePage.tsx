@@ -4,10 +4,12 @@ import { tokens } from '../theme';
 import { ScrollProgress } from '../components/ScrollProgress';
 import { Nav } from '../components/Nav';
 import HeroScene from '../components/HeroScene';
+import { ManifestoSection } from '../components/ManifestoSection';
 import VisualiserSection from '../components/VisualiserSection';
+import { ProcessSection } from '../components/ProcessSection';
+import { DifferentiatorsSection } from '../components/DifferentiatorsSection';
 import { ShopSection } from '../components/ShopSection';
-import { SocialSection } from '../components/SocialSection';
-import { ReviewsScene } from '../components/ReviewsScene';
+import { ReviewsSection } from '../components/ReviewsSection';
 import { FinalScene } from '../components/FinalScene';
 import { Footer } from '../components/Footer';
 import { SectionCounter } from '../components/SectionCounter';
@@ -34,30 +36,22 @@ export default function HomePage() {
     <>
       <ScrollProgress />
       <Nav />
-      {/* Order is the argument, and each section only works once the one above
-          it has done its job:
-            Hero        — the promise. What your life could look like.
-            Visualiser  — proof of concept. See it in your own room first.
-            Social      — validation, placed AFTER desire exists. Proof shown
-                          before someone wants the thing is just noise.
-            Reviews     — validation in words, straight after it in pictures.
-            Shop        — now they want it, show them what to buy.
-            Final       — the close. Dark, one dominant CTA.
-          Shop used to sit above the two proof sections, which asked people to
-          choose a product before anything had established the product was
-          worth choosing.
-
-          Tonal rhythm that falls out of it: charcoal, warm white, parchment,
-          parchment, warm white, charcoal, charcoal. Light resets attention
-          after each dark moment, the two proof sections share one warm tone
-          so they read as a single body of evidence, and the close and footer
-          land as one continuous dark block. */}
       <main style={{ background: tokens.warmWhite }}>
+        {/* SECTION 1: Hero — video with centered CTAs */}
         <HeroScene />
+        {/* SECTION 2: Manifesto — charcoal strip with stats */}
+        <ManifestoSection />
+        {/* SECTION 3: Visualiser — unchanged */}
         <VisualiserSection />
-        <SocialSection />
-        <ReviewsScene />
+        {/* SECTION 4: How It Works — 4 steps on warm white */}
+        <ProcessSection />
+        {/* SECTION 5: Differentiators — 3 cards on charcoal */}
+        <DifferentiatorsSection />
+        {/* SECTION 6: Shop the Range — 4 product cards */}
         <ShopSection />
+        {/* SECTION 7: Reviews — 3 static review cards on parchment */}
+        <ReviewsSection />
+        {/* SECTION 8: Final CTA — charcoal close */}
         <FinalScene />
         <Footer />
       </main>

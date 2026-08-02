@@ -1,30 +1,31 @@
-import { useState } from 'react';
-import { RevealWords } from './RevealWords';
-import { tokens, headline, motion, supporting } from '../theme';
-import { splitWords } from '../utils/splitWords';
+import { useState } from 'react'
+import { tokens, motion } from '../theme'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 export function FinalScene() {
-  const [primaryHover, setPrimaryHover] = useState(false);
-  const [secondaryHover, setSecondaryHover] = useState(false);
+  const isMobile = useIsMobile()
+  const [primaryHover, setPrimaryHover] = useState(false)
+  const [secondaryHover, setSecondaryHover] = useState(false)
+
+  const scrollToVisualiser = () => {
+    document.getElementById('visualiser')?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   return (
     <section
       id="final"
       style={{
         position: 'relative',
-        // Charcoal — the conviction close, and the same ground the Footer
-        // below now uses, so the page ends on one continuous dark block that
-        // bookends the charcoal hero at the top. Previously ink, which made
-        // this and the footer two subtly different darks stacked together.
         background: tokens.charcoal,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        padding: '140px 0',
+        padding: isMobile ? '100px 24px' : '160px 80px',
+        textAlign: 'center',
       }}
     >
-      {/* Slow gold radial glow rising from bottom — dawn light under a door */}
+      {/* Subtle gold glow from bottom */}
       <div
         style={{
           position: 'absolute',
@@ -37,56 +38,104 @@ export function FinalScene() {
         }}
       />
 
-      <div style={{ position: 'relative', maxWidth: 900, margin: '0 auto', padding: '0 5vw', textAlign: 'center' }}>
-        <RevealWords
-          as="h2"
-          words={[
-            ...splitWords('Ready to let the'),
-            { text: 'light', italic: true, color: tokens.gold },
-            { text: 'in?', italic: true, color: tokens.gold },
-          ]}
+      <div style={{ position: 'relative', maxWidth: 900, margin: '0 auto' }}>
+        {/* Eyebrow */}
+        <p
           style={{
-            ...headline.section,
-            lineHeight: 1.05,
-            color: tokens.warmWhite,
-            justifyContent: 'center',
+            fontFamily: tokens.body,
+            fontSize: 10,
+            fontWeight: 500,
+            color: tokens.gold,
+            textTransform: 'uppercase',
+            letterSpacing: '0.3em',
+            margin: 0,
           }}
-        />
-        <p style={{ ...supporting.onDark, fontSize: 18, fontWeight: 300, margin: '28px auto 44px', maxWidth: 520 }}>
-          Design your blinds in minutes. We measure. We install. You live in it.
+        >
+          Ready to Transform Your Windows
         </p>
-        {/* Two CTAs by design: the gold button is the primary path and carries
-            all the visual weight, but a made-to-measure trade purchase has a
-            real cohort who will only ever convert by phone. The ghost button
-            keeps that path open without competing for the eye. */}
-        <div style={{ display: 'flex', gap: 18, justifyContent: 'center', flexWrap: 'wrap' }}>
-          {/* The copy above promises designing your blinds — that happens in
-              the visualiser, so this points there rather than at the range. */}
-          <a
-            href="#visualiser"
+
+        {/* Headline */}
+        <h2
+          style={{
+            fontFamily: tokens.display,
+            fontSize: isMobile ? 52 : 80,
+            fontWeight: 300,
+            color: tokens.warmWhite,
+            lineHeight: 1.0,
+            margin: 0,
+            marginTop: 20,
+          }}
+        >
+          Your room is waiting.
+        </h2>
+
+        {/* Subtext */}
+        <p
+          style={{
+            fontFamily: tokens.body,
+            fontSize: 16,
+            color: 'rgba(245,242,237,0.5)',
+            lineHeight: 1.7,
+            margin: 0,
+            marginTop: 24,
+            maxWidth: 480,
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          }}
+        >
+          Configure your blind, see it in your room, book your installation. All online. All Klay.
+        </p>
+
+        {/* CTAs */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 20,
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            marginTop: 48,
+          }}
+        >
+          <button
+            onClick={scrollToVisualiser}
             onMouseEnter={() => setPrimaryHover(true)}
             onMouseLeave={() => setPrimaryHover(false)}
             style={{
-              textDecoration: 'none', fontFamily: tokens.body, fontSize: 13, fontWeight: 500,
-              letterSpacing: '0.1em', textTransform: 'uppercase', padding: '18px 40px',
-              borderRadius: 2, background: primaryHover ? tokens.goldLight : tokens.gold,
-              color: tokens.ink,
+              padding: '18px 48px',
+              borderRadius: 2,
+              fontFamily: tokens.body,
+              fontSize: 11,
+              fontWeight: 500,
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
               transition: motion.button,
+              background: primaryHover ? tokens.goldLight : tokens.gold,
+              color: tokens.ink,
+              border: `1px solid ${primaryHover ? tokens.goldLight : tokens.gold}`,
             }}
           >
             Design Yours
-          </a>
+          </button>
           <a
             href="tel:1300005529"
             onMouseEnter={() => setSecondaryHover(true)}
             onMouseLeave={() => setSecondaryHover(false)}
             style={{
-              textDecoration: 'none', fontFamily: tokens.body, fontSize: 13, fontWeight: 500,
-              letterSpacing: '0.1em', textTransform: 'uppercase', padding: '18px 40px',
-              borderRadius: 2, background: 'transparent',
+              padding: '18px 48px',
+              borderRadius: 2,
+              fontFamily: tokens.body,
+              fontSize: 11,
+              fontWeight: 500,
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              transition: motion.button,
+              textDecoration: 'none',
+              background: 'transparent',
               color: secondaryHover ? tokens.gold : tokens.warmWhite,
               border: `1px solid ${secondaryHover ? tokens.gold : tokens.onDarkEdge}`,
-              transition: motion.button,
+              display: 'inline-block',
             }}
           >
             Call 1300 00 KLAY
@@ -94,5 +143,5 @@ export function FinalScene() {
         </div>
       </div>
     </section>
-  );
+  )
 }

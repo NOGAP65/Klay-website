@@ -28,7 +28,7 @@ export function ShopSection() {
       <div style={{ maxWidth: layout.gridMax, margin: '0 auto' }}>
         <div style={{ ...eyebrow, marginBottom: 18 }}>The Collection</div>
         <h2 style={{ ...headline.section, color: tokens.ink }}>
-          Shop the range.
+          Four ranges. One perfect fit.
         </h2>
         <p style={{ ...supporting.onLight, marginTop: 20, maxWidth: 520 }}>
           {PRODUCT_COUNT} made-to-measure blinds, {COLOUR_COUNT} fabric colours,
