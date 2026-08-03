@@ -6,6 +6,7 @@ import { useVisualiserStore, BlindType } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
   lockedRange?: string; // if passed, hides the blind type row — customer can only configure this type
+  compact?: boolean; // if true, uses tighter spacing for homepage embed
 }
 
 const RADIUS = 2;
@@ -81,26 +82,27 @@ function Swatch({
   label,
   active,
   onClick,
+  compact = false,
 }: {
   hex: string;
   label: string;
   active: boolean;
   onClick: () => void;
+  compact?: boolean;
 }) {
+  const size = compact ? 22 : 26;
   return (
     <button
       aria-label={label}
       title={label}
       onClick={onClick}
       style={{
-        width: 26,
-        height: 26,
+        width: size,
+        height: size,
         borderRadius: '50%',
         cursor: 'pointer',
         padding: 0,
         background: hex,
-        // Ring sits outside the swatch rather than thickening its edge, so
-        // selecting a colour doesn't visibly shrink the colour itself.
         border: `1px solid ${tokens.line}`,
         boxShadow: active ? `0 0 0 2px ${tokens.gold}` : `inset 0 0 0 1px ${tokens.lineFaint}`,
         transition: 'box-shadow 0.2s ease',
@@ -165,7 +167,7 @@ function Field({
   );
 }
 
-export default function VisualiserControls({ lockedRange: lockedRangeProp }: VisualiserControlsProps) {
+export default function VisualiserControls({ lockedRange: lockedRangeProp, compact = false }: VisualiserControlsProps) {
   const [searchParams] = useSearchParams();
   const store = useVisualiserStore();
 
@@ -184,14 +186,11 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
   const selectedHardware = HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour);
 
   return (
-    // Owns its own vertical rhythm rather than inheriting whatever gap the
-    // host happens to set — the homepage used 32 and the full page 20, so the
-    // same panel read differently in each.
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 30 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 16 : 30 }}>
       {/* --- TIER 1: the decisions that change what you see ---------------- */}
       <section>
         <GroupHeading>Your blind</GroupHeading>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 12 : 20 }}>
           {!store.lockedRange && (
             <Field label="Type">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -208,7 +207,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
           )}
 
           <Field label="Fabric colour" caption={selectedColour?.name}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9, marginLeft: 2, paddingRight: 2 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: compact ? 6 : 9, marginLeft: 2, paddingRight: 2 }}>
               {RYNAMIC_COLOURS.map(c => (
                 <Swatch
                   key={c.name}
@@ -216,6 +215,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
                   label={c.name}
                   active={store.fabricColour === c.name}
                   onClick={() => store.setFabricColour(c.name)}
+                  compact={compact}
                 />
               ))}
             </div>
@@ -226,9 +226,9 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
       {/* --- TIER 2: specification, quieter ------------------------------- */}
       <section>
         <GroupHeading>Details</GroupHeading>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 12 : 20 }}>
           <Field label="Hardware" caption={selectedHardware?.label}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9, marginLeft: 2, paddingRight: 2 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: compact ? 6 : 9, marginLeft: 2, paddingRight: 2 }}>
               {HARDWARE_OPTIONS.map(h => (
                 <Swatch
                   key={h.id}
@@ -236,6 +236,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
                   label={h.label}
                   active={store.hardwareColour === h.id}
                   onClick={() => store.setHardwareColour(h.id)}
+                  compact={compact}
                 />
               ))}
             </div>
@@ -247,7 +248,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
                 <Pill
                   key={s.id}
                   label={s.label}
-                  sub={s.sub}
+                  sub={compact ? undefined : s.sub}
                   active={store.windowSize === s.id}
                   onClick={() => store.setWindowSize(s.id)}
                 />
@@ -276,7 +277,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
           background: tokens.cream,
           border: `1px solid ${tokens.line}`,
           borderRadius: RADIUS,
-          padding: '16px 18px',
+          padding: compact ? '12px 14px' : '16px 18px',
         }}
       >
         <div
@@ -293,17 +294,17 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
         <div
           style={{
             fontFamily: tokens.display,
-            fontSize: 38,
+            fontSize: compact ? 32 : 38,
             fontWeight: 300,
             lineHeight: 1.1,
             color: tokens.ink,
-            marginTop: 6,
+            marginTop: compact ? 4 : 6,
           }}
         >
           ${store.getCurrentPrice()}
         </div>
         <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkFaint, marginTop: 4 }}>
-          + professional installation across Victoria
+          + installation across Australia
         </div>
       </div>
     </div>

@@ -20,38 +20,32 @@ export default function VisualiserSection() {
   const { blindType, windowSize, operation, fabricColour, hardwareColour } = useVisualiserStore()
 
   return (
-    // alignItems:flex-start so the media column is free to be exactly as tall
-    // as the photo. Stretching it (the flex default) is what produced the
-    // fixed grey panel with the image floating in the middle of it.
-    <section id="visualiser" style={{ display:'flex', flexDirection:'row', alignItems:'flex-start', width:'100%', background:tokens.warmWhite, overflow:'visible', padding:'120px 80px', gap: 40 }}>
-      <div style={{ flex:'1 1 60%', background:tokens.warmWhite, position:'relative' }}>
-        {/* No wrapper panel — the configurator supplies its own charcoal
-            surface, sized to the photo, so there is no excess to show. */}
+    <section id="visualiser" style={{ display:'flex', flexDirection:'row', alignItems:'stretch', width:'100%', background:tokens.warmWhite, overflow:'visible', padding:'80px 60px', gap: 32 }}>
+      <div style={{ flex:'1 1 55%', background:tokens.warmWhite, position:'relative' }}>
         <KlayConfigurator />
       </div>
 
-      <div style={{ flex:'0 0 320px', background:tokens.warmWhite, display:'flex', flexDirection:'column', justifyContent:'flex-start', gap:'32px' }}>
-        <p style={eyebrow}>
-          The Klay Visualiser
-        </p>
+      <div style={{ flex:'0 0 340px', background:tokens.warmWhite, display:'flex', flexDirection:'column', justifyContent:'space-between', gap:'16px' }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
+          <p style={eyebrow}>
+            The Klay Visualiser
+          </p>
 
-        {/* Was a flat 42px — below the 52px floor every other section headline
-            holds, which made the site's single most persuasive feature read as
-            a sidebar caption next to the canvas rather than as its own moment. */}
-        <h2 style={{ ...headline.section, color:tokens.ink }}>
-          See your blind in your room, <em>before you order.</em>
-        </h2>
+          <h2 style={{ ...headline.section, color:tokens.ink, fontSize: 36, lineHeight: 1.1 }}>
+            See your blind in your room, <em>before you order.</em>
+          </h2>
 
-        <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-          {FEATURES.map(f => (
-            <div key={f} style={{ display:'flex', alignItems:'center', gap:'12px' }}>
-              <div style={{ width:'16px', height:'1px', background:tokens.gold, flexShrink:0 }} />
-              <span style={{ fontFamily:tokens.body, fontSize:'13px', color:tokens.inkSoft }}>{f}</span>
-            </div>
-          ))}
+          <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+            {FEATURES.map(f => (
+              <div key={f} style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+                <div style={{ width:'14px', height:'1px', background:tokens.gold, flexShrink:0 }} />
+                <span style={{ fontFamily:tokens.body, fontSize:'12px', color:tokens.inkSoft }}>{f}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <VisualiserControls />
+        <VisualiserControls compact />
 
         <Link
           to={bookingLink({ blindType, windowSize, operation, fabricColour, hardwareColour })}
@@ -60,7 +54,7 @@ export default function VisualiserSection() {
           style={{
             display:'block',
             width:'100%',
-            padding:'17px 16px',
+            padding:'14px 16px',
             background: ctaHover ? tokens.goldLight : tokens.gold,
             color:tokens.ink,
             fontFamily:tokens.body,
@@ -69,12 +63,13 @@ export default function VisualiserSection() {
             letterSpacing:'0.14em',
             textTransform:'uppercase',
             border:'none',
-            borderRadius:'8px',
+            borderRadius:'6px',
             cursor:'pointer',
             transition: motion.button,
             textAlign:'center',
             textDecoration:'none',
             boxSizing:'border-box',
+            flexShrink: 0,
           }}
         >
           Book Installation →
