@@ -3,21 +3,9 @@ import { Link } from 'react-router-dom';
 import { useKlayStore } from '../store';
 import { tokens, motion } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
-
-const links = [
-  { label: 'Collection', to: '/products' },
-  { label: 'Process', to: '/how-it-works' },
-  { label: 'Reviews', to: '/#reviews' },
-  { label: 'Contact', to: '/contact' },
-];
+import { NAV_CATEGORIES } from '../data/categories';
 
 interface NavProps {
-  /** Set on pages that open on a LIGHT hero. The nav is transparent until it
-   * compresses, and over a dark hero its links are warmWhite — the same value
-   * as a light page's background — so without this they are invisible above
-   * the fold. Still required after the scrolled state was inverted to warm
-   * white: inverting fixed the scrolled half, but the transparent half is
-   * still light-on-dark by default. */
   onLight?: boolean;
 }
 
@@ -28,25 +16,11 @@ export function Nav({ onLight = false }: NavProps = {}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const [ctaHover, setCtaHover] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 
-  // What the bar is sitting on, which is the only thing that decides link
-  // colour. Three grounds: the charcoal menu overlay, a dark hero while
-  // transparent, or warm white (scrolled, or transparent over a light hero).
   const onDarkGround = menuOpen || (!compressed && !onLight);
   const linkColor = onDarkGround ? tokens.warmWhite : tokens.ink;
-
-  // Scrolled, the bar becomes warm white with a blur — the page's own surface
-  // rising behind the type rather than a dark slab dropped over it. Reads as
-  // part of the page instead of a separate chrome layer, and keeps the whole
-  // site off the near-black rgba(20,20,20) this used to use.
-  // While the mobile menu is open the overlay behind supplies the ground, so
-  // the bar itself stays transparent rather than stacking two scrims.
   const solidBar = compressed && !menuOpen;
-
-  // Gold outline over the hero, solid gold once scrolled. The button gains
-  // weight exactly as the nav does — by the time it is a solid gold block the
-  // visitor has scrolled past the hero's own CTA and this is the only one left
-  // on screen.
   const ctaSolid = solidBar;
 
   return (
@@ -93,11 +67,115 @@ export function Nav({ onLight = false }: NavProps = {}) {
           <div
             style={{
               display: 'flex',
-              gap: 38,
+              gap: 32,
               alignItems: 'center',
             }}
           >
-            {links.map((l) => {
+            {/* Category dropdowns */}
+            {NAV_CATEGORIES.map((category) => (
+              <div
+                key={category.slug}
+                style={{ position: 'relative' }}
+                onMouseEnter={() => setDropdownOpen(category.slug)}
+                onMouseLeave={() => setDropdownOpen(null)}
+              >
+                <Link
+                  to={`/${category.slug}`}
+                  style={{
+                    color: dropdownOpen === category.slug ? tokens.gold : linkColor,
+                    textDecoration: 'none',
+                    fontFamily: tokens.body,
+                    fontSize: 13,
+                    fontWeight: 400,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    opacity: dropdownOpen === category.slug ? 1 : 0.82,
+                    paddingBottom: 3,
+                    borderBottom: `1px solid ${dropdownOpen === category.slug ? tokens.gold : 'transparent'}`,
+                    transition: `${motion.link}, opacity 0.2s ease`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  {category.name}
+                  <span style={{ fontSize: 8, opacity: 0.6 }}>▼</span>
+                </Link>
+
+                {/* Dropdown */}
+                {dropdownOpen === category.slug && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      paddingTop: 16,
+                      zIndex: 100,
+                    }}
+                  >
+                    <div
+                      style={{
+                        background: tokens.warmWhite,
+                        borderRadius: 12,
+                        boxShadow: '0 16px 48px rgba(28,24,16,0.15)',
+                        border: `1px solid ${tokens.lineFaint}`,
+                        padding: '16px 8px',
+                        minWidth: 220,
+                      }}
+                    >
+                      {category.subcategories.map((sub) => (
+                        <Link
+                          key={sub.slug}
+                          to={sub.available ? `/${category.slug}/${sub.slug}` : '#'}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '12px 16px',
+                            borderRadius: 8,
+                            textDecoration: 'none',
+                            fontFamily: tokens.body,
+                            fontSize: 14,
+                            color: sub.available ? tokens.ink : tokens.textMuted,
+                            transition: 'background 0.2s ease',
+                            background: 'transparent',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (sub.available) {
+                              e.currentTarget.style.background = 'rgba(200,151,58,0.08)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                          }}
+                        >
+                          <span>{sub.name}</span>
+                          {!sub.available && (
+                            <span
+                              style={{
+                                fontSize: 10,
+                                color: tokens.gold,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                              }}
+                            >
+                              Soon
+                            </span>
+                          )}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Other links */}
+            {[
+              { label: 'How It Works', to: '/#process' },
+              { label: 'Reviews', to: '/#reviews' },
+            ].map((l) => {
               const isHovered = hovered === l.to;
               return (
                 <Link
@@ -106,10 +184,6 @@ export function Nav({ onLight = false }: NavProps = {}) {
                   onMouseEnter={() => setHovered(l.to)}
                   onMouseLeave={() => setHovered(cur => (cur === l.to ? null : cur))}
                   style={{
-                    // Gold on hover, and a gold rule under it. The transition
-                    // here was previously dead code — declared, but with no
-                    // hover handler to drive it, so the links never responded
-                    // to the cursor at all.
                     color: isHovered ? tokens.gold : linkColor,
                     textDecoration: 'none',
                     fontFamily: tokens.body,
@@ -135,9 +209,7 @@ export function Nav({ onLight = false }: NavProps = {}) {
             onMouseLeave={() => setCtaHover(false)}
             style={{
               border: `1px solid ${tokens.gold}`,
-              // Solid gold once scrolled; gold outline over the hero. Hover
-              // fills the outline and brightens the solid, so both states have
-              // somewhere to go.
+              borderRadius: 6,
               background: ctaSolid
                 ? ctaHover
                   ? tokens.goldLight
@@ -169,6 +241,7 @@ export function Nav({ onLight = false }: NavProps = {}) {
             width: 40,
             height: 40,
             border: `1px solid ${tokens.gold}`,
+            borderRadius: 6,
             background: 'transparent',
             color: tokens.gold,
             fontSize: 18,
@@ -191,40 +264,93 @@ export function Nav({ onLight = false }: NavProps = {}) {
             left: 0,
             width: '100%',
             height: '100vh',
-            // Charcoal, not the near-black rgba(15,14,11) this used to be —
-            // a full-screen overlay is a dark section like any other, and
-            // charcoal is the darkest surface the palette allows.
             background: 'rgba(44,40,36,0.98)',
             zIndex: 8900,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 32,
+            gap: 24,
+            overflowY: 'auto',
+            padding: '80px 24px',
           }}
         >
-          {links.map((l) => (
+          {NAV_CATEGORIES.map((category) => (
+            <div key={category.slug} style={{ textAlign: 'center' }}>
+              <Link
+                to={`/${category.slug}`}
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  color: tokens.gold,
+                  textDecoration: 'none',
+                  fontFamily: tokens.display,
+                  fontSize: 32,
+                  letterSpacing: '0.04em',
+                  display: 'block',
+                  marginBottom: 12,
+                }}
+              >
+                {category.name}
+              </Link>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {category.subcategories.map((sub) => (
+                  <Link
+                    key={sub.slug}
+                    to={sub.available ? `/${category.slug}/${sub.slug}` : '#'}
+                    onClick={() => sub.available && setMenuOpen(false)}
+                    style={{
+                      color: sub.available ? tokens.warmWhite : tokens.textMuted,
+                      textDecoration: 'none',
+                      fontFamily: tokens.body,
+                      fontSize: 15,
+                      opacity: sub.available ? 0.8 : 0.5,
+                    }}
+                  >
+                    {sub.name} {!sub.available && '(Soon)'}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div style={{ marginTop: 16 }}>
             <Link
-              key={l.to}
-              to={l.to}
+              to="/#process"
               onClick={() => setMenuOpen(false)}
               style={{
                 color: tokens.warmWhite,
                 textDecoration: 'none',
-                fontFamily: tokens.display,
-                fontSize: 28,
-                letterSpacing: '0.04em',
+                fontFamily: tokens.body,
+                fontSize: 16,
+                opacity: 0.8,
+                display: 'block',
+                marginBottom: 16,
               }}
             >
-              {l.label}
+              How It Works
             </Link>
-          ))}
+            <Link
+              to="/#reviews"
+              onClick={() => setMenuOpen(false)}
+              style={{
+                color: tokens.warmWhite,
+                textDecoration: 'none',
+                fontFamily: tokens.body,
+                fontSize: 16,
+                opacity: 0.8,
+              }}
+            >
+              Reviews
+            </Link>
+          </div>
+
           <Link
             to="/visualiser"
             onClick={() => setMenuOpen(false)}
             style={{
-              marginTop: 16,
+              marginTop: 24,
               border: `1px solid ${tokens.gold}`,
+              borderRadius: 6,
               color: tokens.gold,
               textDecoration: 'none',
               fontFamily: tokens.body,
