@@ -118,7 +118,7 @@ export function ReviewsCarousel() {
               marginTop: 12,
             }}
           >
-            Trusted by homeowners across Victoria.
+            Trusted by homeowners across Australia.
           </h2>
         </div>
       </div>

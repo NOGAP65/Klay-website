@@ -208,7 +208,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
           )}
 
           <Field label="Fabric colour" caption={selectedColour?.name}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9, marginLeft: 2, paddingRight: 2 }}>
               {RYNAMIC_COLOURS.map(c => (
                 <Swatch
                   key={c.name}
@@ -228,7 +228,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp }: Vis
         <GroupHeading>Details</GroupHeading>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <Field label="Hardware" caption={selectedHardware?.label}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9, marginLeft: 2, paddingRight: 2 }}>
               {HARDWARE_OPTIONS.map(h => (
                 <Swatch
                   key={h.id}

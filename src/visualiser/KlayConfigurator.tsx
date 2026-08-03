@@ -523,8 +523,15 @@ export default function KlayConfigurator({
       </Button>
     ) : (
       <>
+        <Button onClick={() => {
+          clear();
+          store.setPhotoUrl(null);
+          store.clearTracedAreas();
+          store.setDefaultWindowActive(true);
+          hasSeededDefaultRef.current = false;
+          loadFromUrl(DEFAULT_WINDOW_URL);
+        }}>Back to preview</Button>
         <Button onClick={() => store.clearTracedAreas()}>Retrace</Button>
-        <Button onClick={handleChangePhoto}>Change photo</Button>
         <Button variant="primary" onClick={handleDownload}>Download</Button>
       </>
     )
