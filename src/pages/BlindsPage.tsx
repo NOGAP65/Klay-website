@@ -298,7 +298,7 @@ export default function BlindsPage() {
         {/* Browse by Type - compact */}
         <section
           style={{
-            background: tokens.parchment,
+            background: tokens.warmWhite,
             padding: isMobile ? '32px 24px' : '40px 24px',
           }}
         >
@@ -530,7 +530,7 @@ export default function BlindsPage() {
         {/* Products grid */}
         <section
           style={{
-            background: tokens.warmWhite,
+            background: tokens.parchment,
             padding: isMobile ? '32px 24px 80px' : '48px 24px 120px',
           }}
         >
