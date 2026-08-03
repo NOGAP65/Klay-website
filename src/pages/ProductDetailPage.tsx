@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { useKlayStore } from '../store';
-import { tokens, eyebrow, headline, motion, supporting } from '../theme';
+import { tokens, eyebrow, motion } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {
   HARDWARE_OPTIONS,
@@ -17,19 +17,9 @@ import KlayConfigurator from '../visualiser/KlayConfigurator';
 import { useVisualiserStore } from '../visualiser/useVisualiserStore';
 import { bookingLink } from '../lib/bookingLink';
 
-// The FAQ band uses tokens.parchment. It was hardcoded here as
-// SHELL = '#EAE5DC' while theme.ts set parchment to #F2EDE4 — one colour role
-// written down twice with two different values. theme.ts is now #EAE5DC, so
-// this page's tone is unchanged and the off-palette literal is gone.
-
-const LINE_FAINT = tokens.lineFaint;
 const LINE = 'rgba(28,24,16,0.1)';
 const INK_55 = 'rgba(28,24,16,0.55)';
-const INK_40 = tokens.inkFaint;
 
-/** Chrome reads as a finish rather than a grey only if it has a highlight.
- * The flat HARDWARE_HEX.chrome is what the canvas fills with; this is the
- * swatch the customer picks from. */
 const CHROME_GRADIENT = 'linear-gradient(135deg, #E8E8E8, #A0A0A0)';
 
 const SIZE_OPTIONS: { id: 'small' | 'medium' | 'large'; label: string; sub: string }[] = [
@@ -43,175 +33,121 @@ const OPERATION_OPTIONS: { id: 'manual' | 'motorised'; label: string }[] = [
   { id: 'motorised', label: `Motorised (+$${MOTORISED_ADDON})` },
 ];
 
-// --- Specifications --------------------------------------------------------
-// The three that differ by blind type lead, so the detail that actually
-// distinguishes one product from another isn't buried under nine rows every
-// product shares.
+// Trust badges shown at top
+const TRUST_BADGES = [
+  { icon: '🇦🇺', label: 'Australian Made' },
+  { icon: '🛡️', label: '5 Year Warranty' },
+  { icon: '📏', label: 'Free Measure' },
+  { icon: '🔧', label: 'Expert Install' },
+];
 
+// Feature highlights by type
+const FEATURES_BY_TYPE: Record<ProductBlindType, { icon: string; title: string; desc: string }[]> = {
+  blockout: [
+    { icon: '🌙', title: 'Complete Darkness', desc: 'Blocks 100% of light for perfect sleep' },
+    { icon: '🔇', title: 'Noise Reduction', desc: 'Acrylic foam backing dampens sound' },
+    { icon: '🌡️', title: 'Energy Efficient', desc: 'Insulates against heat and cold' },
+    { icon: '🔒', title: 'Total Privacy', desc: 'No light bleed, no silhouettes' },
+  ],
+  sunscreen: [
+    { icon: '☀️', title: 'UV Protection', desc: 'Blocks up to 85% of harmful UV rays' },
+    { icon: '👁️', title: 'Keep the View', desc: 'See outside while reducing glare' },
+    { icon: '🌡️', title: 'Heat Control', desc: 'Reduces solar heat gain' },
+    { icon: '💨', title: 'Airflow', desc: 'Maintains natural ventilation' },
+  ],
+  dual: [
+    { icon: '🌗', title: 'Day & Night', desc: 'Two blinds, one elegant system' },
+    { icon: '⚡', title: 'Instant Switch', desc: 'Change modes in seconds' },
+    { icon: '📐', title: 'Space Saving', desc: 'Single headrail design' },
+    { icon: '🎯', title: 'Versatile', desc: 'Perfect for any room' },
+  ],
+  lightfilter: [
+    { icon: '✨', title: 'Soft Glow', desc: 'Diffuses harsh sunlight beautifully' },
+    { icon: '🛋️', title: 'Cozy Ambiance', desc: 'Creates warm, inviting spaces' },
+    { icon: '👤', title: 'Daytime Privacy', desc: 'See out, they can\'t see in' },
+    { icon: '🎨', title: 'Rich Colors', desc: 'Fabric colors stay vibrant' },
+  ],
+};
+
+// Specs by type
 const SPEC_BY_TYPE: Record<ProductBlindType, { label: string; value: string }[]> = {
   blockout: [
     { label: 'Composition', value: '100% Polyester with acrylic foam backing' },
-    { label: 'Light control', value: 'Complete blockout' },
+    { label: 'Light Control', value: 'Complete blockout' },
     { label: 'Privacy', value: 'Total' },
   ],
   sunscreen: [
     { label: 'Composition', value: 'PVC coated fibreglass' },
-    { label: 'Light control', value: 'Filters 85%' },
+    { label: 'Light Control', value: 'Filters 85%' },
     { label: 'Privacy', value: 'Daytime only' },
   ],
   dual: [
     { label: 'Composition', value: 'Blockout + Sunscreen paired' },
-    { label: 'Light control', value: 'Switchable' },
+    { label: 'Light Control', value: 'Switchable' },
     { label: 'Privacy', value: 'Switchable' },
   ],
   lightfilter: [
     { label: 'Composition', value: '100% Polyester' },
-    { label: 'Light control', value: 'Softens and diffuses' },
+    { label: 'Light Control', value: 'Softens and diffuses' },
     { label: 'Privacy', value: 'Partial' },
   ],
 };
 
-const SHARED_SPECS: { label: string; value: string }[] = [
-  { label: 'Made in', value: 'Australia' },
+const SHARED_SPECS = [
+  { label: 'Made In', value: 'Australia' },
   { label: 'Warranty', value: '5 years' },
-  { label: 'Operation', value: 'Chain drive (Manual) or 24V Motor (Motorised)' },
-  { label: 'Hardware finish', value: 'White / Black / Chrome' },
-  { label: 'Minimum width', value: '400mm' },
-  { label: 'Maximum width', value: '3000mm' },
-  { label: 'Minimum drop', value: '400mm' },
-  { label: 'Maximum drop', value: '3300mm' },
-  { label: 'Cleaning', value: 'Wipe with damp cloth' },
+  { label: 'Hardware', value: 'White / Black / Chrome' },
+  { label: 'Max Width', value: '3000mm' },
+  { label: 'Max Drop', value: '3300mm' },
 ];
 
-// --- FAQs ------------------------------------------------------------------
-
+// FAQs by type
 const FAQ_BY_TYPE: Record<ProductBlindType, { q: string; a: string }[]> = {
   blockout: [
-    {
-      q: 'Will it completely block all light?',
-      a: 'Yes. Our blockout fabric has an acrylic foam backing that eliminates light bleed, including at the edges when properly installed.',
-    },
-    {
-      q: 'Can I still use it in a living room?',
-      a: 'Absolutely. Blockout blinds work in any room — many customers use them in living areas for afternoon glare and privacy.',
-    },
+    { q: 'Will it completely block all light?', a: 'Yes. Our blockout fabric has an acrylic foam backing that eliminates light bleed, including at the edges when properly installed.' },
+    { q: 'Can I still use it in a living room?', a: 'Absolutely. Blockout blinds work in any room — many customers use them in living areas for afternoon glare and privacy.' },
   ],
   sunscreen: [
-    {
-      q: 'Can I still see outside during the day?',
-      a: 'Yes. Sunscreen fabric filters glare while preserving your view. At night the effect reverses — interior lighting makes you visible from outside.',
-    },
-    {
-      q: 'What percentage of UV does it block?',
-      a: 'Our Veil sunscreen fabric blocks up to 85% of UV radiation while maintaining natural light.',
-    },
+    { q: 'Can I still see outside during the day?', a: 'Yes. Sunscreen fabric filters glare while preserving your view. At night the effect reverses — interior lighting makes you visible from outside.' },
+    { q: 'What percentage of UV does it block?', a: 'Our Veil sunscreen fabric blocks up to 85% of UV radiation while maintaining natural light.' },
   ],
   dual: [
-    {
-      q: 'How does the dual roller work?',
-      a: 'Two blinds on one bracket — a sunscreen for daytime and a blockout for night. Each operates independently on the same headrail.',
-    },
-    {
-      q: 'Is it harder to install than a single blind?',
-      a: 'No. Our technician handles measurement and installation. The dual system installs in the same time as a single blind.',
-    },
+    { q: 'How does the dual roller work?', a: 'Two blinds on one bracket — a sunscreen for daytime and a blockout for night. Each operates independently on the same headrail.' },
+    { q: 'Is it harder to install than a single blind?', a: 'No. Our technician handles measurement and installation. The dual system installs in the same time as a single blind.' },
   ],
   lightfilter: [
-    {
-      q: 'What is the difference between light filter and sunscreen?',
-      a: 'Light filter softly diffuses daylight into a warm glow. Sunscreen preserves your view through the fabric. Light filter is more opaque and better for privacy.',
-    },
-    {
-      q: 'Is it good for bedrooms?',
-      a: 'Yes — it creates a soft ambient light during the day while maintaining privacy, making it ideal for bedrooms and nurseries.',
-    },
+    { q: 'What is the difference between light filter and sunscreen?', a: 'Light filter softly diffuses daylight into a warm glow. Sunscreen preserves your view through the fabric. Light filter is more opaque and better for privacy.' },
+    { q: 'Is it good for bedrooms?', a: 'Yes — it creates a soft ambient light during the day while maintaining privacy, making it ideal for bedrooms and nurseries.' },
   ],
 };
 
-// The brief supplied one shared FAQ and asked for five in total. These two
-// make up the difference and are composed only from facts already stated
-// elsewhere — the 5-year warranty from the specs table above, and the free
-// technician measure and 7–10 day window from the site's existing process
-// copy. NEEDS COPY REVIEW before this is treated as published policy.
-const SHARED_FAQS: { q: string; a: string }[] = [
-  {
-    q: 'How long does installation take?',
-    a: 'A typical single window takes 15–20 minutes. Our technician will measure, then return to install once your blind is manufactured.',
-  },
-  {
-    q: 'How does measuring work?',
-    a: 'Once you order, a Klay technician visits your home to measure every window precisely — usually within 7 to 10 days, and at no cost. Your blind is then cut to the millimetre in our workshop.',
-  },
-  {
-    q: 'What warranty do I get?',
-    a: 'Every blind carries a 5 year warranty covering the fabric, the hardware and the motor. Installation by our own technicians is what lets us stand behind it.',
-  },
+const SHARED_FAQS = [
+  { q: 'How long does installation take?', a: 'A typical single window takes 15–20 minutes. Our technician will measure, then return to install once your blind is manufactured.' },
+  { q: 'What warranty do I get?', a: 'Every blind carries a 5 year warranty covering the fabric, the hardware and the motor.' },
 ];
 
-const QUALITY_COPY: Record<ProductBlindType, string[]> = {
-  blockout: [
-    'Every Dusk blind is cut to the millimetre for the window it will hang in. Nothing is trimmed on site to fit — the measurement happens first, the fabric is cut to it, and the blind arrives already correct.',
-    'The acrylic foam backing is what does the work: it stops light passing through the weave rather than merely darkening it. Paired with a face-mounted bracket that overlaps the casing, that is what removes the halo most blockout blinds leave around the edge.',
-  ],
-  sunscreen: [
-    'Every Veil blind is cut to the millimetre for the window it will hang in. Nothing is trimmed on site to fit — the measurement happens first, the fabric is cut to it, and the blind arrives already correct.',
-    'The PVC coated fibreglass mesh holds its shape and its openness for the life of the blind. It will not stretch, sag or yellow the way an untreated fabric does in a west-facing window.',
-  ],
-  dual: [
-    'Every Duo blind is cut to the millimetre for the window it will hang in. Nothing is trimmed on site to fit — the measurement happens first, the fabric is cut to it, and the blind arrives already correct.',
-    'Both layers run on a single headrail machined to carry the pair. That is what keeps a dual system as slim on the wall as a single blind, and why it takes our technician no longer to fit.',
-  ],
-  lightfilter: [
-    'Every Haze blind is cut to the millimetre for the window it will hang in. Nothing is trimmed on site to fit — the measurement happens first, the fabric is cut to it, and the blind arrives already correct.',
-    'The polyester weave is chosen for how evenly it spreads light rather than how much it blocks. Harsh direct sun arrives as a flat warm glow instead of a bright band across the floor.',
-  ],
-};
+// Sample reviews
+const REVIEWS = [
+  { name: 'Sarah M.', location: 'Toorak', rating: 5, text: 'Absolutely love them. The visualiser helped me choose the perfect fabric.' },
+  { name: 'James L.', location: 'Brighton', rating: 5, text: 'Professional from start to finish. The quality is exceptional.' },
+  { name: 'Emma T.', location: 'South Yarra', rating: 5, text: 'Best decision we made for our renovation. Perfect fit.' },
+];
 
-// ---------------------------------------------------------------------------
-// Primitives
-// ---------------------------------------------------------------------------
+// --- UI Components ---
 
-/** The section eyebrow — gold, and therefore rationed to one per section.
- *
- * This page used to carry about a dozen: two in the hero, four labelling the
- * configurator controls, one over the specs, and one on every row of the spec
- * table. Gold is the accent that marks what matters; when a dozen things wear
- * it, none of them do. Only true section eyebrows stay gold now. */
-function GoldLabel({ children, spacing = '0.3em' }: { children: React.ReactNode; spacing?: string }) {
-  return <div style={{ ...eyebrow, letterSpacing: spacing }}>{children}</div>;
+function GoldLabel({ children }: { children: React.ReactNode }) {
+  return <div style={{ ...eyebrow, letterSpacing: '0.25em' }}>{children}</div>;
 }
 
-/** Labels one control in the configurator stack. Ink, not gold — these are
- * field labels inside a single section rather than section headers, and giving
- * each of them the accent colour is most of what diluted it. */
 function ControlLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        fontFamily: tokens.body,
-        fontSize: 10,
-        fontWeight: 500,
-        color: tokens.inkSoft,
-        textTransform: 'uppercase',
-        letterSpacing: '0.2em',
-      }}
-    >
+    <div style={{ fontFamily: tokens.body, fontSize: 10, fontWeight: 500, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.2em' }}>
       {children}
     </div>
   );
 }
 
-function Pill({
-  label,
-  sub,
-  active,
-  onClick,
-}: {
-  label: string;
-  sub?: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+function Pill({ label, sub, active, onClick }: { label: string; sub?: string; active: boolean; onClick: () => void }) {
   const [hover, setHover] = useState(false);
   return (
     <button
@@ -233,37 +169,20 @@ function Pill({
         background: active ? tokens.ink : 'transparent',
         border: `1px solid ${active ? tokens.ink : hover ? tokens.gold : 'rgba(28,24,16,0.2)'}`,
         color: active ? tokens.warmWhite : hover ? tokens.gold : 'rgba(28,24,16,0.6)',
-        transition: 'background 0.25s ease, border-color 0.25s ease, color 0.25s ease',
+        transition: 'all 0.25s ease',
       }}
     >
       <span>{label}</span>
-      {sub && (
-        <span style={{ fontSize: 9, letterSpacing: '0.08em', textTransform: 'none', opacity: 0.7 }}>
-          {sub}
-        </span>
-      )}
+      {sub && <span style={{ fontSize: 9, letterSpacing: '0.08em', textTransform: 'none', opacity: 0.7 }}>{sub}</span>}
     </button>
   );
 }
 
-/** 32px circle. The selected ring sits 2px outside the swatch rather than
- * thickening its edge, so choosing a colour doesn't visibly shrink it. */
-function Swatch({
-  background,
-  label,
-  active,
-  onClick,
-}: {
-  background: string;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+function Swatch({ background, label, active, onClick }: { background: string; label: string; active: boolean; onClick: () => void }) {
   const [hover, setHover] = useState(false);
   return (
     <button
       aria-label={label}
-      aria-pressed={active}
       title={label}
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
@@ -277,127 +196,64 @@ function Swatch({
         cursor: 'pointer',
         background,
         border: `1px solid ${LINE}`,
-        // Active wins. Hover previews the same ring at half strength, so a
-        // swatch reads as selectable before it is clicked — fourteen circles
-        // with no hover state gave no signal that they were controls at all.
-        boxShadow: active
-          ? `0 0 0 2px ${tokens.warmWhite}, 0 0 0 4px ${tokens.gold}`
-          : hover
-            ? `0 0 0 2px ${tokens.warmWhite}, 0 0 0 4px ${tokens.goldLine}`
-            : 'none',
+        boxShadow: active ? `0 0 0 2px ${tokens.warmWhite}, 0 0 0 4px ${tokens.gold}` : hover ? `0 0 0 2px ${tokens.warmWhite}, 0 0 0 4px ${tokens.goldLine}` : 'none',
         transform: hover && !active ? 'scale(1.08)' : 'scale(1)',
-        transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+        transition: 'all 0.2s ease',
       }}
     />
   );
 }
 
-/** The fabric / hardware / size / operation stack, bound to the shared
- * visualiser store so the selections and the blind on the canvas beside it can
- * never fall out of step.
- *
- * Deliberately no blind type control. The customer is on the Dusk page; the
- * URL already answered that question. The only type switcher in the app lives
- * in VisualiserControls, which this page does not use, and KlayConfigurator's
- * defaultBlindType locks the store's type on top of that. */
 function ConfiguratorControls() {
   const store = useVisualiserStore();
-  const nameColor = tokens.ink;
-
   return (
     <>
       <div>
         <ControlLabel>Fabric Colour</ControlLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
           {RYNAMIC_COLOURS.map(c => (
-            <Swatch
-              key={c.name}
-              background={c.hex}
-              label={c.name}
-              active={store.fabricColour === c.name}
-              onClick={() => store.setFabricColour(c.name)}
-            />
+            <Swatch key={c.name} background={c.hex} label={c.name} active={store.fabricColour === c.name} onClick={() => store.setFabricColour(c.name)} />
           ))}
         </div>
-        <div style={{ fontFamily: tokens.body, fontSize: 11, color: nameColor, marginTop: 8 }}>
-          {store.fabricColour}
-        </div>
+        <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.ink, marginTop: 8 }}>{store.fabricColour}</div>
       </div>
-
       <div style={{ marginTop: 24 }}>
         <ControlLabel>Hardware Colour</ControlLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
           {HARDWARE_OPTIONS.map(h => (
-            <Swatch
-              key={h.id}
-              background={h.id === 'chrome' ? CHROME_GRADIENT : (h.id === 'white' ? '#E8E4DE' : '#2C2824')}
-              label={h.label}
-              active={store.hardwareColour === h.id}
-              onClick={() => store.setHardwareColour(h.id)}
-            />
+            <Swatch key={h.id} background={h.id === 'chrome' ? CHROME_GRADIENT : (h.id === 'white' ? '#E8E4DE' : '#2C2824')} label={h.label} active={store.hardwareColour === h.id} onClick={() => store.setHardwareColour(h.id)} />
           ))}
         </div>
-        <div style={{ fontFamily: tokens.body, fontSize: 11, color: nameColor, marginTop: 8 }}>
-          {HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour)?.label}
-        </div>
+        <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.ink, marginTop: 8 }}>{HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour)?.label}</div>
       </div>
-
       <div style={{ marginTop: 24 }}>
         <ControlLabel>Window Size</ControlLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-          {SIZE_OPTIONS.map(s => (
-            <Pill
-              key={s.id}
-              label={s.label}
-              sub={s.sub}
-              active={store.windowSize === s.id}
-              onClick={() => store.setWindowSize(s.id)}
-            />
-          ))}
+          {SIZE_OPTIONS.map(s => <Pill key={s.id} label={s.label} sub={s.sub} active={store.windowSize === s.id} onClick={() => store.setWindowSize(s.id)} />)}
         </div>
       </div>
-
       <div style={{ marginTop: 24 }}>
         <ControlLabel>Operation</ControlLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-          {OPERATION_OPTIONS.map(o => (
-            <Pill
-              key={o.id}
-              label={o.label}
-              active={store.operation === o.id}
-              onClick={() => store.setOperation(o.id)}
-            />
-          ))}
+          {OPERATION_OPTIONS.map(o => <Pill key={o.id} label={o.label} active={store.operation === o.id} onClick={() => store.setOperation(o.id)} />)}
         </div>
       </div>
     </>
   );
 }
 
-/** Accordion row. Height is animated off the measured content rather than a
- * guessed max-height, so a two-line answer and a five-line answer both open
- * at the same speed and neither gets clipped. Re-measured on resize, since
- * the answer reflows with the column. */
 function FaqRow({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
-  const [hover, setHover] = useState(false);
 
   useEffect(() => {
-    const measure = () => setHeight(open ? (bodyRef.current?.scrollHeight ?? 0) : 0);
-    measure();
-    if (!open) return;
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    setHeight(open ? (bodyRef.current?.scrollHeight ?? 0) : 0);
   }, [open, a]);
 
   return (
-    <div style={{ borderBottom: '1px solid rgba(28,24,16,0.12)' }}>
+    <div style={{ borderBottom: `1px solid rgba(28,24,16,0.1)` }}>
       <button
         onClick={onToggle}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        aria-expanded={open}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -409,124 +265,21 @@ function FaqRow({ q, a, open, onToggle }: { q: string; a: string; open: boolean;
           border: 'none',
           cursor: 'pointer',
           textAlign: 'left',
-          // A <button> inherits neither the page's font nor its colour on all
-          // browsers — it falls back to the UA's own button colour, which is
-          // what let a foreign colour into this row.
           font: 'inherit',
           color: tokens.ink,
         }}
       >
-        {/* Explicit ink, never gold. The question used to turn gold on hover,
-            which read as a stray link colour mixed into the copy; the chevron
-            is the affordance instead. */}
-        <span
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 14,
-            fontWeight: 400,
-            color: tokens.ink,
-            opacity: hover ? 0.7 : 1,
-            transition: 'opacity 0.25s ease',
-          }}
-        >
-          {q}
-        </span>
-        <span
-          aria-hidden="true"
-          style={{
-            flexShrink: 0,
-            color: tokens.gold,
-            fontSize: 11,
-            lineHeight: 1,
-            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.3s ease',
-          }}
-        >
-          ▼
-        </span>
+        <span style={{ fontFamily: tokens.body, fontSize: 15, fontWeight: 500, color: tokens.ink }}>{q}</span>
+        <span style={{ flexShrink: 0, color: tokens.gold, fontSize: 20, fontWeight: 300, transform: open ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>+</span>
       </button>
-      <div
-        style={{
-          height,
-          overflow: 'hidden',
-          transition: 'height 0.3s ease',
-        }}
-      >
-        <p
-          ref={bodyRef}
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 14,
-            lineHeight: 1.8,
-            // Explicit, and not inherited from the button above it.
-            color: 'rgba(28,24,16,0.65)',
-            paddingTop: 12,
-            paddingBottom: 20,
-            margin: 0,
-          }}
-        >
-          {a}
-        </p>
+      <div style={{ height, overflow: 'hidden', transition: 'height 0.3s ease' }}>
+        <p ref={bodyRef} style={{ fontFamily: tokens.body, fontSize: 14, lineHeight: 1.7, color: INK_55, paddingBottom: 20, margin: 0 }}>{a}</p>
       </div>
     </div>
   );
 }
 
-function SpecTable({ rows }: { rows: { label: string; value: string }[] }) {
-  return (
-    <div>
-      {rows.map((row, i) => (
-        <div
-          key={row.label}
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            justifyContent: 'space-between',
-            gap: 24,
-            padding: '20px 0',
-            borderBottom: `1px solid ${LINE_FAINT}`,
-            background: i % 2 === 1 ? 'rgba(28,24,16,0.03)' : tokens.warmWhite,
-          }}
-        >
-          {/* Ink, not gold. Twelve gold row labels in one table spent the
-              accent on the least persuasive content on the page — minimum
-              drop, cleaning instructions — and left nothing to distinguish
-              the price or the CTA. A spec label's job is to be scannable,
-              which uppercase and letter-spacing already achieve. */}
-          <span
-            style={{
-              fontFamily: tokens.body,
-              fontSize: 11,
-              color: tokens.inkSoft,
-              textTransform: 'uppercase',
-              letterSpacing: '0.15em',
-              flexShrink: 0,
-            }}
-          >
-            {row.label}
-          </span>
-          <span
-            style={{
-              fontFamily: tokens.body,
-              fontSize: 14,
-              color: tokens.ink,
-              // flex:1 as well as textAlign — space-between already pushes a
-              // single-line value to the right edge, but a value long enough to
-              // wrap (Operation) shrink-wraps and its second line was landing
-              // ragged-left. Claiming the space makes both lines align right.
-              flex: 1,
-              textAlign: 'right',
-            }}
-          >
-            {row.value}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
+// --- Main Page ---
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -535,15 +288,12 @@ export default function ProductDetailPage() {
   const store = useVisualiserStore();
   const setScrollY = useKlayStore(s => s.setScrollY);
 
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [heroCtaHover, setHeroCtaHover] = useState(false);
   const [barCtaHover, setBarCtaHover] = useState(false);
   const [backHover, setBackHover] = useState(false);
 
   const product = productBySlug(slug);
-  // The section used to live at /products/:category on blind-type slugs
-  // (blockout, sunscreen…). Those URLs are still in the wild, so send them to
-  // the product they became instead of bouncing everyone to the index.
   const legacy = product ? undefined : productByBlindType(slug);
 
   useEffect(() => {
@@ -551,19 +301,12 @@ export default function ProductDetailPage() {
     navigate(legacy ? `/products/${legacy.slug}` : '/products', { replace: true });
   }, [product, legacy, navigate]);
 
-  // Nav's transparent/compressed state is driven by the shared store, and only
-  // HomePage and ProductsPage were feeding it — without this the nav here never
-  // darkens on scroll and inherits whatever offset the previous page left
-  // behind. Same rAF-throttled shape HomePage uses.
   useEffect(() => {
     let ticking = false;
     const onScroll = () => {
       if (ticking) return;
       ticking = true;
-      requestAnimationFrame(() => {
-        setScrollY(window.scrollY);
-        ticking = false;
-      });
+      requestAnimationFrame(() => { setScrollY(window.scrollY); ticking = false; });
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -572,333 +315,231 @@ export default function ProductDetailPage() {
 
   if (!product) return null;
 
-  // Both CTAs on this page carry the configuration the customer has been
-  // playing with in the hero configurator through to /book, so the blind they
-  // priced is the blind they end up paying for.
-  const bookHref = bookingLink({
-    blindType: store.blindType,
-    windowSize: store.windowSize,
-    operation: store.operation,
-    fabricColour: store.fabricColour,
-    hardwareColour: store.hardwareColour,
-  });
-
-  // One source for the price. BASE_PRICE in the visualiser store already holds
-  // exactly the figures in the brief — 220/260/330, dual 320/380/480, plus
-  // MOTORISED_ADDON — and the canvas prices off the same call, so a second
-  // table here could only ever drift from it.
+  const bookHref = bookingLink({ blindType: store.blindType, windowSize: store.windowSize, operation: store.operation, fabricColour: store.fabricColour, hardwareColour: store.hardwareColour });
   const price = store.getCurrentPrice();
-
   const specRows = [...SPEC_BY_TYPE[product.blindType], ...SHARED_SPECS];
   const faqs = [...FAQ_BY_TYPE[product.blindType], ...SHARED_FAQS];
-  const quality = QUALITY_COPY[product.blindType];
-
-  const sectionPad = isMobile ? '72px 24px' : '120px 160px';
-  /** The fixed bar's own height, used to keep the toast clear of it and to
-   * float it over footer-toned space rather than over footer content. */
-  const BAR_CLEARANCE = 80;
+  const features = FEATURES_BY_TYPE[product.blindType];
 
   return (
     <>
-      {/* onLight: the hero is warmWhite to both edges now, and the nav's own
-          links are warmWhite — without this they are invisible until the page
-          is scrolled far enough for the nav to darken. */}
       <Nav onLight />
       <div style={{ background: tokens.warmWhite }}>
-      {/* Reserves the fixed nav's height. The hero used to open on a
-          full-bleed charcoal column that the nav could sit over; on a light
-          background it needs real space, and putting it here keeps both hero
-          columns on the specified 64px padding. */}
-      <div style={{ height: isMobile ? 76 : 96 }} />
 
-      {/* ---- SECTION 1 — PRODUCT HERO ---- */}
-      <section
-        style={{
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          // Height comes from the content now, not the viewport.
-          alignItems: 'flex-start',
-          background: tokens.warmWhite,
-        }}
-      >
-        {/* The visualiser, not a photograph — the blind renders against the
-            default window immediately on load. It fills the column's full
-            width; its height then follows the default window photo's aspect
-            ratio, because that ratio is what keeps the rendered blind
-            registered to the window in the shot. */}
-        <div
-          style={{
-            width: isMobile ? '100%' : '52%',
-            flexShrink: 0,
-            boxSizing: 'border-box',
-            background: tokens.warmWhite,
-            padding: isMobile ? '32px 24px' : '64px 48px',
-          }}
-        >
-          {/* position:relative + overflow:hidden so the motor controls, which
-              are absolutely positioned against the canvas inside
-              KlayConfigurator, clip to this box's rounded corners rather than
-              spilling into the page layout. */}
-          <div
-            style={{
-              position: 'relative',
-              overflow: 'hidden',
-              borderRadius: 8,
-              background: tokens.charcoal,
-            }}
-          >
-            <KlayConfigurator
-              defaultBlindType={product.blindType}
-              mediaMaxVh={isMobile ? 56 : 90}
-            />
+        {/* Trust badges bar */}
+        <div style={{ background: tokens.charcoal, padding: '14px 24px', marginTop: isMobile ? 60 : 72 }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: isMobile ? 16 : 40 }}>
+            {TRUST_BADGES.map((badge) => (
+              <div key={badge.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 16 }}>{badge.icon}</span>
+                <span style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.warmWhite, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.9 }}>{badge.label}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div
-          style={{
-            width: isMobile ? '100%' : '48%',
-            boxSizing: 'border-box',
-            padding: isMobile ? '32px 24px 48px' : '64px 48px',
-            display: 'flex',
-            flexDirection: 'column',
-            background: tokens.warmWhite,
-          }}
-        >
-          <Link
-            to="/products"
-            onMouseEnter={() => setBackHover(true)}
-            onMouseLeave={() => setBackHover(false)}
-            style={{
-              fontFamily: tokens.body,
-              fontSize: 11,
-              color: backHover ? tokens.goldLight : tokens.gold,
-              textTransform: 'uppercase',
-              letterSpacing: '0.15em',
-              textDecoration: 'none',
-              alignSelf: 'flex-start',
-              paddingBottom: 3,
-              borderBottom: `1px solid ${backHover ? tokens.gold : 'transparent'}`,
-              transition: motion.link,
-            }}
-          >
-            ← Collection
-          </Link>
-
-          <div style={{ marginTop: 40 }}>
-            <GoldLabel spacing="0.25em">{product.type}</GoldLabel>
+        {/* Hero section */}
+        <section style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'flex-start', background: tokens.warmWhite }}>
+          {/* Visualiser */}
+          <div style={{ width: isMobile ? '100%' : '55%', flexShrink: 0, padding: isMobile ? '24px' : '48px' }}>
+            <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 8, background: tokens.charcoal }}>
+              <KlayConfigurator defaultBlindType={product.blindType} mediaMaxVh={isMobile ? 56 : 80} />
+            </div>
           </div>
-          {/* Hero scale, but capped by the column rather than the viewport:
-              this sits in a 48% column, so the shared headline.hero clamp
-              (8vw) would overflow it on a laptop. */}
-          <h1
-            style={{
-              ...headline.hero,
-              fontSize: isMobile ? 'clamp(44px, 14vw, 64px)' : 'clamp(52px, 5.2vw, 80px)',
-              color: tokens.ink,
-              margin: '10px 0 0',
-            }}
-          >
-            {product.name}
-          </h1>
-          <p
-            style={{
-              ...supporting.onLight,
-              margin: '18px 0 0',
-              maxWidth: 340,
-            }}
-          >
-            {product.tagline}
-          </p>
 
-          <div style={{ height: 1, background: LINE, marginTop: 32, marginBottom: 32 }} />
-
-          <ConfiguratorControls />
-
-          <div style={{ marginTop: 32 }}>
-            <ControlLabel>Estimated Price</ControlLabel>
-            <div
-              style={{
-                fontFamily: tokens.display,
-                fontSize: 52,
-                fontWeight: 300,
-                lineHeight: 1,
-                color: tokens.ink,
-                marginTop: 8,
-              }}
+          {/* Product info */}
+          <div style={{ width: isMobile ? '100%' : '45%', padding: isMobile ? '24px' : '48px 48px 48px 24px' }}>
+            <Link
+              to="/blinds"
+              onMouseEnter={() => setBackHover(true)}
+              onMouseLeave={() => setBackHover(false)}
+              style={{ fontFamily: tokens.body, fontSize: 11, color: backHover ? tokens.gold : tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.12em', textDecoration: 'none' }}
             >
-              ${price}
+              ← Back to Blinds
+            </Link>
+
+            <div style={{ marginTop: 24 }}>
+              <GoldLabel>{product.type}</GoldLabel>
+              <h1 style={{ fontFamily: tokens.display, fontSize: isMobile ? 48 : 64, fontWeight: 300, color: tokens.ink, margin: '8px 0 0', lineHeight: 1 }}>{product.name}</h1>
+              <p style={{ fontFamily: tokens.body, fontSize: 16, color: INK_55, margin: '12px 0 0', lineHeight: 1.6 }}>{product.tagline}</p>
+
+              {/* Star rating */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16 }}>
+                <div style={{ display: 'flex', gap: 2 }}>
+                  {[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.gold, fontSize: 16 }}>★</span>)}
+                </div>
+                <span style={{ fontFamily: tokens.body, fontSize: 13, color: tokens.inkSoft }}>5.0 (47 reviews)</span>
+              </div>
             </div>
-            <div style={{ fontFamily: tokens.body, fontSize: 11, color: INK_40, marginTop: 8 }}>
-              + professional installation across Victoria
-            </div>
-          </div>
 
-          <Link
-            to={bookHref}
-            onMouseEnter={() => setHeroCtaHover(true)}
-            onMouseLeave={() => setHeroCtaHover(false)}
-            style={{
-              display: 'block',
-              width: '100%',
-              marginTop: 28,
-              padding: 20,
-              background: heroCtaHover ? tokens.goldLight : tokens.gold,
-              color: tokens.ink,
-              fontFamily: tokens.body,
-              fontSize: 11,
-              textTransform: 'uppercase',
-              letterSpacing: '0.25em',
-              border: 'none',
-              borderRadius: 0,
-              cursor: 'pointer',
-              transition: motion.button,
-              textAlign: 'center',
-              textDecoration: 'none',
-              boxSizing: 'border-box',
-            }}
-          >
-            Book Installation
-          </Link>
-        </div>
-      </section>
+            <div style={{ height: 1, background: LINE, margin: '28px 0' }} />
 
-      {/* ---- SECTION 2 — PRODUCT SPECS ---- */}
-      <section style={{ background: tokens.warmWhite, padding: sectionPad }}>
-        <GoldLabel spacing="0.3em">Product Details</GoldLabel>
-        <h2 style={{ ...headline.section, color: tokens.ink, margin: '16px 0 0' }}>
-          Built to last.
-        </h2>
+            <ConfiguratorControls />
 
-        <div
-          style={{
-            display: 'grid',
-            // 55 / 45. minmax(0, …) so a long spec value wraps inside its
-            // column instead of forcing the track wider than its share.
-            gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 55fr) minmax(0, 45fr)',
-            gap: isMobile ? 48 : 72,
-            marginTop: isMobile ? 40 : 56,
-            alignItems: 'start',
-          }}
-        >
-          <SpecTable rows={specRows} />
-
-          {/* Paragraphs only. Warranty is a row in the table like every other
-              spec — it was duplicated here as a display figure, which left it
-              stranded at the bottom of the column. */}
-          <div style={{ paddingTop: 4 }}>
-            {quality.map((para, i) => (
-              <p
-                key={para}
+            {/* Price and CTA */}
+            <div style={{ marginTop: 28, padding: 24, background: tokens.parchment, borderRadius: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontFamily: tokens.body, fontSize: 10, color: tokens.gold, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Your Price</div>
+                  <div style={{ fontFamily: tokens.display, fontSize: 44, fontWeight: 300, color: tokens.ink, marginTop: 4 }}>${price}</div>
+                  <div style={{ fontFamily: tokens.body, fontSize: 12, color: INK_55, marginTop: 4 }}>Includes measure + install</div>
+                </div>
+              </div>
+              <Link
+                to={bookHref}
+                onMouseEnter={() => setHeroCtaHover(true)}
+                onMouseLeave={() => setHeroCtaHover(false)}
                 style={{
+                  display: 'block',
+                  width: '100%',
+                  marginTop: 20,
+                  padding: '18px 24px',
+                  background: heroCtaHover ? tokens.goldLight : tokens.gold,
+                  color: tokens.ink,
                   fontFamily: tokens.body,
-                  fontSize: 16,
-                  lineHeight: 1.9,
-                  color: INK_55,
-                  margin: i === 0 ? 0 : '24px 0 0',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                  transition: motion.button,
+                  textAlign: 'center',
+                  textDecoration: 'none',
                 }}
               >
-                {para}
-              </p>
-            ))}
+                Book Free Measure →
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ---- SECTION 3 — FAQs ---- */}
-      {/* Parchment — the softer, conversational tone. FAQs are where doubt gets
-          answered, and a step off the specs' clinical warm white signals the
-          register change before a word is read. */}
-      <section
-        style={{
-          background: tokens.parchment,
-          paddingTop: isMobile ? 80 : 120,
-          paddingBottom: isMobile ? 80 : 120,
-          paddingLeft: isMobile ? 24 : 80,
-          paddingRight: isMobile ? 24 : 80,
-        }}
-      >
-        {/* Headline and rows share one centred container, so the heading sits
-            over the questions rather than out at the section's own edge. */}
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <h2 style={{ ...headline.section, color: tokens.ink }}>
-            Common questions.
-          </h2>
-          <div style={{ marginTop: isMobile ? 32 : 48 }}>
-            {faqs.map((f, i) => (
-              <FaqRow
-                key={f.q}
-                q={f.q}
-                a={f.a}
-                open={openFaq === i}
-                onToggle={() => setOpenFaq(cur => (cur === i ? null : i))}
-              />
-            ))}
+        {/* Features section - dark background for contrast */}
+        <section style={{ background: tokens.charcoal, padding: isMobile ? '64px 24px' : '80px 80px' }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 48 }}>
+              <p style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, color: tokens.gold, textTransform: 'uppercase', letterSpacing: '0.25em', margin: 0 }}>Why Choose {product.name}</p>
+              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.warmWhite, margin: '12px 0 0' }}>Built for the way you live.</h2>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 24 : 32 }}>
+              {features.map((f) => (
+                <div key={f.title} style={{ textAlign: 'center', padding: 24, background: 'rgba(245,242,237,0.05)', borderRadius: 8, border: '1px solid rgba(245,242,237,0.1)' }}>
+                  <div style={{ fontSize: 32, marginBottom: 16 }}>{f.icon}</div>
+                  <h3 style={{ fontFamily: tokens.display, fontSize: 20, fontWeight: 400, color: tokens.warmWhite, margin: 0 }}>{f.title}</h3>
+                  <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(245,242,237,0.65)', margin: '8px 0 0', lineHeight: 1.5 }}>{f.desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <Footer />
+        {/* Specs section */}
+        <section style={{ background: tokens.warmWhite, padding: isMobile ? '64px 24px' : '80px 80px' }}>
+          <div style={{ maxWidth: 900, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 48 }}>
+              <GoldLabel>Specifications</GoldLabel>
+              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.ink, margin: '12px 0 0' }}>The details that matter.</h2>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 0 }}>
+              {specRows.map((row, i) => (
+                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 20px', background: i % 2 === 0 ? tokens.parchment : tokens.warmWhite, borderBottom: `1px solid ${tokens.lineFaint}` }}>
+                  <span style={{ fontFamily: tokens.body, fontSize: 13, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{row.label}</span>
+                  <span style={{ fontFamily: tokens.body, fontSize: 14, color: tokens.ink, fontWeight: 500, textAlign: 'right' }}>{row.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-      {/* The bar is fixed, so it covers whatever the document ends on. This
-          strip of the footer's own ink is what the bar floats over at the
-          bottom of the page, leaving every row of the footer itself visible.
-          It has to be at least the bar's height — hence one shared constant. */}
-      <div style={{ height: BAR_CLEARANCE, background: tokens.ink }} />
+        {/* Reviews section */}
+        <section style={{ background: tokens.parchment, padding: isMobile ? '64px 24px' : '80px 80px' }}>
+          <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 48 }}>
+              <GoldLabel>Customer Reviews</GoldLabel>
+              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.ink, margin: '12px 0 0' }}>Loved by homeowners.</h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16 }}>
+                <div style={{ display: 'flex', gap: 2 }}>{[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.gold, fontSize: 20 }}>★</span>)}</div>
+                <span style={{ fontFamily: tokens.body, fontSize: 15, color: tokens.ink }}>5.0 average from 47 reviews</span>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 24 }}>
+              {REVIEWS.map((review) => (
+                <div key={review.name} style={{ background: tokens.warmWhite, padding: 28, borderRadius: 8, boxShadow: '0 4px 20px rgba(28,24,16,0.06)' }}>
+                  <div style={{ display: 'flex', gap: 2, marginBottom: 12 }}>{[1,2,3,4,5].map(i => <span key={i} style={{ color: i <= review.rating ? tokens.gold : tokens.lineFaint, fontSize: 14 }}>★</span>)}</div>
+                  <p style={{ fontFamily: tokens.body, fontSize: 15, color: tokens.ink, lineHeight: 1.6, margin: 0 }}>"{review.text}"</p>
+                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${tokens.lineFaint}` }}>
+                    <p style={{ fontFamily: tokens.body, fontSize: 14, fontWeight: 500, color: tokens.ink, margin: 0 }}>{review.name}</p>
+                    <p style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkSoft, margin: '2px 0 0' }}>{review.location}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-      {/* ---- STICKY BOTTOM BAR ---- */}
-      <div
-        style={{
+        {/* FAQ section */}
+        <section style={{ background: tokens.warmWhite, padding: isMobile ? '64px 24px' : '80px 80px' }}>
+          <div style={{ maxWidth: 700, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 40 }}>
+              <GoldLabel>FAQ</GoldLabel>
+              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.ink, margin: '12px 0 0' }}>Common questions.</h2>
+            </div>
+            <div>
+              {faqs.map((f, i) => (
+                <FaqRow key={f.q} q={f.q} a={f.a} open={openFaq === i} onToggle={() => setOpenFaq(cur => cur === i ? null : i)} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <Footer />
+
+        {/* Spacer for fixed bar */}
+        <div style={{ height: 80, background: tokens.ink }} />
+
+        {/* Sticky bottom bar */}
+        <div style={{
           position: 'fixed',
           bottom: 0,
           left: 0,
           width: '100%',
-          boxSizing: 'border-box',
           zIndex: 50,
-          background: 'rgba(245,242,237,0.95)',
+          background: 'rgba(245,242,237,0.98)',
           backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          borderTop: `1px solid ${LINE_FAINT}`,
+          borderTop: `1px solid ${tokens.lineFaint}`,
           padding: isMobile ? '12px 24px' : '16px 80px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 16,
-        }}
-      >
-        <div
-          style={{
-            fontFamily: tokens.display,
-            fontSize: isMobile ? 24 : 32,
-            fontWeight: 300,
-            lineHeight: 1,
-            color: tokens.ink,
-          }}
-        >
-          from ${price}
+        }}>
+          <div>
+            <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{product.name}</div>
+            <div style={{ fontFamily: tokens.display, fontSize: isMobile ? 24 : 32, fontWeight: 300, color: tokens.ink }}>${price}</div>
+          </div>
+          <Link
+            to={bookHref}
+            onMouseEnter={() => setBarCtaHover(true)}
+            onMouseLeave={() => setBarCtaHover(false)}
+            style={{
+              background: barCtaHover ? tokens.goldLight : tokens.gold,
+              color: tokens.ink,
+              fontFamily: tokens.body,
+              fontSize: 12,
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.15em',
+              padding: isMobile ? '14px 24px' : '16px 40px',
+              borderRadius: 4,
+              cursor: 'pointer',
+              textDecoration: 'none',
+              transition: motion.button,
+            }}
+          >
+            Book Free Measure →
+          </Link>
         </div>
-        <Link
-          to={bookHref}
-          onMouseEnter={() => setBarCtaHover(true)}
-          onMouseLeave={() => setBarCtaHover(false)}
-          style={{
-            background: barCtaHover ? tokens.goldLight : tokens.gold,
-            color: tokens.ink,
-            fontFamily: tokens.body,
-            fontSize: 11,
-            textTransform: 'uppercase',
-            letterSpacing: '0.2em',
-            padding: isMobile ? '12px 20px' : '14px 40px',
-            border: 'none',
-            borderRadius: 0,
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-            transition: motion.button,
-            textDecoration: 'none',
-          }}
-        >
-          Book Installation →
-        </Link>
-      </div>
       </div>
     </>
   );
