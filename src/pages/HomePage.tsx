@@ -5,9 +5,11 @@ import { ScrollProgress } from '../components/ScrollProgress';
 import { Nav } from '../components/Nav';
 import HeroScene from '../components/HeroScene';
 import VisualiserSection from '../components/VisualiserSection';
-import { ProcessSection } from '../components/ProcessSection';
-import { ShopSection } from '../components/ShopSection';
-import { ReviewsSection } from '../components/ReviewsSection';
+import { ProductsBanner } from '../components/ProductsBanner';
+import { HowItWorks } from '../components/HowItWorks';
+import { ReviewsCarousel } from '../components/ReviewsCarousel';
+import { SocialMedia } from '../components/SocialMedia';
+import { OurStory } from '../components/OurStory';
 import { FinalScene } from '../components/FinalScene';
 import { Footer } from '../components/Footer';
 import { SectionCounter } from '../components/SectionCounter';
@@ -35,17 +37,21 @@ export default function HomePage() {
       <ScrollProgress />
       <Nav />
       <main style={{ background: tokens.warmWhite }}>
-        {/* Hero — video with centered CTAs */}
+        {/* 1. Hero */}
         <HeroScene />
-        {/* Visualiser — the key differentiator */}
+        {/* 2. Visualiser */}
         <VisualiserSection />
-        {/* Process — how it works */}
-        <ProcessSection />
-        {/* Shop by category */}
-        <ShopSection />
-        {/* Reviews — customer testimonials */}
-        <ReviewsSection />
-        {/* Final CTA — charcoal close */}
+        {/* 3. Products Banner */}
+        <ProductsBanner />
+        {/* 4. How It Works */}
+        <HowItWorks />
+        {/* 5. Reviews Carousel */}
+        <ReviewsCarousel />
+        {/* 6. Social Media */}
+        <SocialMedia />
+        {/* 7. Our Story */}
+        <OurStory />
+        {/* 8. Final CTA */}
         <FinalScene />
         <Footer />
       </main>
