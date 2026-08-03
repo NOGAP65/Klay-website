@@ -17,14 +17,6 @@ import { bookingLink } from '../lib/bookingLink';
 
 const INK_55 = 'rgba(28,24,16,0.55)';
 
-// Trust badges shown at top
-const TRUST_BADGES = [
-  { icon: '🇦🇺', label: 'Australian Made' },
-  { icon: '🛡️', label: '5 Year Warranty' },
-  { icon: '📏', label: 'Free Measure' },
-  { icon: '🔧', label: 'Expert Install' },
-];
-
 // SVG Icons for features
 const FeatureIcon = ({ type }: { type: string }) => {
   const icons: Record<string, JSX.Element> = {
@@ -222,22 +214,10 @@ export default function ProductDetailPage() {
   return (
     <>
       <Nav onLight />
-      <div style={{ background: tokens.warmWhite }}>
+      <div style={{ background: tokens.warmWhite, paddingTop: isMobile ? 60 : 72 }}>
 
-        {/* Trust badges bar */}
-        <div style={{ background: tokens.charcoal, padding: '14px 24px', marginTop: isMobile ? 60 : 72 }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: isMobile ? 16 : 40 }}>
-            {TRUST_BADGES.map((badge) => (
-              <div key={badge.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 16 }}>{badge.icon}</span>
-                <span style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.warmWhite, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.9 }}>{badge.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Hero section - identical to homepage visualiser layout */}
-        <section style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', width: '100%', background: tokens.warmWhite, overflow: 'visible', padding: isMobile ? '24px' : '80px 60px', gap: 32 }}>
+        {/* Hero section */}
+        <section style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', width: '100%', background: tokens.warmWhite, overflow: 'visible', padding: isMobile ? '24px' : '60px 60px', gap: 32 }}>
           {/* Visualiser - same as homepage */}
           <div style={{ flex: '1 1 55%', background: tokens.warmWhite, position: 'relative' }}>
             <KlayConfigurator defaultBlindType={product.blindType} />
