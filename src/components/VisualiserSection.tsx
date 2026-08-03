@@ -23,14 +23,14 @@ export default function VisualiserSection() {
     // alignItems:flex-start so the media column is free to be exactly as tall
     // as the photo. Stretching it (the flex default) is what produced the
     // fixed grey panel with the image floating in the middle of it.
-    <section id="visualiser" style={{ display:'flex', flexDirection:'row', alignItems:'flex-start', width:'100%', background:tokens.warmWhite, overflow:'visible', padding:'120px 80px' }}>
-      <div style={{ flex:7, background:tokens.warmWhite, paddingRight:'64px', position:'relative' }}>
+    <section id="visualiser" style={{ display:'flex', flexDirection:'row', alignItems:'flex-start', width:'100%', background:tokens.warmWhite, overflow:'visible', padding:'120px 80px', gap: 40 }}>
+      <div style={{ flex:'1 1 60%', background:tokens.warmWhite, position:'relative' }}>
         {/* No wrapper panel — the configurator supplies its own charcoal
             surface, sized to the photo, so there is no excess to show. */}
         <KlayConfigurator />
       </div>
 
-      <div style={{ flex:3, minWidth: 280, background:tokens.warmWhite, display:'flex', flexDirection:'column', justifyContent:'flex-start', gap:'32px', paddingLeft: 8 }}>
+      <div style={{ flex:'0 0 320px', background:tokens.warmWhite, display:'flex', flexDirection:'column', justifyContent:'flex-start', gap:'32px' }}>
         <p style={eyebrow}>
           The Klay Visualiser
         </p>
