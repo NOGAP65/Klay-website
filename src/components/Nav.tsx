@@ -43,6 +43,7 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
         transition: 'padding 0.5s ease, background 0.5s ease, border-color 0.5s ease',
       }}
     >
+      {/* Left: Logo */}
       <Link
         to="/#top"
         style={{
@@ -50,6 +51,7 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
           alignItems: 'center',
           textDecoration: 'none',
           color: linkColor,
+          flex: '0 0 auto',
         }}
       >
         <img
@@ -57,18 +59,22 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
           alt="Klay Interiors"
           style={
             isMobile
-              ? { width: '100px', height: '40px', objectFit: 'contain', display: 'block', marginLeft: 12 }
-              : { width: '120px', height: '48px', objectFit: 'contain', display: 'block', marginLeft: 14 }
+              ? { width: '100px', height: '40px', objectFit: 'contain', display: 'block' }
+              : { width: '120px', height: '48px', objectFit: 'contain', display: 'block' }
           }
         />
       </Link>
 
       {!isMobile && (
         <>
+          {/* Center: All nav links */}
           <div
             style={{
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
               display: 'flex',
-              gap: 32,
+              gap: 28,
               alignItems: 'center',
             }}
           >
@@ -172,10 +178,11 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
               </div>
             ))}
 
-            {/* Other links */}
+            {/* Other links including Design Yours */}
             {[
               { label: 'How It Works', to: '/#process' },
               { label: 'Reviews', to: '/#reviews' },
+              { label: 'Design Yours', to: '/visualiser' },
             ].map((l) => {
               const isHovered = hovered === l.to;
               return (
@@ -202,31 +209,34 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
                 </Link>
               );
             })}
-
-            {/* Design Yours - cart-style CTA */}
-            <Link
-              to="/visualiser"
-              onMouseEnter={() => setCtaHover(true)}
-              onMouseLeave={() => setCtaHover(false)}
-              style={{
-                marginLeft: 8,
-                border: `1px solid ${tokens.gold}`,
-                borderRadius: 6,
-                background: ctaHover ? tokens.gold : 'transparent',
-                color: ctaHover ? tokens.ink : tokens.gold,
-                textDecoration: 'none',
-                fontFamily: tokens.body,
-                fontSize: 12,
-                fontWeight: 500,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                padding: '10px 18px',
-                transition: motion.button,
-              }}
-            >
-              Design Yours
-            </Link>
           </div>
+
+          {/* Right: Cart button */}
+          <Link
+            to="/cart"
+            onMouseEnter={() => setCtaHover(true)}
+            onMouseLeave={() => setCtaHover(false)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 44,
+              height: 44,
+              borderRadius: 8,
+              border: `1px solid ${ctaHover ? tokens.gold : 'rgba(245,242,237,0.2)'}`,
+              background: ctaHover ? 'rgba(200,151,58,0.1)' : 'transparent',
+              color: ctaHover ? tokens.gold : tokens.warmWhite,
+              textDecoration: 'none',
+              transition: 'all 0.2s ease',
+            }}
+            aria-label="Cart"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+          </Link>
         </>
       )}
 
