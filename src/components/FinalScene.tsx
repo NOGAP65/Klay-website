@@ -102,7 +102,7 @@ export function FinalScene() {
             onMouseLeave={() => setPrimaryHover(false)}
             style={{
               padding: '18px 48px',
-              borderRadius: 2,
+              borderRadius: 8,
               fontFamily: tokens.body,
               fontSize: 11,
               fontWeight: 500,
@@ -123,7 +123,7 @@ export function FinalScene() {
             onMouseLeave={() => setSecondaryHover(false)}
             style={{
               padding: '18px 48px',
-              borderRadius: 2,
+              borderRadius: 8,
               fontFamily: tokens.body,
               fontSize: 11,
               fontWeight: 500,

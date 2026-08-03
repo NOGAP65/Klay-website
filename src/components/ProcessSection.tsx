@@ -1,35 +1,35 @@
 import { useState } from 'react'
-import { tokens, motion } from '../theme'
+import { tokens } from '../theme'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const STEPS = [
   {
-    number: '1',
+    number: '01',
     title: 'Configure',
     image: '/images/lifestyle/step-1-configure.png',
     description:
-      'Choose your blind type, fabric colour and hardware finish. See it rendered live in your room before you commit to anything.',
+      'Choose your blind type, fabric colour and hardware finish. See it rendered live in your room.',
   },
   {
-    number: '2',
+    number: '02',
     title: 'We Measure',
     image: '/images/lifestyle/step-2-measure.png',
     description:
-      'A Klay technician visits your home within 7–10 days. They take precise measurements — down to the millimetre.',
+      'A Klay technician visits your home within 7–10 days. Precise measurements, down to the millimetre.',
   },
   {
-    number: '3',
+    number: '03',
     title: 'Made for You',
     image: '/images/lifestyle/step-3-manufacture.png',
     description:
-      'Your blind is manufactured to your exact measurements by Rynamic Industries in South Australia. No stock. No compromise.',
+      'Manufactured to your exact measurements by Rynamic Industries in South Australia.',
   },
   {
-    number: '4',
+    number: '04',
     title: 'Installed',
     image: '/images/lifestyle/step-4-install.png',
     description:
-      "The same technician returns to install. Perfectly fitted, every time. We don't leave until it's right.",
+      "The same technician returns to install. Perfectly fitted, every time.",
   },
 ]
 
@@ -43,13 +43,17 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
       style={{
         position: 'relative',
         overflow: 'hidden',
-        borderRadius: 2,
+        borderRadius: 20,
         background: tokens.warmWhite,
-        boxShadow: '0 2px 20px rgba(28,24,16,0.08)',
+        boxShadow: hover
+          ? '0 20px 40px rgba(28,24,16,0.15)'
+          : '0 4px 24px rgba(28,24,16,0.08)',
+        transform: hover ? 'translateY(-4px)' : 'translateY(0)',
+        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
       }}
     >
       {/* Image */}
-      <div style={{ overflow: 'hidden', height: 220 }}>
+      <div style={{ overflow: 'hidden', height: 260 }}>
         <img
           src={step.image}
           alt={step.title}
@@ -58,14 +62,14 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
             height: '100%',
             objectFit: 'cover',
             display: 'block',
-            transition: 'transform 0.4s ease',
-            transform: hover ? 'scale(1.03)' : 'scale(1)',
+            transition: 'transform 0.5s ease',
+            transform: hover ? 'scale(1.05)' : 'scale(1)',
           }}
         />
       </div>
 
       {/* Text content */}
-      <div style={{ padding: '24px 20px 28px' }}>
+      <div style={{ padding: '28px 24px 32px' }}>
         {/* Step number */}
         <span
           style={{
@@ -74,7 +78,7 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
             fontWeight: 400,
             color: tokens.gold,
             display: 'block',
-            letterSpacing: '0.05em',
+            letterSpacing: '0.1em',
           }}
         >
           Step {step.number}
@@ -88,8 +92,8 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
             fontWeight: 300,
             color: tokens.ink,
             margin: 0,
-            marginTop: 6,
-            lineHeight: 1.1,
+            marginTop: 8,
+            lineHeight: 1.15,
           }}
         >
           {step.title}
@@ -99,11 +103,11 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
         <p
           style={{
             fontFamily: tokens.body,
-            fontSize: 13,
-            color: 'rgba(28,24,16,0.6)',
-            lineHeight: 1.7,
+            fontSize: 14,
+            color: 'rgba(28,24,16,0.55)',
+            lineHeight: 1.65,
             margin: 0,
-            marginTop: 10,
+            marginTop: 12,
           }}
         >
           {step.description}
@@ -125,99 +129,83 @@ export function ProcessSection() {
     <section
       id="process"
       style={{
-        position: 'relative',
-        backgroundImage: "url('/images/lifestyle/fabric-texture.png')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        background: tokens.parchment,
+        padding: isMobile ? '80px 24px' : '120px 80px',
       }}
     >
-      {/* Light overlay */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(234,229,220,0.92)',
-          pointerEvents: 'none',
-        }}
-      />
+      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+        {/* Eyebrow */}
+        <p
+          style={{
+            fontFamily: tokens.body,
+            fontSize: 11,
+            fontWeight: 500,
+            color: tokens.gold,
+            textTransform: 'uppercase',
+            letterSpacing: '0.25em',
+            margin: 0,
+            textAlign: 'center',
+          }}
+        >
+          How It Works
+        </p>
 
-      <div
-        style={{
-          position: 'relative',
-          padding: isMobile ? '80px 24px' : '120px 80px',
-        }}
-      >
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          {/* Eyebrow */}
-          <p
+        {/* Headline */}
+        <h2
+          style={{
+            fontFamily: tokens.display,
+            fontSize: isMobile ? 38 : 56,
+            fontWeight: 300,
+            color: tokens.ink,
+            lineHeight: 1.08,
+            margin: 0,
+            marginTop: 20,
+            textAlign: 'center',
+          }}
+        >
+          Four simple steps to perfect blinds.
+        </h2>
+
+        {/* Steps */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
+            gap: isMobile ? 24 : 24,
+            marginTop: 64,
+          }}
+        >
+          {STEPS.map((step) => (
+            <StepCard key={step.number} step={step} />
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div style={{ textAlign: 'center', marginTop: 56 }}>
+          <button
+            onClick={scrollToVisualiser}
+            onMouseEnter={() => setCtaHover(true)}
+            onMouseLeave={() => setCtaHover(false)}
             style={{
+              padding: '18px 52px',
+              borderRadius: 8,
               fontFamily: tokens.body,
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: 500,
-              color: tokens.gold,
+              letterSpacing: '0.15em',
               textTransform: 'uppercase',
-              letterSpacing: '0.3em',
-              margin: 0,
-              textAlign: 'center',
-            }}
-          >
-            How It Works
-          </p>
-
-          {/* Headline */}
-          <h2
-            style={{
-              fontFamily: tokens.display,
-              fontSize: isMobile ? 36 : 52,
-              fontWeight: 300,
+              cursor: 'pointer',
+              transition: 'all 0.25s ease',
+              background: ctaHover ? tokens.goldLight : tokens.gold,
               color: tokens.ink,
-              lineHeight: 1.1,
-              margin: 0,
-              marginTop: 18,
-              textAlign: 'center',
+              border: 'none',
+              boxShadow: ctaHover
+                ? '0 8px 24px rgba(200,151,58,0.4)'
+                : '0 4px 16px rgba(200,151,58,0.25)',
             }}
           >
-            From your screen to your window in four steps.
-          </h2>
-
-          {/* Steps */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-              gap: isMobile ? 24 : 28,
-              marginTop: 56,
-            }}
-          >
-            {STEPS.map((step) => (
-              <StepCard key={step.number} step={step} />
-            ))}
-          </div>
-
-          {/* CTA */}
-          <div style={{ textAlign: 'center', marginTop: 56 }}>
-            <button
-              onClick={scrollToVisualiser}
-              onMouseEnter={() => setCtaHover(true)}
-              onMouseLeave={() => setCtaHover(false)}
-              style={{
-                padding: '18px 48px',
-                borderRadius: 2,
-                fontFamily: tokens.body,
-                fontSize: 11,
-                fontWeight: 500,
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                transition: motion.button,
-                background: ctaHover ? tokens.goldLight : tokens.gold,
-                color: tokens.ink,
-                border: `1px solid ${ctaHover ? tokens.goldLight : tokens.gold}`,
-              }}
-            >
-              Start Designing
-            </button>
-          </div>
+            Start Designing
+          </button>
         </div>
       </div>
     </section>
