@@ -340,29 +340,20 @@ export default function BlindsPage() {
                       aspectRatio: '1 / 1',
                       borderRadius: 8,
                       overflow: 'hidden',
-                      background: '#f8f7f5',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                      background: '#fff',
                       border: `1px solid ${tokens.lineFaint}`,
                     }}
                   >
-                    {/* Placeholder - replace with B&W explanation images */}
-                    <div
+                    <img
+                      src={type.image}
+                      alt={type.name}
                       style={{
-                        width: '60%',
-                        height: '60%',
-                        background: `linear-gradient(135deg, #e8e6e2 0%, #d4d2ce 100%)`,
-                        borderRadius: 6,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'rgba(28,24,16,0.2)',
-                        fontSize: 32,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        padding: 12,
                       }}
-                    >
-                      ◐
-                    </div>
+                    />
                   </div>
                   <p
                     style={{
