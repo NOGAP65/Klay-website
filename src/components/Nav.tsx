@@ -20,10 +20,10 @@ export function Nav({ onLight = false, solid = false }: NavProps = {}) {
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 
   const alwaysSolid = solid || compressed;
-  const onDarkGround = menuOpen || (!alwaysSolid && !onLight);
-  const linkColor = onDarkGround ? tokens.warmWhite : tokens.ink;
   const solidBar = alwaysSolid && !menuOpen;
-  const ctaSolid = solidBar;
+  const onDarkGround = menuOpen || solidBar || (!compressed && !onLight);
+  const linkColor = onDarkGround ? tokens.warmWhite : tokens.ink;
+  const ctaSolid = !solidBar;
 
   return (
     <nav
@@ -36,11 +36,11 @@ export function Nav({ onLight = false, solid = false }: NavProps = {}) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: compressed ? '14px 5vw' : isMobile ? '18px 5vw' : '26px 5vw',
-        background: solidBar ? 'rgba(245,242,237,0.85)' : 'transparent',
-        backdropFilter: solidBar ? 'blur(14px)' : 'none',
-        WebkitBackdropFilter: solidBar ? 'blur(14px)' : 'none',
-        borderBottom: `1px solid ${solidBar ? tokens.line : 'transparent'}`,
+        padding: compressed ? '12px 5vw' : isMobile ? '14px 5vw' : '16px 5vw',
+        background: solidBar ? tokens.charcoal : 'transparent',
+        backdropFilter: 'none',
+        WebkitBackdropFilter: 'none',
+        borderBottom: 'none',
         transition: 'padding 0.5s ease, background 0.5s ease, border-color 0.5s ease',
       }}
     >
@@ -58,8 +58,8 @@ export function Nav({ onLight = false, solid = false }: NavProps = {}) {
           alt="Klay Interiors"
           style={
             isMobile
-              ? { width: '112px', height: '44px', objectFit: 'contain', display: 'block', marginLeft: 12 }
-              : { width: '140px', height: '55px', objectFit: 'contain', display: 'block', marginLeft: 14 }
+              ? { width: '100px', height: '40px', objectFit: 'contain', display: 'block', marginLeft: 12 }
+              : { width: '120px', height: '48px', objectFit: 'contain', display: 'block', marginLeft: 14 }
           }
         />
       </Link>
