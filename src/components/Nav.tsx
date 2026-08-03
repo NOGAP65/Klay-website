@@ -10,7 +10,7 @@ interface NavProps {
   solid?: boolean;
 }
 
-export function Nav({ onLight = false, solid = false }: NavProps = {}) {
+export function Nav({ onLight = false, solid = true }: NavProps = {}) {
   const scrollY = useKlayStore((s) => s.scrollY);
   const compressed = scrollY > 60;
   const isMobile = useIsMobile();
