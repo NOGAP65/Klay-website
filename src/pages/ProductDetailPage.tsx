@@ -352,7 +352,7 @@ export default function ProductDetailPage() {
         <Footer />
 
         {/* Spacer for fixed bar */}
-        <div style={{ height: 80, background: tokens.ink }} />
+        <div style={{ height: 56, background: tokens.ink }} />
 
         {/* Sticky bottom bar */}
         <div style={{
@@ -364,17 +364,17 @@ export default function ProductDetailPage() {
           background: 'rgba(245,242,237,0.98)',
           backdropFilter: 'blur(8px)',
           borderTop: `1px solid ${tokens.lineFaint}`,
-          padding: isMobile ? '12px 24px' : '16px 80px',
+          padding: isMobile ? '8px 24px' : '10px 80px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 16,
         }}>
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{product.name}</div>
-            <div style={{ fontFamily: tokens.display, fontSize: isMobile ? 24 : 32, fontWeight: 300, color: tokens.ink }}>${price}</div>
+            <div style={{ fontFamily: tokens.display, fontSize: isMobile ? 20 : 24, fontWeight: 300, color: tokens.ink }}>${price}</div>
           </div>
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 10 }}>
             <Link
               to={bookHref}
               onMouseEnter={() => setBarQuoteHover(true)}
@@ -383,11 +383,11 @@ export default function ProductDetailPage() {
                 background: 'transparent',
                 color: barQuoteHover ? tokens.gold : tokens.ink,
                 fontFamily: tokens.body,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 600,
                 textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                padding: isMobile ? '12px 20px' : '14px 28px',
+                letterSpacing: '0.1em',
+                padding: isMobile ? '8px 16px' : '10px 20px',
                 borderRadius: 4,
                 border: `1px solid ${barQuoteHover ? tokens.gold : tokens.lineStrong}`,
                 cursor: 'pointer',
@@ -404,11 +404,11 @@ export default function ProductDetailPage() {
                 background: barCartHover ? tokens.goldLight : tokens.gold,
                 color: tokens.ink,
                 fontFamily: tokens.body,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 600,
                 textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                padding: isMobile ? '12px 20px' : '14px 28px',
+                letterSpacing: '0.1em',
+                padding: isMobile ? '8px 16px' : '10px 20px',
                 borderRadius: 4,
                 border: 'none',
                 cursor: 'pointer',
