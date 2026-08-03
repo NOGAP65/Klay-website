@@ -110,12 +110,6 @@ const SHARED_FAQS = [
   { q: 'What warranty do I get?', a: 'Every blind carries a 5 year warranty covering the fabric, the hardware and the motor.' },
 ];
 
-// Sample reviews
-const REVIEWS = [
-  { name: 'Sarah M.', location: 'Toorak', rating: 5, text: 'Absolutely love them. The visualiser helped me choose the perfect fabric.' },
-  { name: 'James L.', location: 'Brighton', rating: 5, text: 'Professional from start to finish. The quality is exceptional.' },
-  { name: 'Emma T.', location: 'South Yarra', rating: 5, text: 'Best decision we made for our renovation. Perfect fit.' },
-];
 
 // --- UI Components ---
 
@@ -170,8 +164,10 @@ export default function ProductDetailPage() {
   const setScrollY = useKlayStore(s => s.setScrollY);
 
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [ctaHover, setCtaHover] = useState(false);
-  const [barCtaHover, setBarCtaHover] = useState(false);
+  const [quoteHover, setQuoteHover] = useState(false);
+  const [cartHover, setCartHover] = useState(false);
+  const [barCartHover, setBarCartHover] = useState(false);
+  const [barQuoteHover, setBarQuoteHover] = useState(false);
 
   const product = productBySlug(slug);
   const legacy = product ? undefined : productByBlindType(slug);
@@ -247,34 +243,56 @@ export default function ProductDetailPage() {
             {/* VisualiserControls - same as homepage but with lockedRange */}
             <VisualiserControls lockedRange={product.blindType} compact />
 
-            {/* CTA button - same as homepage */}
-            <Link
-              to={bookHref}
-              onMouseEnter={() => setCtaHover(true)}
-              onMouseLeave={() => setCtaHover(false)}
-              style={{
-                display: 'block',
-                width: '100%',
-                padding: '14px 16px',
-                background: ctaHover ? tokens.goldLight : tokens.gold,
-                color: tokens.ink,
-                fontFamily: tokens.body,
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                border: 'none',
-                borderRadius: 6,
-                cursor: 'pointer',
-                transition: motion.button,
-                textAlign: 'center',
-                textDecoration: 'none',
-                boxSizing: 'border-box',
-                flexShrink: 0,
-              }}
-            >
-              Book Installation →
-            </Link>
+            {/* Two CTAs right below price */}
+            <div style={{ display: 'flex', gap: 12, marginTop: -8 }}>
+              <Link
+                to={bookHref}
+                onMouseEnter={() => setQuoteHover(true)}
+                onMouseLeave={() => setQuoteHover(false)}
+                style={{
+                  flex: 1,
+                  padding: '14px 16px',
+                  background: 'transparent',
+                  color: quoteHover ? tokens.gold : tokens.ink,
+                  fontFamily: tokens.body,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  border: `1px solid ${quoteHover ? tokens.gold : tokens.lineStrong}`,
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  transition: motion.button,
+                  textAlign: 'center',
+                  textDecoration: 'none',
+                  boxSizing: 'border-box',
+                }}
+              >
+                Get Quote
+              </Link>
+              <button
+                onMouseEnter={() => setCartHover(true)}
+                onMouseLeave={() => setCartHover(false)}
+                style={{
+                  flex: 1,
+                  padding: '14px 16px',
+                  background: cartHover ? tokens.goldLight : tokens.gold,
+                  color: tokens.ink,
+                  fontFamily: tokens.body,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  transition: motion.button,
+                  textAlign: 'center',
+                }}
+              >
+                Add to Cart
+              </button>
+            </div>
           </div>
         </section>
 
@@ -309,32 +327,6 @@ export default function ProductDetailPage() {
                 <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 20px', background: i % 2 === 0 ? tokens.parchment : tokens.warmWhite, borderBottom: `1px solid ${tokens.lineFaint}` }}>
                   <span style={{ fontFamily: tokens.body, fontSize: 13, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{row.label}</span>
                   <span style={{ fontFamily: tokens.body, fontSize: 14, color: tokens.ink, fontWeight: 500, textAlign: 'right' }}>{row.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Reviews section */}
-        <section style={{ background: tokens.parchment, padding: isMobile ? '64px 24px' : '80px 80px' }}>
-          <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 48 }}>
-              <GoldLabel>Customer Reviews</GoldLabel>
-              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.ink, margin: '12px 0 0' }}>Loved by homeowners.</h2>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16 }}>
-                <div style={{ display: 'flex', gap: 2 }}>{[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.gold, fontSize: 20 }}>★</span>)}</div>
-                <span style={{ fontFamily: tokens.body, fontSize: 15, color: tokens.ink }}>5.0 average from 47 reviews</span>
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 24 }}>
-              {REVIEWS.map((review) => (
-                <div key={review.name} style={{ background: tokens.warmWhite, padding: 28, borderRadius: 8, boxShadow: '0 4px 20px rgba(28,24,16,0.06)' }}>
-                  <div style={{ display: 'flex', gap: 2, marginBottom: 12 }}>{[1,2,3,4,5].map(i => <span key={i} style={{ color: i <= review.rating ? tokens.gold : tokens.lineFaint, fontSize: 14 }}>★</span>)}</div>
-                  <p style={{ fontFamily: tokens.body, fontSize: 15, color: tokens.ink, lineHeight: 1.6, margin: 0 }}>"{review.text}"</p>
-                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${tokens.lineFaint}` }}>
-                    <p style={{ fontFamily: tokens.body, fontSize: 14, fontWeight: 500, color: tokens.ink, margin: 0 }}>{review.name}</p>
-                    <p style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkSoft, margin: '2px 0 0' }}>{review.location}</p>
-                  </div>
                 </div>
               ))}
             </div>
@@ -381,27 +373,50 @@ export default function ProductDetailPage() {
             <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{product.name}</div>
             <div style={{ fontFamily: tokens.display, fontSize: isMobile ? 24 : 32, fontWeight: 300, color: tokens.ink }}>${price}</div>
           </div>
-          <Link
-            to={bookHref}
-            onMouseEnter={() => setBarCtaHover(true)}
-            onMouseLeave={() => setBarCtaHover(false)}
-            style={{
-              background: barCtaHover ? tokens.goldLight : tokens.gold,
-              color: tokens.ink,
-              fontFamily: tokens.body,
-              fontSize: 12,
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: '0.15em',
-              padding: isMobile ? '14px 24px' : '16px 40px',
-              borderRadius: 4,
-              cursor: 'pointer',
-              textDecoration: 'none',
-              transition: motion.button,
-            }}
-          >
-            Book Free Measure →
-          </Link>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Link
+              to={bookHref}
+              onMouseEnter={() => setBarQuoteHover(true)}
+              onMouseLeave={() => setBarQuoteHover(false)}
+              style={{
+                background: 'transparent',
+                color: barQuoteHover ? tokens.gold : tokens.ink,
+                fontFamily: tokens.body,
+                fontSize: 12,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                padding: isMobile ? '12px 20px' : '14px 28px',
+                borderRadius: 4,
+                border: `1px solid ${barQuoteHover ? tokens.gold : tokens.lineStrong}`,
+                cursor: 'pointer',
+                textDecoration: 'none',
+                transition: motion.button,
+              }}
+            >
+              Get Quote
+            </Link>
+            <button
+              onMouseEnter={() => setBarCartHover(true)}
+              onMouseLeave={() => setBarCartHover(false)}
+              style={{
+                background: barCartHover ? tokens.goldLight : tokens.gold,
+                color: tokens.ink,
+                fontFamily: tokens.body,
+                fontSize: 12,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.12em',
+                padding: isMobile ? '12px 20px' : '14px 28px',
+                borderRadius: 4,
+                border: 'none',
+                cursor: 'pointer',
+                transition: motion.button,
+              }}
+            >
+              Add to Cart
+            </button>
+          </div>
         </div>
       </div>
     </>
