@@ -423,7 +423,7 @@ export function ShopSection() {
 
           <div style={{ marginTop: 64, textAlign: 'center' }}>
             <Link
-              to="/products"
+              to="/blinds/roller-blinds"
               onMouseEnter={() => setLinkHover(true)}
               onMouseLeave={() => setLinkHover(false)}
               style={{
