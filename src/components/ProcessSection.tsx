@@ -5,124 +5,29 @@ import { useIsMobile } from '../hooks/useIsMobile'
 const STEPS = [
   {
     number: '01',
-    title: 'Configure',
-    desc: 'Choose your blind type, fabric and colour. See it in your room with our visualiser.',
-    image: '/images/lifestyle/step-1-configure.png',
+    title: 'Design Online',
+    desc: 'Choose your blind, pick your fabric, and see it in your room with our visualiser.',
+    icon: '✦',
   },
   {
     number: '02',
     title: 'We Measure',
-    desc: 'A Klay technician visits your home. Precise measurements, down to the millimetre.',
-    image: '/images/lifestyle/step-2-measure.png',
+    desc: 'A Klay technician visits your home for precise measurements.',
+    icon: '◇',
   },
   {
     number: '03',
     title: 'Made for You',
-    desc: 'Manufactured to your exact specs by Rynamic Industries in South Australia.',
-    image: '/images/lifestyle/step-3-manufacture.png',
+    desc: 'Manufactured to your exact specs in South Australia.',
+    icon: '○',
   },
   {
     number: '04',
     title: 'Installed',
-    desc: 'The same technician returns to install. Perfectly fitted, every time.',
-    image: '/images/lifestyle/step-4-install.png',
+    desc: 'Professional installation by the same technician who measured.',
+    icon: '▽',
   },
 ]
-
-function StepCard({ step }: { step: (typeof STEPS)[number] }) {
-  const [hover, setHover] = useState(false)
-
-  return (
-    <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        background: tokens.warmWhite,
-        borderRadius: 12,
-        overflow: 'hidden',
-        boxShadow: hover
-          ? '0 16px 40px rgba(28,24,16,0.12)'
-          : '0 4px 16px rgba(28,24,16,0.06)',
-        transform: hover ? 'translateY(-4px)' : 'translateY(0)',
-        transition: 'all 0.3s ease',
-      }}
-    >
-      {/* Image */}
-      <div style={{ overflow: 'hidden', aspectRatio: '16 / 10' }}>
-        <img
-          src={step.image}
-          alt={step.title}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: 'block',
-            transform: hover ? 'scale(1.04)' : 'scale(1)',
-            transition: 'transform 0.5s ease',
-          }}
-        />
-      </div>
-
-      {/* Content */}
-      <div style={{ padding: '20px 20px 24px' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            marginBottom: 10,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: tokens.display,
-              fontSize: 24,
-              fontWeight: 200,
-              color: tokens.gold,
-              opacity: 0.6,
-              lineHeight: 1,
-            }}
-          >
-            {step.number}
-          </span>
-          <div
-            style={{
-              flex: 1,
-              height: 1,
-              background: tokens.lineFaint,
-            }}
-          />
-        </div>
-
-        <h3
-          style={{
-            fontFamily: tokens.display,
-            fontSize: 22,
-            fontWeight: 300,
-            color: tokens.ink,
-            margin: 0,
-            lineHeight: 1.2,
-          }}
-        >
-          {step.title}
-        </h3>
-
-        <p
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 13,
-            color: 'rgba(28,24,16,0.55)',
-            lineHeight: 1.6,
-            margin: 0,
-            marginTop: 8,
-          }}
-        >
-          {step.desc}
-        </p>
-      </div>
-    </div>
-  )
-}
 
 export function ProcessSection() {
   const isMobile = useIsMobile()
@@ -140,7 +45,7 @@ export function ProcessSection() {
         padding: isMobile ? '80px 24px' : '100px 80px',
       }}
     >
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         {/* Header */}
         <div
           style={{
@@ -149,7 +54,7 @@ export function ProcessSection() {
             justifyContent: 'space-between',
             alignItems: isMobile ? 'flex-start' : 'center',
             gap: 24,
-            marginBottom: 48,
+            marginBottom: isMobile ? 56 : 72,
           }}
         >
           <div>
@@ -205,16 +110,100 @@ export function ProcessSection() {
           </button>
         </div>
 
-        {/* Steps grid */}
+        {/* Timeline steps */}
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-            gap: 24,
+            gap: isMobile ? 0 : 0,
+            position: 'relative',
           }}
         >
-          {STEPS.map((step) => (
-            <StepCard key={step.number} step={step} />
+          {/* Connecting line - desktop only */}
+          {!isMobile && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 28,
+                left: 'calc(12.5% + 14px)',
+                right: 'calc(12.5% + 14px)',
+                height: 1,
+                background: 'rgba(200,151,58,0.3)',
+              }}
+            />
+          )}
+
+          {STEPS.map((step, index) => (
+            <div
+              key={step.number}
+              style={{
+                display: 'flex',
+                flexDirection: isMobile ? 'row' : 'column',
+                alignItems: isMobile ? 'flex-start' : 'center',
+                textAlign: isMobile ? 'left' : 'center',
+                padding: isMobile ? '24px 0' : '0 16px',
+                borderBottom: isMobile && index < STEPS.length - 1 ? `1px solid rgba(28,24,16,0.08)` : 'none',
+                position: 'relative',
+              }}
+            >
+              {/* Number circle */}
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  background: tokens.warmWhite,
+                  border: `2px solid ${tokens.gold}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: tokens.display,
+                  fontSize: 20,
+                  fontWeight: 300,
+                  color: tokens.gold,
+                  flexShrink: 0,
+                  position: 'relative',
+                  zIndex: 1,
+                }}
+              >
+                {step.number}
+              </div>
+
+              {/* Content */}
+              <div
+                style={{
+                  marginLeft: isMobile ? 20 : 0,
+                  marginTop: isMobile ? 0 : 28,
+                }}
+              >
+                <h3
+                  style={{
+                    fontFamily: tokens.display,
+                    fontSize: isMobile ? 20 : 22,
+                    fontWeight: 400,
+                    color: tokens.ink,
+                    margin: 0,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {step.title}
+                </h3>
+
+                <p
+                  style={{
+                    fontFamily: tokens.body,
+                    fontSize: 14,
+                    color: 'rgba(28,24,16,0.55)',
+                    lineHeight: 1.65,
+                    margin: 0,
+                    marginTop: 10,
+                    maxWidth: isMobile ? 280 : 200,
+                  }}
+                >
+                  {step.desc}
+                </p>
+              </div>
+            </div>
           ))}
         </div>
       </div>
