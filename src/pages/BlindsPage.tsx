@@ -295,89 +295,6 @@ export default function BlindsPage() {
           </div>
         </section>
 
-        {/* Browse by Type - compact */}
-        <section
-          style={{
-            background: tokens.warmWhite,
-            padding: isMobile ? '32px 24px' : '40px 24px',
-          }}
-        >
-          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-                gap: isMobile ? 12 : 20,
-              }}
-            >
-              {[
-                { id: 'blockout', name: 'Dusk', desc: 'Total darkness', image: '/images/types/dusk.png' },
-                { id: 'sunscreen', name: 'Veil', desc: 'Keep the view', image: '/images/types/veil.png' },
-                { id: 'lightfilter', name: 'Haze', desc: 'Soft glow', image: '/images/types/haze.png' },
-                { id: 'dual', name: 'Duo', desc: 'Day & night', image: '/images/types/duo.png' },
-              ].map((type) => (
-                <button
-                  key={type.id}
-                  onClick={() => setActiveFilter(type.id as FilterType)}
-                  style={{
-                    cursor: 'pointer',
-                    background: activeFilter === type.id ? tokens.warmWhite : 'transparent',
-                    border: `1px solid ${activeFilter === type.id ? tokens.gold : tokens.lineFaint}`,
-                    borderRadius: 10,
-                    padding: 12,
-                    textAlign: 'center',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <div
-                    style={{
-                      aspectRatio: '1 / 1',
-                      borderRadius: 8,
-                      overflow: 'hidden',
-                      background: '#fff',
-                      border: `1px solid ${tokens.lineFaint}`,
-                    }}
-                  >
-                    <img
-                      src={type.image}
-                      alt={type.name}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain',
-                        padding: 12,
-                      }}
-                    />
-                  </div>
-                  <p
-                    style={{
-                      fontFamily: tokens.body,
-                      fontSize: 14,
-                      fontWeight: 500,
-                      color: tokens.ink,
-                      margin: 0,
-                      marginTop: 12,
-                    }}
-                  >
-                    {type.name}
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: tokens.body,
-                      fontSize: 12,
-                      color: 'rgba(28,24,16,0.5)',
-                      margin: 0,
-                      marginTop: 4,
-                    }}
-                  >
-                    {type.desc}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* Filter & Sort bar */}
         <div
           style={{
@@ -588,110 +505,126 @@ export default function BlindsPage() {
           </div>
         </section>
 
-        {/* Info section */}
+        {/* FAQ Section */}
         <section
           style={{
             background: tokens.warmWhite,
-            padding: isMobile ? '64px 24px' : '80px 24px',
+            padding: isMobile ? '64px 24px 80px' : '80px 24px 100px',
           }}
         >
-          <div
-            style={{
-              maxWidth: 1200,
-              margin: '0 auto',
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-              gap: 40,
-            }}
-          >
-            <div>
-              <h3
-                style={{
-                  fontFamily: tokens.display,
-                  fontSize: 24,
-                  fontWeight: 300,
-                  color: tokens.ink,
-                  margin: 0,
-                }}
-              >
-                What are Roller Blinds?
-              </h3>
+          <div style={{ maxWidth: 800, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <p
                 style={{
                   fontFamily: tokens.body,
-                  fontSize: 14,
-                  color: 'rgba(28,24,16,0.6)',
-                  lineHeight: 1.75,
-                  margin: 0,
-                  marginTop: 12,
-                }}
-              >
-                The modern classic. A single panel of fabric on a spring-loaded or chain-operated roller. Clean, minimal, and effective at controlling light and privacy.
-              </p>
-            </div>
-            <div>
-              <h3
-                style={{
-                  fontFamily: tokens.display,
-                  fontSize: 24,
-                  fontWeight: 300,
-                  color: tokens.ink,
-                  margin: 0,
-                }}
-              >
-                How It Works
-              </h3>
-              <p
-                style={{
-                  fontFamily: tokens.body,
-                  fontSize: 14,
-                  color: 'rgba(28,24,16,0.6)',
-                  lineHeight: 1.75,
-                  margin: 0,
-                  marginTop: 12,
-                }}
-              >
-                Configure online with our visualiser. A technician measures at your home. We manufacture in SA. The same technician returns to install.
-              </p>
-            </div>
-            <div>
-              <h3
-                style={{
-                  fontFamily: tokens.display,
-                  fontSize: 24,
-                  fontWeight: 300,
-                  color: tokens.ink,
-                  margin: 0,
-                }}
-              >
-                Need Help?
-              </h3>
-              <p
-                style={{
-                  fontFamily: tokens.body,
-                  fontSize: 14,
-                  color: 'rgba(28,24,16,0.6)',
-                  lineHeight: 1.75,
-                  margin: 0,
-                  marginTop: 12,
-                }}
-              >
-                Try our visualiser to see blinds in your room, or call 1300 00 KLAY.
-              </p>
-              <Link
-                to="/visualiser"
-                style={{
-                  display: 'inline-block',
-                  marginTop: 16,
-                  fontFamily: tokens.body,
-                  fontSize: 13,
-                  color: tokens.gold,
-                  textDecoration: 'none',
+                  fontSize: 11,
                   fontWeight: 500,
+                  color: tokens.gold,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.2em',
+                  margin: 0,
                 }}
               >
-                Try the Visualiser →
-              </Link>
+                FAQ
+              </p>
+              <h2
+                style={{
+                  fontFamily: tokens.display,
+                  fontSize: isMobile ? 28 : 36,
+                  fontWeight: 300,
+                  color: tokens.ink,
+                  margin: 0,
+                  marginTop: 12,
+                }}
+              >
+                Common Questions
+              </h2>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              {[
+                {
+                  q: 'What are Roller Blinds?',
+                  a: 'The modern classic. A single panel of fabric on a spring-loaded or chain-operated roller. Clean, minimal, and effective at controlling light and privacy.',
+                },
+                {
+                  q: 'How does the process work?',
+                  a: 'Configure online with our visualiser. A technician measures at your home. We manufacture in South Australia. The same technician returns to install — perfectly fitted, every time.',
+                },
+                {
+                  q: 'What fabric types are available?',
+                  a: 'We offer four fabric types: Blockout for total darkness, Sunscreen to keep the view while reducing glare, Light Filter for a soft diffused glow, and Dual blinds that combine two fabrics for day and night.',
+                },
+                {
+                  q: 'How long does it take?',
+                  a: 'After your in-home measure, manufacturing typically takes 2-3 weeks. Installation is scheduled at a time that suits you.',
+                },
+                {
+                  q: 'Do you service my area?',
+                  a: 'We currently service all of metropolitan Melbourne and greater Victoria. Contact us for regional availability.',
+                },
+                {
+                  q: 'What warranty do you offer?',
+                  a: 'All Klay blinds come with a 5-year warranty on manufacturing defects. Our installation workmanship is guaranteed.',
+                },
+              ].map((faq, index) => (
+                <div
+                  key={index}
+                  style={{
+                    padding: '24px 28px',
+                    background: tokens.parchment,
+                    borderRadius: 12,
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontFamily: tokens.display,
+                      fontSize: 20,
+                      fontWeight: 400,
+                      color: tokens.ink,
+                      margin: 0,
+                    }}
+                  >
+                    {faq.q}
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: tokens.body,
+                      fontSize: 15,
+                      color: 'rgba(28,24,16,0.65)',
+                      lineHeight: 1.7,
+                      margin: 0,
+                      marginTop: 12,
+                    }}
+                  >
+                    {faq.a}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ textAlign: 'center', marginTop: 48 }}>
+              <p
+                style={{
+                  fontFamily: tokens.body,
+                  fontSize: 15,
+                  color: 'rgba(28,24,16,0.6)',
+                  margin: 0,
+                }}
+              >
+                Still have questions?{' '}
+                <Link
+                  to="/visualiser"
+                  style={{
+                    color: tokens.gold,
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                  }}
+                >
+                  Try the Visualiser
+                </Link>{' '}
+                or call 1300 00 KLAY
+              </p>
             </div>
           </div>
         </section>
