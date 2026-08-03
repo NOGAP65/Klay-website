@@ -46,7 +46,7 @@ function FeatureBlock({
             ? 'row-reverse'
             : 'row',
         alignItems: 'center',
-        gap: isMobile ? 40 : 80,
+        gap: isMobile ? 48 : 100,
       }}
     >
       {/* Image */}
@@ -57,12 +57,12 @@ function FeatureBlock({
           flex: 1,
           position: 'relative',
           overflow: 'hidden',
-          borderRadius: 24,
-          aspectRatio: isMobile ? '4 / 3' : '3 / 2',
+          borderRadius: 20,
+          aspectRatio: isMobile ? '4 / 3' : '4 / 3',
           boxShadow: imageHover
-            ? '0 32px 64px rgba(28,24,16,0.25)'
-            : '0 16px 48px rgba(28,24,16,0.15)',
-          transition: 'box-shadow 0.4s ease',
+            ? '0 40px 80px rgba(28,24,16,0.25)'
+            : '0 20px 60px rgba(28,24,16,0.15)',
+          transition: 'box-shadow 0.5s ease',
         }}
       >
         <img
@@ -73,18 +73,8 @@ function FeatureBlock({
             height: '100%',
             objectFit: 'cover',
             display: 'block',
-            transform: imageHover ? 'scale(1.03)' : 'scale(1)',
-            transition: 'transform 0.6s ease',
-          }}
-        />
-        {/* Subtle gradient overlay */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background:
-              'linear-gradient(180deg, transparent 60%, rgba(28,24,16,0.08) 100%)',
-            pointerEvents: 'none',
+            transform: imageHover ? 'scale(1.04)' : 'scale(1)',
+            transition: 'transform 0.7s ease',
           }}
         />
       </div>
@@ -93,18 +83,18 @@ function FeatureBlock({
       <div
         style={{
           flex: 1,
-          padding: isMobile ? '0' : '20px 0',
+          padding: isMobile ? '0' : '40px 0',
         }}
       >
-        {/* Number */}
+        {/* Large number */}
         <span
           style={{
             fontFamily: tokens.display,
-            fontSize: 64,
+            fontSize: 80,
             fontWeight: 200,
             color: tokens.gold,
-            opacity: 0.3,
-            lineHeight: 1,
+            opacity: 0.2,
+            lineHeight: 0.9,
             display: 'block',
           }}
         >
@@ -115,13 +105,13 @@ function FeatureBlock({
         <p
           style={{
             fontFamily: tokens.body,
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: 500,
             color: tokens.gold,
             textTransform: 'uppercase',
-            letterSpacing: '0.2em',
+            letterSpacing: '0.15em',
             margin: 0,
-            marginTop: 16,
+            marginTop: 20,
           }}
         >
           {feature.subtitle}
@@ -131,12 +121,12 @@ function FeatureBlock({
         <h3
           style={{
             fontFamily: tokens.display,
-            fontSize: isMobile ? 36 : 44,
+            fontSize: isMobile ? 34 : 42,
             fontWeight: 300,
             color: tokens.ink,
-            lineHeight: 1.1,
+            lineHeight: 1.15,
             margin: 0,
-            marginTop: 12,
+            marginTop: 16,
           }}
         >
           {feature.title}
@@ -150,8 +140,8 @@ function FeatureBlock({
             color: 'rgba(28,24,16,0.6)',
             lineHeight: 1.8,
             margin: 0,
-            marginTop: 20,
-            maxWidth: 440,
+            marginTop: 24,
+            maxWidth: 480,
           }}
         >
           {feature.body}
@@ -160,11 +150,10 @@ function FeatureBlock({
         {/* Decorative line */}
         <div
           style={{
-            width: 60,
+            width: 80,
             height: 2,
-            background: tokens.gold,
-            marginTop: 32,
-            opacity: 0.5,
+            background: `linear-gradient(90deg, ${tokens.gold} 0%, transparent 100%)`,
+            marginTop: 40,
           }}
         />
       </div>
@@ -179,20 +168,20 @@ export function DifferentiatorsSection() {
     <section
       style={{
         background: tokens.warmWhite,
-        padding: isMobile ? '80px 24px' : '140px 80px',
+        padding: isMobile ? '100px 24px' : '160px 80px',
       }}
     >
-      <div style={{ maxWidth: 1300, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: isMobile ? 60 : 100 }}>
+        <div style={{ textAlign: 'center', marginBottom: isMobile ? 80 : 120 }}>
           <p
             style={{
               fontFamily: tokens.body,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 500,
               color: tokens.gold,
               textTransform: 'uppercase',
-              letterSpacing: '0.25em',
+              letterSpacing: '0.2em',
               margin: 0,
             }}
           >
@@ -201,12 +190,12 @@ export function DifferentiatorsSection() {
           <h2
             style={{
               fontFamily: tokens.display,
-              fontSize: isMobile ? 40 : 60,
+              fontSize: isMobile ? 38 : 56,
               fontWeight: 300,
               color: tokens.ink,
-              lineHeight: 1.05,
+              lineHeight: 1.1,
               margin: 0,
-              marginTop: 20,
+              marginTop: 24,
             }}
           >
             Not just blinds. A better way.
@@ -218,7 +207,7 @@ export function DifferentiatorsSection() {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: isMobile ? 80 : 120,
+            gap: isMobile ? 100 : 140,
           }}
         >
           {FEATURES.map((feature, index) => (

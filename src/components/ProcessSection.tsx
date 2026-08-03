@@ -43,17 +43,17 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
       style={{
         position: 'relative',
         overflow: 'hidden',
-        borderRadius: 20,
+        borderRadius: 16,
         background: tokens.warmWhite,
         boxShadow: hover
-          ? '0 20px 40px rgba(28,24,16,0.15)'
-          : '0 4px 24px rgba(28,24,16,0.08)',
-        transform: hover ? 'translateY(-4px)' : 'translateY(0)',
-        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+          ? '0 24px 48px rgba(28,24,16,0.18)'
+          : '0 8px 32px rgba(28,24,16,0.1)',
+        transform: hover ? 'translateY(-6px)' : 'translateY(0)',
+        transition: 'transform 0.4s ease, box-shadow 0.4s ease',
       }}
     >
       {/* Image */}
-      <div style={{ overflow: 'hidden', height: 260 }}>
+      <div style={{ overflow: 'hidden', aspectRatio: '4 / 3' }}>
         <img
           src={step.image}
           alt={step.title}
@@ -62,23 +62,24 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
             height: '100%',
             objectFit: 'cover',
             display: 'block',
-            transition: 'transform 0.5s ease',
-            transform: hover ? 'scale(1.05)' : 'scale(1)',
+            transition: 'transform 0.6s ease',
+            transform: hover ? 'scale(1.06)' : 'scale(1)',
           }}
         />
       </div>
 
       {/* Text content */}
-      <div style={{ padding: '28px 24px 32px' }}>
+      <div style={{ padding: '32px 28px 36px' }}>
         {/* Step number */}
         <span
           style={{
-            fontFamily: tokens.display,
-            fontSize: 13,
-            fontWeight: 400,
+            fontFamily: tokens.body,
+            fontSize: 11,
+            fontWeight: 600,
             color: tokens.gold,
             display: 'block',
-            letterSpacing: '0.1em',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
           }}
         >
           Step {step.number}
@@ -88,12 +89,12 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
         <h3
           style={{
             fontFamily: tokens.display,
-            fontSize: 28,
-            fontWeight: 300,
+            fontSize: 26,
+            fontWeight: 400,
             color: tokens.ink,
             margin: 0,
-            marginTop: 8,
-            lineHeight: 1.15,
+            marginTop: 12,
+            lineHeight: 1.2,
           }}
         >
           {step.title}
@@ -103,11 +104,11 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
         <p
           style={{
             fontFamily: tokens.body,
-            fontSize: 14,
-            color: 'rgba(28,24,16,0.55)',
-            lineHeight: 1.65,
+            fontSize: 15,
+            color: 'rgba(28,24,16,0.6)',
+            lineHeight: 1.7,
             margin: 0,
-            marginTop: 12,
+            marginTop: 14,
           }}
         >
           {step.description}
@@ -130,19 +131,19 @@ export function ProcessSection() {
       id="process"
       style={{
         background: tokens.parchment,
-        padding: isMobile ? '80px 24px' : '120px 80px',
+        padding: isMobile ? '100px 24px' : '160px 80px',
       }}
     >
-      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* Eyebrow */}
         <p
           style={{
             fontFamily: tokens.body,
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: 500,
             color: tokens.gold,
             textTransform: 'uppercase',
-            letterSpacing: '0.25em',
+            letterSpacing: '0.2em',
             margin: 0,
             textAlign: 'center',
           }}
@@ -154,12 +155,12 @@ export function ProcessSection() {
         <h2
           style={{
             fontFamily: tokens.display,
-            fontSize: isMobile ? 38 : 56,
+            fontSize: isMobile ? 36 : 52,
             fontWeight: 300,
             color: tokens.ink,
-            lineHeight: 1.08,
+            lineHeight: 1.1,
             margin: 0,
-            marginTop: 20,
+            marginTop: 24,
             textAlign: 'center',
           }}
         >
@@ -171,8 +172,8 @@ export function ProcessSection() {
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-            gap: isMobile ? 24 : 24,
-            marginTop: 64,
+            gap: isMobile ? 32 : 28,
+            marginTop: 80,
           }}
         >
           {STEPS.map((step) => (
@@ -181,27 +182,28 @@ export function ProcessSection() {
         </div>
 
         {/* CTA */}
-        <div style={{ textAlign: 'center', marginTop: 56 }}>
+        <div style={{ textAlign: 'center', marginTop: 72 }}>
           <button
             onClick={scrollToVisualiser}
             onMouseEnter={() => setCtaHover(true)}
             onMouseLeave={() => setCtaHover(false)}
             style={{
-              padding: '18px 52px',
+              padding: '20px 56px',
               borderRadius: 8,
               fontFamily: tokens.body,
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: 500,
               letterSpacing: '0.15em',
               textTransform: 'uppercase',
               cursor: 'pointer',
-              transition: 'all 0.25s ease',
+              transition: 'all 0.3s ease',
               background: ctaHover ? tokens.goldLight : tokens.gold,
               color: tokens.ink,
               border: 'none',
               boxShadow: ctaHover
-                ? '0 8px 24px rgba(200,151,58,0.4)'
-                : '0 4px 16px rgba(200,151,58,0.25)',
+                ? '0 12px 32px rgba(200,151,58,0.4)'
+                : '0 6px 20px rgba(200,151,58,0.3)',
+              transform: ctaHover ? 'translateY(-2px)' : 'translateY(0)',
             }}
           >
             Start Designing

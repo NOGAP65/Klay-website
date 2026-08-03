@@ -16,7 +16,7 @@ export function ShopSection() {
       <div
         style={{
           position: 'relative',
-          height: isMobile ? 320 : 440,
+          height: isMobile ? 360 : 500,
           backgroundImage: "url('/images/lifestyle/room-kitchen.png')",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -30,7 +30,7 @@ export function ShopSection() {
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(180deg, rgba(28,24,16,0.35) 0%, rgba(28,24,16,0.55) 100%)',
+            background: 'linear-gradient(180deg, rgba(28,24,16,0.3) 0%, rgba(28,24,16,0.55) 100%)',
             pointerEvents: 'none',
           }}
         />
@@ -46,11 +46,11 @@ export function ShopSection() {
           <p
             style={{
               fontFamily: tokens.body,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 500,
               color: tokens.gold,
               textTransform: 'uppercase',
-              letterSpacing: '0.25em',
+              letterSpacing: '0.2em',
               margin: 0,
             }}
           >
@@ -59,12 +59,12 @@ export function ShopSection() {
           <h2
             style={{
               fontFamily: tokens.display,
-              fontSize: isMobile ? 42 : 64,
+              fontSize: isMobile ? 40 : 60,
               fontWeight: 300,
               color: tokens.warmWhite,
               lineHeight: 1.05,
               margin: 0,
-              marginTop: 16,
+              marginTop: 20,
             }}
           >
             Four ranges. One perfect fit.
@@ -72,11 +72,11 @@ export function ShopSection() {
           <p
             style={{
               fontFamily: tokens.body,
-              fontSize: 16,
+              fontSize: 17,
               color: 'rgba(245,242,237,0.7)',
               margin: 0,
-              marginTop: 16,
-              maxWidth: 480,
+              marginTop: 20,
+              maxWidth: 500,
               marginLeft: 'auto',
               marginRight: 'auto',
               lineHeight: 1.6,
@@ -91,15 +91,15 @@ export function ShopSection() {
       <div
         style={{
           background: tokens.warmWhite,
-          padding: isMobile ? '60px 24px 80px' : '80px 80px 100px',
+          padding: isMobile ? '80px 24px 100px' : '120px 80px 140px',
         }}
       >
-        <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-              gap: isMobile ? 20 : 24,
+              gap: isMobile ? 28 : 28,
             }}
           >
             {RANGES.map((range, index) => {
@@ -118,15 +118,15 @@ export function ShopSection() {
                     borderRadius: 16,
                     cursor: 'pointer',
                     background: tokens.warmWhite,
-                    border: `1px solid ${hovered ? 'rgba(200,151,58,0.3)' : 'rgba(28,24,16,0.08)'}`,
-                    transform: hovered ? 'translateY(-6px)' : 'translateY(0)',
+                    border: `1px solid ${hovered ? 'rgba(200,151,58,0.3)' : 'rgba(28,24,16,0.06)'}`,
+                    transform: hovered ? 'translateY(-8px)' : 'translateY(0)',
                     boxShadow: hovered
-                      ? '0 20px 48px rgba(28,24,16,0.18)'
-                      : '0 4px 20px rgba(28,24,16,0.06)',
-                    transition: 'all 0.35s ease',
+                      ? '0 24px 56px rgba(28,24,16,0.2)'
+                      : '0 4px 24px rgba(28,24,16,0.06)',
+                    transition: 'all 0.4s ease',
                   }}
                 >
-                  <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '4 / 5' }}>
+                  <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '3 / 4' }}>
                     <img
                       src={range.image}
                       alt={range.name}
@@ -140,23 +140,11 @@ export function ShopSection() {
                         transform: hovered ? 'scale(1.06)' : 'scale(1)',
                       }}
                     />
-                    {/* Subtle gradient at bottom */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: '40%',
-                        background: 'linear-gradient(180deg, transparent 0%, rgba(28,24,16,0.03) 100%)',
-                        pointerEvents: 'none',
-                      }}
-                    />
                   </div>
 
                   <div
                     style={{
-                      padding: '24px 24px 28px',
+                      padding: '28px 24px 32px',
                       display: 'flex',
                       flexDirection: 'column',
                       flex: 1,
@@ -165,11 +153,12 @@ export function ShopSection() {
                     <div
                       style={{
                         fontFamily: tokens.body,
-                        fontSize: 10,
+                        fontSize: 11,
                         color: tokens.gold,
                         textTransform: 'uppercase',
-                        letterSpacing: '0.2em',
-                        marginBottom: 8,
+                        letterSpacing: '0.15em',
+                        fontWeight: 500,
+                        marginBottom: 10,
                       }}
                     >
                       {range.range}
@@ -177,10 +166,10 @@ export function ShopSection() {
                     <div
                       style={{
                         fontFamily: tokens.display,
-                        fontSize: 28,
-                        fontWeight: 300,
+                        fontSize: 26,
+                        fontWeight: 400,
                         color: tokens.ink,
-                        lineHeight: 1.1,
+                        lineHeight: 1.15,
                       }}
                     >
                       {range.name}
@@ -188,11 +177,11 @@ export function ShopSection() {
                     <div
                       style={{
                         fontFamily: tokens.body,
-                        fontSize: 13,
-                        lineHeight: 1.55,
-                        color: 'rgba(28,24,16,0.5)',
+                        fontSize: 14,
+                        lineHeight: 1.6,
+                        color: 'rgba(28,24,16,0.55)',
                         fontStyle: 'italic',
-                        marginTop: 10,
+                        marginTop: 12,
                         flex: 1,
                       }}
                     >
@@ -203,15 +192,15 @@ export function ShopSection() {
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        marginTop: 20,
-                        paddingTop: 16,
+                        marginTop: 24,
+                        paddingTop: 20,
                         borderTop: `1px solid rgba(28,24,16,0.08)`,
                       }}
                     >
                       <span
                         style={{
                           fontFamily: tokens.display,
-                          fontSize: 18,
+                          fontSize: 20,
                           color: tokens.ink,
                         }}
                       >
@@ -220,9 +209,9 @@ export function ShopSection() {
                       <span
                         style={{
                           fontFamily: tokens.body,
-                          fontSize: 11,
+                          fontSize: 12,
                           color: tokens.gold,
-                          letterSpacing: '0.12em',
+                          letterSpacing: '0.1em',
                           textTransform: 'uppercase',
                           fontWeight: 500,
                           transform: hovered ? 'translateX(4px)' : 'translateX(0)',
@@ -238,7 +227,7 @@ export function ShopSection() {
             })}
           </div>
 
-          <div style={{ marginTop: 56, textAlign: 'center' }}>
+          <div style={{ marginTop: 72, textAlign: 'center' }}>
             <Link
               to="/products"
               onMouseEnter={() => setLinkHover(true)}
@@ -246,17 +235,17 @@ export function ShopSection() {
               style={{
                 textDecoration: 'none',
                 display: 'inline-block',
-                padding: '16px 40px',
+                padding: '18px 48px',
                 borderRadius: 8,
-                border: `1px solid ${linkHover ? tokens.gold : 'rgba(28,24,16,0.15)'}`,
+                border: `1px solid ${linkHover ? tokens.gold : 'rgba(28,24,16,0.12)'}`,
                 fontFamily: tokens.body,
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 500,
                 color: linkHover ? tokens.gold : tokens.ink,
                 textTransform: 'uppercase',
-                letterSpacing: '0.15em',
-                transition: 'all 0.25s ease',
-                background: linkHover ? 'rgba(200,151,58,0.08)' : 'transparent',
+                letterSpacing: '0.12em',
+                transition: 'all 0.3s ease',
+                background: linkHover ? 'rgba(200,151,58,0.06)' : 'transparent',
               }}
             >
               View All Products
