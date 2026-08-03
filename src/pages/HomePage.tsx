@@ -6,8 +6,6 @@ import { Nav } from '../components/Nav';
 import HeroScene from '../components/HeroScene';
 import VisualiserSection from '../components/VisualiserSection';
 import { ProcessSection } from '../components/ProcessSection';
-import { ShopSection } from '../components/ShopSection';
-import { DifferentiatorsSection } from '../components/DifferentiatorsSection';
 import { ReviewsSection } from '../components/ReviewsSection';
 import { FinalScene } from '../components/FinalScene';
 import { Footer } from '../components/Footer';
@@ -40,12 +38,8 @@ export default function HomePage() {
         <HeroScene />
         {/* Visualiser — the key differentiator */}
         <VisualiserSection />
-        {/* Process — 4 steps with fabric texture background */}
+        {/* Process — how it works */}
         <ProcessSection />
-        {/* Collection — banner + 4 product cards */}
-        <ShopSection />
-        {/* What Makes Klay Different — 3 cards */}
-        <DifferentiatorsSection />
         {/* Reviews — customer testimonials */}
         <ReviewsSection />
         {/* Final CTA — charcoal close */}

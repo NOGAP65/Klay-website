@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { tokens } from '../theme'
 import { useIsMobile } from '../hooks/useIsMobile'
 
@@ -7,158 +8,115 @@ export function FinalScene() {
   const [primaryHover, setPrimaryHover] = useState(false)
   const [secondaryHover, setSecondaryHover] = useState(false)
 
-  const scrollToVisualiser = () => {
-    document.getElementById('visualiser')?.scrollIntoView({ behavior: 'smooth' })
-  }
-
   return (
     <section
       id="final"
       style={{
-        position: 'relative',
-        minHeight: isMobile ? '70vh' : '90vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
+        background: tokens.charcoal,
+        padding: isMobile ? '80px 24px' : '100px 80px',
       }}
     >
-      {/* Background image */}
       <div
         style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: "url('/images/lifestyle/room-living.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
-
-      {/* Gradient overlay */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background:
-            'linear-gradient(180deg, rgba(28,24,16,0.5) 0%, rgba(28,24,16,0.75) 50%, rgba(28,24,16,0.88) 100%)',
-        }}
-      />
-
-      {/* Content */}
-      <div
-        style={{
-          position: 'relative',
-          textAlign: 'center',
-          padding: isMobile ? '80px 24px' : '120px 80px',
           maxWidth: 900,
+          margin: '0 auto',
+          textAlign: 'center',
         }}
       >
-        {/* Eyebrow */}
         <p
           style={{
             fontFamily: tokens.body,
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: 500,
             color: tokens.gold,
             textTransform: 'uppercase',
-            letterSpacing: '0.25em',
+            letterSpacing: '0.2em',
             margin: 0,
           }}
         >
-          Ready to Transform Your Space
+          Ready to Start?
         </p>
 
-        {/* Headline */}
         <h2
           style={{
             fontFamily: tokens.display,
-            fontSize: isMobile ? 44 : 72,
+            fontSize: isMobile ? 36 : 52,
             fontWeight: 300,
             color: tokens.warmWhite,
-            lineHeight: 1.05,
+            lineHeight: 1.1,
             margin: 0,
-            marginTop: 28,
+            marginTop: 20,
           }}
         >
           Your room is waiting.
         </h2>
 
-        {/* Subtext */}
         <p
           style={{
             fontFamily: tokens.body,
-            fontSize: isMobile ? 16 : 18,
-            color: 'rgba(245,242,237,0.65)',
-            lineHeight: 1.75,
+            fontSize: 16,
+            color: 'rgba(245,242,237,0.55)',
+            lineHeight: 1.7,
             margin: 0,
-            marginTop: 32,
-            maxWidth: 540,
+            marginTop: 20,
+            maxWidth: 480,
             marginLeft: 'auto',
             marginRight: 'auto',
           }}
         >
-          Design your perfect blind in minutes. See it in your room. Book professional installation. All online.
+          Design your blind online. See it in your room. We measure, manufacture, and install.
         </p>
 
-        {/* CTAs */}
         <div
           style={{
             display: 'flex',
-            gap: 20,
+            gap: 16,
             justifyContent: 'center',
             flexWrap: 'wrap',
-            marginTop: 56,
+            marginTop: 36,
           }}
         >
-          <button
-            onClick={scrollToVisualiser}
+          <Link
+            to="/visualiser"
             onMouseEnter={() => setPrimaryHover(true)}
             onMouseLeave={() => setPrimaryHover(false)}
             style={{
-              padding: '20px 56px',
-              borderRadius: 8,
+              padding: '16px 40px',
+              borderRadius: 6,
               fontFamily: tokens.body,
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 500,
-              letterSpacing: '0.15em',
+              letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              background: primaryHover ? tokens.warmWhite : tokens.gold,
+              textDecoration: 'none',
+              transition: 'all 0.25s ease',
+              background: primaryHover ? tokens.goldLight : tokens.gold,
               color: tokens.ink,
-              border: 'none',
-              boxShadow: primaryHover
-                ? '0 16px 40px rgba(245,242,237,0.35)'
-                : '0 12px 32px rgba(200,151,58,0.4)',
-              transform: primaryHover ? 'translateY(-3px)' : 'translateY(0)',
             }}
           >
             Start Designing
-          </button>
-          <a
-            href="tel:1300005529"
+          </Link>
+          <Link
+            to="/blinds"
             onMouseEnter={() => setSecondaryHover(true)}
             onMouseLeave={() => setSecondaryHover(false)}
             style={{
-              padding: '20px 56px',
-              borderRadius: 8,
+              padding: '16px 40px',
+              borderRadius: 6,
               fontFamily: tokens.body,
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 500,
-              letterSpacing: '0.15em',
+              letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
               textDecoration: 'none',
-              background: secondaryHover ? 'rgba(245,242,237,0.1)' : 'transparent',
+              transition: 'all 0.25s ease',
+              background: 'transparent',
               color: secondaryHover ? tokens.gold : tokens.warmWhite,
-              border: `1px solid ${secondaryHover ? tokens.gold : 'rgba(245,242,237,0.3)'}`,
-              display: 'inline-block',
-              transform: secondaryHover ? 'translateY(-3px)' : 'translateY(0)',
+              border: `1px solid ${secondaryHover ? tokens.gold : 'rgba(245,242,237,0.25)'}`,
             }}
           >
-            Call 1300 00 KLAY
-          </a>
+            View Blinds
+          </Link>
         </div>
 
         {/* Trust badges */}
@@ -166,28 +124,24 @@ export function FinalScene() {
           style={{
             display: 'flex',
             justifyContent: 'center',
-            gap: isMobile ? 32 : 56,
-            marginTop: 72,
+            gap: isMobile ? 24 : 40,
+            marginTop: 48,
             flexWrap: 'wrap',
           }}
         >
-          {[
-            { label: 'Made in Australia' },
-            { label: '5 Year Warranty' },
-            { label: 'Free Installation' },
-          ].map((badge) => (
+          {['Australian Made', '5 Year Warranty', 'Free Installation'].map((badge) => (
             <div
-              key={badge.label}
+              key={badge}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
+                gap: 8,
               }}
             >
               <div
                 style={{
-                  width: 6,
-                  height: 6,
+                  width: 5,
+                  height: 5,
                   borderRadius: '50%',
                   background: tokens.gold,
                 }}
@@ -195,12 +149,11 @@ export function FinalScene() {
               <span
                 style={{
                   fontFamily: tokens.body,
-                  fontSize: 13,
-                  color: 'rgba(245,242,237,0.6)',
-                  letterSpacing: '0.05em',
+                  fontSize: 12,
+                  color: 'rgba(245,242,237,0.45)',
                 }}
               >
-                {badge.label}
+                {badge}
               </span>
             </div>
           ))}

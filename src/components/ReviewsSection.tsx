@@ -4,17 +4,17 @@ import { useIsMobile } from '../hooks/useIsMobile'
 
 const REVIEWS = [
   {
-    text: "Finally a blind company that actually comes to you. The technician was on time, knew exactly what he was doing, and the blind fits perfectly. Couldn't be happier.",
-    name: 'Sarah M.',
-    location: 'Brighton',
-  },
-  {
-    text: "The visualiser is incredible. I spent an hour trying different colours in my living room before I even placed the order. Ended up with exactly what I pictured.",
+    text: "The visualiser is incredible. I spent an hour trying different colours before I ordered. Ended up with exactly what I pictured.",
     name: 'James T.',
     location: 'South Yarra',
   },
   {
-    text: "Three windows, all measured and installed in one visit. The quality is exceptional — these are not cheap blinds. Worth every cent.",
+    text: "Finally a blind company that comes to you. The technician was on time, knew exactly what he was doing, and the blind fits perfectly.",
+    name: 'Sarah M.',
+    location: 'Brighton',
+  },
+  {
+    text: "Three windows, all measured and installed in one visit. The quality is exceptional — worth every cent.",
     name: 'Priya K.',
     location: 'Hawthorn',
   },
@@ -28,49 +28,27 @@ export function ReviewsSection() {
     <section
       id="reviews"
       style={{
-        position: 'relative',
-        padding: isMobile ? '100px 24px' : '160px 80px',
-        overflow: 'hidden',
+        background: tokens.parchment,
+        padding: isMobile ? '80px 24px' : '100px 80px',
       }}
     >
-      {/* Fabric texture background */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: "url('/images/lifestyle/fabric-texture.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      />
-
-      {/* Warm overlay to blend with brand */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(234,229,220,0.92)',
-        }}
-      />
-
-      {/* Content */}
-      <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* Header */}
         <div
           style={{
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
             justifyContent: 'space-between',
-            alignItems: isMobile ? 'flex-start' : 'flex-end',
-            marginBottom: isMobile ? 64 : 80,
-            gap: 32,
+            alignItems: isMobile ? 'flex-start' : 'center',
+            marginBottom: isMobile ? 48 : 56,
+            gap: 24,
           }}
         >
           <div>
             <p
               style={{
                 fontFamily: tokens.body,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 500,
                 color: tokens.gold,
                 textTransform: 'uppercase',
@@ -78,17 +56,17 @@ export function ReviewsSection() {
                 margin: 0,
               }}
             >
-              Customer Stories
+              Customer Reviews
             </p>
             <h2
               style={{
                 fontFamily: tokens.display,
-                fontSize: isMobile ? 38 : 52,
+                fontSize: isMobile ? 32 : 40,
                 fontWeight: 300,
                 color: tokens.ink,
-                lineHeight: 1.1,
+                lineHeight: 1.15,
                 margin: 0,
-                marginTop: 24,
+                marginTop: 12,
               }}
             >
               Loved across Victoria.
@@ -96,17 +74,12 @@ export function ReviewsSection() {
           </div>
 
           {/* Stats */}
-          <div
-            style={{
-              display: 'flex',
-              gap: isMobile ? 40 : 64,
-            }}
-          >
+          <div style={{ display: 'flex', gap: 32 }}>
             <div>
               <div
                 style={{
                   fontFamily: tokens.display,
-                  fontSize: isMobile ? 40 : 56,
+                  fontSize: 36,
                   fontWeight: 300,
                   color: tokens.gold,
                   lineHeight: 1,
@@ -117,21 +90,19 @@ export function ReviewsSection() {
               <div
                 style={{
                   fontFamily: tokens.body,
-                  fontSize: 12,
-                  color: 'rgba(28,24,16,0.5)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  marginTop: 10,
+                  fontSize: 11,
+                  color: 'rgba(28,24,16,0.45)',
+                  marginTop: 4,
                 }}
               >
-                Happy Homes
+                Homes
               </div>
             </div>
             <div>
               <div
                 style={{
                   fontFamily: tokens.display,
-                  fontSize: isMobile ? 40 : 56,
+                  fontSize: 36,
                   fontWeight: 300,
                   color: tokens.gold,
                   lineHeight: 1,
@@ -142,14 +113,12 @@ export function ReviewsSection() {
               <div
                 style={{
                   fontFamily: tokens.body,
-                  fontSize: 12,
-                  color: 'rgba(28,24,16,0.5)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  marginTop: 10,
+                  fontSize: 11,
+                  color: 'rgba(28,24,16,0.45)',
+                  marginTop: 4,
                 }}
               >
-                Star Rating
+                Rating
               </div>
             </div>
           </div>
@@ -160,7 +129,7 @@ export function ReviewsSection() {
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-            gap: 32,
+            gap: 24,
           }}
         >
           {REVIEWS.map((review, index) => {
@@ -172,23 +141,22 @@ export function ReviewsSection() {
                 onMouseLeave={() => setHoveredIndex(null)}
                 style={{
                   background: tokens.warmWhite,
-                  padding: isMobile ? '40px 32px' : '48px 40px',
-                  borderRadius: 20,
+                  padding: '32px 28px',
+                  borderRadius: 12,
                   boxShadow: hovered
-                    ? '0 24px 56px rgba(28,24,16,0.16)'
-                    : '0 8px 32px rgba(28,24,16,0.08)',
-                  border: `1px solid ${hovered ? 'rgba(200,151,58,0.2)' : 'rgba(28,24,16,0.04)'}`,
-                  transform: hovered ? 'translateY(-6px)' : 'translateY(0)',
-                  transition: 'all 0.4s ease',
+                    ? '0 12px 32px rgba(28,24,16,0.1)'
+                    : '0 2px 12px rgba(28,24,16,0.04)',
+                  transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
+                  transition: 'all 0.3s ease',
                 }}
               >
                 {/* Stars */}
                 <div
                   style={{
                     color: tokens.gold,
-                    fontSize: 18,
-                    letterSpacing: '0.08em',
-                    marginBottom: 28,
+                    fontSize: 14,
+                    letterSpacing: '0.05em',
+                    marginBottom: 16,
                   }}
                 >
                   ★★★★★
@@ -198,9 +166,9 @@ export function ReviewsSection() {
                 <p
                   style={{
                     fontFamily: tokens.body,
-                    fontSize: 16,
-                    color: 'rgba(28,24,16,0.7)',
-                    lineHeight: 1.85,
+                    fontSize: 15,
+                    color: 'rgba(28,24,16,0.65)',
+                    lineHeight: 1.7,
                     fontStyle: 'italic',
                     margin: 0,
                   }}
@@ -211,25 +179,23 @@ export function ReviewsSection() {
                 {/* Author */}
                 <div
                   style={{
-                    marginTop: 36,
-                    paddingTop: 28,
-                    borderTop: '1px solid rgba(28,24,16,0.08)',
+                    marginTop: 20,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 16,
+                    gap: 12,
                   }}
                 >
                   <div
                     style={{
-                      width: 52,
-                      height: 52,
+                      width: 36,
+                      height: 36,
                       borderRadius: '50%',
-                      background: `linear-gradient(135deg, ${tokens.parchment} 0%, rgba(200,151,58,0.15) 100%)`,
+                      background: tokens.parchment,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontFamily: tokens.display,
-                      fontSize: 20,
+                      fontSize: 14,
                       color: tokens.gold,
                     }}
                   >
@@ -239,7 +205,7 @@ export function ReviewsSection() {
                     <p
                       style={{
                         fontFamily: tokens.body,
-                        fontSize: 15,
+                        fontSize: 13,
                         fontWeight: 500,
                         color: tokens.ink,
                         margin: 0,
@@ -250,10 +216,9 @@ export function ReviewsSection() {
                     <p
                       style={{
                         fontFamily: tokens.body,
-                        fontSize: 13,
-                        color: 'rgba(28,24,16,0.45)',
+                        fontSize: 11,
+                        color: 'rgba(28,24,16,0.4)',
                         margin: 0,
-                        marginTop: 4,
                       }}
                     >
                       {review.location}
