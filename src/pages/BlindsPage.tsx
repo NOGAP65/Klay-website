@@ -298,6 +298,26 @@ export default function BlindsPage() {
             >
               Clean lines, simple elegance. Four fabric types for different ways of living with light.
             </p>
+            <div style={{ marginTop: 24 }}>
+              <Link
+                to="/visualiser"
+                style={{
+                  display: 'inline-block',
+                  padding: '14px 32px',
+                  borderRadius: 6,
+                  background: tokens.gold,
+                  color: tokens.ink,
+                  fontFamily: tokens.body,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  textDecoration: 'none',
+                }}
+              >
+                Design Yours
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -592,6 +612,64 @@ export default function BlindsPage() {
                 </button>
               </div>
             )}
+
+            {/* CTA Banner */}
+            <div
+              style={{
+                marginTop: 64,
+                padding: isMobile ? '40px 24px' : '48px 56px',
+                background: tokens.charcoal,
+                borderRadius: 16,
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 24,
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    fontFamily: tokens.display,
+                    fontSize: isMobile ? 26 : 32,
+                    fontWeight: 300,
+                    color: tokens.warmWhite,
+                    margin: 0,
+                  }}
+                >
+                  Ready to see it in your room?
+                </h3>
+                <p
+                  style={{
+                    fontFamily: tokens.body,
+                    fontSize: 14,
+                    color: 'rgba(245,242,237,0.6)',
+                    margin: 0,
+                    marginTop: 8,
+                  }}
+                >
+                  Try our visualiser — upload a photo, pick your blind, see it instantly.
+                </p>
+              </div>
+              <Link
+                to="/visualiser"
+                style={{
+                  padding: '16px 40px',
+                  borderRadius: 6,
+                  background: tokens.gold,
+                  color: tokens.ink,
+                  fontFamily: tokens.body,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  textDecoration: 'none',
+                  flexShrink: 0,
+                }}
+              >
+                Design Yours
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -690,14 +768,19 @@ export default function BlindsPage() {
                 style={{
                   display: 'inline-block',
                   marginTop: 16,
+                  padding: '12px 24px',
+                  borderRadius: 6,
+                  background: tokens.gold,
+                  color: tokens.ink,
                   fontFamily: tokens.body,
-                  fontSize: 13,
-                  color: tokens.gold,
-                  textDecoration: 'none',
+                  fontSize: 12,
                   fontWeight: 500,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  textDecoration: 'none',
                 }}
               >
-                Try the Visualiser →
+                Design Yours
               </Link>
             </div>
           </div>
