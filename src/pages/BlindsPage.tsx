@@ -316,14 +316,17 @@ export default function BlindsPage() {
                 { id: 'lightfilter', name: 'Haze', desc: 'Soft glow', image: '/images/types/haze.png' },
                 { id: 'dual', name: 'Duo', desc: 'Day & night', image: '/images/types/duo.png' },
               ].map((type) => (
-                <div
+                <button
                   key={type.id}
+                  onClick={() => setActiveFilter(type.id as FilterType)}
                   style={{
-                    background: tokens.warmWhite,
-                    border: `1px solid ${tokens.lineFaint}`,
+                    cursor: 'pointer',
+                    background: activeFilter === type.id ? tokens.warmWhite : 'transparent',
+                    border: `1px solid ${activeFilter === type.id ? tokens.gold : tokens.lineFaint}`,
                     borderRadius: 10,
                     padding: 12,
                     textAlign: 'center',
+                    transition: 'all 0.2s ease',
                   }}
                 >
                   <div
@@ -369,26 +372,7 @@ export default function BlindsPage() {
                   >
                     {type.desc}
                   </p>
-                  <Link
-                    to={`/visualiser?type=${type.id}`}
-                    style={{
-                      display: 'block',
-                      marginTop: 12,
-                      padding: '10px 16px',
-                      borderRadius: 6,
-                      background: tokens.gold,
-                      color: tokens.ink,
-                      fontFamily: tokens.body,
-                      fontSize: 11,
-                      fontWeight: 500,
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    Design Yours
-                  </Link>
-                </div>
+                </button>
               ))}
             </div>
           </div>
