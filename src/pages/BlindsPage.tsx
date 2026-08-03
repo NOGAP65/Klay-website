@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { useKlayStore } from '../store';
@@ -27,20 +27,16 @@ const SORT_OPTIONS: { id: SortOption; label: string }[] = [
 
 function ProductCard({
   product,
-  onOpen,
 }: {
   product: (typeof PRODUCTS)[number];
-  onOpen: () => void;
 }) {
   const [hover, setHover] = useState(false);
 
   return (
     <article
-      onClick={onOpen}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        cursor: 'pointer',
         background: tokens.warmWhite,
         borderRadius: 12,
         overflow: 'hidden',
@@ -66,28 +62,6 @@ function ProductCard({
             transition: 'transform 0.4s ease',
           }}
         />
-        {/* Quick view badge */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 12,
-            left: '50%',
-            transform: `translateX(-50%) translateY(${hover ? 0 : 20}px)`,
-            opacity: hover ? 1 : 0,
-            transition: 'all 0.3s ease',
-            background: tokens.charcoal,
-            color: tokens.warmWhite,
-            fontFamily: tokens.body,
-            fontSize: 11,
-            fontWeight: 500,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            padding: '10px 20px',
-            borderRadius: 4,
-          }}
-        >
-          Quick View
-        </div>
       </div>
 
       <div style={{ padding: '20px 16px 24px' }}>
@@ -168,13 +142,33 @@ function ProductCard({
             ))}
           </span>
         </div>
+
+        <Link
+          to={`/visualiser?type=${product.blindType}`}
+          style={{
+            display: 'block',
+            marginTop: 16,
+            padding: '12px 20px',
+            borderRadius: 6,
+            background: tokens.gold,
+            color: tokens.ink,
+            fontFamily: tokens.body,
+            fontSize: 12,
+            fontWeight: 500,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            textDecoration: 'none',
+            textAlign: 'center',
+          }}
+        >
+          Design Yours
+        </Link>
       </div>
     </article>
   );
 }
 
 export default function BlindsPage() {
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const setScrollY = useKlayStore(s => s.setScrollY);
 
@@ -569,7 +563,6 @@ export default function BlindsPage() {
                   <ProductCard
                     key={product.slug}
                     product={product}
-                    onOpen={() => navigate(`/products/${product.slug}`)}
                   />
                 ))}
               </div>
