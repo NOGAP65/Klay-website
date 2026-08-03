@@ -6,32 +6,16 @@ import { useKlayStore } from '../store';
 import { tokens, eyebrow, motion } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {
-  HARDWARE_OPTIONS,
-  MOTORISED_ADDON,
   ProductBlindType,
-  RYNAMIC_COLOURS,
   productByBlindType,
   productBySlug,
 } from '../data/products';
 import KlayConfigurator from '../visualiser/KlayConfigurator';
+import VisualiserControls from '../visualiser/VisualiserControls';
 import { useVisualiserStore } from '../visualiser/useVisualiserStore';
 import { bookingLink } from '../lib/bookingLink';
 
-const LINE = 'rgba(28,24,16,0.1)';
 const INK_55 = 'rgba(28,24,16,0.55)';
-
-const CHROME_GRADIENT = 'linear-gradient(135deg, #E8E8E8, #A0A0A0)';
-
-const SIZE_OPTIONS: { id: 'small' | 'medium' | 'large'; label: string; sub: string }[] = [
-  { id: 'small', label: 'Small', sub: 'up to 1m' },
-  { id: 'medium', label: 'Medium', sub: 'up to 2m' },
-  { id: 'large', label: 'Large', sub: 'up to 3m' },
-];
-
-const OPERATION_OPTIONS: { id: 'manual' | 'motorised'; label: string }[] = [
-  { id: 'manual', label: 'Manual' },
-  { id: 'motorised', label: `Motorised (+$${MOTORISED_ADDON})` },
-];
 
 // Trust badges shown at top
 const TRUST_BADGES = [
@@ -139,109 +123,6 @@ function GoldLabel({ children }: { children: React.ReactNode }) {
   return <div style={{ ...eyebrow, letterSpacing: '0.25em' }}>{children}</div>;
 }
 
-function ControlLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ fontFamily: tokens.body, fontSize: 10, fontWeight: 500, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.2em' }}>
-      {children}
-    </div>
-  );
-}
-
-function Pill({ label, sub, active, onClick }: { label: string; sub?: string; active: boolean; onClick: () => void }) {
-  const [hover, setHover] = useState(false);
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        display: 'inline-flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 2,
-        fontFamily: tokens.body,
-        fontSize: 11,
-        textTransform: 'uppercase',
-        letterSpacing: '0.15em',
-        padding: '10px 20px',
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-        background: active ? tokens.ink : 'transparent',
-        border: `1px solid ${active ? tokens.ink : hover ? tokens.gold : 'rgba(28,24,16,0.2)'}`,
-        color: active ? tokens.warmWhite : hover ? tokens.gold : 'rgba(28,24,16,0.6)',
-        transition: 'all 0.25s ease',
-      }}
-    >
-      <span>{label}</span>
-      {sub && <span style={{ fontSize: 9, letterSpacing: '0.08em', textTransform: 'none', opacity: 0.7 }}>{sub}</span>}
-    </button>
-  );
-}
-
-function Swatch({ background, label, active, onClick }: { background: string; label: string; active: boolean; onClick: () => void }) {
-  const [hover, setHover] = useState(false);
-  return (
-    <button
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        width: 32,
-        height: 32,
-        borderRadius: '50%',
-        padding: 0,
-        flexShrink: 0,
-        cursor: 'pointer',
-        background,
-        border: `1px solid ${LINE}`,
-        boxShadow: active ? `0 0 0 2px ${tokens.warmWhite}, 0 0 0 4px ${tokens.gold}` : hover ? `0 0 0 2px ${tokens.warmWhite}, 0 0 0 4px ${tokens.goldLine}` : 'none',
-        transform: hover && !active ? 'scale(1.08)' : 'scale(1)',
-        transition: 'all 0.2s ease',
-      }}
-    />
-  );
-}
-
-function ConfiguratorControls() {
-  const store = useVisualiserStore();
-  return (
-    <>
-      <div>
-        <ControlLabel>Fabric Colour</ControlLabel>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-          {RYNAMIC_COLOURS.map(c => (
-            <Swatch key={c.name} background={c.hex} label={c.name} active={store.fabricColour === c.name} onClick={() => store.setFabricColour(c.name)} />
-          ))}
-        </div>
-        <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.ink, marginTop: 8 }}>{store.fabricColour}</div>
-      </div>
-      <div style={{ marginTop: 24 }}>
-        <ControlLabel>Hardware Colour</ControlLabel>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-          {HARDWARE_OPTIONS.map(h => (
-            <Swatch key={h.id} background={h.id === 'chrome' ? CHROME_GRADIENT : (h.id === 'white' ? '#E8E4DE' : '#2C2824')} label={h.label} active={store.hardwareColour === h.id} onClick={() => store.setHardwareColour(h.id)} />
-          ))}
-        </div>
-        <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.ink, marginTop: 8 }}>{HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour)?.label}</div>
-      </div>
-      <div style={{ marginTop: 24 }}>
-        <ControlLabel>Window Size</ControlLabel>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-          {SIZE_OPTIONS.map(s => <Pill key={s.id} label={s.label} sub={s.sub} active={store.windowSize === s.id} onClick={() => store.setWindowSize(s.id)} />)}
-        </div>
-      </div>
-      <div style={{ marginTop: 24 }}>
-        <ControlLabel>Operation</ControlLabel>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-          {OPERATION_OPTIONS.map(o => <Pill key={o.id} label={o.label} active={store.operation === o.id} onClick={() => store.setOperation(o.id)} />)}
-        </div>
-      </div>
-    </>
-  );
-}
-
 function FaqRow({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
@@ -289,9 +170,8 @@ export default function ProductDetailPage() {
   const setScrollY = useKlayStore(s => s.setScrollY);
 
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [heroCtaHover, setHeroCtaHover] = useState(false);
+  const [ctaHover, setCtaHover] = useState(false);
   const [barCtaHover, setBarCtaHover] = useState(false);
-  const [backHover, setBackHover] = useState(false);
 
   const product = productBySlug(slug);
   const legacy = product ? undefined : productByBlindType(slug);
@@ -338,80 +218,63 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* Hero section */}
-        <section style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'flex-start', background: tokens.warmWhite }}>
-          {/* Visualiser */}
-          <div style={{ width: isMobile ? '100%' : '55%', flexShrink: 0, padding: isMobile ? '24px' : '48px' }}>
-            <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 8, background: tokens.charcoal }}>
-              <KlayConfigurator defaultBlindType={product.blindType} mediaMaxVh={isMobile ? 56 : 80} />
-            </div>
+        {/* Hero section - identical to homepage visualiser layout */}
+        <section style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', width: '100%', background: tokens.warmWhite, overflow: 'visible', padding: isMobile ? '24px' : '80px 60px', gap: 32 }}>
+          {/* Visualiser - same as homepage */}
+          <div style={{ flex: '1 1 55%', background: tokens.warmWhite, position: 'relative' }}>
+            <KlayConfigurator defaultBlindType={product.blindType} />
           </div>
 
-          {/* Product info */}
-          <div style={{ width: isMobile ? '100%' : '45%', padding: isMobile ? '24px' : '48px 48px 48px 24px' }}>
-            <Link
-              to="/blinds"
-              onMouseEnter={() => setBackHover(true)}
-              onMouseLeave={() => setBackHover(false)}
-              style={{ fontFamily: tokens.body, fontSize: 11, color: backHover ? tokens.gold : tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.12em', textDecoration: 'none' }}
-            >
-              ← Back to Blinds
-            </Link>
-
-            <div style={{ marginTop: 24 }}>
+          {/* Controls panel - same structure as homepage */}
+          <div style={{ flex: '0 0 340px', background: tokens.warmWhite, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <GoldLabel>{product.type}</GoldLabel>
-              <h1 style={{ fontFamily: tokens.display, fontSize: isMobile ? 48 : 64, fontWeight: 300, color: tokens.ink, margin: '8px 0 0', lineHeight: 1 }}>{product.name}</h1>
-              <p style={{ fontFamily: tokens.body, fontSize: 16, color: INK_55, margin: '12px 0 0', lineHeight: 1.6 }}>{product.tagline}</p>
-
+              <h1 style={{ fontFamily: tokens.display, fontSize: 36, fontWeight: 300, color: tokens.ink, lineHeight: 1.1, margin: 0 }}>
+                {product.name}
+              </h1>
+              <p style={{ fontFamily: tokens.body, fontSize: 14, color: INK_55, lineHeight: 1.5, margin: 0 }}>
+                {product.tagline}
+              </p>
               {/* Star rating */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 2 }}>
-                  {[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.gold, fontSize: 16 }}>★</span>)}
+                  {[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.gold, fontSize: 14 }}>★</span>)}
                 </div>
-                <span style={{ fontFamily: tokens.body, fontSize: 13, color: tokens.inkSoft }}>5.0 (47 reviews)</span>
+                <span style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkSoft }}>5.0 (47 reviews)</span>
               </div>
             </div>
 
-            <div style={{ height: 1, background: LINE, margin: '28px 0' }} />
+            {/* VisualiserControls - same as homepage but with lockedRange */}
+            <VisualiserControls lockedRange={product.blindType} compact />
 
-            <ConfiguratorControls />
-
-            {/* Price and CTA */}
-            <div style={{ marginTop: 28, padding: 24, background: tokens.parchment, borderRadius: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontFamily: tokens.body, fontSize: 10, color: tokens.gold, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Your Price</div>
-                  <div style={{ fontFamily: tokens.display, fontSize: 44, fontWeight: 300, color: tokens.ink, marginTop: 4 }}>${price}</div>
-                  <div style={{ fontFamily: tokens.body, fontSize: 12, color: INK_55, marginTop: 4 }}>Includes measure + install</div>
-                </div>
-              </div>
-              <Link
-                to={bookHref}
-                onMouseEnter={() => setHeroCtaHover(true)}
-                onMouseLeave={() => setHeroCtaHover(false)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: 20,
-                  padding: '18px 24px',
-                  background: heroCtaHover ? tokens.goldLight : tokens.gold,
-                  color: tokens.ink,
-                  fontFamily: tokens.body,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.15em',
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                  transition: motion.button,
-                  textAlign: 'center',
-                  textDecoration: 'none',
-                }}
-              >
-                Book Free Measure →
-              </Link>
-            </div>
+            {/* CTA button - same as homepage */}
+            <Link
+              to={bookHref}
+              onMouseEnter={() => setCtaHover(true)}
+              onMouseLeave={() => setCtaHover(false)}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '14px 16px',
+                background: ctaHover ? tokens.goldLight : tokens.gold,
+                color: tokens.ink,
+                fontFamily: tokens.body,
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                transition: motion.button,
+                textAlign: 'center',
+                textDecoration: 'none',
+                boxSizing: 'border-box',
+                flexShrink: 0,
+              }}
+            >
+              Book Installation →
+            </Link>
           </div>
         </section>
 
