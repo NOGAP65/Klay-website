@@ -227,7 +227,7 @@ export default function BlindsPage() {
           style={{
             position: 'relative',
             height: isMobile ? 280 : 360,
-            marginTop: 72,
+            paddingTop: 72,
             overflow: 'hidden',
           }}
         >
@@ -317,10 +317,10 @@ export default function BlindsPage() {
               }}
             >
               {[
-                { id: 'blockout', name: 'Blockout', desc: 'Total darkness', image: '/images/Phoenix%20Blockout%20product%20image.png' },
-                { id: 'sunscreen', name: 'Sunscreen', desc: 'Keep the view', image: '/images/Soleil%20Sunscreen%20product%20image.png' },
-                { id: 'lightfilter', name: 'Light Filter', desc: 'Soft glow', image: '/images/Soleil%20Sunscreen%20product%20image.png' },
-                { id: 'dual', name: 'Dual Roller', desc: 'Day & night', image: '/images/Eclipse%20Dual%20Roller%20product%20image.png' },
+                { id: 'blockout', name: 'Dusk', desc: 'Total darkness', image: '/images/types/dusk.png' },
+                { id: 'sunscreen', name: 'Veil', desc: 'Keep the view', image: '/images/types/veil.png' },
+                { id: 'lightfilter', name: 'Haze', desc: 'Soft glow', image: '/images/types/haze.png' },
+                { id: 'dual', name: 'Duo', desc: 'Day & night', image: '/images/types/duo.png' },
               ].map((type) => (
                 <button
                   key={type.id}
@@ -340,18 +340,29 @@ export default function BlindsPage() {
                       aspectRatio: '1 / 1',
                       borderRadius: 8,
                       overflow: 'hidden',
-                      background: tokens.warmWhite,
+                      background: '#f8f7f5',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: `1px solid ${tokens.lineFaint}`,
                     }}
                   >
-                    <img
-                      src={type.image}
-                      alt={type.name}
+                    {/* Placeholder - replace with B&W explanation images */}
+                    <div
                       style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
+                        width: '60%',
+                        height: '60%',
+                        background: `linear-gradient(135deg, #e8e6e2 0%, #d4d2ce 100%)`,
+                        borderRadius: 6,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'rgba(28,24,16,0.2)',
+                        fontSize: 32,
                       }}
-                    />
+                    >
+                      ◐
+                    </div>
                   </div>
                   <p
                     style={{
