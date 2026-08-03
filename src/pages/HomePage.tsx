@@ -6,6 +6,7 @@ import { Nav } from '../components/Nav';
 import HeroScene from '../components/HeroScene';
 import VisualiserSection from '../components/VisualiserSection';
 import { ProcessSection } from '../components/ProcessSection';
+import { ShopSection } from '../components/ShopSection';
 import { ReviewsSection } from '../components/ReviewsSection';
 import { FinalScene } from '../components/FinalScene';
 import { Footer } from '../components/Footer';
@@ -40,6 +41,8 @@ export default function HomePage() {
         <VisualiserSection />
         {/* Process — how it works */}
         <ProcessSection />
+        {/* Shop by category */}
+        <ShopSection />
         {/* Reviews — customer testimonials */}
         <ReviewsSection />
         {/* Final CTA — charcoal close */}

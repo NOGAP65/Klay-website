@@ -12,13 +12,36 @@ export function FinalScene() {
     <section
       id="final"
       style={{
-        background: tokens.charcoal,
-        padding: isMobile ? '80px 24px' : '100px 80px',
+        position: 'relative',
+        padding: isMobile ? '100px 24px' : '120px 80px',
+        overflow: 'hidden',
       }}
     >
+      {/* Background image */}
       <div
         style={{
-          maxWidth: 900,
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: "url('/images/lifestyle/room-living.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      />
+
+      {/* Overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(28,24,16,0.75)',
+        }}
+      />
+
+      {/* Content */}
+      <div
+        style={{
+          position: 'relative',
+          maxWidth: 700,
           margin: '0 auto',
           textAlign: 'center',
         }}
@@ -40,7 +63,7 @@ export function FinalScene() {
         <h2
           style={{
             fontFamily: tokens.display,
-            fontSize: isMobile ? 36 : 52,
+            fontSize: isMobile ? 38 : 56,
             fontWeight: 300,
             color: tokens.warmWhite,
             lineHeight: 1.1,
@@ -55,11 +78,11 @@ export function FinalScene() {
           style={{
             fontFamily: tokens.body,
             fontSize: 16,
-            color: 'rgba(245,242,237,0.55)',
+            color: 'rgba(245,242,237,0.6)',
             lineHeight: 1.7,
             margin: 0,
             marginTop: 20,
-            maxWidth: 480,
+            maxWidth: 460,
             marginLeft: 'auto',
             marginRight: 'auto',
           }}
@@ -112,7 +135,7 @@ export function FinalScene() {
               transition: 'all 0.25s ease',
               background: 'transparent',
               color: secondaryHover ? tokens.gold : tokens.warmWhite,
-              border: `1px solid ${secondaryHover ? tokens.gold : 'rgba(245,242,237,0.25)'}`,
+              border: `1px solid ${secondaryHover ? tokens.gold : 'rgba(245,242,237,0.3)'}`,
             }}
           >
             View Blinds
@@ -124,8 +147,8 @@ export function FinalScene() {
           style={{
             display: 'flex',
             justifyContent: 'center',
-            gap: isMobile ? 24 : 40,
-            marginTop: 48,
+            gap: isMobile ? 20 : 36,
+            marginTop: 40,
             flexWrap: 'wrap',
           }}
         >
@@ -150,7 +173,7 @@ export function FinalScene() {
                 style={{
                   fontFamily: tokens.body,
                   fontSize: 12,
-                  color: 'rgba(245,242,237,0.45)',
+                  color: 'rgba(245,242,237,0.5)',
                 }}
               >
                 {badge}
