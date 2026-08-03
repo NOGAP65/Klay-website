@@ -223,7 +223,25 @@ export default function ProductDetailPage() {
 
           {/* Controls panel */}
           <div style={{ flex: '0 0 380px', background: tokens.warmWhite, display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* VisualiserControls - same as homepage but with lockedRange */}
+            {/* Product info at top */}
+            <div>
+              <GoldLabel>{product.type}</GoldLabel>
+              <h1 style={{ fontFamily: tokens.display, fontSize: 32, fontWeight: 300, color: tokens.ink, lineHeight: 1.1, margin: '8px 0 0' }}>
+                {product.name}
+              </h1>
+              <p style={{ fontFamily: tokens.body, fontSize: 14, color: INK_55, lineHeight: 1.5, margin: '8px 0 0' }}>
+                {product.tagline}
+              </p>
+              {/* Star rating */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+                <div style={{ display: 'flex', gap: 2 }}>
+                  {[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.gold, fontSize: 14 }}>★</span>)}
+                </div>
+                <span style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkSoft }}>5.0 (47 reviews)</span>
+              </div>
+            </div>
+
+            {/* VisualiserControls */}
             <VisualiserControls lockedRange={product.blindType} compact />
 
             {/* Two large CTAs right after price */}
@@ -275,24 +293,6 @@ export default function ProductDetailPage() {
               >
                 Get Quote
               </Link>
-            </div>
-
-            {/* Product info moved down */}
-            <div style={{ paddingTop: 16, borderTop: `1px solid ${tokens.lineFaint}` }}>
-              <GoldLabel>{product.type}</GoldLabel>
-              <h1 style={{ fontFamily: tokens.display, fontSize: 32, fontWeight: 300, color: tokens.ink, lineHeight: 1.1, margin: '8px 0 0' }}>
-                {product.name}
-              </h1>
-              <p style={{ fontFamily: tokens.body, fontSize: 14, color: INK_55, lineHeight: 1.5, margin: '8px 0 0' }}>
-                {product.tagline}
-              </p>
-              {/* Star rating */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-                <div style={{ display: 'flex', gap: 2 }}>
-                  {[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.gold, fontSize: 14 }}>★</span>)}
-                </div>
-                <span style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkSoft }}>5.0 (47 reviews)</span>
-              </div>
             </div>
           </div>
         </section>
