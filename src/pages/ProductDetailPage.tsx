@@ -25,31 +25,53 @@ const TRUST_BADGES = [
   { icon: '🔧', label: 'Expert Install' },
 ];
 
+// SVG Icons for features
+const FeatureIcon = ({ type }: { type: string }) => {
+  const icons: Record<string, JSX.Element> = {
+    moon: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
+    mute: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>,
+    thermometer: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>,
+    lock: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+    sun: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
+    eye: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+    wind: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>,
+    contrast: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 2v20"/><path d="M12 2a10 10 0 0 1 0 20"/></svg>,
+    zap: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+    minimize: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>,
+    target: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+    sparkle: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>,
+    home: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+    user: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+    palette: <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="13.5" cy="6.5" r="2"/><circle cx="19" cy="11.5" r="2"/><circle cx="17.5" cy="17.5" r="2"/><circle cx="6.5" cy="12.5" r="2"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.8-.1 2.6-.3.5-.1.8-.6.7-1.1-.1-.4-.2-.8-.2-1.1 0-1.1.9-2 2-2h1.5c2.2 0 3.4-1.5 3.4-3.5 0-4.4-4-8-10-8z"/></svg>,
+  };
+  return icons[type] || null;
+};
+
 // Feature highlights by type
 const FEATURES_BY_TYPE: Record<ProductBlindType, { icon: string; title: string; desc: string }[]> = {
   blockout: [
-    { icon: '🌙', title: 'Complete Darkness', desc: 'Blocks 100% of light for perfect sleep' },
-    { icon: '🔇', title: 'Noise Reduction', desc: 'Acrylic foam backing dampens sound' },
-    { icon: '🌡️', title: 'Energy Efficient', desc: 'Insulates against heat and cold' },
-    { icon: '🔒', title: 'Total Privacy', desc: 'No light bleed, no silhouettes' },
+    { icon: 'moon', title: 'Complete Darkness', desc: 'Blocks 100% of light for perfect sleep' },
+    { icon: 'mute', title: 'Noise Reduction', desc: 'Acrylic foam backing dampens sound' },
+    { icon: 'thermometer', title: 'Energy Efficient', desc: 'Insulates against heat and cold' },
+    { icon: 'lock', title: 'Total Privacy', desc: 'No light bleed, no silhouettes' },
   ],
   sunscreen: [
-    { icon: '☀️', title: 'UV Protection', desc: 'Blocks up to 85% of harmful UV rays' },
-    { icon: '👁️', title: 'Keep the View', desc: 'See outside while reducing glare' },
-    { icon: '🌡️', title: 'Heat Control', desc: 'Reduces solar heat gain' },
-    { icon: '💨', title: 'Airflow', desc: 'Maintains natural ventilation' },
+    { icon: 'sun', title: 'UV Protection', desc: 'Blocks up to 85% of harmful UV rays' },
+    { icon: 'eye', title: 'Keep the View', desc: 'See outside while reducing glare' },
+    { icon: 'thermometer', title: 'Heat Control', desc: 'Reduces solar heat gain' },
+    { icon: 'wind', title: 'Airflow', desc: 'Maintains natural ventilation' },
   ],
   dual: [
-    { icon: '🌗', title: 'Day & Night', desc: 'Two blinds, one elegant system' },
-    { icon: '⚡', title: 'Instant Switch', desc: 'Change modes in seconds' },
-    { icon: '📐', title: 'Space Saving', desc: 'Single headrail design' },
-    { icon: '🎯', title: 'Versatile', desc: 'Perfect for any room' },
+    { icon: 'contrast', title: 'Day & Night', desc: 'Two blinds, one elegant system' },
+    { icon: 'zap', title: 'Instant Switch', desc: 'Change modes in seconds' },
+    { icon: 'minimize', title: 'Space Saving', desc: 'Single headrail design' },
+    { icon: 'target', title: 'Versatile', desc: 'Perfect for any room' },
   ],
   lightfilter: [
-    { icon: '✨', title: 'Soft Glow', desc: 'Diffuses harsh sunlight beautifully' },
-    { icon: '🛋️', title: 'Cozy Ambiance', desc: 'Creates warm, inviting spaces' },
-    { icon: '👤', title: 'Daytime Privacy', desc: 'See out, they can\'t see in' },
-    { icon: '🎨', title: 'Rich Colors', desc: 'Fabric colors stay vibrant' },
+    { icon: 'sparkle', title: 'Soft Glow', desc: 'Diffuses harsh sunlight beautifully' },
+    { icon: 'home', title: 'Cozy Ambiance', desc: 'Creates warm, inviting spaces' },
+    { icon: 'user', title: 'Daytime Privacy', desc: 'See out, they can\'t see in' },
+    { icon: 'palette', title: 'Rich Colors', desc: 'Fabric colors stay vibrant' },
   ],
 };
 
@@ -307,7 +329,7 @@ export default function ProductDetailPage() {
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 24 : 32 }}>
               {features.map((f) => (
                 <div key={f.title} style={{ textAlign: 'center', padding: 24, background: 'rgba(245,242,237,0.05)', borderRadius: 8, border: '1px solid rgba(245,242,237,0.1)' }}>
-                  <div style={{ fontSize: 32, marginBottom: 16 }}>{f.icon}</div>
+                  <div style={{ color: tokens.gold, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><FeatureIcon type={f.icon} /></div>
                   <h3 style={{ fontFamily: tokens.display, fontSize: 20, fontWeight: 400, color: tokens.warmWhite, margin: 0 }}>{f.title}</h3>
                   <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(245,242,237,0.65)', margin: '8px 0 0', lineHeight: 1.5 }}>{f.desc}</p>
                 </div>
