@@ -23,7 +23,6 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
   const solidBar = alwaysSolid && !menuOpen;
   const onDarkGround = menuOpen || solidBar || (!compressed && !onLight);
   const linkColor = onDarkGround ? tokens.warmWhite : tokens.ink;
-  const ctaSolid = !solidBar;
 
   return (
     <nav
@@ -203,35 +202,31 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
                 </Link>
               );
             })}
-          </div>
 
-          <Link
-            to="/visualiser"
-            onMouseEnter={() => setCtaHover(true)}
-            onMouseLeave={() => setCtaHover(false)}
-            style={{
-              border: `1px solid ${tokens.gold}`,
-              borderRadius: 6,
-              background: ctaSolid
-                ? ctaHover
-                  ? tokens.goldLight
-                  : tokens.gold
-                : ctaHover
-                  ? tokens.gold
-                  : 'transparent',
-              color: ctaSolid || ctaHover ? tokens.ink : tokens.gold,
-              textDecoration: 'none',
-              fontFamily: tokens.body,
-              fontSize: 12,
-              fontWeight: 500,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              padding: '12px 22px',
-              transition: motion.button,
-            }}
-          >
-            Design Yours
-          </Link>
+            {/* Design Yours - cart-style CTA */}
+            <Link
+              to="/visualiser"
+              onMouseEnter={() => setCtaHover(true)}
+              onMouseLeave={() => setCtaHover(false)}
+              style={{
+                marginLeft: 8,
+                border: `1px solid ${tokens.gold}`,
+                borderRadius: 6,
+                background: ctaHover ? tokens.gold : 'transparent',
+                color: ctaHover ? tokens.ink : tokens.gold,
+                textDecoration: 'none',
+                fontFamily: tokens.body,
+                fontSize: 12,
+                fontWeight: 500,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                padding: '10px 18px',
+                transition: motion.button,
+              }}
+            >
+              Design Yours
+            </Link>
+          </div>
         </>
       )}
 
