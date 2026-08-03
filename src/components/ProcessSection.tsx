@@ -5,55 +5,74 @@ import { useIsMobile } from '../hooks/useIsMobile'
 const STEPS = [
   {
     number: '01',
-    title: 'Configure',
-    image: '/images/lifestyle/step-1-configure.png',
+    title: 'Configure Online',
     description:
-      'Choose your blind type, fabric colour and hardware finish. See it rendered live in your room.',
+      'Choose your blind type, fabric colour and hardware finish. Our visualiser renders it live in your room — try every option before you decide.',
+    image: '/images/lifestyle/step-1-configure.png',
   },
   {
     number: '02',
     title: 'We Measure',
-    image: '/images/lifestyle/step-2-measure.png',
     description:
-      'A Klay technician visits your home within 7–10 days. Precise measurements, down to the millimetre.',
+      'A Klay technician visits your home within 7–10 days. Precise measurements, down to the millimetre. No DIY, no guesswork.',
+    image: '/images/lifestyle/step-2-measure.png',
   },
   {
     number: '03',
     title: 'Made for You',
-    image: '/images/lifestyle/step-3-manufacture.png',
     description:
-      'Manufactured to your exact measurements by Rynamic Industries in South Australia.',
+      'Your blinds are manufactured to your exact measurements by Rynamic Industries in South Australia. Australian made, premium quality.',
+    image: '/images/lifestyle/step-3-manufacture.png',
   },
   {
     number: '04',
-    title: 'Installed',
-    image: '/images/lifestyle/step-4-install.png',
+    title: 'Professionally Installed',
     description:
-      "The same technician returns to install. Perfectly fitted, every time.",
+      'The same technician returns to install your blinds. Perfectly fitted, every time. Your home, transformed.',
+    image: '/images/lifestyle/step-4-install.png',
   },
 ]
 
-function StepCard({ step }: { step: (typeof STEPS)[number] }) {
-  const [hover, setHover] = useState(false)
+function StepBlock({
+  step,
+  index,
+}: {
+  step: (typeof STEPS)[number]
+  index: number
+}) {
+  const isMobile = useIsMobile()
+  const [imageHover, setImageHover] = useState(false)
+  const isReversed = index % 2 === 1
 
   return (
     <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
       style={{
-        position: 'relative',
-        overflow: 'hidden',
-        borderRadius: 16,
-        background: tokens.warmWhite,
-        boxShadow: hover
-          ? '0 24px 48px rgba(28,24,16,0.18)'
-          : '0 8px 32px rgba(28,24,16,0.1)',
-        transform: hover ? 'translateY(-6px)' : 'translateY(0)',
-        transition: 'transform 0.4s ease, box-shadow 0.4s ease',
+        display: 'flex',
+        flexDirection: isMobile
+          ? 'column'
+          : isReversed
+            ? 'row-reverse'
+            : 'row',
+        alignItems: 'center',
+        gap: isMobile ? 48 : 80,
       }}
     >
       {/* Image */}
-      <div style={{ overflow: 'hidden', aspectRatio: '4 / 3' }}>
+      <div
+        onMouseEnter={() => setImageHover(true)}
+        onMouseLeave={() => setImageHover(false)}
+        style={{
+          flex: 1,
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 24,
+          aspectRatio: '16 / 10',
+          boxShadow: imageHover
+            ? '0 40px 80px rgba(28,24,16,0.22)'
+            : '0 16px 48px rgba(28,24,16,0.12)',
+          transition: 'box-shadow 0.5s ease',
+        }}
+      >
         <img
           src={step.image}
           alt={step.title}
@@ -62,39 +81,59 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
             height: '100%',
             objectFit: 'cover',
             display: 'block',
-            transition: 'transform 0.6s ease',
-            transform: hover ? 'scale(1.06)' : 'scale(1)',
+            transform: imageHover ? 'scale(1.03)' : 'scale(1)',
+            transition: 'transform 0.7s ease',
           }}
         />
       </div>
 
       {/* Text content */}
-      <div style={{ padding: '32px 28px 36px' }}>
-        {/* Step number */}
-        <span
+      <div
+        style={{
+          flex: 1,
+          padding: isMobile ? '0' : '24px 0',
+        }}
+      >
+        {/* Large step number */}
+        <div
+          style={{
+            fontFamily: tokens.display,
+            fontSize: 100,
+            fontWeight: 200,
+            color: tokens.gold,
+            opacity: 0.2,
+            lineHeight: 0.85,
+            marginBottom: -20,
+          }}
+        >
+          {step.number}
+        </div>
+
+        {/* Step label */}
+        <p
           style={{
             fontFamily: tokens.body,
-            fontSize: 11,
-            fontWeight: 600,
+            fontSize: 12,
+            fontWeight: 500,
             color: tokens.gold,
-            display: 'block',
-            letterSpacing: '0.15em',
             textTransform: 'uppercase',
+            letterSpacing: '0.15em',
+            margin: 0,
           }}
         >
           Step {step.number}
-        </span>
+        </p>
 
         {/* Title */}
         <h3
           style={{
             fontFamily: tokens.display,
-            fontSize: 26,
-            fontWeight: 400,
+            fontSize: isMobile ? 32 : 40,
+            fontWeight: 300,
             color: tokens.ink,
+            lineHeight: 1.15,
             margin: 0,
-            marginTop: 12,
-            lineHeight: 1.2,
+            marginTop: 16,
           }}
         >
           {step.title}
@@ -104,15 +143,26 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
         <p
           style={{
             fontFamily: tokens.body,
-            fontSize: 15,
+            fontSize: 16,
             color: 'rgba(28,24,16,0.6)',
-            lineHeight: 1.7,
+            lineHeight: 1.8,
             margin: 0,
-            marginTop: 14,
+            marginTop: 20,
+            maxWidth: 440,
           }}
         >
           {step.description}
         </p>
+
+        {/* Decorative line */}
+        <div
+          style={{
+            width: 60,
+            height: 2,
+            background: `linear-gradient(90deg, ${tokens.gold} 0%, transparent 100%)`,
+            marginTop: 32,
+          }}
+        />
       </div>
     </div>
   )
@@ -135,54 +185,51 @@ export function ProcessSection() {
       }}
     >
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        {/* Eyebrow */}
-        <p
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 12,
-            fontWeight: 500,
-            color: tokens.gold,
-            textTransform: 'uppercase',
-            letterSpacing: '0.2em',
-            margin: 0,
-            textAlign: 'center',
-          }}
-        >
-          How It Works
-        </p>
-
-        {/* Headline */}
-        <h2
-          style={{
-            fontFamily: tokens.display,
-            fontSize: isMobile ? 36 : 52,
-            fontWeight: 300,
-            color: tokens.ink,
-            lineHeight: 1.1,
-            margin: 0,
-            marginTop: 24,
-            textAlign: 'center',
-          }}
-        >
-          Four simple steps to perfect blinds.
-        </h2>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: isMobile ? 80 : 100 }}>
+          <p
+            style={{
+              fontFamily: tokens.body,
+              fontSize: 12,
+              fontWeight: 500,
+              color: tokens.gold,
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+              margin: 0,
+            }}
+          >
+            How It Works
+          </p>
+          <h2
+            style={{
+              fontFamily: tokens.display,
+              fontSize: isMobile ? 36 : 52,
+              fontWeight: 300,
+              color: tokens.ink,
+              lineHeight: 1.1,
+              margin: 0,
+              marginTop: 24,
+            }}
+          >
+            Four simple steps to perfect blinds.
+          </h2>
+        </div>
 
         {/* Steps */}
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-            gap: isMobile ? 32 : 28,
-            marginTop: 80,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: isMobile ? 80 : 120,
           }}
         >
-          {STEPS.map((step) => (
-            <StepCard key={step.number} step={step} />
+          {STEPS.map((step, index) => (
+            <StepBlock key={step.number} step={step} index={index} />
           ))}
         </div>
 
         {/* CTA */}
-        <div style={{ textAlign: 'center', marginTop: 72 }}>
+        <div style={{ textAlign: 'center', marginTop: 100 }}>
           <button
             onClick={scrollToVisualiser}
             onMouseEnter={() => setCtaHover(true)}
