@@ -45,10 +45,11 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
         overflow: 'hidden',
         borderRadius: 2,
         background: tokens.warmWhite,
+        boxShadow: '0 2px 20px rgba(28,24,16,0.08)',
       }}
     >
       {/* Image */}
-      <div style={{ overflow: 'hidden', height: 240 }}>
+      <div style={{ overflow: 'hidden', height: 220 }}>
         <img
           src={step.image}
           alt={step.title}
@@ -64,15 +65,16 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
       </div>
 
       {/* Text content */}
-      <div style={{ padding: '24px 0' }}>
+      <div style={{ padding: '24px 20px 28px' }}>
         {/* Step number */}
         <span
           style={{
             fontFamily: tokens.display,
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 400,
             color: tokens.gold,
             display: 'block',
+            letterSpacing: '0.05em',
           }}
         >
           Step {step.number}
@@ -82,11 +84,11 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
         <h3
           style={{
             fontFamily: tokens.display,
-            fontSize: 32,
+            fontSize: 28,
             fontWeight: 300,
             color: tokens.ink,
             margin: 0,
-            marginTop: 8,
+            marginTop: 6,
             lineHeight: 1.1,
           }}
         >
@@ -101,7 +103,7 @@ function StepCard({ step }: { step: (typeof STEPS)[number] }) {
             color: 'rgba(28,24,16,0.6)',
             lineHeight: 1.7,
             margin: 0,
-            marginTop: 12,
+            marginTop: 10,
           }}
         >
           {step.description}
@@ -123,78 +125,99 @@ export function ProcessSection() {
     <section
       id="process"
       style={{
-        background: tokens.warmWhite,
-        padding: isMobile ? '80px 24px' : '120px 80px',
+        position: 'relative',
+        backgroundImage: "url('/images/lifestyle/fabric-texture.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        {/* Eyebrow */}
-        <p
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 10,
-            fontWeight: 500,
-            color: tokens.gold,
-            textTransform: 'uppercase',
-            letterSpacing: '0.3em',
-            margin: 0,
-          }}
-        >
-          The Process
-        </p>
+      {/* Light overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(234,229,220,0.92)',
+          pointerEvents: 'none',
+        }}
+      />
 
-        {/* Headline */}
-        <h2
-          style={{
-            fontFamily: tokens.display,
-            fontSize: isMobile ? 36 : 56,
-            fontWeight: 300,
-            color: tokens.ink,
-            lineHeight: 1.1,
-            margin: 0,
-            marginTop: 18,
-          }}
-        >
-          From your screen to your window in four steps.
-        </h2>
-
-        {/* Steps */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-            gap: isMobile ? 32 : 32,
-            marginTop: 64,
-          }}
-        >
-          {STEPS.map((step) => (
-            <StepCard key={step.number} step={step} />
-          ))}
-        </div>
-
-        {/* CTA */}
-        <div style={{ textAlign: 'center', marginTop: 64 }}>
-          <button
-            onClick={scrollToVisualiser}
-            onMouseEnter={() => setCtaHover(true)}
-            onMouseLeave={() => setCtaHover(false)}
+      <div
+        style={{
+          position: 'relative',
+          padding: isMobile ? '80px 24px' : '120px 80px',
+        }}
+      >
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          {/* Eyebrow */}
+          <p
             style={{
-              padding: '18px 48px',
-              borderRadius: 2,
               fontFamily: tokens.body,
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 500,
-              letterSpacing: '0.2em',
+              color: tokens.gold,
               textTransform: 'uppercase',
-              cursor: 'pointer',
-              transition: motion.button,
-              background: ctaHover ? tokens.goldLight : tokens.gold,
-              color: tokens.ink,
-              border: `1px solid ${ctaHover ? tokens.goldLight : tokens.gold}`,
+              letterSpacing: '0.3em',
+              margin: 0,
+              textAlign: 'center',
             }}
           >
-            Book Your Installation
-          </button>
+            How It Works
+          </p>
+
+          {/* Headline */}
+          <h2
+            style={{
+              fontFamily: tokens.display,
+              fontSize: isMobile ? 36 : 52,
+              fontWeight: 300,
+              color: tokens.ink,
+              lineHeight: 1.1,
+              margin: 0,
+              marginTop: 18,
+              textAlign: 'center',
+            }}
+          >
+            From your screen to your window in four steps.
+          </h2>
+
+          {/* Steps */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
+              gap: isMobile ? 24 : 28,
+              marginTop: 56,
+            }}
+          >
+            {STEPS.map((step) => (
+              <StepCard key={step.number} step={step} />
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div style={{ textAlign: 'center', marginTop: 56 }}>
+            <button
+              onClick={scrollToVisualiser}
+              onMouseEnter={() => setCtaHover(true)}
+              onMouseLeave={() => setCtaHover(false)}
+              style={{
+                padding: '18px 48px',
+                borderRadius: 2,
+                fontFamily: tokens.body,
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                transition: motion.button,
+                background: ctaHover ? tokens.goldLight : tokens.gold,
+                color: tokens.ink,
+                border: `1px solid ${ctaHover ? tokens.goldLight : tokens.gold}`,
+              }}
+            >
+              Start Designing
+            </button>
+          </div>
         </div>
       </div>
     </section>

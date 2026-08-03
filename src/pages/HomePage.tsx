@@ -4,11 +4,10 @@ import { tokens } from '../theme';
 import { ScrollProgress } from '../components/ScrollProgress';
 import { Nav } from '../components/Nav';
 import HeroScene from '../components/HeroScene';
-import { ManifestoSection } from '../components/ManifestoSection';
 import VisualiserSection from '../components/VisualiserSection';
 import { ProcessSection } from '../components/ProcessSection';
-import { DifferentiatorsSection } from '../components/DifferentiatorsSection';
 import { ShopSection } from '../components/ShopSection';
+import { DifferentiatorsSection } from '../components/DifferentiatorsSection';
 import { ReviewsSection } from '../components/ReviewsSection';
 import { FinalScene } from '../components/FinalScene';
 import { Footer } from '../components/Footer';
@@ -37,21 +36,19 @@ export default function HomePage() {
       <ScrollProgress />
       <Nav />
       <main style={{ background: tokens.warmWhite }}>
-        {/* SECTION 1: Hero — video with centered CTAs */}
+        {/* Hero — video with centered CTAs */}
         <HeroScene />
-        {/* SECTION 2: Manifesto — charcoal strip with stats */}
-        <ManifestoSection />
-        {/* SECTION 3: Visualiser — unchanged */}
+        {/* Visualiser — the key differentiator */}
         <VisualiserSection />
-        {/* SECTION 4: How It Works — 4 steps on warm white */}
+        {/* Process — 4 steps with fabric texture background */}
         <ProcessSection />
-        {/* SECTION 5: Differentiators — 3 cards on charcoal */}
-        <DifferentiatorsSection />
-        {/* SECTION 6: Shop the Range — 4 product cards */}
+        {/* Collection — banner + 4 product cards */}
         <ShopSection />
-        {/* SECTION 7: Reviews — 3 static review cards on parchment */}
+        {/* What Makes Klay Different — 3 cards */}
+        <DifferentiatorsSection />
+        {/* Reviews — customer testimonials */}
         <ReviewsSection />
-        {/* SECTION 8: Final CTA — charcoal close */}
+        {/* Final CTA — charcoal close */}
         <FinalScene />
         <Footer />
       </main>
