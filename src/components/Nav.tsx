@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useKlayStore } from '../store';
+import { useCartStore } from '../store/cartStore';
 import { tokens, motion } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { NAV_CATEGORIES } from '../data/categories';
@@ -12,6 +13,7 @@ interface NavProps {
 
 export function Nav({ onLight = false, solid = true }: NavProps = {}) {
   const scrollY = useKlayStore((s) => s.scrollY);
+  const cartItemCount = useCartStore((s) => s.getItemCount());
   const compressed = scrollY > 60;
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -217,6 +219,7 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
             onMouseEnter={() => setCtaHover(true)}
             onMouseLeave={() => setCtaHover(false)}
             style={{
+              position: 'relative',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -236,6 +239,26 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
               <circle cx="20" cy="21" r="1" />
               <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
             </svg>
+            {cartItemCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: -4,
+                right: -4,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                background: tokens.gold,
+                color: tokens.ink,
+                fontFamily: tokens.body,
+                fontSize: 10,
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                {cartItemCount}
+              </span>
+            )}
           </Link>
         </>
       )}
