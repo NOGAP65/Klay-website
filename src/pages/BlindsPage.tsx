@@ -33,10 +33,13 @@ function ProductCard({
   const [hover, setHover] = useState(false);
 
   return (
-    <article
+    <Link
+      to={`/products/${product.slug}`}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
+        display: 'block',
+        textDecoration: 'none',
         background: tokens.warmWhite,
         borderRadius: 12,
         overflow: 'hidden',
@@ -143,8 +146,7 @@ function ProductCard({
           </span>
         </div>
 
-        <Link
-          to={`/visualiser?type=${product.blindType}`}
+        <span
           style={{
             display: 'block',
             marginTop: 16,
@@ -157,14 +159,13 @@ function ProductCard({
             fontWeight: 500,
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
-            textDecoration: 'none',
             textAlign: 'center',
           }}
         >
           Design Yours
-        </Link>
+        </span>
       </div>
-    </article>
+    </Link>
   );
 }
 
@@ -175,6 +176,7 @@ export default function BlindsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -541,7 +543,7 @@ export default function BlindsPage() {
               </h2>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               {[
                 {
                   q: 'What are Roller Blinds?',
@@ -567,40 +569,75 @@ export default function BlindsPage() {
                   q: 'What warranty do you offer?',
                   a: 'All Klay blinds come with a 5-year warranty on manufacturing defects. Our installation workmanship is guaranteed.',
                 },
-              ].map((faq, index) => (
-                <div
-                  key={index}
-                  style={{
-                    padding: '24px 28px',
-                    background: tokens.parchment,
-                    borderRadius: 12,
-                  }}
-                >
-                  <h3
+              ].map((faq, index) => {
+                const isOpen = openFaq === index;
+                return (
+                  <div
+                    key={index}
                     style={{
-                      fontFamily: tokens.display,
-                      fontSize: 20,
-                      fontWeight: 400,
-                      color: tokens.ink,
-                      margin: 0,
+                      borderBottom: `1px solid ${tokens.lineFaint}`,
                     }}
                   >
-                    {faq.q}
-                  </h3>
-                  <p
-                    style={{
-                      fontFamily: tokens.body,
-                      fontSize: 15,
-                      color: 'rgba(28,24,16,0.65)',
-                      lineHeight: 1.7,
-                      margin: 0,
-                      marginTop: 12,
-                    }}
-                  >
-                    {faq.a}
-                  </p>
-                </div>
-              ))}
+                    <button
+                      onClick={() => setOpenFaq(isOpen ? null : index)}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '20px 0',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <h3
+                        style={{
+                          fontFamily: tokens.display,
+                          fontSize: 18,
+                          fontWeight: 400,
+                          color: tokens.ink,
+                          margin: 0,
+                        }}
+                      >
+                        {faq.q}
+                      </h3>
+                      <span
+                        style={{
+                          fontSize: 24,
+                          color: tokens.gold,
+                          fontWeight: 300,
+                          transition: 'transform 0.3s ease',
+                          transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)',
+                        }}
+                      >
+                        +
+                      </span>
+                    </button>
+                    <div
+                      style={{
+                        maxHeight: isOpen ? 200 : 0,
+                        overflow: 'hidden',
+                        transition: 'max-height 0.3s ease, padding 0.3s ease',
+                        paddingBottom: isOpen ? 20 : 0,
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontFamily: tokens.body,
+                          fontSize: 15,
+                          color: 'rgba(28,24,16,0.65)',
+                          lineHeight: 1.7,
+                          margin: 0,
+                        }}
+                      >
+                        {faq.a}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <div style={{ textAlign: 'center', marginTop: 48 }}>
