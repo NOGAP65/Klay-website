@@ -66,7 +66,7 @@ export function ReviewsCarousel() {
 
     let animationId: number
     let start: number | null = null
-    const speed = 0.5
+    const speed = 0.15
 
     const animate = (timestamp: number) => {
       if (!start) start = timestamp

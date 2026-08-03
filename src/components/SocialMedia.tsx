@@ -74,7 +74,7 @@ export function SocialMedia() {
             gap: isMobile ? 12 : 20,
           }}
         >
-          {PLACEHOLDERS.slice(0, isMobile ? 4 : 6).map((item, index) => {
+          {PLACEHOLDERS.slice(0, 3).map((item, index) => {
             const hovered = hoveredIndex === index
             return (
               <div
