@@ -339,19 +339,44 @@ export default function ProductDetailPage() {
         </section>
 
         {/* Specs section */}
-        <section style={{ background: tokens.warmWhite, padding: isMobile ? '64px 24px' : '80px 80px' }}>
-          <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <section style={{ background: tokens.parchment, padding: isMobile ? '64px 24px' : '80px 80px' }}>
+          <div style={{ maxWidth: 800, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <GoldLabel>Specifications</GoldLabel>
               <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.ink, margin: '12px 0 0' }}>The details that matter.</h2>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 0 }}>
-              {specRows.map((row, i) => (
-                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 20px', background: i % 2 === 0 ? tokens.parchment : tokens.warmWhite, borderBottom: `1px solid ${tokens.lineFaint}` }}>
-                  <span style={{ fontFamily: tokens.body, fontSize: 13, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{row.label}</span>
-                  <span style={{ fontFamily: tokens.body, fontSize: 14, color: tokens.ink, fontWeight: 500, textAlign: 'right' }}>{row.value}</span>
-                </div>
-              ))}
+            <div style={{ background: tokens.warmWhite, borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 24px rgba(28,24,16,0.06)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <tbody>
+                  {specRows.map((row, i) => (
+                    <tr key={row.label} style={{ borderBottom: i < specRows.length - 1 ? `1px solid ${tokens.lineFaint}` : 'none' }}>
+                      <td style={{
+                        padding: '18px 24px',
+                        fontFamily: tokens.body,
+                        fontSize: 13,
+                        color: tokens.inkSoft,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        width: '40%',
+                        verticalAlign: 'middle',
+                      }}>
+                        {row.label}
+                      </td>
+                      <td style={{
+                        padding: '18px 24px',
+                        fontFamily: tokens.body,
+                        fontSize: 15,
+                        color: tokens.ink,
+                        fontWeight: 500,
+                        textAlign: 'right',
+                        verticalAlign: 'middle',
+                      }}>
+                        {row.value}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </section>
