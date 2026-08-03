@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { useKlayStore } from '../store';
+import { useCartStore } from '../store/cartStore';
 import { tokens, eyebrow, motion } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {
@@ -182,6 +183,9 @@ export default function ProductDetailPage() {
   const [cartHover, setCartHover] = useState(false);
   const [barCartHover, setBarCartHover] = useState(false);
   const [barQuoteHover, setBarQuoteHover] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
+
+  const addItem = useCartStore(s => s.addItem);
 
   const product = productBySlug(slug);
   const legacy = product ? undefined : productByBlindType(slug);
@@ -249,13 +253,27 @@ export default function ProductDetailPage() {
             {/* Two large CTAs right after price */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <button
+                onClick={() => {
+                  addItem({
+                    name: product.name,
+                    type: product.type,
+                    blindType: product.blindType,
+                    fabricColour: store.fabricColour,
+                    hardwareColour: store.hardwareColour,
+                    windowSize: store.windowSize,
+                    operation: store.operation,
+                    price: price,
+                  });
+                  setAddedToCart(true);
+                  setTimeout(() => setAddedToCart(false), 2000);
+                }}
                 onMouseEnter={() => setCartHover(true)}
                 onMouseLeave={() => setCartHover(false)}
                 style={{
                   width: '100%',
                   padding: '18px 24px',
-                  background: cartHover ? tokens.goldLight : tokens.gold,
-                  color: tokens.ink,
+                  background: addedToCart ? tokens.charcoal : (cartHover ? tokens.goldLight : tokens.gold),
+                  color: addedToCart ? tokens.warmWhite : tokens.ink,
                   fontFamily: tokens.body,
                   fontSize: 14,
                   fontWeight: 600,
@@ -268,7 +286,7 @@ export default function ProductDetailPage() {
                   textAlign: 'center',
                 }}
               >
-                Add to Cart
+                {addedToCart ? '✓ Added to Cart' : 'Add to Cart'}
               </button>
               <Link
                 to={bookHref}
@@ -425,11 +443,25 @@ export default function ProductDetailPage() {
               Get Quote
             </Link>
             <button
+              onClick={() => {
+                addItem({
+                  name: product.name,
+                  type: product.type,
+                  blindType: product.blindType,
+                  fabricColour: store.fabricColour,
+                  hardwareColour: store.hardwareColour,
+                  windowSize: store.windowSize,
+                  operation: store.operation,
+                  price: price,
+                });
+                setAddedToCart(true);
+                setTimeout(() => setAddedToCart(false), 2000);
+              }}
               onMouseEnter={() => setBarCartHover(true)}
               onMouseLeave={() => setBarCartHover(false)}
               style={{
-                background: barCartHover ? tokens.goldLight : tokens.gold,
-                color: tokens.ink,
+                background: addedToCart ? tokens.charcoal : (barCartHover ? tokens.goldLight : tokens.gold),
+                color: addedToCart ? tokens.warmWhite : tokens.ink,
                 fontFamily: tokens.body,
                 fontSize: 11,
                 fontWeight: 600,
@@ -442,7 +474,7 @@ export default function ProductDetailPage() {
                 transition: motion.button,
               }}
             >
-              Add to Cart
+              {addedToCart ? '✓ Added' : 'Add to Cart'}
             </button>
           </div>
         </div>

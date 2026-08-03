@@ -9,6 +9,7 @@ import ContactPage from './pages/ContactPage';
 import VisualiserPage from './pages/VisualiserPage';
 import BookInstallPage from './pages/BookInstallPage';
 import BookingConfirmedPage from './pages/BookingConfirmedPage';
+import CartPage from './pages/CartPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
           the right blind; /booking/confirmed is Stripe's return URL. */}
       <Route path="/book" element={<BookInstallPage />} />
       <Route path="/booking/confirmed" element={<BookingConfirmedPage />} />
+      <Route path="/cart" element={<CartPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
