@@ -2,40 +2,116 @@ import { useState } from 'react'
 import { tokens } from '../theme'
 import { useIsMobile } from '../hooks/useIsMobile'
 
-const DIFFERENTIATORS = [
+const FEATURES = [
   {
-    number: '01',
     title: 'See It Before You Buy',
-    body: 'Our visualiser renders your exact blind in your exact room. Upload a photo of your window and watch it transform in real time. No other blind brand in Australia offers this.',
-    icon: '👁',
+    subtitle: "Australia's only blind visualiser",
+    body: 'Upload a photo of your window and watch your blind render in real time. Try every fabric, every colour, every style — before you spend a cent.',
+    image: '/images/lifestyle/step-1-configure.png',
+    reverse: false,
   },
   {
-    number: '02',
-    title: 'Professional Installation',
-    body: 'Every Klay blind comes with professional installation across Victoria. Your technician measures, manufactures to spec, and installs. You do nothing except choose what you love.',
-    icon: '🛠',
+    title: 'We Come to You',
+    subtitle: 'Professional measurement & installation',
+    body: 'No DIY, no guesswork. A Klay technician measures your windows to the millimetre, then returns to install your blinds perfectly. All included.',
+    image: '/images/lifestyle/step-2-measure.png',
+    reverse: true,
   },
   {
-    number: '03',
     title: 'One Person, Start to Finish',
-    body: 'The same technician who measures your windows installs your blinds. They know your home, your windows, and exactly how your blind needs to fit.',
-    icon: '👤',
+    subtitle: 'Your dedicated technician',
+    body: 'The same person who measures your windows installs your blinds. They know your home, your windows, and exactly how everything needs to fit.',
+    image: '/images/lifestyle/step-4-install.png',
+    reverse: false,
   },
 ]
 
-export function DifferentiatorsSection() {
+function FeatureBlock({
+  feature,
+  index,
+}: {
+  feature: (typeof FEATURES)[number]
+  index: number
+}) {
   const isMobile = useIsMobile()
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [imageHover, setImageHover] = useState(false)
 
   return (
-    <section
+    <div
       style={{
-        background: tokens.charcoal,
-        padding: isMobile ? '80px 24px' : '120px 80px',
+        display: 'flex',
+        flexDirection: isMobile
+          ? 'column'
+          : feature.reverse
+            ? 'row-reverse'
+            : 'row',
+        alignItems: 'center',
+        gap: isMobile ? 40 : 80,
       }}
     >
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        {/* Eyebrow */}
+      {/* Image */}
+      <div
+        onMouseEnter={() => setImageHover(true)}
+        onMouseLeave={() => setImageHover(false)}
+        style={{
+          flex: 1,
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 24,
+          aspectRatio: isMobile ? '4 / 3' : '3 / 2',
+          boxShadow: imageHover
+            ? '0 32px 64px rgba(28,24,16,0.25)'
+            : '0 16px 48px rgba(28,24,16,0.15)',
+          transition: 'box-shadow 0.4s ease',
+        }}
+      >
+        <img
+          src={feature.image}
+          alt={feature.title}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+            transform: imageHover ? 'scale(1.03)' : 'scale(1)',
+            transition: 'transform 0.6s ease',
+          }}
+        />
+        {/* Subtle gradient overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background:
+              'linear-gradient(180deg, transparent 60%, rgba(28,24,16,0.08) 100%)',
+            pointerEvents: 'none',
+          }}
+        />
+      </div>
+
+      {/* Text */}
+      <div
+        style={{
+          flex: 1,
+          padding: isMobile ? '0' : '20px 0',
+        }}
+      >
+        {/* Number */}
+        <span
+          style={{
+            fontFamily: tokens.display,
+            fontSize: 64,
+            fontWeight: 200,
+            color: tokens.gold,
+            opacity: 0.3,
+            lineHeight: 1,
+            display: 'block',
+          }}
+        >
+          0{index + 1}
+        </span>
+
+        {/* Subtitle */}
         <p
           style={{
             fontFamily: tokens.body,
@@ -43,120 +119,111 @@ export function DifferentiatorsSection() {
             fontWeight: 500,
             color: tokens.gold,
             textTransform: 'uppercase',
-            letterSpacing: '0.25em',
+            letterSpacing: '0.2em',
             margin: 0,
-            textAlign: 'center',
+            marginTop: 16,
           }}
         >
-          Why Choose Klay
+          {feature.subtitle}
         </p>
 
-        {/* Headline */}
-        <h2
+        {/* Title */}
+        <h3
           style={{
             fontFamily: tokens.display,
-            fontSize: isMobile ? 38 : 56,
+            fontSize: isMobile ? 36 : 44,
             fontWeight: 300,
-            color: tokens.warmWhite,
-            lineHeight: 1.08,
+            color: tokens.ink,
+            lineHeight: 1.1,
+            margin: 0,
+            marginTop: 12,
+          }}
+        >
+          {feature.title}
+        </h3>
+
+        {/* Body */}
+        <p
+          style={{
+            fontFamily: tokens.body,
+            fontSize: 16,
+            color: 'rgba(28,24,16,0.6)',
+            lineHeight: 1.8,
             margin: 0,
             marginTop: 20,
-            textAlign: 'center',
+            maxWidth: 440,
           }}
         >
-          We do things differently.
-        </h2>
+          {feature.body}
+        </p>
 
-        {/* Cards */}
+        {/* Decorative line */}
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-            gap: 28,
-            marginTop: 64,
+            width: 60,
+            height: 2,
+            background: tokens.gold,
+            marginTop: 32,
+            opacity: 0.5,
+          }}
+        />
+      </div>
+    </div>
+  )
+}
+
+export function DifferentiatorsSection() {
+  const isMobile = useIsMobile()
+
+  return (
+    <section
+      style={{
+        background: tokens.warmWhite,
+        padding: isMobile ? '80px 24px' : '140px 80px',
+      }}
+    >
+      <div style={{ maxWidth: 1300, margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: isMobile ? 60 : 100 }}>
+          <p
+            style={{
+              fontFamily: tokens.body,
+              fontSize: 11,
+              fontWeight: 500,
+              color: tokens.gold,
+              textTransform: 'uppercase',
+              letterSpacing: '0.25em',
+              margin: 0,
+            }}
+          >
+            The Klay Difference
+          </p>
+          <h2
+            style={{
+              fontFamily: tokens.display,
+              fontSize: isMobile ? 40 : 60,
+              fontWeight: 300,
+              color: tokens.ink,
+              lineHeight: 1.05,
+              margin: 0,
+              marginTop: 20,
+            }}
+          >
+            Not just blinds. A better way.
+          </h2>
+        </div>
+
+        {/* Feature blocks */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: isMobile ? 80 : 120,
           }}
         >
-          {DIFFERENTIATORS.map((diff, index) => {
-            const hovered = hoveredIndex === index
-            return (
-              <div
-                key={diff.number}
-                onMouseEnter={() => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
-                style={{
-                  background: hovered
-                    ? 'rgba(245,242,237,0.08)'
-                    : 'rgba(245,242,237,0.03)',
-                  border: `1px solid ${hovered ? 'rgba(200,151,58,0.3)' : 'rgba(245,242,237,0.08)'}`,
-                  padding: isMobile ? '36px 28px' : '48px 36px',
-                  borderRadius: 16,
-                  transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
-                  transition: 'all 0.3s ease',
-                }}
-              >
-                {/* Icon circle */}
-                <div
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: '50%',
-                    background: 'rgba(200,151,58,0.15)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 24,
-                    marginBottom: 24,
-                  }}
-                >
-                  {diff.icon}
-                </div>
-
-                {/* Number badge */}
-                <span
-                  style={{
-                    fontFamily: tokens.body,
-                    fontSize: 10,
-                    fontWeight: 500,
-                    color: tokens.gold,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.15em',
-                    display: 'block',
-                  }}
-                >
-                  0{index + 1}
-                </span>
-
-                {/* Title */}
-                <h3
-                  style={{
-                    fontFamily: tokens.display,
-                    fontSize: isMobile ? 26 : 30,
-                    fontWeight: 300,
-                    color: tokens.warmWhite,
-                    margin: 0,
-                    marginTop: 12,
-                    lineHeight: 1.15,
-                  }}
-                >
-                  {diff.title}
-                </h3>
-
-                {/* Body */}
-                <p
-                  style={{
-                    fontFamily: tokens.body,
-                    fontSize: 14,
-                    color: 'rgba(245,242,237,0.55)',
-                    lineHeight: 1.75,
-                    margin: 0,
-                    marginTop: 16,
-                  }}
-                >
-                  {diff.body}
-                </p>
-              </div>
-            )
-          })}
+          {FEATURES.map((feature, index) => (
+            <FeatureBlock key={feature.title} feature={feature} index={index} />
+          ))}
         </div>
       </div>
     </section>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { tokens, motion } from '../theme'
+import { tokens } from '../theme'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 export function FinalScene() {
@@ -16,34 +16,62 @@ export function FinalScene() {
       id="final"
       style={{
         position: 'relative',
-        background: tokens.charcoal,
+        minHeight: isMobile ? '80vh' : '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        padding: isMobile ? '100px 24px' : '160px 80px',
-        textAlign: 'center',
       }}
     >
-      {/* Subtle gold glow from bottom */}
+      {/* Background image */}
       <div
         style={{
           position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '100%',
-          background: 'radial-gradient(ellipse at 50% 120%, rgba(200,151,58,0.2) 0%, transparent 55%)',
-          pointerEvents: 'none',
+          inset: 0,
+          backgroundImage: "url('/images/lifestyle/room-kitchen.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
       />
 
-      <div style={{ position: 'relative', maxWidth: 900, margin: '0 auto' }}>
+      {/* Gradient overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'linear-gradient(180deg, rgba(28,24,16,0.4) 0%, rgba(28,24,16,0.75) 50%, rgba(28,24,16,0.9) 100%)',
+        }}
+      />
+
+      {/* Decorative gold line at top */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 1,
+          height: 100,
+          background: `linear-gradient(180deg, ${tokens.gold} 0%, transparent 100%)`,
+          opacity: 0.4,
+        }}
+      />
+
+      {/* Content */}
+      <div
+        style={{
+          position: 'relative',
+          textAlign: 'center',
+          padding: isMobile ? '0 24px' : '0 80px',
+          maxWidth: 1000,
+        }}
+      >
         {/* Eyebrow */}
         <p
           style={{
             fontFamily: tokens.body,
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: 500,
             color: tokens.gold,
             textTransform: 'uppercase',
@@ -51,19 +79,19 @@ export function FinalScene() {
             margin: 0,
           }}
         >
-          Ready to Transform Your Windows
+          Ready to Transform Your Space
         </p>
 
         {/* Headline */}
         <h2
           style={{
             fontFamily: tokens.display,
-            fontSize: isMobile ? 52 : 80,
+            fontSize: isMobile ? 48 : 88,
             fontWeight: 300,
             color: tokens.warmWhite,
             lineHeight: 1.0,
             margin: 0,
-            marginTop: 20,
+            marginTop: 24,
           }}
         >
           Your room is waiting.
@@ -73,17 +101,17 @@ export function FinalScene() {
         <p
           style={{
             fontFamily: tokens.body,
-            fontSize: 16,
-            color: 'rgba(245,242,237,0.5)',
+            fontSize: isMobile ? 16 : 18,
+            color: 'rgba(245,242,237,0.6)',
             lineHeight: 1.7,
             margin: 0,
-            marginTop: 24,
-            maxWidth: 480,
+            marginTop: 28,
+            maxWidth: 520,
             marginLeft: 'auto',
             marginRight: 'auto',
           }}
         >
-          Configure your blind, see it in your room, book your installation. All online. All Klay.
+          Design your perfect blind in minutes. See it in your room. Book professional installation. All online.
         </p>
 
         {/* CTAs */}
@@ -101,47 +129,104 @@ export function FinalScene() {
             onMouseEnter={() => setPrimaryHover(true)}
             onMouseLeave={() => setPrimaryHover(false)}
             style={{
-              padding: '18px 48px',
+              padding: '20px 56px',
               borderRadius: 8,
               fontFamily: tokens.body,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 500,
-              letterSpacing: '0.2em',
+              letterSpacing: '0.18em',
               textTransform: 'uppercase',
               cursor: 'pointer',
-              transition: motion.button,
-              background: primaryHover ? tokens.goldLight : tokens.gold,
+              transition: 'all 0.3s ease',
+              background: primaryHover ? tokens.warmWhite : tokens.gold,
               color: tokens.ink,
-              border: `1px solid ${primaryHover ? tokens.goldLight : tokens.gold}`,
+              border: 'none',
+              boxShadow: primaryHover
+                ? '0 12px 32px rgba(245,242,237,0.3)'
+                : '0 8px 24px rgba(200,151,58,0.35)',
+              transform: primaryHover ? 'translateY(-2px)' : 'translateY(0)',
             }}
           >
-            Design Yours
+            Start Designing
           </button>
           <a
             href="tel:1300005529"
             onMouseEnter={() => setSecondaryHover(true)}
             onMouseLeave={() => setSecondaryHover(false)}
             style={{
-              padding: '18px 48px',
+              padding: '20px 56px',
               borderRadius: 8,
               fontFamily: tokens.body,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 500,
-              letterSpacing: '0.2em',
+              letterSpacing: '0.18em',
               textTransform: 'uppercase',
               cursor: 'pointer',
-              transition: motion.button,
+              transition: 'all 0.3s ease',
               textDecoration: 'none',
-              background: 'transparent',
+              background: secondaryHover ? 'rgba(245,242,237,0.1)' : 'transparent',
               color: secondaryHover ? tokens.gold : tokens.warmWhite,
-              border: `1px solid ${secondaryHover ? tokens.gold : tokens.onDarkEdge}`,
+              border: `1px solid ${secondaryHover ? tokens.gold : 'rgba(245,242,237,0.25)'}`,
               display: 'inline-block',
+              transform: secondaryHover ? 'translateY(-2px)' : 'translateY(0)',
             }}
           >
             Call 1300 00 KLAY
           </a>
         </div>
+
+        {/* Trust badges */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: isMobile ? 24 : 48,
+            marginTop: 64,
+            flexWrap: 'wrap',
+          }}
+        >
+          {[
+            { label: 'Made in Australia', icon: '🇦🇺' },
+            { label: '5 Year Warranty', icon: '✓' },
+            { label: 'Free Installation', icon: '🛠' },
+          ].map((badge) => (
+            <div
+              key={badge.label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}
+            >
+              <span style={{ fontSize: 16 }}>{badge.icon}</span>
+              <span
+                style={{
+                  fontFamily: tokens.body,
+                  fontSize: 12,
+                  color: 'rgba(245,242,237,0.5)',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                {badge.label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Decorative gold line at bottom */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 1,
+          height: 80,
+          background: `linear-gradient(0deg, ${tokens.gold} 0%, transparent 100%)`,
+          opacity: 0.3,
+        }}
+      />
     </section>
   )
 }
