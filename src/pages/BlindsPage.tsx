@@ -322,17 +322,14 @@ export default function BlindsPage() {
                 { id: 'lightfilter', name: 'Haze', desc: 'Soft glow', image: '/images/types/haze.png' },
                 { id: 'dual', name: 'Duo', desc: 'Day & night', image: '/images/types/duo.png' },
               ].map((type) => (
-                <button
+                <div
                   key={type.id}
-                  onClick={() => setActiveFilter(type.id as FilterType)}
                   style={{
-                    cursor: 'pointer',
-                    background: activeFilter === type.id ? tokens.warmWhite : 'transparent',
-                    border: `1px solid ${activeFilter === type.id ? tokens.gold : 'transparent'}`,
+                    background: tokens.warmWhite,
+                    border: `1px solid ${tokens.lineFaint}`,
                     borderRadius: 10,
                     padding: 12,
                     textAlign: 'center',
-                    transition: 'all 0.2s ease',
                   }}
                 >
                   <div
@@ -358,11 +355,11 @@ export default function BlindsPage() {
                   <p
                     style={{
                       fontFamily: tokens.body,
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: 500,
                       color: tokens.ink,
                       margin: 0,
-                      marginTop: 10,
+                      marginTop: 12,
                     }}
                   >
                     {type.name}
@@ -370,15 +367,34 @@ export default function BlindsPage() {
                   <p
                     style={{
                       fontFamily: tokens.body,
-                      fontSize: 11,
+                      fontSize: 12,
                       color: 'rgba(28,24,16,0.5)',
                       margin: 0,
-                      marginTop: 2,
+                      marginTop: 4,
                     }}
                   >
                     {type.desc}
                   </p>
-                </button>
+                  <Link
+                    to={`/visualiser?type=${type.id}`}
+                    style={{
+                      display: 'block',
+                      marginTop: 12,
+                      padding: '10px 16px',
+                      borderRadius: 6,
+                      background: tokens.gold,
+                      color: tokens.ink,
+                      fontFamily: tokens.body,
+                      fontSize: 11,
+                      fontWeight: 500,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    Design Yours
+                  </Link>
+                </div>
               ))}
             </div>
           </div>
