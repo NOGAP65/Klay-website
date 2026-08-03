@@ -591,7 +591,7 @@ export default function BlindsPage() {
         {/* Info section */}
         <section
           style={{
-            background: tokens.parchment,
+            background: tokens.warmWhite,
             padding: isMobile ? '64px 24px' : '80px 24px',
           }}
         >
