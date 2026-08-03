@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
@@ -7,11 +7,22 @@ import { tokens } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { PRODUCTS, HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
 
-const FEATURES = [
-  { label: 'Australian Made', icon: '🇦🇺' },
-  { label: '5 Year Warranty', icon: '✓' },
-  { label: 'Free Installation', icon: '🛠' },
-  { label: '14 Colours', icon: '🎨' },
+type SortOption = 'featured' | 'price-low' | 'price-high' | 'name-az';
+type FilterType = 'all' | 'blockout' | 'sunscreen' | 'lightfilter' | 'dual';
+
+const FILTER_OPTIONS: { id: FilterType; label: string }[] = [
+  { id: 'all', label: 'All Fabrics' },
+  { id: 'blockout', label: 'Blockout' },
+  { id: 'sunscreen', label: 'Sunscreen' },
+  { id: 'lightfilter', label: 'Light Filter' },
+  { id: 'dual', label: 'Dual' },
+];
+
+const SORT_OPTIONS: { id: SortOption; label: string }[] = [
+  { id: 'featured', label: 'Featured' },
+  { id: 'price-low', label: 'Price: Low to High' },
+  { id: 'price-high', label: 'Price: High to Low' },
+  { id: 'name-az', label: 'Name: A to Z' },
 ];
 
 function ProductCard({
@@ -31,17 +42,17 @@ function ProductCard({
       style={{
         cursor: 'pointer',
         background: tokens.warmWhite,
-        borderRadius: 16,
+        borderRadius: 12,
         overflow: 'hidden',
         border: `1px solid ${hover ? 'rgba(200,151,58,0.2)' : tokens.lineFaint}`,
         boxShadow: hover
-          ? '0 20px 48px rgba(28,24,16,0.14)'
-          : '0 4px 16px rgba(28,24,16,0.05)',
-        transform: hover ? 'translateY(-6px)' : 'translateY(0)',
-        transition: 'all 0.35s ease',
+          ? '0 16px 40px rgba(28,24,16,0.12)'
+          : '0 2px 12px rgba(28,24,16,0.04)',
+        transform: hover ? 'translateY(-4px)' : 'translateY(0)',
+        transition: 'all 0.3s ease',
       }}
     >
-      <div style={{ position: 'relative', aspectRatio: '4 / 3', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', aspectRatio: '1 / 1', overflow: 'hidden', background: '#f5f3ef' }}>
         <img
           src={product.image}
           alt={`${product.name} — ${product.type}`}
@@ -51,20 +62,42 @@ function ProductCard({
             objectFit: 'cover',
             objectPosition: 'center',
             display: 'block',
-            transform: hover ? 'scale(1.04)' : 'scale(1)',
-            transition: 'transform 0.5s ease',
+            transform: hover ? 'scale(1.03)' : 'scale(1)',
+            transition: 'transform 0.4s ease',
           }}
         />
+        {/* Quick view badge */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 12,
+            left: '50%',
+            transform: `translateX(-50%) translateY(${hover ? 0 : 20}px)`,
+            opacity: hover ? 1 : 0,
+            transition: 'all 0.3s ease',
+            background: tokens.charcoal,
+            color: tokens.warmWhite,
+            fontFamily: tokens.body,
+            fontSize: 11,
+            fontWeight: 500,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            padding: '10px 20px',
+            borderRadius: 4,
+          }}
+        >
+          Quick View
+        </div>
       </div>
 
-      <div style={{ padding: '24px 20px 28px' }}>
+      <div style={{ padding: '20px 16px 24px' }}>
         <span
           style={{
             fontFamily: tokens.body,
             fontSize: 10,
             color: tokens.gold,
             textTransform: 'uppercase',
-            letterSpacing: '0.12em',
+            letterSpacing: '0.1em',
             fontWeight: 500,
           }}
         >
@@ -74,12 +107,12 @@ function ProductCard({
         <h3
           style={{
             fontFamily: tokens.display,
-            fontSize: 28,
+            fontSize: 24,
             fontWeight: 300,
             color: tokens.ink,
             margin: 0,
-            marginTop: 10,
-            lineHeight: 1.15,
+            marginTop: 8,
+            lineHeight: 1.2,
           }}
         >
           {product.name}
@@ -88,28 +121,16 @@ function ProductCard({
         <p
           style={{
             fontFamily: tokens.body,
-            fontSize: 14,
+            fontSize: 13,
             color: 'rgba(28,24,16,0.5)',
-            fontStyle: 'italic',
             lineHeight: 1.5,
             margin: 0,
             marginTop: 8,
+            height: 40,
+            overflow: 'hidden',
           }}
         >
           {product.tagline}
-        </p>
-
-        <p
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 13,
-            color: 'rgba(28,24,16,0.55)',
-            lineHeight: 1.6,
-            margin: 0,
-            marginTop: 12,
-          }}
-        >
-          {product.description}
         </p>
 
         <div
@@ -117,57 +138,34 @@ function ProductCard({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginTop: 20,
-            paddingTop: 20,
+            marginTop: 16,
+            paddingTop: 16,
             borderTop: `1px solid ${tokens.lineFaint}`,
           }}
         >
           <span
             style={{
               fontFamily: tokens.body,
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: 500,
               color: tokens.ink,
             }}
           >
-            from ${product.priceFrom}
+            From ${product.priceFrom}
           </span>
-          <span style={{ display: 'flex', gap: 6 }}>
+          <span style={{ display: 'flex', gap: 4 }}>
             {HARDWARE_OPTIONS.map(h => (
               <span
                 key={h.id}
                 style={{
-                  width: 12,
-                  height: 12,
+                  width: 14,
+                  height: 14,
                   borderRadius: '50%',
                   background: HARDWARE_HEX[h.id],
-                  border: `1px solid ${tokens.lineFaint}`,
+                  border: `1px solid rgba(28,24,16,0.1)`,
                 }}
               />
             ))}
-          </span>
-        </div>
-
-        <div
-          style={{
-            marginTop: 20,
-            display: 'flex',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <span
-            style={{
-              fontFamily: tokens.body,
-              fontSize: 12,
-              color: tokens.gold,
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              fontWeight: 500,
-              transform: hover ? 'translateX(4px)' : 'translateX(0)',
-              transition: 'transform 0.3s ease',
-            }}
-          >
-            Configure →
           </span>
         </div>
       </div>
@@ -179,7 +177,10 @@ export default function BlindsPage() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const setScrollY = useKlayStore(s => s.setScrollY);
-  const [ctaHover, setCtaHover] = useState(false);
+
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('featured');
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -188,80 +189,71 @@ export default function BlindsPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, [setScrollY]);
 
-  const scrollToProducts = () => {
-    document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // Filter and sort products
+  const filteredProducts = useMemo(() => {
+    let result = [...PRODUCTS];
+
+    // Apply filter
+    if (activeFilter !== 'all') {
+      result = result.filter(p => p.blindType === activeFilter);
+    }
+
+    // Apply sort
+    switch (sortBy) {
+      case 'price-low':
+        result.sort((a, b) => a.priceFrom - b.priceFrom);
+        break;
+      case 'price-high':
+        result.sort((a, b) => b.priceFrom - a.priceFrom);
+        break;
+      case 'name-az':
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      default:
+        // featured - keep original order
+        break;
+    }
+
+    return result;
+  }, [activeFilter, sortBy]);
 
   return (
     <>
       <Nav />
 
       <main style={{ background: tokens.warmWhite, minHeight: '100vh' }}>
-        {/* Hero */}
-        <section
+        {/* Breadcrumb bar */}
+        <div
           style={{
-            position: 'relative',
-            height: isMobile ? '60vh' : '70vh',
-            minHeight: isMobile ? 400 : 500,
-            maxHeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            overflow: 'hidden',
+            background: tokens.parchment,
+            padding: '100px 24px 24px',
+            borderBottom: `1px solid ${tokens.lineFaint}`,
           }}
         >
-          {/* Background image */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundImage: "url('/images/Phoenix%20Blockout%20product%20image.png')",
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          />
-
-          {/* Overlay */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background:
-                'linear-gradient(90deg, rgba(28,24,16,0.8) 0%, rgba(28,24,16,0.4) 60%, rgba(28,24,16,0.2) 100%)',
-            }}
-          />
-
-          {/* Content */}
-          <div
-            style={{
-              position: 'relative',
-              padding: isMobile ? '100px 24px 60px' : '120px 80px 80px',
-              maxWidth: 600,
-            }}
-          >
-            {/* Breadcrumb */}
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <nav
               style={{
                 fontFamily: tokens.body,
                 fontSize: 12,
-                color: 'rgba(245,242,237,0.5)',
-                marginBottom: 24,
+                color: 'rgba(28,24,16,0.5)',
               }}
             >
-              <Link to="/" style={{ color: 'rgba(245,242,237,0.5)', textDecoration: 'none' }}>
+              <Link to="/" style={{ color: 'rgba(28,24,16,0.5)', textDecoration: 'none' }}>
                 Home
               </Link>
               <span style={{ margin: '0 8px' }}>/</span>
-              <span style={{ color: tokens.warmWhite }}>Blinds</span>
+              <span style={{ color: tokens.ink }}>Roller Blinds</span>
             </nav>
 
             <h1
               style={{
                 fontFamily: tokens.display,
-                fontSize: isMobile ? 44 : 64,
+                fontSize: isMobile ? 36 : 48,
                 fontWeight: 300,
-                color: tokens.warmWhite,
-                lineHeight: 1.05,
+                color: tokens.ink,
+                lineHeight: 1.1,
                 margin: 0,
+                marginTop: 16,
               }}
             >
               Roller Blinds
@@ -270,147 +262,235 @@ export default function BlindsPage() {
             <p
               style={{
                 fontFamily: tokens.body,
-                fontSize: 17,
-                color: 'rgba(245,242,237,0.7)',
-                lineHeight: 1.7,
+                fontSize: 15,
+                color: 'rgba(28,24,16,0.6)',
+                lineHeight: 1.6,
                 margin: 0,
-                marginTop: 20,
-                maxWidth: 440,
+                marginTop: 12,
+                maxWidth: 600,
               }}
             >
-              Clean lines, simple elegance. A single panel of fabric that rolls up neatly when you need light, and drops down for privacy. Made to measure. Professionally installed.
+              Clean lines, simple elegance. Choose from four fabric types, each designed for a different way of living with light.
             </p>
+          </div>
+        </div>
 
-            {/* Trust badges */}
+        {/* Filter & Sort bar */}
+        <div
+          style={{
+            background: tokens.warmWhite,
+            padding: isMobile ? '16px 24px' : '20px 24px',
+            borderBottom: `1px solid ${tokens.lineFaint}`,
+            position: 'sticky',
+            top: 72,
+            zIndex: 90,
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 1200,
+              margin: '0 auto',
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent: 'space-between',
+              alignItems: isMobile ? 'stretch' : 'center',
+              gap: 16,
+            }}
+          >
+            {/* Filter tabs */}
             <div
               style={{
                 display: 'flex',
-                gap: 20,
+                gap: 8,
                 flexWrap: 'wrap',
-                marginTop: 32,
               }}
             >
-              {FEATURES.map((f) => (
-                <div
-                  key={f.label}
+              {FILTER_OPTIONS.map(option => (
+                <button
+                  key={option.id}
+                  onClick={() => setActiveFilter(option.id)}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: 6,
+                    fontFamily: tokens.body,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    background: activeFilter === option.id ? tokens.charcoal : 'transparent',
+                    color: activeFilter === option.id ? tokens.warmWhite : tokens.ink,
+                    border: `1px solid ${activeFilter === option.id ? tokens.charcoal : tokens.lineFaint}`,
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Sort & count */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 20,
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: tokens.body,
+                  fontSize: 13,
+                  color: 'rgba(28,24,16,0.5)',
+                }}
+              >
+                {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
+              </span>
+
+              {/* Sort dropdown */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowSortDropdown(!showSortDropdown)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
+                    padding: '10px 16px',
+                    borderRadius: 6,
                     fontFamily: tokens.body,
-                    fontSize: 12,
-                    color: 'rgba(245,242,237,0.6)',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    background: 'transparent',
+                    color: tokens.ink,
+                    border: `1px solid ${tokens.lineFaint}`,
                   }}
                 >
-                  <span>{f.icon}</span>
-                  <span>{f.label}</span>
-                </div>
-              ))}
+                  <span>Sort: {SORT_OPTIONS.find(s => s.id === sortBy)?.label}</span>
+                  <span style={{ fontSize: 10 }}>▼</span>
+                </button>
+
+                {showSortDropdown && (
+                  <>
+                    <div
+                      style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 98,
+                      }}
+                      onClick={() => setShowSortDropdown(false)}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        right: 0,
+                        marginTop: 4,
+                        background: tokens.warmWhite,
+                        border: `1px solid ${tokens.lineFaint}`,
+                        borderRadius: 8,
+                        boxShadow: '0 8px 24px rgba(28,24,16,0.12)',
+                        overflow: 'hidden',
+                        zIndex: 99,
+                        minWidth: 180,
+                      }}
+                    >
+                      {SORT_OPTIONS.map(option => (
+                        <button
+                          key={option.id}
+                          onClick={() => {
+                            setSortBy(option.id);
+                            setShowSortDropdown(false);
+                          }}
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '12px 16px',
+                            fontFamily: tokens.body,
+                            fontSize: 13,
+                            cursor: 'pointer',
+                            background: sortBy === option.id ? tokens.parchment : 'transparent',
+                            color: tokens.ink,
+                            border: 'none',
+                            borderBottom: `1px solid ${tokens.lineFaint}`,
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-
-            <button
-              onClick={scrollToProducts}
-              onMouseEnter={() => setCtaHover(true)}
-              onMouseLeave={() => setCtaHover(false)}
-              style={{
-                marginTop: 40,
-                padding: '18px 48px',
-                borderRadius: 8,
-                fontFamily: tokens.body,
-                fontSize: 13,
-                fontWeight: 500,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                background: ctaHover ? tokens.goldLight : tokens.gold,
-                color: tokens.ink,
-                border: 'none',
-                boxShadow: '0 8px 24px rgba(200,151,58,0.35)',
-              }}
-            >
-              View Collection
-            </button>
           </div>
-        </section>
+        </div>
 
-        {/* Products section */}
+        {/* Products grid */}
         <section
-          id="products"
           style={{
-            background: tokens.parchment,
-            padding: isMobile ? '80px 24px 100px' : '100px 80px 140px',
+            background: tokens.warmWhite,
+            padding: isMobile ? '32px 24px 80px' : '48px 24px 120px',
           }}
         >
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-            {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: 56 }}>
-              <p
+            {filteredProducts.length > 0 ? (
+              <div
                 style={{
-                  fontFamily: tokens.body,
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: tokens.gold,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.2em',
-                  margin: 0,
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+                  gap: isMobile ? 16 : 24,
                 }}
               >
-                Choose Your Fabric
-              </p>
-              <h2
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.slug}
+                    product={product}
+                    onOpen={() => navigate(`/products/${product.slug}`)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div
                 style={{
-                  fontFamily: tokens.display,
-                  fontSize: isMobile ? 34 : 48,
-                  fontWeight: 300,
-                  color: tokens.ink,
-                  lineHeight: 1.1,
-                  margin: 0,
-                  marginTop: 20,
+                  textAlign: 'center',
+                  padding: '80px 24px',
                 }}
               >
-                Four ways to live with light.
-              </h2>
-              <p
-                style={{
-                  fontFamily: tokens.body,
-                  fontSize: 16,
-                  color: 'rgba(28,24,16,0.55)',
-                  margin: 0,
-                  marginTop: 16,
-                  maxWidth: 500,
-                  marginLeft: 'auto',
-                  marginRight: 'auto',
-                }}
-              >
-                Each fabric type serves a different purpose. Pick the one that fits your room.
-              </p>
-            </div>
-
-            {/* Product grid - 2x2 for larger cards */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                gap: isMobile ? 24 : 32,
-              }}
-            >
-              {PRODUCTS.map((product) => (
-                <ProductCard
-                  key={product.slug}
-                  product={product}
-                  onOpen={() => navigate(`/products/${product.slug}`)}
-                />
-              ))}
-            </div>
+                <p
+                  style={{
+                    fontFamily: tokens.body,
+                    fontSize: 16,
+                    color: 'rgba(28,24,16,0.5)',
+                  }}
+                >
+                  No products found. Try adjusting your filters.
+                </p>
+                <button
+                  onClick={() => setActiveFilter('all')}
+                  style={{
+                    marginTop: 16,
+                    padding: '12px 24px',
+                    borderRadius: 6,
+                    fontFamily: tokens.body,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    background: tokens.gold,
+                    color: tokens.ink,
+                    border: 'none',
+                  }}
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
           </div>
         </section>
 
         {/* Info section */}
         <section
           style={{
-            background: tokens.warmWhite,
-            padding: isMobile ? '64px 24px' : '100px 80px',
+            background: tokens.parchment,
+            padding: isMobile ? '64px 24px' : '80px 24px',
           }}
         >
           <div
@@ -419,14 +499,14 @@ export default function BlindsPage() {
               margin: '0 auto',
               display: 'grid',
               gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-              gap: 48,
+              gap: 40,
             }}
           >
             <div>
               <h3
                 style={{
                   fontFamily: tokens.display,
-                  fontSize: 26,
+                  fontSize: 24,
                   fontWeight: 300,
                   color: tokens.ink,
                   margin: 0,
@@ -437,11 +517,11 @@ export default function BlindsPage() {
               <p
                 style={{
                   fontFamily: tokens.body,
-                  fontSize: 15,
+                  fontSize: 14,
                   color: 'rgba(28,24,16,0.6)',
                   lineHeight: 1.75,
                   margin: 0,
-                  marginTop: 16,
+                  marginTop: 12,
                 }}
               >
                 The modern classic. A single panel of fabric on a spring-loaded or chain-operated roller. Clean, minimal, and effective at controlling light and privacy.
@@ -451,7 +531,7 @@ export default function BlindsPage() {
               <h3
                 style={{
                   fontFamily: tokens.display,
-                  fontSize: 26,
+                  fontSize: 24,
                   fontWeight: 300,
                   color: tokens.ink,
                   margin: 0,
@@ -462,45 +542,45 @@ export default function BlindsPage() {
               <p
                 style={{
                   fontFamily: tokens.body,
-                  fontSize: 15,
+                  fontSize: 14,
                   color: 'rgba(28,24,16,0.6)',
                   lineHeight: 1.75,
                   margin: 0,
-                  marginTop: 16,
+                  marginTop: 12,
                 }}
               >
-                Configure online with our visualiser. A technician measures at your home. We manufacture in SA. The same technician returns to install. All included.
+                Configure online with our visualiser. A technician measures at your home. We manufacture in SA. The same technician returns to install.
               </p>
             </div>
             <div>
               <h3
                 style={{
                   fontFamily: tokens.display,
-                  fontSize: 26,
+                  fontSize: 24,
                   fontWeight: 300,
                   color: tokens.ink,
                   margin: 0,
                 }}
               >
-                Need Help Choosing?
+                Need Help?
               </h3>
               <p
                 style={{
                   fontFamily: tokens.body,
-                  fontSize: 15,
+                  fontSize: 14,
                   color: 'rgba(28,24,16,0.6)',
                   lineHeight: 1.75,
                   margin: 0,
-                  marginTop: 16,
+                  marginTop: 12,
                 }}
               >
-                Try our visualiser to see blinds in your room, or call 1300 00 KLAY. We're here to help you find the right fabric.
+                Try our visualiser to see blinds in your room, or call 1300 00 KLAY.
               </p>
               <Link
                 to="/visualiser"
                 style={{
                   display: 'inline-block',
-                  marginTop: 20,
+                  marginTop: 16,
                   fontFamily: tokens.body,
                   fontSize: 13,
                   color: tokens.gold,
