@@ -275,6 +275,103 @@ export default function BlindsPage() {
           </div>
         </div>
 
+        {/* Browse by Type section */}
+        <div
+          style={{
+            background: tokens.warmWhite,
+            padding: isMobile ? '40px 24px' : '56px 24px',
+            borderBottom: `1px solid ${tokens.lineFaint}`,
+          }}
+        >
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+                gap: isMobile ? 16 : 24,
+              }}
+            >
+              {[
+                { id: 'blockout', name: 'Blockout', desc: 'Complete darkness', image: '/images/types/blockout.jpg' },
+                { id: 'sunscreen', name: 'Sunscreen', desc: 'Keep the view', image: '/images/types/sunscreen.jpg' },
+                { id: 'lightfilter', name: 'Light Filter', desc: 'Soft diffused light', image: '/images/types/lightfilter.jpg' },
+                { id: 'dual', name: 'Dual Roller', desc: 'Day and night', image: '/images/types/dual.jpg' },
+              ].map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => setActiveFilter(type.id as FilterType)}
+                  style={{
+                    cursor: 'pointer',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    textAlign: 'left',
+                  }}
+                >
+                  {/* Image frame placeholder */}
+                  <div
+                    style={{
+                      aspectRatio: '3 / 4',
+                      borderRadius: 12,
+                      overflow: 'hidden',
+                      background: tokens.parchment,
+                      border: `1px solid ${tokens.lineFaint}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                    }}
+                  >
+                    {/* Placeholder icon */}
+                    <div
+                      style={{
+                        color: 'rgba(28,24,16,0.15)',
+                        fontSize: 48,
+                      }}
+                    >
+                      ▢
+                    </div>
+                    {/* When image exists, use this instead:
+                    <img
+                      src={type.image}
+                      alt={type.name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                    */}
+                  </div>
+                  <h3
+                    style={{
+                      fontFamily: tokens.display,
+                      fontSize: isMobile ? 18 : 22,
+                      fontWeight: 400,
+                      color: tokens.ink,
+                      margin: 0,
+                      marginTop: 16,
+                    }}
+                  >
+                    {type.name}
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: tokens.body,
+                      fontSize: 13,
+                      color: 'rgba(28,24,16,0.5)',
+                      margin: 0,
+                      marginTop: 4,
+                    }}
+                  >
+                    {type.desc}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Filter & Sort bar */}
         <div
           style={{
