@@ -221,43 +221,48 @@ export default function ProductDetailPage() {
             <KlayConfigurator defaultBlindType={product.blindType} />
           </div>
 
-          {/* Controls panel - same structure as homepage */}
-          <div style={{ flex: '0 0 340px', background: tokens.warmWhite, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 16 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <GoldLabel>{product.type}</GoldLabel>
-              <h1 style={{ fontFamily: tokens.display, fontSize: 36, fontWeight: 300, color: tokens.ink, lineHeight: 1.1, margin: 0 }}>
-                {product.name}
-              </h1>
-              <p style={{ fontFamily: tokens.body, fontSize: 14, color: INK_55, lineHeight: 1.5, margin: 0 }}>
-                {product.tagline}
-              </p>
-              {/* Star rating */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ display: 'flex', gap: 2 }}>
-                  {[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.gold, fontSize: 14 }}>★</span>)}
-                </div>
-                <span style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkSoft }}>5.0 (47 reviews)</span>
-              </div>
-            </div>
-
+          {/* Controls panel */}
+          <div style={{ flex: '0 0 380px', background: tokens.warmWhite, display: 'flex', flexDirection: 'column', gap: 20 }}>
             {/* VisualiserControls - same as homepage but with lockedRange */}
             <VisualiserControls lockedRange={product.blindType} compact />
 
-            {/* Two CTAs right below price */}
-            <div style={{ display: 'flex', gap: 12, marginTop: -8 }}>
+            {/* Two large CTAs right after price */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <button
+                onMouseEnter={() => setCartHover(true)}
+                onMouseLeave={() => setCartHover(false)}
+                style={{
+                  width: '100%',
+                  padding: '18px 24px',
+                  background: cartHover ? tokens.goldLight : tokens.gold,
+                  color: tokens.ink,
+                  fontFamily: tokens.body,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  transition: motion.button,
+                  textAlign: 'center',
+                }}
+              >
+                Add to Cart
+              </button>
               <Link
                 to={bookHref}
                 onMouseEnter={() => setQuoteHover(true)}
                 onMouseLeave={() => setQuoteHover(false)}
                 style={{
-                  flex: 1,
-                  padding: '14px 16px',
+                  width: '100%',
+                  padding: '18px 24px',
                   background: 'transparent',
                   color: quoteHover ? tokens.gold : tokens.ink,
                   fontFamily: tokens.body,
-                  fontSize: 11,
+                  fontSize: 14,
                   fontWeight: 600,
-                  letterSpacing: '0.14em',
+                  letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                   border: `1px solid ${quoteHover ? tokens.gold : tokens.lineStrong}`,
                   borderRadius: 6,
@@ -270,28 +275,24 @@ export default function ProductDetailPage() {
               >
                 Get Quote
               </Link>
-              <button
-                onMouseEnter={() => setCartHover(true)}
-                onMouseLeave={() => setCartHover(false)}
-                style={{
-                  flex: 1,
-                  padding: '14px 16px',
-                  background: cartHover ? tokens.goldLight : tokens.gold,
-                  color: tokens.ink,
-                  fontFamily: tokens.body,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
-                  border: 'none',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  transition: motion.button,
-                  textAlign: 'center',
-                }}
-              >
-                Add to Cart
-              </button>
+            </div>
+
+            {/* Product info moved down */}
+            <div style={{ paddingTop: 16, borderTop: `1px solid ${tokens.lineFaint}` }}>
+              <GoldLabel>{product.type}</GoldLabel>
+              <h1 style={{ fontFamily: tokens.display, fontSize: 32, fontWeight: 300, color: tokens.ink, lineHeight: 1.1, margin: '8px 0 0' }}>
+                {product.name}
+              </h1>
+              <p style={{ fontFamily: tokens.body, fontSize: 14, color: INK_55, lineHeight: 1.5, margin: '8px 0 0' }}>
+                {product.tagline}
+              </p>
+              {/* Star rating */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+                <div style={{ display: 'flex', gap: 2 }}>
+                  {[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.gold, fontSize: 14 }}>★</span>)}
+                </div>
+                <span style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkSoft }}>5.0 (47 reviews)</span>
+              </div>
             </div>
           </div>
         </section>
