@@ -1,17 +1,17 @@
 import { useState } from 'react'
-import { tokens, motion } from '../theme'
+import { tokens } from '../theme'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const buttonBase: React.CSSProperties = {
-  padding: '18px 48px',
-  borderRadius: 2,
+  padding: '20px 52px',
+  borderRadius: 8,
   fontFamily: tokens.body,
-  fontSize: '11px',
+  fontSize: '12px',
   fontWeight: 500,
-  letterSpacing: '0.2em',
+  letterSpacing: '0.15em',
   textTransform: 'uppercase',
   cursor: 'pointer',
-  transition: motion.button,
+  transition: 'all 0.3s ease',
   textDecoration: 'none',
   display: 'inline-block',
 }

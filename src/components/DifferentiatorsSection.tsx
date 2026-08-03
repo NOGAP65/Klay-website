@@ -60,8 +60,8 @@ function FeatureBlock({
           borderRadius: 20,
           aspectRatio: isMobile ? '4 / 3' : '4 / 3',
           boxShadow: imageHover
-            ? '0 40px 80px rgba(28,24,16,0.25)'
-            : '0 20px 60px rgba(28,24,16,0.15)',
+            ? '0 40px 80px rgba(0,0,0,0.4)'
+            : '0 20px 60px rgba(0,0,0,0.3)',
           transition: 'box-shadow 0.5s ease',
         }}
       >
@@ -93,7 +93,7 @@ function FeatureBlock({
             fontSize: 80,
             fontWeight: 200,
             color: tokens.gold,
-            opacity: 0.2,
+            opacity: 0.3,
             lineHeight: 0.9,
             display: 'block',
           }}
@@ -123,7 +123,7 @@ function FeatureBlock({
             fontFamily: tokens.display,
             fontSize: isMobile ? 34 : 42,
             fontWeight: 300,
-            color: tokens.ink,
+            color: tokens.warmWhite,
             lineHeight: 1.15,
             margin: 0,
             marginTop: 16,
@@ -137,7 +137,7 @@ function FeatureBlock({
           style={{
             fontFamily: tokens.body,
             fontSize: 16,
-            color: 'rgba(28,24,16,0.6)',
+            color: 'rgba(245,242,237,0.6)',
             lineHeight: 1.8,
             margin: 0,
             marginTop: 24,
@@ -167,7 +167,7 @@ export function DifferentiatorsSection() {
   return (
     <section
       style={{
-        background: tokens.warmWhite,
+        background: tokens.charcoal,
         padding: isMobile ? '100px 24px' : '160px 80px',
       }}
     >
@@ -192,7 +192,7 @@ export function DifferentiatorsSection() {
               fontFamily: tokens.display,
               fontSize: isMobile ? 38 : 56,
               fontWeight: 300,
-              color: tokens.ink,
+              color: tokens.warmWhite,
               lineHeight: 1.1,
               margin: 0,
               marginTop: 24,

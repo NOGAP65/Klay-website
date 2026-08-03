@@ -69,7 +69,7 @@ export default function VisualiserSection() {
             letterSpacing:'0.14em',
             textTransform:'uppercase',
             border:'none',
-            borderRadius:'2px',
+            borderRadius:'8px',
             cursor:'pointer',
             transition: motion.button,
             textAlign:'center',
