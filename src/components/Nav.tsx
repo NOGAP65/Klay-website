@@ -7,9 +7,10 @@ import { NAV_CATEGORIES } from '../data/categories';
 
 interface NavProps {
   onLight?: boolean;
+  solid?: boolean;
 }
 
-export function Nav({ onLight = false }: NavProps = {}) {
+export function Nav({ onLight = false, solid = false }: NavProps = {}) {
   const scrollY = useKlayStore((s) => s.scrollY);
   const compressed = scrollY > 60;
   const isMobile = useIsMobile();
@@ -18,9 +19,10 @@ export function Nav({ onLight = false }: NavProps = {}) {
   const [ctaHover, setCtaHover] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 
-  const onDarkGround = menuOpen || (!compressed && !onLight);
+  const alwaysSolid = solid || compressed;
+  const onDarkGround = menuOpen || (!alwaysSolid && !onLight);
   const linkColor = onDarkGround ? tokens.warmWhite : tokens.ink;
-  const solidBar = compressed && !menuOpen;
+  const solidBar = alwaysSolid && !menuOpen;
   const ctaSolid = solidBar;
 
   return (

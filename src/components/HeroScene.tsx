@@ -3,12 +3,12 @@ import { tokens } from '../theme'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const buttonBase: React.CSSProperties = {
-  padding: '20px 52px',
-  borderRadius: 8,
+  padding: '16px 40px',
+  borderRadius: 6,
   fontFamily: tokens.body,
   fontSize: '12px',
   fontWeight: 500,
-  letterSpacing: '0.15em',
+  letterSpacing: '0.12em',
   textTransform: 'uppercase',
   cursor: 'pointer',
   transition: 'all 0.3s ease',
@@ -30,7 +30,17 @@ export default function HeroScene() {
   }
 
   return (
-    <section style={{ position: 'relative', height: '100vh', overflow: 'hidden', background: tokens.charcoal }}>
+    <section
+      style={{
+        position: 'relative',
+        height: isMobile ? '70vh' : '80vh',
+        minHeight: isMobile ? 500 : 600,
+        maxHeight: 800,
+        overflow: 'hidden',
+        background: tokens.charcoal,
+        marginTop: 72,
+      }}
+    >
       <video
         autoPlay
         muted
@@ -41,40 +51,28 @@ export default function HeroScene() {
         <source src="/hero_video.mp4" type="video/mp4" />
       </video>
 
-      {/* Directional overlay: heaviest at bottom-left under copy */}
+      {/* Directional overlay */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           zIndex: 1,
           background:
-            'linear-gradient(15deg, rgba(28,24,16,0.86) 0%, rgba(28,24,16,0.62) 42%, rgba(28,24,16,0.34) 100%)',
+            'linear-gradient(15deg, rgba(28,24,16,0.82) 0%, rgba(28,24,16,0.55) 42%, rgba(28,24,16,0.28) 100%)',
         }}
       />
 
-      {/* Bottom gradient for CTA readability */}
+      {/* Content */}
       <div
         style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '35%',
-          zIndex: 1,
-          background: 'linear-gradient(to top, rgba(28,24,16,0.7) 0%, transparent 100%)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {/* Headline - positioned left */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '22%',
-          left: isMobile ? '24px' : '80px',
-          right: isMobile ? '24px' : undefined,
+          position: 'relative',
           zIndex: 2,
-          maxWidth: '700px',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          padding: isMobile ? '0 24px' : '0 80px',
+          maxWidth: 800,
         }}
       >
         <p
@@ -84,101 +82,80 @@ export default function HeroScene() {
             fontWeight: 500,
             color: tokens.gold,
             textTransform: 'uppercase',
-            letterSpacing: '0.3em',
-            marginBottom: 22,
+            letterSpacing: '0.25em',
+            margin: 0,
           }}
         >
           Australian Made-to-Measure
         </p>
+
         <h1
           style={{
             fontFamily: tokens.display,
-            fontSize: 'clamp(72px, 10vw, 140px)',
+            fontSize: isMobile ? 52 : 80,
             fontWeight: 300,
-            lineHeight: 0.88,
+            lineHeight: 0.95,
             margin: 0,
+            marginTop: 20,
           }}
         >
-          <span style={{ display: 'block', color: tokens.warmWhite }}>Light,</span>
-          <span style={{ display: 'block', color: tokens.goldLight, fontStyle: 'italic' }}>curated</span>
-          <span style={{ display: 'block', color: tokens.warmWhite }}>for you.</span>
+          <span style={{ color: tokens.warmWhite }}>Light,</span>
+          <br />
+          <span style={{ color: tokens.gold, fontStyle: 'italic' }}>curated</span>
+          <br />
+          <span style={{ color: tokens.warmWhite }}>for you.</span>
         </h1>
+
         <p
           style={{
             fontFamily: tokens.body,
             fontSize: 15,
             color: 'rgba(245,242,237,0.65)',
-            lineHeight: 1.75,
-            marginTop: 26,
+            lineHeight: 1.7,
+            margin: 0,
+            marginTop: 24,
             maxWidth: 420,
           }}
         >
-          Blinds, curtains and shutters made precisely for your windows — designed with you, installed by hand across
-          Victoria.
+          Blinds, curtains and shutters made precisely for your windows — designed with you, installed by hand across Victoria.
         </p>
-      </div>
 
-      {/* CTAs - bottom center */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: isMobile ? '6%' : '8%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 2,
-          display: 'flex',
-          gap: 20,
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-        }}
-      >
-        <button
-          onClick={scrollToVisualiser}
-          onMouseEnter={() => setPrimaryHover(true)}
-          onMouseLeave={() => setPrimaryHover(false)}
+        <div
           style={{
-            ...buttonBase,
-            background: primaryHover ? tokens.goldLight : tokens.gold,
-            color: tokens.ink,
-            border: `1px solid ${primaryHover ? tokens.goldLight : tokens.gold}`,
+            display: 'flex',
+            gap: 14,
+            marginTop: 36,
+            flexWrap: 'wrap',
           }}
         >
-          Design Yours
-        </button>
-        <button
-          onClick={scrollToProcess}
-          onMouseEnter={() => setSecondaryHover(true)}
-          onMouseLeave={() => setSecondaryHover(false)}
-          style={{
-            ...buttonBase,
-            background: 'transparent',
-            color: secondaryHover ? tokens.gold : tokens.warmWhite,
-            border: `1px solid ${secondaryHover ? tokens.gold : tokens.onDarkEdge}`,
-          }}
-        >
-          How It Works
-        </button>
+          <button
+            onClick={scrollToVisualiser}
+            onMouseEnter={() => setPrimaryHover(true)}
+            onMouseLeave={() => setPrimaryHover(false)}
+            style={{
+              ...buttonBase,
+              background: primaryHover ? tokens.goldLight : tokens.gold,
+              color: tokens.ink,
+              border: 'none',
+            }}
+          >
+            Design Yours
+          </button>
+          <button
+            onClick={scrollToProcess}
+            onMouseEnter={() => setSecondaryHover(true)}
+            onMouseLeave={() => setSecondaryHover(false)}
+            style={{
+              ...buttonBase,
+              background: 'transparent',
+              color: secondaryHover ? tokens.gold : tokens.warmWhite,
+              border: `1px solid ${secondaryHover ? tokens.gold : 'rgba(245,242,237,0.3)'}`,
+            }}
+          >
+            How It Works
+          </button>
+        </div>
       </div>
-
-      {!isMobile && (
-        <p
-          style={{
-            position: 'absolute',
-            bottom: 48,
-            right: 80,
-            zIndex: 2,
-            fontFamily: tokens.body,
-            fontSize: 10,
-            color: 'rgba(245,242,237,0.35)',
-            letterSpacing: '0.2em',
-            textTransform: 'uppercase',
-            writingMode: 'vertical-rl',
-            margin: 0,
-          }}
-        >
-          Scroll
-        </p>
-      )}
     </section>
   )
 }

@@ -33,7 +33,7 @@ export default function HomePage() {
   return (
     <>
       <ScrollProgress />
-      <Nav />
+      <Nav solid />
       <main style={{ background: tokens.warmWhite }}>
         {/* Hero — video with centered CTAs */}
         <HeroScene />
