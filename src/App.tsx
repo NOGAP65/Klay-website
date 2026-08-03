@@ -2,7 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
-import RollerBlindsPage from './pages/RollerBlindsPage';
+import BlindsPage from './pages/BlindsPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
@@ -16,8 +16,8 @@ export default function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/products" element={<ProductsPage />} />
-      <Route path="/blinds" element={<RollerBlindsPage />} />
-      <Route path="/blinds/roller-blinds" element={<RollerBlindsPage />} />
+      <Route path="/blinds" element={<BlindsPage />} />
+      <Route path="/blinds/roller-blinds" element={<BlindsPage />} />
       {/* One page per product, carrying the whole configurator. The old
           category tier (/products/blockout) and per-SKU tier
           (/products/blockout/dusk-white) are gone; ProductDetailPage
