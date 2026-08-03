@@ -222,65 +222,90 @@ export default function BlindsPage() {
       <Nav />
 
       <main style={{ background: tokens.warmWhite, minHeight: '100vh' }}>
-        {/* Breadcrumb bar */}
-        <div
+        {/* Hero */}
+        <section
           style={{
-            background: tokens.parchment,
-            padding: '100px 24px 24px',
-            borderBottom: `1px solid ${tokens.lineFaint}`,
+            position: 'relative',
+            height: isMobile ? 280 : 360,
+            marginTop: 72,
+            overflow: 'hidden',
           }}
         >
-          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: "url('/images/lifestyle/room-living.png')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(90deg, rgba(28,24,16,0.7) 0%, rgba(28,24,16,0.3) 100%)',
+            }}
+          />
+          <div
+            style={{
+              position: 'relative',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              padding: isMobile ? '0 24px' : '0 80px',
+              maxWidth: 1200,
+              margin: '0 auto',
+            }}
+          >
             <nav
               style={{
                 fontFamily: tokens.body,
                 fontSize: 12,
-                color: 'rgba(28,24,16,0.5)',
+                color: 'rgba(245,242,237,0.5)',
+                marginBottom: 16,
               }}
             >
-              <Link to="/" style={{ color: 'rgba(28,24,16,0.5)', textDecoration: 'none' }}>
+              <Link to="/" style={{ color: 'rgba(245,242,237,0.5)', textDecoration: 'none' }}>
                 Home
               </Link>
               <span style={{ margin: '0 8px' }}>/</span>
-              <span style={{ color: tokens.ink }}>Roller Blinds</span>
+              <span style={{ color: tokens.warmWhite }}>Roller Blinds</span>
             </nav>
-
             <h1
               style={{
                 fontFamily: tokens.display,
-                fontSize: isMobile ? 36 : 48,
+                fontSize: isMobile ? 36 : 52,
                 fontWeight: 300,
-                color: tokens.ink,
+                color: tokens.warmWhite,
                 lineHeight: 1.1,
                 margin: 0,
-                marginTop: 16,
               }}
             >
               Roller Blinds
             </h1>
-
             <p
               style={{
                 fontFamily: tokens.body,
                 fontSize: 15,
-                color: 'rgba(28,24,16,0.6)',
+                color: 'rgba(245,242,237,0.7)',
                 lineHeight: 1.6,
                 margin: 0,
                 marginTop: 12,
-                maxWidth: 600,
+                maxWidth: 500,
               }}
             >
-              Clean lines, simple elegance. Choose from four fabric types, each designed for a different way of living with light.
+              Clean lines, simple elegance. Four fabric types for different ways of living with light.
             </p>
           </div>
-        </div>
+        </section>
 
-        {/* Browse by Type section */}
-        <div
+        {/* Browse by Type - compact */}
+        <section
           style={{
-            background: tokens.warmWhite,
-            padding: isMobile ? '40px 24px' : '56px 24px',
-            borderBottom: `1px solid ${tokens.lineFaint}`,
+            background: tokens.parchment,
+            padding: isMobile ? '32px 24px' : '40px 24px',
           }}
         >
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -288,50 +313,36 @@ export default function BlindsPage() {
               style={{
                 display: 'grid',
                 gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-                gap: isMobile ? 16 : 24,
+                gap: isMobile ? 12 : 20,
               }}
             >
               {[
-                { id: 'blockout', name: 'Blockout', desc: 'Complete darkness', image: '/images/types/blockout.jpg' },
-                { id: 'sunscreen', name: 'Sunscreen', desc: 'Keep the view', image: '/images/types/sunscreen.jpg' },
-                { id: 'lightfilter', name: 'Light Filter', desc: 'Soft diffused light', image: '/images/types/lightfilter.jpg' },
-                { id: 'dual', name: 'Dual Roller', desc: 'Day and night', image: '/images/types/dual.jpg' },
+                { id: 'blockout', name: 'Blockout', desc: 'Total darkness', image: '/images/Phoenix%20Blockout%20product%20image.png' },
+                { id: 'sunscreen', name: 'Sunscreen', desc: 'Keep the view', image: '/images/Soleil%20Sunscreen%20product%20image.png' },
+                { id: 'lightfilter', name: 'Light Filter', desc: 'Soft glow', image: '/images/Soleil%20Sunscreen%20product%20image.png' },
+                { id: 'dual', name: 'Dual Roller', desc: 'Day & night', image: '/images/Eclipse%20Dual%20Roller%20product%20image.png' },
               ].map((type) => (
                 <button
                   key={type.id}
                   onClick={() => setActiveFilter(type.id as FilterType)}
                   style={{
                     cursor: 'pointer',
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
-                    textAlign: 'left',
+                    background: activeFilter === type.id ? tokens.warmWhite : 'transparent',
+                    border: `1px solid ${activeFilter === type.id ? tokens.gold : 'transparent'}`,
+                    borderRadius: 10,
+                    padding: 12,
+                    textAlign: 'center',
+                    transition: 'all 0.2s ease',
                   }}
                 >
-                  {/* Image frame placeholder */}
                   <div
                     style={{
-                      aspectRatio: '3 / 4',
-                      borderRadius: 12,
+                      aspectRatio: '1 / 1',
+                      borderRadius: 8,
                       overflow: 'hidden',
-                      background: tokens.parchment,
-                      border: `1px solid ${tokens.lineFaint}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      position: 'relative',
+                      background: tokens.warmWhite,
                     }}
                   >
-                    {/* Placeholder icon */}
-                    <div
-                      style={{
-                        color: 'rgba(28,24,16,0.15)',
-                        fontSize: 48,
-                      }}
-                    >
-                      ▢
-                    </div>
-                    {/* When image exists, use this instead:
                     <img
                       src={type.image}
                       alt={type.name}
@@ -341,27 +352,26 @@ export default function BlindsPage() {
                         objectFit: 'cover',
                       }}
                     />
-                    */}
                   </div>
-                  <h3
-                    style={{
-                      fontFamily: tokens.display,
-                      fontSize: isMobile ? 18 : 22,
-                      fontWeight: 400,
-                      color: tokens.ink,
-                      margin: 0,
-                      marginTop: 16,
-                    }}
-                  >
-                    {type.name}
-                  </h3>
                   <p
                     style={{
                       fontFamily: tokens.body,
                       fontSize: 13,
+                      fontWeight: 500,
+                      color: tokens.ink,
+                      margin: 0,
+                      marginTop: 10,
+                    }}
+                  >
+                    {type.name}
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: tokens.body,
+                      fontSize: 11,
                       color: 'rgba(28,24,16,0.5)',
                       margin: 0,
-                      marginTop: 4,
+                      marginTop: 2,
                     }}
                   >
                     {type.desc}
@@ -370,7 +380,7 @@ export default function BlindsPage() {
               ))}
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Filter & Sort bar */}
         <div
