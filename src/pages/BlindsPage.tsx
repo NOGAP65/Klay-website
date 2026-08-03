@@ -216,12 +216,12 @@ export default function BlindsPage() {
       <Nav />
 
       <main style={{ background: tokens.warmWhite, minHeight: '100vh' }}>
-        {/* Hero */}
+        {/* Compact Hero Banner */}
         <section
           style={{
             position: 'relative',
-            height: isMobile ? 280 : 360,
-            paddingTop: 72,
+            height: isMobile ? 160 : 200,
+            marginTop: 72,
             overflow: 'hidden',
           }}
         >
@@ -231,14 +231,14 @@ export default function BlindsPage() {
               inset: 0,
               backgroundImage: "url('/images/lifestyle/room-living.png')",
               backgroundSize: 'cover',
-              backgroundPosition: 'center',
+              backgroundPosition: 'center 30%',
             }}
           />
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(90deg, rgba(28,24,16,0.7) 0%, rgba(28,24,16,0.3) 100%)',
+              background: 'linear-gradient(90deg, rgba(28,24,16,0.75) 0%, rgba(28,24,16,0.4) 100%)',
             }}
           />
           <div
@@ -246,52 +246,40 @@ export default function BlindsPage() {
               position: 'relative',
               height: '100%',
               display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
+              alignItems: 'center',
               padding: isMobile ? '0 24px' : '0 80px',
               maxWidth: 1200,
               margin: '0 auto',
             }}
           >
-            <nav
-              style={{
-                fontFamily: tokens.body,
-                fontSize: 12,
-                color: 'rgba(245,242,237,0.5)',
-                marginBottom: 16,
-              }}
-            >
-              <Link to="/" style={{ color: 'rgba(245,242,237,0.5)', textDecoration: 'none' }}>
-                Home
-              </Link>
-              <span style={{ margin: '0 8px' }}>/</span>
-              <span style={{ color: tokens.warmWhite }}>Roller Blinds</span>
-            </nav>
-            <h1
-              style={{
-                fontFamily: tokens.display,
-                fontSize: isMobile ? 36 : 52,
-                fontWeight: 300,
-                color: tokens.warmWhite,
-                lineHeight: 1.1,
-                margin: 0,
-              }}
-            >
-              Roller Blinds
-            </h1>
-            <p
-              style={{
-                fontFamily: tokens.body,
-                fontSize: 15,
-                color: 'rgba(245,242,237,0.7)',
-                lineHeight: 1.6,
-                margin: 0,
-                marginTop: 12,
-                maxWidth: 500,
-              }}
-            >
-              Clean lines, simple elegance. Four fabric types for different ways of living with light.
-            </p>
+            <div>
+              <nav
+                style={{
+                  fontFamily: tokens.body,
+                  fontSize: 11,
+                  color: 'rgba(245,242,237,0.5)',
+                  marginBottom: 8,
+                }}
+              >
+                <Link to="/" style={{ color: 'rgba(245,242,237,0.5)', textDecoration: 'none' }}>
+                  Home
+                </Link>
+                <span style={{ margin: '0 6px' }}>/</span>
+                <span style={{ color: tokens.warmWhite }}>Roller Blinds</span>
+              </nav>
+              <h1
+                style={{
+                  fontFamily: tokens.display,
+                  fontSize: isMobile ? 32 : 42,
+                  fontWeight: 300,
+                  color: tokens.warmWhite,
+                  lineHeight: 1.1,
+                  margin: 0,
+                }}
+              >
+                Roller Blinds
+              </h1>
+            </div>
           </div>
         </section>
 
