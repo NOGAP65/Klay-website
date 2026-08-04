@@ -2,11 +2,12 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { tokens } from '../theme';
 import { HARDWARE_HEX, HARDWARE_OPTIONS, RYNAMIC_COLOURS } from '../data/products';
-import { useVisualiserStore, BlindType } from './useVisualiserStore';
+import { useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainFold, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
   lockedRange?: string; // if passed, hides the blind type row — customer can only configure this type
   compact?: boolean; // if true, uses tighter spacing for homepage embed
+  showCurtainControls?: boolean; // if true, show curtain controls when curtain category is active
 }
 
 const RADIUS = 2;
@@ -27,6 +28,37 @@ const SIZE_OPTIONS: { id: 'small' | 'medium' | 'large'; label: string; sub: stri
 const OPERATION_OPTIONS: { id: 'manual' | 'motorised'; label: string }[] = [
   { id: 'manual', label: 'Manual' },
   { id: 'motorised', label: 'Motorised +$150' },
+];
+
+const CURTAIN_TYPE_OPTIONS: { id: CurtainType; label: string }[] = [
+  { id: 'blockout', label: 'Blockout' },
+  { id: 'sheer', label: 'Sheer' },
+  { id: 'linen', label: 'Linen' },
+];
+
+const CURTAIN_SIZE_OPTIONS: { id: CurtainSize; label: string; sub: string }[] = [
+  { id: 'small', label: 'Small', sub: 'up to 1.2m' },
+  { id: 'medium', label: 'Medium', sub: 'up to 1.8m' },
+  { id: 'large', label: 'Large', sub: 'up to 2.4m' },
+  { id: 'xl', label: 'XL', sub: 'up to 3m' },
+];
+
+const CURTAIN_OPERATION_OPTIONS: { id: CurtainOperation; label: string }[] = [
+  { id: 'rod', label: 'Rod' },
+  { id: 'wand', label: 'Wand' },
+  { id: 'motorised', label: 'Motorised +$200' },
+];
+
+const CURTAIN_MOUNT_OPTIONS: { id: CurtainMount; label: string }[] = [
+  { id: 'ceiling', label: 'Ceiling Mount' },
+  { id: 'window', label: 'Window Mount' },
+];
+
+const CURTAIN_FOLD_OPTIONS: { id: CurtainFold; label: string }[] = [
+  { id: 'boxpleat', label: 'Box Pleat' },
+  { id: 'pencilpleat', label: 'Pencil Pleat' },
+  { id: 'pinchpleat', label: 'Pinch Pleat' },
+  { id: 'sfold', label: 'S-Fold' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -167,7 +199,7 @@ function Field({
   );
 }
 
-export default function VisualiserControls({ lockedRange: lockedRangeProp, compact = false }: VisualiserControlsProps) {
+export default function VisualiserControls({ lockedRange: lockedRangeProp, compact = false, showCurtainControls = false }: VisualiserControlsProps) {
   const [searchParams] = useSearchParams();
   const store = useVisualiserStore();
 
@@ -184,7 +216,158 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
 
   const selectedColour = RYNAMIC_COLOURS.find(c => c.name === store.fabricColour);
   const selectedHardware = HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour);
+  const isCurtain = showCurtainControls && store.productCategory === 'curtain';
 
+  // Curtain controls
+  if (isCurtain) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 16 : 30 }}>
+        <section>
+          <GroupHeading>Your curtain</GroupHeading>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 12 : 20 }}>
+            <Field label="Type">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {CURTAIN_TYPE_OPTIONS.map(t => (
+                  <Pill
+                    key={t.id}
+                    label={t.label}
+                    active={store.curtainType === t.id}
+                    onClick={() => store.setCurtainType(t.id)}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Fabric colour" caption={selectedColour?.name}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: compact ? 6 : 9, marginLeft: 2, paddingRight: 2 }}>
+                {RYNAMIC_COLOURS.map(c => (
+                  <Swatch
+                    key={c.name}
+                    hex={c.hex}
+                    label={c.name}
+                    active={store.fabricColour === c.name}
+                    onClick={() => store.setFabricColour(c.name)}
+                    compact={compact}
+                  />
+                ))}
+              </div>
+            </Field>
+          </div>
+        </section>
+
+        <section>
+          <GroupHeading>Details</GroupHeading>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 12 : 20 }}>
+            <Field label="Hardware" caption={selectedHardware?.label}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: compact ? 6 : 9, marginLeft: 2, paddingRight: 2 }}>
+                {HARDWARE_OPTIONS.map(h => (
+                  <Swatch
+                    key={h.id}
+                    hex={HARDWARE_HEX[h.id]}
+                    label={h.label}
+                    active={store.hardwareColour === h.id}
+                    onClick={() => store.setHardwareColour(h.id)}
+                    compact={compact}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Window size">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {CURTAIN_SIZE_OPTIONS.map(s => (
+                  <Pill
+                    key={s.id}
+                    label={s.label}
+                    sub={compact ? undefined : s.sub}
+                    active={store.curtainSize === s.id}
+                    onClick={() => store.setCurtainSize(s.id)}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Operation">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {CURTAIN_OPERATION_OPTIONS.map(o => (
+                  <Pill
+                    key={o.id}
+                    label={o.label}
+                    active={store.curtainOperation === o.id}
+                    onClick={() => store.setCurtainOperation(o.id)}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Mount">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {CURTAIN_MOUNT_OPTIONS.map(m => (
+                  <Pill
+                    key={m.id}
+                    label={m.label}
+                    active={store.curtainMount === m.id}
+                    onClick={() => store.setCurtainMount(m.id)}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Fold">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {CURTAIN_FOLD_OPTIONS.map(f => (
+                  <Pill
+                    key={f.id}
+                    label={f.label}
+                    active={store.curtainFold === f.id}
+                    onClick={() => store.setCurtainFold(f.id)}
+                  />
+                ))}
+              </div>
+            </Field>
+          </div>
+        </section>
+
+        <div
+          style={{
+            background: tokens.cream,
+            border: `1px solid ${tokens.line}`,
+            borderRadius: RADIUS,
+            padding: compact ? '12px 14px' : '16px 18px',
+          }}
+        >
+          <div
+            style={{
+              fontFamily: tokens.body,
+              fontSize: 10,
+              color: tokens.gold,
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+            }}
+          >
+            Estimated price
+          </div>
+          <div
+            style={{
+              fontFamily: tokens.display,
+              fontSize: compact ? 32 : 38,
+              fontWeight: 300,
+              lineHeight: 1.1,
+              color: tokens.ink,
+              marginTop: compact ? 4 : 6,
+            }}
+          >
+            ${store.getCurtainPrice()}
+          </div>
+          <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkFaint, marginTop: 4 }}>
+            + installation across Australia
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Blind controls (default)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 16 : 30 }}>
       {/* --- TIER 1: the decisions that change what you see ---------------- */}

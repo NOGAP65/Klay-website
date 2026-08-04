@@ -3,8 +3,49 @@ import { Nav } from '../components/Nav';
 import { tokens } from '../theme';
 import VisualiserControls from '../visualiser/VisualiserControls';
 import KlayConfigurator from '../visualiser/KlayConfigurator';
-import { useVisualiserStore } from '../visualiser/useVisualiserStore';
+import { useVisualiserStore, ProductCategory } from '../visualiser/useVisualiserStore';
 import { bookingLink } from '../lib/bookingLink';
+
+const CATEGORY_TAB_STYLE = {
+  flex: 1,
+  padding: '12px 16px',
+  fontFamily: tokens.body,
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.2em',
+  textTransform: 'uppercase' as const,
+  border: 'none',
+  cursor: 'pointer',
+  transition: 'background 0.2s ease, color 0.2s ease',
+};
+
+function CategorySwitcher() {
+  const { productCategory, setProductCategory } = useVisualiserStore();
+
+  const tabs: { id: ProductCategory; label: string }[] = [
+    { id: 'blind', label: 'Blinds' },
+    { id: 'curtain', label: 'Curtains' },
+  ];
+
+  return (
+    <div style={{ display: 'flex', marginBottom: 20 }}>
+      {tabs.map(tab => (
+        <button
+          key={tab.id}
+          onClick={() => setProductCategory(tab.id)}
+          style={{
+            ...CATEGORY_TAB_STYLE,
+            background: productCategory === tab.id ? '#1C1810' : 'transparent',
+            color: productCategory === tab.id ? '#F5F2ED' : '#1C1810',
+            border: productCategory === tab.id ? 'none' : '1px solid rgba(28,24,16,0.2)',
+          }}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function VisualiserPage() {
   const [searchParams] = useSearchParams();
@@ -38,7 +79,8 @@ export default function VisualiserPage() {
         {/* Matches VisualiserSection's rhythm so the same panel doesn't read
             differently on the homepage and here. */}
         <div style={{ width: 348, flexShrink: 0, padding: 28, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column', gap: 28 }}>
-          <VisualiserControls />
+          <CategorySwitcher />
+          <VisualiserControls showCurtainControls />
           <Link
             to={bookingLink({
               blindType,

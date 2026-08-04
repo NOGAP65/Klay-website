@@ -20,9 +20,23 @@ interface TracedArea {
 // store keep working.
 export type { BlindType };
 export type HardwareColour = 'white' | 'black' | 'chrome';
+export type ProductCategory = 'blind' | 'curtain';
+export type CurtainType = 'blockout' | 'sheer' | 'linen';
+export type CurtainOperation = 'rod' | 'wand' | 'motorised';
+export type CurtainMount = 'ceiling' | 'window';
+export type CurtainFold = 'boxpleat' | 'pencilpleat' | 'pinchpleat' | 'sfold';
+export type CurtainSize = 'small' | 'medium' | 'large' | 'xl';
+
+const CURTAIN_BASE_PRICES: Record<CurtainSize, number> = {
+  small: 320,
+  medium: 420,
+  large: 560,
+  xl: 720,
+};
 
 interface VisualiserStore {
   // Product selection
+  productCategory: ProductCategory;
   blindType: BlindType;
   fabricColour: string;         // Rynamic colour name, e.g. 'White'
   hardwareColour: HardwareColour;
@@ -30,6 +44,13 @@ interface VisualiserStore {
   operation: 'manual' | 'motorised';
   lockedRange: string | null;   // if set from product page, blind type picker is hidden and locked
   defaultWindowActive: boolean; // true until the user uploads/selects their own photo — locks the trace to the preset default-window pins
+
+  // Curtain-specific
+  curtainType: CurtainType;
+  curtainOperation: CurtainOperation;
+  curtainMount: CurtainMount;
+  curtainFold: CurtainFold;
+  curtainSize: CurtainSize;
 
   // Visual state
   photoUrl: string | null;
@@ -41,11 +62,13 @@ interface VisualiserStore {
 
   // Computed
   getCurrentPrice: () => number;
+  getCurtainPrice: () => number;
   getFabricColor: () => string;
   getHardwareColor: () => string;
   isConfigComplete: () => boolean;
 
   // Actions
+  setProductCategory: (cat: ProductCategory) => void;
   setBlindType: (type: BlindType) => void;
   setFabricColour: (colour: string) => void;
   setHardwareColour: (colour: HardwareColour) => void;
@@ -53,6 +76,11 @@ interface VisualiserStore {
   setOperation: (op: 'manual' | 'motorised') => void;
   setLockedRange: (range: string | null) => void;
   setDefaultWindowActive: (active: boolean) => void;
+  setCurtainType: (type: CurtainType) => void;
+  setCurtainOperation: (op: CurtainOperation) => void;
+  setCurtainMount: (mount: CurtainMount) => void;
+  setCurtainFold: (fold: CurtainFold) => void;
+  setCurtainSize: (size: CurtainSize) => void;
   setPhotoUrl: (url: string | null) => void;
   setRollPosition: (pos: number) => void;
   addTracedArea: (area: TracedArea) => void;
@@ -65,6 +93,7 @@ interface VisualiserStore {
 }
 
 export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
+  productCategory: 'blind',
   blindType: 'blockout',
   fabricColour: 'White',
   hardwareColour: 'white',
@@ -72,6 +101,11 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   operation: 'manual',
   lockedRange: null,
   defaultWindowActive: true,
+  curtainType: 'sheer',
+  curtainOperation: 'rod',
+  curtainMount: 'ceiling',
+  curtainFold: 'sfold',
+  curtainSize: 'medium',
   photoUrl: null,
   rollPosition: 0.5,
   tracedAreas: [],
@@ -84,6 +118,13 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   getCurrentPrice: () => {
     const state = get();
     return pricePerBlind(state);
+  },
+
+  getCurtainPrice: () => {
+    const state = get();
+    const base = CURTAIN_BASE_PRICES[state.curtainSize];
+    const motorAdd = state.curtainOperation === 'motorised' ? 200 : 0;
+    return base + motorAdd;
   },
 
   getFabricColor: () => {
@@ -101,6 +142,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
     return state.tracedAreas.some(a => a.confirmed) && state.photoUrl !== null;
   },
 
+  setProductCategory: (cat) => set({ productCategory: cat }),
   setBlindType: (type) => set({ blindType: type }),
   setFabricColour: (colour) => set({ fabricColour: colour }),
   setHardwareColour: (colour) => set({ hardwareColour: colour }),
@@ -108,6 +150,11 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   setOperation: (op) => set({ operation: op }),
   setLockedRange: (range) => set({ lockedRange: range }),
   setDefaultWindowActive: (active) => set({ defaultWindowActive: active }),
+  setCurtainType: (type) => set({ curtainType: type }),
+  setCurtainOperation: (op) => set({ curtainOperation: op }),
+  setCurtainMount: (mount) => set({ curtainMount: mount }),
+  setCurtainFold: (fold) => set({ curtainFold: fold }),
+  setCurtainSize: (size) => set({ curtainSize: size }),
   setPhotoUrl: (url) => set({ photoUrl: url }),
   setRollPosition: (pos) => set({ rollPosition: pos }),
   addTracedArea: (area) => set(s => ({ tracedAreas: [...s.tracedAreas, area] })),

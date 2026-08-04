@@ -20,6 +20,12 @@ export interface RenderedArea {
   hardwareColourName?: 'white' | 'black' | 'chrome';
   controlType: string;
   showChain: boolean;
+  // Curtain-specific
+  productCategory?: 'blind' | 'curtain';
+  curtainType?: 'blockout' | 'sheer' | 'linen';
+  curtainOperation?: 'rod' | 'wand' | 'motorised';
+  curtainMount?: 'ceiling' | 'window';
+  curtainFold?: 'boxpleat' | 'pencilpleat' | 'pinchpleat' | 'sfold';
 }
 
 interface Props {
@@ -679,19 +685,6 @@ const drawQuad = (
 // corner pins every render, so it scales correctly regardless of the
 // window's size/position in the photo.
 // ---------------------------------------------------------------------------
-
-interface AreaParams {
-  corners: Point[];
-  blindType: string;
-  fabricColor: string;
-  hardwareColor?: string | null;
-  hardwareColourName?: 'white' | 'black' | 'chrome';
-  controlType: string;
-  showChain?: boolean;
-  rollPosition?: number;
-  baseRailShape?: string;
-  chainSide?: string;
-}
 
 /** Darkens the window opening before fabric is drawn, so the blind/curtain
  * reads as sitting deeper in the frame than the surrounding wall. Shared by
@@ -1635,6 +1628,25 @@ const drawBottomRail = (
   ctx.restore();
 };
 
+interface AreaParams {
+  corners: Point[];
+  blindType: string;
+  fabricColor: string;
+  hardwareColor?: string | null;
+  hardwareColourName?: 'white' | 'black' | 'chrome';
+  controlType: string;
+  showChain?: boolean;
+  rollPosition?: number;
+  baseRailShape?: string;
+  chainSide?: string;
+  // Curtain-specific
+  productCategory?: 'blind' | 'curtain';
+  curtainType?: 'blockout' | 'sheer' | 'linen';
+  curtainOperation?: 'rod' | 'wand' | 'motorised';
+  curtainMount?: 'ceiling' | 'window';
+  curtainFold?: 'boxpleat' | 'pencilpleat' | 'pinchpleat' | 'sfold';
+}
+
 const drawBlindArea = (
   ctx: CanvasRenderingContext2D,
   glStateRef: React.MutableRefObject<GLState | null>,
@@ -1645,7 +1657,14 @@ const drawBlindArea = (
   fabricImgs: FabricImages,
   photo: CanvasImageSource
 ) => {
-  const { blindType } = params;
+  const { blindType, productCategory } = params;
+
+  // Dispatch to new curtain renderer if category is curtain
+  if (productCategory === 'curtain') {
+    drawNewCurtainArea(ctx, glStateRef, glUnavailableRef, W, H, params, fabricImgs);
+    return;
+  }
+
   if (blindType === 'sheer-curtains' || blindType === 'blockout-curtains') {
     drawCurtainArea(ctx, glStateRef, glUnavailableRef, W, H, params, fabricImgs);
     return;
@@ -2141,6 +2160,399 @@ const drawDualBlindArea = (
 };
 
 // ---------------------------------------------------------------------------
+// New Curtains — track/rod at top with fold types: S-fold, pencil pleat,
+// pinch pleat, box pleat. Two panels meeting at centre. Ceiling mount
+// extends 15% beyond frame each side, window mount stays within frame.
+// ---------------------------------------------------------------------------
+
+const drawNewCurtainArea = (
+  ctx: CanvasRenderingContext2D,
+  glStateRef: React.MutableRefObject<GLState | null>,
+  glUnavailableRef: React.MutableRefObject<boolean>,
+  W: number,
+  H: number,
+  params: AreaParams,
+  fabricImgs: FabricImages
+) => {
+  const {
+    corners,
+    fabricColor,
+    rollPosition = 1,
+    curtainType = 'sheer',
+    curtainOperation = 'rod',
+    curtainMount = 'ceiling',
+    curtainFold = 'sfold',
+  } = params;
+  const safeHardwareColor = params.hardwareColor ?? HARDWARE_FALLBACK;
+  const hardwareColourName = params.hardwareColourName;
+
+  const [tl, tr, br, bl] = corners;
+  const topW = Math.hypot(tr[0] - tl[0], tr[1] - tl[1]);
+  const bottomW = Math.hypot(br[0] - bl[0], br[1] - bl[1]);
+  const avgW = (topW + bottomW) / 2;
+  const leftH = Math.hypot(bl[0] - tl[0], bl[1] - tl[1]);
+  const rightH = Math.hypot(br[0] - tr[0], br[1] - tr[1]);
+
+  const { u, pv } = axesFor(tl, tr);
+  const [ux, uy] = u;
+  const [px, py] = pv;
+
+  // Y-rotation for perspective
+  const yRotation = Math.max(-1, Math.min(1, (leftH - rightH) / (leftH + rightH) * 3));
+
+  // Top edge interpolation
+  const topEdge = (t: number): Point => [
+    tl[0] + (tr[0] - tl[0]) * t,
+    tl[1] + (tr[1] - tl[1]) * t,
+  ];
+  const bottomEdge = (t: number): Point => [
+    bl[0] + (br[0] - bl[0]) * t,
+    bl[1] + (br[1] - bl[1]) * t,
+  ];
+
+  // Curtain position: 0 = fully open, 1 = fully closed
+  const p = Math.max(0, Math.min(1, rollPosition));
+  const openAmount = 1 - p;
+
+  // Track extends 15% beyond frame for ceiling mount
+  const trackExtension = curtainMount === 'ceiling' ? 0.15 : 0;
+  const trackTL: Point = [tl[0] - ux * avgW * trackExtension, tl[1] - uy * avgW * trackExtension];
+  const trackTR: Point = [tr[0] + ux * avgW * trackExtension, tr[1] + uy * avgW * trackExtension];
+
+  // Track/rod height
+  const trackHeight = curtainOperation === 'rod' ? leftH * 0.018 : leftH * 0.012;
+
+  // --- DEPTH (pre-fabric) ---
+  drawPreFabricDepth(ctx, corners);
+
+  // Each panel's width as a fraction - fabric has fullness (60% of half width)
+  const panelFrac = 0.5 * (1 - openAmount * 0.7);
+  const leftPanelQuad: Point[] = [tl, topEdge(panelFrac), bottomEdge(panelFrac), bl];
+  const rightPanelQuad: Point[] = [topEdge(1 - panelFrac), tr, br, bottomEdge(1 - panelFrac)];
+
+  // Fabric opacity based on type
+  const fabricOpacity = curtainType === 'sheer' ? 0.45 : curtainType === 'linen' ? 0.75 : 1;
+
+  // --- FABRIC PANELS ---
+  const drawPanel = (quad: Point[], isLeft: boolean) => {
+    const [qtl, qtr, qbr, qbl] = quad;
+    const panelW = Math.hypot(qtr[0] - qtl[0], qtr[1] - qtl[1]);
+    const panelH = Math.hypot(qbl[0] - qtl[0], qbl[1] - qtl[1]);
+
+    // Draw base fabric
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(qtl[0], qtl[1]);
+    ctx.lineTo(qtr[0], qtr[1]);
+    ctx.lineTo(qbr[0], qbr[1]);
+    ctx.lineTo(qbl[0], qbl[1]);
+    ctx.closePath();
+    ctx.fillStyle = rgba(fabricColor, fabricOpacity);
+    ctx.fill();
+    ctx.restore();
+
+    // Draw fold variations based on type
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(qtl[0], qtl[1]);
+    ctx.lineTo(qtr[0], qtr[1]);
+    ctx.lineTo(qbr[0], qbr[1]);
+    ctx.lineTo(qbl[0], qbl[1]);
+    ctx.closePath();
+    ctx.clip();
+
+    const foldCount = curtainFold === 'sfold' ? 7 : curtainFold === 'pencilpleat' ? 9 : curtainFold === 'pinchpleat' ? 5 : 5;
+
+    for (let i = 0; i <= foldCount; i++) {
+      const t = i / foldCount;
+      const topPt: Point = [qtl[0] + (qtr[0] - qtl[0]) * t, qtl[1] + (qtr[1] - qtl[1]) * t];
+      const botPt: Point = [qbl[0] + (qbr[0] - qbl[0]) * t, qbl[1] + (qbr[1] - qbl[1]) * t];
+
+      // Folds spread wider at bottom
+      const spreadFactor = 1 + 0.1 * (1 - t);
+
+      if (curtainFold === 'sfold') {
+        // S-fold: smooth continuous curves with alternating light/dark
+        const isPeak = i % 2 === 0;
+        const amplitude = panelW * 0.015;
+        const waveOffset = isPeak ? amplitude : -amplitude;
+
+        // Vertical strip for fold
+        const stripW = panelW / foldCount * 0.9;
+        const stripLeft: Point = [topPt[0] - stripW / 2, topPt[1]];
+        const stripRight: Point = [topPt[0] + stripW / 2, topPt[1]];
+        const stripBotLeft: Point = [botPt[0] - stripW / 2 * spreadFactor, botPt[1]];
+        const stripBotRight: Point = [botPt[0] + stripW / 2 * spreadFactor, botPt[1]];
+
+        ctx.beginPath();
+        ctx.moveTo(stripLeft[0], stripLeft[1]);
+        ctx.lineTo(stripRight[0], stripRight[1]);
+        ctx.lineTo(stripBotRight[0], stripBotRight[1]);
+        ctx.lineTo(stripBotLeft[0], stripBotLeft[1]);
+        ctx.closePath();
+
+        if (isPeak) {
+          ctx.fillStyle = lighten(fabricColor, 15);
+        } else {
+          ctx.fillStyle = darken(fabricColor, 35);
+        }
+        ctx.globalAlpha = 0.4;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+      } else if (curtainFold === 'pencilpleat') {
+        // Pencil pleat: dense heading band at top, soft waves below
+        const headingH = panelH * 0.08;
+
+        // Heading band - darker with dense vertical lines
+        if (i === 0) {
+          ctx.fillStyle = darken(fabricColor, 20);
+          ctx.fillRect(qtl[0], qtl[1], panelW, headingH);
+
+          // Dense vertical lines in heading
+          ctx.strokeStyle = darken(fabricColor, 40);
+          ctx.lineWidth = 1;
+          for (let j = 0; j < foldCount * 3; j++) {
+            const lt = j / (foldCount * 3);
+            const lx = qtl[0] + panelW * lt;
+            ctx.beginPath();
+            ctx.moveTo(lx, qtl[1]);
+            ctx.lineTo(lx + (j % 2 === 0 ? 2 : -2), qtl[1] + headingH);
+            ctx.stroke();
+          }
+        }
+
+        // Soft wave below heading
+        if (i > 0 && i < foldCount) {
+          const waveAmp = panelW * 0.01;
+          ctx.strokeStyle = shadowRgba(0.12);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          const startY = topPt[1] + headingH;
+          ctx.moveTo(topPt[0], startY);
+          const midX = (topPt[0] + botPt[0]) / 2 + (i % 2 === 0 ? waveAmp : -waveAmp);
+          const midY = (startY + botPt[1]) / 2;
+          ctx.quadraticCurveTo(midX, midY, botPt[0], botPt[1]);
+          ctx.stroke();
+        }
+
+      } else if (curtainFold === 'pinchpleat') {
+        // Pinch pleat: distinct pinch points with flat panels between
+        const pinchSpacing = panelW / 5;
+
+        if (i > 0 && i < foldCount) {
+          // Pinch point - dark triangle at heading
+          const pinchX = topPt[0];
+          const pinchY = topPt[1];
+          const pinchW = pinchSpacing * 0.3;
+          const pinchH = panelH * 0.06;
+
+          ctx.fillStyle = darken(fabricColor, 45);
+          ctx.beginPath();
+          ctx.moveTo(pinchX - pinchW / 2, pinchY);
+          ctx.lineTo(pinchX + pinchW / 2, pinchY);
+          ctx.lineTo(pinchX, pinchY + pinchH);
+          ctx.closePath();
+          ctx.fill();
+
+          // Flat panel between pinches - slightly lighter
+          if (i % 2 === 0) {
+            const panelLeft = pinchX - pinchSpacing * 0.4;
+            const panelRight = pinchX + pinchSpacing * 0.4;
+            ctx.fillStyle = lighten(fabricColor, 8);
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.moveTo(panelLeft, pinchY + pinchH);
+            ctx.lineTo(panelRight, pinchY + pinchH);
+            ctx.lineTo(panelRight + panelW * 0.02, botPt[1]);
+            ctx.lineTo(panelLeft - panelW * 0.02, botPt[1]);
+            ctx.closePath();
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+
+          // Gentle fold line from pinch
+          ctx.strokeStyle = shadowRgba(0.08);
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(pinchX, pinchY + pinchH);
+          ctx.lineTo(botPt[0], botPt[1]);
+          ctx.stroke();
+        }
+
+      } else if (curtainFold === 'boxpleat') {
+        // Box pleat: structured flat panels with sharp fold lines
+        if (i > 0 && i < foldCount) {
+          // Sharp vertical shadow line - 8px wide
+          const shadowW = 8;
+          ctx.fillStyle = darken(fabricColor, 50);
+          ctx.globalAlpha = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(topPt[0] - shadowW / 2, topPt[1]);
+          ctx.lineTo(topPt[0] + shadowW / 2, topPt[1]);
+          ctx.lineTo(botPt[0] + shadowW / 2, botPt[1]);
+          ctx.lineTo(botPt[0] - shadowW / 2, botPt[1]);
+          ctx.closePath();
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+
+    ctx.restore();
+
+    // --- FABRIC SHADOWS ---
+    // Shadow at fold troughs
+    for (let i = 1; i < foldCount; i++) {
+      const t = i / foldCount;
+      if (curtainFold === 'sfold' && i % 2 === 1) {
+        const topPt: Point = [qtl[0] + (qtr[0] - qtl[0]) * t, qtl[1] + (qtr[1] - qtl[1]) * t];
+        const botPt: Point = [qbl[0] + (qbr[0] - qbl[0]) * t, qbl[1] + (qbr[1] - qbl[1]) * t];
+
+        ctx.save();
+        const grad = ctx.createLinearGradient(topPt[0] - 5, topPt[1], topPt[0] + 5, topPt[1]);
+        grad.addColorStop(0, shadowRgba(0));
+        grad.addColorStop(0.5, shadowRgba(0.15));
+        grad.addColorStop(1, shadowRgba(0));
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.moveTo(topPt[0], topPt[1]);
+        ctx.lineTo(botPt[0], botPt[1]);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  };
+
+  // Draw both panels
+  drawPanel(leftPanelQuad, true);
+  drawPanel(rightPanelQuad, false);
+
+  // --- TRACK/ROD ---
+  ctx.save();
+
+  if (curtainOperation === 'rod') {
+    // Rod with decorative finial balls
+    const rodCenterY = (trackTL[1] + tl[1]) / 2 - trackHeight;
+
+    // Rod cylinder
+    const rodGrad = ctx.createLinearGradient(trackTL[0], rodCenterY - trackHeight, trackTL[0], rodCenterY + trackHeight);
+    rodGrad.addColorStop(0, lighten(safeHardwareColor, 25));
+    rodGrad.addColorStop(0.3, safeHardwareColor);
+    rodGrad.addColorStop(0.7, safeHardwareColor);
+    rodGrad.addColorStop(1, darken(safeHardwareColor, 20));
+    ctx.fillStyle = rodGrad;
+    ctx.beginPath();
+    ctx.moveTo(trackTL[0], rodCenterY - trackHeight / 2);
+    ctx.lineTo(trackTR[0], rodCenterY - trackHeight / 2 + (trackTR[1] - trackTL[1]));
+    ctx.lineTo(trackTR[0], rodCenterY + trackHeight / 2 + (trackTR[1] - trackTL[1]));
+    ctx.lineTo(trackTL[0], rodCenterY + trackHeight / 2);
+    ctx.closePath();
+    ctx.fill();
+
+    // Finial balls at each end
+    const finialRadius = trackHeight * 1.2;
+    ctx.fillStyle = safeHardwareColor;
+
+    // Left finial
+    ctx.beginPath();
+    ctx.arc(trackTL[0] - finialRadius * 0.5, rodCenterY, finialRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Right finial
+    ctx.beginPath();
+    ctx.arc(trackTR[0] + finialRadius * 0.5, rodCenterY + (trackTR[1] - trackTL[1]), finialRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+  } else {
+    // Track (wand or motorised) - slim rectangle
+    const trackY = tl[1] - trackHeight * 2;
+
+    const trackGrad = ctx.createLinearGradient(trackTL[0], trackY, trackTL[0], trackY + trackHeight);
+    trackGrad.addColorStop(0, lighten(safeHardwareColor, 20));
+    trackGrad.addColorStop(0.5, safeHardwareColor);
+    trackGrad.addColorStop(1, darken(safeHardwareColor, 15));
+    ctx.fillStyle = trackGrad;
+
+    ctx.beginPath();
+    ctx.moveTo(trackTL[0], trackY);
+    ctx.lineTo(trackTR[0], trackY + (trackTR[1] - trackTL[1]));
+    ctx.lineTo(trackTR[0], trackY + trackHeight + (trackTR[1] - trackTL[1]));
+    ctx.lineTo(trackTL[0], trackY + trackHeight);
+    ctx.closePath();
+    ctx.fill();
+
+    // Motor box for motorised
+    if (curtainOperation === 'motorised') {
+      const motorW = avgW * 0.06;
+      const motorH = trackHeight * 2.5;
+      const motorX = trackTR[0] - motorW;
+      const motorY = trackY - motorH + trackHeight;
+
+      ctx.fillStyle = darken(safeHardwareColor, 10);
+      ctx.fillRect(motorX, motorY + (trackTR[1] - trackTL[1]), motorW, motorH);
+
+      // Motor detail line
+      ctx.strokeStyle = darken(safeHardwareColor, 30);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(motorX + motorW * 0.2, motorY + motorH * 0.3 + (trackTR[1] - trackTL[1]));
+      ctx.lineTo(motorX + motorW * 0.8, motorY + motorH * 0.3 + (trackTR[1] - trackTL[1]));
+      ctx.stroke();
+    }
+  }
+
+  // Track shadow onto curtain
+  const trackShadowH = leftH * 0.02;
+  const shadowGrad = ctx.createLinearGradient(tl[0], tl[1], tl[0], tl[1] + trackShadowH);
+  shadowGrad.addColorStop(0, shadowRgba(0.2));
+  shadowGrad.addColorStop(1, shadowRgba(0));
+  ctx.fillStyle = shadowGrad;
+  ctx.fillRect(tl[0], tl[1], avgW, trackShadowH);
+
+  ctx.restore();
+
+  // --- BOTTOM SHADOW (curtain on sill) ---
+  drawContactShadow(ctx, bl, br);
+
+  // --- EDGE SHADOWS (where curtain meets wall) ---
+  ctx.save();
+  // Left edge
+  const edgeGrad = ctx.createLinearGradient(tl[0], tl[1], tl[0] + avgW * 0.05, tl[1]);
+  edgeGrad.addColorStop(0, shadowRgba(0.2));
+  edgeGrad.addColorStop(1, shadowRgba(0));
+  ctx.fillStyle = edgeGrad;
+  ctx.beginPath();
+  ctx.moveTo(tl[0], tl[1]);
+  ctx.lineTo(tl[0] + avgW * 0.05, tl[1]);
+  ctx.lineTo(bl[0] + avgW * 0.05, bl[1]);
+  ctx.lineTo(bl[0], bl[1]);
+  ctx.closePath();
+  ctx.fill();
+
+  // Right edge
+  const edgeGradR = ctx.createLinearGradient(tr[0], tr[1], tr[0] - avgW * 0.05, tr[1]);
+  edgeGradR.addColorStop(0, shadowRgba(0.2));
+  edgeGradR.addColorStop(1, shadowRgba(0));
+  ctx.fillStyle = edgeGradR;
+  ctx.beginPath();
+  ctx.moveTo(tr[0], tr[1]);
+  ctx.lineTo(tr[0] - avgW * 0.05, tr[1]);
+  ctx.lineTo(br[0] - avgW * 0.05, br[1]);
+  ctx.lineTo(br[0], br[1]);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // --- LIGHT SHEEN ---
+  drawLightSheen(ctx, corners);
+
+  // --- VIGNETTE ---
+  drawVignette(ctx, corners);
+};
+
+// ---------------------------------------------------------------------------
 // Curtains — a track at the top instead of a roller tube, two full-height
 // panels that slide apart from the centre, and S-fold pleat lines. No
 // chain, no bottom rail. Reuses the same depth-shadow helpers as the roller
@@ -2363,6 +2775,11 @@ const buildAreaParams = (area: RenderedArea, rollPosition: number): AreaParams =
   rollPosition,
   baseRailShape: 'd-shape',
   chainSide: 'right',
+  productCategory: area.productCategory,
+  curtainType: area.curtainType,
+  curtainOperation: area.curtainOperation,
+  curtainMount: area.curtainMount,
+  curtainFold: area.curtainFold,
 });
 
 const Canvas2DBlindRenderer: React.FC<Props> = ({

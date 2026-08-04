@@ -478,6 +478,11 @@ export default function KlayConfigurator({
     hardwareColourName: store.hardwareColour,
     controlType: store.operation,
     showChain: false,
+    productCategory: store.productCategory,
+    curtainType: store.curtainType,
+    curtainOperation: store.curtainOperation,
+    curtainMount: store.curtainMount,
+    curtainFold: store.curtainFold,
   }));
 
   // The default window's pins are seeded in an effect, but these states are
