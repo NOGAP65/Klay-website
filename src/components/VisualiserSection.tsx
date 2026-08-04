@@ -20,14 +20,25 @@ export default function VisualiserSection() {
   return (
     <section id="visualiser" style={{ background:'#F5F2ED', padding:'80px 0' }}>
       <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'0 40px' }}>
-        {/* Row 1: Eyebrow + Headline */}
-        <div style={{ marginBottom:'32px' }}>
-          <p style={{ ...eyebrow, marginBottom:'12px' }}>
-            The Klay Visualiser
-          </p>
-          <h2 style={{ ...headline.section, color:tokens.ink, fontSize:36, lineHeight:1.1, margin:0 }}>
-            See your blind in your room, <em>before you order.</em>
-          </h2>
+        {/* Row 1: Eyebrow + Headline left, Feature bullets right */}
+        <div style={{ display:'flex', gap:'32px', alignItems:'flex-start', marginBottom:'32px' }}>
+          <div style={{ flex:'0 0 60%' }}>
+            <p style={{ ...eyebrow, marginBottom:'12px' }}>
+              The Klay Visualiser
+            </p>
+            <h2 style={{ ...headline.section, color:tokens.ink, fontSize:36, lineHeight:1.1, margin:0 }}>
+              See your blind in your room, <em>before you order.</em>
+            </h2>
+          </div>
+
+          <div style={{ flex:'1 1 40%', display:'flex', flexDirection:'column', gap:'8px', paddingTop:'8px' }}>
+            {FEATURES.map(f => (
+              <div key={f} style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+                <div style={{ width:'14px', height:'1px', background:tokens.gold, flexShrink:0 }} />
+                <span style={{ fontFamily:tokens.body, fontSize:'12px', color:tokens.inkSoft }}>{f}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Row 2: Canvas left 60%, Controls right 40% */}
@@ -43,18 +54,8 @@ export default function VisualiserSection() {
             <KlayConfigurator />
           </div>
 
-          {/* Controls panel */}
-          <div style={{ flex:'1 1 40%', display:'flex', flexDirection:'column', justifyContent:'space-between', gap:'24px' }}>
-            {/* Feature bullets above controls */}
-            <div style={{ display:'flex', flexDirection:'column', gap:'8px', marginBottom:'8px' }}>
-              {FEATURES.map(f => (
-                <div key={f} style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                  <div style={{ width:'14px', height:'1px', background:tokens.gold, flexShrink:0 }} />
-                  <span style={{ fontFamily:tokens.body, fontSize:'12px', color:tokens.inkSoft }}>{f}</span>
-                </div>
-              ))}
-            </div>
-
+          {/* Controls panel - fits to canvas height */}
+          <div style={{ flex:'1 1 40%', display:'flex', flexDirection:'column', justifyContent:'space-between', gap:'16px' }}>
             <VisualiserControls compact />
 
             <Link
