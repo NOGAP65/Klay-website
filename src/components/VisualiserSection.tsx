@@ -20,9 +20,9 @@ export default function VisualiserSection() {
   return (
     <section id="visualiser" style={{ background:'#F5F2ED', padding:'80px 0' }}>
       <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'0 40px' }}>
-        {/* Row 1: Eyebrow + Headline left, Features right */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'40px', marginBottom:'32px' }}>
-          <div style={{ flex:'1 1 auto' }}>
+        {/* Row 1: Eyebrow + Headline left (45%), Features right (45%), gap ~10% */}
+        <div style={{ display:'flex', alignItems:'flex-start', gap:'10%', marginBottom:'32px' }}>
+          <div style={{ flex:'0 0 45%' }}>
             <p style={{ ...eyebrow, marginBottom:'12px' }}>
               The Klay Visualiser
             </p>
@@ -31,7 +31,7 @@ export default function VisualiserSection() {
             </h2>
           </div>
 
-          <div style={{ flex:'0 0 auto', display:'flex', flexDirection:'column', gap:'8px', paddingTop:'8px' }}>
+          <div style={{ flex:'0 0 45%', display:'flex', flexDirection:'column', gap:'8px', paddingTop:'8px' }}>
             {FEATURES.map(f => (
               <div key={f} style={{ display:'flex', alignItems:'center', gap:'10px' }}>
                 <div style={{ width:'14px', height:'1px', background:tokens.gold, flexShrink:0 }} />
@@ -46,10 +46,10 @@ export default function VisualiserSection() {
           {/* Canvas area with card feel */}
           <div style={{
             flex:'0 0 60%',
-            background:'#fff',
-            borderRadius:'12px',
-            boxShadow:'0 2px 12px rgba(0,0,0,0.06)',
-            overflow:'hidden',
+            borderRadius:'4px',
+            boxShadow:'0 4px 32px rgba(28,24,16,0.10)',
+            overflow:'visible',
+            position:'relative',
           }}>
             <KlayConfigurator />
           </div>
