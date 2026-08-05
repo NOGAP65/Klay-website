@@ -196,7 +196,7 @@ export default function Canvas2DCurtainRenderer({
 
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
-  const cameraRef = useRef<THREE.OrthographicCamera | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const leftPanelRef = useRef<THREE.Mesh | null>(null);
   const rightPanelRef = useRef<THREE.Mesh | null>(null);
   const leftMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
@@ -215,6 +215,7 @@ export default function Canvas2DCurtainRenderer({
 
       const W = photo.naturalWidth;
       const H = photo.naturalHeight;
+      const aspectRatio = W / H;
 
       bgCanvas.width = W;
       bgCanvas.height = H;
@@ -226,49 +227,35 @@ export default function Canvas2DCurtainRenderer({
         bgCtx.drawImage(photo, 0, 0);
       }
 
-      const tlPx = { x: tl.x, y: H - tl.y };
-      const trPx = { x: tr.x, y: H - tr.y };
-      const blPx = { x: bl.x, y: H - bl.y };
+      const scaleX = W / canvasWidth;
+      const scaleY = H / canvasHeight;
+      const sTl = { x: tl.x * scaleX / W, y: tl.y * scaleY / H };
+      const sTr = { x: tr.x * scaleX / W, y: tr.y * scaleY / H };
+      const sBl = { x: bl.x * scaleX / W, y: bl.y * scaleY / H };
 
-      let windowLeft = tlPx.x;
-      let windowRight = trPx.x;
-      let windowTop = tlPx.y;
-      const windowBottom = blPx.y;
+      const toWorldX = (normX: number) => (normX - 0.5) * aspectRatio * 2;
+      const toWorldY = (normY: number) => (0.5 - normY) * 2;
+
+      let windowLeft = toWorldX(sTl.x);
+      let windowRight = toWorldX(sTr.x);
+      let windowTop = toWorldY(sTl.y);
+      const windowBottom = toWorldY(sBl.y);
       let windowWidth = windowRight - windowLeft;
-      let windowHeight = windowTop - windowBottom;
+      const windowHeight = windowTop - windowBottom;
 
       if (mount === 'ceiling') {
-        const extendX = windowWidth * 0.12;
-        windowLeft -= extendX;
-        windowRight += extendX;
+        const extend = windowWidth * 0.12;
+        windowLeft -= extend;
+        windowRight += extend;
         windowWidth = windowRight - windowLeft;
-        const extendY = windowHeight * 0.08;
-        windowTop += extendY;
-        windowHeight = windowTop - windowBottom;
+        windowTop += windowHeight * 0.08;
       }
 
       const panelWidth = windowWidth / 2;
-      const panelHeight = windowHeight;
-
-      const leftCentreX = windowLeft + panelWidth / 2;
-      const rightCentreX = windowLeft + panelWidth * 1.5;
-      const centreY = windowBottom + panelHeight / 2;
-
+      const panelHeight = windowHeight + (mount === 'ceiling' ? windowHeight * 0.08 : 0);
 
       if (rendererRef.current) {
         rendererRef.current.dispose();
-      }
-      if (sceneRef.current) {
-        while (sceneRef.current.children.length > 0) {
-          const obj = sceneRef.current.children[0];
-          sceneRef.current.remove(obj);
-          if ((obj as THREE.Mesh).geometry) (obj as THREE.Mesh).geometry.dispose();
-          if ((obj as THREE.Mesh).material) {
-            const mat = (obj as THREE.Mesh).material;
-            if (Array.isArray(mat)) mat.forEach(m => m.dispose());
-            else (mat as THREE.Material).dispose();
-          }
-        }
       }
 
       const renderer = new THREE.WebGLRenderer({
@@ -284,15 +271,16 @@ export default function Canvas2DCurtainRenderer({
       const scene = new THREE.Scene();
       sceneRef.current = scene;
 
-      const camera = new THREE.OrthographicCamera(0, W, H, 0, -1000, 1000);
-      camera.position.set(0, 0, 100);
+      const camera = new THREE.PerspectiveCamera(45, aspectRatio, 0.1, 100);
+      camera.position.z = 2.5;
+      camera.lookAt(0, 0, 0);
       cameraRef.current = camera;
 
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
 
       const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      directionalLight.position.set(1, -1, 1);
+      directionalLight.position.set(1, 2, 1);
       scene.add(directionalLight);
 
       const foldConfig = FOLD_CONFIGS[foldType] || FOLD_CONFIGS.sfold;
@@ -303,13 +291,11 @@ export default function Canvas2DCurtainRenderer({
       const opacity = isSheer ? 0.55 : 1.0;
       const sheerGlow = isSheer ? 1.0 : 0.0;
 
-      const foldAmpScaled = foldConfig.amplitude * panelWidth;
-
       const createPanelMaterial = (panelSide: number, phaseOffset: number) => {
         return new THREE.ShaderMaterial({
           uniforms: {
             uFoldFrequency: { value: foldConfig.frequency },
-            uFoldAmplitude: { value: foldAmpScaled },
+            uFoldAmplitude: { value: foldConfig.amplitude },
             uFoldPhase: { value: phaseOffset },
             uOpenness: { value: openness },
             uPanelSide: { value: panelSide },
@@ -329,7 +315,7 @@ export default function Canvas2DCurtainRenderer({
       const leftGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 64, 128);
       const leftMaterial = createPanelMaterial(-1, 0);
       const leftPanel = new THREE.Mesh(leftGeometry, leftMaterial);
-      leftPanel.position.set(leftCentreX, centreY, 0);
+      leftPanel.position.set(windowLeft + panelWidth / 2, windowTop - panelHeight / 2, 0);
       scene.add(leftPanel);
       leftPanelRef.current = leftPanel;
       leftMaterialRef.current = leftMaterial;
@@ -337,7 +323,7 @@ export default function Canvas2DCurtainRenderer({
       const rightGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 64, 128);
       const rightMaterial = createPanelMaterial(1, Math.PI);
       const rightPanel = new THREE.Mesh(rightGeometry, rightMaterial);
-      rightPanel.position.set(rightCentreX, centreY, 0);
+      rightPanel.position.set(windowLeft + panelWidth * 1.5, windowTop - panelHeight / 2, 0);
       scene.add(rightPanel);
       rightPanelRef.current = rightPanel;
       rightMaterialRef.current = rightMaterial;
@@ -350,7 +336,7 @@ export default function Canvas2DCurtainRenderer({
     return () => {
       cancelled = true;
     };
-  }, [photoUrl, canvasWidth, canvasHeight, tl, tr, br, bl, mount, foldType, colour, fabricType, openness]);
+  }, [photoUrl, canvasWidth, canvasHeight]);
 
   useEffect(() => {
     if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return;
@@ -365,6 +351,7 @@ export default function Canvas2DCurtainRenderer({
 
     [leftMaterialRef.current, rightMaterialRef.current].forEach((mat, i) => {
       mat.uniforms.uFoldFrequency.value = foldConfig.frequency;
+      mat.uniforms.uFoldAmplitude.value = foldConfig.amplitude;
       mat.uniforms.uOpenness.value = openness;
       mat.uniforms.uColour.value = colourVec;
       mat.uniforms.uOpacity.value = opacity;
@@ -396,7 +383,7 @@ export default function Canvas2DCurtainRenderer({
   }, []);
 
   void hardwareColour;
-  void br;
+  void tl; void tr; void br; void bl; void mount;
 
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
