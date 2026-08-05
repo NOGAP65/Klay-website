@@ -21,20 +21,12 @@ interface Canvas2DCurtainRendererProps {
   photoUrl: string;
 }
 
-const HARDWARE_HEX: Record<'white' | 'black' | 'chrome', string> = {
-  white: '#F5F2ED',
-  black: '#1C1810',
-  chrome: '#C0C0C0',
-};
-
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return { r: 200, g: 200, b: 200 };
-  return {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16),
-  };
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return { r: isNaN(r) ? 200 : r, g: isNaN(g) ? 200 : g, b: isNaN(b) ? 200 : b };
 }
 
 function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
@@ -50,15 +42,9 @@ function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: n
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
     switch (max) {
-      case r:
-        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-        break;
-      case g:
-        h = ((b - r) / d + 2) / 6;
-        break;
-      case b:
-        h = ((r - g) / d + 4) / 6;
-        break;
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
     }
   }
   return { h, s, l };
@@ -86,33 +72,12 @@ function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: n
   return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
 }
 
-function lighten(hex: string, amount: number): string {
+function adjustBrightness(hex: string, amount: number): string {
   const { r, g, b } = hexToRgb(hex);
   const { h, s, l } = rgbToHsl(r, g, b);
-  const newL = Math.min(1, l + amount);
+  const newL = Math.max(0, Math.min(1, l + amount));
   const rgb = hslToRgb(h, s, newL);
   return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
-}
-
-function darken(hex: string, amount: number): string {
-  const { r, g, b } = hexToRgb(hex);
-  const { h, s, l } = rgbToHsl(r, g, b);
-  const newL = Math.max(0, l - amount);
-  const rgb = hslToRgb(h, s, newL);
-  return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
-}
-
-function rgba(hex: string, alpha: number): string {
-  const { r, g, b } = hexToRgb(hex);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
-function lerpPoint(a: Point, b: Point, t: number): Point {
-  return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) };
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -125,11 +90,16 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function lerpPoint(a: Point, b: Point, t: number): Point {
+  return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) };
+}
+
 export default function Canvas2DCurtainRenderer({
-  tl,
-  tr,
-  br,
-  bl,
+  tl, tr, br, bl,
   fabricType,
   foldType,
   hardwareColour,
@@ -162,100 +132,105 @@ export default function Canvas2DCurtainRenderer({
 
       const scaleX = W / canvasWidth;
       const scaleY = H / canvasHeight;
-      const scaledTl = { x: tl.x * scaleX, y: tl.y * scaleY };
-      const scaledTr = { x: tr.x * scaleX, y: tr.y * scaleY };
-      const scaledBr = { x: br.x * scaleX, y: br.y * scaleY };
-      const scaledBl = { x: bl.x * scaleX, y: bl.y * scaleY };
+      const sTl = { x: tl.x * scaleX, y: tl.y * scaleY };
+      const sTr = { x: tr.x * scaleX, y: tr.y * scaleY };
+      const sBr = { x: br.x * scaleX, y: br.y * scaleY };
+      const sBl = { x: bl.x * scaleX, y: bl.y * scaleY };
 
       let curtainTl: Point, curtainTr: Point, curtainBr: Point, curtainBl: Point;
-      let trackTl: Point, trackTr: Point;
 
       if (mount === 'ceiling') {
-        const leftEdge = { x: scaledTl.x - scaledBl.x, y: scaledTl.y - scaledBl.y };
-        const rightEdge = { x: scaledTr.x - scaledBr.x, y: scaledTr.y - scaledBr.y };
-        const leftLen = Math.sqrt(leftEdge.x * leftEdge.x + leftEdge.y * leftEdge.y);
-        const rightLen = Math.sqrt(rightEdge.x * rightEdge.x + rightEdge.y * rightEdge.y);
-        const leftUnit = { x: leftEdge.x / leftLen, y: leftEdge.y / leftLen };
-        const rightUnit = { x: rightEdge.x / rightLen, y: rightEdge.y / rightLen };
-
-        const trackOffset = 15 * scaleY;
-        trackTl = { x: scaledTl.x + leftUnit.x * trackOffset, y: scaledTl.y + leftUnit.y * trackOffset };
-        trackTr = { x: scaledTr.x + rightUnit.x * trackOffset, y: scaledTr.y + rightUnit.y * trackOffset };
-
-        const topEdge = { x: scaledTr.x - scaledTl.x, y: scaledTr.y - scaledTl.y };
+        const topEdge = { x: sTr.x - sTl.x, y: sTr.y - sTl.y };
         const topLen = Math.sqrt(topEdge.x * topEdge.x + topEdge.y * topEdge.y);
         const topUnit = { x: topEdge.x / topLen, y: topEdge.y / topLen };
         const extendAmount = topLen * 0.12;
 
-        curtainTl = { x: trackTl.x - topUnit.x * extendAmount, y: trackTl.y - topUnit.y * extendAmount };
-        curtainTr = { x: trackTr.x + topUnit.x * extendAmount, y: trackTr.y + topUnit.y * extendAmount };
+        const leftEdge = { x: sTl.x - sBl.x, y: sTl.y - sBl.y };
+        const leftLen = Math.sqrt(leftEdge.x * leftEdge.x + leftEdge.y * leftEdge.y);
+        const leftUnit = { x: leftEdge.x / leftLen, y: leftEdge.y / leftLen };
+        const trackOffset = 15 * scaleY;
 
-        const bottomEdge = { x: scaledBr.x - scaledBl.x, y: scaledBr.y - scaledBl.y };
+        curtainTl = {
+          x: sTl.x - topUnit.x * extendAmount + leftUnit.x * trackOffset,
+          y: sTl.y - topUnit.y * extendAmount + leftUnit.y * trackOffset
+        };
+        curtainTr = {
+          x: sTr.x + topUnit.x * extendAmount + leftUnit.x * trackOffset,
+          y: sTr.y + topUnit.y * extendAmount + leftUnit.y * trackOffset
+        };
+
+        const bottomEdge = { x: sBr.x - sBl.x, y: sBr.y - sBl.y };
         const bottomLen = Math.sqrt(bottomEdge.x * bottomEdge.x + bottomEdge.y * bottomEdge.y);
         const bottomUnit = { x: bottomEdge.x / bottomLen, y: bottomEdge.y / bottomLen };
         const bottomExtend = bottomLen * 0.12;
 
-        curtainBl = { x: scaledBl.x - bottomUnit.x * bottomExtend, y: scaledBl.y - bottomUnit.y * bottomExtend };
-        curtainBr = { x: scaledBr.x + bottomUnit.x * bottomExtend, y: scaledBr.y + bottomUnit.y * bottomExtend };
+        curtainBl = { x: sBl.x - bottomUnit.x * bottomExtend, y: sBl.y - bottomUnit.y * bottomExtend };
+        curtainBr = { x: sBr.x + bottomUnit.x * bottomExtend, y: sBr.y + bottomUnit.y * bottomExtend };
       } else {
-        trackTl = { ...scaledTl };
-        trackTr = { ...scaledTr };
-        curtainTl = { ...scaledTl };
-        curtainTr = { ...scaledTr };
-        curtainBl = { ...scaledBl };
-        curtainBr = { ...scaledBr };
+        curtainTl = { ...sTl };
+        curtainTr = { ...sTr };
+        curtainBl = { ...sBl };
+        curtainBr = { ...sBr };
       }
 
-      const hardwareHex = HARDWARE_HEX[hardwareColour];
-      const trackHeight = 8 * scaleY;
-      ctx.fillStyle = hardwareHex;
-      ctx.beginPath();
-      ctx.moveTo(curtainTl.x, trackTl.y - trackHeight);
-      ctx.lineTo(curtainTr.x, trackTr.y - trackHeight);
-      ctx.lineTo(curtainTr.x, trackTr.y);
-      ctx.lineTo(curtainTl.x, trackTl.y);
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = darken(hardwareHex, 0.15);
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
       const isSheer = fabricType === 'sheer';
+
+      if (isSheer) {
+        const centerX = (curtainTl.x + curtainTr.x + curtainBr.x + curtainBl.x) / 4;
+        const centerY = (curtainTl.y + curtainTr.y + curtainBr.y + curtainBl.y) / 4;
+        const width = Math.abs(curtainTr.x - curtainTl.x);
+        const height = Math.abs(curtainBl.y - curtainTl.y);
+        const radius = Math.max(width, height) * 0.6;
+
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+        gradient.addColorStop(0, 'rgba(255, 248, 234, 0.35)');
+        gradient.addColorStop(1, 'rgba(255, 248, 234, 0)');
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(curtainTl.x, curtainTl.y);
+        ctx.lineTo(curtainTr.x, curtainTr.y);
+        ctx.lineTo(curtainBr.x, curtainBr.y);
+        ctx.lineTo(curtainBl.x, curtainBl.y);
+        ctx.closePath();
+        ctx.clip();
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+      }
+
+      const leftPanelOpenFrac = Math.min(1, openness * 2);
+      const rightPanelOpenFrac = Math.min(1, openness * 2);
+
+      const leftPanelEndT = 0.5 - leftPanelOpenFrac * 0.4;
+      const rightPanelStartT = 0.5 + rightPanelOpenFrac * 0.4;
+
+      const leftPanelTl = curtainTl;
+      const leftPanelTr = lerpPoint(curtainTl, curtainTr, leftPanelEndT);
+      const leftPanelBr = lerpPoint(curtainBl, curtainBr, leftPanelEndT);
+      const leftPanelBl = curtainBl;
+
+      const rightPanelTl = lerpPoint(curtainTl, curtainTr, rightPanelStartT);
+      const rightPanelTr = curtainTr;
+      const rightPanelBr = curtainBr;
+      const rightPanelBl = lerpPoint(curtainBl, curtainBr, rightPanelStartT);
+
       if (isSheer) {
         ctx.globalAlpha = 0.55;
       }
 
-      const curtainTop = { left: curtainTl, right: curtainTr };
-      const curtainBottom = { left: curtainBl, right: curtainBr };
-
-      const leftCurtainOpenFrac = Math.min(1, openness * 2);
-      const rightCurtainOpenFrac = Math.min(1, openness * 2);
-
-      const leftCurtainWidth = 0.5 - leftCurtainOpenFrac * 0.4;
-      const rightCurtainStart = 0.5 + rightCurtainOpenFrac * 0.4;
-
-      const leftTopStart = curtainTop.left;
-      const leftTopEnd = lerpPoint(curtainTop.left, curtainTop.right, leftCurtainWidth);
-      const leftBottomStart = curtainBottom.left;
-      const leftBottomEnd = lerpPoint(curtainBottom.left, curtainBottom.right, leftCurtainWidth);
-
-      const rightTopStart = lerpPoint(curtainTop.left, curtainTop.right, rightCurtainStart);
-      const rightTopEnd = curtainTop.right;
-      const rightBottomStart = lerpPoint(curtainBottom.left, curtainBottom.right, rightCurtainStart);
-      const rightBottomEnd = curtainBottom.right;
-
-      drawCurtainPanel(ctx, leftTopStart, leftTopEnd, leftBottomEnd, leftBottomStart, colour, foldType, isSheer, scaleX, scaleY);
-      drawCurtainPanel(ctx, rightTopStart, rightTopEnd, rightBottomEnd, rightBottomStart, colour, foldType, isSheer, scaleX, scaleY);
+      drawPanel(ctx, leftPanelTl, leftPanelTr, leftPanelBr, leftPanelBl, colour, foldType, false);
+      drawPanel(ctx, rightPanelTl, rightPanelTr, rightPanelBr, rightPanelBl, colour, foldType, true);
 
       if (isSheer) {
         ctx.globalAlpha = 1.0;
       }
+
+      void hardwareColour;
     };
 
     render();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [tl, tr, br, bl, fabricType, foldType, hardwareColour, mount, colour, openness, canvasWidth, canvasHeight, photoUrl]);
 
   return (
@@ -266,270 +241,311 @@ export default function Canvas2DCurtainRenderer({
   );
 }
 
-function drawCurtainPanel(
+function drawPanel(
   ctx: CanvasRenderingContext2D,
-  topLeft: Point,
-  topRight: Point,
-  bottomRight: Point,
-  bottomLeft: Point,
+  tl: Point, tr: Point, br: Point, bl: Point,
   colour: string,
   foldType: 'sfold' | 'pencilpleat' | 'pinchpleat' | 'boxpleat',
-  isSheer: boolean,
-  scaleX: number,
-  scaleY: number
+  isRightPanel: boolean
 ) {
-  const panelWidth = Math.sqrt(
-    Math.pow(topRight.x - topLeft.x, 2) + Math.pow(topRight.y - topLeft.y, 2)
-  );
-  if (panelWidth < 10) return;
+  const panelWidth = Math.sqrt(Math.pow(tr.x - tl.x, 2) + Math.pow(tr.y - tl.y, 2));
+  if (panelWidth < 5) return;
 
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(topLeft.x, topLeft.y);
-  ctx.lineTo(topRight.x, topRight.y);
-  ctx.lineTo(bottomRight.x, bottomRight.y);
-  ctx.lineTo(bottomLeft.x, bottomLeft.y);
+  ctx.moveTo(tl.x, tl.y);
+  ctx.lineTo(tr.x, tr.y);
+  ctx.lineTo(br.x, br.y);
+  ctx.lineTo(bl.x, bl.y);
   ctx.closePath();
   ctx.clip();
 
-  if (isSheer) {
-    ctx.fillStyle = 'rgba(255, 248, 231, 0.3)';
-    ctx.fill();
-  }
-
-  ctx.fillStyle = colour;
-  ctx.fill();
-
   switch (foldType) {
     case 'sfold':
-      drawSFold(ctx, topLeft, topRight, bottomRight, bottomLeft, colour, scaleX);
+      drawSFoldPanel(ctx, tl, tr, br, bl, colour, panelWidth);
       break;
     case 'pencilpleat':
-      drawPencilPleat(ctx, topLeft, topRight, bottomRight, bottomLeft, colour, scaleX, scaleY);
+      drawPencilPleatPanel(ctx, tl, tr, br, bl, colour, panelWidth);
       break;
     case 'pinchpleat':
-      drawPinchPleat(ctx, topLeft, topRight, bottomRight, bottomLeft, colour, scaleX, scaleY);
+      drawPinchPleatPanel(ctx, tl, tr, br, bl, colour, panelWidth, isRightPanel);
       break;
     case 'boxpleat':
-      drawBoxPleat(ctx, topLeft, topRight, bottomRight, bottomLeft, colour, scaleX);
+      drawBoxPleatPanel(ctx, tl, tr, br, bl, colour, panelWidth, isRightPanel);
       break;
   }
 
   ctx.restore();
 }
 
-function drawSFold(
+function drawSFoldPanel(
   ctx: CanvasRenderingContext2D,
-  topLeft: Point,
-  topRight: Point,
-  bottomRight: Point,
-  bottomLeft: Point,
+  tl: Point, tr: Point, br: Point, bl: Point,
   colour: string,
-  scaleX: number
+  panelWidth: number
 ) {
-  const numFolds = 7;
-  const panelWidth = Math.sqrt(
-    Math.pow(topRight.x - topLeft.x, 2) + Math.pow(topRight.y - topLeft.y, 2)
-  );
-  const foldWidth = panelWidth / numFolds;
+  const numColumns = 28;
+  const foldDepth = panelWidth * 0.06;
 
-  for (let i = 0; i < numFolds; i++) {
-    const t1 = i / numFolds;
-    const t2 = (i + 1) / numFolds;
+  for (let i = 0; i < numColumns; i++) {
+    const t1 = i / numColumns;
+    const t2 = (i + 1) / numColumns;
 
-    const topStart = lerpPoint(topLeft, topRight, t1);
-    const topEnd = lerpPoint(topLeft, topRight, t2);
-    const bottomStart = lerpPoint(bottomLeft, bottomRight, t1);
-    const bottomEnd = lerpPoint(bottomLeft, bottomRight, t2);
+    const colTl = lerpPoint(tl, tr, t1);
+    const colTr = lerpPoint(tl, tr, t2);
+    const colBr = lerpPoint(bl, br, t2);
+    const colBl = lerpPoint(bl, br, t1);
 
-    const phase = (i % 2 === 0) ? 1 : -1;
-    const peakOffset = phase > 0 ? 0.18 : -0.22;
+    const sineVal = Math.sin((i + 0.5) * Math.PI / 4);
+    const brightness = sineVal * 0.12;
 
-    const midX = (topStart.x + topEnd.x) / 2;
-
+    ctx.fillStyle = adjustBrightness(colour, brightness);
     ctx.beginPath();
-    ctx.moveTo(topStart.x, topStart.y);
-
-    const topMidY = (topStart.y + topEnd.y) / 2;
-
-    if (phase > 0) {
-      ctx.fillStyle = lighten(colour, 0.08);
-    } else {
-      ctx.fillStyle = darken(colour, 0.10);
-    }
-
-    ctx.quadraticCurveTo(midX, topMidY - foldWidth * peakOffset, topEnd.x, topEnd.y);
-    ctx.lineTo(bottomEnd.x, bottomEnd.y);
-
-    const bottomMidY = (bottomStart.y + bottomEnd.y) / 2;
-    const bottomMidX = (bottomStart.x + bottomEnd.x) / 2;
-    ctx.quadraticCurveTo(bottomMidX, bottomMidY - foldWidth * peakOffset, bottomStart.x, bottomStart.y);
+    ctx.moveTo(colTl.x, colTl.y);
+    ctx.lineTo(colTr.x, colTr.y);
+    ctx.lineTo(colBr.x, colBr.y);
+    ctx.lineTo(colBl.x, colBl.y);
     ctx.closePath();
     ctx.fill();
-
-    ctx.strokeStyle = rgba('#000000', phase > 0 ? 0.05 : 0.12);
-    ctx.lineWidth = 1 * scaleX;
-    ctx.stroke();
   }
+
+  void foldDepth;
 }
 
-function drawPencilPleat(
+function drawPencilPleatPanel(
   ctx: CanvasRenderingContext2D,
-  topLeft: Point,
-  topRight: Point,
-  bottomRight: Point,
-  bottomLeft: Point,
+  tl: Point, tr: Point, br: Point, bl: Point,
   colour: string,
-  scaleX: number,
-  _scaleY: number
+  _panelWidth: number
 ) {
-  const headingHeight = Math.sqrt(
-    Math.pow(topLeft.x - bottomLeft.x, 2) + Math.pow(topLeft.y - bottomLeft.y, 2)
-  ) * 0.09;
+  const headingFrac = 0.09;
+  const numColumns = 48;
 
-  const headingBl = lerpPoint(topLeft, bottomLeft, headingHeight / Math.sqrt(Math.pow(topLeft.x - bottomLeft.x, 2) + Math.pow(topLeft.y - bottomLeft.y, 2)));
-  const headingBr = lerpPoint(topRight, bottomRight, headingHeight / Math.sqrt(Math.pow(topRight.x - bottomRight.x, 2) + Math.pow(topRight.y - bottomRight.y, 2)));
+  const headingBl = lerpPoint(tl, bl, headingFrac);
+  const headingBr = lerpPoint(tr, br, headingFrac);
 
-  ctx.fillStyle = darken(colour, 0.05);
+  ctx.fillStyle = adjustBrightness(colour, -0.08);
   ctx.beginPath();
-  ctx.moveTo(topLeft.x, topLeft.y);
-  ctx.lineTo(topRight.x, topRight.y);
+  ctx.moveTo(tl.x, tl.y);
+  ctx.lineTo(tr.x, tr.y);
   ctx.lineTo(headingBr.x, headingBr.y);
   ctx.lineTo(headingBl.x, headingBl.y);
   ctx.closePath();
   ctx.fill();
 
-  const numColumns = 12;
-  for (let i = 0; i < numColumns; i++) {
-    const t = (i + 0.5) / numColumns;
-    const topPt = lerpPoint(topLeft, topRight, t);
-    const bottomPt = lerpPoint(bottomLeft, bottomRight, t);
+  const bodyTl = headingBl;
+  const bodyTr = headingBr;
+  const bodyBr = br;
+  const bodyBl = bl;
 
-    const shade = (i % 2 === 0) ? 0.06 : -0.04;
-    ctx.strokeStyle = shade > 0 ? lighten(colour, shade) : darken(colour, -shade);
-    ctx.lineWidth = 2 * scaleX;
-    ctx.globalAlpha = 0.4;
+  const seeds = [0.7, 0.9, 0.65, 0.85, 0.75, 0.95, 0.6, 0.8, 0.7, 0.9, 0.65, 0.85];
+
+  for (let i = 0; i < numColumns; i++) {
+    const t1 = i / numColumns;
+    const t2 = (i + 1) / numColumns;
+
+    const colTl = lerpPoint(bodyTl, bodyTr, t1);
+    const colTr = lerpPoint(bodyTl, bodyTr, t2);
+    const colBr = lerpPoint(bodyBl, bodyBr, t2);
+    const colBl = lerpPoint(bodyBl, bodyBr, t1);
+
+    const foldGroup = Math.floor(i / 4);
+    const amp = seeds[foldGroup % seeds.length];
+    const sineVal = Math.sin((i + 0.5) * Math.PI / 4) * amp;
+    const brightness = sineVal * 0.10;
+
+    ctx.fillStyle = adjustBrightness(colour, brightness);
     ctx.beginPath();
-    ctx.moveTo(topPt.x, topPt.y + headingHeight);
-    ctx.lineTo(bottomPt.x, bottomPt.y);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    ctx.moveTo(colTl.x, colTl.y);
+    ctx.lineTo(colTr.x, colTr.y);
+    ctx.lineTo(colBr.x, colBr.y);
+    ctx.lineTo(colBl.x, colBl.y);
+    ctx.closePath();
+    ctx.fill();
   }
 
-  ctx.strokeStyle = rgba('#000000', 0.08);
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(headingBl.x, headingBl.y);
-  ctx.lineTo(headingBr.x, headingBr.y);
-  ctx.stroke();
 }
 
-function drawPinchPleat(
+function drawPinchPleatPanel(
   ctx: CanvasRenderingContext2D,
-  topLeft: Point,
-  topRight: Point,
-  bottomRight: Point,
-  bottomLeft: Point,
+  tl: Point, tr: Point, br: Point, bl: Point,
   colour: string,
-  scaleX: number,
-  _scaleY: number
+  _panelWidth: number,
+  _isRightPanel: boolean
 ) {
-  const numGroups = 4;
-  const panelWidth = Math.sqrt(
-    Math.pow(topRight.x - topLeft.x, 2) + Math.pow(topRight.y - topLeft.y, 2)
-  );
-  const panelHeight = Math.sqrt(
-    Math.pow(topLeft.x - bottomLeft.x, 2) + Math.pow(topLeft.y - bottomLeft.y, 2)
-  );
-  const pinchHeight = panelHeight * 0.12;
+  const numPinches = 4;
+  const pinchWidth = 0.12;
+  const pinchRelax = 0.5;
 
-  for (let g = 0; g < numGroups; g++) {
-    const groupCenter = (g + 0.5) / numGroups;
-    const groupWidth = 1 / numGroups;
+  ctx.fillStyle = colour;
+  ctx.beginPath();
+  ctx.moveTo(tl.x, tl.y);
+  ctx.lineTo(tr.x, tr.y);
+  ctx.lineTo(br.x, br.y);
+  ctx.lineTo(bl.x, bl.y);
+  ctx.closePath();
+  ctx.fill();
 
-    const pinchTopCenter = lerpPoint(topLeft, topRight, groupCenter);
-    const pinchBottomCenter = lerpPoint(
-      lerpPoint(topLeft, bottomLeft, pinchHeight / panelHeight),
-      lerpPoint(topRight, bottomRight, pinchHeight / panelHeight),
-      groupCenter
+  for (let p = 0; p < numPinches; p++) {
+    const pinchCenter = (p + 0.5) / numPinches;
+    const pinchLeft = pinchCenter - pinchWidth / 2;
+    const pinchRight = pinchCenter + pinchWidth / 2;
+
+    const topLeft = lerpPoint(tl, tr, pinchLeft);
+    const topRight = lerpPoint(tl, tr, pinchRight);
+    const topCenter = lerpPoint(tl, tr, pinchCenter);
+
+    const midCenter = lerpPoint(
+      lerpPoint(tl, bl, pinchRelax * 0.3),
+      lerpPoint(tr, br, pinchRelax * 0.3),
+      pinchCenter
     );
 
-    const subFoldWidth = (groupWidth * panelWidth) / 6;
-    for (let s = 0; s < 3; s++) {
-      const offset = (s - 1) * subFoldWidth * 0.6;
-      const subTop = { x: pinchTopCenter.x + offset, y: pinchTopCenter.y };
-      const subBottom = { x: pinchBottomCenter.x + offset * 0.3, y: pinchBottomCenter.y };
+    ctx.fillStyle = adjustBrightness(colour, -0.20);
+    ctx.beginPath();
+    ctx.moveTo(topLeft.x, topLeft.y);
+    ctx.lineTo(topCenter.x, topCenter.y);
+    ctx.lineTo(midCenter.x, midCenter.y);
+    ctx.closePath();
+    ctx.fill();
 
+    ctx.beginPath();
+    ctx.moveTo(topCenter.x, topCenter.y);
+    ctx.lineTo(topRight.x, topRight.y);
+    ctx.lineTo(midCenter.x, midCenter.y);
+    ctx.closePath();
+    ctx.fill();
+
+    const subFoldOffsets = [-0.03, 0, 0.03];
+    for (let s = 0; s < 3; s++) {
+      const offset = subFoldOffsets[s];
+      const subTop = lerpPoint(tl, tr, pinchCenter + offset);
+      const subMid = lerpPoint(
+        lerpPoint(tl, bl, pinchRelax * 0.8),
+        lerpPoint(tr, br, pinchRelax * 0.8),
+        pinchCenter + offset * 2
+      );
+
+      const shade = s === 1 ? -0.15 : -0.10;
+      ctx.strokeStyle = adjustBrightness(colour, shade);
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(subTop.x - subFoldWidth * 0.3, subTop.y);
-      ctx.lineTo(subTop.x + subFoldWidth * 0.3, subTop.y);
-      ctx.lineTo(subBottom.x, subBottom.y);
-      ctx.closePath();
-      ctx.fillStyle = darken(colour, 0.15 + s * 0.03);
-      ctx.fill();
+      ctx.moveTo(subTop.x, subTop.y);
+      ctx.lineTo(subMid.x, subMid.y);
+      ctx.stroke();
     }
 
-    const leftT = groupCenter - groupWidth * 0.4;
-    const rightT = groupCenter + groupWidth * 0.4;
-    const foldTopLeft = lerpPoint(topLeft, topRight, leftT);
-    const foldTopRight = lerpPoint(topLeft, topRight, rightT);
-    const foldBottomLeft = lerpPoint(bottomLeft, bottomRight, leftT);
-    const foldBottomRight = lerpPoint(bottomLeft, bottomRight, rightT);
+    const bottomLeft = lerpPoint(bl, br, pinchLeft - 0.02);
+    const bottomRight = lerpPoint(bl, br, pinchRight + 0.02);
+    const bodyTopLeft = lerpPoint(
+      lerpPoint(tl, bl, pinchRelax),
+      lerpPoint(tr, br, pinchRelax),
+      pinchLeft - 0.01
+    );
+    const bodyTopRight = lerpPoint(
+      lerpPoint(tl, bl, pinchRelax),
+      lerpPoint(tr, br, pinchRelax),
+      pinchRight + 0.01
+    );
 
-    ctx.strokeStyle = rgba('#000000', 0.12);
-    ctx.lineWidth = 1 * scaleX;
-    ctx.beginPath();
-    ctx.moveTo(foldTopLeft.x, foldTopLeft.y + pinchHeight);
-    ctx.lineTo(foldBottomLeft.x, foldBottomLeft.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(foldTopRight.x, foldTopRight.y + pinchHeight);
-    ctx.lineTo(foldBottomRight.x, foldBottomRight.y);
-    ctx.stroke();
+    const numBodyCols = 6;
+    for (let c = 0; c < numBodyCols; c++) {
+      const ct1 = c / numBodyCols;
+      const ct2 = (c + 1) / numBodyCols;
+
+      const cTl = lerpPoint(bodyTopLeft, bodyTopRight, ct1);
+      const cTr = lerpPoint(bodyTopLeft, bodyTopRight, ct2);
+      const cBr = lerpPoint(bottomLeft, bottomRight, ct2);
+      const cBl = lerpPoint(bottomLeft, bottomRight, ct1);
+
+      const sineVal = Math.sin((c + 0.5) * Math.PI / 3);
+      const brightness = sineVal * 0.08;
+
+      ctx.fillStyle = adjustBrightness(colour, brightness);
+      ctx.beginPath();
+      ctx.moveTo(cTl.x, cTl.y);
+      ctx.lineTo(cTr.x, cTr.y);
+      ctx.lineTo(cBr.x, cBr.y);
+      ctx.lineTo(cBl.x, cBl.y);
+      ctx.closePath();
+      ctx.fill();
+    }
   }
 }
 
-function drawBoxPleat(
+function drawBoxPleatPanel(
   ctx: CanvasRenderingContext2D,
-  topLeft: Point,
-  topRight: Point,
-  bottomRight: Point,
-  bottomLeft: Point,
+  tl: Point, tr: Point, br: Point, bl: Point,
   colour: string,
-  scaleX: number
+  _panelWidth: number,
+  _isRightPanel: boolean
 ) {
   const numPleats = 4;
 
-  for (let i = 0; i <= numPleats; i++) {
-    const t = i / numPleats;
-    const topPt = lerpPoint(topLeft, topRight, t);
-    const bottomPt = lerpPoint(bottomLeft, bottomRight, t);
+  ctx.fillStyle = colour;
+  ctx.beginPath();
+  ctx.moveTo(tl.x, tl.y);
+  ctx.lineTo(tr.x, tr.y);
+  ctx.lineTo(br.x, br.y);
+  ctx.lineTo(bl.x, bl.y);
+  ctx.closePath();
+  ctx.fill();
 
-    ctx.strokeStyle = darken(colour, 0.25);
-    ctx.lineWidth = 2 * scaleX;
+  for (let p = 0; p < numPleats; p++) {
+    const pleatCenter = (p + 0.5) / numPleats;
+    const pleatLeft = pleatCenter - 0.04;
+    const pleatRight = pleatCenter + 0.04;
+
+    const returnLeft = pleatCenter - 0.08;
+    const returnRight = pleatLeft;
+
+    const returnTopLeft = lerpPoint(tl, tr, returnLeft);
+    const returnTopRight = lerpPoint(tl, tr, returnRight);
+    const returnBotRight = lerpPoint(bl, br, returnRight);
+    const returnBotLeft = lerpPoint(bl, br, returnLeft);
+
+    ctx.fillStyle = adjustBrightness(colour, -0.06);
     ctx.beginPath();
-    ctx.moveTo(topPt.x, topPt.y);
-    ctx.lineTo(bottomPt.x, bottomPt.y);
-    ctx.stroke();
-  }
-
-  for (let i = 0; i < numPleats; i++) {
-    const t1 = i / numPleats;
-    const t2 = (i + 1) / numPleats;
-
-    const shade = (i % 2 === 0) ? 0.05 : -0.08;
-    const topStart = lerpPoint(topLeft, topRight, t1);
-    const topEnd = lerpPoint(topLeft, topRight, t2);
-    const bottomStart = lerpPoint(bottomLeft, bottomRight, t1);
-    const bottomEnd = lerpPoint(bottomLeft, bottomRight, t2);
-
-    ctx.fillStyle = shade > 0 ? lighten(colour, shade) : darken(colour, -shade);
-    ctx.beginPath();
-    ctx.moveTo(topStart.x, topStart.y);
-    ctx.lineTo(topEnd.x, topEnd.y);
-    ctx.lineTo(bottomEnd.x, bottomEnd.y);
-    ctx.lineTo(bottomStart.x, bottomStart.y);
+    ctx.moveTo(returnTopLeft.x, returnTopLeft.y);
+    ctx.lineTo(returnTopRight.x, returnTopRight.y);
+    ctx.lineTo(returnBotRight.x, returnBotRight.y);
+    ctx.lineTo(returnBotLeft.x, returnBotLeft.y);
     ctx.closePath();
     ctx.fill();
+
+    const pleatTop = lerpPoint(tl, tr, pleatLeft);
+    const pleatBot = lerpPoint(bl, br, pleatLeft);
+
+    ctx.strokeStyle = adjustBrightness(colour, -0.25);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(pleatTop.x, pleatTop.y);
+    ctx.lineTo(pleatBot.x, pleatBot.y);
+    ctx.stroke();
+
+    const return2Left = pleatRight;
+    const return2Right = pleatCenter + 0.08;
+
+    const return2TopLeft = lerpPoint(tl, tr, return2Left);
+    const return2TopRight = lerpPoint(tl, tr, return2Right);
+    const return2BotRight = lerpPoint(bl, br, return2Right);
+    const return2BotLeft = lerpPoint(bl, br, return2Left);
+
+    ctx.fillStyle = adjustBrightness(colour, -0.06);
+    ctx.beginPath();
+    ctx.moveTo(return2TopLeft.x, return2TopLeft.y);
+    ctx.lineTo(return2TopRight.x, return2TopRight.y);
+    ctx.lineTo(return2BotRight.x, return2BotRight.y);
+    ctx.lineTo(return2BotLeft.x, return2BotLeft.y);
+    ctx.closePath();
+    ctx.fill();
+
+    const pleat2Top = lerpPoint(tl, tr, pleatRight);
+    const pleat2Bot = lerpPoint(bl, br, pleatRight);
+
+    ctx.beginPath();
+    ctx.moveTo(pleat2Top.x, pleat2Top.y);
+    ctx.lineTo(pleat2Bot.x, pleat2Bot.y);
+    ctx.stroke();
   }
 }
