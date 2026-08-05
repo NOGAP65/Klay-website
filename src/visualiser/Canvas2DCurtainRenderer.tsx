@@ -59,10 +59,11 @@ void main() {
   // S-fold: wide smooth waves across the panel
   float wave = sin(uv.x * uFoldFrequency * 6.28318 + uFoldPhase);
 
-  // Folds strongest at top, almost flat at bottom
+  // Folds prominent at top, flat at bottom
   // uv.y = 0 at bottom, 1 at top in PlaneGeometry
-  float topWeight = pow(uv.y, 1.8);
-  wave *= mix(0.05, 1.0, topWeight);
+  // Bottom 30% flat, middle 30% transition, top 40% full folds
+  float topWeight = pow(uv.y, 1.4);
+  wave *= mix(0.0, 1.0, topWeight);
   wave *= (1.0 - uOpenness);
 
   vNormDisp = wave;
@@ -78,10 +79,10 @@ void main() {
 
   vDisplacement = wave;
 
-  // Normal calculation for soft lighting
+  // Normal calculation for lighting
   float dWave = cos(uv.x * uFoldFrequency * 6.28318 + uFoldPhase)
-                * uFoldFrequency * 6.28318 * mix(0.05, 1.0, topWeight) * (1.0 - uOpenness);
-  vec3 tangent = normalize(vec3(1.0, 0.0, dWave * 0.2));
+                * uFoldFrequency * 6.28318 * mix(0.0, 1.0, topWeight) * (1.0 - uOpenness);
+  vec3 tangent = normalize(vec3(1.0, 0.0, dWave * 0.4));
   vNormal = normalize(cross(tangent, vec3(0.0, 1.0, 0.0)));
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -108,9 +109,9 @@ void main() {
   float foldPos = fract(uv.x * uFoldFrequency + uFoldPhase / 6.28318);
   float wave = (smoothstep(0.0, 0.25, foldPos) - smoothstep(0.5, 0.75, foldPos)) * 2.0 - 0.5;
 
-  // Folds strongest at top, almost flat at bottom
-  float topWeight = pow(uv.y, 1.8);
-  wave *= mix(0.05, 1.0, topWeight);
+  // Folds prominent at top, flat at bottom
+  float topWeight = pow(uv.y, 1.4);
+  wave *= mix(0.0, 1.0, topWeight);
   wave *= (1.0 - uOpenness);
 
   vNormDisp = wave;
@@ -123,8 +124,8 @@ void main() {
 
   vDisplacement = wave;
 
-  // Soft normal for fabric lighting
-  float normX = -wave * 0.3;
+  // Normal for directional lighting
+  float normX = -wave * 0.5;
   vNormal = normalize(vec3(normX, 0.0, 1.0));
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -152,10 +153,10 @@ void main() {
   vec3 texColour = texture2D(uTexture, tiledUv).rgb;
   colour = mix(colour, colour * texColour, uUseTexture * 0.45);
 
-  // Fold shading from displacement only - no 3D lights
+  // Strong fold shading for 3D depth
   // vDisplacement is normalized wave value (-1 to 1)
-  float light = 1.0 + vDisplacement * 0.55;
-  light = clamp(light, 0.78, 1.22);
+  float light = 1.0 + vDisplacement * 0.9;
+  light = clamp(light, 0.65, 1.35);
   colour *= light;
 
   // Warm glow for sheer fabrics (backlit effect)
@@ -180,25 +181,25 @@ interface FoldConfig {
 const FOLD_CONFIGS: Record<string, FoldConfig> = {
   sfold: {
     frequency: 2.5,
-    amplitude: 0.022,
+    amplitude: 0.038,
     headingDarken: 0.0,
     vertexShader: VERTEX_SHADER_SFOLD,
   },
   pencilpleat: {
     frequency: 6.0,
-    amplitude: 0.010,
+    amplitude: 0.016,
     headingDarken: 1.0,
     vertexShader: VERTEX_SHADER_SFOLD,
   },
   pinchpleat: {
     frequency: 3.5,
-    amplitude: 0.028,
+    amplitude: 0.042,
     headingDarken: 0.5,
     vertexShader: VERTEX_SHADER_SFOLD,
   },
   boxpleat: {
     frequency: 3.0,
-    amplitude: 0.020,
+    amplitude: 0.032,
     headingDarken: 0.3,
     vertexShader: VERTEX_SHADER_BOXPLEAT,
   },
@@ -317,9 +318,14 @@ export default function Canvas2DCurtainRenderer({
       camera.lookAt(0, 0, 0);
       cameraRef.current = camera;
 
-      // Flat even lighting - no hotspots, shading comes from shader only
-      const ambientLight = new THREE.AmbientLight(0xffffff, 1.6);
+      // Ambient fill light
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
       scene.add(ambientLight);
+
+      // Soft directional light from front-right for fold shadows
+      const directionalLight = new THREE.DirectionalLight(0xfff5e0, 0.5);
+      directionalLight.position.set(2, 0.5, 3);
+      scene.add(directionalLight);
 
       // Load fabric texture
       const textureLoader = new THREE.TextureLoader();
@@ -383,21 +389,32 @@ export default function Canvas2DCurtainRenderer({
         });
       };
 
+      // Create curtain group with slight Y rotation for 3D depth perception
+      // Position group at curtain centre, rotate, then offset back
+      const windowCentreX = windowLeft + windowWidth / 2;
+      const curtainGroup = new THREE.Group();
+      curtainGroup.position.set(windowCentreX, centreY, 0);
+      curtainGroup.rotation.y = 0.12; // ~7 degrees for subtle 3D effect
+
       const leftGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 64, 128);
       const leftMaterial = createPanelMaterial(-1, 0);
       const leftPanel = new THREE.Mesh(leftGeometry, leftMaterial);
-      leftPanel.position.set(leftCentreX, centreY, 0);
-      scene.add(leftPanel);
+      // Position relative to group centre
+      leftPanel.position.set(leftCentreX - windowCentreX, 0, 0);
+      curtainGroup.add(leftPanel);
       leftPanelRef.current = leftPanel;
       leftMaterialRef.current = leftMaterial;
 
       const rightGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 64, 128);
       const rightMaterial = createPanelMaterial(1, Math.PI);
       const rightPanel = new THREE.Mesh(rightGeometry, rightMaterial);
-      rightPanel.position.set(rightCentreX, centreY, 0);
-      scene.add(rightPanel);
+      // Position relative to group centre
+      rightPanel.position.set(rightCentreX - windowCentreX, 0, 0);
+      curtainGroup.add(rightPanel);
       rightPanelRef.current = rightPanel;
       rightMaterialRef.current = rightMaterial;
+
+      scene.add(curtainGroup);
 
       renderer.render(scene, camera);
     };
