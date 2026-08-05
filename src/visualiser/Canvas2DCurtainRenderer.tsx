@@ -152,16 +152,11 @@ void main() {
   vec3 texColour = texture2D(uTexture, tiledUv).rgb;
   colour = mix(colour, colour * texColour, uUseTexture * 0.45);
 
-  // Very subtle fold shading - fabric, not metal
+  // Fold shading from displacement only - no 3D lights
   // vDisplacement is normalized wave value (-1 to 1)
-  float light = 1.0 + vDisplacement * 0.3;
-  light = clamp(light, 0.82, 1.18);
+  float light = 1.0 + vDisplacement * 0.55;
+  light = clamp(light, 0.78, 1.22);
   colour *= light;
-
-  // Soft diffuse lighting from front
-  vec3 lightDir = normalize(vec3(0.5, 1.0, 2.0));
-  float diffuse = max(dot(vNormal, lightDir), 0.0);
-  colour *= 0.9 + diffuse * 0.15;
 
   // Warm glow for sheer fabrics (backlit effect)
   vec3 sheenColour = colour + vec3(0.15, 0.12, 0.08);
@@ -185,25 +180,25 @@ interface FoldConfig {
 const FOLD_CONFIGS: Record<string, FoldConfig> = {
   sfold: {
     frequency: 2.5,
-    amplitude: 0.072,   // 0.18 * 0.4 = gentle ripples
+    amplitude: 0.022,
     headingDarken: 0.0,
     vertexShader: VERTEX_SHADER_SFOLD,
   },
   pencilpleat: {
     frequency: 6.0,
-    amplitude: 0.032,   // 0.08 * 0.4
+    amplitude: 0.010,
     headingDarken: 1.0,
     vertexShader: VERTEX_SHADER_SFOLD,
   },
   pinchpleat: {
     frequency: 3.5,
-    amplitude: 0.056,   // 0.14 * 0.4
+    amplitude: 0.028,
     headingDarken: 0.5,
     vertexShader: VERTEX_SHADER_SFOLD,
   },
   boxpleat: {
     frequency: 3.0,
-    amplitude: 0.048,   // 0.12 * 0.4
+    amplitude: 0.020,
     headingDarken: 0.3,
     vertexShader: VERTEX_SHADER_BOXPLEAT,
   },
@@ -275,10 +270,12 @@ export default function Canvas2DCurtainRenderer({
       // Both mount types use the same window bounds
       void mount;
 
-      const panelWidth = windowWidth / 2;
+      // Centre gap between panels (1.5% of window width)
+      const gapWidth = windowWidth * 0.015;
+      const panelWidth = (windowWidth - gapWidth) / 2;
       const panelHeight = windowHeight;
 
-      // Panel centers
+      // Panel centers - offset by half the gap
       const leftCentreX = windowLeft + panelWidth / 2;
       const rightCentreX = windowRight - panelWidth / 2;
       const centreY = windowBottom + panelHeight / 2;
@@ -320,13 +317,9 @@ export default function Canvas2DCurtainRenderer({
       camera.lookAt(0, 0, 0);
       cameraRef.current = camera;
 
-      // Soft fabric lighting - not harsh/metallic
-      const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
+      // Flat even lighting - no hotspots, shading comes from shader only
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.6);
       scene.add(ambientLight);
-
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3);
-      directionalLight.position.set(0.5, 1, 2);
-      scene.add(directionalLight);
 
       // Load fabric texture
       const textureLoader = new THREE.TextureLoader();
