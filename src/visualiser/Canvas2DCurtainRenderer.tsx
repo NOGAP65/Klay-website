@@ -46,6 +46,10 @@ uniform float uFoldAmplitude;
 uniform int uFoldType;
 uniform float uOpenness;
 uniform float uIsLeftPanel; // 1.0 for left panel, 0.0 for right panel
+uniform float uTrackLeft;   // Left boundary of track (panels must not go past this)
+uniform float uTrackRight;  // Right boundary of track
+uniform float uPanelWidth;  // Width of this panel
+uniform float uPanelCentreX; // Centre X position of this panel
 
 varying vec2 vUv;
 varying float vFoldDepth;
@@ -62,28 +66,25 @@ void main() {
   vec3 pos = position;
 
   // Sequential fold collapse: folds collapse from outer edge (wall) toward centre
-  // Left panel: uv.x=0 is inner (centre), uv.x=1 is outer (wall)
-  // Right panel: uv.x=0 is outer (wall), uv.x=1 is inner (centre) — flip it
+  // Left panel: uv.x=0 is centre edge, uv.x=1 is wall edge
+  // Right panel: uv.x=0 is wall edge, uv.x=1 is centre edge
   float distFromOuter = uIsLeftPanel > 0.5 ? uv.x : (1.0 - uv.x);
 
-  // Collapse threshold moves from 1.0 to 0.0 as openness increases
-  // When openness=0, threshold=1.0, nothing collapsed
-  // When openness=1, threshold=0.0, everything collapsed
-  float collapseThreshold = 1.0 - uOpenness;
-
-  // Local collapse: 0 = normal hanging, 1 = fully collapsed/bunched
-  // Folds past the threshold are collapsed, with a soft transition zone of 0.25
-  float localCollapse = clamp(
-    (distFromOuter - collapseThreshold) / 0.25,
+  // Collapse amount based on distance from outer edge and openness
+  // Smooth transition zone of 0.3 for natural bunching
+  float collapseAmount = clamp(
+    (distFromOuter - (1.0 - uOpenness)) / 0.3,
     0.0, 1.0
   );
-  vLocalCollapse = localCollapse;
+  collapseAmount = smoothstep(0.0, 1.0, collapseAmount);
+  vLocalCollapse = collapseAmount;
 
-  // Collapsed folds: tighter frequency (bunched), deeper amplitude
-  float localFrequency = uFoldFrequency * mix(1.0, 3.0, localCollapse);
-  float localAmplitude = uFoldAmplitude * mix(1.0, 2.5, localCollapse);
+  // Compressed folds: higher frequency, LOWER amplitude
+  // Bunched fabric = tighter smaller folds, not bigger jagged ones
+  float effectiveFreq = mix(uFoldFrequency, uFoldFrequency * 2.8, collapseAmount);
+  float effectiveAmp = mix(uFoldAmplitude, uFoldAmplitude * 0.4, collapseAmount);
 
-  float foldX = uv.x * localFrequency;
+  float foldX = uv.x * effectiveFreq;
 
   float wave = 0.0;
   float gradient = 0.0;
@@ -93,8 +94,8 @@ void main() {
     gradient = cos(foldX * 6.28318);
   }
   else if (uFoldType == PENCILPLEAT) {
-    float topFreq = localFrequency * 2.0;
-    float bottomFreq = localFrequency * 0.6;
+    float topFreq = effectiveFreq * 2.0;
+    float bottomFreq = effectiveFreq * 0.6;
     float yBlend = smoothstep(0.0, 0.6, 1.0 - uv.y);
     float freq = mix(topFreq, bottomFreq, yBlend);
     wave = sin(uv.x * freq * 6.28318);
@@ -121,15 +122,26 @@ void main() {
     gradient = (step(0.5, boxCycle) * 2.0 - 1.0) * (1.0 - smoothstep(0.0, 0.2, min(abs(boxCycle - 0.25), abs(boxCycle - 0.75))));
   }
 
-  float zDisp = wave * localAmplitude;
+  // Apply fold depth with effective (reduced when collapsed) amplitude
+  float zDisp = wave * effectiveAmp;
   pos.z += zDisp;
 
-  // X position compression: collapsed region pulls toward outer wall
-  // Left panel collapses leftward (negative X), right panel collapses rightward (positive X)
-  float xCompressFactor = localCollapse * 0.85;
-  float compressDirection = uIsLeftPanel > 0.5 ? -1.0 : 1.0;
-  // Pull collapsed vertices toward the outer edge
-  pos.x += compressDirection * xCompressFactor * (1.0 - distFromOuter) * 0.5;
+  // X compression: pull collapsed region toward outer wall
+  // xShift increases with collapse amount, pulling vertices outward
+  float xShift = collapseAmount * 0.78;
+  float direction = uIsLeftPanel > 0.5 ? -1.0 : 1.0;
+  // distFromCentre: how far this vertex is from panel centre (0-0.5 range in UV)
+  float distFromCentre = abs(uv.x - 0.5);
+  pos.x += xShift * direction * distFromCentre * uPanelWidth;
+
+  // Hard clamp: panels must stay within track boundaries
+  // Left panel: pos.x >= uTrackLeft
+  // Right panel: pos.x <= uTrackRight
+  if (uIsLeftPanel > 0.5) {
+    pos.x = max(pos.x, uTrackLeft);
+  } else {
+    pos.x = min(pos.x, uTrackRight);
+  }
 
   vFoldDepth = wave;
   vFoldGradient = gradient;
@@ -266,6 +278,10 @@ export default function Canvas2DCurtainRenderer({
     leftCentreX: number;
     rightCentreX: number;
     panelWidth: number;
+    windowLeft: number;
+    windowRight: number;
+    windowWidth: number;
+    maxStackWidth: number;
   } | null>(null);
 
   useEffect(() => {
@@ -358,7 +374,13 @@ export default function Canvas2DCurtainRenderer({
 
       const foldAmpScaled = foldConfig.amplitude * panelWidth;
 
-      const createPanelMaterial = (isLeftPanel: boolean) => {
+      const createPanelMaterial = (
+        isLeftPanel: boolean,
+        trackLeft: number,
+        trackRight: number,
+        pWidth: number,
+        panelCentreX: number
+      ) => {
         return new THREE.ShaderMaterial({
           uniforms: {
             uFoldFrequency: { value: foldConfig.frequency },
@@ -369,6 +391,10 @@ export default function Canvas2DCurtainRenderer({
             uIsSheer: { value: isSheer ? 1.0 : 0.0 },
             uOpenness: { value: openness },
             uIsLeftPanel: { value: isLeftPanel ? 1.0 : 0.0 },
+            uTrackLeft: { value: trackLeft },
+            uTrackRight: { value: trackRight },
+            uPanelWidth: { value: pWidth },
+            uPanelCentreX: { value: panelCentreX },
           },
           vertexShader: VERTEX_SHADER,
           fragmentShader: FRAGMENT_SHADER,
@@ -378,22 +404,42 @@ export default function Canvas2DCurtainRenderer({
         });
       };
 
-      panelGeometryRef.current = { leftCentreX, rightCentreX, panelWidth };
+      // Stack-back maximum: compressed stack never exceeds 1/3 of total window width
+      const maxStackWidth = windowWidth / 3;
+
+      panelGeometryRef.current = {
+        leftCentreX,
+        rightCentreX,
+        panelWidth,
+        windowLeft,
+        windowRight,
+        windowWidth,
+        maxStackWidth,
+      };
+
+      // Calculate panel positions with clamping to track boundaries
+      // At openness 1.0: stacks at walls, each maxStackWidth wide
+      // Left stack: windowLeft to windowLeft + maxStackWidth
+      // Right stack: windowRight - maxStackWidth to windowRight
+      const leftStackTarget = windowLeft + maxStackWidth / 2;
+      const rightStackTarget = windowRight - maxStackWidth / 2;
+
+      // Interpolate from closed position to stack position
+      const leftPanelX = leftCentreX + (leftStackTarget - leftCentreX) * openness;
+      const rightPanelX = rightCentreX + (rightStackTarget - rightCentreX) * openness;
 
       const leftGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 128, 256);
-      const leftMaterial = createPanelMaterial(true);
+      const leftMaterial = createPanelMaterial(true, windowLeft, windowRight, panelWidth, leftPanelX);
       const leftPanel = new THREE.Mesh(leftGeometry, leftMaterial);
-      const leftSlideOffset = panelWidth * 0.8 * openness;
-      leftPanel.position.set(leftCentreX - leftSlideOffset, centreY, 0);
+      leftPanel.position.set(leftPanelX, centreY, 0);
       scene.add(leftPanel);
       leftPanelRef.current = leftPanel;
       leftMaterialRef.current = leftMaterial;
 
       const rightGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 128, 256);
-      const rightMaterial = createPanelMaterial(false);
+      const rightMaterial = createPanelMaterial(false, windowLeft, windowRight, panelWidth, rightPanelX);
       const rightPanel = new THREE.Mesh(rightGeometry, rightMaterial);
-      const rightSlideOffset = panelWidth * 0.8 * openness;
-      rightPanel.position.set(rightCentreX + rightSlideOffset, centreY, 0);
+      rightPanel.position.set(rightPanelX, centreY, 0);
       scene.add(rightPanel);
       rightPanelRef.current = rightPanel;
       rightMaterialRef.current = rightMaterial;
@@ -414,7 +460,7 @@ export default function Canvas2DCurtainRenderer({
     if (!leftPanelRef.current || !rightPanelRef.current) return;
     if (!panelGeometryRef.current) return;
 
-    const { leftCentreX, rightCentreX, panelWidth } = panelGeometryRef.current;
+    const { leftCentreX, rightCentreX, windowLeft, windowRight, maxStackWidth } = panelGeometryRef.current;
 
     const foldConfig = FOLD_CONFIGS[foldType] || FOLD_CONFIGS.sfold;
     const rgb = hexToRgb(colour);
@@ -422,22 +468,39 @@ export default function Canvas2DCurtainRenderer({
     const isSheer = fabricType === 'sheer';
     const opacity = isSheer ? 0.52 : 1.0;
 
-    [leftMaterialRef.current, rightMaterialRef.current].forEach((mat) => {
-      mat.uniforms.uFoldFrequency.value = foldConfig.frequency;
-      mat.uniforms.uFoldType.value = foldConfig.foldType;
-      mat.uniforms.uColour.value = colourVec;
-      mat.uniforms.uOpacity.value = opacity;
-      mat.uniforms.uIsSheer.value = isSheer ? 1.0 : 0.0;
-      mat.uniforms.uOpenness.value = openness;
-      mat.transparent = true;
-      mat.depthWrite = !isSheer;
-      mat.needsUpdate = true;
-    });
+    // Calculate panel positions with stack-back limit
+    const leftStackTarget = windowLeft + maxStackWidth / 2;
+    const rightStackTarget = windowRight - maxStackWidth / 2;
+    const leftPanelX = leftCentreX + (leftStackTarget - leftCentreX) * openness;
+    const rightPanelX = rightCentreX + (rightStackTarget - rightCentreX) * openness;
 
-    const leftSlideOffset = panelWidth * 0.8 * openness;
-    const rightSlideOffset = panelWidth * 0.8 * openness;
-    leftPanelRef.current.position.x = leftCentreX - leftSlideOffset;
-    rightPanelRef.current.position.x = rightCentreX + rightSlideOffset;
+    // Update left panel material
+    leftMaterialRef.current.uniforms.uFoldFrequency.value = foldConfig.frequency;
+    leftMaterialRef.current.uniforms.uFoldType.value = foldConfig.foldType;
+    leftMaterialRef.current.uniforms.uColour.value = colourVec;
+    leftMaterialRef.current.uniforms.uOpacity.value = opacity;
+    leftMaterialRef.current.uniforms.uIsSheer.value = isSheer ? 1.0 : 0.0;
+    leftMaterialRef.current.uniforms.uOpenness.value = openness;
+    leftMaterialRef.current.uniforms.uPanelCentreX.value = leftPanelX;
+    leftMaterialRef.current.transparent = true;
+    leftMaterialRef.current.depthWrite = !isSheer;
+    leftMaterialRef.current.needsUpdate = true;
+
+    // Update right panel material
+    rightMaterialRef.current.uniforms.uFoldFrequency.value = foldConfig.frequency;
+    rightMaterialRef.current.uniforms.uFoldType.value = foldConfig.foldType;
+    rightMaterialRef.current.uniforms.uColour.value = colourVec;
+    rightMaterialRef.current.uniforms.uOpacity.value = opacity;
+    rightMaterialRef.current.uniforms.uIsSheer.value = isSheer ? 1.0 : 0.0;
+    rightMaterialRef.current.uniforms.uOpenness.value = openness;
+    rightMaterialRef.current.uniforms.uPanelCentreX.value = rightPanelX;
+    rightMaterialRef.current.transparent = true;
+    rightMaterialRef.current.depthWrite = !isSheer;
+    rightMaterialRef.current.needsUpdate = true;
+
+    // Update panel positions
+    leftPanelRef.current.position.x = leftPanelX;
+    rightPanelRef.current.position.x = rightPanelX;
 
     rendererRef.current.render(sceneRef.current, cameraRef.current);
   }, [colour, openness, fabricType, foldType]);

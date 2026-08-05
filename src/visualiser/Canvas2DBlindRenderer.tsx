@@ -2278,24 +2278,31 @@ const drawNewCurtainArea = (
   // --- DEPTH (pre-fabric) — only for the original window area ---
   drawPreFabricDepth(ctx, corners);
 
-  // Sequential fold collapse: folds collapse from outer edge toward centre
-  // Each fold's width depends on its distance from outer edge and openAmount
-  const panelWidthFrac = 0.5; // Each panel covers half the track width
-  const slideOffset = openAmount * panelWidthFrac * 0.8; // Slide up to 80% of panel width when fully open
+  // Stack-back maximum: compressed stack never exceeds 1/3 of total curtain width
+  // This prevents panels from going outside track boundaries
+  const maxStackFrac = 1 / 3; // Each stack is at most 1/3 of total width
+  const panelWidthFrac = 0.5; // Each panel covers half the track width when closed
 
-  // Left panel slides left: starts at 0-0.5, slides to (-slideOffset)-(0.5-slideOffset)
+  // Calculate where each panel should be based on openAmount
+  // At openness 0: panels at 0-0.5 and 0.5-1 (meeting at centre)
+  // At openness 1: left stack at 0 to maxStackFrac, right stack at (1-maxStackFrac) to 1
+  const leftStackStart = 0;
+  const leftStackEnd = maxStackFrac * openAmount + panelWidthFrac * (1 - openAmount);
+  const rightStackStart = 1 - (maxStackFrac * openAmount + panelWidthFrac * (1 - openAmount));
+  const rightStackEnd = 1;
+
+  // Clamp panel positions to stay within track (0 to 1)
   const leftPanelQuad: Point[] = [
-    curtainTopEdge(0 - slideOffset),
-    curtainTopEdge(panelWidthFrac - slideOffset),
-    curtainBottomEdge(panelWidthFrac - slideOffset),
-    curtainBottomEdge(0 - slideOffset),
+    curtainTopEdge(Math.max(0, leftStackStart)),
+    curtainTopEdge(Math.min(1, leftStackEnd)),
+    curtainBottomEdge(Math.min(1, leftStackEnd)),
+    curtainBottomEdge(Math.max(0, leftStackStart)),
   ];
-  // Right panel slides right: starts at 0.5-1, slides to (0.5+slideOffset)-(1+slideOffset)
   const rightPanelQuad: Point[] = [
-    curtainTopEdge(panelWidthFrac + slideOffset),
-    curtainTopEdge(1 + slideOffset),
-    curtainBottomEdge(1 + slideOffset),
-    curtainBottomEdge(panelWidthFrac + slideOffset),
+    curtainTopEdge(Math.max(0, rightStackStart)),
+    curtainTopEdge(Math.min(1, rightStackEnd)),
+    curtainBottomEdge(Math.min(1, rightStackEnd)),
+    curtainBottomEdge(Math.max(0, rightStackStart)),
   ];
 
   // --- FABRIC PANELS ---
@@ -2331,7 +2338,6 @@ const drawNewCurtainArea = (
     // Sequential fold collapse: compute each fold's collapse state
     // Left panel: fold 0 is outer (wall), fold N is inner (centre)
     // Right panel: fold N is outer (wall), fold 0 is inner (centre)
-    const collapseThreshold = 1.0 - openAmount;
 
     for (let i = 0; i <= foldCount; i++) {
       const t = i / foldCount;
@@ -2341,29 +2347,36 @@ const drawNewCurtainArea = (
       // Right panel: t=1 is outer, t=0 is inner
       const distFromOuter = isLeftPanel ? t : (1.0 - t);
 
-      // Local collapse: 0 = normal, 1 = fully collapsed
-      const localCollapse = Math.max(0, Math.min(1, (distFromOuter - collapseThreshold) / 0.25));
+      // Collapse amount with smooth transition (0.3 transition zone)
+      const rawCollapse = (distFromOuter - (1.0 - openAmount)) / 0.3;
+      const localCollapse = Math.max(0, Math.min(1, rawCollapse));
+      // Smooth the collapse with an ease function
+      const smoothCollapse = localCollapse * localCollapse * (3 - 2 * localCollapse); // smoothstep
 
-      // Collapsed folds: narrower and bunched toward outer wall
-      const collapseScale = 1.0 - localCollapse * 0.7; // Fold width reduces to 30% when collapsed
-      const collapseOffset = localCollapse * (1.0 - distFromOuter) * 0.3; // Pull toward outer edge
+      // Collapsed folds: narrower (higher effective frequency), shallower (lower amplitude)
+      // This creates tighter, smaller folds — bunched fabric, not magnified zigzags
+      const collapseScale = 1.0 - smoothCollapse * 0.6; // Fold width reduces to 40% when collapsed
+      const collapseOffset = smoothCollapse * (1.0 - distFromOuter) * 0.78; // Pull toward outer edge
 
       // Adjusted position with collapse compression
       const adjustedT = isLeftPanel
         ? t * collapseScale + collapseOffset
         : 1.0 - ((1.0 - t) * collapseScale + collapseOffset);
 
-      const topPt: Point = [qtl[0] + (qtr[0] - qtl[0]) * adjustedT, qtl[1] + (qtr[1] - qtl[1]) * adjustedT];
-      const botPt: Point = [qbl[0] + (qbr[0] - qbl[0]) * adjustedT, qbl[1] + (qbr[1] - qbl[1]) * adjustedT];
+      // Clamp adjusted position to stay within panel bounds
+      const clampedT = Math.max(0, Math.min(1, adjustedT));
+
+      const topPt: Point = [qtl[0] + (qtr[0] - qtl[0]) * clampedT, qtl[1] + (qtr[1] - qtl[1]) * clampedT];
+      const botPt: Point = [qbl[0] + (qbr[0] - qbl[0]) * clampedT, qbl[1] + (qbr[1] - qbl[1]) * clampedT];
 
       // Folds spread wider at bottom, but less so when collapsed
-      const spreadFactor = (1 + 0.1 * (1 - t)) * (1.0 - localCollapse * 0.5);
+      const spreadFactor = (1 + 0.1 * (1 - t)) * (1.0 - smoothCollapse * 0.5);
 
       if (curtainFold === 'sfold') {
         // S-fold: smooth continuous curves with alternating light/dark
         const isPeak = i % 2 === 0;
 
-        // Vertical strip for fold — narrower when collapsed
+        // Vertical strip for fold — narrower when collapsed (tighter bunching)
         const baseStripW = panelW / foldCount * 0.9;
         const stripW = baseStripW * collapseScale;
         const stripLeft: Point = [topPt[0] - stripW / 2, topPt[1]];
