@@ -48,27 +48,17 @@ uniform float uOpenness;
 uniform float uPanelSide; // -1 left, 1 right
 
 varying vec2 vUv;
-varying float vDisplacement;
-varying float vNormDisp;
 varying vec3 vNormal;
 
 void main() {
   vUv = uv;
   vec3 pos = position;
 
-  // S-fold: wide smooth waves across the panel
+  // S-fold: smooth sine waves running full length top to bottom
   float wave = sin(uv.x * uFoldFrequency * 6.28318 + uFoldPhase);
-
-  // Folds prominent at top, flat at bottom
-  // uv.y = 0 at bottom, 1 at top in PlaneGeometry
-  // Bottom 30% flat, middle 30% transition, top 40% full folds
-  float topWeight = pow(uv.y, 1.4);
-  wave *= mix(0.0, 1.0, topWeight);
   wave *= (1.0 - uOpenness);
 
-  vNormDisp = wave;
-
-  // Z displacement for gentle depth
+  // Z displacement - folds run full length with consistent depth
   float zDisp = wave * uFoldAmplitude;
   pos.z += zDisp;
 
@@ -77,13 +67,11 @@ void main() {
   float shift = (1.0 - compress) * 0.5 * uPanelSide;
   pos.x = pos.x * compress + shift;
 
-  vDisplacement = wave;
-
-  // Normal calculation for lighting
-  float dWave = cos(uv.x * uFoldFrequency * 6.28318 + uFoldPhase)
-                * uFoldFrequency * 6.28318 * mix(0.0, 1.0, topWeight) * (1.0 - uOpenness);
-  vec3 tangent = normalize(vec3(1.0, 0.0, dWave * 0.4));
-  vNormal = normalize(cross(tangent, vec3(0.0, 1.0, 0.0)));
+  // Physically correct normal for sine wave displacement
+  // dz/dx = cos(...) * amplitude * frequency * 2PI
+  float dzdx = cos(uv.x * uFoldFrequency * 6.28318 + uFoldPhase)
+               * uFoldAmplitude * uFoldFrequency * 6.28318 * (1.0 - uOpenness);
+  vNormal = normalize(vec3(-dzdx, 0.0, 1.0));
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }
@@ -97,24 +85,18 @@ uniform float uOpenness;
 uniform float uPanelSide;
 
 varying vec2 vUv;
-varying float vDisplacement;
-varying float vNormDisp;
 varying vec3 vNormal;
 
 void main() {
   vUv = uv;
   vec3 pos = position;
 
-  // Box pleat pattern - sharp transitions
+  // Box pleat pattern - sharp transitions running full length
   float foldPos = fract(uv.x * uFoldFrequency + uFoldPhase / 6.28318);
-  float wave = (smoothstep(0.0, 0.25, foldPos) - smoothstep(0.5, 0.75, foldPos)) * 2.0 - 0.5;
-
-  // Folds prominent at top, flat at bottom
-  float topWeight = pow(uv.y, 1.4);
-  wave *= mix(0.0, 1.0, topWeight);
+  float wave = (smoothstep(0.0, 0.2, foldPos) - smoothstep(0.5, 0.7, foldPos)) * 2.0 - 0.5;
   wave *= (1.0 - uOpenness);
 
-  vNormDisp = wave;
+  // Z displacement - full length consistent depth
   float zDisp = wave * uFoldAmplitude;
   pos.z += zDisp;
 
@@ -122,11 +104,12 @@ void main() {
   float shift = (1.0 - compress) * 0.5 * uPanelSide;
   pos.x = pos.x * compress + shift;
 
-  vDisplacement = wave;
-
-  // Normal for directional lighting
-  float normX = -wave * 0.5;
-  vNormal = normalize(vec3(normX, 0.0, 1.0));
+  // Normal based on wave slope
+  // Approximate derivative of box pleat wave
+  float slope = (smoothstep(0.0, 0.2, foldPos) - smoothstep(0.0, 0.2, foldPos - 0.01)) * 100.0
+              - (smoothstep(0.5, 0.7, foldPos) - smoothstep(0.5, 0.7, foldPos - 0.01)) * 100.0;
+  slope *= uFoldAmplitude * uFoldFrequency * (1.0 - uOpenness);
+  vNormal = normalize(vec3(-slope, 0.0, 1.0));
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }
@@ -141,8 +124,6 @@ uniform sampler2D uTexture;
 uniform float uUseTexture;
 
 varying vec2 vUv;
-varying float vDisplacement;
-varying float vNormDisp;
 varying vec3 vNormal;
 
 void main() {
@@ -151,12 +132,13 @@ void main() {
   // Sample fabric texture if available
   vec2 tiledUv = vec2(vUv.x * 3.0, vUv.y * 6.0);
   vec3 texColour = texture2D(uTexture, tiledUv).rgb;
-  colour = mix(colour, colour * texColour, uUseTexture * 0.45);
+  colour = mix(colour, colour * texColour, uUseTexture * 0.35);
 
-  // Strong fold shading for 3D depth
-  // vDisplacement is normalized wave value (-1 to 1)
-  float light = 1.0 + vDisplacement * 0.9;
-  light = clamp(light, 0.65, 1.35);
+  // Lambertian diffuse shading with light from slightly left
+  // This creates the characteristic shadow on right side of fold peaks
+  vec3 lightDir = normalize(vec3(-0.4, 0.2, 1.0));
+  float diffuse = max(dot(normalize(vNormal), lightDir), 0.0);
+  float light = 0.6 + diffuse * 0.7;
   colour *= light;
 
   // Warm glow for sheer fabrics (backlit effect)
@@ -165,7 +147,7 @@ void main() {
 
   // Darker heading band at top
   float headingMask = smoothstep(0.93, 1.0, vUv.y);
-  colour *= mix(1.0, 0.82 - uHeadingDarken * 0.1, headingMask);
+  colour *= mix(1.0, 0.85 - uHeadingDarken * 0.1, headingMask);
 
   gl_FragColor = vec4(colour, uOpacity);
 }
@@ -180,26 +162,26 @@ interface FoldConfig {
 
 const FOLD_CONFIGS: Record<string, FoldConfig> = {
   sfold: {
-    frequency: 2.5,
-    amplitude: 0.038,
+    frequency: 8.0,      // ~8 folds per panel as in reference
+    amplitude: 0.025,    // subtle depth
     headingDarken: 0.0,
     vertexShader: VERTEX_SHADER_SFOLD,
   },
   pencilpleat: {
-    frequency: 6.0,
-    amplitude: 0.016,
+    frequency: 16.0,     // ~16 tight gathers per panel
+    amplitude: 0.015,    // shallow folds
     headingDarken: 1.0,
     vertexShader: VERTEX_SHADER_SFOLD,
   },
   pinchpleat: {
-    frequency: 3.5,
-    amplitude: 0.042,
+    frequency: 10.0,     // ~10 pinch points per panel
+    amplitude: 0.022,
     headingDarken: 0.5,
     vertexShader: VERTEX_SHADER_SFOLD,
   },
   boxpleat: {
-    frequency: 3.0,
-    amplitude: 0.032,
+    frequency: 8.0,      // ~8 box pleats per panel
+    amplitude: 0.020,
     headingDarken: 0.3,
     vertexShader: VERTEX_SHADER_BOXPLEAT,
   },
@@ -318,13 +300,13 @@ export default function Canvas2DCurtainRenderer({
       camera.lookAt(0, 0, 0);
       cameraRef.current = camera;
 
-      // Ambient fill light
-      const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+      // Even ambient room light
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
       scene.add(ambientLight);
 
-      // Soft directional light from front-right for fold shadows
-      const directionalLight = new THREE.DirectionalLight(0xfff5e0, 0.5);
-      directionalLight.position.set(2, 0.5, 3);
+      // Directional light from slightly left of centre (matches reference images)
+      const directionalLight = new THREE.DirectionalLight(0xfff8f0, 0.7);
+      directionalLight.position.set(-2, 1, 4);
       scene.add(directionalLight);
 
       // Load fabric texture
@@ -389,32 +371,24 @@ export default function Canvas2DCurtainRenderer({
         });
       };
 
-      // Create curtain group with slight Y rotation for 3D depth perception
-      // Position group at curtain centre, rotate, then offset back
-      const windowCentreX = windowLeft + windowWidth / 2;
-      const curtainGroup = new THREE.Group();
-      curtainGroup.position.set(windowCentreX, centreY, 0);
-      curtainGroup.rotation.y = 0.12; // ~7 degrees for subtle 3D effect
-
+      // Create panels with individual V-shape rotation (like curtains on a track)
       const leftGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 64, 128);
       const leftMaterial = createPanelMaterial(-1, 0);
       const leftPanel = new THREE.Mesh(leftGeometry, leftMaterial);
-      // Position relative to group centre
-      leftPanel.position.set(leftCentreX - windowCentreX, 0, 0);
-      curtainGroup.add(leftPanel);
+      leftPanel.position.set(leftCentreX, centreY, 0);
+      leftPanel.rotation.y = -0.08; // slight angle inward
+      scene.add(leftPanel);
       leftPanelRef.current = leftPanel;
       leftMaterialRef.current = leftMaterial;
 
       const rightGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 64, 128);
       const rightMaterial = createPanelMaterial(1, Math.PI);
       const rightPanel = new THREE.Mesh(rightGeometry, rightMaterial);
-      // Position relative to group centre
-      rightPanel.position.set(rightCentreX - windowCentreX, 0, 0);
-      curtainGroup.add(rightPanel);
+      rightPanel.position.set(rightCentreX, centreY, 0);
+      rightPanel.rotation.y = 0.08; // slight angle inward (V-shape)
+      scene.add(rightPanel);
       rightPanelRef.current = rightPanel;
       rightMaterialRef.current = rightMaterial;
-
-      scene.add(curtainGroup);
 
       renderer.render(scene, camera);
     };
