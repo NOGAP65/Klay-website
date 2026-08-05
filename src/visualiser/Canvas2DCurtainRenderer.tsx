@@ -46,10 +46,7 @@ uniform float uFoldAmplitude;
 uniform int uFoldType;
 uniform float uOpenness;
 uniform float uIsLeftPanel; // 1.0 for left panel, 0.0 for right panel
-uniform float uTrackLeft;   // Left boundary of track (panels must not go past this)
-uniform float uTrackRight;  // Right boundary of track
 uniform float uPanelWidth;  // Width of this panel
-uniform float uPanelCentreX; // Centre X position of this panel
 
 varying vec2 vUv;
 varying float vFoldDepth;
@@ -133,15 +130,6 @@ void main() {
   // distFromCentre: how far this vertex is from panel centre (0-0.5 range in UV)
   float distFromCentre = abs(uv.x - 0.5);
   pos.x += xShift * direction * distFromCentre * uPanelWidth;
-
-  // Hard clamp: panels must stay within track boundaries
-  // Left panel: pos.x >= uTrackLeft
-  // Right panel: pos.x <= uTrackRight
-  if (uIsLeftPanel > 0.5) {
-    pos.x = max(pos.x, uTrackLeft);
-  } else {
-    pos.x = min(pos.x, uTrackRight);
-  }
 
   vFoldDepth = wave;
   vFoldGradient = gradient;
@@ -376,10 +364,7 @@ export default function Canvas2DCurtainRenderer({
 
       const createPanelMaterial = (
         isLeftPanel: boolean,
-        trackLeft: number,
-        trackRight: number,
-        pWidth: number,
-        panelCentreX: number
+        pWidth: number
       ) => {
         return new THREE.ShaderMaterial({
           uniforms: {
@@ -391,10 +376,7 @@ export default function Canvas2DCurtainRenderer({
             uIsSheer: { value: isSheer ? 1.0 : 0.0 },
             uOpenness: { value: openness },
             uIsLeftPanel: { value: isLeftPanel ? 1.0 : 0.0 },
-            uTrackLeft: { value: trackLeft },
-            uTrackRight: { value: trackRight },
             uPanelWidth: { value: pWidth },
-            uPanelCentreX: { value: panelCentreX },
           },
           vertexShader: VERTEX_SHADER,
           fragmentShader: FRAGMENT_SHADER,
@@ -404,9 +386,6 @@ export default function Canvas2DCurtainRenderer({
         });
       };
 
-      // Stack-back maximum: compressed stack never exceeds 1/3 of total window width
-      const maxStackWidth = windowWidth / 3;
-
       panelGeometryRef.current = {
         leftCentreX,
         rightCentreX,
@@ -414,32 +393,61 @@ export default function Canvas2DCurtainRenderer({
         windowLeft,
         windowRight,
         windowWidth,
-        maxStackWidth,
+        maxStackWidth: windowWidth / 3,
       };
 
-      // Calculate panel positions with clamping to track boundaries
-      // At openness 1.0: stacks at walls, each maxStackWidth wide
-      // Left stack: windowLeft to windowLeft + maxStackWidth
-      // Right stack: windowRight - maxStackWidth to windowRight
-      const leftStackTarget = windowLeft + maxStackWidth / 2;
-      const rightStackTarget = windowRight - maxStackWidth / 2;
+      // Compute panel positions and widths with mesh-level clamping
+      const computePanelBounds = (open: number) => {
+        // Original full-width positions when closed
+        const leftOriginalCentreX = leftCentreX;
+        const rightOriginalCentreX = rightCentreX;
+        const originalWidth = panelWidth;
 
-      // Interpolate from closed position to stack position
-      const leftPanelX = leftCentreX + (leftStackTarget - leftCentreX) * openness;
-      const rightPanelX = rightCentreX + (rightStackTarget - rightCentreX) * openness;
+        // As openness increases, panels slide toward walls
+        // Left panel slides left, right panel slides right
+        const slideDistance = (windowWidth / 2 - originalWidth / 2) * open;
+
+        let leftCX = leftOriginalCentreX - slideDistance;
+        let rightCX = rightOriginalCentreX + slideDistance;
+        let leftW = originalWidth;
+        let rightW = originalWidth;
+
+        // Left panel: clamp so left edge doesn't go past windowLeft
+        const leftEdge = leftCX - leftW / 2;
+        if (leftEdge < windowLeft) {
+          const newLeftEdge = windowLeft;
+          leftW = (leftCX + originalWidth / 2) - newLeftEdge;
+          leftCX = newLeftEdge + leftW / 2;
+        }
+
+        // Right panel: clamp so right edge doesn't go past windowRight
+        const rightEdge = rightCX + rightW / 2;
+        if (rightEdge > windowRight) {
+          const newRightEdge = windowRight;
+          rightW = newRightEdge - (rightCX - originalWidth / 2);
+          rightCX = newRightEdge - rightW / 2;
+        }
+
+        return { leftCX, rightCX, leftW, rightW, originalWidth };
+      };
+
+      const bounds = computePanelBounds(openness);
+      console.log(`[Curtain] openness=${openness.toFixed(2)} leftCX=${bounds.leftCX.toFixed(1)} leftW=${bounds.leftW.toFixed(1)} rightCX=${bounds.rightCX.toFixed(1)} rightW=${bounds.rightW.toFixed(1)}`);
 
       const leftGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 128, 256);
-      const leftMaterial = createPanelMaterial(true, windowLeft, windowRight, panelWidth, leftPanelX);
+      const leftMaterial = createPanelMaterial(true, panelWidth);
       const leftPanel = new THREE.Mesh(leftGeometry, leftMaterial);
-      leftPanel.position.set(leftPanelX, centreY, 0);
+      leftPanel.position.set(bounds.leftCX, centreY, 0);
+      leftPanel.scale.x = bounds.leftW / panelWidth;
       scene.add(leftPanel);
       leftPanelRef.current = leftPanel;
       leftMaterialRef.current = leftMaterial;
 
       const rightGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 128, 256);
-      const rightMaterial = createPanelMaterial(false, windowLeft, windowRight, panelWidth, rightPanelX);
+      const rightMaterial = createPanelMaterial(false, panelWidth);
       const rightPanel = new THREE.Mesh(rightGeometry, rightMaterial);
-      rightPanel.position.set(rightPanelX, centreY, 0);
+      rightPanel.position.set(bounds.rightCX, centreY, 0);
+      rightPanel.scale.x = bounds.rightW / panelWidth;
       scene.add(rightPanel);
       rightPanelRef.current = rightPanel;
       rightMaterialRef.current = rightMaterial;
@@ -460,7 +468,7 @@ export default function Canvas2DCurtainRenderer({
     if (!leftPanelRef.current || !rightPanelRef.current) return;
     if (!panelGeometryRef.current) return;
 
-    const { leftCentreX, rightCentreX, windowLeft, windowRight, maxStackWidth } = panelGeometryRef.current;
+    const { leftCentreX, rightCentreX, panelWidth, windowLeft, windowRight, windowWidth } = panelGeometryRef.current;
 
     const foldConfig = FOLD_CONFIGS[foldType] || FOLD_CONFIGS.sfold;
     const rgb = hexToRgb(colour);
@@ -468,11 +476,32 @@ export default function Canvas2DCurtainRenderer({
     const isSheer = fabricType === 'sheer';
     const opacity = isSheer ? 0.52 : 1.0;
 
-    // Calculate panel positions with stack-back limit
-    const leftStackTarget = windowLeft + maxStackWidth / 2;
-    const rightStackTarget = windowRight - maxStackWidth / 2;
-    const leftPanelX = leftCentreX + (leftStackTarget - leftCentreX) * openness;
-    const rightPanelX = rightCentreX + (rightStackTarget - rightCentreX) * openness;
+    // Compute panel positions and widths with mesh-level clamping
+    const originalWidth = panelWidth;
+    const slideDistance = (windowWidth / 2 - originalWidth / 2) * openness;
+
+    let leftCX = leftCentreX - slideDistance;
+    let rightCX = rightCentreX + slideDistance;
+    let leftW = originalWidth;
+    let rightW = originalWidth;
+
+    // Left panel: clamp so left edge doesn't go past windowLeft
+    const leftEdge = leftCX - leftW / 2;
+    if (leftEdge < windowLeft) {
+      const newLeftEdge = windowLeft;
+      leftW = (leftCX + originalWidth / 2) - newLeftEdge;
+      leftCX = newLeftEdge + leftW / 2;
+    }
+
+    // Right panel: clamp so right edge doesn't go past windowRight
+    const rightEdge = rightCX + rightW / 2;
+    if (rightEdge > windowRight) {
+      const newRightEdge = windowRight;
+      rightW = newRightEdge - (rightCX - originalWidth / 2);
+      rightCX = newRightEdge - rightW / 2;
+    }
+
+    console.log(`[Curtain] openness=${openness.toFixed(2)} leftCX=${leftCX.toFixed(1)} leftW=${leftW.toFixed(1)} rightCX=${rightCX.toFixed(1)} rightW=${rightW.toFixed(1)}`);
 
     // Update left panel material
     leftMaterialRef.current.uniforms.uFoldFrequency.value = foldConfig.frequency;
@@ -481,7 +510,6 @@ export default function Canvas2DCurtainRenderer({
     leftMaterialRef.current.uniforms.uOpacity.value = opacity;
     leftMaterialRef.current.uniforms.uIsSheer.value = isSheer ? 1.0 : 0.0;
     leftMaterialRef.current.uniforms.uOpenness.value = openness;
-    leftMaterialRef.current.uniforms.uPanelCentreX.value = leftPanelX;
     leftMaterialRef.current.transparent = true;
     leftMaterialRef.current.depthWrite = !isSheer;
     leftMaterialRef.current.needsUpdate = true;
@@ -493,14 +521,15 @@ export default function Canvas2DCurtainRenderer({
     rightMaterialRef.current.uniforms.uOpacity.value = opacity;
     rightMaterialRef.current.uniforms.uIsSheer.value = isSheer ? 1.0 : 0.0;
     rightMaterialRef.current.uniforms.uOpenness.value = openness;
-    rightMaterialRef.current.uniforms.uPanelCentreX.value = rightPanelX;
     rightMaterialRef.current.transparent = true;
     rightMaterialRef.current.depthWrite = !isSheer;
     rightMaterialRef.current.needsUpdate = true;
 
-    // Update panel positions
-    leftPanelRef.current.position.x = leftPanelX;
-    rightPanelRef.current.position.x = rightPanelX;
+    // Update panel positions and scale
+    leftPanelRef.current.position.x = leftCX;
+    leftPanelRef.current.scale.x = leftW / panelWidth;
+    rightPanelRef.current.position.x = rightCX;
+    rightPanelRef.current.scale.x = rightW / panelWidth;
 
     rendererRef.current.render(sceneRef.current, cameraRef.current);
   }, [colour, openness, fabricType, foldType]);
