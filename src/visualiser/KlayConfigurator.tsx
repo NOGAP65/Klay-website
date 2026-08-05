@@ -680,7 +680,7 @@ export default function KlayConfigurator({
               hardwareColour={store.hardwareColour}
               mount={store.curtainMount}
               colour={store.getFabricColor()}
-              openness={store.curtainOpenness}
+              openness={1 - store.rollPosition}
               canvasWidth={photoBitmap?.width ?? 1}
               canvasHeight={photoBitmap?.height ?? 1}
               photoUrl={store.photoUrl!}

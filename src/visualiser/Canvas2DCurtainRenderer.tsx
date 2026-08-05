@@ -40,68 +40,75 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-const VERTEX_SHADER_SFOLD = `
+const VERTEX_SHADER = `
 uniform float uFoldFrequency;
 uniform float uFoldAmplitude;
-uniform float uFoldPhase;
-uniform float uOpenness;
-uniform float uPanelSide; // -1 left, 1 right
-
-varying vec2 vUv;
-varying float vDisplacement;
-
-void main() {
-  vUv = uv;
-  vec3 pos = position;
-
-  // S-fold: smooth sine waves running full length top to bottom
-  // wave *= 1.0 — constant fold depth, no relaxation
-  float wave = sin(uv.x * uFoldFrequency * 6.28318 + uFoldPhase);
-  wave *= (1.0 - uOpenness);
-
-  // Z displacement - folds run full length with consistent depth
-  float zDisp = wave * uFoldAmplitude;
-  pos.z += zDisp;
-
-  // Compress panels when open
-  float compress = mix(1.0, 0.15, uOpenness);
-  float shift = (1.0 - compress) * 0.5 * uPanelSide;
-  pos.x = pos.x * compress + shift;
-
-  vDisplacement = wave;
-
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-}
-`;
-
-const VERTEX_SHADER_BOXPLEAT = `
-uniform float uFoldFrequency;
-uniform float uFoldAmplitude;
-uniform float uFoldPhase;
 uniform float uOpenness;
 uniform float uPanelSide;
+uniform int uFoldType;
 
 varying vec2 vUv;
-varying float vDisplacement;
+varying float vFoldDepth;
+varying float vFoldGradient;
+
+#define SFOLD 0
+#define PENCILPLEAT 1
+#define PINCHPLEAT 2
+#define BOXPLEAT 3
 
 void main() {
   vUv = uv;
   vec3 pos = position;
 
-  // Box pleat pattern - sharp transitions running full length
-  float foldPos = fract(uv.x * uFoldFrequency + uFoldPhase / 6.28318);
-  float wave = (smoothstep(0.0, 0.2, foldPos) - smoothstep(0.5, 0.7, foldPos)) * 2.0 - 0.5;
-  wave *= (1.0 - uOpenness);
+  float closedAmount = 1.0 - uOpenness;
+  float foldX = uv.x * uFoldFrequency;
 
-  // Z displacement - full length consistent depth
+  float wave = 0.0;
+  float gradient = 0.0;
+
+  if (uFoldType == SFOLD) {
+    wave = sin(foldX * 6.28318);
+    gradient = cos(foldX * 6.28318);
+  }
+  else if (uFoldType == PENCILPLEAT) {
+    float topFreq = uFoldFrequency * 2.0;
+    float bottomFreq = uFoldFrequency * 0.6;
+    float yBlend = smoothstep(0.0, 0.6, 1.0 - uv.y);
+    float freq = mix(topFreq, bottomFreq, yBlend);
+    wave = sin(uv.x * freq * 6.28318);
+    gradient = cos(uv.x * freq * 6.28318);
+    float depthFade = mix(1.0, 0.4, yBlend);
+    wave *= depthFade;
+  }
+  else if (uFoldType == PINCHPLEAT) {
+    float pinchCycle = fract(foldX);
+    float inPinch = smoothstep(0.2, 0.35, pinchCycle) * (1.0 - smoothstep(0.65, 0.8, pinchCycle));
+    float pinchWave = sin(pinchCycle * 9.4248) * inPinch;
+    float flowWave = sin(foldX * 6.28318);
+    float yBlend = smoothstep(0.0, 0.4, 1.0 - uv.y);
+    wave = mix(pinchWave + flowWave * 0.3, flowWave, yBlend);
+    gradient = cos(foldX * 6.28318);
+  }
+  else if (uFoldType == BOXPLEAT) {
+    float boxCycle = fract(foldX);
+    float boxWave = smoothstep(0.0, 0.15, boxCycle)
+                  - smoothstep(0.35, 0.5, boxCycle)
+                  + smoothstep(0.5, 0.65, boxCycle)
+                  - smoothstep(0.85, 1.0, boxCycle);
+    wave = boxWave * 2.0 - 0.5;
+    gradient = (step(0.5, boxCycle) * 2.0 - 1.0) * (1.0 - smoothstep(0.0, 0.2, min(abs(boxCycle - 0.25), abs(boxCycle - 0.75))));
+  }
+
+  wave *= closedAmount;
   float zDisp = wave * uFoldAmplitude;
   pos.z += zDisp;
 
-  float compress = mix(1.0, 0.15, uOpenness);
+  float compress = mix(1.0, 0.12, uOpenness);
   float shift = (1.0 - compress) * 0.5 * uPanelSide;
   pos.x = pos.x * compress + shift;
 
-  vDisplacement = wave;
+  vFoldDepth = wave;
+  vFoldGradient = gradient * closedAmount;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }
@@ -110,33 +117,60 @@ void main() {
 const FRAGMENT_SHADER = `
 uniform vec3 uColour;
 uniform float uOpacity;
-uniform float uSheerGlow;
-uniform float uHeadingDarken;
-uniform sampler2D uTexture;
-uniform float uUseTexture;
+uniform float uIsSheer;
+uniform int uFoldType;
 
 varying vec2 vUv;
-varying float vDisplacement;
+varying float vFoldDepth;
+varying float vFoldGradient;
+
+#define SFOLD 0
+#define PENCILPLEAT 1
+#define PINCHPLEAT 2
+#define BOXPLEAT 3
 
 void main() {
   vec3 colour = uColour;
 
-  // Sample fabric texture if available
-  vec2 tiledUv = vec2(vUv.x * 3.0, vUv.y * 6.0);
-  vec3 texColour = texture2D(uTexture, tiledUv).rgb;
-  colour = mix(colour, colour * texColour, uUseTexture * 0.35);
+  float shadow = (1.0 - vFoldDepth) * 0.5;
+  float highlight = (1.0 + vFoldDepth) * 0.5;
 
-  // Displacement-based lighting for soft folds
-  float light = 1.0 + vDisplacement * 0.9;
-  colour *= clamp(light, 0.65, 1.35);
+  float softShadow = smoothstep(0.0, 1.0, shadow);
+  float softHighlight = smoothstep(0.0, 1.0, highlight);
 
-  // Warm glow for sheer fabrics (backlit effect)
-  vec3 sheenColour = colour + vec3(0.15, 0.12, 0.08);
-  colour = mix(colour, sheenColour, uSheerGlow * 0.4);
+  float light = 0.72 + softHighlight * 0.22 - softShadow * 0.12;
 
-  // Darker heading band at top
-  float headingMask = smoothstep(0.93, 1.0, vUv.y);
-  colour *= mix(1.0, 0.85 - uHeadingDarken * 0.1, headingMask);
+  float ao = 1.0 - pow(abs(vFoldDepth), 1.5) * 0.08;
+  light *= ao;
+
+  float edgeLight = abs(vFoldGradient) * 0.06;
+  light += edgeLight * smoothstep(0.3, 0.7, vFoldDepth);
+
+  if (uFoldType == PENCILPLEAT) {
+    float gatherDark = smoothstep(0.85, 1.0, vUv.y) * 0.08;
+    light -= gatherDark;
+  }
+  else if (uFoldType == PINCHPLEAT) {
+    float pinchShadow = smoothstep(0.88, 1.0, vUv.y) * abs(vFoldDepth) * 0.12;
+    light -= pinchShadow;
+  }
+  else if (uFoldType == BOXPLEAT) {
+    float creaseDark = (1.0 - smoothstep(0.0, 0.3, abs(vFoldGradient))) * 0.05;
+    light -= creaseDark;
+  }
+
+  colour *= clamp(light, 0.58, 1.05);
+
+  if (uIsSheer > 0.5) {
+    vec3 warmGlow = colour + vec3(0.15, 0.12, 0.06);
+    float glowStrength = 0.4 + (1.0 - abs(vFoldDepth)) * 0.3;
+    colour = mix(colour, warmGlow, glowStrength);
+    float centerBright = smoothstep(0.2, 0.6, vUv.y) * smoothstep(0.9, 0.6, vUv.y);
+    colour *= 1.0 + centerBright * 0.15;
+  }
+
+  float noise = fract(sin(dot(vUv * 80.0, vec2(12.9898, 78.233))) * 43758.5453);
+  colour += (noise - 0.5) * 0.008;
 
   gl_FragColor = vec4(colour, uOpacity);
 }
@@ -145,34 +179,29 @@ void main() {
 interface FoldConfig {
   frequency: number;
   amplitude: number;
-  headingDarken: number;
-  vertexShader: string;
+  foldType: number;
 }
 
 const FOLD_CONFIGS: Record<string, FoldConfig> = {
   sfold: {
-    frequency: 8.0,      // ~8 folds per panel as in reference
-    amplitude: 0.025,    // subtle depth
-    headingDarken: 0.0,
-    vertexShader: VERTEX_SHADER_SFOLD,
+    frequency: 5.5,
+    amplitude: 0.055,
+    foldType: 0,
   },
   pencilpleat: {
-    frequency: 16.0,     // ~16 tight gathers per panel
-    amplitude: 0.015,    // shallow folds
-    headingDarken: 1.0,
-    vertexShader: VERTEX_SHADER_SFOLD,
+    frequency: 6.0,
+    amplitude: 0.035,
+    foldType: 1,
   },
   pinchpleat: {
-    frequency: 10.0,     // ~10 pinch points per panel
-    amplitude: 0.022,
-    headingDarken: 0.5,
-    vertexShader: VERTEX_SHADER_SFOLD,
+    frequency: 4.5,
+    amplitude: 0.06,
+    foldType: 2,
   },
   boxpleat: {
-    frequency: 8.0,      // ~8 box pleats per panel
-    amplitude: 0.020,
-    headingDarken: 0.3,
-    vertexShader: VERTEX_SHADER_BOXPLEAT,
+    frequency: 4.0,
+    amplitude: 0.045,
+    foldType: 3,
   },
 };
 
@@ -224,35 +253,28 @@ export default function Canvas2DCurtainRenderer({
         bgCtx.drawImage(photo, 0, 0);
       }
 
-      // Corner pins are in photo pixel coordinates (Y from top)
-      // Convert to Three.js coordinates (Y from bottom)
       const tlPx = { x: tl.x, y: H - tl.y };
       const trPx = { x: tr.x, y: H - tr.y };
       const blPx = { x: bl.x, y: H - bl.y };
       const brPx = { x: br.x, y: H - br.y };
 
-      // Window bounds from corner pins
-      let windowLeft = Math.min(tlPx.x, blPx.x);
-      let windowRight = Math.max(trPx.x, brPx.x);
-      let windowTop = Math.max(tlPx.y, trPx.y);
-      let windowBottom = Math.min(blPx.y, brPx.y);
-      let windowWidth = windowRight - windowLeft;
-      let windowHeight = windowTop - windowBottom;
+      const windowLeft = Math.min(tlPx.x, blPx.x);
+      const windowRight = Math.max(trPx.x, brPx.x);
+      const windowTop = Math.max(tlPx.y, trPx.y);
+      const windowBottom = Math.min(blPx.y, brPx.y);
+      const windowWidth = windowRight - windowLeft;
+      const windowHeight = windowTop - windowBottom;
 
-      // Both mount types use the same window bounds
       void mount;
 
-      // Centre gap between panels (1.5% of window width)
-      const gapWidth = windowWidth * 0.015;
+      const gapWidth = windowWidth * 0.006;
       const panelWidth = (windowWidth - gapWidth) / 2;
       const panelHeight = windowHeight;
 
-      // Panel centers - offset by half the gap
       const leftCentreX = windowLeft + panelWidth / 2;
       const rightCentreX = windowRight - panelWidth / 2;
       const centreY = windowBottom + panelHeight / 2;
 
-      // Clean up previous renderer
       if (rendererRef.current) {
         rendererRef.current.dispose();
       }
@@ -283,71 +305,33 @@ export default function Canvas2DCurtainRenderer({
       const scene = new THREE.Scene();
       sceneRef.current = scene;
 
-      // OrthographicCamera maps directly to pixel coordinates
       const camera = new THREE.OrthographicCamera(0, W, H, 0, -1000, 1000);
       camera.position.set(0, 0, 100);
       camera.lookAt(0, 0, 0);
       cameraRef.current = camera;
-
-      // Ambient light only - no directional light
-      const ambientLight = new THREE.AmbientLight(0xffffff, 1.6);
-      scene.add(ambientLight);
-
-      // Load fabric texture
-      const textureLoader = new THREE.TextureLoader();
-      let fabricTexture: THREE.Texture | null = null;
-      let useTexture = 0.0;
-
-      try {
-        fabricTexture = await new Promise<THREE.Texture>((resolve, reject) => {
-          textureLoader.load(
-            '/images/Textures/curtains/sfold_base.png',
-            (tex) => {
-              console.log('Curtain texture loaded successfully');
-              tex.wrapS = THREE.RepeatWrapping;
-              tex.wrapT = THREE.RepeatWrapping;
-              resolve(tex);
-            },
-            undefined,
-            (err) => {
-              console.warn('Curtain texture failed to load:', err);
-              reject(err);
-            }
-          );
-        });
-        useTexture = 1.0;
-      } catch {
-        console.log('Using fallback flat colour for curtains');
-        fabricTexture = new THREE.Texture();
-      }
 
       const foldConfig = FOLD_CONFIGS[foldType] || FOLD_CONFIGS.sfold;
       const rgb = hexToRgb(colour);
       const colourVec = new THREE.Vector3(rgb.r / 255, rgb.g / 255, rgb.b / 255);
 
       const isSheer = fabricType === 'sheer';
-      const opacity = isSheer ? 0.55 : 1.0;
-      const sheerGlow = isSheer ? 1.0 : 0.0;
+      const opacity = isSheer ? 0.52 : 1.0;
 
-      // Scale amplitude to panel size
       const foldAmpScaled = foldConfig.amplitude * panelWidth;
 
-      const createPanelMaterial = (panelSide: number, phaseOffset: number) => {
+      const createPanelMaterial = (panelSide: number) => {
         return new THREE.ShaderMaterial({
           uniforms: {
             uFoldFrequency: { value: foldConfig.frequency },
             uFoldAmplitude: { value: foldAmpScaled },
-            uFoldPhase: { value: phaseOffset },
             uOpenness: { value: openness },
             uPanelSide: { value: panelSide },
+            uFoldType: { value: foldConfig.foldType },
             uColour: { value: colourVec },
             uOpacity: { value: opacity },
-            uSheerGlow: { value: sheerGlow },
-            uHeadingDarken: { value: foldConfig.headingDarken },
-            uTexture: { value: fabricTexture },
-            uUseTexture: { value: useTexture },
+            uIsSheer: { value: isSheer ? 1.0 : 0.0 },
           },
-          vertexShader: foldConfig.vertexShader,
+          vertexShader: VERTEX_SHADER,
           fragmentShader: FRAGMENT_SHADER,
           transparent: true,
           depthWrite: !isSheer,
@@ -355,17 +339,16 @@ export default function Canvas2DCurtainRenderer({
         });
       };
 
-      // Create panels - no rotation
-      const leftGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 64, 128);
-      const leftMaterial = createPanelMaterial(-1, 0);
+      const leftGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 128, 256);
+      const leftMaterial = createPanelMaterial(-1);
       const leftPanel = new THREE.Mesh(leftGeometry, leftMaterial);
       leftPanel.position.set(leftCentreX, centreY, 0);
       scene.add(leftPanel);
       leftPanelRef.current = leftPanel;
       leftMaterialRef.current = leftMaterial;
 
-      const rightGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 64, 128);
-      const rightMaterial = createPanelMaterial(1, Math.PI);
+      const rightGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 128, 256);
+      const rightMaterial = createPanelMaterial(1);
       const rightPanel = new THREE.Mesh(rightGeometry, rightMaterial);
       rightPanel.position.set(rightCentreX, centreY, 0);
       scene.add(rightPanel);
@@ -390,17 +373,15 @@ export default function Canvas2DCurtainRenderer({
     const rgb = hexToRgb(colour);
     const colourVec = new THREE.Vector3(rgb.r / 255, rgb.g / 255, rgb.b / 255);
     const isSheer = fabricType === 'sheer';
-    const opacity = isSheer ? 0.55 : 1.0;
-    const sheerGlow = isSheer ? 1.0 : 0.0;
+    const opacity = isSheer ? 0.52 : 1.0;
 
-    [leftMaterialRef.current, rightMaterialRef.current].forEach((mat, i) => {
+    [leftMaterialRef.current, rightMaterialRef.current].forEach((mat) => {
       mat.uniforms.uFoldFrequency.value = foldConfig.frequency;
+      mat.uniforms.uFoldType.value = foldConfig.foldType;
       mat.uniforms.uOpenness.value = openness;
       mat.uniforms.uColour.value = colourVec;
       mat.uniforms.uOpacity.value = opacity;
-      mat.uniforms.uSheerGlow.value = sheerGlow;
-      mat.uniforms.uHeadingDarken.value = foldConfig.headingDarken;
-      mat.uniforms.uFoldPhase.value = i === 0 ? 0 : Math.PI;
+      mat.uniforms.uIsSheer.value = isSheer ? 1.0 : 0.0;
       mat.transparent = true;
       mat.depthWrite = !isSheer;
       mat.needsUpdate = true;
