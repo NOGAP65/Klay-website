@@ -69,20 +69,25 @@ void main() {
   vNormDisp = wave;
 
   // Scale for actual Z displacement
-  pos.z += wave * uFoldAmplitude;
+  float zDisp = wave * uFoldAmplitude;
+  pos.z += zDisp;
+
+  // Add X displacement to fake perspective depth - folds bulge sideways
+  // This makes the 3D wave visible in orthographic projection
+  pos.x += wave * uFoldAmplitude * 0.3;
 
   // Compress panels when open
   float compress = mix(1.0, 0.15, uOpenness);
   float shift = (1.0 - compress) * 0.5 * uPanelSide;
   pos.x = pos.x * compress + shift;
 
-  vDisplacement = wave * uFoldAmplitude;
+  vDisplacement = zDisp;
 
   // Calculate normal from wave derivative
   float dWave = cos(uv.x * uFoldFrequency * 6.28318 + uFoldPhase)
                 * uFoldFrequency * 6.28318
                 * foldStrength * (1.0 - uOpenness);
-  vec3 tangent = normalize(vec3(1.0, 0.0, dWave * 0.5));
+  vec3 tangent = normalize(vec3(1.0, 0.0, dWave));
   vNormal = normalize(cross(tangent, vec3(0.0, 1.0, 0.0)));
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -115,13 +120,17 @@ void main() {
   wave *= (1.0 - uOpenness);
 
   vNormDisp = wave;
-  pos.z += wave * uFoldAmplitude;
+  float zDisp = wave * uFoldAmplitude;
+  pos.z += zDisp;
+
+  // Add X displacement to fake perspective depth
+  pos.x += wave * uFoldAmplitude * 0.3;
 
   float compress = mix(1.0, 0.15, uOpenness);
   float shift = (1.0 - compress) * 0.5 * uPanelSide;
   pos.x = pos.x * compress + shift;
 
-  vDisplacement = wave * uFoldAmplitude;
+  vDisplacement = zDisp;
 
   // Approximate normal from wave position
   float normX = -wave * 0.8;
@@ -145,37 +154,33 @@ varying vec3 vNormal;
 void main() {
   vec3 colour = uColour;
 
-  // Fold shadows and highlights based on normalized displacement
-  // vNormDisp ranges -1 (valley/shadow) to +1 (peak/highlight)
-  float foldLight = 1.0 + vNormDisp * 0.35;
-  colour *= foldLight;
+  // Strong fold shadows and highlights
+  // vNormDisp ranges -1 (deep valley) to +1 (bright peak)
 
-  // Diffuse lighting from top-left
-  vec3 lightDir = normalize(vec3(0.4, 0.7, 1.0));
+  // Deep shadows in valleys
+  float shadow = smoothstep(-1.0, 0.3, vNormDisp);
+  colour *= mix(0.45, 1.0, shadow);
+
+  // Bright highlights on peaks
+  float highlight = smoothstep(0.0, 1.0, vNormDisp);
+  colour *= mix(1.0, 1.4, highlight);
+
+  // Strong directional lighting from upper-left
+  vec3 lightDir = normalize(vec3(0.5, 0.5, 1.0));
   float diffuse = max(dot(vNormal, lightDir), 0.0);
-  float ambient = 0.6;
-  float lighting = ambient + diffuse * 0.4;
-  colour *= lighting;
+  colour *= 0.7 + diffuse * 0.5;
 
-  // Deeper shadow in valleys (where fabric folds back)
-  float valleyShadow = smoothstep(-1.0, 0.2, vNormDisp);
-  colour *= mix(0.72, 1.0, valleyShadow);
-
-  // Brighter highlight on peaks - catches the light
-  float peakHighlight = smoothstep(0.3, 1.0, vNormDisp);
-  colour = mix(colour, colour * 1.18, peakHighlight * 0.45);
+  // Rim light effect on edges
+  float rim = 1.0 - abs(vNormDisp);
+  colour *= 1.0 - rim * 0.15;
 
   // Warm glow for sheer fabrics (backlit effect)
-  vec3 sheenColour = colour + vec3(0.15, 0.12, 0.08);
-  colour = mix(colour, sheenColour, uSheerGlow * 0.4);
+  vec3 sheenColour = colour + vec3(0.2, 0.15, 0.1);
+  colour = mix(colour, sheenColour, uSheerGlow * 0.5);
 
   // Darker heading band at top
   float headingMask = smoothstep(0.92, 1.0, vUv.y);
-  colour *= mix(1.0, 0.8 - uHeadingDarken * 0.1, headingMask);
-
-  // Subtle vertical gradient - slightly lighter at top
-  float vertGrad = mix(0.95, 1.0, vUv.y);
-  colour *= vertGrad;
+  colour *= mix(1.0, 0.75 - uHeadingDarken * 0.1, headingMask);
 
   gl_FragColor = vec4(colour, uOpacity);
 }
@@ -190,26 +195,26 @@ interface FoldConfig {
 
 const FOLD_CONFIGS: Record<string, FoldConfig> = {
   sfold: {
-    frequency: 3.5,
-    amplitude: 0.08,
+    frequency: 5.0,
+    amplitude: 0.12,
     headingDarken: 0.0,
     vertexShader: VERTEX_SHADER_SFOLD,
   },
   pencilpleat: {
-    frequency: 6.0,
-    amplitude: 0.04,
+    frequency: 8.0,
+    amplitude: 0.06,
     headingDarken: 1.0,
     vertexShader: VERTEX_SHADER_SFOLD,
   },
   pinchpleat: {
-    frequency: 4.0,
-    amplitude: 0.06,
+    frequency: 5.5,
+    amplitude: 0.09,
     headingDarken: 0.5,
     vertexShader: VERTEX_SHADER_SFOLD,
   },
   boxpleat: {
-    frequency: 4.0,
-    amplitude: 0.05,
+    frequency: 5.0,
+    amplitude: 0.08,
     headingDarken: 0.3,
     vertexShader: VERTEX_SHADER_BOXPLEAT,
   },
