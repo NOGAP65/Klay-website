@@ -2278,29 +2278,28 @@ const drawNewCurtainArea = (
   // --- DEPTH (pre-fabric) — only for the original window area ---
   drawPreFabricDepth(ctx, corners);
 
-  // Real curtain physics: panels slide horizontally on track, no compression.
-  // Each panel is always half the curtain width; they translate outward as openness increases.
-  // openAmount: 0 = closed (panels meet at centre), 1 = open (panels stacked at sides)
-  const panelWidth = 0.5; // Each panel covers half the track width
-  const slideOffset = openAmount * panelWidth * 0.8; // Slide up to 80% of panel width when fully open
+  // Sequential fold collapse: folds collapse from outer edge toward centre
+  // Each fold's width depends on its distance from outer edge and openAmount
+  const panelWidthFrac = 0.5; // Each panel covers half the track width
+  const slideOffset = openAmount * panelWidthFrac * 0.8; // Slide up to 80% of panel width when fully open
 
   // Left panel slides left: starts at 0-0.5, slides to (-slideOffset)-(0.5-slideOffset)
   const leftPanelQuad: Point[] = [
     curtainTopEdge(0 - slideOffset),
-    curtainTopEdge(panelWidth - slideOffset),
-    curtainBottomEdge(panelWidth - slideOffset),
+    curtainTopEdge(panelWidthFrac - slideOffset),
+    curtainBottomEdge(panelWidthFrac - slideOffset),
     curtainBottomEdge(0 - slideOffset),
   ];
   // Right panel slides right: starts at 0.5-1, slides to (0.5+slideOffset)-(1+slideOffset)
   const rightPanelQuad: Point[] = [
-    curtainTopEdge(panelWidth + slideOffset),
+    curtainTopEdge(panelWidthFrac + slideOffset),
     curtainTopEdge(1 + slideOffset),
     curtainBottomEdge(1 + slideOffset),
-    curtainBottomEdge(panelWidth + slideOffset),
+    curtainBottomEdge(panelWidthFrac + slideOffset),
   ];
 
   // --- FABRIC PANELS ---
-  const drawPanel = (quad: Point[]) => {
+  const drawPanel = (quad: Point[], isLeftPanel: boolean) => {
     const [qtl, qtr, qbr, qbl] = quad;
     const panelW = Math.hypot(qtr[0] - qtl[0], qtr[1] - qtl[1]);
     const panelH = Math.hypot(qbl[0] - qtl[0], qbl[1] - qtl[1]);
@@ -2329,20 +2328,44 @@ const drawNewCurtainArea = (
 
     const foldCount = curtainFold === 'sfold' ? 7 : curtainFold === 'pencilpleat' ? 9 : curtainFold === 'pinchpleat' ? 5 : 5;
 
+    // Sequential fold collapse: compute each fold's collapse state
+    // Left panel: fold 0 is outer (wall), fold N is inner (centre)
+    // Right panel: fold N is outer (wall), fold 0 is inner (centre)
+    const collapseThreshold = 1.0 - openAmount;
+
     for (let i = 0; i <= foldCount; i++) {
       const t = i / foldCount;
-      const topPt: Point = [qtl[0] + (qtr[0] - qtl[0]) * t, qtl[1] + (qtr[1] - qtl[1]) * t];
-      const botPt: Point = [qbl[0] + (qbr[0] - qbl[0]) * t, qbl[1] + (qbr[1] - qbl[1]) * t];
 
-      // Folds spread wider at bottom
-      const spreadFactor = 1 + 0.1 * (1 - t);
+      // Distance from outer edge: 0 = outer (wall), 1 = inner (centre)
+      // Left panel: t=0 is outer, t=1 is inner
+      // Right panel: t=1 is outer, t=0 is inner
+      const distFromOuter = isLeftPanel ? t : (1.0 - t);
+
+      // Local collapse: 0 = normal, 1 = fully collapsed
+      const localCollapse = Math.max(0, Math.min(1, (distFromOuter - collapseThreshold) / 0.25));
+
+      // Collapsed folds: narrower and bunched toward outer wall
+      const collapseScale = 1.0 - localCollapse * 0.7; // Fold width reduces to 30% when collapsed
+      const collapseOffset = localCollapse * (1.0 - distFromOuter) * 0.3; // Pull toward outer edge
+
+      // Adjusted position with collapse compression
+      const adjustedT = isLeftPanel
+        ? t * collapseScale + collapseOffset
+        : 1.0 - ((1.0 - t) * collapseScale + collapseOffset);
+
+      const topPt: Point = [qtl[0] + (qtr[0] - qtl[0]) * adjustedT, qtl[1] + (qtr[1] - qtl[1]) * adjustedT];
+      const botPt: Point = [qbl[0] + (qbr[0] - qbl[0]) * adjustedT, qbl[1] + (qbr[1] - qbl[1]) * adjustedT];
+
+      // Folds spread wider at bottom, but less so when collapsed
+      const spreadFactor = (1 + 0.1 * (1 - t)) * (1.0 - localCollapse * 0.5);
 
       if (curtainFold === 'sfold') {
         // S-fold: smooth continuous curves with alternating light/dark
         const isPeak = i % 2 === 0;
 
-        // Vertical strip for fold
-        const stripW = panelW / foldCount * 0.9;
+        // Vertical strip for fold — narrower when collapsed
+        const baseStripW = panelW / foldCount * 0.9;
+        const stripW = baseStripW * collapseScale;
         const stripLeft: Point = [topPt[0] - stripW / 2, topPt[1]];
         const stripRight: Point = [topPt[0] + stripW / 2, topPt[1]];
         const stripBotLeft: Point = [botPt[0] - stripW / 2 * spreadFactor, botPt[1]];
@@ -2356,12 +2379,14 @@ const drawNewCurtainArea = (
         ctx.closePath();
 
         // Fold shadow contrast: Peak at 115% brightness, Trough at 78%
+        // Collapsed folds are darker (bunched fabric)
+        const collapseDarken = localCollapse * 15;
         if (isPeak) {
-          ctx.fillStyle = lighten(fabricColor, 12); // ~115% brightness
+          ctx.fillStyle = lighten(fabricColor, 12 - collapseDarken);
         } else {
-          ctx.fillStyle = darken(fabricColor, 22); // ~78% brightness
+          ctx.fillStyle = darken(fabricColor, 22 + collapseDarken);
         }
-        ctx.globalAlpha = 0.5;
+        ctx.globalAlpha = 0.5 + localCollapse * 0.3; // More opaque when collapsed
         ctx.fill();
         ctx.globalAlpha = 1;
 
@@ -2492,8 +2517,8 @@ const drawNewCurtainArea = (
   };
 
   // Draw both panels
-  drawPanel(leftPanelQuad);
-  drawPanel(rightPanelQuad);
+  drawPanel(leftPanelQuad, true);
+  drawPanel(rightPanelQuad, false);
 
   // --- TRACK ---
   ctx.save();
