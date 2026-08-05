@@ -49,30 +49,40 @@ uniform float uPanelSide; // -1 left, 1 right
 
 varying vec2 vUv;
 varying float vDisplacement;
+varying float vNormDisp;
 varying vec3 vNormal;
 
 void main() {
   vUv = uv;
   vec3 pos = position;
 
-  float wave = sin(uv.x * uFoldFrequency * 6.28318 + uFoldPhase) * uFoldAmplitude;
+  // S-fold wave with smooth sine curve
+  float wave = sin(uv.x * uFoldFrequency * 6.28318 + uFoldPhase);
 
+  // Folds are tighter at top (gathered at heading), looser at bottom
   float topWeight = 1.0 - uv.y;
-  wave *= mix(0.3, 1.0, topWeight);
+  float foldStrength = mix(0.4, 1.0, topWeight);
+  wave *= foldStrength;
   wave *= (1.0 - uOpenness);
 
-  pos.z += wave;
+  // Store normalized displacement for lighting (-1 to 1)
+  vNormDisp = wave;
 
+  // Scale for actual Z displacement
+  pos.z += wave * uFoldAmplitude;
+
+  // Compress panels when open
   float compress = mix(1.0, 0.15, uOpenness);
   float shift = (1.0 - compress) * 0.5 * uPanelSide;
   pos.x = pos.x * compress + shift;
 
-  vDisplacement = wave;
+  vDisplacement = wave * uFoldAmplitude;
 
+  // Calculate normal from wave derivative
   float dWave = cos(uv.x * uFoldFrequency * 6.28318 + uFoldPhase)
-                * uFoldAmplitude * uFoldFrequency * 6.28318
-                * mix(0.3, 1.0, topWeight) * (1.0 - uOpenness);
-  vec3 tangent = normalize(vec3(1.0, 0.0, dWave));
+                * uFoldFrequency * 6.28318
+                * foldStrength * (1.0 - uOpenness);
+  vec3 tangent = normalize(vec3(1.0, 0.0, dWave * 0.5));
   vNormal = normalize(cross(tangent, vec3(0.0, 1.0, 0.0)));
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
@@ -88,28 +98,34 @@ uniform float uPanelSide;
 
 varying vec2 vUv;
 varying float vDisplacement;
+varying float vNormDisp;
 varying vec3 vNormal;
 
 void main() {
   vUv = uv;
   vec3 pos = position;
 
+  // Box pleat pattern - sharp transitions
   float foldPos = fract(uv.x * uFoldFrequency + uFoldPhase / 6.28318);
-  float wave = (smoothstep(0.0, 0.3, foldPos) - smoothstep(0.5, 0.8, foldPos)) * 2.0 - 0.5;
-  wave *= uFoldAmplitude;
+  float wave = (smoothstep(0.0, 0.25, foldPos) - smoothstep(0.5, 0.75, foldPos)) * 2.0 - 0.5;
 
   float topWeight = 1.0 - uv.y;
-  wave *= mix(0.5, 1.0, topWeight);
+  float foldStrength = mix(0.5, 1.0, topWeight);
+  wave *= foldStrength;
   wave *= (1.0 - uOpenness);
 
-  pos.z += wave;
+  vNormDisp = wave;
+  pos.z += wave * uFoldAmplitude;
 
   float compress = mix(1.0, 0.15, uOpenness);
   float shift = (1.0 - compress) * 0.5 * uPanelSide;
   pos.x = pos.x * compress + shift;
 
-  vDisplacement = wave;
-  vNormal = vec3(0.0, 0.0, 1.0);
+  vDisplacement = wave * uFoldAmplitude;
+
+  // Approximate normal from wave position
+  float normX = -wave * 0.8;
+  vNormal = normalize(vec3(normX, 0.0, 1.0));
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }
@@ -123,22 +139,43 @@ uniform float uHeadingDarken;
 
 varying vec2 vUv;
 varying float vDisplacement;
+varying float vNormDisp;
 varying vec3 vNormal;
 
 void main() {
   vec3 colour = uColour;
 
-  float light = 1.0 + vDisplacement * 12.0;
-  colour *= clamp(light, 0.7, 1.3);
+  // Fold shadows and highlights based on normalized displacement
+  // vNormDisp ranges -1 (valley/shadow) to +1 (peak/highlight)
+  float foldLight = 1.0 + vNormDisp * 0.35;
+  colour *= foldLight;
 
-  vec3 lightDir = normalize(vec3(1.0, 2.0, 1.5));
-  float diffuse = max(dot(vNormal, lightDir), 0.0) * 0.3 + 0.7;
-  colour *= diffuse;
+  // Diffuse lighting from top-left
+  vec3 lightDir = normalize(vec3(0.4, 0.7, 1.0));
+  float diffuse = max(dot(vNormal, lightDir), 0.0);
+  float ambient = 0.6;
+  float lighting = ambient + diffuse * 0.4;
+  colour *= lighting;
 
-  colour = mix(colour, colour + vec3(0.12, 0.10, 0.06), uSheerGlow * 0.5);
+  // Deeper shadow in valleys (where fabric folds back)
+  float valleyShadow = smoothstep(-1.0, 0.2, vNormDisp);
+  colour *= mix(0.72, 1.0, valleyShadow);
 
-  float headingMask = smoothstep(0.91, 1.0, vUv.y);
-  colour *= mix(1.0, 1.0 - uHeadingDarken * 0.15, headingMask);
+  // Brighter highlight on peaks - catches the light
+  float peakHighlight = smoothstep(0.3, 1.0, vNormDisp);
+  colour = mix(colour, colour * 1.18, peakHighlight * 0.45);
+
+  // Warm glow for sheer fabrics (backlit effect)
+  vec3 sheenColour = colour + vec3(0.15, 0.12, 0.08);
+  colour = mix(colour, sheenColour, uSheerGlow * 0.4);
+
+  // Darker heading band at top
+  float headingMask = smoothstep(0.92, 1.0, vUv.y);
+  colour *= mix(1.0, 0.8 - uHeadingDarken * 0.1, headingMask);
+
+  // Subtle vertical gradient - slightly lighter at top
+  float vertGrad = mix(0.95, 1.0, vUv.y);
+  colour *= vertGrad;
 
   gl_FragColor = vec4(colour, uOpacity);
 }
