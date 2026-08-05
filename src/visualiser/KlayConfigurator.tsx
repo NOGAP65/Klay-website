@@ -4,6 +4,7 @@ import { useVisualiserStore, BlindType } from './useVisualiserStore';
 import { usePhotoUpload } from './usePhotoUpload';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
+import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
 
 // One radius for every surface in the visualiser. The three files used to
 // disagree (0 here, 12px on the homepage wrapper, 4px on the thumbnails),
@@ -668,12 +669,30 @@ export default function KlayConfigurator({
       ) : (
         /* STATE 3 — area traced and confirmed */
         <div ref={rendererContainerRef} style={{ position: 'absolute', inset: 0 }}>
-          <Canvas2DBlindRenderer
-            photoUrl={store.photoUrl!}
-            tracedAreas={canvasTracedAreas}
-            activeAreaId={store.activeAreaId ?? undefined}
-            rollPosition={store.rollPosition}
-          />
+          {store.productCategory === 'curtain' && confirmedArea ? (
+            <Canvas2DCurtainRenderer
+              tl={{ x: confirmedArea.corners[0][0], y: confirmedArea.corners[0][1] }}
+              tr={{ x: confirmedArea.corners[1][0], y: confirmedArea.corners[1][1] }}
+              br={{ x: confirmedArea.corners[2][0], y: confirmedArea.corners[2][1] }}
+              bl={{ x: confirmedArea.corners[3][0], y: confirmedArea.corners[3][1] }}
+              fabricType={store.curtainType}
+              foldType={store.curtainFold}
+              hardwareColour={store.hardwareColour}
+              mount={store.curtainMount}
+              colour={store.getFabricColor()}
+              openness={store.curtainOpenness}
+              canvasWidth={photoBitmap?.width ?? 1}
+              canvasHeight={photoBitmap?.height ?? 1}
+              photoUrl={store.photoUrl!}
+            />
+          ) : (
+            <Canvas2DBlindRenderer
+              photoUrl={store.photoUrl!}
+              tracedAreas={canvasTracedAreas}
+              activeAreaId={store.activeAreaId ?? undefined}
+              rollPosition={store.rollPosition}
+            />
+          )}
 
           {sideControl && (
             <div

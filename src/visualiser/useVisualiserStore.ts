@@ -51,6 +51,7 @@ interface VisualiserStore {
   curtainMount: CurtainMount;
   curtainFold: CurtainFold;
   curtainSize: CurtainSize;
+  curtainOpenness: number;
 
   // Visual state
   photoUrl: string | null;
@@ -81,6 +82,7 @@ interface VisualiserStore {
   setCurtainMount: (mount: CurtainMount) => void;
   setCurtainFold: (fold: CurtainFold) => void;
   setCurtainSize: (size: CurtainSize) => void;
+  setCurtainOpenness: (openness: number) => void;
   setPhotoUrl: (url: string | null) => void;
   setRollPosition: (pos: number) => void;
   addTracedArea: (area: TracedArea) => void;
@@ -106,6 +108,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   curtainMount: 'ceiling',
   curtainFold: 'sfold',
   curtainSize: 'medium',
+  curtainOpenness: 0,
   photoUrl: null,
   rollPosition: 0.5,
   tracedAreas: [],
@@ -155,6 +158,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   setCurtainMount: (mount) => set({ curtainMount: mount }),
   setCurtainFold: (fold) => set({ curtainFold: fold }),
   setCurtainSize: (size) => set({ curtainSize: size }),
+  setCurtainOpenness: (openness) => set({ curtainOpenness: openness }),
   setPhotoUrl: (url) => set({ photoUrl: url }),
   setRollPosition: (pos) => set({ rollPosition: pos }),
   addTracedArea: (area) => set(s => ({ tracedAreas: [...s.tracedAreas, area] })),
