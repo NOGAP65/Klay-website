@@ -241,16 +241,8 @@ export default function Canvas2DCurtainRenderer({
       let windowWidth = windowRight - windowLeft;
       let windowHeight = windowTop - windowBottom;
 
-      // Ceiling mount extends curtains beyond window frame
-      if (mount === 'ceiling') {
-        const extendX = windowWidth * 0.12;
-        windowLeft -= extendX;
-        windowRight += extendX;
-        windowWidth = windowRight - windowLeft;
-        const extendY = windowHeight * 0.08;
-        windowTop += extendY;
-        windowHeight = windowTop - windowBottom;
-      }
+      // Both mount types use the same window bounds
+      void mount;
 
       const panelWidth = windowWidth / 2;
       const panelHeight = windowHeight;
