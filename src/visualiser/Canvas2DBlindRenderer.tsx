@@ -2193,12 +2193,11 @@ const drawNewCurtainArea = (
   const bottomW = Math.hypot(br[0] - bl[0], br[1] - bl[1]);
   const avgW = (topW + bottomW) / 2;
   const leftH = Math.hypot(bl[0] - tl[0], bl[1] - tl[1]);
-  const rightH = Math.hypot(br[0] - tr[0], br[1] - tr[1]);
+  void leftH; // kept for future use
 
   // Edge direction vectors for perspective-correct extensions
-  const { u, pv } = axesFor(tl, tr);
+  const { u } = axesFor(tl, tr);
   const [ux, uy] = u;
-  const [px, py] = pv;
 
   // Left edge direction (tl to bl)
   const leftDx = bl[0] - tl[0];
