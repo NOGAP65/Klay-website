@@ -43,8 +43,6 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 const VERTEX_SHADER = `
 uniform float uFoldFrequency;
 uniform float uFoldAmplitude;
-uniform float uOpenness;
-uniform float uPanelSide;
 uniform int uFoldType;
 
 varying vec2 vUv;
@@ -60,7 +58,6 @@ void main() {
   vUv = uv;
   vec3 pos = position;
 
-  float closedAmount = 1.0 - uOpenness;
   float foldX = uv.x * uFoldFrequency;
 
   float wave = 0.0;
@@ -99,16 +96,11 @@ void main() {
     gradient = (step(0.5, boxCycle) * 2.0 - 1.0) * (1.0 - smoothstep(0.0, 0.2, min(abs(boxCycle - 0.25), abs(boxCycle - 0.75))));
   }
 
-  wave *= closedAmount;
   float zDisp = wave * uFoldAmplitude;
   pos.z += zDisp;
 
-  float compress = mix(1.0, 0.12, uOpenness);
-  float shift = (1.0 - compress) * 0.5 * uPanelSide;
-  pos.x = pos.x * compress + shift;
-
   vFoldDepth = wave;
-  vFoldGradient = gradient * closedAmount;
+  vFoldGradient = gradient;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }
@@ -132,35 +124,37 @@ varying float vFoldGradient;
 void main() {
   vec3 colour = uColour;
 
-  float shadow = (1.0 - vFoldDepth) * 0.5;
-  float highlight = (1.0 + vFoldDepth) * 0.5;
+  // Fold shadow contrast: Peak (facing viewer) at 115%, Trough (facing away) at 78%
+  // vFoldDepth ranges -1 to 1: positive = peak, negative = trough
+  // Map to smooth gradient from 0.78 to 1.15
+  float foldT = (vFoldDepth + 1.0) * 0.5; // 0 = trough, 1 = peak
+  float foldLight = mix(0.78, 1.15, smoothstep(0.0, 1.0, foldT));
 
-  float softShadow = smoothstep(0.0, 1.0, shadow);
-  float softHighlight = smoothstep(0.0, 1.0, highlight);
+  // Ambient occlusion in deep folds
+  float ao = 1.0 - pow(abs(vFoldDepth), 1.5) * 0.06;
+  foldLight *= ao;
 
-  float light = 0.72 + softHighlight * 0.22 - softShadow * 0.12;
+  // Subtle edge highlights where fold surface curves toward viewer
+  float edgeLight = abs(vFoldGradient) * 0.04;
+  foldLight += edgeLight * smoothstep(0.3, 0.7, vFoldDepth);
 
-  float ao = 1.0 - pow(abs(vFoldDepth), 1.5) * 0.08;
-  light *= ao;
-
-  float edgeLight = abs(vFoldGradient) * 0.06;
-  light += edgeLight * smoothstep(0.3, 0.7, vFoldDepth);
-
+  // Fold-type specific adjustments
   if (uFoldType == PENCILPLEAT) {
     float gatherDark = smoothstep(0.85, 1.0, vUv.y) * 0.08;
-    light -= gatherDark;
+    foldLight -= gatherDark;
   }
   else if (uFoldType == PINCHPLEAT) {
-    float pinchShadow = smoothstep(0.88, 1.0, vUv.y) * abs(vFoldDepth) * 0.12;
-    light -= pinchShadow;
+    float pinchShadow = smoothstep(0.88, 1.0, vUv.y) * abs(vFoldDepth) * 0.10;
+    foldLight -= pinchShadow;
   }
   else if (uFoldType == BOXPLEAT) {
-    float creaseDark = (1.0 - smoothstep(0.0, 0.3, abs(vFoldGradient))) * 0.05;
-    light -= creaseDark;
+    float creaseDark = (1.0 - smoothstep(0.0, 0.3, abs(vFoldGradient))) * 0.04;
+    foldLight -= creaseDark;
   }
 
-  colour *= clamp(light, 0.58, 1.05);
+  colour *= clamp(foldLight, 0.72, 1.18);
 
+  // Sheer fabric: warm backlit glow
   if (uIsSheer > 0.5) {
     vec3 warmGlow = colour + vec3(0.15, 0.12, 0.06);
     float glowStrength = 0.4 + (1.0 - abs(vFoldDepth)) * 0.3;
@@ -169,8 +163,9 @@ void main() {
     colour *= 1.0 + centerBright * 0.15;
   }
 
-  float noise = fract(sin(dot(vUv * 80.0, vec2(12.9898, 78.233))) * 43758.5453);
-  colour += (noise - 0.5) * 0.008;
+  // Micro-grain noise to break up flat CG look and simulate woven fabric texture
+  float grain = fract(sin(dot(vUv * 500.0, vec2(127.1, 311.7))) * 43758.5453);
+  colour += (grain - 0.5) * 0.015;
 
   gl_FragColor = vec4(colour, uOpacity);
 }
@@ -228,6 +223,12 @@ export default function Canvas2DCurtainRenderer({
   const rightPanelRef = useRef<THREE.Mesh | null>(null);
   const leftMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
   const rightMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+
+  const panelGeometryRef = useRef<{
+    leftCentreX: number;
+    rightCentreX: number;
+    panelWidth: number;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -319,13 +320,11 @@ export default function Canvas2DCurtainRenderer({
 
       const foldAmpScaled = foldConfig.amplitude * panelWidth;
 
-      const createPanelMaterial = (panelSide: number) => {
+      const createPanelMaterial = () => {
         return new THREE.ShaderMaterial({
           uniforms: {
             uFoldFrequency: { value: foldConfig.frequency },
             uFoldAmplitude: { value: foldAmpScaled },
-            uOpenness: { value: openness },
-            uPanelSide: { value: panelSide },
             uFoldType: { value: foldConfig.foldType },
             uColour: { value: colourVec },
             uOpacity: { value: opacity },
@@ -339,18 +338,22 @@ export default function Canvas2DCurtainRenderer({
         });
       };
 
+      panelGeometryRef.current = { leftCentreX, rightCentreX, panelWidth };
+
       const leftGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 128, 256);
-      const leftMaterial = createPanelMaterial(-1);
+      const leftMaterial = createPanelMaterial();
       const leftPanel = new THREE.Mesh(leftGeometry, leftMaterial);
-      leftPanel.position.set(leftCentreX, centreY, 0);
+      const leftSlideOffset = panelWidth * 0.8 * openness;
+      leftPanel.position.set(leftCentreX - leftSlideOffset, centreY, 0);
       scene.add(leftPanel);
       leftPanelRef.current = leftPanel;
       leftMaterialRef.current = leftMaterial;
 
       const rightGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 128, 256);
-      const rightMaterial = createPanelMaterial(1);
+      const rightMaterial = createPanelMaterial();
       const rightPanel = new THREE.Mesh(rightGeometry, rightMaterial);
-      rightPanel.position.set(rightCentreX, centreY, 0);
+      const rightSlideOffset = panelWidth * 0.8 * openness;
+      rightPanel.position.set(rightCentreX + rightSlideOffset, centreY, 0);
       scene.add(rightPanel);
       rightPanelRef.current = rightPanel;
       rightMaterialRef.current = rightMaterial;
@@ -368,6 +371,10 @@ export default function Canvas2DCurtainRenderer({
   useEffect(() => {
     if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return;
     if (!leftMaterialRef.current || !rightMaterialRef.current) return;
+    if (!leftPanelRef.current || !rightPanelRef.current) return;
+    if (!panelGeometryRef.current) return;
+
+    const { leftCentreX, rightCentreX, panelWidth } = panelGeometryRef.current;
 
     const foldConfig = FOLD_CONFIGS[foldType] || FOLD_CONFIGS.sfold;
     const rgb = hexToRgb(colour);
@@ -378,7 +385,6 @@ export default function Canvas2DCurtainRenderer({
     [leftMaterialRef.current, rightMaterialRef.current].forEach((mat) => {
       mat.uniforms.uFoldFrequency.value = foldConfig.frequency;
       mat.uniforms.uFoldType.value = foldConfig.foldType;
-      mat.uniforms.uOpenness.value = openness;
       mat.uniforms.uColour.value = colourVec;
       mat.uniforms.uOpacity.value = opacity;
       mat.uniforms.uIsSheer.value = isSheer ? 1.0 : 0.0;
@@ -386,6 +392,11 @@ export default function Canvas2DCurtainRenderer({
       mat.depthWrite = !isSheer;
       mat.needsUpdate = true;
     });
+
+    const leftSlideOffset = panelWidth * 0.8 * openness;
+    const rightSlideOffset = panelWidth * 0.8 * openness;
+    leftPanelRef.current.position.x = leftCentreX - leftSlideOffset;
+    rightPanelRef.current.position.x = rightCentreX + rightSlideOffset;
 
     rendererRef.current.render(sceneRef.current, cameraRef.current);
   }, [colour, openness, fabricType, foldType]);

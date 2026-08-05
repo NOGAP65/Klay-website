@@ -2186,14 +2186,13 @@ const drawNewCurtainArea = (
     curtainMount = 'ceiling',
     curtainFold = 'sfold',
   } = params;
-  const safeHardwareColor = params.hardwareColor ?? HARDWARE_FALLBACK;
+  const hardwareColourName = params.hardwareColourName;
 
   const [tl, tr, br, bl] = corners;
   const topW = Math.hypot(tr[0] - tl[0], tr[1] - tl[1]);
   const bottomW = Math.hypot(br[0] - bl[0], br[1] - bl[1]);
   const avgW = (topW + bottomW) / 2;
   const leftH = Math.hypot(bl[0] - tl[0], bl[1] - tl[1]);
-  void leftH; // kept for future use
 
   // Edge direction vectors for perspective-correct extensions
   const { u } = axesFor(tl, tr);
@@ -2219,9 +2218,6 @@ const drawNewCurtainArea = (
 
   // Fabric opacity based on type
   const fabricOpacity = curtainType === 'sheer' ? 0.45 : 1;
-
-  // Track height
-  const trackHeight = leftH * 0.012;
 
   // Compute curtain area based on mount type
   let trackTL: Point, trackTR: Point;
@@ -2282,19 +2278,25 @@ const drawNewCurtainArea = (
   // --- DEPTH (pre-fabric) — only for the original window area ---
   drawPreFabricDepth(ctx, corners);
 
-  // Each panel's width as a fraction - fabric has fullness (60% of half width)
-  const panelFrac = 0.5 * (1 - openAmount * 0.7);
+  // Real curtain physics: panels slide horizontally on track, no compression.
+  // Each panel is always half the curtain width; they translate outward as openness increases.
+  // openAmount: 0 = closed (panels meet at centre), 1 = open (panels stacked at sides)
+  const panelWidth = 0.5; // Each panel covers half the track width
+  const slideOffset = openAmount * panelWidth * 0.8; // Slide up to 80% of panel width when fully open
+
+  // Left panel slides left: starts at 0-0.5, slides to (-slideOffset)-(0.5-slideOffset)
   const leftPanelQuad: Point[] = [
-    curtainTL,
-    curtainTopEdge(panelFrac),
-    curtainBottomEdge(panelFrac),
-    curtainBL,
+    curtainTopEdge(0 - slideOffset),
+    curtainTopEdge(panelWidth - slideOffset),
+    curtainBottomEdge(panelWidth - slideOffset),
+    curtainBottomEdge(0 - slideOffset),
   ];
+  // Right panel slides right: starts at 0.5-1, slides to (0.5+slideOffset)-(1+slideOffset)
   const rightPanelQuad: Point[] = [
-    curtainTopEdge(1 - panelFrac),
-    curtainTR,
-    curtainBR,
-    curtainBottomEdge(1 - panelFrac),
+    curtainTopEdge(panelWidth + slideOffset),
+    curtainTopEdge(1 + slideOffset),
+    curtainBottomEdge(1 + slideOffset),
+    curtainBottomEdge(panelWidth + slideOffset),
   ];
 
   // --- FABRIC PANELS ---
@@ -2353,12 +2355,13 @@ const drawNewCurtainArea = (
         ctx.lineTo(stripBotLeft[0], stripBotLeft[1]);
         ctx.closePath();
 
+        // Fold shadow contrast: Peak at 115% brightness, Trough at 78%
         if (isPeak) {
-          ctx.fillStyle = lighten(fabricColor, 15);
+          ctx.fillStyle = lighten(fabricColor, 12); // ~115% brightness
         } else {
-          ctx.fillStyle = darken(fabricColor, 35);
+          ctx.fillStyle = darken(fabricColor, 22); // ~78% brightness
         }
-        ctx.globalAlpha = 0.4;
+        ctx.globalAlpha = 0.5;
         ctx.fill();
         ctx.globalAlpha = 1;
 
@@ -2495,18 +2498,46 @@ const drawNewCurtainArea = (
   // --- TRACK ---
   ctx.save();
 
-  // Track is always a slim rectangle (no rod option anymore)
-  const trackGrad = ctx.createLinearGradient(
-    trackTL[0], trackTL[1] - trackHeight,
-    trackTL[0], trackTL[1] + trackHeight
-  );
-  trackGrad.addColorStop(0, lighten(safeHardwareColor, 20));
-  trackGrad.addColorStop(0.5, safeHardwareColor);
-  trackGrad.addColorStop(1, darken(safeHardwareColor, 15));
-  ctx.fillStyle = trackGrad;
+  // Track dimensions: 4% of window height
+  const trackThickness = leftH * 0.04;
 
-  // Track follows the perspective of the curtain top edge
-  const trackThickness = trackHeight * 2;
+  // Hardware material colours per spec (edge = shadow for white/black)
+  const TRACK_COLOURS: Record<'white' | 'black' | 'chrome', { base: string; highlight: string; edge: string }> = {
+    white: { base: '#F0EEE9', highlight: '#FFFFFF', edge: '#D8D6D0' },
+    black: { base: '#2C2824', highlight: '#3E3A34', edge: '#1A1816' },
+    chrome: { base: '#C8C8C8', highlight: '#E8E8E8', edge: '#888888' },
+  };
+
+  const colours = hardwareColourName && TRACK_COLOURS[hardwareColourName]
+    ? TRACK_COLOURS[hardwareColourName]
+    : TRACK_COLOURS.white;
+
+  // Track gradient based on material
+  if (hardwareColourName === 'chrome') {
+    // Chrome: linear gradient silver — centre bright, edges darker, top highlight
+    const trackGrad = ctx.createLinearGradient(
+      trackTL[0], trackTL[1] - trackThickness / 2,
+      trackTL[0], trackTL[1] + trackThickness / 2
+    );
+    trackGrad.addColorStop(0, colours.edge);
+    trackGrad.addColorStop(0.15, colours.highlight);
+    trackGrad.addColorStop(0.5, colours.base);
+    trackGrad.addColorStop(0.85, colours.highlight);
+    trackGrad.addColorStop(1, colours.edge);
+    ctx.fillStyle = trackGrad;
+  } else {
+    // White/Black: subtle gloss gradient
+    const trackGrad = ctx.createLinearGradient(
+      trackTL[0], trackTL[1] - trackThickness / 2,
+      trackTL[0], trackTL[1] + trackThickness / 2
+    );
+    trackGrad.addColorStop(0, colours.highlight);
+    trackGrad.addColorStop(0.3, colours.base);
+    trackGrad.addColorStop(1, colours.edge);
+    ctx.fillStyle = trackGrad;
+  }
+
+  // Draw track body
   ctx.beginPath();
   ctx.moveTo(trackTL[0], trackTL[1] - trackThickness / 2);
   ctx.lineTo(trackTR[0], trackTR[1] - trackThickness / 2);
@@ -2515,12 +2546,63 @@ const drawNewCurtainArea = (
   ctx.closePath();
   ctx.fill();
 
+  // Chrome highlight line along top edge
+  if (hardwareColourName === 'chrome') {
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(trackTL[0], trackTL[1] - trackThickness / 2 + 1);
+    ctx.lineTo(trackTR[0], trackTR[1] - trackThickness / 2 + 1);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // --- MOUNT BRACKETS (ceiling mount only) ---
+  if (curtainMount === 'ceiling') {
+    const bracketW = trackThickness * 0.6;
+    const bracketH = leftH * 0.08; // Height extending up to ceiling
+    const trackCentreX = (trackTL[0] + trackTR[0]) / 2;
+    const trackCentreY = (trackTL[1] + trackTR[1]) / 2;
+
+    const drawBracket = (x: number, y: number) => {
+      ctx.save();
+      // Bracket fill matches track
+      if (hardwareColourName === 'chrome') {
+        const bracketGrad = ctx.createLinearGradient(x - bracketW / 2, y, x + bracketW / 2, y);
+        bracketGrad.addColorStop(0, colours.edge);
+        bracketGrad.addColorStop(0.5, colours.base);
+        bracketGrad.addColorStop(1, colours.edge);
+        ctx.fillStyle = bracketGrad;
+      } else {
+        ctx.fillStyle = colours.base;
+      }
+
+      // Bracket body
+      ctx.beginPath();
+      ctx.rect(x - bracketW / 2, y - bracketH - trackThickness / 2, bracketW, bracketH);
+      ctx.fill();
+
+      // Slight shadow on bracket edge
+      ctx.fillStyle = shadowRgba(0.2);
+      ctx.beginPath();
+      ctx.rect(x + bracketW / 2 - 1, y - bracketH - trackThickness / 2, 1, bracketH);
+      ctx.fill();
+      ctx.restore();
+    };
+
+    // Three brackets: left end, centre, right end
+    drawBracket(trackTL[0] + bracketW, trackTL[1]);
+    drawBracket(trackCentreX, trackCentreY);
+    drawBracket(trackTR[0] - bracketW, trackTR[1]);
+  }
+
   // Motor box for motorised operation
   if (curtainOperation === 'motorised') {
     const motorW = avgW * 0.06;
-    const motorH = trackThickness * 2;
+    const motorH = trackThickness * 1.5;
 
-    ctx.fillStyle = darken(safeHardwareColor, 10);
+    ctx.fillStyle = hardwareColourName === 'chrome' ? colours.edge : darken(colours.base, 10);
     ctx.beginPath();
     ctx.moveTo(trackTR[0] - motorW, trackTR[1] - motorH / 2);
     ctx.lineTo(trackTR[0], trackTR[1] - motorH / 2);
@@ -2530,7 +2612,7 @@ const drawNewCurtainArea = (
     ctx.fill();
 
     // Motor detail line
-    ctx.strokeStyle = darken(safeHardwareColor, 30);
+    ctx.strokeStyle = darken(colours.base, 30);
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(trackTR[0] - motorW * 0.8, trackTR[1]);
