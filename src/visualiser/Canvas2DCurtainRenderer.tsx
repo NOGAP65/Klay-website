@@ -48,13 +48,14 @@ uniform float uOpenness;
 uniform float uPanelSide; // -1 left, 1 right
 
 varying vec2 vUv;
-varying vec3 vNormal;
+varying float vDisplacement;
 
 void main() {
   vUv = uv;
   vec3 pos = position;
 
   // S-fold: smooth sine waves running full length top to bottom
+  // wave *= 1.0 — constant fold depth, no relaxation
   float wave = sin(uv.x * uFoldFrequency * 6.28318 + uFoldPhase);
   wave *= (1.0 - uOpenness);
 
@@ -67,11 +68,7 @@ void main() {
   float shift = (1.0 - compress) * 0.5 * uPanelSide;
   pos.x = pos.x * compress + shift;
 
-  // Physically correct normal for sine wave displacement
-  // dz/dx = cos(...) * amplitude * frequency * 2PI
-  float dzdx = cos(uv.x * uFoldFrequency * 6.28318 + uFoldPhase)
-               * uFoldAmplitude * uFoldFrequency * 6.28318 * (1.0 - uOpenness);
-  vNormal = normalize(vec3(-dzdx, 0.0, 1.0));
+  vDisplacement = wave;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }
@@ -85,7 +82,7 @@ uniform float uOpenness;
 uniform float uPanelSide;
 
 varying vec2 vUv;
-varying vec3 vNormal;
+varying float vDisplacement;
 
 void main() {
   vUv = uv;
@@ -104,12 +101,7 @@ void main() {
   float shift = (1.0 - compress) * 0.5 * uPanelSide;
   pos.x = pos.x * compress + shift;
 
-  // Normal based on wave slope
-  // Approximate derivative of box pleat wave
-  float slope = (smoothstep(0.0, 0.2, foldPos) - smoothstep(0.0, 0.2, foldPos - 0.01)) * 100.0
-              - (smoothstep(0.5, 0.7, foldPos) - smoothstep(0.5, 0.7, foldPos - 0.01)) * 100.0;
-  slope *= uFoldAmplitude * uFoldFrequency * (1.0 - uOpenness);
-  vNormal = normalize(vec3(-slope, 0.0, 1.0));
+  vDisplacement = wave;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 }
@@ -124,7 +116,7 @@ uniform sampler2D uTexture;
 uniform float uUseTexture;
 
 varying vec2 vUv;
-varying vec3 vNormal;
+varying float vDisplacement;
 
 void main() {
   vec3 colour = uColour;
@@ -134,12 +126,9 @@ void main() {
   vec3 texColour = texture2D(uTexture, tiledUv).rgb;
   colour = mix(colour, colour * texColour, uUseTexture * 0.35);
 
-  // Lambertian diffuse shading with light from slightly left
-  // This creates the characteristic shadow on right side of fold peaks
-  vec3 lightDir = normalize(vec3(-0.4, 0.2, 1.0));
-  float diffuse = max(dot(normalize(vNormal), lightDir), 0.0);
-  float light = 0.6 + diffuse * 0.7;
-  colour *= light;
+  // Displacement-based lighting for soft folds
+  float light = 1.0 + vDisplacement * 0.9;
+  colour *= clamp(light, 0.65, 1.35);
 
   // Warm glow for sheer fabrics (backlit effect)
   vec3 sheenColour = colour + vec3(0.15, 0.12, 0.08);
@@ -300,14 +289,9 @@ export default function Canvas2DCurtainRenderer({
       camera.lookAt(0, 0, 0);
       cameraRef.current = camera;
 
-      // Even ambient room light
-      const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+      // Ambient light only - no directional light
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.6);
       scene.add(ambientLight);
-
-      // Directional light from slightly left of centre (matches reference images)
-      const directionalLight = new THREE.DirectionalLight(0xfff8f0, 0.7);
-      directionalLight.position.set(-2, 1, 4);
-      scene.add(directionalLight);
 
       // Load fabric texture
       const textureLoader = new THREE.TextureLoader();
@@ -371,12 +355,11 @@ export default function Canvas2DCurtainRenderer({
         });
       };
 
-      // Create panels with individual V-shape rotation (like curtains on a track)
+      // Create panels - no rotation
       const leftGeometry = new THREE.PlaneGeometry(panelWidth, panelHeight, 64, 128);
       const leftMaterial = createPanelMaterial(-1, 0);
       const leftPanel = new THREE.Mesh(leftGeometry, leftMaterial);
       leftPanel.position.set(leftCentreX, centreY, 0);
-      leftPanel.rotation.y = -0.08; // slight angle inward
       scene.add(leftPanel);
       leftPanelRef.current = leftPanel;
       leftMaterialRef.current = leftMaterial;
@@ -385,7 +368,6 @@ export default function Canvas2DCurtainRenderer({
       const rightMaterial = createPanelMaterial(1, Math.PI);
       const rightPanel = new THREE.Mesh(rightGeometry, rightMaterial);
       rightPanel.position.set(rightCentreX, centreY, 0);
-      rightPanel.rotation.y = 0.08; // slight angle inward (V-shape)
       scene.add(rightPanel);
       rightPanelRef.current = rightPanel;
       rightMaterialRef.current = rightMaterial;
