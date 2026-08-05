@@ -33,7 +33,6 @@ const OPERATION_OPTIONS: { id: 'manual' | 'motorised'; label: string }[] = [
 const CURTAIN_TYPE_OPTIONS: { id: CurtainType; label: string }[] = [
   { id: 'blockout', label: 'Blockout' },
   { id: 'sheer', label: 'Sheer' },
-  { id: 'linen', label: 'Linen' },
 ];
 
 const CURTAIN_SIZE_OPTIONS: { id: CurtainSize; label: string; sub: string }[] = [
@@ -44,8 +43,7 @@ const CURTAIN_SIZE_OPTIONS: { id: CurtainSize; label: string; sub: string }[] = 
 ];
 
 const CURTAIN_OPERATION_OPTIONS: { id: CurtainOperation; label: string }[] = [
-  { id: 'rod', label: 'Rod' },
-  { id: 'wand', label: 'Wand' },
+  { id: 'manual', label: 'Manual' },
   { id: 'motorised', label: 'Motorised +$200' },
 ];
 

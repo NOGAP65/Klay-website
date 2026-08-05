@@ -21,8 +21,8 @@ interface TracedArea {
 export type { BlindType };
 export type HardwareColour = 'white' | 'black' | 'chrome';
 export type ProductCategory = 'blind' | 'curtain';
-export type CurtainType = 'blockout' | 'sheer' | 'linen';
-export type CurtainOperation = 'rod' | 'wand' | 'motorised';
+export type CurtainType = 'blockout' | 'sheer';
+export type CurtainOperation = 'manual' | 'motorised';
 export type CurtainMount = 'ceiling' | 'window';
 export type CurtainFold = 'boxpleat' | 'pencilpleat' | 'pinchpleat' | 'sfold';
 export type CurtainSize = 'small' | 'medium' | 'large' | 'xl';
@@ -102,7 +102,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   lockedRange: null,
   defaultWindowActive: true,
   curtainType: 'sheer',
-  curtainOperation: 'rod',
+  curtainOperation: 'manual',
   curtainMount: 'ceiling',
   curtainFold: 'sfold',
   curtainSize: 'medium',
