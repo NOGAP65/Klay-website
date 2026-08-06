@@ -81,6 +81,14 @@ const rgba = (hex: string, a: number): string => {
   return `rgba(${r},${g},${b},${a})`;
 };
 
+/** Perceived brightness of a hex, 0 (black) to 1 (white). Same Rec.601 weights
+ * the fragment shader uses for the weave, so a colour's luminance means the
+ * same thing on both sides of the GL boundary. */
+const luma01 = (hex: string): number => {
+  const { r, g, b } = hexToRgb(hex);
+  return (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+};
+
 // ---------------------------------------------------------------------------
 // Shadow and light constants
 //
@@ -294,6 +302,11 @@ void main() {
   vec3 col = u_tintColor.rgb * (1.0 + detail * u_textureAmount)
            + vec3(detail * u_textureAmount * 0.12);
 
+  // How dark the selected yarn is, on the same Rec.601 weighting as the weave
+  // above. Used by the per-type passes below to scale transmitted light: a
+  // fabric cannot glow more than its own colour allows.
+  float tintLuma = dot(u_tintColor.rgb, vec3(0.299, 0.587, 0.114));
+
   // Soft vertical fold ripples for sheer fabric
   if (u_folds > 0.5) {
     col *= 1.0 + 0.06 * sin(uv.x * u_folds * 6.2831853);
@@ -318,14 +331,20 @@ void main() {
     col *= 1.0 + diag * 0.14 - 0.06;
   }
 
-  // SUNSCREEN — open-weave mesh. Fine horizontal bands catch the light along
-  // the weave; the frequency is high enough to read as texture rather than
-  // as stripes, and it is what separates a screen from a plain translucent
-  // sheet at a glance.
+  // SUNSCREEN — open-weave mesh you look THROUGH, so the shader's job here is
+  // to stay out of the way. There used to be a sin(uv.y * 240.0) band pass
+  // standing in for the weave; 240 cycles sampled at the quad's pixel height
+  // beat against the texture photo's own tight grid and produced the crosshatch
+  // hash that made a sunscreen read as a printed pattern rather than a screen.
+  // The weave is in the photo already — nothing periodic is drawn over it.
+  //
+  // What is left is transmission, scaled by how dark the yarn is. A pale screen
+  // scatters the light coming through it and hazes over; a dark one absorbs
+  // that scatter, which is exactly why dark sunscreen is what you specify when
+  // the view matters. Black yarn adds no glow at all.
   else if (u_blindType < 1.5) {
-    col *= 1.0 + 0.035 * sin(uv.y * 240.0);
-    // Transmitted light warms very slightly as it passes the weave.
-    col += vec3(0.035, 0.030, 0.018) * (1.0 - abs(uv.x - 0.5) * 1.2);
+    col += vec3(0.035, 0.030, 0.018) * tintLuma
+         * (1.0 - abs(uv.x - 0.5) * 1.2);
   }
 
   // LIGHT FILTER — diffuses rather than transmits. A broad warm bloom centred
@@ -394,6 +413,69 @@ const FABRIC_OPACITY: Record<string, number> = {
   sunscreen: 0.65,
   sheer: 0.38,
 };
+
+// ---------------------------------------------------------------------------
+// Sunscreen — view-through is a function of the YARN COLOUR, not just openness
+//
+// This is the one fabric in the range whose transparency the customer changes
+// by picking a colour, and it runs opposite to the intuition. A white sunscreen
+// scatters the daylight passing through it forward into the room: the screen
+// itself lights up, hazes over, and you see the screen instead of the view. A
+// charcoal or black sunscreen absorbs that forward scatter, so nothing lights
+// up and you look straight through the weave to what is outside — which is
+// exactly why dark sunscreen is what gets specified when the view matters.
+//
+// Rendered as three things moving together with luminance, because changing
+// opacity alone left a dark screen transparent but still glowing:
+//   - opacity            — how much of the fabric colour covers the view
+//   - background blur    — how sharp what you see through it is
+//   - weave strength     — how much of the photo's grid reads on the surface
+// ---------------------------------------------------------------------------
+
+/** Near-black sunscreen: almost clear, you read it by its edges and the rail. */
+const SUNSCREEN_OPACITY_DARK = 0.24;
+/** White sunscreen: still unmistakably a screen, milky and bright. */
+const SUNSCREEN_OPACITY_LIGHT = 0.7;
+
+/** Squared, not linear. View-through falls away quickly once the yarn is off
+ * black, and the useful part of the range sits in the darker half — a linear
+ * ramp made every mid-tone look like a half-drawn sheer. */
+const sunscreenOpenness = (fabricColor: string): number => {
+  const l = luma01(fabricColor);
+  return l * l;
+};
+
+/** Opacity for one fabric, given the colour it is being rendered in. Every
+ * type except sunscreen ignores the colour and comes straight from the table
+ * above. Used by the WebGL path and the flat-colour fallback alike, so the two
+ * can never disagree about how transparent a given blind is. */
+const fabricOpacityFor = (blindType: string, fabricColor: string): number => {
+  if (blindType === 'sunscreen') {
+    const t = sunscreenOpenness(fabricColor);
+    return SUNSCREEN_OPACITY_DARK + (SUNSCREEN_OPACITY_LIGHT - SUNSCREEN_OPACITY_DARK) * t;
+  }
+  return FABRIC_OPACITY[blindType] ?? 1;
+};
+
+/** Diffusion radius, in reference pixels, for the view behind a translucent
+ * fabric. A dark sunscreen is nearly a window — 1.5px is barely a softening —
+ * while a white one scatters the view into a ghost. Light filter does not
+ * transmit an image at any colour and keeps its fixed, much larger radius. */
+const sunscreenDiffusionPx = (fabricColor: string): number =>
+  1.5 + 6.5 * sunscreenOpenness(fabricColor);
+
+/** How hard the weave photo reads on a sunscreen. On a dark, see-through
+ * screen the grid has to almost vanish: at full strength the texture's own
+ * tight crosshatch was the most prominent thing on the fabric, which is the
+ * hash pattern this is tuned to kill. */
+const sunscreenTextureAmount = (base: number, fabricColor: string): number =>
+  base * (0.35 + 0.65 * sunscreenOpenness(fabricColor));
+
+/** Light bleeding through the weave, as a fraction of the standard wash. Dark
+ * yarn absorbs the scatter instead of re-emitting it, so a charcoal screen
+ * barely bleeds at all. */
+const sunscreenBleedScale = (fabricColor: string): number =>
+  0.25 + 0.75 * sunscreenOpenness(fabricColor);
 
 /** An uploaded fabric photo plus its own mean luminance, measured once at
  * upload. The shader subtracts that mean so the photo contributes weave
@@ -590,9 +672,15 @@ const FABRIC_TEXTURE_AMOUNT = 0.5;
  * weave into hard black-and-white banding.
  *
  * `tileX` — horizontal repeats across the blind's width. Set from how fine
- * each weave is: the sunscreen's tight grid disappears into a flat wash unless
- * it repeats often enough to be resolved at normal viewing distance, while the
- * other two are coarser and would turn to noise at the same density. */
+ * each weave is: too few and a weave disappears into a flat wash, too many and
+ * it turns to noise.
+ *
+ * Sunscreen sits at 2, down from 3. Its photo is a 512px image of a very tight
+ * woven grid, and every extra repeat minifies that grid further: at 3 the
+ * mipmap chain handled the GL sample but the canvas is then CSS-downscaled from
+ * the photo's own resolution a second time, which it cannot cover. Two grid
+ * patterns beating against each other at that density is the crosshatch hash
+ * a sunscreen was showing. Fewer, larger repeats resolve cleanly. */
 interface FabricSurface {
   textureAmount: number;
   tileX: number;
@@ -600,7 +688,7 @@ interface FabricSurface {
 
 const FABRIC_SURFACE: Record<string, FabricSurface> = {
   blockout: { textureAmount: 0.85, tileX: 2 },
-  sunscreen: { textureAmount: 0.5, tileX: 3 },
+  sunscreen: { textureAmount: 0.5, tileX: 2 },
   lightfilter: { textureAmount: 0.5, tileX: 2 },
 };
 
@@ -1003,14 +1091,20 @@ const drawContactShadow = (
 
 /** Sunscreen / Light Filter read as semi-translucent — light bleeds through
  * from behind, brightest at the fabric's centre and fading toward all four
- * edges (a soft radial wash, not the linear left-right centre-light above). */
+ * edges (a soft radial wash, not the linear left-right centre-light above).
+ *
+ * `scale` attenuates the whole wash. Dark sunscreen absorbs the light it
+ * transmits rather than glowing with it, and a fixed wash left a charcoal
+ * screen see-through but still lit from within. See sunscreenBleedScale. */
 const drawTranslucentLightBleed = (
   ctx: CanvasRenderingContext2D,
   tl: Point,
   tr: Point,
   fabBR: Point,
-  fabBL: Point
+  fabBL: Point,
+  scale = 1,
 ) => {
+  if (scale <= 0) return;
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(tl[0], tl[1]);
@@ -1028,8 +1122,8 @@ const drawTranslucentLightBleed = (
   ) * 0.65;
 
   const bleed = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-  bleed.addColorStop(0, 'rgba(255,255,255,0.1)');
-  bleed.addColorStop(0.6, 'rgba(255,255,255,0.03)');
+  bleed.addColorStop(0, `rgba(255,255,255,${0.1 * scale})`);
+  bleed.addColorStop(0.6, `rgba(255,255,255,${0.03 * scale})`);
   bleed.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = bleed;
   ctx.fill();
@@ -1221,7 +1315,9 @@ const CHROME_GRADIENT_STOPS: [number, string][] = [
  * derive the cylinder gradient and the bracket's shaded plate from whatever
  * the base finish is, so a new finish needs no new constants. */
 const shadeHex = (hex: string, f: number): string => {
-  const n = parseInt(hex.slice(1), 16);
+  // Tolerates a leading '#' or not — hardware finishes carry one, fabric
+  // colours come from the catalogue and are not guaranteed to.
+  const n = parseInt(hex.replace('#', ''), 16);
   const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(c =>
     Math.max(0, Math.min(255, Math.round(f >= 0 ? c + (255 - c) * f : c * (1 + f)))),
   );
@@ -1262,8 +1358,72 @@ const setHardwareFill = (
 // The cassette and rail both use traceCylinderBody with metallic gradients
 // that include prominent highlight bands matching the real product photos.
 
-const CASSETTE_HEIGHT_RATIO = 0.04; // ~4% of blind height — slim, not a thick bar
+const CASSETTE_HEIGHT_RATIO = 0.04; // ~4% of blind height — the BARE 45mm tube
 const RAIL_HEIGHT_RATIO = 0.018; // ~1.8% of blind height — per product photo spec
+
+// ---------------------------------------------------------------------------
+// Roll diameter — the tube gets fatter as the blind goes up
+//
+// A roller blind's visible barrel is not a fixed object. Bare, it is a 45mm
+// aluminium tube; fully raised, the entire drop is wound around it and it
+// measures about 65mm. The renderer used to draw one fixed cylinder at every
+// position, so a blind rolled to the top had all its fabric vanish into a tube
+// the same size as when it was fully down.
+//
+// There is no mm-to-pixel scale anywhere in this renderer — the geometry comes
+// from four traced corner pins, not from measurements — so CASSETTE_HEIGHT_RATIO
+// is the anchor: 4% of the blind's height IS 45mm, and every other diameter is
+// quoted as a ratio against that.
+// ---------------------------------------------------------------------------
+
+const TUBE_BARE_MM = 45;  // aluminium barrel, nothing wound on it
+const TUBE_FULL_MM = 65;  // the whole drop wound on, blind at the top
+
+/** Diameter of the roll in mm at roll position `p` (1 = fully down, 0 = fully
+ * raised).
+ *
+ * Wound fabric occupies a cross-section, not a length: π(R² − r²) = L·t for a
+ * wound length L of thickness t. Solving for R gives a square root, so the
+ * diameter climbs steeply over the first turns and flattens as the roll fattens
+ * — which is why a blind visibly thickens the moment you start raising it and
+ * then changes little over the last third. A linear ramp gets both ends wrong. */
+const rollDiameterMm = (p: number): number => {
+  const wound = 1 - Math.max(0, Math.min(1, p));
+  const r = TUBE_BARE_MM / 2;
+  const R = TUBE_FULL_MM / 2;
+  return 2 * Math.sqrt(r * r + (R * R - r * r) * wound);
+};
+
+/** The bare tube's height as a fraction of blind height, scaled to whatever
+ * diameter the current roll position implies. */
+const cassetteHeightRatio = (p: number): number =>
+  CASSETTE_HEIGHT_RATIO * (rollDiameterMm(p) / TUBE_BARE_MM);
+
+// ---------------------------------------------------------------------------
+// What the roll shows — and it is not always the selected colour
+//
+// Blockout is a BOTTOM ROLL: the fabric comes off the barrel at the back and
+// hangs down the far side, so what faces the room on the roll is the fabric's
+// REVERSE. Every blockout in the range is backed white for heat reflection, so
+// a charcoal blockout has a WHITE roll sitting on the tube. This is the detail
+// people most often get wrong when they picture one, and getting it wrong in a
+// visualiser sets the wrong expectation before the blind is even ordered.
+//
+// Sunscreen and light filter roll over the top, so the fabric's FACE is what
+// wraps outward and the roll reads in the selected colour.
+// ---------------------------------------------------------------------------
+
+/** The white acrylic backing on every blockout in the range. Not pure white —
+ * it is a warm off-white, and pure #FFF next to a photographed room reads as a
+ * blown-out hole rather than as fabric. */
+const BLOCKOUT_BACKING_HEX = '#F1EDE6';
+
+/** Which way a fabric rolls, and therefore what colour its roll is. */
+const rollsFaceOut = (blindType: string): boolean =>
+  blindType === 'sunscreen' || blindType === 'lightfilter';
+
+const rollFaceHex = (blindType: string, fabricColor: string): string =>
+  rollsFaceOut(blindType) ? fabricColor : BLOCKOUT_BACKING_HEX;
 
 /** Unit direction along tl->tr plus its perpendicular. */
 const axesFor = (tl: Point, tr: Point): { u: Point; pv: Point } => {
@@ -1372,6 +1532,14 @@ const traceEndCapOval = (
   ctx.closePath();
 };
 
+/** The wound fabric on the barrel: which fabric, and how far the blind is up. */
+interface RollState {
+  /** Roll position, 1 = fully down, 0 = fully raised. */
+  p: number;
+  blindType: string;
+  fabricColor: string;
+}
+
 const drawCassette = (
   ctx: CanvasRenderingContext2D,
   tl: Point,
@@ -1381,8 +1549,12 @@ const drawCassette = (
   safeHardwareColor: string,
   avgW: number,
   yRotation = 0, // window rotation for end cap visibility
+  roll?: RollState,
 ): number => {
-  const fullH = leftH * CASSETTE_HEIGHT_RATIO;
+  // Diameter tracks the roll: 45mm bare, up to 65mm with the whole drop wound
+  // on. Without a roll state (curtain and legacy callers) it stays bare.
+  const rollP = roll ? Math.max(0, Math.min(1, roll.p)) : 1;
+  const fullH = leftH * cassetteHeightRatio(rollP);
   const halfH = fullH / 2;
   const { u, pv } = axesFor(tl, tr);
   const base = hardwareBaseHex(hardwareColourName, safeHardwareColor);
@@ -1411,24 +1583,56 @@ const drawCassette = (
   traceCylinderBody(ctx, tl, tr, halfH, u, pv);
   ctx.clip();
 
-  // --- FABRIC ROLL visible on the tube
-  const rollTop = halfH * -0.1;
-  const rollBot = halfH * -0.7;
-  const rollGrad = ctx.createLinearGradient(
-    tl[0] + pv[0] * rollTop, tl[1] + pv[1] * rollTop,
-    tl[0] + pv[0] * rollBot, tl[1] + pv[1] * rollBot
-  );
-  rollGrad.addColorStop(0, shadowRgba(0.08));
-  rollGrad.addColorStop(0.5, shadowRgba(0.12));
-  rollGrad.addColorStop(1, shadowRgba(0.06));
-  ctx.fillStyle = rollGrad;
-  ctx.beginPath();
-  ctx.moveTo(tl[0] + pv[0] * rollTop, tl[1] + pv[1] * rollTop);
-  ctx.lineTo(tr[0] + pv[0] * rollTop, tr[1] + pv[1] * rollTop);
-  ctx.lineTo(tr[0] + pv[0] * rollBot, tr[1] + pv[1] * rollBot);
-  ctx.lineTo(tl[0] + pv[0] * rollBot, tl[1] + pv[1] * rollBot);
-  ctx.closePath();
-  ctx.fill();
+  // --- FABRIC WOUND ON THE TUBE
+  //
+  // Once there is fabric on the barrel it wraps the whole circumference, so
+  // what you see is the fabric, not the tube — in the reverse's white for a
+  // bottom-rolling blockout, or in the selected colour for a sunscreen or light
+  // filter that rolls face-out. See rollFaceHex.
+  //
+  // Coverage ramps in over the first 15% of travel rather than switching on,
+  // for two reasons: a hard swap from hardware finish to fabric partway through
+  // a smooth motorised sweep is the kind of pop that reads as a bug, and at
+  // fully-closed the barrel genuinely is near-bare, which is also the one
+  // position where the customer can still see which hardware finish they picked.
+  const coverage = roll ? Math.max(0, Math.min(1, (1 - rollP) / 0.15)) : 0;
+  if (coverage > 0) {
+    const face = rollFaceHex(roll!.blindType, roll!.fabricColor);
+    // Same top-lit relationship as the hardware body above, so a wrapped tube
+    // and a bare one are lit by the same imagined window.
+    const wrapGrad = ctx.createLinearGradient(top[0], top[1], bot[0], bot[1]);
+    wrapGrad.addColorStop(0, shadeHex(face, 0.06));
+    wrapGrad.addColorStop(0.3, shadeHex(face, 0.16));
+    wrapGrad.addColorStop(0.62, face);
+    wrapGrad.addColorStop(1, shadeHex(face, -0.32));
+    ctx.globalAlpha = coverage;
+    ctx.fillStyle = wrapGrad;
+    traceCylinderBody(ctx, tl, tr, halfH, u, pv);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // The layer edge where the outermost wrap laps over the one beneath. One
+    // faint line low on the roll is enough to read as wound layers; a stack of
+    // them turns the tube into a set of stripes.
+    const seam = halfH * -0.45;
+    ctx.strokeStyle = shadowRgba(0.13 * coverage);
+    ctx.lineWidth = Math.max(1, scaleToBlind(1.5, avgW));
+    ctx.beginPath();
+    ctx.moveTo(tl[0] + pv[0] * seam, tl[1] + pv[1] * seam);
+    ctx.lineTo(tr[0] + pv[0] * seam, tr[1] + pv[1] * seam);
+    ctx.stroke();
+
+    // Where the fabric leaves the roll and becomes the hanging drop it turns
+    // through a tight radius and self-shadows. Without this the wrap and the
+    // fabric below it merge into one flat shape at the same colour.
+    const tangent = halfH * -0.82;
+    ctx.strokeStyle = shadowRgba(0.3 * coverage);
+    ctx.lineWidth = Math.max(1, scaleToBlind(2, avgW));
+    ctx.beginPath();
+    ctx.moveTo(tl[0] + pv[0] * tangent, tl[1] + pv[1] * tangent);
+    ctx.lineTo(tr[0] + pv[0] * tangent, tr[1] + pv[1] * tangent);
+    ctx.stroke();
+  }
 
   // --- END CAPS: Only visible on the NEAR side (toward viewer)
   // TRUE 3D PERSPECTIVE:
@@ -1744,8 +1948,11 @@ const drawBlindArea = (
     // Strictly before drawPreFabricDepth: this re-draws the untouched photo
     // clipped to the quad, so anything already painted inside that quad is
     // erased. Run after the depth pass it silently undid it.
+    // Sunscreen's radius is colour-driven: a dark screen is nearly a window and
+    // wants the view almost sharp, a white one scatters it away. See
+    // sunscreenDiffusionPx.
     if (type === 'sunscreen') {
-      drawBackgroundDiffusion(ctx, photo, fabricQuad, scaleToBlind(6, avgW));
+      drawBackgroundDiffusion(ctx, photo, fabricQuad, scaleToBlind(sunscreenDiffusionPx(fabricColor), avgW));
     } else if (type === 'lightfilter') {
       drawBackgroundDiffusion(ctx, photo, fabricQuad, scaleToBlind(14, avgW));
     }
@@ -1813,14 +2020,17 @@ const drawBlindArea = (
         drawQuad(state, [midT2, tr, fabBR, midB2p], fabricTexture, panelOpts);
       } else {
         // Blockout, sunscreen and light filter share one quad and differ only
-        // in transmission: 1.0 stops all light, 0.65 lets the diffused view
-        // read through the mesh, 0.82 sits between them. The shader's own
-        // per-type pass (u_blindType) adds the surface behaviour on top —
-        // directional sheen, weave bands, or a warm centre bloom.
+        // in transmission: blockout stops all light, light filter sits at 0.82,
+        // and sunscreen is the one type whose transparency depends on the
+        // selected colour — see fabricOpacityFor. The shader's own per-type pass
+        // (u_blindType) adds the surface behaviour on top: directional sheen for
+        // blockout, warm transmission for sunscreen, a centre bloom for filter.
         drawQuad(state, [tl, tr, fabBR, fabBL], fabricTexture, {
           tint,
-          textureAmount: surface.textureAmount,
-          opacity: FABRIC_OPACITY[type] ?? 1,
+          textureAmount: type === 'sunscreen'
+            ? sunscreenTextureAmount(surface.textureAmount, fabricColor)
+            : surface.textureAmount,
+          opacity: fabricOpacityFor(type, fabricColor),
           uvScale,
           shade: true,
           folds: 0,
@@ -1841,7 +2051,7 @@ const drawBlindArea = (
       // Opacities come from the same table the WebGL path uses — blockout is
       // fully opaque so the selected colour renders as itself, not blended
       // with the darkened window opening underneath.
-      ctx.fillStyle = rgba(fabricColor, FABRIC_OPACITY[type] ?? 1);
+      ctx.fillStyle = rgba(fabricColor, fabricOpacityFor(type, fabricColor));
       ctx.fill();
       ctx.restore();
     }
@@ -1851,7 +2061,11 @@ const drawBlindArea = (
     // comes from the texture; no synthetic stripes are drawn over it. ---
     drawFabricCentreLight(ctx, tl, tr, fabBL, fabBR);
     drawFabricVignette(ctx, tl, tr, fabBL, fabBR);
-    if (type === 'sunscreen' || type === 'lightfilter') {
+    if (type === 'sunscreen') {
+      // Attenuated by yarn colour — a charcoal screen absorbs the light it
+      // passes instead of glowing with it.
+      drawTranslucentLightBleed(ctx, tl, tr, fabBR, fabBL, sunscreenBleedScale(fabricColor));
+    } else if (type === 'lightfilter') {
       drawTranslucentLightBleed(ctx, tl, tr, fabBR, fabBL);
     }
 
@@ -1868,7 +2082,13 @@ const drawBlindArea = (
 
   // --- CASSETTE — always drawn (not gated on showBlind) since
   // the hardware itself is always present regardless of roll position. ---
-  const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation);
+  // The roll state is what makes the tube thicken from 45mm to 65mm as the
+  // fabric winds on, and what puts the fabric's own colour (or a blockout's
+  // white reverse) onto it.
+  const cassetteHalfH = drawCassette(
+    ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
+    { p, blindType: type, fabricColor },
+  );
 
   // --- CASSETTE MOUNT SHADOW — the headrail casts a shadow onto the
   // fabric below it, like a physical bracket blocking light. ---
@@ -1925,8 +2145,15 @@ const drawBlindArea = (
 const FRONT_LAYER_MAX_DROP = 0.7; // blockout stops short of the sunscreen, keeping both readable
 
 /** Sunscreen back layer — translucent enough to read as a mesh with the view
- * behind it, matching the standalone sunscreen render path's opacity. */
-const DUAL_BACK_OPACITY = 0.55;
+ * behind it. Slightly clearer than the same sunscreen standalone: it sits behind
+ * the blockout, and where both overlap the pair would otherwise read as one
+ * thick sheet. A fraction rather than a fixed number so it inherits the
+ * standalone path's colour-driven view-through — a dual with a charcoal screen
+ * shows the view through its exposed strip just as a standalone one does. */
+const DUAL_BACK_OPACITY_SCALE = 0.85;
+
+const dualBackOpacity = (fabricColor: string): number =>
+  fabricOpacityFor('sunscreen', fabricColor) * DUAL_BACK_OPACITY_SCALE;
 
 const drawDualBlindArea = (
   ctx: CanvasRenderingContext2D,
@@ -1976,7 +2203,7 @@ const drawDualBlindArea = (
   // Diffusion before depth — it re-draws the untouched photo inside the quad,
   // so it has to run before anything else paints there. See drawBlindArea.
   if (showBlind) {
-    drawBackgroundDiffusion(ctx, photo, fabricQuad, scaleToBlind(6, avgW));
+    drawBackgroundDiffusion(ctx, photo, fabricQuad, scaleToBlind(sunscreenDiffusionPx(fabricColor), avgW));
     drawPreFabricDepth(ctx, fabricQuad);
   }
 
@@ -2025,7 +2252,9 @@ const drawDualBlindArea = (
       if (fabricTexture) {
         drawQuad(state, [tl, tr, layerBR, layerBL], fabricTexture, {
           tint,
-          textureAmount: surface.textureAmount,
+          textureAmount: surfaceType === 'sunscreen'
+            ? sunscreenTextureAmount(surface.textureAmount, fabricColor)
+            : surface.textureAmount,
           opacity,
           uvScale,
           shade: true,
@@ -2058,11 +2287,11 @@ const drawDualBlindArea = (
     // and hanging lower, so its exposed portion sits below the blockout. The
     // view behind it was diffused above, for the same reason a standalone
     // sunscreen's is: through a mesh it is a ghost, not a sharp image. ---
-    drawFabricLayer(backP, DUAL_BACK_TEXTURE, DUAL_BACK_OPACITY, 'sunscreen');
+    drawFabricLayer(backP, DUAL_BACK_TEXTURE, dualBackOpacity(fabricColor), 'sunscreen');
     drawFabricCentreLight(ctx, tl, tr, backBL, backBR);
     // Light bleeding through the mesh, same treatment the standalone
     // sunscreen gets — this is what sells it as a screen rather than cloth.
-    drawTranslucentLightBleed(ctx, tl, tr, backBR, backBL);
+    drawTranslucentLightBleed(ctx, tl, tr, backBR, backBL, sunscreenBleedScale(fabricColor));
 
     // --- FRONT LAYER — blockout on the room side, opaque, drawn on top and
     // stopping short so the sunscreen stays visible beneath it. ---
@@ -2138,8 +2367,20 @@ const drawDualBlindArea = (
   const cassetteOffset = scaleToBlind(4, avgW);
   const backCassetteTL: Point = [tl[0] + cassettePv[0] * cassetteOffset, tl[1] + cassettePv[1] * cassetteOffset];
   const backCassetteTR: Point = [tr[0] + cassettePv[0] * cassetteOffset, tr[1] + cassettePv[1] * cassetteOffset];
-  drawCassette(ctx, backCassetteTL, backCassetteTR, leftH * 0.85, hardwareColourName, safeHardwareColor, avgW, yRotation);
-  const cassetteHalfH = drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation);
+  //
+  // The two tubes wind different fabrics different ways, and each tracks its own
+  // roller's position: the back one carries the sunscreen face-out and takes the
+  // selected colour, the front one carries the blockout and shows its white
+  // reverse. Passing one shared roll state would have put a blockout's white on
+  // the sunscreen tube as well.
+  drawCassette(
+    ctx, backCassetteTL, backCassetteTR, leftH * 0.85, hardwareColourName, safeHardwareColor, avgW, yRotation,
+    { p: backP, blindType: 'sunscreen', fabricColor },
+  );
+  const cassetteHalfH = drawCassette(
+    ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
+    { p: frontP, blindType: 'blockout', fabricColor },
+  );
 
   if (showBlind) {
     drawCassetteMountShadow(ctx, tl, tr, frontBL, frontBR, cassetteHalfH, leftH, avgW);
