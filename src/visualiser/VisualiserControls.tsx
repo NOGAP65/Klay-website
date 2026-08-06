@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { tokens } from '../theme';
-import { HARDWARE_HEX, HARDWARE_OPTIONS, RYNAMIC_COLOURS } from '../data/products';
-import { useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
+import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
+import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
   lockedRange?: string; // if passed, hides the blind type row — customer can only configure this type
@@ -205,9 +205,16 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const selectedColour = RYNAMIC_COLOURS.find(c => c.name === store.fabricColour);
   const selectedHardware = HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour);
   const isCurtain = showCurtainControls && store.productCategory === 'curtain';
+
+  // The swatch grid is whichever card this category actually offers — blinds and
+  // curtains are different cloth and different ranges. Keyed off the store's own
+  // category rather than `isCurtain`, which is additionally gated on the host
+  // passing showCurtainControls, so the swatches can never end up from a
+  // different range than the colour the renderer is resolving.
+  const palette = coloursFor(store.productCategory);
+  const selectedColour = palette.find(c => c.name === store.fabricColour);
 
   // Curtain controls
   if (isCurtain) {
@@ -231,7 +238,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
 
             <Field label="Fabric colour" caption={selectedColour?.name}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: compact ? 6 : 9, marginLeft: 2, paddingRight: 2 }}>
-                {RYNAMIC_COLOURS.map(c => (
+                {palette.map(c => (
                   <Swatch
                     key={c.name}
                     hex={c.hex}
@@ -378,7 +385,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
 
           <Field label="Fabric colour" caption={selectedColour?.name}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: compact ? 6 : 9, marginLeft: 2, paddingRight: 2 }}>
-              {RYNAMIC_COLOURS.map(c => (
+              {palette.map(c => (
                 <Swatch
                   key={c.name}
                   hex={c.hex}

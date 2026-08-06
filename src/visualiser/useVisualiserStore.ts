@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
+import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
 import { pricePerBlind, type BlindType } from '../lib/pricing';
 
 type Point = [number, number];
@@ -29,6 +29,12 @@ export type CurtainSize = 'small' | 'medium' | 'large' | 'xl';
 // The heading used to be a choice of four (box, pencil, pinch, S-fold). The
 // range is wave fold only, so there is nothing to choose and no `curtainFold`
 // state: Canvas2DCurtainRenderer draws wave folds and knows no other kind.
+
+/** The colour card for a product category. Blinds and curtains are different
+ * cloth from different mills and do not share a range — see products.ts. Every
+ * colour lookup goes through here so the two can never be crossed. */
+export const coloursFor = (category: ProductCategory) =>
+  category === 'curtain' ? CURTAIN_COLOURS : RYNAMIC_COLOURS;
 
 const CURTAIN_BASE_PRICES: Record<CurtainSize, number> = {
   small: 320,
@@ -132,10 +138,11 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
 
   getFabricColor: () => {
     const state = get();
-    // Falls back to the first Rynamic colour rather than an invented hex, so
+    const palette = coloursFor(state.productCategory);
+    // Falls back to the first colour on the card rather than an invented hex, so
     // an unrecognised name still renders as a real catalogue fabric and the
     // White swatch's value stays defined in exactly one place.
-    return RYNAMIC_COLOURS.find(c => c.name === state.fabricColour)?.hex ?? RYNAMIC_COLOURS[0].hex;
+    return palette.find(c => c.name === state.fabricColour)?.hex ?? palette[0].hex;
   },
 
   getHardwareColor: () => HARDWARE_HEX[get().hardwareColour],
@@ -145,7 +152,22 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
     return state.tracedAreas.some(a => a.confirmed) && state.photoUrl !== null;
   },
 
-  setProductCategory: (cat) => set({ productCategory: cat }),
+  // Switching category has to reconcile the selected colour, because the two
+  // cards are different ranges. A name carried across that the new card does not
+  // list would leave no swatch highlighted while getFabricColor quietly fell back
+  // to the first entry — the render and the controls disagreeing about what is
+  // selected. A name the new card DOES list is kept, so moving between blinds and
+  // curtains on White or Black (or Sand, or Dune) stays where the customer left
+  // it, even though the hex behind it differs.
+  setProductCategory: (cat) => set(s => {
+    const palette = coloursFor(cat);
+    return {
+      productCategory: cat,
+      fabricColour: palette.some(c => c.name === s.fabricColour)
+        ? s.fabricColour
+        : palette[0].name,
+    };
+  }),
   setBlindType: (type) => set({ blindType: type }),
   setFabricColour: (colour) => set({ fabricColour: colour }),
   setHardwareColour: (colour) => set({ hardwareColour: colour }),

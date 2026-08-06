@@ -131,40 +131,71 @@ export const SKU_COUNT = SKU_CATALOGUE.length
 /** Products in the collection — four. Used by the /products header copy. */
 export const PRODUCT_COUNT = PRODUCTS.length
 
-// The authoritative Rynamic colour map. These hexes are the literal base
-// colour the visualiser renders the fabric as (see Canvas2DBlindRenderer's
-// fragment shader) as well as the swatch shown in the configurator controls —
-// the two must never drift apart, so there is exactly one list.
-// Every hex here was SAMPLED, not chosen: each one is the mean colour of the
-// centre of a real fabric swatch photograph from the Australian roller blind
-// market, measured off the swatch imagery of the four ranges that between them
-// cover blockout and sunscreen. Cross-referencing an actual range rather than
-// inventing a palette changed it fundamentally, in two ways worth recording
-// because both are easy to get wrong from intuition:
+// ---------------------------------------------------------------------------
+// FABRIC COLOURS — a separate range per product category
 //
-//   1. THE MARKET IS NEUTRALS. Whites, greiges, greys, charcoals, blacks, and
-//      essentially nothing else. Not one range carried a green, a red or a blue.
-//      The list this replaces had Forest Green, Red, Deep Ocean Blue and Brown
-//      in it — four of fourteen spent on colours nobody sells, while the greys
-//      people actually buy were represented by two entries.
+// Blinds and curtains are different cloth from different mills, so they do not
+// share a colour card, and the two lists below are deliberately independent.
+// Resolution is always by (category, name): see the visualiser store's
+// coloursFor / getFabricColor.
 //
-//   2. FABRIC IS NEVER PAPER-WHITE. The lightest swatch anywhere across the four
-//      ranges measured 0.905 luminance; the old list opened at 0.94 and ran
-//      several entries above anything real. Blind fabric is a woven, backed
-//      material and it always reads slightly down from white.
+// One consequence to keep in mind. A few names appear in BOTH lists at
+// different hexes — Dune is a warm tan on a blind and a deep brown on a
+// curtain, Sand and White differ slightly too. A colour name is therefore no
+// longer unique on its own, so anything that persists or transmits a colour has
+// to carry the category with it to be unambiguous. Cart lines and booking links
+// both already record the product, so they resolve correctly; just do not add a
+// lookup that takes a bare name and assumes it can find the hex.
+// ---------------------------------------------------------------------------
+
+// The authoritative Rynamic colour map, for ROLLER BLINDS. These hexes are the
+// literal base colour the visualiser renders the fabric as (see
+// Canvas2DBlindRenderer's fragment shader) as well as the swatch shown in the
+// configurator controls — the two must never drift apart, so there is exactly
+// one list.
+export const RYNAMIC_COLOURS = [
+  { name: 'White', hex: '#F2F0EC' },
+  { name: 'Surfmist', hex: '#E8E4DC' },
+  { name: 'Light Grey', hex: '#C8C4BC' },
+  { name: 'Dune', hex: '#C4A882' },
+  { name: 'Cream', hex: '#EDE0C8' },
+  { name: 'Sand', hex: '#D4BC98' },
+  { name: 'Beige', hex: '#C8B090' },
+  { name: 'Forest Green', hex: '#2C4A30' },
+  { name: 'Red', hex: '#8C2820' },
+  { name: 'Brown', hex: '#6C4830' },
+  { name: 'Black', hex: '#2C2824' },
+  { name: 'Deep Ocean Blue', hex: '#1C3048' },
+  { name: 'Woodland Grey', hex: '#686460' },
+  { name: 'Monument', hex: '#4C4844' },
+]
+
+// The CURTAIN colour card. Every hex here was SAMPLED, not chosen: each is the
+// mean colour of the centre of a real fabric swatch photograph, measured off the
+// swatch imagery of four ranges on the Australian market. Two things that came
+// out of doing it by measurement rather than by eye, both worth recording
+// because intuition gets them wrong:
+//
+//   1. THE RANGE IS NEUTRALS. Whites, greiges, greys, charcoals, blacks, and
+//      essentially nothing else — not one range carried a green, a red or a
+//      blue. Curtains are a large soft furnishing and are specified to disappear
+//      into the wall, which is not how a blind is chosen.
+//
+//   2. FABRIC IS NEVER PAPER-WHITE. The lightest swatch found anywhere measured
+//      0.905 luminance. Curtain cloth is woven and lined, and it always reads
+//      slightly down from white.
 //
 // Ordered by luminance, brightest first, and alternating warm against cool
 // wherever two sit close together — the real ranges do the same, because a
 // customer choosing between two near-identical lightnesses is choosing on
-// undertone. That ordering also matters to the renderer: sunscreen view-through,
-// sheer density and the roller's white blockout backing are all driven off this
-// value, so an evenly spaced ramp is what exercises them evenly.
+// undertone. The ordering also matters to the renderer: sheer density is driven
+// off this value, so an evenly spaced ramp is what exercises it evenly.
 //
-// The names are the industry's generic colour vocabulary — Ivory, Sand,
-// Concrete, Pewter, Flint, Charcoal and so on, terms in common use across the
-// trade. Deliberately none of the distinctive product names one range uses for
-// its own patterns, which are its branding rather than descriptions of a colour.
-export const RYNAMIC_COLOURS = [
+// The names are the trade's generic colour vocabulary — Ivory, Concrete, Pewter,
+// Flint, Charcoal and so on. Deliberately none of the distinctive product names
+// a particular range uses for its own patterns, which are its branding rather
+// than descriptions of a colour.
+export const CURTAIN_COLOURS = [
   { name: 'White', hex: '#E7E7E6' },     // 0.905
   { name: 'Whisper', hex: '#DEDFDD' },   // 0.872 · cool
   { name: 'Ivory', hex: '#D9D5CD' },     // 0.836 · warm
@@ -187,7 +218,10 @@ export const RYNAMIC_COLOURS = [
 /** Fabric colours offered — cited in marketing copy on the homepage and the
  * collection page. Derived rather than written down twice: a literal would go
  * stale the first time a colour is added or retired, and a marketing figure
- * that contradicts the swatch grid below it is worse than no figure. */
+ * that contradicts the swatch grid below it is worse than no figure.
+ *
+ * Blinds only, because the figure is labelled as the Rynamic range where it is
+ * quoted. Summing the two cards would inflate it and imply one card of 31. */
 export const COLOUR_COUNT = RYNAMIC_COLOURS.length
 
 // The three hardware finishes. Single source for the swatch UI, the store's
