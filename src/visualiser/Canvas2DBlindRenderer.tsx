@@ -1034,18 +1034,38 @@ const drawLightLeak = (
   ctx.restore();
 };
 
-/** Perimeter stroke around the quad, grounding the fabric in the frame. */
-const drawVignette = (ctx: CanvasRenderingContext2D, corners: Point[]) => {
+/** Perimeter stroke around the quad, grounding the fabric in the frame.
+ *
+ * `skipTopEdge` omits the tl->tr run. On a roller the fabric quad's top edge is
+ * the tube's own centreline, so stroking it draws a hard dark line straight
+ * across the middle of the roll. The stroke is meant to be the shadow where
+ * fabric meets frame, and along that edge there is no such join — the fabric
+ * disappears behind a tube sitting in front of it. It only became visible once
+ * the tube grew with the roll; at the old fixed diameter the line fell close
+ * enough to the tube's lower edge to pass for the shadow beneath it. */
+const drawVignette = (
+  ctx: CanvasRenderingContext2D,
+  corners: Point[],
+  skipTopEdge = false,
+) => {
   const [tl, tr, br, bl] = corners;
   ctx.save();
   ctx.strokeStyle = shadowRgba(0.36);
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(tl[0], tl[1]);
-  ctx.lineTo(tr[0], tr[1]);
-  ctx.lineTo(br[0], br[1]);
-  ctx.lineTo(bl[0], bl[1]);
-  ctx.closePath();
+  if (skipTopEdge) {
+    // Open path: right, bottom, left. No closePath — that would re-add the top.
+    ctx.moveTo(tr[0], tr[1]);
+    ctx.lineTo(br[0], br[1]);
+    ctx.lineTo(bl[0], bl[1]);
+    ctx.lineTo(tl[0], tl[1]);
+  } else {
+    ctx.moveTo(tl[0], tl[1]);
+    ctx.lineTo(tr[0], tr[1]);
+    ctx.lineTo(br[0], br[1]);
+    ctx.lineTo(bl[0], bl[1]);
+    ctx.closePath();
+  }
   ctx.stroke();
   ctx.restore();
 };
@@ -2123,9 +2143,10 @@ const drawBlindArea = (
   void showChain;
   void controlType;
 
-  // --- VIGNETTE (perimeter stroke) — always last, grounds the frame ---
+  // --- VIGNETTE (perimeter stroke) — always last, grounds the frame. Top edge
+  // omitted: it runs under the tube, not against the frame. ---
   if (showBlind) {
-    drawVignette(ctx, fabricQuad);
+    drawVignette(ctx, fabricQuad, true);
   }
 };
 
@@ -2396,7 +2417,8 @@ const drawDualBlindArea = (
     drawBottomRail(ctx, leftEdge(backRailT), rightEdge(backRailT), backBL, backBR, hardwareColourName, safeHardwareColor, avgW, yRotation);
     drawContactShadow(ctx, backBL, backBR);
 
-    drawVignette(ctx, fabricQuad);
+    // Top edge omitted — it runs under the twin tubes. See drawVignette.
+    drawVignette(ctx, fabricQuad, true);
   }
 };
 
