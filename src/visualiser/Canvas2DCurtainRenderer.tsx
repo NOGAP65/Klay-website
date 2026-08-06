@@ -77,32 +77,23 @@ void main() {
   float collapseAmount = smoothstep(0.0, 1.0, smoothstep(0.0, 1.0, rawCollapse));
   vLocalCollapse = collapseAmount;
 
-  // UV REMAPPING approach — avoids phase discontinuity
-  // Instead of changing frequency mid-wave (causes dark crease),
-  // we remap the UV coordinate itself so compressed regions
-  // map to stretched UV space = more folds per pixel naturally
+  // REAL CURTAIN PHYSICS:
+  // A curtain has a FIXED number of folds. The folds don't appear or disappear.
+  // When compressed, the folds just get physically pushed closer together.
+  // Frequency NEVER changes — only:
+  //   1. Horizontal spacing (X position of vertices)
+  //   2. Amplitude (compressed folds are shallower)
 
-  // Compression ratio: how much the UV space is stretched in compressed regions
-  // At full collapse: 2.8x stretch (same as old freq multiplier)
-  float minFoldScale = 0.15;
-  float compressionRatio = mix(1.0, 2.8, collapseAmount);
+  // Minimum compression: blockout fabric has physical thickness
+  // Typical stack-back ratio is 15-20% of panel width when fully open
+  float minCompressionRatio = 0.18;
 
-  // Integrate the compression ratio along the panel to get remapped UV
-  // This creates a continuous mapping with no phase breaks
-  // remappedU accumulates: uncompressed regions add 1:1, compressed regions add more
-  // For smooth integration, we compute the integral of compressionRatio from 0 to uv.x
-  // Since collapseAmount varies with position, we approximate with current position's contribution
-  float remappedU = uv.x * compressionRatio;
+  // Amplitude DECREASES with compression — compressed folds are shallower
+  // Smooth transition over the collapse zone
+  float effectiveAmp = mix(uFoldAmplitude, uFoldAmplitude * 0.35, collapseAmount);
 
-  // Amplitude DECREASES with compression — scrunched fabric has shallower folds
-  // Wide smoothstep over 2 fold widths for gradual amplitude transition
-  float foldWidth = 1.0 / uFoldFrequency;
-  float ampTransitionZone = foldWidth * 2.0;
-  float ampCollapseSmooth = smoothstep(0.0, 1.0, collapseAmount);
-  float effectiveAmp = mix(uFoldAmplitude, uFoldAmplitude * 0.3, ampCollapseSmooth);
-
-  // Single continuous sine wave using remapped UV — no phase reset
-  float foldX = remappedU * uFoldFrequency;
+  // CONSTANT frequency — use original uv.x, never remap or change frequency
+  float foldX = uv.x * uFoldFrequency;
   float wave = 0.0;
   float gradient = 0.0;
 
@@ -111,8 +102,8 @@ void main() {
     gradient = cos(foldX * 6.28318);
   }
   else if (uFoldType == PENCILPLEAT) {
-    float topFreq = uFoldFrequency * 2.0 * compressionRatio;
-    float bottomFreq = uFoldFrequency * 0.6 * compressionRatio;
+    float topFreq = uFoldFrequency * 2.0;
+    float bottomFreq = uFoldFrequency * 0.6;
     float yBlend = smoothstep(0.0, 0.6, 1.0 - uv.y);
     float freq = mix(topFreq, bottomFreq, yBlend);
     wave = sin(uv.x * freq * 6.28318);
@@ -139,13 +130,13 @@ void main() {
     gradient = (step(0.5, boxCycle) * 2.0 - 1.0) * (1.0 - smoothstep(0.0, 0.2, min(abs(boxCycle - 0.25), abs(boxCycle - 0.75))));
   }
 
-  // Apply fold depth with effective (reduced when collapsed) amplitude
+  // Apply fold depth with reduced amplitude in compressed regions
   float zDisp = wave * effectiveAmp;
   pos.z += zDisp;
 
-  // X compression: pull collapsed region toward outer wall
-  // Limit shift to preserve minimum fold width (15% of original)
-  float maxShift = 1.0 - minFoldScale; // 0.85 max compression
+  // X compression: push collapsed fabric toward outer wall
+  // Fabric has physical thickness — cannot compress beyond minCompressionRatio
+  float maxShift = 1.0 - minCompressionRatio; // ~0.82 max compression
   float xShift = collapseAmount * maxShift;
   float direction = uIsLeftPanel > 0.5 ? -1.0 : 1.0;
   // distFromCentre: how far this vertex is from panel centre (0-0.5 range in UV)
