@@ -78,8 +78,15 @@ void main() {
 
   // Compressed folds: higher frequency, LOWER amplitude
   // Bunched fabric = tighter smaller folds, not bigger jagged ones
-  float effectiveFreq = mix(uFoldFrequency, uFoldFrequency * 2.8, collapseAmount);
-  float effectiveAmp = mix(uFoldAmplitude, uFoldAmplitude * 0.4, collapseAmount);
+  // Minimum fold width: 15% of resting width — fabric cannot compress to a line
+  float minFoldScale = 0.15;
+  float maxFreqMultiplier = 1.0 / minFoldScale; // ~6.67x max frequency increase
+  float freqMultiplier = mix(1.0, min(2.8, maxFreqMultiplier), collapseAmount);
+  float effectiveFreq = uFoldFrequency * freqMultiplier;
+
+  // Amplitude DECREASES with compression — scrunched fabric has shallower folds
+  // At full collapse: 30% of original amplitude (was 40%, making it even shallower)
+  float effectiveAmp = mix(uFoldAmplitude, uFoldAmplitude * 0.3, collapseAmount);
 
   float foldX = uv.x * effectiveFreq;
 
@@ -125,7 +132,9 @@ void main() {
 
   // X compression: pull collapsed region toward outer wall
   // xShift increases with collapse amount, pulling vertices outward
-  float xShift = collapseAmount * 0.78;
+  // Limit shift to preserve minimum fold width (15% of original)
+  float maxShift = 1.0 - minFoldScale; // 0.85 max compression
+  float xShift = collapseAmount * maxShift;
   float direction = uIsLeftPanel > 0.5 ? -1.0 : 1.0;
   // distFromCentre: how far this vertex is from panel centre (0-0.5 range in UV)
   float distFromCentre = abs(uv.x - 0.5);
