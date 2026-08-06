@@ -85,15 +85,24 @@ const WAVE_PITCH_MM = 160;
 const OPEN_STACK_FRACTION = 1 / 3;
 const WAVE_MIN_RATIO = OPEN_STACK_FRACTION;
 
-/** Fabric consumed by one wave, as a multiple of its shut pitch. 1.42 puts the
- * shut curtain at roughly a third of its pitch in depth, which is the gentle
- * standing wave a shut wave curtain actually has — it is never flat. */
+/** Fabric consumed by one wave, as a multiple of its shut pitch. Only sets the
+ * weave density now — depth comes from the two constants below. */
 const FABRIC_ARC_RATIO = 1.42;
 
-/** Ceiling on wave depth, as a multiple of the shut pitch. Arc length alone
- * would drive a fully stacked wave to a spike; real fabric gives up and packs
- * into a bundle instead. This is where that happens. */
-const MAX_DEPTH_RATIO = 0.62;
+/** Wave depth, as a multiple of the SHUT pitch: shut, and fully packed.
+ *
+ * These replace an arc-length solver that bisected the sine's arc integral per
+ * wave per frame to hold the fabric length constant. It was not worth its cost,
+ * because the answer barely moves: as a wave's width goes to zero its arc length
+ * tends to 4x its amplitude, so the amplitude tends to a CONSTANT of a quarter
+ * the fabric length — 0.355 of the shut pitch at our fullness, against 0.33 when
+ * shut. Two hundred-odd square roots per wave per frame to travel 8%.
+ *
+ * The depth was never what compression changes. What changes is the wave's
+ * ASPECT: the same depth over a third of the width, which is a much steeper
+ * surface and reads as a much sharper fold. That comes free from the width. */
+const DEPTH_SHUT = 0.33;
+const DEPTH_PACKED = 0.36;
 
 /** Width of the compression front, in waves. A hard sequential handover — wave
  * n at its minimum before wave n+1 starts moving — steps visibly as the slider
@@ -110,10 +119,25 @@ const HEM_SPLAY = 0.1;
 /** Extra wave depth at the hem, same reason. */
 const HEM_DEPTH_GAIN = 0.14;
 
-/** Mesh resolution. Per wave rather than per panel, so a wide curtain with
- * more waves gets more geometry instead of coarser waves. */
-const COLS_PER_WAVE = 12;
-const ROWS = 26;
+/** Mesh resolution. Columns are per wave rather than per panel, so a wide
+ * curtain gets more geometry instead of coarser waves.
+ *
+ * ROWS is 8, down from 26. Nothing in this surface varies quickly down the drop:
+ * the only vertical terms are the hem splay and hem deepening, both quadratic in
+ * height, which 8 rows carry to within a pixel. The other 18 rows were paying
+ * full vertex and fragment cost to interpolate a parabola. */
+const COLS_PER_WAVE = 10;
+const ROWS = 8;
+
+/** Ceiling on the render buffer's width in pixels.
+ *
+ * The canvas used to be sized to the photo's own resolution, which is fine for
+ * the default 1254px room but means a 4000px phone photo shaded 16 MILLION
+ * fragments per frame — enough to drop a low-end machine to single figures while
+ * the slider moves. The result is CSS-scaled to the container either way, and
+ * the ortho camera maps the world to the viewport rather than to pixels, so
+ * capping the buffer costs nothing but sampling and changes no coordinates. */
+const RENDER_MAX_WIDTH = 1400;
 
 /** Fabric weave repeat, in mm of real fabric. */
 const WEAVE_TILE_MM = 340;
@@ -163,38 +187,6 @@ const waveJitter = (i: number, salt: number): number =>
   Math.sin((i + 1) * 12.9898 + salt * 78.233) * 43758.5453 % 1;
 
 // --- Wave geometry maths ---------------------------------------------------
-
-/** Arc length of one full sine period, width `w` and amplitude `a`. Midpoint
- * rule over the period; 24 samples is well inside a pixel for the amplitudes
- * involved here. */
-function sineArcLength(w: number, a: number): number {
-  const k = (2 * Math.PI * a) / w;
-  const SAMPLES = 24;
-  let total = 0;
-  for (let j = 0; j < SAMPLES; j++) {
-    const c = Math.cos(((j + 0.5) / SAMPLES) * 2 * Math.PI);
-    total += Math.sqrt(1 + k * k * c * c);
-  }
-  return (total / SAMPLES) * w;
-}
-
-/** The amplitude at which a wave of width `w` consumes `arc` of fabric.
- * Bisection: arc length rises monotonically with amplitude, so 22 halvings
- * lands well under a pixel. Returns 0 if the width alone already accounts for
- * the fabric, and is capped so a fully packed wave becomes a bundle rather
- * than a spike. */
-function depthForArc(w: number, arc: number, maxAmp: number): number {
-  if (arc <= w || w <= 0) return 0;
-  if (sineArcLength(w, maxAmp) < arc) return maxAmp;
-  let lo = 0;
-  let hi = maxAmp;
-  for (let i = 0; i < 22; i++) {
-    const mid = (lo + hi) * 0.5;
-    if (sineArcLength(w, mid) < arc) lo = mid;
-    else hi = mid;
-  }
-  return (lo + hi) * 0.5;
-}
 
 /** Width of every wave in one panel at a given openness, leading edge first.
  *
@@ -250,18 +242,14 @@ function panelLayout(
   const jittered = even.map((w, i) => w * (1 + waveJitter(i, 3.1) * 0.05));
   const jitterSum = jittered.reduce((a, b) => a + b, 0);
   const widths = jittered.map(w => (w * target) / jitterSum);
-  const arc = shutWidth * FABRIC_ARC_RATIO;
-  const maxAmp = shutWidth * MAX_DEPTH_RATIO;
 
   const depths: number[] = [];
   const compressions: number[] = [];
   for (let i = 0; i < count; i++) {
-    // Depth is solved per wave from its own width, so a half-open panel shows
-    // shallow standing waves near the wall and deep packed ones at the leading
-    // edge in the same panel — which is what the compression front looks like.
+    const compression = clamp01((shutWidth - widths[i]) / (shutWidth - minWidth));
     const jitter = 1 + waveJitter(i, 1.7) * 0.09;
-    depths.push(depthForArc(widths[i], arc, maxAmp) * jitter);
-    compressions.push(clamp01((shutWidth - widths[i]) / (shutWidth - minWidth)));
+    depths.push(shutWidth * (DEPTH_SHUT + (DEPTH_PACKED - DEPTH_SHUT) * compression) * jitter);
+    compressions.push(compression);
   }
 
   const span = widths.reduce((a, b) => a + b, 0);
@@ -274,7 +262,83 @@ function panelLayout(
 
 // --- Mesh construction ----------------------------------------------------
 
-interface PanelGeometryInput {
+/** One panel's mesh, allocated once. Openness rewrites the typed arrays in place
+ * and flags them; it never builds a BufferGeometry.
+ *
+ * Rebuilding was the whole cost of moving the slider: a fresh BufferGeometry,
+ * four fresh typed arrays, a fresh index array and a computeVertexNormals pass
+ * per panel per frame, and — worst of the lot — a GPU buffer created and deleted
+ * sixty times a second, which is exactly the pattern a low-end driver handles
+ * worst. Wave COUNT is fixed for the life of the track, so the vertex count and
+ * the index buffer are fixed too, and only the positions actually move. */
+interface PanelMesh {
+  geometry: THREE.BufferGeometry;
+  positions: Float32Array;
+  normals: Float32Array;
+  compression: Float32Array;
+  depth: Float32Array;
+  cols: number;
+  count: number;
+}
+
+function createPanelMesh(count: number): PanelMesh {
+  const cols = count * COLS_PER_WAVE;
+  const vertexCount = (cols + 1) * (ROWS + 1);
+
+  const positions = new Float32Array(vertexCount * 3);
+  const normals = new Float32Array(vertexCount * 3);
+  const uvs = new Float32Array(vertexCount * 2);
+  const compression = new Float32Array(vertexCount);
+  const depth = new Float32Array(vertexCount);
+
+  // UVs never change: u runs along the FABRIC, not along x. Every wave holds the
+  // same length of cloth whatever its width, so p/count is already an arc-length
+  // parameter — which means the weave compresses with the wave instead of
+  // stretching across it, and none of it depends on openness.
+  let v = 0;
+  for (let r = 0; r <= ROWS; r++) {
+    for (let c = 0; c <= cols; c++) {
+      uvs[v * 2] = c / cols;
+      uvs[v * 2 + 1] = 1 - r / ROWS;
+      v++;
+    }
+  }
+
+  // Indices are a plain grid and outlive every openness change.
+  const indices = new Uint16Array(cols * ROWS * 6);
+  let k = 0;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < cols; c++) {
+      const a = r * (cols + 1) + c;
+      const b = a + cols + 1;
+      indices[k++] = a; indices[k++] = b; indices[k++] = a + 1;
+      indices[k++] = a + 1; indices[k++] = b; indices[k++] = b + 1;
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  const posAttr = new THREE.BufferAttribute(positions, 3);
+  const normAttr = new THREE.BufferAttribute(normals, 3);
+  const compAttr = new THREE.BufferAttribute(compression, 1);
+  const depthAttr = new THREE.BufferAttribute(depth, 1);
+  posAttr.setUsage(THREE.DynamicDrawUsage);
+  normAttr.setUsage(THREE.DynamicDrawUsage);
+  compAttr.setUsage(THREE.DynamicDrawUsage);
+  depthAttr.setUsage(THREE.DynamicDrawUsage);
+  geometry.setAttribute('position', posAttr);
+  geometry.setAttribute('normal', normAttr);
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  geometry.setAttribute('aCompression', compAttr);
+  geometry.setAttribute('aDepth', depthAttr);
+  geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+  // Drawn with an orthographic camera dead-on, so the bounding sphere only has
+  // to contain the panel; computing it per frame from 400-odd vertices is waste.
+  geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e6);
+
+  return { geometry, positions, normals, compression, depth, cols, count };
+}
+
+interface PanelWrite {
   layout: PanelLayout;
   /** x of the fixed end, against the wall. */
   wallX: number;
@@ -284,108 +348,101 @@ interface PanelGeometryInput {
   bottomY: number;
 }
 
-/** Builds one panel as an explicit height field: x and z per column from the
- * wave widths and depths, extruded down the drop with a hem that splays and
- * deepens. Normals come from three.js rather than being derived by hand — the
- * hem terms make this not quite a pure extrusion, and the fragment shader
- * flips any normal facing away from the camera, so winding never matters. */
-function buildPanelGeometry({
-  layout,
-  wallX,
-  towardCentre,
-  topY,
-  bottomY,
-}: PanelGeometryInput): THREE.BufferGeometry {
+/** Rewrites one panel's vertex data for a new openness.
+ *
+ * Normals are derived analytically from the surface slope rather than by
+ * computeVertexNormals, which walked every triangle taking cross products. This
+ * is a height field z(x) with only smooth quadratic terms down the drop, so the
+ * slope at a column is the same all the way down it: the normal is computed once
+ * per COLUMN and copied down, which is ROWS times less work than per vertex, and
+ * needs no cross products at all. */
+function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
+  const { layout, wallX, towardCentre, topY, bottomY } = w;
   const { widths, depths, compressions, span, overall } = layout;
-  const count = widths.length;
-  const cols = count * COLS_PER_WAVE;
+  const { positions, normals, compression, depth, cols, count } = mesh;
   const height = topY - bottomY;
+  const TAU = Math.PI * 2;
 
-  // Cumulative distance from the LEADING edge, per wave boundary.
-  const cum: number[] = [0];
-  for (let i = 0; i < count; i++) cum.push(cum[i] + widths[i]);
+  let maxDepth = 1e-6;
+  for (let i = 0; i < count; i++) if (depths[i] > maxDepth) maxDepth = depths[i];
 
-  // Depth sampled at wave centres and interpolated, so amplitude varies
-  // smoothly along the panel. Sampling it per wave as a step function put a
-  // crease in the surface at every wave boundary wherever two neighbours were
-  // compressed by different amounts.
-  const depthAt = (p: number): number => {
+  // Per-column values, computed once and reused down every row.
+  const colX = new Float64Array(cols + 1);
+  const colZ = new Float64Array(cols + 1);
+  const colNx = new Float64Array(cols + 1);
+  const colNz = new Float64Array(cols + 1);
+  const colComp = new Float64Array(cols + 1);
+
+  let cum = 0;      // distance from the leading edge at the current wave's start
+  let wave = 0;
+  for (let c = 0; c <= cols; c++) {
+    const p = (c / cols) * count;
+    while (wave < count - 1 && p >= wave + 1) {
+      cum += widths[wave];
+      wave++;
+    }
+    const width = widths[wave];
+    const offset = cum + width * (p - wave);
+
+    // Depth interpolated between wave centres, so amplitude varies smoothly
+    // along the panel. As a step function it creased the surface at every wave
+    // boundary where two neighbours were compressed differently.
     const t = p - 0.5;
     const i0 = Math.floor(t);
     const f = t - i0;
-    const a = depths[Math.min(count - 1, Math.max(0, i0))];
-    const b = depths[Math.min(count - 1, Math.max(0, i0 + 1))];
-    return a + (b - a) * f;
-  };
-  const compressionAt = (p: number): number => {
-    const i = Math.min(count - 1, Math.max(0, Math.floor(p)));
-    return compressions[i];
-  };
-  /** Distance from the leading edge at continuous wave coordinate p. */
-  const offsetAt = (p: number): number => {
-    const i = Math.min(count - 1, Math.max(0, Math.floor(p)));
-    return cum[i] + widths[i] * (p - i);
-  };
+    const d0 = depths[i0 < 0 ? 0 : i0 > count - 1 ? count - 1 : i0];
+    const d1 = depths[i0 + 1 < 0 ? 0 : i0 + 1 > count - 1 ? count - 1 : i0 + 1];
+    const amp = d0 + (d1 - d0) * f;
 
-  const vertexCount = (cols + 1) * (ROWS + 1);
-  const positions = new Float32Array(vertexCount * 3);
-  const uvs = new Float32Array(vertexCount * 2);
-  const compression = new Float32Array(vertexCount);
-  const depthNorm = new Float32Array(vertexCount);
+    const phase = p * TAU;
+    colZ[c] = amp * Math.sin(phase);
+    // Measured from the WALL end so the hem splay reaches further toward the
+    // room while the heading stays pinned to its end carrier.
+    colX[c] = span - offset;
+    colComp[c] = compressions[wave];
 
-  const maxDepth = Math.max(1e-6, ...depths);
+    // Slope: dz/dp over dx/dp. dx/dp is -width (offset grows with p, distance
+    // from the wall shrinks), and the dominant dz/dp term is the sine's own
+    // derivative — the amplitude ramp between neighbours is an order down and
+    // contributes nothing visible.
+    const dzdp = amp * TAU * Math.cos(phase);
+    const dxdp = -width * towardCentre;
+    // Normal perpendicular to (dxdp, dzdp) in the x-z plane; the shader forces
+    // it to face the camera, so the sign here is free.
+    const nx = -dzdp;
+    const nz = dxdp;
+    const len = Math.hypot(nx, nz) || 1;
+    colNx[c] = nx / len;
+    colNz[c] = nz / len;
+  }
 
   let v = 0;
   for (let r = 0; r <= ROWS; r++) {
     const vy = r / ROWS; // 0 at the heading, 1 at the hem
     const y = topY - height * vy;
-    // Only a compressed panel splays: at openness 0 this is 1 and the two
-    // panels meet cleanly at the centre instead of overlapping.
+    // Only a compressed panel splays: at openness 0 this is 1 and the two panels
+    // meet cleanly at the centre instead of overlapping.
     const splay = 1 + HEM_SPLAY * vy * vy * overall;
     const deepen = 1 + HEM_DEPTH_GAIN * vy * vy;
 
-    for (let c = 0; c <= cols; c++) {
-      const p = (c / cols) * count;
-      // Measured from the WALL end so the splay lets the hem reach further
-      // toward the room while the heading stays pinned to its end carrier.
-      const fromWall = (span - offsetAt(p)) * splay;
-      const x = wallX + towardCentre * fromWall;
-      const z = depthAt(p) * deepen * Math.sin(p * Math.PI * 2);
-
-      positions[v * 3] = x;
-      positions[v * 3 + 1] = y;
-      positions[v * 3 + 2] = z;
-
-      // u runs along the FABRIC, not along x. Every wave holds the same length
-      // of cloth whatever its width, so p/count is already an arc-length
-      // parameter — the weave then compresses with the wave instead of
-      // stretching across it.
-      uvs[v * 2] = p / count;
-      uvs[v * 2 + 1] = 1 - vy;
-
-      compression[v] = compressionAt(p);
-      depthNorm[v] = z / maxDepth;
-      v++;
+    for (let c = 0; c <= cols; c++, v++) {
+      const i3 = v * 3;
+      positions[i3] = wallX + towardCentre * colX[c] * splay;
+      positions[i3 + 1] = y;
+      positions[i3 + 2] = colZ[c] * deepen;
+      normals[i3] = colNx[c];
+      normals[i3 + 1] = 0;
+      normals[i3 + 2] = colNz[c];
+      compression[v] = colComp[c];
+      depth[v] = colZ[c] / maxDepth;
     }
   }
 
-  const indices: number[] = [];
-  const idx = (r: number, c: number) => r * (cols + 1) + c;
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < cols; c++) {
-      indices.push(idx(r, c), idx(r + 1, c), idx(r, c + 1));
-      indices.push(idx(r, c + 1), idx(r + 1, c), idx(r + 1, c + 1));
-    }
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-  geometry.setAttribute('aCompression', new THREE.BufferAttribute(compression, 1));
-  geometry.setAttribute('aDepth', new THREE.BufferAttribute(depthNorm, 1));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  return geometry;
+  const g = mesh.geometry;
+  (g.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+  (g.attributes.normal as THREE.BufferAttribute).needsUpdate = true;
+  (g.attributes.aCompression as THREE.BufferAttribute).needsUpdate = true;
+  (g.attributes.aDepth as THREE.BufferAttribute).needsUpdate = true;
 }
 
 // --- Shaders --------------------------------------------------------------
@@ -597,8 +654,8 @@ export default function Canvas2DCurtainRenderer({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.OrthographicCamera | null>(null);
-  const leftPanelRef = useRef<THREE.Mesh | null>(null);
-  const rightPanelRef = useRef<THREE.Mesh | null>(null);
+  const leftMeshRef = useRef<PanelMesh | null>(null);
+  const rightMeshRef = useRef<PanelMesh | null>(null);
   const layoutRef = useRef<Layout | null>(null);
 
   // Openness animates at 60fps; everything else changes on a click. Keeping the
@@ -608,32 +665,30 @@ export default function Canvas2DCurtainRenderer({
   const opennessRef = useRef(openness);
   opennessRef.current = openness;
 
-  /** Rebuilds both panels' geometry for an openness and repaints. Geometry, not
-   * uniforms: wave widths are real positions, so there is nothing to fake in a
-   * shader. ~2.9k vertices per panel rebuilds well inside a frame. */
+  /** Repositions both panels for an openness and repaints. Writes into buffers
+   * allocated once at setup — see createPanelMesh. */
   const applyOpenness = (open: number) => {
     const layout = layoutRef.current;
-    const leftPanel = leftPanelRef.current;
-    const rightPanel = rightPanelRef.current;
+    const left = leftMeshRef.current;
+    const right = rightMeshRef.current;
     const renderer = rendererRef.current;
     const scene = sceneRef.current;
     const camera = cameraRef.current;
-    if (!layout || !leftPanel || !rightPanel || !renderer || !scene || !camera) return;
+    if (!layout || !left || !right || !renderer || !scene || !camera) return;
 
     const { windowLeft, windowRight, windowTop, windowBottom, waveCount, shutWaveWidth } = layout;
+    // One layout serves both panels — they are mirror images, so the wave widths
+    // are identical and only the anchor and direction differ.
     const shaped = panelLayout(waveCount, shutWaveWidth, open);
 
-    leftPanel.geometry.dispose();
-    leftPanel.geometry = buildPanelGeometry({
+    writePanelMesh(left, {
       layout: shaped,
       wallX: windowLeft,
       towardCentre: 1,
       topY: windowTop,
       bottomY: windowBottom,
     });
-
-    rightPanel.geometry.dispose();
-    rightPanel.geometry = buildPanelGeometry({
+    writePanelMesh(right, {
       layout: shaped,
       wallX: windowRight,
       towardCentre: -1,
@@ -664,8 +719,13 @@ export default function Canvas2DCurtainRenderer({
 
       bgCanvas.width = W;
       bgCanvas.height = H;
-      threeCanvas.width = W;
-      threeCanvas.height = H;
+
+      // The fabric buffer is capped; the ortho camera below still spans 0..W in
+      // photo pixels, so world coordinates are unchanged and the two canvases
+      // stay aligned — both are CSS-sized to the container.
+      const renderScale = Math.min(1, RENDER_MAX_WIDTH / W);
+      threeCanvas.width = Math.round(W * renderScale);
+      threeCanvas.height = Math.round(H * renderScale);
 
       const bgCtx = bgCanvas.getContext('2d');
       if (bgCtx) bgCtx.drawImage(photo, 0, 0);
@@ -724,13 +784,19 @@ export default function Canvas2DCurtainRenderer({
       }
       if (rendererRef.current) rendererRef.current.dispose();
 
+      // antialias off: MSAA on a buffer this size is one of the most expensive
+      // things you can ask of an integrated GPU, and it buys almost nothing here
+      // because the result is CSS-downscaled to the container anyway — that
+      // downscale is itself a resolve. The fabric has no hard edges against the
+      // photo either; the panel silhouette is the only one, and it is vertical.
       const renderer = new THREE.WebGLRenderer({
         canvas: threeCanvas,
         alpha: true,
-        antialias: true,
+        antialias: false,
+        powerPreference: 'low-power',
       });
       renderer.setPixelRatio(1);
-      renderer.setSize(W, H, false);
+      renderer.setSize(threeCanvas.width, threeCanvas.height, false);
       renderer.setClearColor(0x000000, 0);
       rendererRef.current = renderer;
 
@@ -773,14 +839,19 @@ export default function Canvas2DCurtainRenderer({
           side: THREE.DoubleSide,
         });
 
-      // Geometry is a placeholder — applyOpenness builds the real thing below.
-      const leftPanel = new THREE.Mesh(new THREE.BufferGeometry(), makeMaterial());
-      const rightPanel = new THREE.Mesh(new THREE.BufferGeometry(), makeMaterial());
+      // Buffers allocated here and only ever rewritten — applyOpenness fills in
+      // the positions below.
+      const leftMesh = createPanelMesh(waveCount);
+      const rightMesh = createPanelMesh(waveCount);
+      const leftPanel = new THREE.Mesh(leftMesh.geometry, makeMaterial());
+      const rightPanel = new THREE.Mesh(rightMesh.geometry, makeMaterial());
+      leftPanel.frustumCulled = false;
+      rightPanel.frustumCulled = false;
       leftPanel.renderOrder = 1;
       rightPanel.renderOrder = 1;
       scene.add(leftPanel, rightPanel);
-      leftPanelRef.current = leftPanel;
-      rightPanelRef.current = rightPanel;
+      leftMeshRef.current = leftMesh;
+      rightMeshRef.current = rightMesh;
 
       // TRACK — the panels hang from something, and without it they float in
       // the opening. Drawn in front of the fabric so it covers the heading, the
@@ -805,8 +876,9 @@ export default function Canvas2DCurtainRenderer({
       track.position.set(
         (windowLeft + windowRight) / 2,
         windowTop - trackHeight / 2,
-        // In front of the deepest possible wave.
-        shutWaveWidth * MAX_DEPTH_RATIO * 1.6 + 1,
+        // In front of the deepest possible wave: the packed depth, plus the hem
+        // gain, plus the jitter, plus a margin.
+        shutWaveWidth * DEPTH_PACKED * (1 + HEM_DEPTH_GAIN) * 1.3 + 1,
       );
       track.renderOrder = 2;
       scene.add(track);
@@ -819,9 +891,22 @@ export default function Canvas2DCurtainRenderer({
     return () => {
       cancelled = true;
     };
-    // openness is deliberately absent — it drives applyOpenness below instead
-    // of a full rebuild. eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoUrl, canvasWidth, canvasHeight, tl, tr, br, bl, mount, colour, fabricType, curtainSize, hardwareColour]);
+    // The corner props are listed as eight NUMBERS, not as four objects.
+    //
+    // KlayConfigurator builds them as fresh object literals in its JSX, so their
+    // identity changes on every render — which meant this effect, the one that
+    // disposes the WebGL renderer and recompiles both shader programs, re-ran on
+    // every single frame of a slider drag. Keeping openness out of the list did
+    // nothing while the corners were pulling it in anyway. Depending on the
+    // values makes it fire when the trace actually moves.
+    //
+    // openness is absent on purpose: it drives applyOpenness below instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    photoUrl, canvasWidth, canvasHeight,
+    tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y,
+    mount, colour, fabricType, curtainSize, hardwareColour,
+  ]);
 
   useEffect(() => {
     applyOpenness(openness);

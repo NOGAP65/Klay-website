@@ -801,12 +801,71 @@ const drawPreFabricDepth = (ctx: CanvasRenderingContext2D, corners: Point[]) => 
  * ctx.filter, which is a real gaussian in one pass; where that is unsupported
  * it falls back to stacked offset draws, which approximates the same blur as
  * a box average at a few times the cost. */
+// The blurred photo, cached across frames.
+//
+// A full-canvas gaussian at the photo's own resolution is the single most
+// expensive operation in this renderer, and it was running inside every frame of
+// the roll animation — sixty times a second, on an image that can be 4000px
+// wide. Nothing about it depends on roll position: the blur is a function of the
+// photo and the radius only. So it is computed once per (photo, radius) and the
+// per-frame cost drops to one clipped drawImage.
+//
+// Keyed by radius to the nearest half pixel, and more than one entry, because a
+// scene with a sunscreen and a light filter needs two different radii in the
+// same frame and a single slot would thrash between them.
+const diffusionCache = new Map<number, HTMLCanvasElement>();
+let diffusionSource: CanvasImageSource | null = null;
+
+const diffusedPhoto = (
+  photo: CanvasImageSource,
+  W: number,
+  H: number,
+  radius: number,
+): HTMLCanvasElement | null => {
+  if (diffusionSource !== photo) {
+    diffusionCache.clear();
+    diffusionSource = photo;
+  }
+  const key = Math.round(radius * 2) / 2;
+  const cached = diffusionCache.get(key);
+  if (cached && cached.width === W && cached.height === H) return cached;
+
+  const canvas = cached ?? document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const bctx = canvas.getContext('2d');
+  if (!bctx) return null;
+
+  if (typeof bctx.filter === 'string') {
+    bctx.filter = `blur(${key.toFixed(1)}px)`;
+    bctx.drawImage(photo, 0, 0);
+    bctx.filter = 'none';
+  } else {
+    // Eight offsets on a ring, each at a low alpha — the accumulated average
+    // reads as a blur of roughly the same radius.
+    bctx.globalAlpha = 0.14;
+    for (let i = 0; i < 8; i++) {
+      const ang = (i / 8) * Math.PI * 2;
+      bctx.drawImage(photo, Math.cos(ang) * key, Math.sin(ang) * key);
+    }
+    bctx.globalAlpha = 1;
+  }
+
+  diffusionCache.set(key, canvas);
+  return canvas;
+};
+
 const drawBackgroundDiffusion = (
   ctx: CanvasRenderingContext2D,
   photo: CanvasImageSource,
+  W: number,
+  H: number,
   quad: Point[],
   radius: number,
 ) => {
+  const blurred = diffusedPhoto(photo, W, H, radius);
+  if (!blurred) return;
+
   const [a, b, c, d] = quad;
   ctx.save();
   ctx.beginPath();
@@ -816,22 +875,7 @@ const drawBackgroundDiffusion = (
   ctx.lineTo(d[0], d[1]);
   ctx.closePath();
   ctx.clip();
-
-  const supportsFilter = typeof ctx.filter === 'string';
-  if (supportsFilter) {
-    ctx.filter = `blur(${radius.toFixed(1)}px)`;
-    ctx.drawImage(photo, 0, 0);
-    ctx.filter = 'none';
-  } else {
-    // Eight offsets on a ring plus the centre, each at a low alpha — the
-    // accumulated average reads as a blur of roughly the same radius.
-    ctx.globalAlpha = 0.14;
-    for (let i = 0; i < 8; i++) {
-      const ang = (i / 8) * Math.PI * 2;
-      ctx.drawImage(photo, Math.cos(ang) * radius, Math.sin(ang) * radius);
-    }
-    ctx.globalAlpha = 1;
-  }
+  ctx.drawImage(blurred, 0, 0);
   ctx.restore();
 };
 
@@ -1972,9 +2016,9 @@ const drawBlindArea = (
     // wants the view almost sharp, a white one scatters it away. See
     // sunscreenDiffusionPx.
     if (type === 'sunscreen') {
-      drawBackgroundDiffusion(ctx, photo, fabricQuad, scaleToBlind(sunscreenDiffusionPx(fabricColor), avgW));
+      drawBackgroundDiffusion(ctx, photo, W, H, fabricQuad, scaleToBlind(sunscreenDiffusionPx(fabricColor), avgW));
     } else if (type === 'lightfilter') {
-      drawBackgroundDiffusion(ctx, photo, fabricQuad, scaleToBlind(14, avgW));
+      drawBackgroundDiffusion(ctx, photo, W, H, fabricQuad, scaleToBlind(14, avgW));
     }
 
     // --- DEPTH (pre-fabric) ---
@@ -2224,7 +2268,7 @@ const drawDualBlindArea = (
   // Diffusion before depth — it re-draws the untouched photo inside the quad,
   // so it has to run before anything else paints there. See drawBlindArea.
   if (showBlind) {
-    drawBackgroundDiffusion(ctx, photo, fabricQuad, scaleToBlind(sunscreenDiffusionPx(fabricColor), avgW));
+    drawBackgroundDiffusion(ctx, photo, W, H, fabricQuad, scaleToBlind(sunscreenDiffusionPx(fabricColor), avgW));
     drawPreFabricDepth(ctx, fabricQuad);
   }
 
@@ -3313,8 +3357,12 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
 
       const W = photo.naturalWidth;
       const H = photo.naturalHeight;
-      canvas.width = W;
-      canvas.height = H;
+      // Assigning width/height reallocates and clears the backing store even
+      // when the value is unchanged, which during a roll animation meant a fresh
+      // multi-megabyte buffer sixty times a second. The photo redraw below
+      // clears it anyway.
+      if (canvas.width !== W) canvas.width = W;
+      if (canvas.height !== H) canvas.height = H;
       ctx.drawImage(photo, 0, 0);
 
       if (!compareMode) {
