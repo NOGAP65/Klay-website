@@ -120,6 +120,26 @@ const HEM_SPLAY = 0.1;
 /** Extra wave depth at the hem, same reason. */
 const HEM_DEPTH_GAIN = 0.14;
 
+/** How far the hem rides up and down with fold depth, as a fraction of the fold's
+ * own depth — and the same at the heading, where it is much smaller.
+ *
+ * Without this the panels are boxes. The waves live purely in z, the camera looks
+ * straight down -z, so depth moved nothing on screen and the top and bottom edges
+ * came out as dead straight horizontal lines across a rippling surface. A real
+ * curtain's hem is scalloped: you are looking slightly DOWN at it, so the part of
+ * each wave that bulges toward the room sits lower in frame than the part that
+ * bows away, and the hem draws that out as a wave of its own.
+ *
+ * A true perspective camera would give this for free, but the orthographic one is
+ * what keeps the render locked to the traced window, so the depth cue is applied
+ * as a shear on y instead: a projection effect, which is what it is.
+ *
+ * Scaled off the reference render, where the hem's scallop measures about 17% of
+ * the wave pitch peak-to-peak against a fold depth of ~0.41 of pitch. A little
+ * over that here, since this is looked at much smaller than a 1535px still. */
+const HEM_DEPTH_SWING = 0.3;
+const HEADING_DEPTH_SWING = 0.06;
+
 /** Mesh resolution. Columns are per wave rather than per panel, so a wide
  * curtain gets more geometry instead of coarser waves.
  *
@@ -168,6 +188,31 @@ const HARDWARE_HEX: Record<string, string> = {
 };
 
 // --- Helpers ---------------------------------------------------------------
+
+// --- Sheer opacity -------------------------------------------------------
+
+/** A sheer is a veil, and how much of one depends on the colour it is woven in.
+ * A white sheer scatters the daylight coming through it forward into the room and
+ * hazes over into something you plainly see; a charcoal one absorbs that scatter
+ * and reads much more as a tint over the view. So the paler the colour, the more
+ * opaque it renders.
+ *
+ * The floor is what matters as much as the range: at 0.62 the previous fixed
+ * value the fabric was barely there against a bright window, and a curtain you
+ * cannot see is not a visualisation of a curtain. Even the darkest colour now
+ * covers most of what is behind it. */
+const SHEER_OPACITY_DARK = 0.72;
+const SHEER_OPACITY_LIGHT = 0.9;
+
+const sheerOpacity = (colour: string): number => {
+  const l = luma01(colour);
+  return SHEER_OPACITY_DARK + (SHEER_OPACITY_LIGHT - SHEER_OPACITY_DARK) * l;
+};
+
+function luma01(hex: string): number {
+  const { r, g, b } = hexToRgb(hex);
+  return (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+}
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const clean = hex.replace('#', '');
@@ -439,16 +484,25 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     const splay = 1 + HEM_SPLAY * vy * vy * overall;
     const deepen = 1 + HEM_DEPTH_GAIN * vy * vy;
 
+    // Depth read as height: forward of the track sits lower in frame, and more so
+    // the further down the drop you look. This is what scallops the hem instead of
+    // ruling a straight line under a rippling surface. See HEM_DEPTH_SWING.
+    const swing = HEADING_DEPTH_SWING + (HEM_DEPTH_SWING - HEADING_DEPTH_SWING) * vy;
+
     for (let c = 0; c <= cols; c++, v++) {
       const i3 = v * 3;
+      const z = colZ[c] * deepen;
       positions[i3] = wallX + towardCentre * colX[c] * splay;
-      positions[i3 + 1] = y;
-      positions[i3 + 2] = colZ[c] * deepen;
+      positions[i3 + 1] = y - z * swing;
+      positions[i3 + 2] = z;
       normals[i3] = colNx[c];
       normals[i3 + 1] = 0;
       normals[i3 + 2] = colNz[c];
       compression[v] = colComp[c];
       depth[v] = colZ[c] / maxDepth;
+      // The y shear tilts the surface slightly out of the x-z plane. Left out of
+      // the normal on purpose: at this magnitude it is a fraction of a degree,
+      // and carrying it would cost a normalise per vertex to change nothing.
     }
   }
 
@@ -487,8 +541,8 @@ uniform float uOpacity;
 uniform float uIsSheer;
 uniform sampler2D uTexture;
 uniform vec2 uTexRepeat;
-uniform float uTexMean;
 uniform float uTexAmount;
+uniform float uBump;
 
 varying vec3 vNormal;
 varying vec2 vUv;
@@ -502,14 +556,47 @@ void main() {
   vec3 N = normalize(vNormal);
   if (N.z < 0.0) N = -N;
 
-  // WEAVE. The selected colour is the fabric; the photo contributes only its
-  // deviation from its own mean luminance, so a white curtain stays white
-  // instead of picking up the texture photo's grey.
+  // THE CLOTH'S OWN SURFACE, from the sample photograph. RG are the surface
+  // slope along u and v, B is height as albedo. See buildDetailTexture.
   vec3 tex = texture2D(uTexture, vUv * uTexRepeat).rgb;
-  float luma = dot(tex, vec3(0.299, 0.587, 0.114));
-  float detail = clamp(luma - uTexMean, -0.5, 0.5);
-  vec3 colour = uColour * (1.0 + detail * uTexAmount)
-              + vec3(detail * uTexAmount * 0.10);
+  float slopeU = (tex.r - 0.5) * 2.0;
+  float slopeV = (tex.g - 0.5) * 2.0;
+  float relief = (tex.b - 0.5) * 2.0;
+
+  // Tilt the normal by that slope, rather than just darkening the colour with
+  // it. This is the whole difference between fabric and a flat panel: relief
+  // catches the room light, so the cloth's creases and slub light up on the side
+  // facing the window and fall away on the other, and they keep doing that as
+  // the fold they sit on turns. Painted on as luminance instead, the same data
+  // reads as dirt on a flat surface — which is exactly how it looked.
+  //
+  // v runs down the drop so its bitangent is world up, and u runs along the wave;
+  // for a surface whose normal lies in the x-z plane that tangent is exactly
+  // up x N, with no need to carry a tangent attribute.
+  //
+  // The geometric normal is kept as well. Relief belongs in the light REFLECTED
+  // off the cloth, not in the light coming THROUGH it: transmission depends on how
+  // far the light travels through the sheet, which is set by the fold the fabric
+  // is lying on and not by which thread it crossed on the way out. Feeding the
+  // bumped normal into the sheer's transmission made every thread flash
+  // independently and the fabric came out looking like crumpled foil.
+  vec3 geoN = N;
+  vec3 up = vec3(0.0, 1.0, 0.0);
+  vec3 tangent = normalize(cross(up, N));
+  N = normalize(N - (tangent * slopeU + up * slopeV) * uBump);
+
+  // The selected colour is the fabric; the photo contributes only its deviation
+  // from its own mean, so a white curtain stays white instead of picking up the
+  // sample's grey.
+  // Two terms, and the second is what keeps dark fabrics from going featureless.
+  // The multiplicative term is what makes the selected colour survive — the
+  // surface scales the colour rather than being mixed into it, so white stays
+  // white — but it scales toward zero as the colour darkens, and on black a 30%
+  // swing is a rounding error. The additive term is a fixed absolute swing that
+  // does not shrink with the base colour: imperceptible against a pale fabric,
+  // and carrying the entire surface on a charcoal or black one.
+  vec3 colour = uColour * (1.0 + relief * uTexAmount)
+              + vec3(relief * uTexAmount * 0.16);
 
   // KEY LIGHT from the room: front, above, a little to the left, matching the
   // rest of the visualiser. Half-Lambert rather than clamped n-dot-l — cloth
@@ -542,7 +629,7 @@ void main() {
   // and it goes dense. That contrast is the whole character of a sheer, and it
   // is why a sheer wave curtain reads as translucent even in a still.
   if (uIsSheer > 0.5) {
-    float facing = pow(max(N.z, 0.0), 1.7);
+    float facing = pow(max(geoN.z, 0.0), 1.7);
     vec3 glow = colour + vec3(0.20, 0.17, 0.10);
     colour = mix(colour * 0.82, glow, facing * (1.0 - vCompression * 0.45));
   }
@@ -619,16 +706,26 @@ const FABRIC_SAMPLE: Record<'blockout' | 'sheer', string> = {
 const DETAIL_SIZE = 512;
 
 /** Resolution the low frequencies are measured at, as a fraction of DETAIL_SIZE.
- * At 3/16 each cell is about 5px of the crop, so anything broader than ~11px is
- * treated as drape and removed and only finer structure survives as weave —
- * which is where the thread grid lives, at roughly 4px in these samples.
  *
- * The first attempt measured this far too coarsely. It cleared the big studio
- * gradients but left the mid-frequency creases, which then tiled as diagonal
- * streaks. The rule is that anything you could mistake for a fold has to go,
- * because we draw the folds ourselves; only what reads as thread may stay. */
-const DETAIL_LOW_FRACTION = 3 / 16;
+ * At 1/8 each cell is ~8px of the crop, so structure broader than about 16px is
+ * treated as studio lighting and removed while everything finer is KEPT as the
+ * cloth's own relief. Mapped onto a panel that works out around 27px on screen
+ * against a wave pitch of ~100px, so it reads as the surface of the fabric and
+ * never as a competing fold.
+ *
+ * This deliberately keeps far more of the photograph than the first pass did.
+ * That pass filtered down to bare thread level and threw the drape away with the
+ * lighting, which is why both fabrics came out as flat colour that looked nothing
+ * like the samples. The ups and downs in these photos are the point — they are
+ * what makes cloth look like cloth — and they are now used as RELIEF rather than
+ * as a luminance wash, which is what stops them fighting the wave geometry. See
+ * the normal packing below. */
+const DETAIL_LOW_FRACTION = 1 / 8;
 const DETAIL_LOW_SIZE = Math.round(DETAIL_SIZE * DETAIL_LOW_FRACTION);
+
+/** Standard deviation the packed slope channels are normalised to. Keeps the
+ * 8-bit range well used and makes uBump mean the same thing for any sample. */
+const SLOPE_TARGET_STD = 0.16;
 
 /** Standard deviation the detail map is normalised to, so uTexAmount means the
  * same thing whatever the sample photo's own contrast happens to be. Swap in a
@@ -643,7 +740,6 @@ const SAMPLE_CROP = 0.66;
 
 interface FabricTexture {
   texture: THREE.Texture;
-  meanLuma: number;
 }
 
 /** The square patch of a sample frame with the least large-scale structure in it.
@@ -772,8 +868,10 @@ function buildDetailTexture(path: string): Promise<FabricTexture> {
       return (a + (b - a) * tx) * (1 - ty) + (c + (d - c) * tx) * ty;
     };
 
-    // Detail = photo minus its own low frequencies.
-    const detail = new Float32Array(S * S);
+    // HEIGHT = photo minus its own low frequencies. What is left is the cloth's
+    // surface: its creases, its slub, its weave — the ups and downs the sample
+    // was photographed with, minus the studio's lighting.
+    const height = new Float32Array(S * S);
     let sum = 0;
     for (let y = 0; y < S; y++) {
       const fy = ((y + 0.5) / S) * L - 0.5;
@@ -781,32 +879,55 @@ function buildDetailTexture(path: string): Promise<FabricTexture> {
         const i = y * S + x;
         const luma = (src[i * 4] * 0.299 + src[i * 4 + 1] * 0.587 + src[i * 4 + 2] * 0.114) / 255;
         const d = luma - sampleLow(((x + 0.5) / S) * L - 0.5, fy);
-        detail[i] = d;
+        height[i] = d;
         sum += d;
       }
     }
     const mean = sum / (S * S);
     let variance = 0;
     for (let i = 0; i < S * S; i++) {
-      const d = detail[i] - mean;
+      const d = height[i] - mean;
       variance += d * d;
     }
     const std = Math.sqrt(variance / (S * S));
     const gain = Math.min(8, Math.max(0.2, DETAIL_TARGET_STD / Math.max(1e-5, std)));
+    for (let i = 0; i < S * S; i++) height[i] = (height[i] - mean) * gain;
 
-    // Written greyscale and centred on mid-grey: the shader reads luminance
-    // only, and the fabric's colour is the customer's choice, never the photo's.
+    // SLOPE. The relief is used by tilting the surface normal, not by darkening
+    // the colour, and that needs the height field's gradient. Central
+    // differences, wrapped, so the edges get a slope like everywhere else.
+    const gx = new Float32Array(S * S);
+    const gy = new Float32Array(S * S);
+    let slopeVar = 0;
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const i = y * S + x;
+        const xl = (x + S - 1) % S;
+        const xr = (x + 1) % S;
+        const yu = (y + S - 1) % S;
+        const yd = (y + 1) % S;
+        gx[i] = (height[y * S + xr] - height[y * S + xl]) * 0.5;
+        gy[i] = (height[yd * S + x] - height[yu * S + x]) * 0.5;
+        slopeVar += gx[i] * gx[i] + gy[i] * gy[i];
+      }
+    }
+    const slopeStd = Math.sqrt(slopeVar / (2 * S * S));
+    const slopeGain = Math.min(40, Math.max(0.5, SLOPE_TARGET_STD / Math.max(1e-6, slopeStd)));
+
+    // Packed: RG carry the surface slope along u and v, B carries the height as
+    // albedo variation. One fetch in the shader rather than three, which matters
+    // on the hardware this has to run on.
     const out = document.createElement('canvas');
     out.width = S;
     out.height = S;
     const octx = out.getContext('2d');
     if (!octx) throw new Error('2d context unavailable');
     const image = octx.createImageData(S, S);
+    const pack = (v: number) => Math.round(Math.min(255, Math.max(0, (v * 0.5 + 0.5) * 255)));
     for (let i = 0; i < S * S; i++) {
-      const v = Math.round(Math.min(255, Math.max(0, (0.5 + (detail[i] - mean) * gain) * 255)));
-      image.data[i * 4] = v;
-      image.data[i * 4 + 1] = v;
-      image.data[i * 4 + 2] = v;
+      image.data[i * 4] = pack(gx[i] * slopeGain);
+      image.data[i * 4 + 1] = pack(gy[i] * slopeGain);
+      image.data[i * 4 + 2] = pack(height[i]);
       image.data[i * 4 + 3] = 255;
     }
     octx.putImageData(image, 0, 0);
@@ -826,9 +947,7 @@ function buildDetailTexture(path: string): Promise<FabricTexture> {
     texture.generateMipmaps = false;
     texture.needsUpdate = true;
 
-    // Centred on 0.5 by construction, so the shader's subtraction leaves the
-    // weave and nothing else.
-    return { texture, meanLuma: 0.5 };
+    return { texture };
   })();
 
   textureCache.set(path, cached);
@@ -998,15 +1117,17 @@ export default function Canvas2DCurtainRenderer({
       }
       if (rendererRef.current) rendererRef.current.dispose();
 
-      // antialias off: MSAA on a buffer this size is one of the most expensive
-      // things you can ask of an integrated GPU, and it buys almost nothing here
-      // because the result is CSS-downscaled to the container anyway — that
-      // downscale is itself a resolve. The fabric has no hard edges against the
-      // photo either; the panel silhouette is the only one, and it is vertical.
+      // MSAA back on. It was turned off on the grounds that the only hard edge in
+      // the scene was the panel silhouette and that edge was vertical, so the CSS
+      // downscale could carry it. That stopped being true the moment the hem
+      // started following the fold depth: a shallow sloped edge is the worst case
+      // for aliasing, and the scallop came out as a hard sawtooth. Cheaper than
+      // supersampling the whole buffer to fix one edge, and the curtain path has
+      // the headroom for it.
       const renderer = new THREE.WebGLRenderer({
         canvas: threeCanvas,
         alpha: true,
-        antialias: false,
+        antialias: true,
         powerPreference: 'low-power',
       });
       renderer.setPixelRatio(1);
@@ -1032,17 +1153,19 @@ export default function Canvas2DCurtainRenderer({
         new THREE.ShaderMaterial({
           uniforms: {
             uColour: { value: colourVec },
-            uOpacity: { value: isSheer ? 0.62 : 1.0 },
+            uOpacity: { value: isSheer ? sheerOpacity(colour) : 1.0 },
             uIsSheer: { value: isSheer ? 1.0 : 0.0 },
             uTexture: { value: fabric.texture },
             uTexRepeat: { value: repeat },
-            uTexMean: { value: fabric.meanLuma },
-            // The sheer's open linen grid is its whole character and wants to be
-            // read; the blockout is a smooth sateen whose surface is nearly
-            // featureless, and pushing it harder only amplifies photo grain.
-            // Comparable numbers because the detail map is normalised — see
-            // DETAIL_TARGET_STD.
-            uTexAmount: { value: isSheer ? 1.0 : 0.6 },
+            // Albedo variation stays modest: the relief now carries the surface
+            // through the lighting, and doubling it up in the colour as well
+            // pushes the cloth back toward looking stained.
+            uTexAmount: { value: isSheer ? 0.34 : 0.35 },
+            // How hard the sample's relief tilts the normal. The sheer sits LOWER
+            // than the blockout despite having the more pronounced weave: a
+            // backlit veil is mostly transmitted light, so strong relief on top
+            // of it stops reading as thread and starts reading as glitter.
+            uBump: { value: isSheer ? 0.7 : 1.0 },
           },
           vertexShader: VERTEX_SHADER,
           fragmentShader: FRAGMENT_SHADER,
@@ -1142,11 +1265,14 @@ export default function Canvas2DCurtainRenderer({
     if (!materials.length || !renderer || !scene || !camera) return;
 
     const rgb = hexToRgb(colour);
+    const isSheer = fabricType === 'sheer';
     for (const material of materials) {
       (material.uniforms.uColour.value as THREE.Vector3).set(rgb.r / 255, rgb.g / 255, rgb.b / 255);
+      // A sheer's opacity is a function of its colour, so it has to move with it.
+      if (isSheer) material.uniforms.uOpacity.value = sheerOpacity(colour);
     }
     renderer.render(scene, camera);
-  }, [colour]);
+  }, [colour, fabricType]);
 
   useEffect(() => {
     return () => {
