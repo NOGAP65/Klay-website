@@ -160,13 +160,18 @@ const getTexturePath = (blindType: string): string => {
     // A dual roller is a blockout in front of a sunscreen; both come from the
     // real photos above via DUAL_FRONT_TEXTURE / DUAL_BACK_TEXTURE.
     case 'dual': return `${TEXTURE_ROOT}/Blockout/Blockout_fabric.png`;
-    // Curtains have no dedicated photography yet and keep the older weave
-    // scans under public/textures/. They are a different product line, not a
-    // roller blind, so they are unaffected by the roller texture swap.
+    // Curtains DO have dedicated photography now, and it lives with the rest of
+    // the sample library. These cases pointed at public/textures/, a directory
+    // that no longer exists — the generic weave scans in it were replaced by the
+    // real curtain samples. None of these blind types is reachable (the picker
+    // offers blockout, sunscreen, lightfilter and dual, and curtains render
+    // through Canvas2DCurtainRenderer, not this file) so nothing was visibly
+    // broken, but code pointing at deleted assets is a trap set for whoever
+    // wires one of them up next.
     case 'sheer':
-    case 'sheer-curtains': return '/textures/sheer_fabric.jpg';
-    case 'blockout-curtains-light': return '/textures/blockout_white.jpg';
-    case 'blockout-curtains-dark': return '/textures/blockout_charcoal.jpg';
+    case 'sheer-curtains': return `${TEXTURE_ROOT}/curtains/Sheer_curtains_1.png`;
+    case 'blockout-curtains-light':
+    case 'blockout-curtains-dark': return `${TEXTURE_ROOT}/curtains/Blockout_curtains_1.png`;
     default: return `${TEXTURE_ROOT}/Blockout/Blockout_fabric.png`;
   }
 };

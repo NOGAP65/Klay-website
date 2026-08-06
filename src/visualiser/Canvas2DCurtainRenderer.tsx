@@ -85,9 +85,10 @@ const WAVE_PITCH_MM = 160;
 const OPEN_STACK_FRACTION = 1 / 3;
 const WAVE_MIN_RATIO = OPEN_STACK_FRACTION;
 
-/** Fabric consumed by one wave, as a multiple of its shut pitch. Only sets the
- * weave density now — depth comes from the two constants below. */
-const FABRIC_ARC_RATIO = 1.42;
+// FABRIC_ARC_RATIO lived here: the fabric consumed by one wave as a multiple of
+// its shut pitch, 1.42. It fed the arc-length depth solver, and then only the
+// weave repeat once that solver was replaced by DEPTH_SHUT/DEPTH_PACKED. Now that
+// the weave covers each panel exactly once there is nothing left for it to set.
 
 /** Wave depth, as a multiple of the SHUT pitch: shut, and fully packed.
  *
@@ -139,8 +140,26 @@ const ROWS = 8;
  * capping the buffer costs nothing but sampling and changes no coordinates. */
 const RENDER_MAX_WIDTH = 1400;
 
-/** Fabric weave repeat, in mm of real fabric. */
-const WEAVE_TILE_MM = 340;
+// The detail map covers each panel EXACTLY ONCE — it is not tiled.
+//
+// Tiling was tried twice and both ways showed. Plain repeat puts a hard join at
+// every tile edge, because a high-passed photograph is not seamless. Mirrored
+// repeat has no join, but it does have a reflection axis, and linen slub is
+// directional enough that each axis read as a horizontal line ruled across the
+// curtain. Fitting one tile to the panel removes the whole class of problem:
+// there are no internal boundaries left to see.
+//
+// The cost is that the weave is magnified — 640 texels across ~850px of fabric,
+// so about 1.3x. That is a legibility choice anyway. At true scale a linen
+// thread is well under a tenth of a millimetre against a curtain a few hundred
+// pixels wide, so a physically-sized weave is invisible and every fabric
+// collapses into the same flat wash. Shown slightly magnified, the blockout's
+// sateen and the sheer's open linen actually look like different cloth.
+//
+// It also means the weave stretches with the window's aspect rather than staying
+// square. On the window shapes this gets — roughly square panels — that is a few
+// percent, and it degrades into softness rather than into an artifact.
+const WEAVE_REPEAT = 1;
 
 const HARDWARE_HEX: Record<string, string> = {
   white: '#E8E4DE',
@@ -156,11 +175,6 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const g = parseInt(clean.slice(2, 4), 16);
   const b = parseInt(clean.slice(4, 6), 16);
   return { r: isNaN(r) ? 200 : r, g: isNaN(g) ? 200 : g, b: isNaN(b) ? 200 : b };
-}
-
-function luma01(hex: string): number {
-  const { r, g, b } = hexToRgb(hex);
-  return (r * 0.299 + g * 0.587 + b * 0.114) / 255;
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -563,61 +577,261 @@ void main() {
 
 // --- Fabric textures ------------------------------------------------------
 
-/** Blockout picks a light or dark weave scan from the selected colour, the same
- * way the roller renderer does — a charcoal weave under a white curtain reads
- * as dirt, and a white one under charcoal disappears. */
-function texturePathFor(fabricType: string, colour: string): string {
-  if (fabricType === 'sheer') return '/textures/sheer_fabric.jpg';
-  return luma01(colour) > 0.55
-    ? '/textures/blockout_white.jpg'
-    : '/textures/blockout_charcoal.jpg';
-}
+// ---------------------------------------------------------------------------
+// FABRIC — the real sample photography
+//
+// From the sample library under public/images/Textures/curtains: the actual
+// cloth we sell, photographed. Two things have to be dealt with before a
+// draped studio photograph can be used as a tiling surface, and neither is
+// optional:
+//
+//   1. The photographs have their OWN folds and their own studio lighting —
+//      big soft diagonal gradients across the frame. Tiled onto our waves
+//      those gradients read as a second set of folds lying at the wrong
+//      angle, arguing with the geometry. They also make even a mirrored
+//      repeat obvious, because the eye picks up the patchwork of light and
+//      dark long before it notices a weave.
+//
+//   2. The library stamps a round badge into the top-right corner of every
+//      frame, which would tile across the curtain as a row of dark blobs.
+//
+// So the photo is not used directly. It is cropped clear of the badge and
+// then HIGH-PASSED: the low frequencies, which are the drape and the
+// lighting, are measured and subtracted, leaving only the weave — the thread
+// grid, the slub, the surface. That is precisely what the shader wants, since
+// it already treats the texture as a deviation to modulate the selected
+// colour rather than as colour in its own right. What survives is the
+// fabric's real surface character: the blockout's smooth sateen, the sheer's
+// open linen grid.
+// ---------------------------------------------------------------------------
+
+const FABRIC_SAMPLE: Record<'blockout' | 'sheer', string> = {
+  // CASE-SENSITIVE, and `curtains` is lowercase on disk. A Linux host serves
+  // /Curtains/ as a different URL that 404s, which is the worst failure shape
+  // there is — it only shows up after deploy.
+  blockout: '/images/Textures/curtains/Blockout_curtains_1.png',
+  sheer: '/images/Textures/curtains/Sheer_curtains_1.png',
+};
+
+/** Working size of the extracted detail map. Matched to the crop's own resolution
+ * — the samples are ~780px and the crop keeps ~510 of that — so thread detail is
+ * neither upscaled into softness nor thrown away. */
+const DETAIL_SIZE = 512;
+
+/** Resolution the low frequencies are measured at, as a fraction of DETAIL_SIZE.
+ * At 3/16 each cell is about 5px of the crop, so anything broader than ~11px is
+ * treated as drape and removed and only finer structure survives as weave —
+ * which is where the thread grid lives, at roughly 4px in these samples.
+ *
+ * The first attempt measured this far too coarsely. It cleared the big studio
+ * gradients but left the mid-frequency creases, which then tiled as diagonal
+ * streaks. The rule is that anything you could mistake for a fold has to go,
+ * because we draw the folds ourselves; only what reads as thread may stay. */
+const DETAIL_LOW_FRACTION = 3 / 16;
+const DETAIL_LOW_SIZE = Math.round(DETAIL_SIZE * DETAIL_LOW_FRACTION);
+
+/** Standard deviation the detail map is normalised to, so uTexAmount means the
+ * same thing whatever the sample photo's own contrast happens to be. Swap in a
+ * new fabric and it arrives at a comparable strength instead of needing the
+ * shader retuned. */
+const DETAIL_TARGET_STD = 0.055;
+
+/** Side of the crop, as a fraction of the frame's short edge. Two thirds rather
+ * than the whole frame: the crop position is chosen, not fixed, and it needs room
+ * to move. See pickFlattestCrop. */
+const SAMPLE_CROP = 0.66;
 
 interface FabricTexture {
   texture: THREE.Texture;
   meanLuma: number;
 }
 
+/** The square patch of a sample frame with the least large-scale structure in it.
+ *
+ * These are draped photographs, so some of the frame is near-flat cloth and some
+ * of it carries a hard crease. A crease is high-frequency ACROSS itself, so the
+ * high pass keeps it, and it ends up ruled diagonally across the curtain — which
+ * is exactly what happened when this cropped a fixed corner: the blockout
+ * sample's deepest folds sit in the bottom left, which is where it was looking.
+ *
+ * So score a grid of candidate positions by how much low-frequency variation each
+ * contains and take the calmest. Candidates overlapping the badge the sample
+ * library stamps into the top-right corner are rejected outright. This also means
+ * a new sample dropped into the folder gets a sensible crop without anyone having
+ * to go and find one by eye. */
+function pickFlattestCrop(img: HTMLImageElement): { sx: number; sy: number; side: number } {
+  const W = img.naturalWidth;
+  const H = img.naturalHeight;
+  const side = Math.min(W, H) * SAMPLE_CROP;
+  const fallback = { sx: 0, sy: H - side, side };
+
+  // Generous box around the badge — better to reject a usable crop than to tile
+  // a dark blob across the curtain.
+  const badgeLeft = W * 0.78;
+  const badgeBottom = H * 0.22;
+
+  const P = 16;
+  const probe = document.createElement('canvas');
+  probe.width = P;
+  probe.height = P;
+  const pctx = probe.getContext('2d');
+  if (!pctx) return fallback;
+
+  const STEPS = 4;
+  let best: { sx: number; sy: number; side: number } | null = null;
+  let bestScore = Infinity;
+  for (let iy = 0; iy < STEPS; iy++) {
+    for (let ix = 0; ix < STEPS; ix++) {
+      const sx = ((W - side) * ix) / (STEPS - 1);
+      const sy = ((H - side) * iy) / (STEPS - 1);
+      if (sx + side > badgeLeft && sy < badgeBottom) continue;
+
+      pctx.drawImage(img, sx, sy, side, side, 0, 0, P, P);
+      const d = pctx.getImageData(0, 0, P, P).data;
+      let mean = 0;
+      const luma = new Float32Array(P * P);
+      for (let i = 0; i < P * P; i++) {
+        luma[i] = (d[i * 4] * 0.299 + d[i * 4 + 1] * 0.587 + d[i * 4 + 2] * 0.114) / 255;
+        mean += luma[i];
+      }
+      mean /= P * P;
+      let score = 0;
+      for (let i = 0; i < P * P; i++) score += (luma[i] - mean) ** 2;
+      score /= P * P;
+
+      if (score < bestScore) {
+        bestScore = score;
+        best = { sx, sy, side };
+      }
+    }
+  }
+  return best ?? fallback;
+}
+
 const textureCache = new Map<string, Promise<FabricTexture>>();
 
-function loadFabricTexture(path: string): Promise<FabricTexture> {
+function buildDetailTexture(path: string): Promise<FabricTexture> {
   let cached = textureCache.get(path);
-  if (!cached) {
-    cached = (async () => {
-      const img = await loadImage(path);
-      // Mean luminance, measured once, so the shader can subtract it and leave
-      // only the weave. Sampled at 64x64 — this is an average, not a detail
-      // measurement, and the full-size read was the slowest part of a swap.
-      const S = 64;
-      const c = document.createElement('canvas');
-      c.width = S;
-      c.height = S;
-      let meanLuma = 0.5;
-      const ctx = c.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(img, 0, 0, S, S);
-        const d = ctx.getImageData(0, 0, S, S).data;
-        let sum = 0;
-        for (let i = 0; i < d.length; i += 4) {
-          sum += (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114) / 255;
-        }
-        meanLuma = sum / (d.length / 4);
+  if (cached) return cached;
+
+  cached = (async () => {
+    const img = await loadImage(path);
+    const S = DETAIL_SIZE;
+    const L = DETAIL_LOW_SIZE;
+
+    const { sx, sy, side } = pickFlattestCrop(img);
+
+    const sharp = document.createElement('canvas');
+    sharp.width = S;
+    sharp.height = S;
+    const sctx = sharp.getContext('2d');
+    if (!sctx) throw new Error('2d context unavailable');
+    sctx.drawImage(img, sx, sy, side, side, 0, 0, S, S);
+    const src = sctx.getImageData(0, 0, S, S).data;
+
+    // LOW PASS BY DOWNSCALE, not by blur. ctx.filter blur treats everything
+    // outside the bitmap as transparent and averages it in, so it haloes the
+    // border — subtracting that would ring a bright frame around every tile. A
+    // downscale is a box average with no boundary to get wrong. Two steps, since
+    // a single large reduction is where browsers start dropping samples rather
+    // than averaging them.
+    const step = L * 2;
+    const mid = document.createElement('canvas');
+    mid.width = step;
+    mid.height = step;
+    const mctx = mid.getContext('2d');
+    if (!mctx) throw new Error('2d context unavailable');
+    mctx.drawImage(sharp, 0, 0, S, S, 0, 0, step, step);
+
+    const lowCanvas = document.createElement('canvas');
+    lowCanvas.width = L;
+    lowCanvas.height = L;
+    const lctx = lowCanvas.getContext('2d');
+    if (!lctx) throw new Error('2d context unavailable');
+    lctx.drawImage(mid, 0, 0, step, step, 0, 0, L, L);
+    const lowData = lctx.getImageData(0, 0, L, L).data;
+
+    const low = new Float32Array(L * L);
+    for (let i = 0; i < L * L; i++) {
+      low[i] = (lowData[i * 4] * 0.299 + lowData[i * 4 + 1] * 0.587 + lowData[i * 4 + 2] * 0.114) / 255;
+    }
+
+    const sampleLow = (fx: number, fy: number): number => {
+      const x = Math.min(L - 1, Math.max(0, fx));
+      const y = Math.min(L - 1, Math.max(0, fy));
+      const x0 = Math.floor(x);
+      const y0 = Math.floor(y);
+      const x1 = Math.min(L - 1, x0 + 1);
+      const y1 = Math.min(L - 1, y0 + 1);
+      const tx = x - x0;
+      const ty = y - y0;
+      const a = low[y0 * L + x0];
+      const b = low[y0 * L + x1];
+      const c = low[y1 * L + x0];
+      const d = low[y1 * L + x1];
+      return (a + (b - a) * tx) * (1 - ty) + (c + (d - c) * tx) * ty;
+    };
+
+    // Detail = photo minus its own low frequencies.
+    const detail = new Float32Array(S * S);
+    let sum = 0;
+    for (let y = 0; y < S; y++) {
+      const fy = ((y + 0.5) / S) * L - 0.5;
+      for (let x = 0; x < S; x++) {
+        const i = y * S + x;
+        const luma = (src[i * 4] * 0.299 + src[i * 4 + 1] * 0.587 + src[i * 4 + 2] * 0.114) / 255;
+        const d = luma - sampleLow(((x + 0.5) / S) * L - 0.5, fy);
+        detail[i] = d;
+        sum += d;
       }
-      const texture = new THREE.Texture(img);
-      // Mirrored, not plain repeat. These weave scans are photographs and are
-      // not seamless, so a plain repeat laid a visible horizontal join across
-      // the drop at every tile boundary. Mirroring removes the join
-      // geometrically at the cost of a reflection no one can see in a weave.
-      texture.wrapS = THREE.MirroredRepeatWrapping;
-      texture.wrapT = THREE.MirroredRepeatWrapping;
-      texture.minFilter = THREE.LinearMipmapLinearFilter;
-      texture.magFilter = THREE.LinearFilter;
-      texture.generateMipmaps = true;
-      texture.needsUpdate = true;
-      return { texture, meanLuma };
-    })();
-    textureCache.set(path, cached);
-  }
+    }
+    const mean = sum / (S * S);
+    let variance = 0;
+    for (let i = 0; i < S * S; i++) {
+      const d = detail[i] - mean;
+      variance += d * d;
+    }
+    const std = Math.sqrt(variance / (S * S));
+    const gain = Math.min(8, Math.max(0.2, DETAIL_TARGET_STD / Math.max(1e-5, std)));
+
+    // Written greyscale and centred on mid-grey: the shader reads luminance
+    // only, and the fabric's colour is the customer's choice, never the photo's.
+    const out = document.createElement('canvas');
+    out.width = S;
+    out.height = S;
+    const octx = out.getContext('2d');
+    if (!octx) throw new Error('2d context unavailable');
+    const image = octx.createImageData(S, S);
+    for (let i = 0; i < S * S; i++) {
+      const v = Math.round(Math.min(255, Math.max(0, (0.5 + (detail[i] - mean) * gain) * 255)));
+      image.data[i * 4] = v;
+      image.data[i * 4 + 1] = v;
+      image.data[i * 4 + 2] = v;
+      image.data[i * 4 + 3] = 255;
+    }
+    octx.putImageData(image, 0, 0);
+
+    const texture = new THREE.CanvasTexture(out);
+    // Clamped, because the map covers each panel exactly once and never wraps —
+    // see WEAVE_REPEAT. Nothing samples outside 0..1, so the wrap mode is only
+    // here to make that explicit rather than leave a repeat mode implying tiling
+    // that does not happen.
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    // No mipmaps: the map is magnified, not minified, so a mip chain would never
+    // be sampled and generating it only costs memory and upload time. Without
+    // POT dimensions WebGL1 would refuse them anyway.
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false;
+    texture.needsUpdate = true;
+
+    // Centred on 0.5 by construction, so the shader's subtraction leaves the
+    // weave and nothing else.
+    return { texture, meanLuma: 0.5 };
+  })();
+
+  textureCache.set(path, cached);
   return cached;
 }
 
@@ -656,6 +870,7 @@ export default function Canvas2DCurtainRenderer({
   const cameraRef = useRef<THREE.OrthographicCamera | null>(null);
   const leftMeshRef = useRef<PanelMesh | null>(null);
   const rightMeshRef = useRef<PanelMesh | null>(null);
+  const materialsRef = useRef<THREE.ShaderMaterial[]>([]);
   const layoutRef = useRef<Layout | null>(null);
 
   // Openness animates at 60fps; everything else changes on a click. Keeping the
@@ -707,10 +922,9 @@ export default function Canvas2DCurtainRenderer({
       const threeCanvas = threeRef.current;
       if (!bgCanvas || !threeCanvas) return;
 
-      const texturePath = texturePathFor(fabricType, colour);
       const [photo, fabric] = await Promise.all([
         loadImage(photoUrl),
-        loadFabricTexture(texturePath),
+        buildDetailTexture(FABRIC_SAMPLE[fabricType] ?? FABRIC_SAMPLE.blockout),
       ]);
       if (cancelled) return;
 
@@ -812,14 +1026,7 @@ export default function Canvas2DCurtainRenderer({
       const colourVec = new THREE.Vector3(rgb.r / 255, rgb.g / 255, rgb.b / 255);
       const isSheer = fabricType === 'sheer';
 
-      // Weave repeats are set from the fabric's own length, so the weave stays
-      // the same physical size whatever the window measures.
-      const fabricWidthMm = (waveCount * shutWaveWidth * FABRIC_ARC_RATIO) / pxPerMm;
-      const dropMm = (windowTop - windowBottom) / pxPerMm;
-      const repeat = new THREE.Vector2(
-        Math.max(1, fabricWidthMm / WEAVE_TILE_MM),
-        Math.max(1, dropMm / WEAVE_TILE_MM),
-      );
+      const repeat = new THREE.Vector2(WEAVE_REPEAT, WEAVE_REPEAT);
 
       const makeMaterial = () =>
         new THREE.ShaderMaterial({
@@ -830,7 +1037,12 @@ export default function Canvas2DCurtainRenderer({
             uTexture: { value: fabric.texture },
             uTexRepeat: { value: repeat },
             uTexMean: { value: fabric.meanLuma },
-            uTexAmount: { value: isSheer ? 0.34 : 0.5 },
+            // The sheer's open linen grid is its whole character and wants to be
+            // read; the blockout is a smooth sateen whose surface is nearly
+            // featureless, and pushing it harder only amplifies photo grain.
+            // Comparable numbers because the detail map is normalised — see
+            // DETAIL_TARGET_STD.
+            uTexAmount: { value: isSheer ? 1.0 : 0.6 },
           },
           vertexShader: VERTEX_SHADER,
           fragmentShader: FRAGMENT_SHADER,
@@ -843,8 +1055,11 @@ export default function Canvas2DCurtainRenderer({
       // the positions below.
       const leftMesh = createPanelMesh(waveCount);
       const rightMesh = createPanelMesh(waveCount);
-      const leftPanel = new THREE.Mesh(leftMesh.geometry, makeMaterial());
-      const rightPanel = new THREE.Mesh(rightMesh.geometry, makeMaterial());
+      const leftMaterial = makeMaterial();
+      const rightMaterial = makeMaterial();
+      materialsRef.current = [leftMaterial, rightMaterial];
+      const leftPanel = new THREE.Mesh(leftMesh.geometry, leftMaterial);
+      const rightPanel = new THREE.Mesh(rightMesh.geometry, rightMaterial);
       leftPanel.frustumCulled = false;
       rightPanel.frustumCulled = false;
       leftPanel.renderOrder = 1;
@@ -900,18 +1115,38 @@ export default function Canvas2DCurtainRenderer({
     // nothing while the corners were pulling it in anyway. Depending on the
     // values makes it fire when the trace actually moves.
     //
-    // openness is absent on purpose: it drives applyOpenness below instead.
+    // openness and colour are absent on purpose — both are handled by the two
+    // effects below without touching the scene.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     photoUrl, canvasWidth, canvasHeight,
     tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y,
-    mount, colour, fabricType, curtainSize, hardwareColour,
+    mount, fabricType, curtainSize, hardwareColour,
   ]);
 
   useEffect(() => {
     applyOpenness(openness);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openness]);
+
+  // Colour is a uniform, not a rebuild. It used to be a setup dependency, back
+  // when the texture was picked from the colour's luminance — a light weave scan
+  // for pale fabrics, a dark one for deep ones. The detail map is greyscale and
+  // colour-independent now, so every swatch click was disposing the renderer and
+  // recompiling two shader programs to change three floats.
+  useEffect(() => {
+    const materials = materialsRef.current;
+    const renderer = rendererRef.current;
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    if (!materials.length || !renderer || !scene || !camera) return;
+
+    const rgb = hexToRgb(colour);
+    for (const material of materials) {
+      (material.uniforms.uColour.value as THREE.Vector3).set(rgb.r / 255, rgb.g / 255, rgb.b / 255);
+    }
+    renderer.render(scene, camera);
+  }, [colour]);
 
   useEffect(() => {
     return () => {
