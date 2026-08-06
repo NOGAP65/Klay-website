@@ -138,7 +138,13 @@ const HEM_DEPTH_GAIN = 0.14;
  * the wave pitch peak-to-peak against a fold depth of ~0.41 of pitch. A little
  * over that here, since this is looked at much smaller than a 1535px still. */
 const HEM_DEPTH_SWING = 0.3;
-const HEADING_DEPTH_SWING = 0.06;
+
+/** Zero at the heading, and for two reasons. The fabric is clipped to its
+ * carriers there, so it genuinely has nowhere to move — the swing is a projection
+ * effect that grows with distance below the camera's axis, and at the track there
+ * is none. And any swing at all lifted part of the heading above the track, which
+ * showed as a row of dark specks along its top edge. */
+const HEADING_DEPTH_SWING = 0;
 
 /** Mesh resolution. Columns are per wave rather than per panel, so a wide
  * curtain gets more geometry instead of coarser waves.
@@ -665,62 +671,58 @@ void main() {
 // --- Fabric textures ------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// FABRIC — the real sample photography
+// FABRIC — purpose-made flat swatches
 //
-// From the sample library under public/images/Textures/curtains: the actual
-// cloth we sell, photographed. Two things have to be dealt with before a
-// draped studio photograph can be used as a tiling surface, and neither is
-// optional:
+// These are shot (well, generated) to spec for this renderer: 1254px square,
+// the cloth flat and taut, lit dead even edge to edge, weave filling the
+// frame, no props and no watermark. That specification is the reason this
+// section is now short.
 //
-//   1. The photographs have their OWN folds and their own studio lighting —
-//      big soft diagonal gradients across the frame. Tiled onto our waves
-//      those gradients read as a second set of folds lying at the wrong
-//      angle, arguing with the geometry. They also make even a mirrored
-//      repeat obvious, because the eye picks up the patchwork of light and
-//      dark long before it notices a weave.
+// The samples it replaced were draped studio photographs, and nearly all the
+// machinery here existed to undo that: they carried their own folds and their
+// own lighting, which tiled onto our waves as a second set of creases lying
+// at the wrong angle, and a badge in one corner that tiled as a row of dark
+// blobs. Undoing it took a search for the frame's flattest patch, a crop that
+// dodged the badge, and a low pass aggressive enough to strip every crease —
+// which took most of the fabric's character with it and left something close
+// enough to flat colour that the two cloths were indistinguishable.
 //
-//   2. The library stamps a round badge into the top-right corner of every
-//      frame, which would tile across the curtain as a row of dark blobs.
-//
-// So the photo is not used directly. It is cropped clear of the badge and
-// then HIGH-PASSED: the low frequencies, which are the drape and the
-// lighting, are measured and subtracted, leaving only the weave — the thread
-// grid, the slub, the surface. That is precisely what the shader wants, since
-// it already treats the texture as a deviation to modulate the selected
-// colour rather than as colour in its own right. What survives is the
-// fabric's real surface character: the blockout's smooth sateen, the sheer's
-// open linen grid.
+// A flat swatch needs none of that. The whole frame is usable, and the low
+// pass only has to remove the swatch's overall level so the shader gets a
+// deviation rather than a colour. Everything else — thread grid, slub,
+// surface — is kept and used as relief.
 // ---------------------------------------------------------------------------
 
 const FABRIC_SAMPLE: Record<'blockout' | 'sheer', string> = {
-  // CASE-SENSITIVE, and `curtains` is lowercase on disk. A Linux host serves
-  // /Curtains/ as a different URL that 404s, which is the worst failure shape
-  // there is — it only shows up after deploy.
-  blockout: '/images/Textures/curtains/Blockout_curtains_1.png',
-  sheer: '/images/Textures/curtains/Sheer_curtains_1.png',
+  // CASE-SENSITIVE all the way down, and these two do not even agree with each
+  // other: `Blockout_produced` is capitalised and `sheer_produced` is not, and
+  // `curtains` is lowercase. A Linux host serves any other casing as a
+  // different URL that 404s, which is the worst failure shape there is — it
+  // only shows up after deploy. Match the filenames on disk exactly.
+  blockout: '/images/Textures/curtains/Blockout_produced.png',
+  sheer: '/images/Textures/curtains/sheer_produced.png',
 };
 
-/** Working size of the extracted detail map. Matched to the crop's own resolution
- * — the samples are ~780px and the crop keeps ~510 of that — so thread detail is
- * neither upscaled into softness nor thrown away. */
-const DETAIL_SIZE = 512;
+/** Working size of the extracted detail map. The swatches are 1254px square and
+ * the whole frame is usable, so 1024 is a mild downscale that keeps the weave
+ * resolved — the blockout's threads sit about 4px apart in the source, and at 512
+ * they landed on the Nyquist limit and half blurred away. */
+const DETAIL_SIZE = 1024;
 
 /** Resolution the low frequencies are measured at, as a fraction of DETAIL_SIZE.
  *
- * At 1/8 each cell is ~8px of the crop, so structure broader than about 16px is
- * treated as studio lighting and removed while everything finer is KEPT as the
- * cloth's own relief. Mapped onto a panel that works out around 27px on screen
- * against a wave pitch of ~100px, so it reads as the surface of the fabric and
- * never as a competing fold.
+ * Down to 1/32 now the swatches are flat: each cell is ~32px, so only structure
+ * broader than about 64px is removed. On an evenly lit swatch there is almost
+ * nothing at that scale to take out beyond the overall grey level, which is the
+ * one thing that does have to go — the shader wants a deviation to modulate the
+ * selected colour with, not a colour of its own.
  *
- * This deliberately keeps far more of the photograph than the first pass did.
- * That pass filtered down to bare thread level and threw the drape away with the
- * lighting, which is why both fabrics came out as flat colour that looked nothing
- * like the samples. The ups and downs in these photos are the point — they are
- * what makes cloth look like cloth — and they are now used as RELIEF rather than
- * as a luminance wash, which is what stops them fighting the wave geometry. See
- * the normal packing below. */
-const DETAIL_LOW_FRACTION = 1 / 8;
+ * Everything finer is kept and used as relief, which now includes the sheer's
+ * slub patches. Those are the fabric, and with one tile per panel they appear
+ * once rather than repeating, so they read as cloth varying across its width. The
+ * draped samples needed this eight times more aggressive purely to kill creases,
+ * and that took the character out with them. */
+const DETAIL_LOW_FRACTION = 1 / 32;
 const DETAIL_LOW_SIZE = Math.round(DETAIL_SIZE * DETAIL_LOW_FRACTION);
 
 /** Standard deviation the packed slope channels are normalised to. Keeps the
@@ -733,75 +735,16 @@ const SLOPE_TARGET_STD = 0.16;
  * shader retuned. */
 const DETAIL_TARGET_STD = 0.055;
 
-/** Side of the crop, as a fraction of the frame's short edge. Two thirds rather
- * than the whole frame: the crop position is chosen, not fixed, and it needs room
- * to move. See pickFlattestCrop. */
-const SAMPLE_CROP = 0.66;
+// SAMPLE_CROP and pickFlattestCrop lived here. The crop used to be two thirds of
+// the frame, positioned by scoring a grid of candidates for whichever patch had
+// the least large-scale structure in it — because a crease is high-frequency
+// across itself, survives any filter strong enough to keep the weave, and ends up
+// ruled diagonally across the curtain, so the only real answer was to not crop
+// one. On a flat swatch there is no crease to dodge and no badge to avoid, so the
+// crop is the whole frame and there is nothing to choose.
 
 interface FabricTexture {
   texture: THREE.Texture;
-}
-
-/** The square patch of a sample frame with the least large-scale structure in it.
- *
- * These are draped photographs, so some of the frame is near-flat cloth and some
- * of it carries a hard crease. A crease is high-frequency ACROSS itself, so the
- * high pass keeps it, and it ends up ruled diagonally across the curtain — which
- * is exactly what happened when this cropped a fixed corner: the blockout
- * sample's deepest folds sit in the bottom left, which is where it was looking.
- *
- * So score a grid of candidate positions by how much low-frequency variation each
- * contains and take the calmest. Candidates overlapping the badge the sample
- * library stamps into the top-right corner are rejected outright. This also means
- * a new sample dropped into the folder gets a sensible crop without anyone having
- * to go and find one by eye. */
-function pickFlattestCrop(img: HTMLImageElement): { sx: number; sy: number; side: number } {
-  const W = img.naturalWidth;
-  const H = img.naturalHeight;
-  const side = Math.min(W, H) * SAMPLE_CROP;
-  const fallback = { sx: 0, sy: H - side, side };
-
-  // Generous box around the badge — better to reject a usable crop than to tile
-  // a dark blob across the curtain.
-  const badgeLeft = W * 0.78;
-  const badgeBottom = H * 0.22;
-
-  const P = 16;
-  const probe = document.createElement('canvas');
-  probe.width = P;
-  probe.height = P;
-  const pctx = probe.getContext('2d');
-  if (!pctx) return fallback;
-
-  const STEPS = 4;
-  let best: { sx: number; sy: number; side: number } | null = null;
-  let bestScore = Infinity;
-  for (let iy = 0; iy < STEPS; iy++) {
-    for (let ix = 0; ix < STEPS; ix++) {
-      const sx = ((W - side) * ix) / (STEPS - 1);
-      const sy = ((H - side) * iy) / (STEPS - 1);
-      if (sx + side > badgeLeft && sy < badgeBottom) continue;
-
-      pctx.drawImage(img, sx, sy, side, side, 0, 0, P, P);
-      const d = pctx.getImageData(0, 0, P, P).data;
-      let mean = 0;
-      const luma = new Float32Array(P * P);
-      for (let i = 0; i < P * P; i++) {
-        luma[i] = (d[i * 4] * 0.299 + d[i * 4 + 1] * 0.587 + d[i * 4 + 2] * 0.114) / 255;
-        mean += luma[i];
-      }
-      mean /= P * P;
-      let score = 0;
-      for (let i = 0; i < P * P; i++) score += (luma[i] - mean) ** 2;
-      score /= P * P;
-
-      if (score < bestScore) {
-        bestScore = score;
-        best = { sx, sy, side };
-      }
-    }
-  }
-  return best ?? fallback;
 }
 
 const textureCache = new Map<string, Promise<FabricTexture>>();
@@ -815,7 +758,11 @@ function buildDetailTexture(path: string): Promise<FabricTexture> {
     const S = DETAIL_SIZE;
     const L = DETAIL_LOW_SIZE;
 
-    const { sx, sy, side } = pickFlattestCrop(img);
+    // The whole frame, squared off from the centre in case a future swatch is not
+    // square. These are, so this is a straight full-frame read.
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    const sx = (img.naturalWidth - side) / 2;
+    const sy = (img.naturalHeight - side) / 2;
 
     const sharp = document.createElement('canvas');
     sharp.width = S;

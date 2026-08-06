@@ -169,9 +169,9 @@ const getTexturePath = (blindType: string): string => {
     // broken, but code pointing at deleted assets is a trap set for whoever
     // wires one of them up next.
     case 'sheer':
-    case 'sheer-curtains': return `${TEXTURE_ROOT}/curtains/Sheer_curtains_1.png`;
+    case 'sheer-curtains': return `${TEXTURE_ROOT}/curtains/sheer_produced.png`;
     case 'blockout-curtains-light':
-    case 'blockout-curtains-dark': return `${TEXTURE_ROOT}/curtains/Blockout_curtains_1.png`;
+    case 'blockout-curtains-dark': return `${TEXTURE_ROOT}/curtains/Blockout_produced.png`;
     default: return `${TEXTURE_ROOT}/Blockout/Blockout_fabric.png`;
   }
 };
