@@ -68,12 +68,16 @@ void main() {
   float distFromOuter = uIsLeftPanel > 0.5 ? uv.x : (1.0 - uv.x);
 
   // Collapse amount based on distance from outer edge and openness
-  // Smooth transition zone of 0.3 for natural bunching
-  float collapseAmount = clamp(
-    (distFromOuter - (1.0 - uOpenness)) / 0.3,
+  // Wide transition zone (0.5) so compression bleeds across 1.5-2 folds
+  // This prevents the "collision" artifact at compression boundaries
+  float transitionWidth = 0.5;
+  float rawCollapse = clamp(
+    (distFromOuter - (1.0 - uOpenness)) / transitionWidth,
     0.0, 1.0
   );
-  collapseAmount = smoothstep(0.0, 1.0, collapseAmount);
+  // Double smoothstep for extra-smooth S-curve transition
+  // Prevents sudden jumps in fold depth at the boundary
+  float collapseAmount = smoothstep(0.0, 1.0, smoothstep(0.0, 1.0, rawCollapse));
   vLocalCollapse = collapseAmount;
 
   // Compressed folds: higher frequency, LOWER amplitude
