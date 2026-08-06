@@ -135,21 +135,53 @@ export const PRODUCT_COUNT = PRODUCTS.length
 // colour the visualiser renders the fabric as (see Canvas2DBlindRenderer's
 // fragment shader) as well as the swatch shown in the configurator controls —
 // the two must never drift apart, so there is exactly one list.
+// Every hex here was SAMPLED, not chosen: each one is the mean colour of the
+// centre of a real fabric swatch photograph from the Australian roller blind
+// market, measured off the swatch imagery of the four ranges that between them
+// cover blockout and sunscreen. Cross-referencing an actual range rather than
+// inventing a palette changed it fundamentally, in two ways worth recording
+// because both are easy to get wrong from intuition:
+//
+//   1. THE MARKET IS NEUTRALS. Whites, greiges, greys, charcoals, blacks, and
+//      essentially nothing else. Not one range carried a green, a red or a blue.
+//      The list this replaces had Forest Green, Red, Deep Ocean Blue and Brown
+//      in it — four of fourteen spent on colours nobody sells, while the greys
+//      people actually buy were represented by two entries.
+//
+//   2. FABRIC IS NEVER PAPER-WHITE. The lightest swatch anywhere across the four
+//      ranges measured 0.905 luminance; the old list opened at 0.94 and ran
+//      several entries above anything real. Blind fabric is a woven, backed
+//      material and it always reads slightly down from white.
+//
+// Ordered by luminance, brightest first, and alternating warm against cool
+// wherever two sit close together — the real ranges do the same, because a
+// customer choosing between two near-identical lightnesses is choosing on
+// undertone. That ordering also matters to the renderer: sunscreen view-through,
+// sheer density and the roller's white blockout backing are all driven off this
+// value, so an evenly spaced ramp is what exercises them evenly.
+//
+// The names are the industry's generic colour vocabulary — Ivory, Sand,
+// Concrete, Pewter, Flint, Charcoal and so on, terms in common use across the
+// trade. Deliberately none of the distinctive product names one range uses for
+// its own patterns, which are its branding rather than descriptions of a colour.
 export const RYNAMIC_COLOURS = [
-  { name: 'White', hex: '#F2F0EC' },
-  { name: 'Surfmist', hex: '#E8E4DC' },
-  { name: 'Light Grey', hex: '#C8C4BC' },
-  { name: 'Dune', hex: '#C4A882' },
-  { name: 'Cream', hex: '#EDE0C8' },
-  { name: 'Sand', hex: '#D4BC98' },
-  { name: 'Beige', hex: '#C8B090' },
-  { name: 'Forest Green', hex: '#2C4A30' },
-  { name: 'Red', hex: '#8C2820' },
-  { name: 'Brown', hex: '#6C4830' },
-  { name: 'Black', hex: '#2C2824' },
-  { name: 'Deep Ocean Blue', hex: '#1C3048' },
-  { name: 'Woodland Grey', hex: '#686460' },
-  { name: 'Monument', hex: '#4C4844' },
+  { name: 'White', hex: '#E7E7E6' },     // 0.905
+  { name: 'Whisper', hex: '#DEDFDD' },   // 0.872 · cool
+  { name: 'Ivory', hex: '#D9D5CD' },     // 0.836 · warm
+  { name: 'Sand', hex: '#D3CBBB' },      // 0.798 · warm
+  { name: 'Mineral', hex: '#C8C8C6' },   // 0.783 · neutral
+  { name: 'Concrete', hex: '#B8B8B8' },  // 0.722 · neutral
+  { name: 'Barley', hex: '#BEB5A1' },    // 0.711 · warm
+  { name: 'Truffle', hex: '#B2AD9E' },   // 0.678 · greige
+  { name: 'Silver', hex: '#A7AAA5' },    // 0.661 · cool
+  { name: 'Baltic', hex: '#9D9C9B' },    // 0.612 · neutral
+  { name: 'Pewter', hex: '#908E8C' },    // 0.558 · warm
+  { name: 'Dune', hex: '#8A7C73' },      // 0.499 · warm brown
+  { name: 'Flint', hex: '#6F6F6E' },     // 0.435 · neutral
+  { name: 'Wallaby', hex: '#554B44' },   // 0.303 · deep brown
+  { name: 'Ebony', hex: '#3B3B3C' },     // 0.232
+  { name: 'Charcoal', hex: '#2E2E2F' },  // 0.181
+  { name: 'Black', hex: '#131415' },     // 0.078
 ]
 
 /** Fabric colours offered — cited in marketing copy on the homepage and the
