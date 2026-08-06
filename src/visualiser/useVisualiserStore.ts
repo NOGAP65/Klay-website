@@ -24,8 +24,11 @@ export type ProductCategory = 'blind' | 'curtain';
 export type CurtainType = 'blockout' | 'sheer';
 export type CurtainOperation = 'manual' | 'motorised';
 export type CurtainMount = 'ceiling' | 'window';
-export type CurtainFold = 'boxpleat' | 'pencilpleat' | 'pinchpleat' | 'sfold';
 export type CurtainSize = 'small' | 'medium' | 'large' | 'xl';
+
+// The heading used to be a choice of four (box, pencil, pinch, S-fold). The
+// range is wave fold only, so there is nothing to choose and no `curtainFold`
+// state: Canvas2DCurtainRenderer draws wave folds and knows no other kind.
 
 const CURTAIN_BASE_PRICES: Record<CurtainSize, number> = {
   small: 320,
@@ -49,7 +52,6 @@ interface VisualiserStore {
   curtainType: CurtainType;
   curtainOperation: CurtainOperation;
   curtainMount: CurtainMount;
-  curtainFold: CurtainFold;
   curtainSize: CurtainSize;
   curtainOpenness: number;
 
@@ -80,7 +82,6 @@ interface VisualiserStore {
   setCurtainType: (type: CurtainType) => void;
   setCurtainOperation: (op: CurtainOperation) => void;
   setCurtainMount: (mount: CurtainMount) => void;
-  setCurtainFold: (fold: CurtainFold) => void;
   setCurtainSize: (size: CurtainSize) => void;
   setCurtainOpenness: (openness: number) => void;
   setPhotoUrl: (url: string | null) => void;
@@ -106,7 +107,6 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   curtainType: 'sheer',
   curtainOperation: 'manual',
   curtainMount: 'ceiling',
-  curtainFold: 'sfold',
   curtainSize: 'medium',
   curtainOpenness: 0,
   photoUrl: null,
@@ -156,7 +156,6 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   setCurtainType: (type) => set({ curtainType: type }),
   setCurtainOperation: (op) => set({ curtainOperation: op }),
   setCurtainMount: (mount) => set({ curtainMount: mount }),
-  setCurtainFold: (fold) => set({ curtainFold: fold }),
   setCurtainSize: (size) => set({ curtainSize: size }),
   setCurtainOpenness: (openness) => set({ curtainOpenness: openness }),
   setPhotoUrl: (url) => set({ photoUrl: url }),

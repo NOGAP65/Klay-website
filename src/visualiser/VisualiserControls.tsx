@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { tokens } from '../theme';
 import { HARDWARE_HEX, HARDWARE_OPTIONS, RYNAMIC_COLOURS } from '../data/products';
-import { useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainFold, CurtainSize } from './useVisualiserStore';
+import { useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
   lockedRange?: string; // if passed, hides the blind type row — customer can only configure this type
@@ -50,13 +50,6 @@ const CURTAIN_OPERATION_OPTIONS: { id: CurtainOperation; label: string }[] = [
 const CURTAIN_MOUNT_OPTIONS: { id: CurtainMount; label: string }[] = [
   { id: 'ceiling', label: 'Ceiling Mount' },
   { id: 'window', label: 'Window Mount' },
-];
-
-const CURTAIN_FOLD_OPTIONS: { id: CurtainFold; label: string }[] = [
-  { id: 'boxpleat', label: 'Box Pleat' },
-  { id: 'pencilpleat', label: 'Pencil Pleat' },
-  { id: 'pinchpleat', label: 'Pinch Pleat' },
-  { id: 'sfold', label: 'S-Fold' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -311,16 +304,12 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               </div>
             </Field>
 
-            <Field label="Fold">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {CURTAIN_FOLD_OPTIONS.map(f => (
-                  <Pill
-                    key={f.id}
-                    label={f.label}
-                    active={store.curtainFold === f.id}
-                    onClick={() => store.setCurtainFold(f.id)}
-                  />
-                ))}
+            {/* Heading is not a choice — the range is wave fold only. Stated
+                rather than dropped, because it is a spec the customer is
+                buying and its absence would read as an omission. */}
+            <Field label="Heading">
+              <div style={{ fontFamily: tokens.body, fontSize: 11.5, color: tokens.inkSoft }}>
+                Wave fold — one wave every 160mm of track
               </div>
             </Field>
           </div>

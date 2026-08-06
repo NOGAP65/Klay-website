@@ -483,7 +483,6 @@ export default function KlayConfigurator({
     curtainType: store.curtainType,
     curtainOperation: store.curtainOperation,
     curtainMount: store.curtainMount,
-    curtainFold: store.curtainFold,
   }));
 
   // The default window's pins are seeded in an effect, but these states are
@@ -676,7 +675,7 @@ export default function KlayConfigurator({
               br={{ x: confirmedArea.corners[2][0], y: confirmedArea.corners[2][1] }}
               bl={{ x: confirmedArea.corners[3][0], y: confirmedArea.corners[3][1] }}
               fabricType={store.curtainType}
-              foldType={store.curtainFold}
+              curtainSize={store.curtainSize}
               hardwareColour={store.hardwareColour}
               mount={store.curtainMount}
               colour={store.getFabricColor()}
