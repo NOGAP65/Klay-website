@@ -675,7 +675,6 @@ export default function KlayConfigurator({
               br={{ x: confirmedArea.corners[2][0], y: confirmedArea.corners[2][1] }}
               bl={{ x: confirmedArea.corners[3][0], y: confirmedArea.corners[3][1] }}
               fabricType={store.curtainType}
-              curtainSize={store.curtainSize}
               hardwareColour={store.hardwareColour}
               mount={store.curtainMount}
               colour={store.getFabricColor()}

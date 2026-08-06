@@ -37,8 +37,6 @@ interface Point {
   y: number;
 }
 
-type CurtainSize = 'small' | 'medium' | 'large' | 'xl';
-
 interface Canvas2DCurtainRendererProps {
   tl: Point;
   tr: Point;
@@ -50,8 +48,6 @@ interface Canvas2DCurtainRendererProps {
   colour: string;
   /** 0 = shut (panels meet at the centre), 1 = fully drawn back. */
   openness: number;
-  /** Drives the real-world mm scale, and through it the wave count. */
-  curtainSize: CurtainSize;
   canvasWidth: number;
   canvasHeight: number;
   photoUrl: string;
@@ -59,23 +55,32 @@ interface Canvas2DCurtainRendererProps {
 
 // --- The physical spec -----------------------------------------------------
 
-/** Nominal track width per size option, in mm. These are the same figures the
- * size pills quote to the customer ("up to 1.8m"), and they are what gives this
- * renderer a real-world scale: wave COUNT has to come from a width in
- * millimetres, not from however many pixels across the traced window happens to
- * be. A phone photo and the default room photo of the same window must produce
- * the same number of waves. */
-const TRACK_WIDTH_MM: Record<CurtainSize, number> = {
-  small: 1200,
-  medium: 1800,
-  large: 2400,
-  xl: 3000,
-};
+/** Waves per panel. FIXED, on every window.
+ *
+ * This used to be derived from the ordered track width — a table of mm per size
+ * pill, divided by the heading tape's snap spacing — which is how a real curtain
+ * is quoted and gave a small window fewer waves than a large one. Correct on
+ * paper, wrong on screen: at four waves a small window read as two bulges rather
+ * than as a wave curtain, and the whole point of the visualiser is that the
+ * customer recognises the product. Nine is the count the largest size produced,
+ * it looks right at every window, so every window gets it.
+ *
+ * A whole number, always, and the mesh spans exactly this many full sine periods
+ * — so a panel opens and closes on a complete wave and never on half of one.
+ * There is no path here that can produce a fractional wave: the compression front
+ * moves the wave WIDTHS and never the count. */
+const WAVES_PER_PANEL = 9;
 
-/** One wave per 160mm of track. Wave heading tape carries a snap every 80mm at
- * the standard 80% fullness, and one wave — a crest and the trough beside it —
- * spans two snaps. So a 2100mm track carries ~13 waves, ~6-7 per panel, which
- * is what the reference photography shows. */
+/** One wave per 160mm of track: heading tape carries a snap every 80mm at the
+ * standard 80% fullness, and one wave — a crest and the trough beside it — spans
+ * two snaps.
+ *
+ * No longer sets the wave count. It is now the renderer's only link to real-world
+ * scale, working the other way round: the panel shows WAVES_PER_PANEL waves, each
+ * wave is 160mm of track, so the panel is 9 x 160mm of cloth however many pixels
+ * wide it happens to be, and one pixel is therefore a known number of
+ * millimetres. The cloth physics needs that — a pendulum's period depends on its
+ * length in metres, not in pixels. */
 const WAVE_PITCH_MM = 160;
 
 /** Stacked, both panels together occupy a third of the track. A shut panel is
@@ -146,6 +151,185 @@ const HEM_DEPTH_SWING = 0.3;
  * showed as a row of dark specks along its top edge. */
 const HEADING_DEPTH_SWING = 0;
 
+// ---------------------------------------------------------------------------
+// CLOTH PHYSICS — the hem does not go where the carriers go
+//
+// Only the heading is attached to anything. The carriers are pulled along the
+// track and the rest of the panel follows late, because it has mass and because
+// it has to push air out of the way. So the hem trails behind while you draw the
+// curtain, overshoots when you stop, swings back, and settles. That overshoot is
+// the single most recognisable thing a curtain does, and without it a panel reads
+// as a picture of a curtain being slid sideways.
+//
+// Modelled as a damped harmonic oscillator, which is what a hanging sheet is, in
+// the non-inertial frame of the moving heading:
+//
+//     s'' + 2ζω s' + ω² s = -(a_track + k_air · v_track)
+//
+// where s is how far the hem lags the heading. Two drive terms, and both are
+// needed for different reasons:
+//
+//   - a_track (inertia). Zero at constant speed, large at the start and end of a
+//     drag. This is what produces the FLICK: stop the carriers and the hem is
+//     still moving, so it swings past and comes back.
+//
+//   - k_air · v_track (air resistance). Constant at constant speed, which is what
+//     holds the hem in a steady trailing lean for as long as you keep dragging.
+//     Inertia alone cannot do that — a pendulum under constant velocity hangs
+//     straight down, and the panel would snap to vertical mid-drag.
+//
+// Both drives scale with how hard the curtain is pulled, so the response is
+// automatically paced by the user: a slow drag leans a little and settles almost
+// invisibly, a fast one leans hard and swings twice before it stops. Nothing here
+// is keyed to a fixed animation duration.
+// ---------------------------------------------------------------------------
+
+const GRAVITY = 9.81; // m/s²
+
+/** Fundamental frequency of a hanging chain of length L is 1.2024·sqrt(g/L) —
+ * the first zero of J₀ over two — and a curtain panel is close enough to one for
+ * that to be the right starting point. It comes out slow, though: a 2.9m drop
+ * gives a 2.8 second period, which reads as a rope in a swimming pool rather than
+ * as cloth.
+ *
+ * Scaled up because a curtain is not a chain. It has bending stiffness across its
+ * width, the wave heading couples every fold to its neighbours, and the fabric is
+ * light enough that air does most of the work — all of which raise the apparent
+ * frequency well above the ideal limp-chain mode. Tuned by eye against a real
+ * curtain: about a 1.3 second period on a full-height drop, which is what a hem
+ * settling actually looks like. */
+const SWAY_FREQ_SCALE = 2.2;
+
+/** Damping ratio. Underdamped, so there IS a visible overshoot and a swing back —
+ * that is the whole point. Around a third gives roughly two diminishing swings
+ * before it settles, which is what cloth does; much less and it wobbles like
+ * jelly, much more and the flick is swallowed. */
+const SWAY_DAMPING = 0.3;
+
+/** Air resistance, 1/s. Sets the steady lean while the curtain is being pulled at
+ * a constant speed. */
+const SWAY_AIR = 1.8;
+
+/** Fraction of the heading's acceleration the hem actually feels. Well under 1
+ * because the panel is a distributed sheet, not a bob on a string: most of its
+ * mass sits nearer the top, where the motion is imposed rather than free. Without
+ * this the peak of an eased drag drives a lag wider than the wave pitch. */
+const SWAY_ACCEL_GAIN = 0.35;
+
+/** Ceiling on the lag, as a fraction of one shut wave pitch. Cloth runs out of
+ * slack; past that it would have to stretch. Also stops a violent slider flick
+ * from shearing the mesh into something that is not a curtain.
+ *
+ * 1.2 pitches is about 190mm of trail at the hem on a full-height drop, which is
+ * what a briskly drawn curtain actually does. The ratio is scale-invariant against
+ * the stacked panel — a fully open panel is three pitches wide, so the lag can
+ * never exceed 40% of it whatever the window measures, which is the number that
+ * decides whether a shoved stack squashes plausibly or collapses. */
+const SWAY_MAX_RATIO = 1.2;
+
+/** How the lag grows down the drop. Superlinear, so the top third barely moves
+ * and the hem carries almost all of it — the heading is clamped to its carriers
+ * and the free length below it is what swings. */
+const SWAY_SHAPE_POWER = 1.7;
+
+/** How much the waves billow when the panel is moving. Air trapped in front of a
+ * moving curtain has to go somewhere, and it deepens the folds. Small: this is a
+ * supporting cue, and overdone it looks like the curtain is breathing. */
+const SWAY_BILLOW = 0.18;
+
+/** Below these the cloth is at rest and the animation loop stops, so a settled
+ * curtain costs nothing. Both have to be met — a hem at zero offset travelling at
+ * speed is mid-swing, not settled. */
+const SETTLED_OFFSET_PX = 0.04;
+const SETTLED_SPEED_PX = 0.4;
+
+/** Longest frame the solver will integrate in one step. A backgrounded tab hands
+ * back a multi-second delta on return, and feeding that to the integrator makes
+ * the oscillator explode. Clamping loses a little real time on a stall, which is
+ * invisible, instead of throwing the panel across the room. */
+const MAX_STEP = 1 / 20;
+
+/** One panel's cloth state. Lag is measured along the panel, positive meaning the
+ * hem is further from the wall than the heading — i.e. trailing when opening. */
+interface SwayState {
+  /** Lag in px at the hem. */
+  offset: number;
+  /** Rate of change of that lag, px/s. */
+  speed: number;
+  /** Leading-edge position last frame, px from the wall. */
+  lastSpan: number;
+  /** Leading-edge velocity last frame, px/s — differenced for acceleration. */
+  lastVelocity: number;
+}
+
+const newSwayState = (span: number): SwayState => ({
+  offset: 0,
+  speed: 0,
+  lastSpan: span,
+  lastVelocity: 0,
+});
+
+/** Advances the cloth one step and returns the lag to draw with.
+ *
+ * Semi-implicit Euler: the new velocity is used to move the position. Costs
+ * nothing over explicit Euler and is stable for an oscillator at frame-rate
+ * steps, where plain Euler gains energy and slowly winds itself up. */
+function stepSway(
+  state: SwayState,
+  span: number,
+  dt: number,
+  omega: number,
+  maxOffset: number,
+  /** Distance from the leading edge to the shut position — i.e. to the centre of
+   * the window, where the other panel is. */
+  roomToCentre: number,
+): number {
+  if (dt <= 0) {
+    state.lastSpan = span;
+    return state.offset;
+  }
+
+  const velocity = (span - state.lastSpan) / dt;
+  const accel = (velocity - state.lastVelocity) / dt;
+  state.lastSpan = span;
+  state.lastVelocity = velocity;
+
+  const drive = -(accel * SWAY_ACCEL_GAIN + velocity * SWAY_AIR);
+  const restore = -omega * omega * state.offset;
+  const damp = -2 * SWAY_DAMPING * omega * state.speed;
+
+  state.speed += (restore + damp + drive) * dt;
+  state.offset += state.speed * dt;
+
+  // Two different limits, because the two directions run out of room for
+  // different reasons.
+  //
+  // Toward the centre, the OTHER PANEL is in the way. Without this a curtain
+  // closed briskly overshoots at the moment the panels meet and the two hems swing
+  // straight through each other — the one artifact in this whole model that reads
+  // as broken rather than as cloth. Real leading edges collide and stop, so the
+  // limit is whatever gap is actually left, which falls to zero exactly as the
+  // curtain shuts.
+  //
+  // Away from the centre it is the fabric itself: past a point the cloth would
+  // have to stretch.
+  const maxOut = Math.min(maxOffset, Math.max(0, roomToCentre));
+  if (state.offset > maxOut) {
+    state.offset = maxOut;
+    // Kill the velocity with it. Cloth that has run out of slack, or met the other
+    // panel, does not keep accelerating — it comes up taut.
+    if (state.speed > 0) state.speed = 0;
+  } else if (state.offset < -maxOffset) {
+    state.offset = -maxOffset;
+    if (state.speed < 0) state.speed = 0;
+  }
+
+  return state.offset;
+}
+
+const swaySettled = (state: SwayState): boolean =>
+  Math.abs(state.offset) < SETTLED_OFFSET_PX && Math.abs(state.speed) < SETTLED_SPEED_PX;
+
 /** Mesh resolution. Columns are per wave rather than per panel, so a wide
  * curtain gets more geometry instead of coarser waves.
  *
@@ -207,8 +391,8 @@ const HARDWARE_HEX: Record<string, string> = {
  * value the fabric was barely there against a bright window, and a curtain you
  * cannot see is not a visualisation of a curtain. Even the darkest colour now
  * covers most of what is behind it. */
-const SHEER_OPACITY_DARK = 0.72;
-const SHEER_OPACITY_LIGHT = 0.9;
+const SHEER_OPACITY_DARK = 0.82;
+const SHEER_OPACITY_LIGHT = 0.95;
 
 const sheerOpacity = (colour: string): number => {
   const l = luma01(colour);
@@ -411,6 +595,8 @@ interface PanelWrite {
   towardCentre: 1 | -1;
   topY: number;
   bottomY: number;
+  /** Hem lag from the cloth solver, px along the panel. See stepSway. */
+  sway?: number;
 }
 
 /** Rewrites one panel's vertex data for a new openness.
@@ -422,7 +608,7 @@ interface PanelWrite {
  * per COLUMN and copied down, which is ROWS times less work than per vertex, and
  * needs no cross products at all. */
 function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
-  const { layout, wallX, towardCentre, topY, bottomY } = w;
+  const { layout, wallX, towardCentre, topY, bottomY, sway = 0 } = w;
   const { widths, depths, compressions, span, overall } = layout;
   const { positions, normals, compression, depth, cols, count } = mesh;
   const height = topY - bottomY;
@@ -430,6 +616,11 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
 
   let maxDepth = 1e-6;
   for (let i = 0; i < count; i++) if (depths[i] > maxDepth) maxDepth = depths[i];
+
+  // Guarded: a fully stacked panel's span is small but never zero, and dividing
+  // the lag by it is what distributes the lag along the panel.
+  const spanForLag = Math.max(1e-6, span);
+  const billow = SWAY_BILLOW * Math.min(1, Math.abs(sway) / Math.max(1e-6, widths[0]));
 
   // Per-column values, computed once and reused down every row.
   const colX = new Float64Array(cols + 1);
@@ -488,17 +679,27 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     // Only a compressed panel splays: at openness 0 this is 1 and the two panels
     // meet cleanly at the centre instead of overlapping.
     const splay = 1 + HEM_SPLAY * vy * vy * overall;
-    const deepen = 1 + HEM_DEPTH_GAIN * vy * vy;
+    // Billow: air trapped in front of a moving panel deepens the folds, and it
+    // does so lowest down where the cloth is freest.
+    const deepen = 1 + HEM_DEPTH_GAIN * vy * vy + billow * vy;
 
     // Depth read as height: forward of the track sits lower in frame, and more so
     // the further down the drop you look. This is what scallops the hem instead of
     // ruling a straight line under a rippling surface. See HEM_DEPTH_SWING.
     const swing = HEADING_DEPTH_SWING + (HEM_DEPTH_SWING - HEADING_DEPTH_SWING) * vy;
 
+    // The lag at this height. Zero at the heading, since that is bolted to the
+    // carriers, growing superlinearly to the full value at the hem.
+    const lagAtRow = sway * Math.pow(vy, SWAY_SHAPE_POWER);
+
     for (let c = 0; c <= cols; c++, v++) {
       const i3 = v * 3;
       const z = colZ[c] * deepen;
-      positions[i3] = wallX + towardCentre * colX[c] * splay;
+      // Scaled by how far along the panel this column sits, because that is how
+      // much it is actually being moved: the wall end is stacked and stationary
+      // however hard the leading edge is pulled, so it has nothing to lag behind.
+      const lag = lagAtRow * (colX[c] / spanForLag);
+      positions[i3] = wallX + towardCentre * (colX[c] * splay + lag);
       positions[i3 + 1] = y - z * swing;
       positions[i3 + 2] = z;
       normals[i3] = colNx[c];
@@ -602,45 +803,69 @@ void main() {
   // does not shrink with the base colour: imperceptible against a pale fabric,
   // and carrying the entire surface on a charcoal or black one.
   vec3 colour = uColour * (1.0 + relief * uTexAmount)
-              + vec3(relief * uTexAmount * 0.16);
+              + vec3(relief * uTexAmount * 0.12);
 
-  // KEY LIGHT from the room: front, above, a little to the left, matching the
-  // rest of the visualiser. Half-Lambert rather than clamped n-dot-l — cloth
-  // scatters light around its own curvature and a hard terminator on a fold
-  // reads as plastic.
+  // --- LIGHTING -------------------------------------------------------------
+  //
+  // Deliberately narrow. Everything below used to run about three times the
+  // contrast it does now, and the result read as heavy grey shadow painted into
+  // the folds rather than as a lit surface — a curtain photographed with one hard
+  // lamp in a black room. A real curtain lives in a bright interior: light arrives
+  // from the window behind it, off the ceiling, off the floor, off the opposite
+  // wall, so the darkest part of a fold is only modestly darker than the lightest.
+  // The fold shape has to be carried by WHERE the tone changes, not by how far.
+
+  // Room light: front, above, a little to the left, matching the rest of the
+  // visualiser. Half-Lambert rather than clamped n-dot-l — cloth scatters light
+  // around its own curvature and a hard terminator on a fold reads as plastic.
+  // The exponent is near 1 now; raising it sharpened the terminator, which is the
+  // opposite of what a soft interior does.
   vec3 L = normalize(vec3(-0.40, 0.32, 0.86));
   float wrap = dot(N, L) * 0.5 + 0.5;
-  float shade = mix(0.60, 1.14, pow(wrap, 1.35));
+  float shade = mix(0.80, 1.06, pow(wrap, 1.1));
 
-  // Self-shadowing in the troughs. A trough faces away from the room and sees
-  // less of it, and the effect is stronger once the waves are packed together
-  // and start occluding each other.
-  float trough = max(0.0, -vDepth);
-  shade *= 1.0 - trough * mix(0.10, 0.26, vCompression);
+  // Occlusion in the concave side of a fold, which sees less of the room than the
+  // crest does. This is the one cue worth spending contrast on, because it is what
+  // actually describes the fold, so it survives while the broad ramp above gives
+  // way. Stronger once the waves pack together and start shading each other.
+  float cavity = max(0.0, -vDepth);
+  shade *= 1.0 - cavity * mix(0.05, 0.14, vCompression);
 
-  // Packed fabric is denser and darker — more layers, less light through and
-  // around it.
-  shade *= mix(1.0, 0.88, vCompression);
+  // Packed fabric is denser — more layers, less light through and around it.
+  shade *= mix(1.0, 0.95, vCompression);
 
-  // The hem sits further from the light and picks up floor bounce rather than
-  // window light.
+  // The hem picks up floor bounce rather than window light, so it sits a shade
+  // below the heading. Barely there on purpose: overdone it reads as the curtain
+  // fading out at the bottom.
   float drop = 1.0 - vUv.y;
-  shade *= 1.0 - drop * drop * 0.10;
+  shade *= 1.0 - drop * drop * 0.05;
 
   colour *= shade;
 
-  // SHEER. Backlit by the window, so brightness is governed by how far the
-  // light travels through the cloth: where the surface faces the camera the
-  // path is shortest and it glows, and where it turns edge-on the path is long
-  // and it goes dense. That contrast is the whole character of a sheer, and it
-  // is why a sheer wave curtain reads as translucent even in a still.
+  float alpha = uOpacity;
+
+  // SHEER. Backlit by the window, so brightness is governed by how far the light
+  // travels through the cloth: where the surface faces the camera the path is
+  // shortest and it glows, and where it turns edge-on the path is long and it goes
+  // dense. That contrast is the whole character of a sheer.
   if (uIsSheer > 0.5) {
-    float facing = pow(max(geoN.z, 0.0), 1.7);
-    vec3 glow = colour + vec3(0.20, 0.17, 0.10);
-    colour = mix(colour * 0.82, glow, facing * (1.0 - vCompression * 0.45));
+    float facing = pow(max(geoN.z, 0.0), 1.5);
+    vec3 glow = colour + vec3(0.13, 0.11, 0.06);
+    colour = mix(colour * 0.90, glow, facing * (1.0 - vCompression * 0.4));
+
+    // TRANSPARENCY FROM THE WEAVE ITSELF, which is the honest way to draw a sheer:
+    // it is not a uniformly hazy sheet, it is an open cloth, and what you see
+    // through it is the gaps between its threads. So the slub reads as slightly
+    // more solid and the open weave as slightly clearer, from the same relief
+    // channel the lighting uses. A flat alpha is what made it look like tinted
+    // glass rather than fabric.
+    alpha *= clamp(1.0 + relief * 0.30, 0.80, 1.10);
+
+    // Packed fabric is layer upon layer, and stacks up nearly solid at the ends.
+    alpha = mix(alpha, min(1.0, alpha + 0.14), vCompression);
   }
 
-  gl_FragColor = vec4(colour, uOpacity);
+  gl_FragColor = vec4(colour, clamp(alpha, 0.0, 1.0));
 }
 `;
 
@@ -912,7 +1137,15 @@ interface Layout {
   waveCount: number;
   /** One wave's width with the curtain shut, px. */
   shutWaveWidth: number;
-  pxPerMm: number;
+  /** Natural frequency of the hem's swing, rad/s. From the drop in METRES, which
+   * is why the renderer needs a physical scale at all. */
+  omega: number;
+  /** Ceiling on the hem's lag, px. */
+  maxSway: number;
+  /** One panel's width with the curtain shut, px — the centre line, as far as the
+   * leading edge can ever travel. The cloth solver clamps against it so two
+   * closing hems cannot swing through each other. */
+  shutPanelWidth: number;
 }
 
 export default function Canvas2DCurtainRenderer({
@@ -922,7 +1155,6 @@ export default function Canvas2DCurtainRenderer({
   mount,
   colour,
   openness,
-  curtainSize,
   canvasWidth,
   canvasHeight,
   photoUrl,
@@ -946,9 +1178,17 @@ export default function Canvas2DCurtainRenderer({
   const opennessRef = useRef(openness);
   opennessRef.current = openness;
 
-  /** Repositions both panels for an openness and repaints. Writes into buffers
-   * allocated once at setup — see createPanelMesh. */
-  const applyOpenness = (open: number) => {
+  // One cloth state serves both panels. They are mirror images pulled at the same
+  // rate, so their spans and therefore their dynamics are identical in panel-local
+  // coordinates; only the anchor and the direction differ, and both of those are
+  // applied at draw time.
+  const swayRef = useRef<SwayState | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number>(0);
+
+  /** Repositions both panels and repaints. Writes into buffers allocated once at
+   * setup — see createPanelMesh. */
+  const draw = (open: number, sway: number) => {
     const layout = layoutRef.current;
     const left = leftMeshRef.current;
     const right = rightMeshRef.current;
@@ -958,8 +1198,7 @@ export default function Canvas2DCurtainRenderer({
     if (!layout || !left || !right || !renderer || !scene || !camera) return;
 
     const { windowLeft, windowRight, windowTop, windowBottom, waveCount, shutWaveWidth } = layout;
-    // One layout serves both panels — they are mirror images, so the wave widths
-    // are identical and only the anchor and direction differ.
+    // One layout serves both panels — the wave widths are identical.
     const shaped = panelLayout(waveCount, shutWaveWidth, open);
 
     writePanelMesh(left, {
@@ -968,6 +1207,7 @@ export default function Canvas2DCurtainRenderer({
       towardCentre: 1,
       topY: windowTop,
       bottomY: windowBottom,
+      sway,
     });
     writePanelMesh(right, {
       layout: shaped,
@@ -975,9 +1215,71 @@ export default function Canvas2DCurtainRenderer({
       towardCentre: -1,
       topY: windowTop,
       bottomY: windowBottom,
+      sway,
     });
 
     renderer.render(scene, camera);
+  };
+
+  /** Runs the cloth solver until the hem is still.
+   *
+   * A frame loop rather than a redraw per openness change, because the cloth
+   * outlives the input: the interesting part of a curtain's motion is the swing
+   * AFTER you stop dragging, and a renderer that only repaints when its props
+   * change can never show it. The loop starts on any openness change and stops
+   * itself once the panel is settled, so a curtain standing still costs nothing —
+   * which is the whole reason the geometry writes are in-place. */
+  const runSolver = () => {
+    if (frameRef.current !== null) return; // already running
+
+    const tick = (now: number) => {
+      frameRef.current = null;
+      const layout = layoutRef.current;
+      const sway = swayRef.current;
+      if (!layout || !sway) return;
+
+      const dt = Math.min(MAX_STEP, Math.max(0, (now - lastTimeRef.current) / 1000));
+      lastTimeRef.current = now;
+
+      const open = opennessRef.current;
+      // The solver is driven by the leading edge's real position, not by openness
+      // directly: openness is a 0..1 control value, and the compression curve
+      // between it and the fabric is not linear. Physics has to see the pixels the
+      // cloth is actually being moved through.
+      const span = panelLayout(layout.waveCount, layout.shutWaveWidth, open).span;
+      const offset = stepSway(
+        sway, span, dt, layout.omega, layout.maxSway,
+        layout.shutPanelWidth - span,
+      );
+      draw(open, offset);
+
+      // Keep going while the cloth is moving OR the input still is. The input test
+      // is on the velocity the solver just recorded, not on a span comparison —
+      // stepSway has already overwritten lastSpan by this point, so differencing
+      // it here would always read zero. It matters for a slow drag, where the lag
+      // can pass through zero between frames and would otherwise look settled
+      // mid-motion.
+      const inputMoving = Math.abs(sway.lastVelocity) > 1e-3;
+      if (!swaySettled(sway) || inputMoving) {
+        frameRef.current = requestAnimationFrame(tick);
+      } else {
+        // Land exactly at rest so a settled panel is bit-identical frame to frame
+        // and never leaves a sub-pixel shimmer behind.
+        sway.offset = 0;
+        sway.speed = 0;
+        draw(open, 0);
+      }
+    };
+
+    lastTimeRef.current = performance.now();
+    frameRef.current = requestAnimationFrame(tick);
+  };
+
+  const stopSolver = () => {
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
   };
 
   useEffect(() => {
@@ -1025,19 +1327,23 @@ export default function Canvas2DCurtainRenderer({
 
       void mount;
 
-      // WAVE COUNT — from the ordered track width in mm, then held. Rounded to
-      // a whole wave per panel because half a wave cannot be sewn, and floored
-      // at 3 so a small window still reads as a wave curtain rather than as two
-      // bulges.
-      const trackWidthMm = TRACK_WIDTH_MM[curtainSize] ?? 1800;
-      const pxPerMm = windowWidth / trackWidthMm;
-      const waveCount = Math.max(3, Math.round(trackWidthMm / 2 / WAVE_PITCH_MM));
+      // WAVE COUNT — the same on every window. See WAVES_PER_PANEL.
+      const waveCount = WAVES_PER_PANEL;
 
       // Panels meet at the centre with a hairline between them, so a shut pair
       // reads as two panels rather than one sheet.
       const gap = windowWidth * 0.004;
       const shutPanelWidth = (windowWidth - gap) / 2;
       const shutWaveWidth = shutPanelWidth / waveCount;
+
+      // PHYSICAL SCALE, backwards out of the wave pitch. Each wave is 160mm of
+      // track whatever the window measures, so one wave's width in pixels IS the
+      // conversion — and the drop follows from the traced window's aspect. The
+      // cloth solver needs metres: a pendulum's period comes from its length, and
+      // a tall curtain has to swing more slowly than a short one.
+      const pxPerMm = shutWaveWidth / WAVE_PITCH_MM;
+      const dropMetres = Math.max(0.3, (windowTop - windowBottom) / pxPerMm / 1000);
+      const omega = SWAY_FREQ_SCALE * 1.2024 * Math.sqrt(GRAVITY / dropMetres);
 
       layoutRef.current = {
         windowLeft,
@@ -1046,8 +1352,16 @@ export default function Canvas2DCurtainRenderer({
         windowBottom,
         waveCount,
         shutWaveWidth,
-        pxPerMm,
+        omega,
+        maxSway: shutWaveWidth * SWAY_MAX_RATIO,
+        shutPanelWidth,
       };
+
+      // The cloth starts at rest, wherever the panel happens to be — a fresh trace
+      // or a photo swap is not a curtain being yanked.
+      swayRef.current = newSwayState(
+        panelLayout(waveCount, shutWaveWidth, opennessRef.current).span,
+      );
 
       // Tear down anything from a previous run before building again.
       if (sceneRef.current) {
@@ -1107,12 +1421,16 @@ export default function Canvas2DCurtainRenderer({
             // Albedo variation stays modest: the relief now carries the surface
             // through the lighting, and doubling it up in the colour as well
             // pushes the cloth back toward looking stained.
-            uTexAmount: { value: isSheer ? 0.34 : 0.35 },
-            // How hard the sample's relief tilts the normal. The sheer sits LOWER
-            // than the blockout despite having the more pronounced weave: a
-            // backlit veil is mostly transmitted light, so strong relief on top
-            // of it stops reading as thread and starts reading as glitter.
-            uBump: { value: isSheer ? 0.7 : 1.0 },
+            uTexAmount: { value: isSheer ? 0.30 : 0.32 },
+            // How hard the sample's relief tilts the normal — and therefore how
+            // much the cloth glints. Pulled down from 0.7/1.0: a steep normal
+            // tilt on every thread catches the light like a sheen, which is what
+            // was making the fabric look faintly satin. Enough to read the weave
+            // as a surface, not enough to make it shine. The sheer sits lower
+            // again despite the more pronounced weave, because a backlit veil is
+            // mostly transmitted light and relief on top of that reads as
+            // glitter rather than as thread.
+            uBump: { value: isSheer ? 0.45 : 0.6 },
           },
           vertexShader: VERTEX_SHADER,
           fragmentShader: FRAGMENT_SHADER,
@@ -1168,13 +1486,14 @@ export default function Canvas2DCurtainRenderer({
       track.renderOrder = 2;
       scene.add(track);
 
-      applyOpenness(opennessRef.current);
+      draw(opennessRef.current, 0);
     };
 
     init();
 
     return () => {
       cancelled = true;
+      stopSolver();
     };
     // The corner props are listed as eight NUMBERS, not as four objects.
     //
@@ -1191,11 +1510,14 @@ export default function Canvas2DCurtainRenderer({
   }, [
     photoUrl, canvasWidth, canvasHeight,
     tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y,
-    mount, fabricType, curtainSize, hardwareColour,
+    mount, fabricType, hardwareColour,
   ]);
 
+  // Openness kicks the solver rather than drawing. The solver reads the live
+  // openness off its ref every frame and keeps running past the last prop change,
+  // which is what lets the hem finish its swing after the input stops.
   useEffect(() => {
-    applyOpenness(openness);
+    runSolver();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openness]);
 
@@ -1223,6 +1545,9 @@ export default function Canvas2DCurtainRenderer({
 
   useEffect(() => {
     return () => {
+      // The solver holds a rAF handle and touches the renderer, so it has to stop
+      // before anything it draws into is disposed.
+      stopSolver();
       if (sceneRef.current) {
         sceneRef.current.traverse(obj => {
           const mesh = obj as THREE.Mesh;
@@ -1236,6 +1561,7 @@ export default function Canvas2DCurtainRenderer({
       }
       if (rendererRef.current) rendererRef.current.dispose();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
