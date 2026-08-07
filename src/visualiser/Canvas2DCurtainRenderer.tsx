@@ -914,10 +914,24 @@ const RUNNER_PITCH_MM = 80;
 /** Bracket centres, mm. 600mm is the maximum the manufacturers specify. */
 const BRACKET_PITCH_MM = 600;
 
-/** How far a face-fixed track hangs below its fixing line, as a multiple of the
- * track's own height. Wall brackets exist to hold the track off the wall, and the
- * gap they leave is the whole visual difference between the two mounts. */
-const BRACKET_DROP = 1.15;
+/** How far a face-fixed track hangs below its fixing line, in mm.
+ *
+ * A face bracket screws to the wall above the opening and the track clamps into
+ * its lower end, so the track sits roughly 34mm below the screws — about twice
+ * the 16mm face. That gap is the entire visual difference between the two
+ * mounts, so it has to survive the same 2.4x oversize the profile gets;
+ * expressed as a bare multiple of the track height it does not.
+ *
+ * It was 1.15x the track height, which left a visible gap of 0.15x — around two
+ * pixels. The brackets and their wall shadow were being drawn correctly and then
+ * almost entirely covered by the track itself, so the Ceiling/Window control
+ * looked like it still did nothing. */
+const BRACKET_GAP_MM = 34;
+
+/** Bracket plate width, mm. Oversized with the profile rather than left at true
+ * scale — it is a size, not a spacing, so at 1:1 it renders as a thread. The
+ * 600mm pitch above stays real, per the note on TRACK_OVERSIZE. */
+const BRACKET_PLATE_MM = 26;
 
 const TRACK_VERTEX_SHADER = `
 varying vec2 vUv;
@@ -940,50 +954,87 @@ varying vec2 vUv;
 
 void main() {
   float y = vUv.y;          // 1 at the top of the extrusion
-  float shade;
 
-  if (y > 0.86) {
-    // TOP CHAMFER — faces the ceiling, so it takes the most light and is what
-    // makes the track read as having a top surface at all.
-    shade = 1.06;
-  } else if (y > 0.36) {
-    // FRONT FACE. Falls away downward, gently: a flat anodised face, not a tube.
-    // The old strip ramped hard over its whole height, which is exactly what a
-    // cylinder does and is why it looked like a roller.
-    shade = mix(0.84, 1.0, (y - 0.36) / 0.5);
-  } else if (y > 0.27) {
+  // Two separate terms, and the split is the whole point.
+  //
+  // NOTE: no backticks anywhere in this file's GLSL — the shaders live in JS
+  // template literals, so one would end the string and break the build.
+  //
+  // diffuse is the anodising or paint. It MULTIPLIES the hardware colour, so it
+  // carries the hue — but multiplying is all the old shader did, and that is why
+  // only the white track worked. On #2C2824 black the entire 0.4-1.06 range
+  // collapses into near-black: channel, chamfers and gliders all landed within a
+  // few levels of each other and the profile read as a flat sticker.
+  //
+  // spec is the sheen, and it is ADDED, not multiplied — so it does not care how
+  // dark the base is. That is physically how a dark anodised extrusion stays
+  // legible in a real room: you read its shape from the light it throws back at
+  // you, not from parts of it getting darker.
+  float diffuse;
+  float spec;
+
+  if (y > 0.88) {
+    // TOP CHAMFER — faces the ceiling, takes the most light, and is what makes
+    // the track read as having a top surface at all.
+    diffuse = 0.98; spec = 0.45;
+  } else if (y > 0.40) {
+    // FRONT FACE. Falls away downward, gently: a flat face, not a tube. The
+    // original ramped hard over its whole height, which is what a cylinder does
+    // and is why it looked like a roller.
+    float t = (y - 0.40) / 0.48;
+    diffuse = mix(0.86, 1.0, t);
+    spec = 0.10 + 0.16 * t;
+  } else if (y > 0.29) {
     // LOWER CHAMFER — turns down and forward, catching a little floor bounce.
-    shade = 0.9;
+    diffuse = 0.92; spec = 0.22;
   } else {
-    // CHANNEL. Recessed, so it is the darkest part of the profile by a long way.
-    // This is the single feature that separates a track from a bar.
-    shade = 0.4;
+    // CHANNEL. Recessed, so much the darkest part of the profile. This is the
+    // single feature that separates a track from a bar.
+    diffuse = 0.42; spec = 0.02;
   }
 
-  // Chrome is a rolled metal surface rather than a painted one: a hard bright
-  // band where it mirrors the ceiling, a dark one where it mirrors the room.
+  // CHROME mirrors the room, and that is the only thing that distinguishes it
+  // from grey paint. Read down the face: ceiling (bright), the horizon line
+  // where wall meets ceiling (dark), then floor bounce (dim). The previous
+  // single sine over the whole height just banded the bar.
   if (uIsChrome > 0.5) {
-    shade *= 1.0 + 0.22 * sin((y - 0.2) * 6.0);
+    float sky     = smoothstep(0.62, 0.96, y);
+    float horizon = 1.0 - smoothstep(0.0, 0.09, abs(y - 0.58));
+    float bounce  = smoothstep(0.42, 0.30, y);
+    diffuse *= 1.0 - 0.34 * horizon;
+    spec += 0.85 * sky + 0.20 * bounce;
   }
 
-  // GLIDERS in the channel. Rounded, slightly proud of the slot, and lit from
-  // above like everything else. They are what the fabric actually hangs from, and
-  // at this spacing they also read as the reason the waves are where they are.
-  if (y <= 0.27) {
+  // GLIDERS in the channel — what the fabric actually hangs from, and at this
+  // spacing also the reason the waves fall where they do.
+  if (y <= 0.29) {
     float u = vUv.x / max(uRunnerPitch, 1e-5);
     float d = abs(fract(u) - 0.5) * 2.0;     // 0 at a glider's centre
-    float bead = 1.0 - smoothstep(0.15, 0.55, d);
-    // Brighter on the bead's upper half, so each one reads as a small round body
-    // rather than as a painted dash.
-    float lift = mix(0.72, 1.02, smoothstep(0.02, 0.24, y));
-    shade = mix(shade, lift, bead);
+    // A dome, not the old hard-edged dash — that read as a stitched seam.
+    float bead = 1.0 - smoothstep(0.10, 0.62, d);
+    // Falls off vertically too, so each one is a bead sitting in the slot
+    // rather than a full-height bar filling it.
+    float vy = smoothstep(0.02, 0.26, y) * (1.0 - smoothstep(0.20, 0.29, y));
+    bead *= clamp(vy * 1.6, 0.0, 1.0);
+    diffuse = mix(diffuse, 0.86, bead);
+    // A small highlight on each crown, so the runners read on dark hardware too.
+    spec += bead * (1.0 - smoothstep(0.0, 0.34, d)) * 0.42;
   }
 
-  // The slot's own opening along the very bottom edge — a dark hairline, which is
-  // what you actually see of a channel from the front.
-  shade *= 1.0 - (1.0 - smoothstep(0.0, 0.05, y)) * 0.45;
+  // The slot's own opening along the very bottom edge — a dark hairline, which
+  // is what you actually see of a channel from the front.
+  float slot = 1.0 - smoothstep(0.0, 0.055, y);
+  diffuse *= 1.0 - slot * 0.5;
+  spec *= 1.0 - slot;
 
-  gl_FragColor = vec4(uColour * shade, 1.0);
+  // Painted white hardware is matte; anodised black and polished chrome are not.
+  // Scaling the specular by how light the base already is keeps a white track
+  // from clipping to a blown-out bar, while letting a black one read fully.
+  float lum = dot(uColour, vec3(0.299, 0.587, 0.114));
+  float specGain = mix(1.0, 0.28, smoothstep(0.25, 0.85, lum));
+
+  vec3 col = uColour * diffuse + vec3(spec * specGain);
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }
 `;
 
@@ -994,10 +1045,19 @@ precision mediump float;
 uniform vec3 uColour;
 varying vec2 vUv;
 void main() {
-  float shade = mix(0.78, 1.02, smoothstep(0.0, 0.85, vUv.y));
+  // Same diffuse + additive-specular split as the extrusion, for the same
+  // reason: a purely multiplicative cap vanishes on dark hardware, and then the
+  // track appears to run off through the wall again.
+  float diffuse = mix(0.78, 1.0, smoothstep(0.0, 0.85, vUv.y));
+  float spec = 0.30 * smoothstep(0.45, 1.0, vUv.y);
   // Inner edge in shadow where it meets the extrusion.
-  shade *= 1.0 - (1.0 - smoothstep(0.0, 0.22, vUv.x)) * 0.18;
-  gl_FragColor = vec4(uColour * shade, 1.0);
+  float inner = 1.0 - smoothstep(0.0, 0.22, vUv.x);
+  diffuse *= 1.0 - inner * 0.18;
+  spec *= 1.0 - inner;
+
+  float lum = dot(uColour, vec3(0.299, 0.587, 0.114));
+  float specGain = mix(1.0, 0.28, smoothstep(0.25, 0.85, lum));
+  gl_FragColor = vec4(clamp(uColour * diffuse + vec3(spec * specGain), 0.0, 1.0), 1.0);
 }
 `;
 
@@ -1023,16 +1083,39 @@ void main() {
 
   float u = vUv.x / max(uBracketPitch, 1e-5);
   float d = abs(fract(u) - 0.5) * 2.0;
-  float half = uBracketWidth / max(uBracketPitch, 1e-5);
-  float onBracket = 1.0 - smoothstep(half, half * 1.5, d);
+  // NOT "half" — that is a reserved keyword in GLSL ES, so declaring it fails
+  // compilation and takes the whole program with it. This shader had never
+  // compiled: WebGL reported 1282 / VALIDATE_STATUS false and three.js fell
+  // back to nothing, which is the real reason no bracket has ever been drawn.
+  float halfW = uBracketWidth / max(uBracketPitch, 1e-5);
+  // Softer shoulder than a hard cut, so the plate reads as a formed part rather
+  // than a pasted-on square.
+  float onBracket = 1.0 - smoothstep(halfW * 0.86, halfW * 1.28, d);
+
+  // Each bracket also darkens the wall right beside it — an ambient contact
+  // shadow. Without it the plates float rather than sit against the plaster.
+  float contact = (1.0 - smoothstep(halfW, halfW * 2.6, d)) * 0.16;
+  float wall = clamp(shadow + contact, 0.0, 0.42);
 
   if (onBracket > 0.01) {
-    // The plate itself: hardware colour, and darker than the track's front face
-    // because it faces down the wall rather than out into the room.
-    float plate = mix(0.62, 0.78, vUv.y);
-    gl_FragColor = vec4(uColour * plate, onBracket);
+    // The plate: hardware colour, darker than the track's front face because it
+    // faces down the wall rather than out into the room. Same diffuse + additive
+    // specular split as the extrusion — a purely multiplicative plate is a solid
+    // black square on dark hardware.
+    float diffuse = mix(0.58, 0.80, vUv.y);
+    // Top edge catches the ceiling light, and the bottom sits in the track's
+    // own shadow.
+    float spec = 0.26 * smoothstep(0.55, 1.0, vUv.y);
+    diffuse *= 1.0 - (1.0 - smoothstep(0.0, 0.30, vUv.y)) * 0.22;
+
+    float lum = dot(uColour, vec3(0.299, 0.587, 0.114));
+    float specGain = mix(1.0, 0.28, smoothstep(0.25, 0.85, lum));
+    vec3 col = clamp(uColour * diffuse + vec3(spec * specGain), 0.0, 1.0);
+    // Composite over the wall shadow so the plate's soft edge blends into the
+    // contact shadow instead of cutting a hole in it.
+    gl_FragColor = vec4(col, max(onBracket, wall));
   } else {
-    gl_FragColor = vec4(0.05, 0.04, 0.03, shadow);
+    gl_FragColor = vec4(0.05, 0.04, 0.03, wall);
   }
 }
 `;
@@ -1494,7 +1577,11 @@ export default function Canvas2DCurtainRenderer({
       // discarded — the control did nothing at all.
       const trackHeight = Math.max(TRACK_MIN_PX, TRACK_FACE_MM * pxPerMm * TRACK_OVERSIZE);
       const faceFixed = mount !== 'ceiling';
-      const bracketDrop = faceFixed ? trackHeight * BRACKET_DROP : 0;
+      // Same oversize as the profile, so the gap scales with it and the two
+      // mounts stay visibly different at any photo resolution.
+      const bracketDrop = faceFixed
+        ? Math.max(trackHeight * 1.6, BRACKET_GAP_MM * pxPerMm * TRACK_OVERSIZE)
+        : 0;
       // The heading hangs from the track, so the fabric starts below the brackets.
       const headingY = windowTop - bracketDrop;
 
@@ -1626,22 +1713,24 @@ export default function Canvas2DCurtainRenderer({
           uniforms: {
             uColour: { value: hardwareVec },
             uBracketPitch: { value: (BRACKET_PITCH_MM * pxPerMm) / windowWidth },
-            // A bracket plate is around 25mm across the face.
-            uBracketWidth: { value: (25 * pxPerMm) / windowWidth },
+            uBracketWidth: { value: (BRACKET_PLATE_MM * pxPerMm * TRACK_OVERSIZE) / windowWidth },
           },
           vertexShader: TRACK_VERTEX_SHADER,
           fragmentShader: BRACKET_FRAGMENT_SHADER,
           transparent: true,
           depthWrite: false,
         });
-        // Overlapped upward past the fixing line so the wall shadow has somewhere
-        // to fall, and downward so the plate disappears behind the track.
-        const stripH = bracketDrop + trackHeight * 0.6;
+        // Spans from a little above the fixing line — so the shadow the assembly
+        // throws has wall to fall on — down to just inside the track's top edge,
+        // where the extrusion clips the plate the way it does in reality.
+        const stripTop = windowTop + trackHeight * 0.5;
+        const stripBottom = headingY + trackHeight * 0.55;
+        const stripH = Math.max(1, stripTop - stripBottom);
         const bracketStrip = new THREE.Mesh(
           new THREE.PlaneGeometry(windowWidth, stripH),
           bracketMaterial,
         );
-        bracketStrip.position.set(centreX, windowTop - stripH / 2 + trackHeight * 0.1, trackZ - 1);
+        bracketStrip.position.set(centreX, (stripTop + stripBottom) / 2, trackZ - 1);
         bracketStrip.renderOrder = 2;
         scene.add(bracketStrip);
       }
