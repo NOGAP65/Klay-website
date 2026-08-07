@@ -144,12 +144,31 @@ const HEM_DEPTH_GAIN = 0.14;
  * over that here, since this is looked at much smaller than a 1535px still. */
 const HEM_DEPTH_SWING = 0.3;
 
-/** Zero at the heading, and for two reasons. The fabric is clipped to its
- * carriers there, so it genuinely has nowhere to move — the swing is a projection
- * effect that grows with distance below the camera's axis, and at the track there
- * is none. And any swing at all lifted part of the heading above the track, which
- * showed as a row of dark specks along its top edge. */
-const HEADING_DEPTH_SWING = 0;
+/** The heading gets a swing too, and this is what stops the top of the panel
+ * reading as a box.
+ *
+ * It was zero. The reasoning was sound as far as it went — the fabric is clipped
+ * to its carriers, and any swing lifted the back half of each wave above the
+ * track as a row of dark specks — but the cost was that the top edge came out as
+ * a dead straight horizontal line ruled across a rippling surface. A real wave
+ * curtain does not do that: the bays that bow toward the room hang visibly lower
+ * than the ones that bow away, so the heading scallops just like the hem, only
+ * shallower.
+ *
+ * The specks are fixed properly by HEADING_SINK below rather than by giving up
+ * the scallop. Smaller than HEM_DEPTH_SWING because the projection effect really
+ * does grow with distance below the camera axis. */
+const HEADING_DEPTH_SWING = 0.22;
+
+/** Sinks the heading by its own worst upward excursion, so the scallop hangs
+ * BELOW the track line instead of straddling it.
+ *
+ * z swings symmetrically (colZ = amp * sin), so the shear lowers the forward
+ * bays and raises the back ones by the same amount. Dropping the whole heading
+ * by that amount puts the highest point back on the track line. Slightly over 1
+ * so the back bays finish a shade inside the track's band and are occluded by
+ * it — the overlap is what removes the seam between fabric and hardware. */
+const HEADING_SINK = 1.12;
 
 // ---------------------------------------------------------------------------
 // CLOTH PHYSICS — the hem does not go where the carriers go
@@ -688,6 +707,12 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     // ruling a straight line under a rippling surface. See HEM_DEPTH_SWING.
     const swing = HEADING_DEPTH_SWING + (HEM_DEPTH_SWING - HEADING_DEPTH_SWING) * vy;
 
+    // The heading's own drop, tapering out over the top of the panel. Without it
+    // the back half of every wave rises above the track; with it the whole
+    // scallop hangs from the track line instead of straddling it.
+    // See HEADING_SINK.
+    const sink = maxDepth * HEADING_DEPTH_SWING * HEADING_SINK * (1 - vy) * (1 - vy);
+
     // The lag at this height. Zero at the heading, since that is bolted to the
     // carriers, growing superlinearly to the full value at the hem.
     const lagAtRow = sway * Math.pow(vy, SWAY_SHAPE_POWER);
@@ -700,7 +725,7 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
       // however hard the leading edge is pulled, so it has nothing to lag behind.
       const lag = lagAtRow * (colX[c] / spanForLag);
       positions[i3] = wallX + towardCentre * (colX[c] * splay + lag);
-      positions[i3 + 1] = y - z * swing;
+      positions[i3 + 1] = y - z * swing - sink;
       positions[i3 + 2] = z;
       normals[i3] = colNx[c];
       normals[i3 + 1] = 0;
@@ -911,27 +936,16 @@ const TRACK_MIN_PX = 6;
  * plane. */
 const RUNNER_PITCH_MM = 80;
 
-/** Bracket centres, mm. 600mm is the maximum the manufacturers specify. */
-const BRACKET_PITCH_MM = 600;
-
 /** How far a face-fixed track hangs below its fixing line, in mm.
  *
  * A face bracket screws to the wall above the opening and the track clamps into
  * its lower end, so the track sits roughly 34mm below the screws — about twice
- * the 16mm face. That gap is the entire visual difference between the two
- * mounts, so it has to survive the same 2.4x oversize the profile gets;
- * expressed as a bare multiple of the track height it does not.
- *
- * It was 1.15x the track height, which left a visible gap of 0.15x — around two
- * pixels. The brackets and their wall shadow were being drawn correctly and then
- * almost entirely covered by the track itself, so the Ceiling/Window control
- * looked like it still did nothing. */
+ * the 16mm face. That drop is the whole visible difference between the two
+ * mounts (the brackets themselves are not drawn; the track hides them), so it
+ * has to survive the same 2.4x oversize the profile gets. Expressed as a bare
+ * multiple of the track height it did not: at 1.15x, the track covered all but
+ * about two pixels of it and the Ceiling/Window control looked inert. */
 const BRACKET_GAP_MM = 34;
-
-/** Bracket plate width, mm. Oversized with the profile rather than left at true
- * scale — it is a size, not a spacing, so at 1:1 it renders as a thread. The
- * 600mm pitch above stays real, per the note on TRACK_OVERSIZE. */
-const BRACKET_PLATE_MM = 26;
 
 const TRACK_VERTEX_SHADER = `
 varying vec2 vUv;
@@ -1061,64 +1075,6 @@ void main() {
 }
 `;
 
-/** Wall brackets, plus the shadow the track throws on the wall behind it.
- *
- * Drawn on one strip spanning the fixing gap, because a face-fixed track's
- * brackets are behind it: dead on from the room you see the plate bridging the
- * gap between the wall and the track, and — more tellingly than the bracket
- * itself — the shadow the whole assembly casts on the wall above.
- */
-const BRACKET_FRAGMENT_SHADER = `
-precision mediump float;
-
-uniform vec3 uColour;
-uniform float uBracketPitch;   // in uv.x units
-uniform float uBracketWidth;   // ditto
-
-varying vec2 vUv;
-
-void main() {
-  // Shadow on the wall: darkest immediately under the fixing line and fading up.
-  float shadow = (1.0 - smoothstep(0.0, 0.75, vUv.y)) * 0.30;
-
-  float u = vUv.x / max(uBracketPitch, 1e-5);
-  float d = abs(fract(u) - 0.5) * 2.0;
-  // NOT "half" — that is a reserved keyword in GLSL ES, so declaring it fails
-  // compilation and takes the whole program with it. This shader had never
-  // compiled: WebGL reported 1282 / VALIDATE_STATUS false and three.js fell
-  // back to nothing, which is the real reason no bracket has ever been drawn.
-  float halfW = uBracketWidth / max(uBracketPitch, 1e-5);
-  // Softer shoulder than a hard cut, so the plate reads as a formed part rather
-  // than a pasted-on square.
-  float onBracket = 1.0 - smoothstep(halfW * 0.86, halfW * 1.28, d);
-
-  // Each bracket also darkens the wall right beside it — an ambient contact
-  // shadow. Without it the plates float rather than sit against the plaster.
-  float contact = (1.0 - smoothstep(halfW, halfW * 2.6, d)) * 0.16;
-  float wall = clamp(shadow + contact, 0.0, 0.42);
-
-  if (onBracket > 0.01) {
-    // The plate: hardware colour, darker than the track's front face because it
-    // faces down the wall rather than out into the room. Same diffuse + additive
-    // specular split as the extrusion — a purely multiplicative plate is a solid
-    // black square on dark hardware.
-    float diffuse = mix(0.58, 0.80, vUv.y);
-    // Top edge catches the ceiling light, and the bottom sits in the track's
-    // own shadow.
-    float spec = 0.26 * smoothstep(0.55, 1.0, vUv.y);
-    diffuse *= 1.0 - (1.0 - smoothstep(0.0, 0.30, vUv.y)) * 0.22;
-
-    float lum = dot(uColour, vec3(0.299, 0.587, 0.114));
-    float specGain = mix(1.0, 0.28, smoothstep(0.25, 0.85, lum));
-    vec3 col = clamp(uColour * diffuse + vec3(spec * specGain), 0.0, 1.0);
-    // Composite over the wall shadow so the plate's soft edge blends into the
-    // contact shadow instead of cutting a hole in it.
-    gl_FragColor = vec4(col, max(onBracket, wall));
-  } else {
-    gl_FragColor = vec4(0.05, 0.04, 0.03, wall);
-  }
-}
-`;
 
 // --- Fabric textures ------------------------------------------------------
 
@@ -1705,35 +1661,12 @@ export default function Canvas2DCurtainRenderer({
       const trackZ = shutWaveWidth * DEPTH_PACKED * (1 + HEM_DEPTH_GAIN) * 1.3 + 1;
       const centreX = (windowLeft + windowRight) / 2;
 
-      // BRACKETS — face fix only. Drawn first so the track overlaps their lower
-      // end, which is how a bracket actually sits: behind the extrusion, clipped
-      // to it. The strip also carries the shadow the assembly throws on the wall.
-      if (faceFixed && bracketDrop > 0.5) {
-        const bracketMaterial = new THREE.ShaderMaterial({
-          uniforms: {
-            uColour: { value: hardwareVec },
-            uBracketPitch: { value: (BRACKET_PITCH_MM * pxPerMm) / windowWidth },
-            uBracketWidth: { value: (BRACKET_PLATE_MM * pxPerMm * TRACK_OVERSIZE) / windowWidth },
-          },
-          vertexShader: TRACK_VERTEX_SHADER,
-          fragmentShader: BRACKET_FRAGMENT_SHADER,
-          transparent: true,
-          depthWrite: false,
-        });
-        // Spans from a little above the fixing line — so the shadow the assembly
-        // throws has wall to fall on — down to just inside the track's top edge,
-        // where the extrusion clips the plate the way it does in reality.
-        const stripTop = windowTop + trackHeight * 0.5;
-        const stripBottom = headingY + trackHeight * 0.55;
-        const stripH = Math.max(1, stripTop - stripBottom);
-        const bracketStrip = new THREE.Mesh(
-          new THREE.PlaneGeometry(windowWidth, stripH),
-          bracketMaterial,
-        );
-        bracketStrip.position.set(centreX, (stripTop + stripBottom) / 2, trackZ - 1);
-        bracketStrip.renderOrder = 2;
-        scene.add(bracketStrip);
-      }
+      // NO BRACKETS. They were drawn here and have been removed: in the room,
+      // looking at a curtain from anywhere a person actually stands, the track
+      // hides its own brackets almost completely. Drawing them put a row of hard
+      // tabs along the top that reads as hardware clutter and is not what the
+      // product looks like. The face-fix DROP stays — the track sitting lower
+      // than a ceiling fix is the real, visible difference between the mounts.
 
       const trackMaterial = new THREE.ShaderMaterial({
         uniforms: {
