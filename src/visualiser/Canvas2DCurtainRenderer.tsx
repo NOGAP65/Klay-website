@@ -869,6 +869,56 @@ void main() {
 }
 `;
 
+// ---------------------------------------------------------------------------
+// THE TRACK
+//
+// Wave curtains do not hang from a pole, they hang from an aluminium track: a
+// slim extrusion with a channel along its underside, and gliders running in that
+// channel at the heading tape's snap spacing. What was here before was a single
+// gradient strip, which is why it read as a roller blind's tube — the two things
+// that make a track a track are the CHANNEL and the RUNNERS in it, and it had
+// neither.
+//
+// Drawn as a real profile seen dead on, top to bottom: a bright chamfer along the
+// top edge where the extrusion faces the ceiling, a flat front face falling away
+// gently, a lower chamfer picking up floor bounce, and a recessed channel in
+// shadow with the gliders visible inside it.
+//
+// Proportions are from the actual hardware — a 16mm face, gliders at 80mm centres
+// (which is the same 80mm that makes our 160mm wave pitch, so the runners land on
+// the wave zero-crossings by construction), brackets at 600mm centres.
+// ---------------------------------------------------------------------------
+
+/** Real profile height, mm. */
+const TRACK_FACE_MM = 16;
+
+/** How much the track is drawn oversized, and why it has to be.
+ *
+ * At true scale a 16mm track is under three pixels on the default room photo,
+ * which cannot carry a chamfer, a channel and a row of gliders — it is one grey
+ * line. So the profile is drawn about two and a half times life size. Everything
+ * INSIDE it stays in correct proportion, and the two spacings that are big enough
+ * to render honestly, the gliders and the brackets, are left at their real
+ * dimensions. The alternative was a track nobody can see. */
+const TRACK_OVERSIZE = 2.4;
+
+/** Floor in pixels, so a small trace or a low-resolution photo still gets a track
+ * with a readable profile rather than a hairline. */
+const TRACK_MIN_PX = 6;
+
+/** Glider centres, mm. The 80mm wave standard — and the same 80mm the heading
+ * tape uses, so one glider sits at every point where the fabric crosses the track
+ * plane. */
+const RUNNER_PITCH_MM = 80;
+
+/** Bracket centres, mm. 600mm is the maximum the manufacturers specify. */
+const BRACKET_PITCH_MM = 600;
+
+/** How far a face-fixed track hangs below its fixing line, as a multiple of the
+ * track's own height. Wall brackets exist to hold the track off the wall, and the
+ * gap they leave is the whole visual difference between the two mounts. */
+const BRACKET_DROP = 1.15;
+
 const TRACK_VERTEX_SHADER = `
 varying vec2 vUv;
 void main() {
@@ -879,17 +929,111 @@ void main() {
 
 const TRACK_FRAGMENT_SHADER = `
 precision mediump float;
+
+uniform vec3 uColour;
+uniform float uIsChrome;
+/** Glider pitch in uv.x units, so runners can be drawn procedurally rather than
+ * as nineteen more meshes. */
+uniform float uRunnerPitch;
+
+varying vec2 vUv;
+
+void main() {
+  float y = vUv.y;          // 1 at the top of the extrusion
+  float shade;
+
+  if (y > 0.86) {
+    // TOP CHAMFER — faces the ceiling, so it takes the most light and is what
+    // makes the track read as having a top surface at all.
+    shade = 1.06;
+  } else if (y > 0.36) {
+    // FRONT FACE. Falls away downward, gently: a flat anodised face, not a tube.
+    // The old strip ramped hard over its whole height, which is exactly what a
+    // cylinder does and is why it looked like a roller.
+    shade = mix(0.84, 1.0, (y - 0.36) / 0.5);
+  } else if (y > 0.27) {
+    // LOWER CHAMFER — turns down and forward, catching a little floor bounce.
+    shade = 0.9;
+  } else {
+    // CHANNEL. Recessed, so it is the darkest part of the profile by a long way.
+    // This is the single feature that separates a track from a bar.
+    shade = 0.4;
+  }
+
+  // Chrome is a rolled metal surface rather than a painted one: a hard bright
+  // band where it mirrors the ceiling, a dark one where it mirrors the room.
+  if (uIsChrome > 0.5) {
+    shade *= 1.0 + 0.22 * sin((y - 0.2) * 6.0);
+  }
+
+  // GLIDERS in the channel. Rounded, slightly proud of the slot, and lit from
+  // above like everything else. They are what the fabric actually hangs from, and
+  // at this spacing they also read as the reason the waves are where they are.
+  if (y <= 0.27) {
+    float u = vUv.x / max(uRunnerPitch, 1e-5);
+    float d = abs(fract(u) - 0.5) * 2.0;     // 0 at a glider's centre
+    float bead = 1.0 - smoothstep(0.15, 0.55, d);
+    // Brighter on the bead's upper half, so each one reads as a small round body
+    // rather than as a painted dash.
+    float lift = mix(0.72, 1.02, smoothstep(0.02, 0.24, y));
+    shade = mix(shade, lift, bead);
+  }
+
+  // The slot's own opening along the very bottom edge — a dark hairline, which is
+  // what you actually see of a channel from the front.
+  shade *= 1.0 - (1.0 - smoothstep(0.0, 0.05, y)) * 0.45;
+
+  gl_FragColor = vec4(uColour * shade, 1.0);
+}
+`;
+
+/** End cap. Moulded, slightly proud of the profile, and flat rather than
+ * chamfered — so it reads as a cap and not as more track. */
+const TRACK_CAP_FRAGMENT_SHADER = `
+precision mediump float;
 uniform vec3 uColour;
 varying vec2 vUv;
 void main() {
-  // Lit along the top edge, falling into shadow underneath — a slim extruded
-  // profile seen head on. vUv.y is 1 at the top of the strip.
-  // Kept under 1.0 so a white track stays a white object with a readable
-  // profile instead of clipping to a blown-out bar across the top of the photo.
-  float t = vUv.y;
-  float shade = mix(0.58, 0.98, smoothstep(0.0, 0.75, t));
-  shade += (1.0 - smoothstep(0.0, 0.18, abs(t - 0.70))) * 0.08;
+  float shade = mix(0.78, 1.02, smoothstep(0.0, 0.85, vUv.y));
+  // Inner edge in shadow where it meets the extrusion.
+  shade *= 1.0 - (1.0 - smoothstep(0.0, 0.22, vUv.x)) * 0.18;
   gl_FragColor = vec4(uColour * shade, 1.0);
+}
+`;
+
+/** Wall brackets, plus the shadow the track throws on the wall behind it.
+ *
+ * Drawn on one strip spanning the fixing gap, because a face-fixed track's
+ * brackets are behind it: dead on from the room you see the plate bridging the
+ * gap between the wall and the track, and — more tellingly than the bracket
+ * itself — the shadow the whole assembly casts on the wall above.
+ */
+const BRACKET_FRAGMENT_SHADER = `
+precision mediump float;
+
+uniform vec3 uColour;
+uniform float uBracketPitch;   // in uv.x units
+uniform float uBracketWidth;   // ditto
+
+varying vec2 vUv;
+
+void main() {
+  // Shadow on the wall: darkest immediately under the fixing line and fading up.
+  float shadow = (1.0 - smoothstep(0.0, 0.75, vUv.y)) * 0.30;
+
+  float u = vUv.x / max(uBracketPitch, 1e-5);
+  float d = abs(fract(u) - 0.5) * 2.0;
+  float half = uBracketWidth / max(uBracketPitch, 1e-5);
+  float onBracket = 1.0 - smoothstep(half, half * 1.5, d);
+
+  if (onBracket > 0.01) {
+    // The plate itself: hardware colour, and darker than the track's front face
+    // because it faces down the wall rather than out into the room.
+    float plate = mix(0.62, 0.78, vUv.y);
+    gl_FragColor = vec4(uColour * plate, onBracket);
+  } else {
+    gl_FragColor = vec4(0.05, 0.04, 0.03, shadow);
+  }
 }
 `;
 
@@ -1325,8 +1469,6 @@ export default function Canvas2DCurtainRenderer({
       const windowBottom = Math.min(blPx.y, brPx.y);
       const windowWidth = windowRight - windowLeft;
 
-      void mount;
-
       // WAVE COUNT — the same on every window. See WAVES_PER_PANEL.
       const waveCount = WAVES_PER_PANEL;
 
@@ -1345,10 +1487,21 @@ export default function Canvas2DCurtainRenderer({
       const dropMetres = Math.max(0.3, (windowTop - windowBottom) / pxPerMm / 1000);
       const omega = SWAY_FREQ_SCALE * 1.2024 * Math.sqrt(GRAVITY / dropMetres);
 
+      // TRACK AND MOUNT. A face-fixed (window mount) track hangs off brackets, so
+      // it sits below its fixing line with a visible gap; a ceiling-mounted one
+      // clamps flush with nothing showing above it. That gap is the entire visual
+      // difference between the two options, and until now `mount` was read and
+      // discarded — the control did nothing at all.
+      const trackHeight = Math.max(TRACK_MIN_PX, TRACK_FACE_MM * pxPerMm * TRACK_OVERSIZE);
+      const faceFixed = mount !== 'ceiling';
+      const bracketDrop = faceFixed ? trackHeight * BRACKET_DROP : 0;
+      // The heading hangs from the track, so the fabric starts below the brackets.
+      const headingY = windowTop - bracketDrop;
+
       layoutRef.current = {
         windowLeft,
         windowRight,
-        windowTop,
+        windowTop: headingY,
         windowBottom,
         waveCount,
         shutWaveWidth,
@@ -1456,35 +1609,82 @@ export default function Canvas2DCurtainRenderer({
       leftMeshRef.current = leftMesh;
       rightMeshRef.current = rightMesh;
 
-      // TRACK — the panels hang from something, and without it they float in
-      // the opening. Drawn in front of the fabric so it covers the heading, the
-      // way a real track hides the top of the tape.
-      const trackHeight = Math.max(3, (windowTop - windowBottom) * 0.022);
-      const trackGeometry = new THREE.PlaneGeometry(windowWidth, trackHeight);
+      // --- TRACK ASSEMBLY -------------------------------------------------
+      // The panels hang from something, and it has to look like the thing they
+      // actually hang from. In front of the deepest possible wave so it covers the
+      // heading, the way a real track hides the top of the tape.
+      const hw = hexToRgb(HARDWARE_HEX[hardwareColour] ?? HARDWARE_HEX.white);
+      const hardwareVec = new THREE.Vector3(hw.r / 255, hw.g / 255, hw.b / 255);
+      const trackZ = shutWaveWidth * DEPTH_PACKED * (1 + HEM_DEPTH_GAIN) * 1.3 + 1;
+      const centreX = (windowLeft + windowRight) / 2;
+
+      // BRACKETS — face fix only. Drawn first so the track overlaps their lower
+      // end, which is how a bracket actually sits: behind the extrusion, clipped
+      // to it. The strip also carries the shadow the assembly throws on the wall.
+      if (faceFixed && bracketDrop > 0.5) {
+        const bracketMaterial = new THREE.ShaderMaterial({
+          uniforms: {
+            uColour: { value: hardwareVec },
+            uBracketPitch: { value: (BRACKET_PITCH_MM * pxPerMm) / windowWidth },
+            // A bracket plate is around 25mm across the face.
+            uBracketWidth: { value: (25 * pxPerMm) / windowWidth },
+          },
+          vertexShader: TRACK_VERTEX_SHADER,
+          fragmentShader: BRACKET_FRAGMENT_SHADER,
+          transparent: true,
+          depthWrite: false,
+        });
+        // Overlapped upward past the fixing line so the wall shadow has somewhere
+        // to fall, and downward so the plate disappears behind the track.
+        const stripH = bracketDrop + trackHeight * 0.6;
+        const bracketStrip = new THREE.Mesh(
+          new THREE.PlaneGeometry(windowWidth, stripH),
+          bracketMaterial,
+        );
+        bracketStrip.position.set(centreX, windowTop - stripH / 2 + trackHeight * 0.1, trackZ - 1);
+        bracketStrip.renderOrder = 2;
+        scene.add(bracketStrip);
+      }
+
       const trackMaterial = new THREE.ShaderMaterial({
         uniforms: {
-          uColour: {
-            value: new THREE.Vector3(
-              ...(() => {
-                const h = hexToRgb(HARDWARE_HEX[hardwareColour] ?? HARDWARE_HEX.white);
-                return [h.r / 255, h.g / 255, h.b / 255] as [number, number, number];
-              })(),
-            ),
-          },
+          uColour: { value: hardwareVec },
+          uIsChrome: { value: hardwareColour === 'chrome' ? 1 : 0 },
+          // Glider pitch in uv.x. Real 80mm centres — and since the wave pitch is
+          // two of these, a glider lands on every wave zero-crossing without
+          // anything having to be aligned by hand.
+          uRunnerPitch: { value: (RUNNER_PITCH_MM * pxPerMm) / windowWidth },
         },
         vertexShader: TRACK_VERTEX_SHADER,
         fragmentShader: TRACK_FRAGMENT_SHADER,
       });
-      const track = new THREE.Mesh(trackGeometry, trackMaterial);
-      track.position.set(
-        (windowLeft + windowRight) / 2,
-        windowTop - trackHeight / 2,
-        // In front of the deepest possible wave: the packed depth, plus the hem
-        // gain, plus the jitter, plus a margin.
-        shutWaveWidth * DEPTH_PACKED * (1 + HEM_DEPTH_GAIN) * 1.3 + 1,
+      const track = new THREE.Mesh(
+        new THREE.PlaneGeometry(windowWidth, trackHeight),
+        trackMaterial,
       );
-      track.renderOrder = 2;
+      track.position.set(centreX, headingY + trackHeight / 2, trackZ);
+      track.renderOrder = 3;
       scene.add(track);
+
+      // END CAPS — a track is cut to length and capped, and the cap is a moulded
+      // part slightly proud of the extrusion. Without them the track runs off the
+      // edge of the opening as if it continued through the wall.
+      const capW = Math.max(2, trackHeight * 0.42);
+      const capMaterial = new THREE.ShaderMaterial({
+        uniforms: { uColour: { value: hardwareVec } },
+        vertexShader: TRACK_VERTEX_SHADER,
+        fragmentShader: TRACK_CAP_FRAGMENT_SHADER,
+      });
+      for (const [x, flip] of [[windowLeft, -1], [windowRight, 1]] as const) {
+        const cap = new THREE.Mesh(
+          new THREE.PlaneGeometry(capW, trackHeight * 1.06),
+          capMaterial,
+        );
+        cap.position.set(x + (flip * capW) / 2, headingY + trackHeight / 2, trackZ + 0.5);
+        cap.scale.x = flip;
+        cap.renderOrder = 4;
+        scene.add(cap);
+      }
 
       draw(opennessRef.current, 0);
     };
