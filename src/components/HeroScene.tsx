@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { tokens } from '../theme'
 import { useIsMobile } from '../hooks/useIsMobile'
 
@@ -25,9 +26,6 @@ export default function HeroScene() {
     document.getElementById('visualiser')?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const scrollToProcess = () => {
-    document.getElementById('process')?.scrollIntoView({ behavior: 'smooth' })
-  }
 
   return (
     <section
@@ -123,26 +121,41 @@ export default function HeroScene() {
         <div
           style={{
             display: 'flex',
+            // center, because Buy Now is now the taller of the two — without
+            // it the secondary sits on the primary's top edge.
+            alignItems: 'center',
             gap: 14,
             marginTop: 36,
             flexWrap: 'wrap',
           }}
         >
-          <button
-            onClick={scrollToVisualiser}
+          {/* BUY NOW is the primary and is deliberately the larger of the two:
+              taller, wider, and a size up in type. Two buttons at identical
+              weight ask the visitor to choose between them; this one is the
+              page's actual job and should be answered without deciding.
+              It goes to the shop, not the configurator — buying starts with
+              seeing what is for sale. */}
+          <Link
+            to="/products"
             onMouseEnter={() => setPrimaryHover(true)}
             onMouseLeave={() => setPrimaryHover(false)}
             style={{
               ...buttonBase,
+              padding: '20px 66px',
+              fontSize: '13px',
+              letterSpacing: '0.14em',
               background: primaryHover ? tokens.goldLight : tokens.gold,
               color: tokens.ink,
               border: 'none',
+              boxShadow: primaryHover
+                ? '0 14px 30px rgba(28,24,16,0.30)'
+                : '0 8px 20px rgba(28,24,16,0.20)',
             }}
           >
-            Design Yours
-          </button>
+            Buy Now
+          </Link>
           <button
-            onClick={scrollToProcess}
+            onClick={scrollToVisualiser}
             onMouseEnter={() => setSecondaryHover(true)}
             onMouseLeave={() => setSecondaryHover(false)}
             style={{
@@ -152,7 +165,7 @@ export default function HeroScene() {
               border: `1px solid ${secondaryHover ? tokens.gold : 'rgba(245,242,237,0.3)'}`,
             }}
           >
-            How It Works
+            Design Yours
           </button>
         </div>
       </div>

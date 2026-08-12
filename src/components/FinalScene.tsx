@@ -93,34 +93,43 @@ export function FinalScene() {
         <div
           style={{
             display: 'flex',
+            // center, not the default stretch — stretch made the secondary the
+            // same height as Buy Now and flattened the hierarchy the larger
+            // primary exists to create.
+            alignItems: 'center',
             gap: 16,
             justifyContent: 'center',
             flexWrap: 'wrap',
             marginTop: 36,
           }}
         >
+          {/* Buy Now is primary and larger, matching the hero. Same pair, same
+              hierarchy, both ends of the page. */}
           <Link
-            to="/visualiser"
+            to="/products"
             onMouseEnter={() => setPrimaryHover(true)}
             onMouseLeave={() => setPrimaryHover(false)}
             style={{
-              padding: '16px 40px',
+              padding: '20px 66px',
               borderRadius: 6,
               fontFamily: tokens.body,
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: 500,
-              letterSpacing: '0.12em',
+              letterSpacing: '0.14em',
               textTransform: 'uppercase',
               textDecoration: 'none',
               transition: 'all 0.25s ease',
               background: primaryHover ? tokens.goldLight : tokens.gold,
               color: tokens.ink,
+              boxShadow: primaryHover
+                ? '0 14px 30px rgba(28,24,16,0.40)'
+                : '0 8px 20px rgba(28,24,16,0.28)',
             }}
           >
-            Start Designing
+            Buy Now
           </Link>
           <Link
-            to="/blinds"
+            to="/visualiser"
             onMouseEnter={() => setSecondaryHover(true)}
             onMouseLeave={() => setSecondaryHover(false)}
             style={{
@@ -138,7 +147,7 @@ export function FinalScene() {
               border: `1px solid ${secondaryHover ? tokens.gold : 'rgba(245,242,237,0.3)'}`,
             }}
           >
-            View Blinds
+            Design Yours
           </Link>
         </div>
 

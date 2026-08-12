@@ -147,6 +147,35 @@ export function CollectionSection() {
                       transition: 'transform 0.6s ease',
                     }}
                   />
+
+                  {/* On the photograph itself, bottom-left — the same move the
+                      Ella cards make. On a white chip rather than straight onto
+                      the image: these are bright interiors and 11px type laid
+                      directly on one is unreadable whatever colour it is. */}
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: 14,
+                      bottom: 14,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '8px 14px',
+                      borderRadius: 999,
+                      background: on ? tokens.gold : 'rgba(255,255,255,0.94)',
+                      color: tokens.ink,
+                      fontFamily: tokens.body,
+                      fontSize: 10.5,
+                      fontWeight: 500,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      transition: 'background 0.3s ease',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    View in your space
+                    <span aria-hidden="true">&rarr;</span>
+                  </span>
                 </div>
 
                 <div style={{ paddingTop: 20 }}>
