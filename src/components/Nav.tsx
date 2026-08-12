@@ -9,9 +9,15 @@ import { NAV_CATEGORIES } from '../data/categories';
 interface NavProps {
   onLight?: boolean;
   solid?: boolean;
+  /** Pixels of something above the nav that scrolls away — the homepage's
+   * announcement bar. The nav starts that far down and slides up to the top
+   * edge as the bar leaves, so the two never overlap and the bar isn't pinned
+   * to the viewport for the whole page. Left at 0, the nav sits at the top as
+   * before, which is what every other page wants. */
+  stickBelow?: number;
 }
 
-export function Nav({ onLight = false, solid = true }: NavProps = {}) {
+export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps = {}) {
   const scrollY = useKlayStore((s) => s.scrollY);
   const cartItemCount = useCartStore((s) => s.getItemCount());
   const compressed = scrollY > 60;
@@ -19,6 +25,7 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const [ctaHover, setCtaHover] = useState(false);
+  const [quoteHover, setQuoteHover] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 
   const alwaysSolid = solid || compressed;
@@ -26,11 +33,16 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
   const onDarkGround = menuOpen || solidBar || (!compressed && !onLight);
   const linkColor = onDarkGround ? tokens.warmWhite : tokens.ink;
 
+  // scrollY is only published by pages that install the listener (the
+  // homepage); everywhere else it stays 0, which resolves to stickBelow — and
+  // stickBelow is only passed by the homepage. Both defaults agree on 0.
+  const top = Math.max(0, stickBelow - scrollY);
+
   return (
     <nav
       style={{
         position: 'fixed',
-        top: 0,
+        top,
         left: 0,
         width: '100%',
         zIndex: 9000,
@@ -42,6 +54,8 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
         backdropFilter: 'none',
         WebkitBackdropFilter: 'none',
         borderBottom: 'none',
+        // `top` is deliberately NOT transitioned — it tracks scroll position
+        // frame by frame, and easing it would make the nav lag the page.
         transition: 'padding 0.5s ease, background 0.5s ease, border-color 0.5s ease',
       }}
     >
@@ -180,12 +194,13 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
               </div>
             ))}
 
-            {/* Other links including Design Yours */}
-            {[
-              { label: 'How It Works', to: '/#process' },
-              { label: 'Reviews', to: '/#reviews' },
-              { label: 'Design Yours', to: '/visualiser' },
-            ].map((l) => {
+            {/* Four links in the centre and one action on the right. Reviews and
+                Design Yours were dropped from here: Reviews pointed at a
+                homepage anchor that read as a page, and Design Yours competed
+                with the gold CTA for the same click while /visualiser is behind
+                a host allowlist. Both are still reachable — from the hero, from
+                the closing CTA, and from the footer. */}
+            {[{ label: 'How It Works', to: '/how-it-works' }].map((l) => {
               const isHovered = hovered === l.to;
               return (
                 <Link
@@ -213,53 +228,83 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
             })}
           </div>
 
-          {/* Right: Cart button */}
-          <Link
-            to="/cart"
-            onMouseEnter={() => setCtaHover(true)}
-            onMouseLeave={() => setCtaHover(false)}
-            style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 44,
-              height: 44,
-              borderRadius: 8,
-              border: `1px solid ${ctaHover ? tokens.gold : 'rgba(245,242,237,0.2)'}`,
-              background: ctaHover ? 'rgba(200,151,58,0.1)' : 'transparent',
-              color: ctaHover ? tokens.gold : tokens.warmWhite,
-              textDecoration: 'none',
-              transition: 'all 0.2s ease',
-            }}
-            aria-label="Cart"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="9" cy="21" r="1" />
-              <circle cx="20" cy="21" r="1" />
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-            </svg>
-            {cartItemCount > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: -4,
-                right: -4,
-                width: 18,
-                height: 18,
-                borderRadius: '50%',
-                background: tokens.gold,
+          {/* Right: the gold pill, then the cart. The pill is the nav's one
+              action; the cart is a utility and stays an outline so the two
+              don't read as two competing CTAs. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: '0 0 auto' }}>
+            <Link
+              to="/contact"
+              onMouseEnter={() => setQuoteHover(true)}
+              onMouseLeave={() => setQuoteHover(false)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: 44,
+                padding: '0 26px',
+                borderRadius: 999,
+                background: quoteHover ? tokens.goldLight : tokens.gold,
                 color: tokens.ink,
                 fontFamily: tokens.body,
-                fontSize: 10,
-                fontWeight: 600,
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+                transition: motion.button,
+              }}
+            >
+              Get a Quote
+            </Link>
+
+            <Link
+              to="/cart"
+              onMouseEnter={() => setCtaHover(true)}
+              onMouseLeave={() => setCtaHover(false)}
+              style={{
+                position: 'relative',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-              }}>
-                {cartItemCount}
-              </span>
-            )}
-          </Link>
+                width: 44,
+                height: 44,
+                borderRadius: 8,
+                border: `1px solid ${ctaHover ? tokens.gold : onDarkGround ? tokens.onDarkEdge : tokens.line}`,
+                background: ctaHover ? 'rgba(200,151,58,0.1)' : 'transparent',
+                color: ctaHover ? tokens.gold : linkColor,
+                textDecoration: 'none',
+                transition: 'all 0.2s ease',
+              }}
+              aria-label="Cart"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1" />
+                <circle cx="20" cy="21" r="1" />
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+              </svg>
+              {cartItemCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  background: tokens.gold,
+                  color: tokens.ink,
+                  fontFamily: tokens.body,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  {cartItemCount}
+                </span>
+              )}
+            </Link>
+          </div>
         </>
       )}
 
@@ -343,55 +388,56 @@ export function Nav({ onLight = false, solid = true }: NavProps = {}) {
             </div>
           ))}
 
-          <div style={{ marginTop: 16 }}>
-            <Link
-              to="/#process"
-              onClick={() => setMenuOpen(false)}
-              style={{
-                color: tokens.warmWhite,
-                textDecoration: 'none',
-                fontFamily: tokens.body,
-                fontSize: 16,
-                opacity: 0.8,
-                display: 'block',
-                marginBottom: 16,
-              }}
-            >
-              How It Works
-            </Link>
-            <Link
-              to="/#reviews"
-              onClick={() => setMenuOpen(false)}
-              style={{
-                color: tokens.warmWhite,
-                textDecoration: 'none',
-                fontFamily: tokens.body,
-                fontSize: 16,
-                opacity: 0.8,
-              }}
-            >
-              Reviews
-            </Link>
-          </div>
-
           <Link
-            to="/visualiser"
+            to="/how-it-works"
+            onClick={() => setMenuOpen(false)}
+            style={{
+              marginTop: 16,
+              color: tokens.warmWhite,
+              textDecoration: 'none',
+              fontFamily: tokens.body,
+              fontSize: 16,
+              opacity: 0.8,
+            }}
+          >
+            How It Works
+          </Link>
+
+          {/* Same action as the desktop pill, same fill. */}
+          <Link
+            to="/contact"
             onClick={() => setMenuOpen(false)}
             style={{
               marginTop: 24,
-              border: `1px solid ${tokens.gold}`,
-              borderRadius: 6,
-              color: tokens.gold,
+              background: tokens.gold,
+              borderRadius: 999,
+              color: tokens.ink,
               textDecoration: 'none',
               fontFamily: tokens.body,
               fontSize: 13,
               fontWeight: 500,
-              letterSpacing: '0.12em',
+              letterSpacing: '0.14em',
               textTransform: 'uppercase',
-              padding: '14px 28px',
+              padding: '16px 34px',
             }}
           >
-            Design Yours
+            Get a Quote
+          </Link>
+
+          <Link
+            to="/cart"
+            onClick={() => setMenuOpen(false)}
+            style={{
+              color: tokens.warmWhite,
+              textDecoration: 'none',
+              fontFamily: tokens.body,
+              fontSize: 13,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              opacity: 0.7,
+            }}
+          >
+            Cart{cartItemCount > 0 ? ` (${cartItemCount})` : ''}
           </Link>
         </div>
       )}

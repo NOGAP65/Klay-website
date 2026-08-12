@@ -12,13 +12,9 @@
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap');
 
-      :root {
-        --parchment: #F2EDE4;
-        --cream: #FAF7F2;
-        --ink: #1E1A16;
-        --text-dark: #1E1A16;
-        --text-mid: #6B6157;
-      }
+      /* The custom properties that used to live here were dead — nothing in
+         src referenced var(--anything), and the values had drifted off the
+         palette in src/theme.ts, which is the one source of truth. */
 
       * {
         margin: 0;
@@ -30,9 +26,12 @@
         scroll-behavior: smooth;
       }
 
+      /* Charcoal, matching tokens.charcoal. This is only ever seen behind a
+         short page or past the end of a scroll; it was #1A1A1A, a cold
+         near-black that greyed the warm palette sitting on top of it. */
       body {
-        background: #1A1A1A;
-        color: #F8F6F2;
+        background: #2C2824;
+        color: #F5F2ED;
         font-family: 'Inter', sans-serif;
         font-weight: 300;
         line-height: 1.6;
@@ -42,7 +41,20 @@
 
       ::selection {
         background: #C8973A;
-        color: #1A1A1A;
+        color: #1C1810;
+      }
+
+      /* The horizontal rails on the homepage — the category strip and the range
+         carousel. Both scroll with the wheel, a trackpad or the arrow buttons,
+         and neither wants a scrollbar drawn under the photographs. A
+         ::-webkit-scrollbar rule can't be expressed as an inline style, which
+         is why this one selector lives here rather than in the component. */
+      .klay-hscroll {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .klay-hscroll::-webkit-scrollbar {
+        display: none;
       }
 
       @keyframes klay-orb {

@@ -1,27 +1,42 @@
+// ---------------------------------------------------------------------------
+// The homepage.
+//
+// Twelve sections, in one order, doing one job each. The page alternates warm
+// white and parchment for the light sections and drops to charcoal twice — once
+// at the trust bar and once at the closing CTA — so the scroll has a rhythm
+// rather than being one continuous cream field.
+//
+// The visualiser at section five is the only section that does work. Everything
+// above it earns the right to ask for a configuration (what Klay makes, what it
+// costs, who installs it); everything below it answers the objections that stop
+// someone finishing one.
+//
+// The section components live in components/home and are used only from here.
+// Nav and Footer are shared with every other page and stay in components/.
+// ---------------------------------------------------------------------------
+
 import { useEffect } from 'react';
 import { useKlayStore } from '../store';
 import { tokens } from '../theme';
-import { ScrollProgress } from '../components/ScrollProgress';
 import { Nav } from '../components/Nav';
-import HeroScene from '../components/HeroScene';
-import { CollectionSection } from '../components/CollectionSection';
-import VisualiserSection from '../components/VisualiserSection';
-import { ProductsBanner, CollectionBanner } from '../components/ProductsBanner';
-import { HowItWorks } from '../components/HowItWorks';
-import { ReviewsCarousel } from '../components/ReviewsCarousel';
-// NOTE: SocialMedia maps a PLACEHOLDERS array that carries no video source, so
-// it renders three empty boxes with play buttons that do nothing. It is kept
-// on the page by request; it needs real reels dropped into that array to stop
-// reading as broken.
-import { SocialMedia } from '../components/SocialMedia';
-import { OurStory } from '../components/OurStory';
-import { FinalScene } from '../components/FinalScene';
 import { Footer } from '../components/Footer';
-import { SectionCounter } from '../components/SectionCounter';
+import { AnnouncementBar, BAR_HEIGHT } from '../components/home/AnnouncementBar';
+import { Hero } from '../components/home/Hero';
+import { CategoryStrip } from '../components/home/CategoryStrip';
+import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
+import { HowItWorksSteps } from '../components/home/HowItWorksSteps';
+import { RangeCarousel } from '../components/home/RangeCarousel';
+import { TrustBar } from '../components/home/TrustBar';
+import { EditorialPanel } from '../components/home/EditorialPanel';
+import { Testimonials } from '../components/home/Testimonials';
+import { FinalCta } from '../components/home/FinalCta';
 
 export default function HomePage() {
   const setScrollY = useKlayStore((s) => s.setScrollY);
 
+  // Publishes scroll position for the nav, which uses it twice: to swap from
+  // transparent to solid charcoal, and to slide up as the announcement bar
+  // scrolls off. rAF-throttled — this fires on every scroll event.
   useEffect(() => {
     let ticking = false;
     const onScroll = () => {
@@ -39,56 +54,44 @@ export default function HomePage() {
 
   return (
     <>
-      <ScrollProgress />
-      <Nav />
+      {/* 1 — Announcement bar, in flow so it scrolls away. */}
+      <AnnouncementBar />
+
+      {/* 2 — Nav. Transparent over the hero (solid={false}), solid charcoal
+          once compressed, and offset by the bar's height until it's gone. */}
+      <Nav solid={false} stickBelow={BAR_HEIGHT} />
+
       <main style={{ background: tokens.warmWhite }}>
-        {/* 1. Hero — the promise. */}
-        <HeroScene />
+        {/* 3 — The promise, full bleed under the transparent nav. */}
+        <Hero />
 
-        {/* 2. THE CATEGORIES — what Klay makes, as three rooms. */}
-        <ProductsBanner />
+        {/* 4 — What Klay makes, as five photographs. */}
+        <CategoryStrip />
 
-        {/* 3. The statement band. It sits BETWEEN the two grids on purpose:
-            it breaks the categories from the range and gives the eye somewhere
-            to rest, which it could not do while it opened the categories
-            section directly beneath the hero. */}
-        <CollectionBanner />
+        {/* 5 — The centrepiece: configure it, see it, buy it. */}
+        <VisualiserShowcase />
 
-        {/* 4. THE RANGE — what is actually for sale, named and priced. This is
-            the change that matters most on this page: the homepage previously
-            ran hero → visualiser → category tiles, so a shopper met a
-            five-field configurator before seeing a single product name or
-            price, and the four real products in data/products.ts appeared
-            nowhere on the page at all. */}
-        <CollectionSection />
+        {/* 6 — "Who measures it?", the objection that stops people ordering. */}
+        <HowItWorksSteps />
 
-        {/* 5. How it works — answers "who measures it?", the objection that
-            stops people configuring. It has to come BEFORE the tool, not
-            after. */}
-        <HowItWorks />
+        {/* 7 — What's for sale, named and priced. */}
+        <RangeCarousel />
 
-        {/* 6. Visualiser — moved from position two to here, and this is the
-            first point on the page where it makes sense. By now the visitor
-            knows the categories, the products, what they cost, and who
-            installs them; the configurator is the natural next step rather
-            than a demand made of a stranger. */}
-        <VisualiserSection />
+        {/* 8 — The four claims, on charcoal. */}
+        <TrustBar />
 
-        {/* 7. Reviews — proof, immediately after the tool that asks for
-            commitment. */}
-        <ReviewsCarousel />
+        {/* 9 — The in-home service argument, at length. */}
+        <EditorialPanel />
 
-        {/* 8. Social. */}
-        <SocialMedia />
+        {/* 10 — Proof, from customers who bought the products above. */}
+        <Testimonials />
 
-        {/* 9. Our story. */}
-        <OurStory />
+        {/* 11 — One last action, pointing back at the visualiser. */}
+        <FinalCta />
 
-        {/* 10. Final CTA. */}
-        <FinalScene />
+        {/* 12 — Footer. */}
         <Footer />
       </main>
-      <SectionCounter />
     </>
   );
 }
