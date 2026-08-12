@@ -6,7 +6,7 @@ import { Nav } from '../components/Nav';
 import HeroScene from '../components/HeroScene';
 import { CollectionSection } from '../components/CollectionSection';
 import VisualiserSection from '../components/VisualiserSection';
-import { ProductsBanner } from '../components/ProductsBanner';
+import { ProductsBanner, CollectionBanner } from '../components/ProductsBanner';
 import { HowItWorks } from '../components/HowItWorks';
 import { ReviewsCarousel } from '../components/ReviewsCarousel';
 // NOTE: SocialMedia maps a PLACEHOLDERS array that carries no video source, so
@@ -45,12 +45,16 @@ export default function HomePage() {
         {/* 1. Hero — the promise. */}
         <HeroScene />
 
-        {/* 2. THE CATEGORIES — what Klay makes, as rooms. Carries its own
-            full-bleed banner, which is the break between the hero and the
-            shop proper. */}
+        {/* 2. THE CATEGORIES — what Klay makes, as three rooms. */}
         <ProductsBanner />
 
-        {/* 3. THE RANGE — what is actually for sale, named and priced. This is
+        {/* 3. The statement band. It sits BETWEEN the two grids on purpose:
+            it breaks the categories from the range and gives the eye somewhere
+            to rest, which it could not do while it opened the categories
+            section directly beneath the hero. */}
+        <CollectionBanner />
+
+        {/* 4. THE RANGE — what is actually for sale, named and priced. This is
             the change that matters most on this page: the homepage previously
             ran hero → visualiser → category tiles, so a shopper met a
             five-field configurator before seeing a single product name or
@@ -58,29 +62,29 @@ export default function HomePage() {
             nowhere on the page at all. */}
         <CollectionSection />
 
-        {/* 4. How it works — answers "who measures it?", the objection that
+        {/* 5. How it works — answers "who measures it?", the objection that
             stops people configuring. It has to come BEFORE the tool, not
             after. */}
         <HowItWorks />
 
-        {/* 5. Visualiser — moved from position two to here, and this is the
+        {/* 6. Visualiser — moved from position two to here, and this is the
             first point on the page where it makes sense. By now the visitor
             knows the categories, the products, what they cost, and who
             installs them; the configurator is the natural next step rather
             than a demand made of a stranger. */}
         <VisualiserSection />
 
-        {/* 6. Reviews — proof, immediately after the tool that asks for
+        {/* 7. Reviews — proof, immediately after the tool that asks for
             commitment. */}
         <ReviewsCarousel />
 
-        {/* 7. Social. */}
+        {/* 8. Social. */}
         <SocialMedia />
 
-        {/* 8. Our story. */}
+        {/* 9. Our story. */}
         <OurStory />
 
-        {/* 9. Final CTA. */}
+        {/* 10. Final CTA. */}
         <FinalScene />
         <Footer />
       </main>
