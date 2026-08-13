@@ -26,11 +26,11 @@
 // about this file changes.
 // ---------------------------------------------------------------------------
 
-import { tokens, layout } from '../../theme';
+import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { PRODUCTS } from '../../data/products';
 import { CATEGORIES } from '../../data/categories';
-import { CtaLink, PhotoTile, SectionBand } from './primitives';
+import { PhotoTile, SectionBand } from './primitives';
 
 /** The cheapest thing Klay actually sells, taken from the catalogue rather than
  * written down again — the roller tile's from-price has to move when the
@@ -45,6 +45,14 @@ const TAGLINES: Record<string, string> = Object.fromEntries(
 );
 
 const SOON = 'Coming soon';
+
+/** Buy Now goes on the tiles that carry a price, and only those. It is the same
+ * always-on bottom-right chip the category tiles use, and it stays off the
+ * coming-soon types deliberately: a tile with COMING SOON printed on its face and
+ * a BUY NOW button beside it contradicts itself in one glance. The presence of the
+ * button IS the signal that a type is buyable, so its absence next to COMING SOON
+ * needs no further explaining. */
+const ctaFor = (note: string) => (note === SOON ? undefined : 'Buy Now');
 
 interface RangeTile {
   label: string;
@@ -119,6 +127,7 @@ export function RangeGrid() {
             image={tile.image}
             objectPosition={tile.objectPosition}
             note={tile.note}
+            cta={ctaFor(tile.note)}
             // Only where there is no photograph. On the four that have one, the
             // picture already says what the tagline would, and a 420px tile does
             // not have the room for both.
@@ -130,17 +139,11 @@ export function RangeGrid() {
           />
         ))}
       </div>
-
-      <div
-        style={{
-          textAlign: 'center',
-          padding: isMobile ? '52px 24px' : '72px 80px',
-          maxWidth: layout.containerMax,
-          margin: '0 auto',
-        }}
-      >
-        <CtaLink to="/products">View All Products</CtaLink>
-      </div>
+      {/* Nothing after the grid, same as the category section. The View All
+          Products button that used to sit here put a band of warm white between
+          the grid and the charcoal section below it, and the tiles now carry their
+          own actions. The full listing is still one click away from any Buy Now,
+          from the nav, and from the footer. */}
     </section>
   );
 }

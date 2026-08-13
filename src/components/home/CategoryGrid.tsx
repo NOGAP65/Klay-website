@@ -26,7 +26,7 @@
 
 import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { CtaLink, PhotoTile, SectionBand } from './primitives';
+import { PhotoTile, SectionBand } from './primitives';
 
 // ON THE CTA. One label on all three — "Buy Now" — by explicit direction, after
 // I'd shipped it reading "Enquire" on the two categories that cannot be bought
@@ -109,16 +109,12 @@ export function CategoryGrid() {
           />
         ))}
       </div>
-
-      {/* The way out for someone none of the three tiles fits, and the only place
-          on the page that offers the measure the gold bar above just promised.
-          Deliberately not another "View All Products" — the range section below
-          already has that, and two buttons to the same listing is one of them
-          doing nothing. /book takes the configuration in query params but
-          parseOrderConfig defaults every one of them, so arriving bare is fine. */}
-      <div style={{ textAlign: 'center', padding: isMobile ? '48px 24px' : '64px 80px' }}>
-        <CtaLink to="/book">Book a Free Measure</CtaLink>
-      </div>
+      {/* Nothing after the tiles. The section ends on the photographs so the
+          charcoal band below butts straight up against them — the two read as one
+          continuous block rather than as two sections with a strip of warm white
+          between them. The Book a Free Measure button that used to sit here was
+          what created that strip, and every tile now carries its own action
+          anyway. */}
     </section>
   );
 }
