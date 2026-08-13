@@ -69,7 +69,7 @@ const COLUMNS: { heading: string; links: { label: string; to: string }[] }[] = [
       // Curtains and wardrobes have no listing page yet — the /products
       // resolver sends both to the enquiry form rather than to a 404.
       { label: 'Curtains', to: '/products?category=curtains' },
-      { label: 'Wardrobes', to: '/products?room=outdoor' },
+      { label: 'Wardrobes', to: '/products?category=wardrobes' },
     ],
   },
   {

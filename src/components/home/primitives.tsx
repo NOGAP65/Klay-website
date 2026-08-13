@@ -230,12 +230,16 @@ export function PhotoTile({
   image,
   objectPosition = 'center',
   minHeight,
+  labelSize = 'clamp(24px, 2.4vw, 32px)',
 }: {
   to: string;
   label: string;
   image: string;
   objectPosition?: string;
   minHeight: number;
+  /** The label scales with the tile. A 32px label that suits a 420px-tall
+   * inspiration tile is undersized on a 660px category tile. */
+  labelSize?: string;
 }) {
   const { hover, bind } = useHover();
   return (
@@ -293,7 +297,7 @@ export function PhotoTile({
           bottom: 28,
           right: 32,
           fontFamily: tokens.display,
-          fontSize: 'clamp(24px, 2.4vw, 32px)',
+          fontSize: labelSize,
           fontStyle: 'italic',
           fontWeight: 300,
           lineHeight: 1.1,

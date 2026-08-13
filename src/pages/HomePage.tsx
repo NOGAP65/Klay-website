@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// The homepage. Fourteen sections, one job each.
+// The homepage. Fifteen sections, one job each.
 //
 // The order is an argument, not a list. It opens on the outcome (a room, not a
 // product), names the four rooms the customer recognises, explains who does the
@@ -26,7 +26,8 @@ import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { AnnouncementBar, BAR_HEIGHT } from '../components/home/AnnouncementBar';
 import { Hero } from '../components/home/Hero';
-import { RoomGrid } from '../components/home/RoomGrid';
+import { ServiceBar } from '../components/home/ServiceBar';
+import { CategoryGrid } from '../components/home/CategoryGrid';
 import { HowItWorksSteps } from '../components/home/HowItWorksSteps';
 import { ProductGrid } from '../components/home/ProductGrid';
 import { RecommendationBanner } from '../components/home/RecommendationBanner';
@@ -71,39 +72,43 @@ export default function HomePage() {
         {/* 3 — The promise, full bleed under the transparent nav. */}
         <Hero />
 
-        {/* 4 — Four rooms, edge to edge. Outcomes before products. */}
-        <RoomGrid />
+        {/* 4 — What you actually get, in gold, before anyone has scrolled. */}
+        <ServiceBar />
 
-        {/* 5 — Who does the work. It comes before the prices because "who
+        {/* 5 — Indoor / Outdoor / Wardrobes, edge to edge. Outcomes before
+            products, and the split the business actually runs on. */}
+        <CategoryGrid />
+
+        {/* 6 — Who does the work. It comes before the prices because "who
             measures it?" is the objection that stops people ordering. */}
         <HowItWorksSteps />
 
-        {/* 6 — What's for sale, named and priced, no gatekeeping. */}
+        {/* 7 — What's for sale, named and priced, no gatekeeping. */}
         <ProductGrid />
 
-        {/* 7 — The catch for anyone who read six prices and still doesn't know
+        {/* 8 — The catch for anyone who read six prices and still doesn't know
             which one they need. */}
         <RecommendationBanner />
 
-        {/* 8 — The centrepiece: configure it, see it, buy it. */}
+        {/* 9 — The centrepiece: configure it, see it, buy it. */}
         <VisualiserShowcase />
 
-        {/* 9 — One panel per range, one idea each: light, then control. */}
+        {/* 10 — One panel per range, one idea each: light, then control. */}
         <AlternatingPanels />
 
-        {/* 10 — What it looks like once it's up. Trust, not conversion. */}
+        {/* 11 — What it looks like once it's up. Trust, not conversion. */}
         <SocialProof />
 
-        {/* 11 — Four ways further in, for the reader who isn't buying today. */}
+        {/* 12 — Four ways further in, for the reader who isn't buying today. */}
         <InspirationTiles />
 
-        {/* 12 — Proof, in customers' own words. */}
+        {/* 13 — Proof, in customers' own words. */}
         <Testimonials />
 
-        {/* 13 — One last action, pointing back at the tool. */}
+        {/* 14 — One last action, pointing back at the tool. */}
         <FinalCta />
 
-        {/* 14 — Footer. */}
+        {/* 15 — Footer. */}
         <Footer />
       </main>
     </>
