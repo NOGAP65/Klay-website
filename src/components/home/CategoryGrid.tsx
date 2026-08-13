@@ -24,9 +24,9 @@
 // which is the failure mode to watch for when every asset comes from one shoot.
 // ---------------------------------------------------------------------------
 
-import { tokens, eyebrow } from '../../theme';
+import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { PhotoTile } from './primitives';
+import { PhotoTile, SectionBand } from './primitives';
 
 const CATEGORIES = [
   {
@@ -59,31 +59,12 @@ export function CategoryGrid() {
 
   return (
     <section style={{ background: tokens.warmWhite }}>
-      {/* The white band. Louder than it was — the heading is up around section
-          size now, because at 36px it read as a caption and got lost between a
-          full-bleed video and three full-bleed photographs. Still a band rather
-          than a section: the padding stays well short of the 120px the real
-          sections get. */}
-      <div
-        style={{
-          padding: isMobile ? '52px 24px' : '76px 80px',
-          textAlign: 'center',
-        }}
-      >
-        <p style={{ ...eyebrow, marginBottom: 16 }}>Shop by category</p>
-        <h2
-          style={{
-            fontFamily: tokens.display,
-            fontSize: 'clamp(34px, 4.4vw, 56px)',
-            fontWeight: 300,
-            lineHeight: 1.05,
-            color: tokens.ink,
-            margin: 0,
-          }}
-        >
-          Start with category.
-        </h2>
-      </div>
+      {/* The white band, shared with the range grid — see SectionBand. Its
+          heading is well up on section size because at 36px it read as a caption
+          and got lost between a full-bleed video and three full-bleed
+          photographs. Still a band rather than a section: the padding stays well
+          short of the 120px the real sections get. */}
+      <SectionBand label="Shop by category" title="Start with category." isMobile={isMobile} />
 
       <div
         style={{

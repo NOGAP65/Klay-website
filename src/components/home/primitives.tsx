@@ -210,6 +210,43 @@ export const scrollToId = (id: string) => () => {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
+/** The warm-white band that introduces a wall of edge-to-edge tiles: gold
+ * eyebrow, big Cormorant line, centred. Used by the category grid and the range
+ * grid, which is why it lives here — the two have to be the same object, and
+ * they were drifting the moment there were two of them.
+ *
+ * Deliberately not SectionHead. That one is a headline block for a contained
+ * section and sizes itself to sit inside one; this is a full-width band whose
+ * job is to caption photographs, so its heading runs bigger and its padding
+ * stays well short of a real section's. */
+export function SectionBand({
+  label,
+  title,
+  isMobile,
+}: {
+  label: string;
+  title: React.ReactNode;
+  isMobile: boolean;
+}) {
+  return (
+    <div style={{ padding: isMobile ? '52px 24px' : '76px 80px', textAlign: 'center' }}>
+      <p style={{ ...eyebrow, marginBottom: 16 }}>{label}</p>
+      <h2
+        style={{
+          fontFamily: tokens.display,
+          fontSize: 'clamp(34px, 4.4vw, 56px)',
+          fontWeight: 300,
+          lineHeight: 1.05,
+          color: tokens.ink,
+          margin: 0,
+        }}
+      >
+        {title}
+      </h2>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // PhotoTile — the edge-to-edge photo tile with a label over it.
 //
@@ -231,15 +268,28 @@ export function PhotoTile({
   objectPosition = 'center',
   minHeight,
   labelSize = 'clamp(24px, 2.4vw, 32px)',
+  note,
+  blurb,
 }: {
   to: string;
   label: string;
-  image: string;
+  /** Omit when no photograph of this thing exists. The tile then renders as
+   * charcoal with its label and note on it, which is how the range grid handles
+   * the types Klay has no photography for — a Venetian tile showing a roller
+   * blind is worse than a Venetian tile showing nothing. */
+  image?: string;
   objectPosition?: string;
   minHeight: number;
   /** The label scales with the tile. A 32px label that suits a 420px-tall
    * inspiration tile is undersized on a 660px category tile. */
   labelSize?: string;
+  /** One gold line under the label — a from-price, or "Coming soon". */
+  note?: string;
+  /** A line of supporting copy, rendered ONLY on a photoless tile. On a
+   * photograph there is no room for it without the type sprawling over the
+   * picture; on a charcoal tile it is what stops the tile reading as an empty
+   * box. */
+  blurb?: string;
 }) {
   const { hover, bind } = useHover();
   return (
@@ -258,61 +308,115 @@ export function PhotoTile({
         background: tokens.charcoal,
       }}
     >
-      <img
-        src={image}
-        alt={label}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition,
-          display: 'block',
-          transform: hover ? 'scale(1.05)' : 'scale(1)',
-          transition: 'transform 0.7s ease',
-        }}
-      />
+      {image && (
+        <img
+          src={image}
+          alt={label}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition,
+            display: 'block',
+            transform: hover ? 'scale(1.05)' : 'scale(1)',
+            transition: 'transform 0.7s ease',
+          }}
+        />
+      )}
+      {/* On a photoless tile, a hairline inset from the edges. It gives the
+          charcoal something to be — a frame the label sits inside — instead of
+          an empty rectangle, and it brightens on hover so the tile still
+          answers the pointer without a photograph to push in. */}
+      {!image && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 16,
+            border: `1px solid ${hover ? tokens.goldLine : tokens.onDarkLine}`,
+            transition: 'border-color 0.3s ease',
+          }}
+        />
+      )}
       {/* Two stops rather than one. Several of these photographs are pale at the
           bottom edge — a bedspread, a bare floorboard — and a single linear ramp
           strong enough to hold white type over those was dark enough to look
           like a bar across the picture on the others. This ramps late and
           finishes deep, so most of the gradient's weight is in the last 15% where
           the label actually sits. */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: '46%',
-          background:
-            'linear-gradient(180deg, rgba(28,24,16,0) 0%, rgba(28,24,16,0.28) 55%, rgba(28,24,16,0.82) 100%)',
-        }}
-      />
+      {/* Only over a photograph. On a charcoal tile there is nothing to darken,
+          and the gradient would show as a band across a flat ground. */}
+      {image && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: '46%',
+            background:
+              'linear-gradient(180deg, rgba(28,24,16,0) 0%, rgba(28,24,16,0.28) 55%, rgba(28,24,16,0.82) 100%)',
+          }}
+        />
+      )}
       <div
         style={{
           position: 'absolute',
           left: 32,
           bottom: 28,
           right: 32,
-          fontFamily: tokens.display,
-          fontSize: labelSize,
-          fontStyle: 'italic',
-          fontWeight: 300,
-          lineHeight: 1.1,
-          color: tokens.warmWhite,
-          // Not decoration — it is what guarantees the label reads on the light
-          // tiles without deepening the gradient over the dark ones. Mixed from
-          // ink, so it stays warm rather than greying the photograph.
-          textShadow: '0 1px 12px rgba(28,24,16,0.55)',
-          // The label lifts with the hover rather than staying put, so the
-          // whole tile reads as one object responding to the pointer.
+          // The label lifts with the hover rather than staying put, so the whole
+          // tile reads as one object responding to the pointer.
           transform: hover ? 'translateY(-4px)' : 'translateY(0)',
           transition: 'transform 0.4s ease',
         }}
       >
-        {label}
+        <div
+          style={{
+            fontFamily: tokens.display,
+            fontSize: labelSize,
+            fontStyle: 'italic',
+            fontWeight: 300,
+            lineHeight: 1.1,
+            color: tokens.warmWhite,
+            // Not decoration — it is what guarantees the label reads on the light
+            // photographs without deepening the gradient over the dark ones.
+            // Mixed from ink, so it stays warm rather than greying the picture.
+            textShadow: image ? '0 1px 12px rgba(28,24,16,0.55)' : undefined,
+          }}
+        >
+          {label}
+        </div>
+        {!image && blurb && (
+          <div
+            style={{
+              fontFamily: tokens.body,
+              fontSize: 13,
+              lineHeight: 1.6,
+              color: tokens.onDarkMuted,
+              marginTop: 10,
+              maxWidth: 260,
+            }}
+          >
+            {blurb}
+          </div>
+        )}
+        {note && (
+          <div
+            style={{
+              fontFamily: tokens.body,
+              fontSize: 10.5,
+              fontWeight: 500,
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              color: tokens.gold,
+              marginTop: 10,
+            }}
+          >
+            {note}
+          </div>
+        )}
       </div>
     </Link>
   );

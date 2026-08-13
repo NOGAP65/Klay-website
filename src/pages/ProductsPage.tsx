@@ -26,16 +26,26 @@ const BY_CATEGORY: Record<string, string> = {
   outdoor: '/contact',
   wardrobes: '/contact',
 
-  // Finer-grained slugs, used by the product cards, the range panels and the
-  // footer.
+  // Finer-grained slugs, used by the range grid, the range panels and the footer.
+  // Every one of these is a subcategory slug from data/categories.ts, so the two
+  // files agree on the vocabulary.
   'roller-blinds': '/blinds/roller-blinds',
   'dual-roller': '/products/duo',
   blockout: '/products/dusk',
   sunscreen: '/products/veil',
   'light-filter': '/products/haze',
-  // Not on sale yet — see the note above.
+
+  // available:false in data/categories.ts, and every one of them lands on the
+  // enquiry form. Falling through to FALLBACK instead would put someone who
+  // clicked "Venetian Blinds" on a page of roller blinds, which is the one
+  // outcome worse than telling them it is coming.
+  'venetian-blinds': '/contact',
+  'roman-blinds': '/contact',
+  'vertical-blinds': '/contact',
+  'panel-blinds': '/contact',
   'sheer-curtains': '/contact',
   'blockout-curtains': '/contact',
+  'lined-curtains': '/contact',
   curtains: '/contact',
 };
 
