@@ -28,17 +28,22 @@ import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { CtaLink, PhotoTile, SectionBand } from './primitives';
 
-// ON THE HOVER CTA. It is NOT "Shop Now" on all three, and that is deliberate.
-// Indoor resolves to the roller-blind listing, which is a shop. Outdoor and
-// Wardrobes resolve to the enquiry form, because nothing in the catalogue serves
-// them yet — promising "Shop Now" and delivering a contact form is the
-// bait-and-switch this whole resolver exists to avoid. The word changes with the
-// destination, so the tile cannot lie about where it goes.
+// ON THE CTA. One label on all three — "Buy Now" — by explicit direction, after
+// I'd shipped it reading "Enquire" on the two categories that cannot be bought
+// yet and raised that. Recording the consequence rather than re-arguing it:
+// Indoor lands on the roller-blind listing and is a genuine buy, while Outdoor
+// and Wardrobes still resolve to the enquiry form, so on those two the button
+// promises a checkout and delivers a form.
+//
+// For a made-to-measure business that is a defensible way to run it — everything
+// here ends in a conversation with a technician anyway. It stops being a
+// mismatch at all the moment those two categories get somewhere to be sold, and
+// the destinations live in ProductsPage, not here.
 const CATEGORIES = [
   {
     label: 'Indoor',
     blurb: 'Blinds, sheers and drapes',
-    cta: 'Shop Now',
+    cta: 'Buy Now',
     category: 'indoor',
     image: '/images/categories/indoor.jpg',
     // Biased right so the bed, lamp and nightstand come into the crop with the
@@ -49,7 +54,7 @@ const CATEGORIES = [
   {
     label: 'Outdoor',
     blurb: 'Patio, deck and alfresco',
-    cta: 'Enquire',
+    cta: 'Buy Now',
     category: 'outdoor',
     image: '/images/categories/outdoor.jpg',
     // Centred, which lands the open door, the deck, the balustrade and the tree
@@ -59,7 +64,7 @@ const CATEGORIES = [
   {
     label: 'Wardrobes',
     blurb: 'Built-in and walk-in',
-    cta: 'Enquire',
+    cta: 'Buy Now',
     category: 'wardrobes',
     image: '/images/categories/wardrobes.jpg',
     objectPosition: '54% center',
@@ -95,7 +100,7 @@ export function CategoryGrid() {
             image={category.image}
             objectPosition={category.objectPosition}
             blurb={category.blurb}
-            hoverCta={category.cta}
+            cta={category.cta}
             // Tall. Three portraits across 1440 give each tile ~480 of width, so
             // 660 of height is roughly 3:4 — and a good deal bigger than the 440
             // the four room tiles had.

@@ -285,7 +285,7 @@ export function PhotoTile({
   labelSize = 'clamp(24px, 2.4vw, 32px)',
   note,
   blurb,
-  hoverCta,
+  cta,
 }: {
   to: string;
   label: string;
@@ -307,35 +307,17 @@ export function PhotoTile({
    * photograph it earns its place only where the label alone is too terse to be
    * useful. */
   blurb?: string;
-  /** The action revealed on hover — "Shop Now", "Enquire". It is what tells the
-   * visitor the tile is a link at all: a photograph with a word on it is not
-   * obviously clickable, and the push-in alone is too subtle to carry that.
+  /** The action, parked in the bottom-right corner and ALWAYS visible. It is what
+   * tells the visitor the tile is a link at all: a photograph with a word on it
+   * is not obviously clickable, and the push-in alone is too subtle to carry
+   * that. On hover the tile darkens behind it and the chip pops forward.
    *
-   * On a pointer device the whole tile darkens and the CTA lands in the middle of
-   * it. On a touch screen, where there is no hover, it sits under the label
-   * instead and is always visible — a permanent full-tile scrim would mean the
-   * photographs never being seen properly on a phone at all. */
-  hoverCta?: string;
+   * Always-on rather than hover-only because a hover-only CTA does not exist on
+   * a touch screen, and this is the primary path into a category. */
+  cta?: string;
 }) {
   const { hover, bind } = useHover();
   const isMobile = useIsMobile();
-  // The scrim-and-centred-CTA treatment is a pointer behaviour. On touch it
-  // degrades to a chip under the label — see the note on hoverCta.
-  const overlay = !!hoverCta && !isMobile;
-  const inlineChip = !!hoverCta && isMobile;
-
-  const chipStyle: React.CSSProperties = {
-    display: 'inline-block',
-    padding: '12px 24px',
-    fontFamily: tokens.body,
-    fontSize: 10.5,
-    fontWeight: 500,
-    letterSpacing: '0.2em',
-    textTransform: 'uppercase',
-    color: tokens.ink,
-    background: tokens.gold,
-    whiteSpace: 'nowrap',
-  };
 
   return (
     <Link
@@ -409,50 +391,40 @@ export function PhotoTile({
           }}
         />
       )}
-      {/* The black-out. Above the photograph and its gradient, below the label —
-          which is why the label stack comes after it in the DOM and stays crisp
-          while everything behind it dims. */}
-      {overlay && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'rgba(28,24,16,0.66)',
-            opacity: hover ? 1 : 0,
-            transition: 'opacity 0.3s ease',
-          }}
-        />
-      )}
-      {overlay && (
-        <div
-          aria-hidden={!hover}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: hover ? 1 : 0,
-            transform: hover ? 'scale(1)' : 'scale(0.96)',
-            transition: 'opacity 0.3s ease, transform 0.3s ease',
-          }}
-        >
-          <span style={chipStyle}>{hoverCta}</span>
-        </div>
-      )}
-
+      {/* The black-out. Above the photograph and its gradient, below the label row
+          — which is why that row comes after it in the DOM and stays crisp while
+          everything behind it dims. */}
       <div
         style={{
           position: 'absolute',
-          left: 32,
-          bottom: 28,
-          right: 32,
-          // The label lifts with the hover rather than staying put, so the whole
+          inset: 0,
+          background: 'rgba(28,24,16,0.66)',
+          opacity: hover ? 1 : 0,
+          transition: 'opacity 0.3s ease',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Label bottom-left, action bottom-right, on one baseline. alignItems is
+          flex-end so the chip sits level with the bottom of the label block
+          however many lines the label and its blurb run to. */}
+      <div
+        style={{
+          position: 'absolute',
+          left: isMobile ? 22 : 32,
+          right: isMobile ? 22 : 32,
+          bottom: isMobile ? 22 : 28,
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'space-between',
+          gap: 16,
+          // The row lifts with the hover rather than staying put, so the whole
           // tile reads as one object responding to the pointer.
           transform: hover ? 'translateY(-4px)' : 'translateY(0)',
           transition: 'transform 0.4s ease',
         }}
       >
+        <div style={{ flex: '1 1 auto', minWidth: 0 }}>
         <div
           style={{
             fontFamily: tokens.display,
@@ -502,10 +474,32 @@ export function PhotoTile({
             {note}
           </div>
         )}
-        {inlineChip && (
-          <div style={{ ...chipStyle, marginTop: 16, padding: '10px 20px', fontSize: 10 }}>
-            {hoverCta}
-          </div>
+        </div>
+
+        {cta && (
+          <span
+            style={{
+              flexShrink: 0,
+              display: 'inline-block',
+              padding: isMobile ? '10px 18px' : '12px 22px',
+              fontFamily: tokens.body,
+              fontSize: 10.5,
+              fontWeight: 500,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: tokens.ink,
+              background: hover ? tokens.goldLight : tokens.gold,
+              whiteSpace: 'nowrap',
+              // Pops forward on hover. transformOrigin is the bottom-right corner
+              // it is pinned to, so it grows inward rather than pushing itself
+              // past the edge of the tile.
+              transform: hover ? 'scale(1.08)' : 'scale(1)',
+              transformOrigin: 'bottom right',
+              transition: 'transform 0.28s ease, background 0.28s ease',
+            }}
+          >
+            {cta}
+          </span>
         )}
       </div>
     </Link>
