@@ -1,7 +1,9 @@
 import { Routes, Route } from 'react-router-dom';
+import { CATEGORIES } from './data/categories';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import CategoryPage from './pages/CategoryPage';
 import BlindsPage from './pages/BlindsPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import AboutPage from './pages/AboutPage';
@@ -17,6 +19,18 @@ export default function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/products" element={<ProductsPage />} />
+      {/* The three top-level categories — Indoor, Outdoor, Wardrobes — each a
+          real page rendered by CategoryPage from data/categories.ts. The nav has
+          pointed at these slugs all along; until now two of the three landed on
+          the 404 page because only /blinds existed.
+
+          Generated from the data so adding a category cannot leave it unrouted,
+          and passed as a prop rather than read as a `/:category` param — a bare
+          param at the root would swallow /about, /contact and everything else
+          declared after it. */}
+      {CATEGORIES.map((c) => (
+        <Route key={c.slug} path={`/${c.slug}`} element={<CategoryPage slug={c.slug} />} />
+      ))}
       <Route path="/blinds" element={<BlindsPage />} />
       <Route path="/blinds/roller-blinds" element={<BlindsPage />} />
       {/* One page per product, carrying the whole configurator. The old

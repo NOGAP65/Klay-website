@@ -167,7 +167,10 @@ export function Testimonials() {
   }, [paused, reduceMotion]);
 
   return (
-    <section id="reviews" style={{ background: tokens.warmWhite }}>
+    // Parchment. The install strip immediately above is warm white, and with the
+    // journal tiles that used to divide them gone these two would otherwise have
+    // run together as one field.
+    <section id="reviews" style={{ background: tokens.parchment }}>
       <SectionBand label="Reviews" title="What our customers say" isMobile={isMobile} />
 
       <div

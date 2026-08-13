@@ -42,7 +42,9 @@ const PANELS: Panel[] = [
       'A sheer does not block light, it spreads it. The hard afternoon square on the floorboards becomes an even glow across the whole room, and the glare goes without the view going with it.',
       'Hung from the ceiling rather than the architrave, it also buys you height — the eye reads the fall of the fabric as the height of the wall, which is why a modest room with floor-length curtains feels taller than it measures.',
     ],
-    cta: { label: 'Explore Curtains', to: '/products?category=sheer-curtains' },
+    // Curtains have no page of their own; /indoor is the listing that shows the
+    // three curtain types with their prices, which is the nearest real thing.
+    cta: { label: 'Explore Curtains', to: '/indoor' },
     // Warm light diffusing through the cloth. The dark heavy-drape bedroom shot
     // was here first and it argued against the headline — "softer light, a room
     // that breathes" over a photograph of a room shut down for the night.

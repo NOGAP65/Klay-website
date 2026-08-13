@@ -26,51 +26,19 @@
 
 import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { CATEGORIES } from '../../data/categories';
 import { PhotoTile, SectionBand } from './primitives';
 
-// ON THE CTA. One label on all three — "Buy Now" — by explicit direction, after
-// I'd shipped it reading "Enquire" on the two categories that cannot be bought
-// yet and raised that. Recording the consequence rather than re-arguing it:
-// Indoor lands on the roller-blind listing and is a genuine buy, while Outdoor
-// and Wardrobes still resolve to the enquiry form, so on those two the button
-// promises a checkout and delivers a form.
+// The three tiles come from the category data now rather than being written out
+// here, so a tile, its page and the nav dropdown cannot disagree about what a
+// category is called or what is in it.
 //
-// For a made-to-measure business that is a defensible way to run it — everything
-// here ends in a conversation with a technician anyway. It stops being a
-// mismatch at all the moment those two categories get somewhere to be sold, and
-// the destinations live in ProductsPage, not here.
-const CATEGORIES = [
-  {
-    label: 'Indoor',
-    blurb: 'Blinds, sheers and drapes',
-    cta: 'Buy Now',
-    category: 'indoor',
-    image: '/images/categories/indoor.jpg',
-    // Biased right so the bed, lamp and nightstand come into the crop with the
-    // curtains. A furnished room reads as "indoor"; a wall of cloth reads as a
-    // fabric swatch, which is what the first crop of this looked like.
-    objectPosition: '62% center',
-  },
-  {
-    label: 'Outdoor',
-    blurb: 'Patio, deck and alfresco',
-    cta: 'Buy Now',
-    category: 'outdoor',
-    image: '/images/categories/outdoor.jpg',
-    // Centred, which lands the open door, the deck, the balustrade and the tree
-    // in the middle of a portrait crop.
-    objectPosition: '50% center',
-  },
-  {
-    label: 'Wardrobes',
-    blurb: 'Built-in and walk-in',
-    cta: 'Buy Now',
-    category: 'wardrobes',
-    image: '/images/categories/wardrobes.jpg',
-    objectPosition: '54% center',
-  },
-];
-
+// ON THE CTA. "Shop Now", not the "Buy Now" these carried while they pointed at a
+// resolver. Each tile now opens a real category page — a listing, which is a
+// place you shop rather than a checkout — and every one of the three genuinely
+// leads somewhere, which is what the earlier label could not honestly claim for
+// Outdoor and Wardrobes. Buy Now still appears on the tiles and the visualiser
+// that actually take money.
 export function CategoryGrid() {
   const isMobile = useIsMobile();
 
@@ -94,13 +62,13 @@ export function CategoryGrid() {
       >
         {CATEGORIES.map(category => (
           <PhotoTile
-            key={category.category}
-            to={`/products?category=${category.category}`}
-            label={category.label}
+            key={category.slug}
+            to={`/${category.slug}`}
+            label={category.name}
             image={category.image}
             objectPosition={category.objectPosition}
             blurb={category.blurb}
-            cta={category.cta}
+            cta="Shop Now"
             // Tall. Three portraits across 1440 give each tile ~480 of width, so
             // 660 of height is roughly 3:4 — and a good deal bigger than the 440
             // the four room tiles had.

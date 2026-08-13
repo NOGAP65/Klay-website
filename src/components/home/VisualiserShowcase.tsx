@@ -170,11 +170,13 @@ export function VisualiserShowcase() {
     // ground the panel reads as a lit screen in a dark room, which is what it is,
     // and the white heading above it separates instead of blending.
     //
-    // Charcoal rather than ink so the page keeps ONE dark tone across the hero,
-    // How It Works, the inspiration tiles and the close. This only works because
-    // the recommendation band above it went light in the same pass — two adjacent
-    // charcoal sections would have merged into one field.
-    <section id="visualiser" style={{ background: tokens.charcoal }}>
+    // Ink, and the only ink on the page. Two reasons it moved off charcoal: How
+    // It Works sits immediately above it and is charcoal, so as charcoal too this
+    // section merged straight into it once the light band between them was
+    // removed — and the deepest ground in the palette under the brightest panel
+    // is what makes the one section that does real work read as the centrepiece
+    // rather than as another band. Charcoal stays the page's ordinary dark.
+    <section id="visualiser" style={{ background: tokens.ink }}>
       {/* The same band as the category and range sections, from the same
           component, so the page's three big sections are introduced identically
           rather than in three slightly different voices. It supplies this

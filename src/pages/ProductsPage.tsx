@@ -17,39 +17,35 @@
 
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ALL_SUBCATEGORY_SLUGS } from '../data/categories';
 
 const BY_CATEGORY: Record<string, string> = {
-  // The homepage's three top-level categories. Indoor is the whole routed,
-  // buyable half of the business; the other two are enquiries because nothing
-  // in the catalogue serves them yet.
-  indoor: '/blinds/roller-blinds',
-  outdoor: '/contact',
-  wardrobes: '/contact',
+  // The three top-level categories are real pages now, so they resolve to
+  // themselves rather than to a stand-in. Anything still linking at
+  // ?category=indoor lands where a tile click would.
+  indoor: '/indoor',
+  outdoor: '/outdoor',
+  wardrobes: '/wardrobes',
 
-  // Finer-grained slugs, used by the range grid, the range panels and the footer.
-  // Every one of these is a subcategory slug from data/categories.ts, so the two
-  // files agree on the vocabulary.
+  // The one product type that is actually routed and buyable, plus the blind-type
+  // slugs the visualiser and the product pages use.
   'roller-blinds': '/blinds/roller-blinds',
   'dual-roller': '/products/duo',
   blockout: '/products/dusk',
   sunscreen: '/products/veil',
   'light-filter': '/products/haze',
-
-  // available:false in data/categories.ts, and every one of them lands on the
-  // enquiry form. Falling through to FALLBACK instead would put someone who
-  // clicked "Venetian Blinds" on a page of roller blinds, which is the one
-  // outcome worse than telling them it is coming.
-  'venetian-blinds': '/contact',
-  'roman-blinds': '/contact',
-  'vertical-blinds': '/contact',
-  'panel-blinds': '/contact',
-  'sheer-curtains': '/contact',
-  'blockout-curtains': '/contact',
-  'lined-curtains': '/contact',
   curtains: '/contact',
 };
 
 const FALLBACK = '/blinds/roller-blinds';
+
+/** Every subcategory that has no page of its own goes to the enquiry form. Built
+ * by difference from the taxonomy rather than typed out, so a type added to
+ * data/categories.ts is routed the moment it exists — the previous hand-written
+ * list is exactly the kind that goes stale silently, and a slug missing from it
+ * fell through to a page of roller blinds. */
+const resolve = (slug: string): string =>
+  BY_CATEGORY[slug] ?? (ALL_SUBCATEGORY_SLUGS.includes(slug) ? '/contact' : FALLBACK);
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -57,7 +53,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     const category = searchParams.get('category');
-    navigate((category && BY_CATEGORY[category]) || FALLBACK, { replace: true });
+    navigate(category ? resolve(category) : FALLBACK, { replace: true });
   }, [navigate, searchParams]);
 
   return null;
