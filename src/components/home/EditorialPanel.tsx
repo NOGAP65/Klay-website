@@ -78,8 +78,15 @@ export function EditorialPanel() {
               person accountable for the fit, and it isn't you.
             </p>
           </div>
+          {/* Charcoal ground, gold text — the inverse fill, same as the step
+              section's. A gold FILL now means Buy Now and nothing else, so the
+              two informational CTAs on the page take the other half of the
+              palette rather than competing with the buy action at equal
+              weight. */}
           <div style={{ marginTop: 36 }}>
-            <CtaLink to="/how-it-works">Learn How It Works</CtaLink>
+            <CtaLink to="/how-it-works" variant="onDark">
+              Learn How It Works
+            </CtaLink>
           </div>
         </div>
       </div>

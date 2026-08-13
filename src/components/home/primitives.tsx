@@ -36,6 +36,20 @@ export function useHover() {
   };
 }
 
+/** The page's primary CTA — one label and one destination, used by the hero,
+ * the visualiser and the closing CTA. Three different labels for the same
+ * intent (Design Yours / Add to Cart / Start Designing) read as three different
+ * offers; "Buy Now" is the page's actual job and it should be answered without
+ * deciding which button means it.
+ *
+ * It goes to the shop rather than to the configurator, which is the call made
+ * when this CTA was introduced: buying starts with seeing what is for sale and
+ * what it costs. /products resolves it — see ProductsPage. The one exception is
+ * the visualiser's own Buy Now, which has a configuration in hand and so buys
+ * THAT, straight into the cart. */
+export const BUY_NOW_LABEL = 'Buy Now';
+export const BUY_NOW_TO = '/products';
+
 export type CtaVariant = 'gold' | 'onDark' | 'ghost';
 
 const ctaBase: React.CSSProperties = {

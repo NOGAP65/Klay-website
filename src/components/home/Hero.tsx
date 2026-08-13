@@ -10,11 +10,15 @@
 
 import { tokens, eyebrow, headline, layout } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { CtaButton, scrollToId } from './primitives';
+import { BUY_NOW_TO, CtaButton, CtaLink, scrollToId } from './primitives';
 
 /** Roller blinds in a real room, shot wide. The hero has to show the product
  * doing its job, which rules out the furniture-led interiors in public/images. */
 const HERO_IMAGE = '/images/lifestyle/room-living.png';
+
+/** The nav's own height at rest, measured in the running page. Used to offset
+ * the hero copy out from under it — see the note on the content container. */
+const NAV_HEIGHT = 80;
 
 export function Hero() {
   const isMobile = useIsMobile();
@@ -69,13 +73,22 @@ export function Hero() {
         }}
       />
 
+      {/* Flush to the viewport edge, NOT inside a centred gridMax container
+          like the sections below it. This is the alignment the previous hero
+          had, and it is the right one for a full-bleed section: a centred
+          container would walk the headline inwards as the viewport grows, so on
+          a wide monitor the copy would drift towards the middle of the
+          photograph while the section itself stayed edge to edge.
+
+          paddingTop is the nav's height. The nav is transparent and overlays
+          this section, so centring against the section's full height puts the
+          copy behind it and reads high; this centres it in the space the nav
+          leaves, which is what the old hero got from its marginTop. */}
       <div
         style={{
           position: 'relative',
           height: '100%',
-          maxWidth: layout.gridMax,
-          margin: '0 auto',
-          padding: `0 ${layout.inlinePad(isMobile)}px`,
+          padding: `${NAV_HEIGHT}px ${layout.inlinePad(isMobile)}px 0`,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -116,7 +129,10 @@ export function Hero() {
             marginTop: isMobile ? 36 : 48,
           }}
         >
-          <CtaButton onClick={scrollToId('visualiser')}>Design Yours</CtaButton>
+          {/* BUY NOW is the primary everywhere on this page — see BUY_NOW_TO in
+              primitives for why it goes to the shop rather than to the
+              configurator. */}
+          <CtaLink to={BUY_NOW_TO}>Buy Now</CtaLink>
           <CtaButton variant="ghost" onClick={scrollToId('how-it-works')}>
             How It Works
           </CtaButton>

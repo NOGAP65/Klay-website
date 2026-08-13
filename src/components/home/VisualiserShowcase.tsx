@@ -18,6 +18,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { tokens, layout, motion } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCartStore } from '../../store/cartStore';
@@ -26,7 +27,7 @@ import { bookingLink } from '../../lib/bookingLink';
 import KlayConfigurator from '../../visualiser/KlayConfigurator';
 import VisualiserControls from '../../visualiser/VisualiserControls';
 import { useVisualiserStore } from '../../visualiser/useVisualiserStore';
-import { CtaButton, SectionHead, TextLink, useHover } from './primitives';
+import { BUY_NOW_LABEL, CtaButton, SectionHead, TextLink, useHover } from './primitives';
 
 const MAX_WINDOWS = 12;
 
@@ -127,14 +128,14 @@ function WindowCount({ value, onChange }: { value: number; onChange: (n: number)
 
 export function VisualiserShowcase() {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [windows, setWindows] = useState(1);
-  const [added, setAdded] = useState(false);
 
   const addItem = useCartStore(s => s.addItem);
   const { blindType, fabricColour, hardwareColour, windowSize, operation, getCurrentPrice } =
     useVisualiserStore();
 
-  const handleAddToCart = () => {
+  const handleBuyNow = () => {
     // The catalogue entry for the configured blind type — the cart line needs a
     // product name and a display type, and this is where the visualiser's
     // vocabulary maps back onto the four things Klay actually sells.
@@ -150,8 +151,10 @@ export function VisualiserShowcase() {
       price: getCurrentPrice(),
     };
     for (let i = 0; i < windows; i += 1) addItem(line);
-    setAdded(true);
-    window.setTimeout(() => setAdded(false), 2600);
+    // Straight to the cart. This button says Buy Now, so it has to do what the
+    // hero's Buy Now promises rather than quietly banking the configuration and
+    // leaving the customer on the same page wondering whether it worked.
+    navigate('/cart');
   };
 
   return (
@@ -215,34 +218,25 @@ export function VisualiserShowcase() {
             gap: 18,
           }}
         >
-          <CtaButton onClick={handleAddToCart} style={{ minWidth: 280 }}>
-            {added
-              ? 'Added to cart ✓'
-              : `Add to Cart — $${getCurrentPrice() * windows}`}
+          {/* Same words as the hero and the closing CTA. The price is appended
+              because this is the one Buy Now on the page that knows what the
+              thing costs — a bare "Buy Now" under a configured render would be
+              hiding the number the customer just built. */}
+          <CtaButton onClick={handleBuyNow} style={{ minWidth: 280 }}>
+            {BUY_NOW_LABEL} — ${getCurrentPrice() * windows}
           </CtaButton>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 18,
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-            }}
+          <TextLink
+            to={bookingLink({
+              blindType,
+              windowSize,
+              operation,
+              quantity: windows,
+              fabricColour,
+              hardwareColour,
+            })}
           >
-            <TextLink
-              to={bookingLink({
-                blindType,
-                windowSize,
-                operation,
-                quantity: windows,
-                fabricColour,
-                hardwareColour,
-              })}
-            >
-              or get a free quote
-            </TextLink>
-            {added && <TextLink to="/cart">View cart →</TextLink>}
-          </div>
+            or get a free quote
+          </TextLink>
         </div>
       </div>
     </section>

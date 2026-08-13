@@ -1,15 +1,15 @@
 // ---------------------------------------------------------------------------
 // 11. Closing CTA — charcoal, centred, one button.
 //
-// One action, and it points back up the page to the visualiser rather than off
-// to another route: the tool that converts is already loaded and configured,
-// and sending someone to a fresh page to start again is how you lose them at
-// the last section.
+// The same Buy Now as the hero, in the same words and to the same place. This
+// is the last thing on the page before the footer, and someone who has read all
+// of it should not have to work out that "Start Designing" was the same offer
+// the hero made.
 // ---------------------------------------------------------------------------
 
 import { tokens, headline, layout } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { CtaButton, scrollToId } from './primitives';
+import { BUY_NOW_LABEL, BUY_NOW_TO, CtaLink } from './primitives';
 
 export function FinalCta() {
   const isMobile = useIsMobile();
@@ -39,7 +39,7 @@ export function FinalCta() {
           Design online. We handle everything else.
         </p>
         <div style={{ marginTop: isMobile ? 40 : 52 }}>
-          <CtaButton onClick={scrollToId('visualiser')}>Start Designing</CtaButton>
+          <CtaLink to={BUY_NOW_TO}>{BUY_NOW_LABEL}</CtaLink>
         </div>
       </div>
     </section>
