@@ -159,6 +159,7 @@ export function SectionHead({
   align = 'left',
   onDark = false,
   maxWidth = 720,
+  titleSize,
   style,
 }: {
   label?: string;
@@ -167,6 +168,11 @@ export function SectionHead({
   align?: 'left' | 'center';
   onDark?: boolean;
   maxWidth?: number;
+  /** Overrides the section scale for a headline that has to be quieter than its
+   * neighbours — a long one, or one in a section that is deliberately compact.
+   * Note that `style` lands on the WRAPPER, not the heading, so a fontSize
+   * passed there silently does nothing. */
+  titleSize?: string;
   style?: React.CSSProperties;
 }) {
   const centred = align === 'center';
@@ -181,7 +187,15 @@ export function SectionHead({
       }}
     >
       {label && <p style={{ ...eyebrow, marginBottom: 22 }}>{label}</p>}
-      <h2 style={{ ...headline.section, color: onDark ? tokens.warmWhite : tokens.ink }}>{title}</h2>
+      <h2
+        style={{
+          ...headline.section,
+          color: onDark ? tokens.warmWhite : tokens.ink,
+          ...(titleSize ? { fontSize: titleSize } : null),
+        }}
+      >
+        {title}
+      </h2>
       {sub && (
         <p
           style={{
