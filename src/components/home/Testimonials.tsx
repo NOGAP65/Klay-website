@@ -46,8 +46,8 @@ export function Testimonials() {
     >
       <div style={{ maxWidth: layout.containerMax, margin: '0 auto' }}>
         <SectionHead
-          label="What our customers say"
-          title="Fitted, and then forgotten about."
+          label="Reviews"
+          title="What our customers say"
           align="center"
           style={{ marginBottom: isMobile ? 52 : 80 }}
         />

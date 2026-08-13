@@ -11,17 +11,9 @@
 // is `ghost`, which sits over hero photography and has no fill at all.
 // ---------------------------------------------------------------------------
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { tokens, eyebrow, headline, layout, motion } from '../../theme';
-
-/** Leading inset for a full-bleed horizontal rail, so its first item lines up
- * with the contained headline above it: the container inset while the viewport
- * is narrower than gridMax, and the inset plus the centring margin once it is
- * wider. Used as BOTH padding-left and scroll-padding-left — see the note in
- * CategoryStrip for what a mismatch between the two does. */
-export const railPadding = (isMobile: boolean) =>
-  `max(${layout.inlinePad(isMobile)}px, calc((100vw - ${layout.gridMax}px) / 2 + ${layout.inlinePad(isMobile)}px))`;
+import { tokens, eyebrow, headline, motion } from '../../theme';
 
 /** Hover state plus the two handlers, so a component that needs three hover
  * targets doesn't declare three useStates by hand. */
@@ -35,20 +27,6 @@ export function useHover() {
     },
   };
 }
-
-/** The page's primary CTA — one label and one destination, used by the hero,
- * the visualiser and the closing CTA. Three different labels for the same
- * intent (Design Yours / Add to Cart / Start Designing) read as three different
- * offers; "Buy Now" is the page's actual job and it should be answered without
- * deciding which button means it.
- *
- * It goes to the shop rather than to the configurator, which is the call made
- * when this CTA was introduced: buying starts with seeing what is for sale and
- * what it costs. /products resolves it — see ProductsPage. The one exception is
- * the visualiser's own Buy Now, which has a configuration in hand and so buys
- * THAT, straight into the cart. */
-export const BUY_NOW_LABEL = 'Buy Now';
-export const BUY_NOW_TO = '/products';
 
 export type CtaVariant = 'gold' | 'onDark' | 'ghost';
 
@@ -141,13 +119,17 @@ export function TextLink({
   to,
   children,
   onDark = false,
+  accent = false,
 }: {
   to: string;
   children: React.ReactNode;
   onDark?: boolean;
+  /** Gold at rest, not just on hover — for the one secondary link that has to
+   * hold its own beside a gold button rather than recede from it. */
+  accent?: boolean;
 }) {
   const { hover, bind } = useHover();
-  const rest = onDark ? tokens.onDarkMuted : tokens.inkSoft;
+  const rest = accent ? tokens.gold : onDark ? tokens.onDarkMuted : tokens.inkSoft;
   return (
     <Link
       {...bind}
@@ -229,82 +211,129 @@ export const scrollToId = (id: string) => () => {
 };
 
 // ---------------------------------------------------------------------------
-// Horizontal rails.
+// PhotoTile — the edge-to-edge photo tile with a label over it.
 //
-// Both the category strip and the range carousel run to the viewport edge and
-// scroll sideways. Neither can rely on a peeking tile to advertise that: how
-// much of the next one shows is a function of viewport width, and at some
-// widths the last visible tile lands flush against the edge and the row reads
-// as complete. So both get explicit arrows — and both hide them when there is
-// nothing to scroll, which is the case for three range cards on a wide desktop.
+// Two sections are built from this: the 2x2 room grid and the row of four
+// inspiration tiles. They are the same object at different grid dimensions —
+// full-bleed photograph, Cormorant italic label bottom-left, a gradient at the
+// bottom only, and a slow push-in on hover — so it is defined once rather than
+// twice with the gradients and the zoom timings drifting apart.
+//
+// The gradient is confined to the bottom third. A wash over the whole tile
+// would dull the photograph everywhere to make legible a label that only
+// occupies one corner.
 // ---------------------------------------------------------------------------
 
-export function useRail(gap: number) {
-  const railRef = useRef<HTMLDivElement>(null);
-  const [overflows, setOverflows] = useState(false);
-
-  useEffect(() => {
-    const measure = () => {
-      const rail = railRef.current;
-      if (rail) setOverflows(rail.scrollWidth > rail.clientWidth + 1);
-    };
-    measure();
-    // The rails contain photographs, so the scrollWidth on the first paint can
-    // predate layout settling; a ResizeObserver catches that as well as the
-    // viewport changing.
-    const observer = new ResizeObserver(measure);
-    if (railRef.current) observer.observe(railRef.current);
-    window.addEventListener('resize', measure);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', measure);
-    };
-  }, []);
-
-  /** One tile plus its gap, so a click always lands the next tile on the same
-   * left edge rather than drifting by a fraction of a tile each time. */
-  const nudge = (direction: 1 | -1) => () => {
-    const rail = railRef.current;
-    if (!rail) return;
-    const tile = rail.firstElementChild as HTMLElement | null;
-    const step = tile ? tile.offsetWidth + gap : rail.clientWidth * 0.8;
-    rail.scrollBy({ left: step * direction, behavior: 'smooth' });
-  };
-
-  return { railRef, overflows, nudge };
-}
-
-export function RailArrow({ dir, onClick }: { dir: 'prev' | 'next'; onClick: () => void }) {
+export function PhotoTile({
+  to,
+  label,
+  image,
+  objectPosition = 'center',
+  minHeight,
+}: {
+  to: string;
+  label: string;
+  image: string;
+  objectPosition?: string;
+  minHeight: number;
+}) {
   const { hover, bind } = useHover();
   return (
-    <button
+    <Link
       {...bind}
-      aria-label={dir === 'prev' ? 'Scroll left' : 'Scroll right'}
-      onClick={onClick}
+      to={to}
       style={{
-        width: 42,
-        height: 42,
-        borderRadius: '50%',
-        border: `1px solid ${hover ? tokens.gold : tokens.line}`,
-        background: hover ? tokens.gold : 'transparent',
-        color: tokens.ink,
-        fontFamily: tokens.body,
-        fontSize: 15,
-        lineHeight: 1,
-        cursor: 'pointer',
-        transition: motion.button,
+        position: 'relative',
+        display: 'block',
+        overflow: 'hidden',
+        minHeight,
+        textDecoration: 'none',
+        // No radius and no gap: these grids are edge to edge, and a rounded
+        // corner would put four slivers of section background into the middle
+        // of the block where the tiles meet.
+        background: tokens.charcoal,
       }}
     >
-      {dir === 'prev' ? '←' : '→'}
-    </button>
+      <img
+        src={image}
+        alt={label}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition,
+          display: 'block',
+          transform: hover ? 'scale(1.05)' : 'scale(1)',
+          transition: 'transform 0.7s ease',
+        }}
+      />
+      {/* Two stops rather than one. Several of these photographs are pale at the
+          bottom edge — a bedspread, a bare floorboard — and a single linear ramp
+          strong enough to hold white type over those was dark enough to look
+          like a bar across the picture on the others. This ramps late and
+          finishes deep, so most of the gradient's weight is in the last 15% where
+          the label actually sits. */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: '46%',
+          background:
+            'linear-gradient(180deg, rgba(28,24,16,0) 0%, rgba(28,24,16,0.28) 55%, rgba(28,24,16,0.82) 100%)',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 32,
+          bottom: 28,
+          right: 32,
+          fontFamily: tokens.display,
+          fontSize: 'clamp(24px, 2.4vw, 32px)',
+          fontStyle: 'italic',
+          fontWeight: 300,
+          lineHeight: 1.1,
+          color: tokens.warmWhite,
+          // Not decoration — it is what guarantees the label reads on the light
+          // tiles without deepening the gradient over the dark ones. Mixed from
+          // ink, so it stays warm rather than greying the photograph.
+          textShadow: '0 1px 12px rgba(28,24,16,0.55)',
+          // The label lifts with the hover rather than staying put, so the
+          // whole tile reads as one object responding to the pointer.
+          transform: hover ? 'translateY(-4px)' : 'translateY(0)',
+          transition: 'transform 0.4s ease',
+        }}
+      >
+        {label}
+      </div>
+    </Link>
   );
 }
 
-export function RailArrows({ nudge }: { nudge: (d: 1 | -1) => () => void }) {
+/** "Shop Now →" / "Explore Curtains →". A link, not a button: these sit inside
+ * or beneath a card that is itself clickable, and a second filled button would
+ * make the card look like it had two actions. */
+export function ArrowLink({ label, hovered }: { label: string; hovered: boolean }) {
   return (
-    <div style={{ display: 'flex', gap: 10, flexShrink: 0, paddingBottom: 6 }}>
-      <RailArrow dir="prev" onClick={nudge(-1)} />
-      <RailArrow dir="next" onClick={nudge(1)} />
-    </div>
+    <span
+      style={{
+        fontFamily: tokens.body,
+        fontSize: 11,
+        fontWeight: 500,
+        letterSpacing: '0.16em',
+        textTransform: 'uppercase',
+        color: hovered ? tokens.gold : tokens.ink,
+        borderBottom: `1px solid ${hovered ? tokens.gold : tokens.line}`,
+        paddingBottom: 3,
+        whiteSpace: 'nowrap',
+        transition: motion.link,
+      }}
+    >
+      {label} →
+    </span>
   );
 }

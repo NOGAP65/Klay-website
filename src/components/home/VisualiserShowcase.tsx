@@ -18,7 +18,6 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { tokens, layout, motion } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCartStore } from '../../store/cartStore';
@@ -27,9 +26,13 @@ import { bookingLink } from '../../lib/bookingLink';
 import KlayConfigurator from '../../visualiser/KlayConfigurator';
 import VisualiserControls from '../../visualiser/VisualiserControls';
 import { useVisualiserStore } from '../../visualiser/useVisualiserStore';
-import { BUY_NOW_LABEL, CtaButton, SectionHead, TextLink, useHover } from './primitives';
+import { CtaButton, SectionHead, TextLink, useHover } from './primitives';
 
 const MAX_WINDOWS = 12;
+
+/** Matches the RADIUS the visualiser's own surfaces use, so the card and the
+ * canvas box inside it agree rather than being 2px and 12px apart. */
+const CARD_RADIUS = 2;
 
 /** Square stepper button. Same selection language as the configurator's own
  * pills — hairline at rest, gold on hover — so the row reads as part of the
@@ -128,14 +131,14 @@ function WindowCount({ value, onChange }: { value: number; onChange: (n: number)
 
 export function VisualiserShowcase() {
   const isMobile = useIsMobile();
-  const navigate = useNavigate();
   const [windows, setWindows] = useState(1);
+  const [added, setAdded] = useState(false);
 
   const addItem = useCartStore(s => s.addItem);
   const { blindType, fabricColour, hardwareColour, windowSize, operation, getCurrentPrice } =
     useVisualiserStore();
 
-  const handleBuyNow = () => {
+  const handleAddToCart = () => {
     // The catalogue entry for the configured blind type — the cart line needs a
     // product name and a display type, and this is where the visualiser's
     // vocabulary maps back onto the four things Klay actually sells.
@@ -151,10 +154,12 @@ export function VisualiserShowcase() {
       price: getCurrentPrice(),
     };
     for (let i = 0; i < windows; i += 1) addItem(line);
-    // Straight to the cart. This button says Buy Now, so it has to do what the
-    // hero's Buy Now promises rather than quietly banking the configuration and
-    // leaving the customer on the same page wondering whether it worked.
-    navigate('/cart');
+    // Confirms in place rather than navigating. The button says Add to Cart, not
+    // Checkout, so it should not move the customer off a configuration they may
+    // want to adjust — and the nav's cart badge increments at the same moment,
+    // which is the other half of the feedback.
+    setAdded(true);
+    window.setTimeout(() => setAdded(false), 2600);
   };
 
   return (
@@ -172,16 +177,28 @@ export function VisualiserShowcase() {
           style={{ marginBottom: isMobile ? 44 : 64 }}
         />
 
-        {/* 30/70. Controls are first in the DOM so they read first to a screen
-            reader and to anyone tabbing in, and `order` puts the canvas above
-            them on a phone — where a column of fields before any picture would
-            bury the one thing this section exists to show. */}
+        {/* ONE CARD, two columns at 30/70. Both columns share the card's cream
+            ground and its radius, so the controls read as part of the same
+            instrument as the render rather than as a form sitting next to a
+            picture. The canvas keeps its own charcoal box — that is
+            KlayConfigurator's, it is protected, and a dark surround is right
+            behind a photograph anyway: inside this card it reads as the screen
+            in the panel.
+
+            Controls are first in the DOM so they come first to a screen reader
+            and to anyone tabbing in; `order` puts the canvas above them on a
+            phone, where a column of fields before any picture would bury the one
+            thing this section exists to show. */}
         <div
           style={{
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? 36 : 44,
-            alignItems: 'flex-start',
+            gap: isMobile ? 28 : 32,
+            alignItems: 'stretch',
+            background: tokens.cream,
+            border: `1px solid ${tokens.lineFaint}`,
+            borderRadius: CARD_RADIUS,
+            padding: isMobile ? 20 : 28,
           }}
         >
           <div
@@ -191,6 +208,11 @@ export function VisualiserShowcase() {
               order: isMobile ? 2 : 1,
               display: 'flex',
               flexDirection: 'column',
+              // Centred against the canvas, which is the taller of the two. Top
+              // aligned, the ~170px the controls don't need collected into one
+              // dead cream block at the foot of the card; split above and below
+              // it reads as the card's own margin.
+              justifyContent: isMobile ? 'flex-start' : 'center',
               gap: isMobile ? 16 : 22,
             }}
           >
@@ -201,31 +223,34 @@ export function VisualiserShowcase() {
           <div style={{ flex: '1 1 auto', width: '100%', minWidth: 0, order: isMobile ? 1 : 2 }}>
             {/* KlayConfigurator caps its own width at mediaMaxVh x the photo's
                 aspect ratio. Its 72vh default was tuned for a full-height page
-                and leaves the render 150px narrower than the column it sits in
-                here, floating in parchment; 88 fills the 70% column instead. */}
-            <KlayConfigurator mediaMaxVh={88} />
+                and leaves the render floating inside the column here; 84 fills
+                the 70% column now that the card's padding has taken some of it. */}
+            <KlayConfigurator mediaMaxVh={84} />
           </div>
         </div>
 
-        {/* The conversion line. Centred under the whole two-column block rather
-            than tucked into the controls column, so it belongs to the render. */}
+        {/* The conversion line, below the card and centred on it: the button
+            belongs to the whole instrument, not to either column. Button and
+            quote link sit on one row, the link beside the button rather than
+            under it, so the section closes on a single line. */}
         <div
           style={{
-            marginTop: isMobile ? 40 : 56,
+            marginTop: isMobile ? 32 : 44,
             display: 'flex',
-            flexDirection: 'column',
+            flexWrap: 'wrap',
             alignItems: 'center',
-            gap: 18,
+            justifyContent: 'center',
+            gap: isMobile ? 20 : 28,
           }}
         >
-          {/* Same words as the hero and the closing CTA. The price is appended
-              because this is the one Buy Now on the page that knows what the
-              thing costs — a bare "Buy Now" under a configured render would be
-              hiding the number the customer just built. */}
-          <CtaButton onClick={handleBuyNow} style={{ minWidth: 280 }}>
-            {BUY_NOW_LABEL} — ${getCurrentPrice() * windows}
+          {/* The price rides on the label because this is the only CTA on the
+              page that knows what the thing costs — a bare "Add to Cart" under a
+              configured render hides the number the customer just built. */}
+          <CtaButton onClick={handleAddToCart} style={{ minWidth: 280 }}>
+            {added ? 'Added to cart ✓' : `Add to Cart — $${getCurrentPrice() * windows}`}
           </CtaButton>
           <TextLink
+            accent
             to={bookingLink({
               blindType,
               windowSize,
@@ -235,7 +260,7 @@ export function VisualiserShowcase() {
               hardwareColour,
             })}
           >
-            or get a free quote
+            or get a free quote →
           </TextLink>
         </div>
       </div>

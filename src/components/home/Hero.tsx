@@ -10,7 +10,7 @@
 
 import { tokens, eyebrow, headline, layout } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { BUY_NOW_TO, CtaButton, CtaLink, scrollToId } from './primitives';
+import { CtaButton, scrollToId } from './primitives';
 
 /** Roller blinds in a real room, shot wide. The hero has to show the product
  * doing its job, which rules out the furniture-led interiors in public/images. */
@@ -29,8 +29,8 @@ export function Hero() {
         position: 'relative',
         // Just short of the viewport, so the bottom edge of the section is
         // visible on load and the page reads as continuing.
-        height: isMobile ? '86vh' : '92vh',
-        minHeight: isMobile ? 540 : 640,
+        height: isMobile ? '88vh' : '96vh',
+        minHeight: isMobile ? 540 : 660,
         maxHeight: 1000,
         overflow: 'hidden',
         background: tokens.charcoal,
@@ -97,11 +97,11 @@ export function Hero() {
         {/* Written out rather than going through SectionHead, which emits an
             h2 — this is the page's one h1. */}
         <div style={{ maxWidth: 780 }}>
-          <p style={{ ...eyebrow, marginBottom: 24 }}>Australian made-to-measure</p>
+          <p style={{ ...eyebrow, marginBottom: 24 }}>Klay Interiors</p>
           <h1 style={{ ...headline.hero, color: tokens.warmWhite }}>
-            Window coverings,
+            The finishing layer
             <br />
-            made for <span style={{ fontStyle: 'italic', color: tokens.gold }}>your home.</span>
+            of <span style={{ fontStyle: 'italic', color: tokens.gold }}>your home.</span>
           </h1>
           {/* Brighter than tokens.onDarkMuted, which is tuned for a flat
               charcoal ground. This line lands over the sunlit half of the
@@ -116,7 +116,8 @@ export function Hero() {
               marginTop: 26,
             }}
           >
-            Designed online. Measured and installed by experts.
+            Blinds, curtains and wardrobes. Measured and installed by experts. See it in your
+            space before you buy.
           </p>
         </div>
 
@@ -129,10 +130,10 @@ export function Hero() {
             marginTop: isMobile ? 36 : 48,
           }}
         >
-          {/* BUY NOW is the primary everywhere on this page — see BUY_NOW_TO in
-              primitives for why it goes to the shop rather than to the
-              configurator. */}
-          <CtaLink to={BUY_NOW_TO}>Buy Now</CtaLink>
+          {/* Design Yours scrolls to the visualiser rather than navigating: the
+              tool it promises is on this page, and a page load to reach
+              something already loaded is a cost with no benefit. */}
+          <CtaButton onClick={scrollToId('visualiser')}>Design Yours</CtaButton>
           <CtaButton variant="ghost" onClick={scrollToId('how-it-works')}>
             How It Works
           </CtaButton>

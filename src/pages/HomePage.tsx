@@ -1,18 +1,22 @@
 // ---------------------------------------------------------------------------
-// The homepage.
+// The homepage. Fourteen sections, one job each.
 //
-// Twelve sections, in one order, doing one job each. The page alternates warm
-// white and parchment for the light sections and drops to charcoal twice — once
-// at the trust bar and once at the closing CTA — so the scroll has a rhythm
-// rather than being one continuous cream field.
+// The order is an argument, not a list. It opens on the outcome (a room, not a
+// product), names the four rooms the customer recognises, explains who does the
+// work, shows what things cost, catches the undecided, and only then hands over
+// the configurator — by which point the visitor knows the range, the price and
+// who installs it, so being asked to configure something is a reasonable request
+// rather than one made of a stranger. Everything after the tool answers the
+// objections that stop someone finishing: what the two ranges are actually for,
+// what it looks like in a real house, and what other people thought.
 //
-// The visualiser at section five is the only section that does work. Everything
-// above it earns the right to ask for a configuration (what Klay makes, what it
-// costs, who installs it); everything below it answers the objections that stop
-// someone finishing one.
+// The grounds alternate warm white and parchment through the light half and drop
+// to charcoal four times — the room grid, the recommendation band, the
+// inspiration tiles and the close — so the scroll has a rhythm instead of being
+// one continuous cream field.
 //
-// The section components live in components/home and are used only from here.
-// Nav and Footer are shared with every other page and stay in components/.
+// Section components live in components/home and are used only from here. Nav
+// and Footer are shared with every other page and stay in components/.
 // ---------------------------------------------------------------------------
 
 import { useEffect } from 'react';
@@ -22,12 +26,14 @@ import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { AnnouncementBar, BAR_HEIGHT } from '../components/home/AnnouncementBar';
 import { Hero } from '../components/home/Hero';
-import { CategoryStrip } from '../components/home/CategoryStrip';
-import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
+import { RoomGrid } from '../components/home/RoomGrid';
 import { HowItWorksSteps } from '../components/home/HowItWorksSteps';
-import { RangeCarousel } from '../components/home/RangeCarousel';
-import { TrustBar } from '../components/home/TrustBar';
-import { EditorialPanel } from '../components/home/EditorialPanel';
+import { ProductGrid } from '../components/home/ProductGrid';
+import { RecommendationBanner } from '../components/home/RecommendationBanner';
+import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
+import { AlternatingPanels } from '../components/home/AlternatingPanels';
+import { SocialProof } from '../components/home/SocialProof';
+import { InspirationTiles } from '../components/home/InspirationTiles';
 import { Testimonials } from '../components/home/Testimonials';
 import { FinalCta } from '../components/home/FinalCta';
 
@@ -65,31 +71,39 @@ export default function HomePage() {
         {/* 3 — The promise, full bleed under the transparent nav. */}
         <Hero />
 
-        {/* 4 — What Klay makes, as five photographs. */}
-        <CategoryStrip />
+        {/* 4 — Four rooms, edge to edge. Outcomes before products. */}
+        <RoomGrid />
 
-        {/* 5 — The centrepiece: configure it, see it, buy it. */}
-        <VisualiserShowcase />
-
-        {/* 6 — "Who measures it?", the objection that stops people ordering. */}
+        {/* 5 — Who does the work. It comes before the prices because "who
+            measures it?" is the objection that stops people ordering. */}
         <HowItWorksSteps />
 
-        {/* 7 — What's for sale, named and priced. */}
-        <RangeCarousel />
+        {/* 6 — What's for sale, named and priced, no gatekeeping. */}
+        <ProductGrid />
 
-        {/* 8 — The four claims, on charcoal. */}
-        <TrustBar />
+        {/* 7 — The catch for anyone who read six prices and still doesn't know
+            which one they need. */}
+        <RecommendationBanner />
 
-        {/* 9 — The in-home service argument, at length. */}
-        <EditorialPanel />
+        {/* 8 — The centrepiece: configure it, see it, buy it. */}
+        <VisualiserShowcase />
 
-        {/* 10 — Proof, from customers who bought the products above. */}
+        {/* 9 — One panel per range, one idea each: light, then control. */}
+        <AlternatingPanels />
+
+        {/* 10 — What it looks like once it's up. Trust, not conversion. */}
+        <SocialProof />
+
+        {/* 11 — Four ways further in, for the reader who isn't buying today. */}
+        <InspirationTiles />
+
+        {/* 12 — Proof, in customers' own words. */}
         <Testimonials />
 
-        {/* 11 — One last action, pointing back at the visualiser. */}
+        {/* 13 — One last action, pointing back at the tool. */}
         <FinalCta />
 
-        {/* 12 — Footer. */}
+        {/* 14 — Footer. */}
         <Footer />
       </main>
     </>

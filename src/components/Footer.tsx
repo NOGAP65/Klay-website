@@ -40,10 +40,17 @@ function FooterLink({ to, children }: { to: string; children: React.ReactNode })
     onMouseLeave: () => setHover(false),
   };
 
-  // tel: and mailto: are not routes — <Link> would try to push them onto the
-  // history stack and navigate to /tel:1300005529.
+  // tel:, mailto: and https: are not routes — <Link> would push them onto the
+  // history stack and navigate to /tel:1300005529. Only the off-site ones open
+  // in a new tab; a mail or phone handler replacing the page would be wrong.
+  const external = /^https?:/.test(to);
   return to.includes(':') ? (
-    <a {...bind} href={to} style={style}>
+    <a
+      {...bind}
+      href={to}
+      style={style}
+      {...(external ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
+    >
       {children}
     </a>
   ) : (
@@ -58,26 +65,22 @@ const COLUMNS: { heading: string; links: { label: string; to: string }[] }[] = [
     heading: 'Products',
     links: [
       // Derived, so a renamed or retired product can't leave a dead link here.
-      ...PRODUCTS.map(p => ({ label: `${p.name} — ${p.type}`, to: `/products/${p.slug}` })),
-      { label: 'All Roller Blinds', to: '/blinds/roller-blinds' },
+      ...PRODUCTS.map(p => ({ label: `${p.name} ${p.type}`, to: `/products/${p.slug}` })),
+      // Curtains and wardrobes have no listing page yet — the /products
+      // resolver sends both to the enquiry form rather than to a 404.
+      { label: 'Curtains', to: '/products?category=curtains' },
+      { label: 'Wardrobes', to: '/products?room=outdoor' },
     ],
   },
   {
     heading: 'Company',
     links: [
-      { label: 'About Klay', to: '/about' },
       { label: 'How It Works', to: '/how-it-works' },
-      { label: 'The Visualiser', to: '/visualiser' },
-      { label: 'Reviews', to: '/#reviews' },
-    ],
-  },
-  {
-    heading: 'Support',
-    links: [
-      { label: 'Contact Us', to: '/contact' },
-      { label: 'Book a Measure', to: '/book' },
-      { label: 'Your Cart', to: '/cart' },
-      { label: 'Warranty', to: '/contact' },
+      { label: 'About Klay', to: '/about' },
+      // The blog does not exist yet — see InspirationTiles. Points at the
+      // process page until it does, rather than at nothing.
+      { label: 'Journal', to: '/how-it-works' },
+      { label: 'Contact', to: '/contact' },
     ],
   },
   {
@@ -101,20 +104,41 @@ export function Footer() {
       }}
     >
       <div style={{ maxWidth: layout.containerMax, margin: '0 auto' }}>
-        <img
-          src="/images/klay-logo.png"
-          alt="Klay Interiors"
-          style={{ width: 128, height: 51, objectFit: 'contain', objectPosition: 'left', display: 'block' }}
-        />
-
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
             gap: isMobile ? '40px 24px' : 48,
-            marginTop: isMobile ? 48 : 64,
           }}
         >
+          {/* Column one is the brand rather than a list of links: mark, one line
+              on what Klay does, and the Instagram handle — which is where this
+              customer researches before they buy, so it is a first-class exit
+              from the footer and not a row of grey social glyphs. */}
+          <div style={{ gridColumn: isMobile ? 'span 2' : undefined }}>
+            <img
+              src="/images/klay-logo.png"
+              alt="Klay Interiors"
+              style={{ width: 128, height: 51, objectFit: 'contain', objectPosition: 'left', display: 'block' }}
+            />
+            <p
+              style={{
+                fontFamily: tokens.body,
+                fontSize: 14,
+                lineHeight: 1.75,
+                color: tokens.inkSoft,
+                margin: '20px 0 0',
+                maxWidth: 260,
+              }}
+            >
+              Australian made-to-measure blinds, curtains and wardrobes — measured and installed
+              by hand across Victoria.
+            </p>
+            <div style={{ marginTop: 18 }}>
+              <FooterLink to="https://www.instagram.com/klayinteriors">@klayinteriors</FooterLink>
+            </div>
+          </div>
+
           {COLUMNS.map(col => (
             <div key={col.heading}>
               <h4 style={{ ...eyebrow, marginBottom: 18 }}>{col.heading}</h4>

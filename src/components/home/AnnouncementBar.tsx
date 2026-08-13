@@ -11,9 +11,9 @@ import { useEffect, useState } from 'react';
 import { tokens } from '../../theme';
 
 const MESSAGES = [
-  'Free in-home measure & installation included',
-  'Made to order, delivered in 7–10 days',
-  'Covering all of Victoria — book online today',
+  'Free in-home measure & professional installation included',
+  'Custom made in 7–10 days. Victoria-wide coverage.',
+  'See it in your home before you buy — use our free visualiser',
 ];
 
 const INTERVAL_MS = 4000;

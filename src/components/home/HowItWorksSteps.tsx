@@ -15,7 +15,7 @@ import { CtaLink, SectionHead } from './primitives';
 
 const STEPS = [
   {
-    label: 'Configure online',
+    label: 'Design online',
     body: 'Choose your fabric, colour, size and operation, and see the result on a photo of your own window.',
   },
   {
@@ -24,11 +24,11 @@ const STEPS = [
   },
   {
     label: 'Custom manufactured',
-    body: 'Your blinds are cut and assembled to those exact measurements, in Australia, in seven to ten days.',
+    body: 'Your order is cut and assembled to those exact measurements, in Australia, in seven to ten days.',
   },
   {
     label: 'We install, you enjoy',
-    body: 'The same technician returns to fit them, squares them off and takes the packaging away with him.',
+    body: 'The same technician returns to fit it, squares everything off and takes the packaging away with him.',
   },
 ];
 
@@ -43,8 +43,9 @@ export function HowItWorksSteps() {
       <div style={{ maxWidth: layout.containerMax, margin: '0 auto' }}>
         <SectionHead
           label="How it works"
-          title="Four steps, and we do three of them."
+          title="From your screen to your window — we handle everything."
           align="center"
+          maxWidth={860}
           style={{ marginBottom: isMobile ? 56 : 88 }}
         />
 
@@ -57,17 +58,20 @@ export function HowItWorksSteps() {
         >
           {STEPS.map((step, i) => (
             <div key={step.label}>
+              {/* 01, not 1. Cormorant Garamond's "1" is a bare stem with no
+                  base flag and at this size reads as a capital I; the leading
+                  zero resolves it, and the two-digit form is the brief's. */}
               <div
                 style={{
                   fontFamily: tokens.display,
-                  fontSize: isMobile ? 76 : 96,
+                  fontSize: isMobile ? 66 : 84,
                   fontWeight: 300,
                   lineHeight: 0.9,
                   color: tokens.gold,
                   marginBottom: 24,
                 }}
               >
-                {i + 1}
+                {String(i + 1).padStart(2, '0')}
               </div>
               {/* Hairline under the numeral, not a card border — it groups the
                   numeral with its own step without drawing four boxes. */}
