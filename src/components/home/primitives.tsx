@@ -237,10 +237,15 @@ export const scrollToId = (id: string) => () => {
 export function SectionBand({
   label,
   title,
+  sub,
   isMobile,
 }: {
   label: string;
   title: React.ReactNode;
+  /** One line under the heading. Only the visualiser band takes one — it is the
+   * single section on the page that needs to tell you how to use it, and the
+   * category and range bands would be explaining a photograph. */
+  sub?: React.ReactNode;
   isMobile: boolean;
 }) {
   return (
@@ -258,6 +263,20 @@ export function SectionBand({
       >
         {title}
       </h2>
+      {sub && (
+        <p
+          style={{
+            fontFamily: tokens.body,
+            fontSize: 15,
+            lineHeight: 1.7,
+            color: tokens.inkSoft,
+            margin: '18px auto 0',
+            maxWidth: 520,
+          }}
+        >
+          {sub}
+        </p>
+      )}
     </div>
   );
 }

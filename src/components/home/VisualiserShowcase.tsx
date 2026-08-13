@@ -18,6 +18,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { tokens, layout, motion } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCartStore } from '../../store/cartStore';
@@ -26,7 +27,7 @@ import { bookingLink } from '../../lib/bookingLink';
 import KlayConfigurator from '../../visualiser/KlayConfigurator';
 import VisualiserControls from '../../visualiser/VisualiserControls';
 import { useVisualiserStore } from '../../visualiser/useVisualiserStore';
-import { CtaButton, SectionHead, TextLink, useHover } from './primitives';
+import { CtaButton, SectionBand, TextLink, useHover } from './primitives';
 
 const MAX_WINDOWS = 12;
 
@@ -131,14 +132,14 @@ function WindowCount({ value, onChange }: { value: number; onChange: (n: number)
 
 export function VisualiserShowcase() {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [windows, setWindows] = useState(1);
-  const [added, setAdded] = useState(false);
 
   const addItem = useCartStore(s => s.addItem);
   const { blindType, fabricColour, hardwareColour, windowSize, operation, getCurrentPrice } =
     useVisualiserStore();
 
-  const handleAddToCart = () => {
+  const handleBuyNow = () => {
     // The catalogue entry for the configured blind type — the cart line needs a
     // product name and a display type, and this is where the visualiser's
     // vocabulary maps back onto the four things Klay actually sells.
@@ -154,29 +155,42 @@ export function VisualiserShowcase() {
       price: getCurrentPrice(),
     };
     for (let i = 0; i < windows; i += 1) addItem(line);
-    // Confirms in place rather than navigating. The button says Add to Cart, not
-    // Checkout, so it should not move the customer off a configuration they may
-    // want to adjust — and the nav's cart badge increments at the same moment,
-    // which is the other half of the feedback.
-    setAdded(true);
-    window.setTimeout(() => setAdded(false), 2600);
+    // Straight to the cart, because the button says Buy Now. When it read "Add to
+    // Cart" the right behaviour was the opposite — confirm in place and leave the
+    // customer on a configuration they might still want to adjust — but a Buy Now
+    // that silently banks the order and leaves you looking at the same screen
+    // reads as a button that did nothing.
+    navigate('/cart');
   };
 
   return (
-    <section id="visualiser" style={{ background: tokens.parchment, padding: isMobile ? '80px 24px' : '120px 80px' }}>
-      <div style={{ maxWidth: layout.containerMax, margin: '0 auto' }}>
-        <SectionHead
-          label="The Klay visualiser"
-          title={
-            <>
-              See it in your home <span style={{ fontStyle: 'italic' }}>before you buy.</span>
-            </>
-          }
-          sub="Upload a photo of your window and configure in real time."
-          align="center"
-          style={{ marginBottom: isMobile ? 44 : 64 }}
-        />
+    <section id="visualiser" style={{ background: tokens.parchment }}>
+      {/* The same band as the category and range sections, from the same
+          component, so the page's three big sections are introduced identically
+          rather than in three slightly different voices. It supplies this
+          section's top padding, which is why the section itself no longer carries
+          any — the band's own 76px is the rhythm now.
 
+          It is the one band that takes a sub. This is the only section on the
+          page that has to tell you how to use it; above a wall of photographs the
+          same line would be explaining a picture. */}
+      <SectionBand
+        label="The Klay visualiser"
+        title={
+          <>
+            See it in your home <span style={{ fontStyle: 'italic' }}>before you buy.</span>
+          </>
+        }
+        sub="Upload a photo of your window and configure in real time."
+        isMobile={isMobile}
+      />
+
+      {/* Two elements, not one: the inset lives on the outer and the cap on the
+          inner. Putting both on one div made the cap include the padding — every
+          global box-sizing is border-box here — which quietly took 160px off the
+          card and 100px off the canvas the moment this section moved to a band. */}
+      <div style={{ padding: isMobile ? '0 24px 72px' : '0 80px 96px' }}>
+        <div style={{ maxWidth: layout.containerMax, margin: '0 auto' }}>
         {/* ONE CARD, two columns at 30/70. Both columns share the card's cream
             ground and its radius, so the controls read as part of the same
             instrument as the render rather than as a form sitting next to a
@@ -243,11 +257,12 @@ export function VisualiserShowcase() {
             gap: isMobile ? 20 : 28,
           }}
         >
-          {/* The price rides on the label because this is the only CTA on the
-              page that knows what the thing costs — a bare "Add to Cart" under a
-              configured render hides the number the customer just built. */}
-          <CtaButton onClick={handleAddToCart} style={{ minWidth: 280 }}>
-            {added ? 'Added to cart ✓' : `Add to Cart — $${getCurrentPrice() * windows}`}
+          {/* Buy Now, the same words as every tile on the page. The price rides on
+              the label because this is the only one of them that knows what the
+              thing costs — a bare "Buy Now" under a configured render would hide
+              the number the customer just built. */}
+          <CtaButton onClick={handleBuyNow} style={{ minWidth: 280 }}>
+            Buy Now — ${getCurrentPrice() * windows}
           </CtaButton>
           <TextLink
             accent
@@ -262,6 +277,7 @@ export function VisualiserShowcase() {
           >
             or get a free quote →
           </TextLink>
+          </div>
         </div>
       </div>
     </section>
