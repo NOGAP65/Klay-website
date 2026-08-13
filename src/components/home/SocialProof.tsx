@@ -18,9 +18,9 @@
 // ---------------------------------------------------------------------------
 
 import { Link } from 'react-router-dom';
-import { tokens, layout } from '../../theme';
+import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { SectionHead, useHover } from './primitives';
+import { SectionBand, useHover } from './primitives';
 
 const INSTAGRAM = 'https://www.instagram.com/klayinteriors';
 
@@ -107,22 +107,16 @@ export function SocialProof() {
   const { hover, bind } = useHover();
 
   return (
-    <section style={{ background: tokens.warmWhite, padding: isMobile ? '80px 0' : '120px 0' }}>
-      <div
-        style={{
-          maxWidth: layout.containerMax,
-          margin: '0 auto',
-          padding: `0 ${layout.inlinePad(isMobile)}px`,
-          marginBottom: isMobile ? 40 : 56,
-        }}
-      >
-        <SectionHead
-          label="Social proof"
-          title="In your home"
-          sub="Real Klay installations. Real Melbourne homes."
-          align="center"
-        />
-      </div>
+    <section style={{ background: tokens.warmWhite }}>
+      {/* The page's shared band, same as the categories, the range and the
+          visualiser. It supplies the section's top padding, so the section itself
+          carries none. */}
+      <SectionBand
+        label="Social proof"
+        title="In your home"
+        sub="Real Klay installations. Real Melbourne homes."
+        isMobile={isMobile}
+      />
 
       <div
         className="klay-hscroll"
@@ -137,7 +131,13 @@ export function SocialProof() {
         ))}
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: isMobile ? 32 : 44 }}>
+      <div
+        style={{
+          textAlign: 'center',
+          paddingTop: isMobile ? 32 : 44,
+          paddingBottom: isMobile ? 72 : 96,
+        }}
+      >
         <a
           {...bind}
           href={INSTAGRAM}

@@ -243,9 +243,10 @@ export function SectionBand({
 }: {
   label: string;
   title: React.ReactNode;
-  /** One line under the heading. Only the visualiser band takes one — it is the
-   * single section on the page that needs to tell you how to use it, and the
-   * category and range bands would be explaining a photograph. */
+  /** One line under the heading, where the heading alone leaves a real question
+   * open — how to use the visualiser, or whose homes the install strip is
+   * showing. The category and range bands take none: above a wall of labelled
+   * photographs a sub is the page explaining a picture. */
   sub?: React.ReactNode;
   isMobile: boolean;
   /** Flips the heading and sub for a dark ground. The eyebrow needs no variant:

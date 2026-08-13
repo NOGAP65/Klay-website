@@ -16,7 +16,7 @@
 
 import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { PhotoTile } from './primitives';
+import { PhotoTile, SectionBand } from './primitives';
 
 const TILES = [
   {
@@ -59,6 +59,17 @@ export function InspirationTiles() {
 
   return (
     <section style={{ background: tokens.charcoal }}>
+      {/* The same band as every other grid on the page, onDark for the charcoal
+          ground. This row previously arrived with no introduction at all, which
+          after two banded grids read as an unfinished section rather than as a
+          deliberately quiet one. */}
+      <SectionBand
+        label="Journal"
+        title="Ideas and inspiration."
+        isMobile={isMobile}
+        onDark
+      />
+
       <div
         style={{
           display: 'grid',
