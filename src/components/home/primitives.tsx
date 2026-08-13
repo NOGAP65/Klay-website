@@ -307,22 +307,36 @@ export function PhotoTile({
    * photograph it earns its place only where the label alone is too terse to be
    * useful. */
   blurb?: string;
-  /** An outlined chip that fades in under the label on hover — "Shop Now",
-   * "Enquire". It is what tells the visitor the tile is a link at all: a
-   * photograph with a word on it is not obviously clickable, and the push-in is
-   * too subtle to carry that on its own.
+  /** The action revealed on hover — "Shop Now", "Enquire". It is what tells the
+   * visitor the tile is a link at all: a photograph with a word on it is not
+   * obviously clickable, and the push-in alone is too subtle to carry that.
    *
-   * Its space is reserved whether or not it is showing, so the label does not
-   * jump when the pointer arrives. */
+   * On a pointer device the whole tile darkens and the CTA lands in the middle of
+   * it. On a touch screen, where there is no hover, it sits under the label
+   * instead and is always visible — a permanent full-tile scrim would mean the
+   * photographs never being seen properly on a phone at all. */
   hoverCta?: string;
 }) {
   const { hover, bind } = useHover();
   const isMobile = useIsMobile();
-  // There is no hover on a touch screen, so on a phone the chip is simply always
-  // there. Gating it on hover alone would reserve its space and never fill it,
-  // and leave the tiles with no visible affordance at all on the devices where
-  // that matters most.
-  const showCta = hover || isMobile;
+  // The scrim-and-centred-CTA treatment is a pointer behaviour. On touch it
+  // degrades to a chip under the label — see the note on hoverCta.
+  const overlay = !!hoverCta && !isMobile;
+  const inlineChip = !!hoverCta && isMobile;
+
+  const chipStyle: React.CSSProperties = {
+    display: 'inline-block',
+    padding: '12px 24px',
+    fontFamily: tokens.body,
+    fontSize: 10.5,
+    fontWeight: 500,
+    letterSpacing: '0.2em',
+    textTransform: 'uppercase',
+    color: tokens.ink,
+    background: tokens.gold,
+    whiteSpace: 'nowrap',
+  };
+
   return (
     <Link
       {...bind}
@@ -395,6 +409,38 @@ export function PhotoTile({
           }}
         />
       )}
+      {/* The black-out. Above the photograph and its gradient, below the label —
+          which is why the label stack comes after it in the DOM and stays crisp
+          while everything behind it dims. */}
+      {overlay && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(28,24,16,0.66)',
+            opacity: hover ? 1 : 0,
+            transition: 'opacity 0.3s ease',
+          }}
+        />
+      )}
+      {overlay && (
+        <div
+          aria-hidden={!hover}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: hover ? 1 : 0,
+            transform: hover ? 'scale(1)' : 'scale(0.96)',
+            transition: 'opacity 0.3s ease, transform 0.3s ease',
+          }}
+        >
+          <span style={chipStyle}>{hoverCta}</span>
+        </div>
+      )}
+
       <div
         style={{
           position: 'absolute',
@@ -456,27 +502,8 @@ export function PhotoTile({
             {note}
           </div>
         )}
-        {hoverCta && (
-          <div
-            // Rendered always, revealed on hover. Toggling display instead would
-            // reflow the stack under the pointer and shove the label upward.
-            aria-hidden={!showCta}
-            style={{
-              display: 'inline-block',
-              marginTop: 14,
-              padding: '9px 18px',
-              fontFamily: tokens.body,
-              fontSize: 10,
-              fontWeight: 500,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: tokens.ink,
-              background: tokens.gold,
-              opacity: showCta ? 1 : 0,
-              transform: showCta ? 'translateY(0)' : 'translateY(6px)',
-              transition: 'opacity 0.28s ease, transform 0.28s ease',
-            }}
-          >
+        {inlineChip && (
+          <div style={{ ...chipStyle, marginTop: 16, padding: '10px 20px', fontSize: 10 }}>
             {hoverCta}
           </div>
         )}

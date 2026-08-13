@@ -64,16 +64,14 @@ export function HowItWorksSteps() {
     <section
       id="how-it-works"
       style={{
-        // Parchment, not warmWhite. The category band above and the range band
-        // below are both warmWhite, so as a third warm-white section this one
-        // dissolved into its neighbours and the page read as one continuous
-        // field from the hero to the visualiser.
-        //
-        // Parchment rather than tokens.cream despite "cream" being the word for
-        // it: cream is #FAF7F2, which is LIGHTER than warmWhite and would have
-        // separated even less. Parchment is the palette's one deliberate step
-        // down, and it is what actually reads as cream against white.
-        background: tokens.parchment,
+        // Charcoal. This section has two jobs at once — it separates the category
+        // tiles above from the range grid below, both of which are walls of
+        // photography on warm white, AND it delivers the four steps. Parchment
+        // was too close to warm white to do the first job: one deliberate step
+        // down still read as the same field continuing. Dark does it in one move,
+        // and the four step photographs are light enough to gain from the
+        // contrast rather than fight it.
+        background: tokens.charcoal,
         // 44, against the standard 120. Everything here is information; none of
         // it is atmosphere, so none of it needs room to breathe.
         padding: isMobile ? '48px 24px' : '44px 80px',
@@ -84,12 +82,13 @@ export function HowItWorksSteps() {
           label="How it works"
           title="From your screen to your window — we handle everything."
           align="center"
+          onDark
           // Wide enough, at this size, for the whole sentence to sit on ONE line
           // on a desktop. It was two lines at 44/820 and three at the 64px
           // section scale — 90px of headline for eleven words.
           maxWidth={1040}
           titleSize="clamp(26px, 3vw, 38px)"
-          style={{ marginBottom: isMobile ? 30 : 30 }}
+          style={{ marginBottom: 30 }}
         />
 
         <div
@@ -111,7 +110,9 @@ export function HowItWorksSteps() {
                   aspectRatio: '2 / 1',
                   overflow: 'hidden',
                   borderRadius: 2,
-                  background: tokens.cream,
+                  // A hairline placeholder rather than a pale block: on charcoal,
+                  // a cream box would flash bright before the image lands.
+                  background: 'rgba(245,242,237,0.06)',
                   marginBottom: 14,
                 }}
               >
@@ -151,7 +152,7 @@ export function HowItWorksSteps() {
                     fontWeight: 500,
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
-                    color: tokens.ink,
+                    color: tokens.warmWhite,
                     margin: 0,
                   }}
                 >
@@ -163,7 +164,7 @@ export function HowItWorksSteps() {
                   fontFamily: tokens.body,
                   fontSize: 13.5,
                   lineHeight: 1.7,
-                  color: tokens.inkSoft,
+                  color: tokens.onDarkMuted,
                   margin: 0,
                 }}
               >
@@ -178,7 +179,9 @@ export function HowItWorksSteps() {
             around it to repeat what the nav and the editorial panel both already
             offer. */}
         <div style={{ marginTop: isMobile ? 30 : 28, textAlign: 'center' }}>
-          <TextLink to="/how-it-works">See the full process →</TextLink>
+          <TextLink to="/how-it-works" onDark>
+            See the full process →
+          </TextLink>
         </div>
       </div>
     </section>

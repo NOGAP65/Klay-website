@@ -26,7 +26,7 @@
 
 import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { PhotoTile, SectionBand } from './primitives';
+import { CtaLink, PhotoTile, SectionBand } from './primitives';
 
 // ON THE HOVER CTA. It is NOT "Shop Now" on all three, and that is deliberate.
 // Indoor resolves to the roller-blind listing, which is a shop. Outdoor and
@@ -103,6 +103,16 @@ export function CategoryGrid() {
             labelSize="clamp(28px, 3vw, 40px)"
           />
         ))}
+      </div>
+
+      {/* The way out for someone none of the three tiles fits, and the only place
+          on the page that offers the measure the gold bar above just promised.
+          Deliberately not another "View All Products" — the range section below
+          already has that, and two buttons to the same listing is one of them
+          doing nothing. /book takes the configuration in query params but
+          parseOrderConfig defaults every one of them, so arriving bare is fine. */}
+      <div style={{ textAlign: 'center', padding: isMobile ? '48px 24px' : '64px 80px' }}>
+        <CtaLink to="/book">Book a Free Measure</CtaLink>
       </div>
     </section>
   );
