@@ -164,7 +164,17 @@ export function VisualiserShowcase() {
   };
 
   return (
-    <section id="visualiser" style={{ background: tokens.parchment }}>
+    // Charcoal. The centrepiece is a bright cream panel, and on parchment the two
+    // light tones sat a single step apart so the card had nothing to be bright
+    // against — it read as a slightly paler rectangle on a pale ground. On a dark
+    // ground the panel reads as a lit screen in a dark room, which is what it is,
+    // and the white heading above it separates instead of blending.
+    //
+    // Charcoal rather than ink so the page keeps ONE dark tone across the hero,
+    // How It Works, the inspiration tiles and the close. This only works because
+    // the recommendation band above it went light in the same pass — two adjacent
+    // charcoal sections would have merged into one field.
+    <section id="visualiser" style={{ background: tokens.charcoal }}>
       {/* The same band as the category and range sections, from the same
           component, so the page's three big sections are introduced identically
           rather than in three slightly different voices. It supplies this
@@ -183,6 +193,7 @@ export function VisualiserShowcase() {
         }
         sub="Upload a photo of your window and configure in real time."
         isMobile={isMobile}
+        onDark
       />
 
       {/* Two elements, not one: the inset lives on the outer and the cap on the
@@ -210,7 +221,10 @@ export function VisualiserShowcase() {
             gap: isMobile ? 28 : 32,
             alignItems: 'stretch',
             background: tokens.cream,
-            border: `1px solid ${tokens.lineFaint}`,
+            // No border. It was a hairline of ink at 0.08, which existed to lift
+            // a cream card off a parchment ground one step away from it. Against
+            // charcoal the card separates completely on its own, and the hairline
+            // would only muddy the edge that is now doing the work.
             borderRadius: CARD_RADIUS,
             padding: isMobile ? 20 : 28,
           }}

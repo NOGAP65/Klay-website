@@ -23,7 +23,12 @@ export function RecommendationBanner() {
   return (
     <section
       style={{
-        background: tokens.charcoal,
+        // Parchment, not charcoal. It sits between the range grid's dark tiles and
+        // the visualiser, which is now dark itself — as charcoal it would have run
+        // straight into the section below it and stopped being a divider at all.
+        // Parchment rather than warmWhite so it also differs from the range band
+        // above, which leaves all three grounds through here distinct.
+        background: tokens.parchment,
         // Short by design — it is a divider that happens to convert, not a
         // section competing with the two it separates.
         minHeight: isMobile ? 260 : 300,
@@ -35,7 +40,11 @@ export function RecommendationBanner() {
       }}
     >
       <div style={{ maxWidth: layout.containerMax }}>
-        <h2 style={{ ...headline.section, color: tokens.gold, fontSize: 'clamp(32px, 4vw, 48px)' }}>
+        {/* Ink, not the gold this headline had on charcoal. Gold on parchment is
+            about 1.9:1 — it fails the 3:1 that even display-size text needs, and
+            it looked washed out rather than accented. The gold survives where it
+            still reads: the eyebrow-weight CTA below. */}
+        <h2 style={{ ...headline.section, color: tokens.ink, fontSize: 'clamp(32px, 4vw, 48px)' }}>
           Not sure where to start?
         </h2>
         <p
@@ -43,7 +52,7 @@ export function RecommendationBanner() {
             fontFamily: tokens.body,
             fontSize: 15,
             lineHeight: 1.7,
-            color: tokens.warmWhite,
+            color: tokens.inkSoft,
             margin: 0,
             marginTop: 18,
             maxWidth: 560,

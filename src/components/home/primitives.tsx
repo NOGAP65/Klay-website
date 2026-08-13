@@ -239,6 +239,7 @@ export function SectionBand({
   title,
   sub,
   isMobile,
+  onDark = false,
 }: {
   label: string;
   title: React.ReactNode;
@@ -247,6 +248,9 @@ export function SectionBand({
    * category and range bands would be explaining a photograph. */
   sub?: React.ReactNode;
   isMobile: boolean;
+  /** Flips the heading and sub for a dark ground. The eyebrow needs no variant:
+   * gold holds on both. */
+  onDark?: boolean;
 }) {
   return (
     <div style={{ padding: isMobile ? '52px 24px' : '76px 80px', textAlign: 'center' }}>
@@ -257,7 +261,7 @@ export function SectionBand({
           fontSize: 'clamp(34px, 4.4vw, 56px)',
           fontWeight: 300,
           lineHeight: 1.05,
-          color: tokens.ink,
+          color: onDark ? tokens.warmWhite : tokens.ink,
           margin: 0,
         }}
       >
@@ -269,7 +273,7 @@ export function SectionBand({
             fontFamily: tokens.body,
             fontSize: 15,
             lineHeight: 1.7,
-            color: tokens.inkSoft,
+            color: onDark ? tokens.onDarkMuted : tokens.inkSoft,
             margin: '18px auto 0',
             maxWidth: 520,
           }}

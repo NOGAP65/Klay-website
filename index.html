@@ -10,7 +10,16 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://bolt.new/static/og_default.png" />
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap');
+      /* Cormorant Garamond 500 is deliberately NOT requested. Google serves a
+         @font-face for it whose woff2 404s at gstatic, so asking for it bought a
+         failed request and a console error on every page load and loaded nothing:
+         document.fonts.check('500 40px "Cormorant Garamond"') came back false
+         while every other face here came back true. Nothing live uses it either —
+         the one call site was ProcessScene, which is imported nowhere.
+
+         Keep it out unless a real weight-500 need appears, and if one does, check
+         the file actually resolves before relying on it. */
+      @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;500&display=swap');
 
       /* The custom properties that used to live here were dead — nothing in
          src referenced var(--anything), and the values had drifted off the
