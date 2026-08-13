@@ -14,6 +14,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { tokens, eyebrow, headline, motion } from '../../theme';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 /** Hover state plus the two handlers, so a component that needs three hover
  * targets doesn't declare three useStates by hand. */
@@ -284,6 +285,7 @@ export function PhotoTile({
   labelSize = 'clamp(24px, 2.4vw, 32px)',
   note,
   blurb,
+  hoverCta,
 }: {
   to: string;
   label: string;
@@ -299,13 +301,28 @@ export function PhotoTile({
   labelSize?: string;
   /** One gold line under the label — a from-price, or "Coming soon". */
   note?: string;
-  /** A line of supporting copy, rendered ONLY on a photoless tile. On a
-   * photograph there is no room for it without the type sprawling over the
-   * picture; on a charcoal tile it is what stops the tile reading as an empty
-   * box. */
+  /** A line of supporting copy under the label — what is actually in this
+   * category, or what the type is for. Whether a tile gets one is the caller's
+   * call: it is what stops a photoless tile reading as an empty box, and on a
+   * photograph it earns its place only where the label alone is too terse to be
+   * useful. */
   blurb?: string;
+  /** An outlined chip that fades in under the label on hover — "Shop Now",
+   * "Enquire". It is what tells the visitor the tile is a link at all: a
+   * photograph with a word on it is not obviously clickable, and the push-in is
+   * too subtle to carry that on its own.
+   *
+   * Its space is reserved whether or not it is showing, so the label does not
+   * jump when the pointer arrives. */
+  hoverCta?: string;
 }) {
   const { hover, bind } = useHover();
+  const isMobile = useIsMobile();
+  // There is no hover on a touch screen, so on a phone the chip is simply always
+  // there. Gating it on hover alone would reserve its space and never fill it,
+  // and leave the tiles with no visible affordance at all on the devices where
+  // that matters most.
+  const showCta = hover || isMobile;
   return (
     <Link
       {...bind}
@@ -368,9 +385,13 @@ export function PhotoTile({
             left: 0,
             right: 0,
             bottom: 0,
-            height: '46%',
+            height: '58%',
+            // Deeper and taller than it was. The labels were getting lost on
+            // these photographs — they are warm and bright right down to the
+            // bottom edge, and warm white at weight 300 over a sunlit floorboard
+            // is decoration rather than a label you notice.
             background:
-              'linear-gradient(180deg, rgba(28,24,16,0) 0%, rgba(28,24,16,0.28) 55%, rgba(28,24,16,0.82) 100%)',
+              'linear-gradient(180deg, rgba(28,24,16,0) 0%, rgba(28,24,16,0.30) 48%, rgba(28,24,16,0.92) 100%)',
           }}
         />
       )}
@@ -391,7 +412,10 @@ export function PhotoTile({
             fontFamily: tokens.display,
             fontSize: labelSize,
             fontStyle: 'italic',
-            fontWeight: 300,
+            // 400, not 300. Cormorant's light weight is very light, and over a
+            // photograph it thins out to the point where the label reads as a
+            // watermark.
+            fontWeight: 400,
             lineHeight: 1.1,
             color: tokens.warmWhite,
             // Not decoration — it is what guarantees the label reads on the light
@@ -402,15 +426,16 @@ export function PhotoTile({
         >
           {label}
         </div>
-        {!image && blurb && (
+        {blurb && (
           <div
             style={{
               fontFamily: tokens.body,
               fontSize: 13,
               lineHeight: 1.6,
-              color: tokens.onDarkMuted,
-              marginTop: 10,
-              maxWidth: 260,
+              color: 'rgba(245,242,237,0.82)',
+              marginTop: 8,
+              maxWidth: 280,
+              textShadow: image ? '0 1px 10px rgba(28,24,16,0.5)' : undefined,
             }}
           >
             {blurb}
@@ -429,6 +454,30 @@ export function PhotoTile({
             }}
           >
             {note}
+          </div>
+        )}
+        {hoverCta && (
+          <div
+            // Rendered always, revealed on hover. Toggling display instead would
+            // reflow the stack under the pointer and shove the label upward.
+            aria-hidden={!showCta}
+            style={{
+              display: 'inline-block',
+              marginTop: 14,
+              padding: '9px 18px',
+              fontFamily: tokens.body,
+              fontSize: 10,
+              fontWeight: 500,
+              letterSpacing: '0.2em',
+              textTransform: 'uppercase',
+              color: tokens.ink,
+              background: tokens.gold,
+              opacity: showCta ? 1 : 0,
+              transform: showCta ? 'translateY(0)' : 'translateY(6px)',
+              transition: 'opacity 0.28s ease, transform 0.28s ease',
+            }}
+          >
+            {hoverCta}
           </div>
         )}
       </div>

@@ -24,30 +24,34 @@
 
 import { tokens, layout } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { CtaLink, SectionHead } from './primitives';
+import { SectionHead, TextLink } from './primitives';
 
+// Each body is trimmed to land on exactly two lines in a quarter-width column.
+// That is not fussiness: at three lines one column ran deeper than the others and
+// the row's baselines stopped agreeing, which is the kind of unevenness that
+// makes a tight section look accidental rather than compressed.
 const STEPS = [
   {
     label: 'Design online',
-    body: 'Choose fabric, colour, size and operation, and see it on a photo of your own window.',
+    body: 'Choose fabric, colour, size and operation, and see it on your own window.',
     image: '/images/lifestyle/step-1-configure.png',
     objectPosition: 'center',
   },
   {
     label: 'We measure your space',
-    body: 'A Klay technician comes to you and measures every window himself. No DIY tape measure.',
+    body: 'A Klay technician comes to you and measures every window himself.',
     image: '/images/lifestyle/step-2-measure.png',
-    objectPosition: 'center 40%',
+    objectPosition: 'center 42%',
   },
   {
     label: 'Custom manufactured',
-    body: 'Cut and assembled to those exact measurements, in Australia, in seven to ten days.',
+    body: 'Cut and assembled to your exact measurements in Australia, in 7–10 days.',
     image: '/images/lifestyle/step-3-manufacture.png',
     objectPosition: 'center',
   },
   {
     label: 'We install, you enjoy',
-    body: 'The same technician returns to fit it, squares it off, and takes the packaging with him.',
+    body: 'The same technician returns to fit it and takes the packaging with him.',
     image: '/images/lifestyle/step-4-install.png',
     objectPosition: '38% center',
   },
@@ -60,11 +64,19 @@ export function HowItWorksSteps() {
     <section
       id="how-it-works"
       style={{
-        background: tokens.warmWhite,
-        // 80, not the layout.sectionPad 120. This section earns its keep on
-        // information rather than on atmosphere, and at 120 it was the longest
-        // thing on the page for what it says.
-        padding: isMobile ? '68px 24px' : '80px 80px',
+        // Parchment, not warmWhite. The category band above and the range band
+        // below are both warmWhite, so as a third warm-white section this one
+        // dissolved into its neighbours and the page read as one continuous
+        // field from the hero to the visualiser.
+        //
+        // Parchment rather than tokens.cream despite "cream" being the word for
+        // it: cream is #FAF7F2, which is LIGHTER than warmWhite and would have
+        // separated even less. Parchment is the palette's one deliberate step
+        // down, and it is what actually reads as cream against white.
+        background: tokens.parchment,
+        // 44, against the standard 120. Everything here is information; none of
+        // it is atmosphere, so none of it needs room to breathe.
+        padding: isMobile ? '48px 24px' : '44px 80px',
       }}
     >
       <div style={{ maxWidth: layout.containerMax, margin: '0 auto' }}>
@@ -77,27 +89,30 @@ export function HowItWorksSteps() {
           // section scale — 90px of headline for eleven words.
           maxWidth={1040}
           titleSize="clamp(26px, 3vw, 38px)"
-          style={{ marginBottom: isMobile ? 36 : 48 }}
+          style={{ marginBottom: isMobile ? 30 : 30 }}
         />
 
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-            gap: isMobile ? 36 : 28,
+            gap: isMobile ? 30 : 24,
           }}
         >
           {STEPS.map((step, i) => (
             <div key={step.label}>
               <div
                 style={{
-                  // 3:2 rather than 4:3 — the same width buys 40px less height
-                  // per column, and none of these four shots needs the extra.
-                  aspectRatio: '3 / 2',
+                  // 2:1. A letterbox rather than a picture, which is the right
+                  // shape when the row is a strip of evidence beside its text
+                  // rather than a gallery — and 46px shorter per column than the
+                  // 3:2 it started at. All four shots have their subject on the
+                  // horizontal centre line, so none of them loses anything.
+                  aspectRatio: '2 / 1',
                   overflow: 'hidden',
                   borderRadius: 2,
-                  background: tokens.parchment,
-                  marginBottom: 18,
+                  background: tokens.cream,
+                  marginBottom: 14,
                 }}
               >
                 <img
@@ -158,14 +173,12 @@ export function HowItWorksSteps() {
           ))}
         </div>
 
-        {/* A link rather than the filled button that was here. The section's job
-            is reassurance, not conversion — and a full-size CTA cost 50px of
-            button plus the air around it to repeat something the nav and the
-            editorial panel both already offer. */}
-        <div style={{ marginTop: isMobile ? 40 : 48, textAlign: 'center' }}>
-          <CtaLink to="/how-it-works" variant="onDark" style={{ padding: '14px 32px' }}>
-            See the full process
-          </CtaLink>
+        {/* A text link, not a button. The section's job is reassurance rather
+            than conversion, and a filled CTA cost 50px of button plus the air
+            around it to repeat what the nav and the editorial panel both already
+            offer. */}
+        <div style={{ marginTop: isMobile ? 30 : 28, textAlign: 'center' }}>
+          <TextLink to="/how-it-works">See the full process →</TextLink>
         </div>
       </div>
     </section>

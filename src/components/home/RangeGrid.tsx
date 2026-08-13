@@ -119,7 +119,10 @@ export function RangeGrid() {
             image={tile.image}
             objectPosition={tile.objectPosition}
             note={tile.note}
-            blurb={TAGLINES[tile.category]}
+            // Only where there is no photograph. On the four that have one, the
+            // picture already says what the tagline would, and a 420px tile does
+            // not have the room for both.
+            blurb={tile.image ? undefined : TAGLINES[tile.category]}
             // Shorter than the category tiles. Three rows of 660 would be two
             // and a half screens of grid on its own.
             minHeight={isMobile ? 300 : 420}
