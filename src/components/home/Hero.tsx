@@ -1,27 +1,47 @@
 // ---------------------------------------------------------------------------
-// 3. Hero — full bleed, room photography, two CTAs.
+// 3. Hero — full bleed, room footage, two CTAs.
 //
 // The nav sits over this section transparently, so the overlay has to do two
 // jobs: hold the headline's contrast on the left, and keep the nav's own links
 // legible across the top. That is why there are two gradients rather than one
-// flat scrim — a single 50% wash would have muddied the photograph everywhere
-// to solve a problem that only exists in two places.
+// flat scrim — a single 50% wash would have muddied the picture everywhere to
+// solve a problem that only exists in two places.
 // ---------------------------------------------------------------------------
 
-import { tokens, eyebrow, headline, layout } from '../../theme';
+import { useState } from 'react';
+import { tokens, eyebrow, headline, layout, prefersReducedMotion } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { CtaButton, scrollToId } from './primitives';
 
-/** Roller blinds in a real room, shot wide. The hero has to show the product
- * doing its job, which rules out the furniture-led interiors in public/images. */
-const HERO_IMAGE = '/images/lifestyle/room-living.png';
+const HERO_VIDEO = '/hero_video.mp4';
+
+/** Shown instead of the video when the visitor has asked for reduced motion.
+ * A poster frame would not do here: it would still be the video element, and a
+ * still frame of unknown content is a worse first paint than a photograph
+ * chosen for the job. Roller blinds in a real room, shot wide. */
+const HERO_STILL = '/images/lifestyle/room-living.png';
 
 /** The nav's own height at rest, measured in the running page. Used to offset
  * the hero copy out from under it — see the note on the content container. */
 const NAV_HEIGHT = 80;
 
+/** Shared by the video and its still fallback, so the two fill the section
+ * identically and swapping between them can't shift the framing. */
+const backdropStyle: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  display: 'block',
+};
+
 export function Hero() {
   const isMobile = useIsMobile();
+  // Read once, on mount. index.html kills CSS animation under a reduced-motion
+  // preference, but an autoplaying video is not a CSS animation and slips
+  // straight through that rule — it has to be handled here.
+  const [reduceMotion] = useState(prefersReducedMotion);
 
   return (
     <section
@@ -36,21 +56,36 @@ export function Hero() {
         background: tokens.charcoal,
       }}
     >
-      <img
-        src={HERO_IMAGE}
-        alt="A living room with sunscreen roller blinds drawn to the sill"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          // The blinds are in the upper half of the frame; centring vertically
-          // crops them out on a tall viewport.
-          objectPosition: 'center 38%',
-          display: 'block',
-        }}
-      />
+      {reduceMotion ? (
+        <img
+          src={HERO_STILL}
+          alt="A living room with sunscreen roller blinds drawn to the sill"
+          style={{
+            ...backdropStyle,
+            // The blinds are in the upper half of this frame; centring
+            // vertically crops them out on a tall viewport.
+            objectPosition: 'center 38%',
+          }}
+        />
+      ) : (
+        <video
+          // muted AND playsInline are both load-bearing, not belt and braces:
+          // without muted no browser will autoplay at all, and without
+          // playsInline iOS Safari takes the video fullscreen instead of
+          // playing it in place.
+          autoPlay
+          muted
+          loop
+          playsInline
+          // Decorative — the headline carries the meaning, and the copy below
+          // describes what is on screen.
+          aria-hidden="true"
+          tabIndex={-1}
+          style={backdropStyle}
+        >
+          <source src={HERO_VIDEO} type="video/mp4" />
+        </video>
+      )}
 
       {/* Left-to-right, for the copy */}
       <div

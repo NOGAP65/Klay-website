@@ -1,11 +1,8 @@
 // ---------------------------------------------------------------------------
-// 4. Room grid — 2x2, edge to edge, no gaps.
+// 4. Shop by category — a short white band, then a 2x2 grid, edge to edge.
 //
 // This section sells the outcome, not the product: the customer sees a room
-// they recognise rather than a swatch or a spec. It carries no headline for the
-// same reason — four photographs of rooms with their names on them do not need
-// to be introduced, and a headline above them would be the page explaining a
-// picture.
+// they recognise rather than a swatch or a spec.
 //
 // ON THE PHOTOGRAPHY. Two of these four are stand-ins, and the section is the
 // place where that shows most. public/images has no home-office shot and no
@@ -20,7 +17,7 @@
 // exist. Nothing here 404s.
 // ---------------------------------------------------------------------------
 
-import { tokens } from '../../theme';
+import { tokens, eyebrow } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { PhotoTile } from './primitives';
 
@@ -57,7 +54,37 @@ export function RoomGrid() {
   const isMobile = useIsMobile();
 
   return (
-    <section style={{ background: tokens.charcoal }}>
+    <section style={{ background: tokens.warmWhite }}>
+      {/* A short warm-white band naming the section, and deliberately shallow —
+          it is a caption for the grid, not a section of its own, so it takes
+          about a third of the vertical padding the real sections get. Sitting
+          between the video and the four charcoal-backed tiles, it also gives the
+          eye somewhere to land: the hero used to run straight into the grid with
+          no pause and no label. */}
+      <div
+        style={{
+          padding: isMobile ? '40px 24px' : '52px 80px',
+          textAlign: 'center',
+        }}
+      >
+        <p style={{ ...eyebrow, marginBottom: 12 }}>Shop by category</p>
+        <h2
+          style={{
+            fontFamily: tokens.display,
+            // Smaller than headline.section on purpose. At 64px this would read
+            // as the page's next big statement and compete with the hero it sits
+            // directly beneath.
+            fontSize: 'clamp(26px, 3vw, 36px)',
+            fontWeight: 300,
+            lineHeight: 1.1,
+            color: tokens.ink,
+            margin: 0,
+          }}
+        >
+          Start with the room.
+        </h2>
+      </div>
+
       <div
         style={{
           display: 'grid',
