@@ -258,6 +258,7 @@ export function SectionBand({
   sub,
   isMobile,
   onDark = false,
+  compact = false,
 }: {
   label: string;
   title: React.ReactNode;
@@ -270,9 +271,26 @@ export function SectionBand({
   /** Flips the heading and sub for a dark ground. The eyebrow needs no variant:
    * gold holds on both. */
   onDark?: boolean;
+  /** Tighter padding, same type. For the one band sitting directly under the
+   * hero, where the section's job is to get product on screen and every pixel of
+   * air above it pushes the first card below the fold. Deliberately does NOT
+   * change the heading size — the bands are the page's one section-opening voice
+   * and a second scale would undo that. */
+  compact?: boolean;
 }) {
   return (
-    <div style={{ padding: isMobile ? '52px 24px' : '76px 80px', textAlign: 'center' }}>
+    <div
+      style={{
+        padding: compact
+          ? isMobile
+            ? '34px 24px 30px'
+            : '46px 80px 40px'
+          : isMobile
+            ? '52px 24px'
+            : '76px 80px',
+        textAlign: 'center',
+      }}
+    >
       <p style={{ ...eyebrow, marginBottom: 16 }}>{label}</p>
       <h2
         style={{
@@ -380,10 +398,17 @@ export function PhotoTile({
         overflow: 'hidden',
         minHeight,
         textDecoration: 'none',
-        // No radius and no gap: these grids are edge to edge, and a rounded
-        // corner would put four slivers of section background into the middle
-        // of the block where the tiles meet.
-        background: tokens.charcoal,
+        // No radius: these grids are edge to edge, and a rounded corner would put
+        // slivers of section background into the joins where the tiles meet.
+        //
+        // A photoless tile gets a warm diagonal rather than the flat charcoal it
+        // had. Flat, it read as a box that had failed to load a picture; lit from
+        // one corner it reads as a surface, which is the difference between a gap
+        // in the row and a deliberately quiet card. Mixed from the two brand
+        // darks, so it stays inside the palette.
+        background: image
+          ? tokens.charcoal
+          : `linear-gradient(145deg, ${tokens.charcoal} 0%, ${tokens.ink} 100%)`,
       }}
     >
       {image && (

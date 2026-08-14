@@ -232,8 +232,13 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               action; the cart is a utility and stays an outline so the two
               don't read as two competing CTAs. */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: '0 0 auto' }}>
+            {/* Shop Now, and square. It was a "Get a Quote" pill pointing at the
+                enquiry form — a quote request is the gatekeeping this brand is
+                built to remove, and it was the only rounded button on a site whose
+                every other CTA is a 2px rectangle. It goes to the blinds listing
+                now: the one place on the site you can genuinely shop. */}
             <Link
-              to="/contact"
+              to="/blinds"
               onMouseEnter={() => setQuoteHover(true)}
               onMouseLeave={() => setQuoteHover(false)}
               style={{
@@ -242,7 +247,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 justifyContent: 'center',
                 height: 44,
                 padding: '0 26px',
-                borderRadius: 999,
+                borderRadius: 2,
                 background: quoteHover ? tokens.goldLight : tokens.gold,
                 color: tokens.ink,
                 fontFamily: tokens.body,
@@ -255,7 +260,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 transition: motion.button,
               }}
             >
-              Get a Quote
+              Shop Now
             </Link>
 
             <Link
@@ -403,14 +408,14 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             How It Works
           </Link>
 
-          {/* Same action as the desktop pill, same fill. */}
+          {/* Same action, destination and fill as the desktop button. */}
           <Link
-            to="/contact"
+            to="/blinds"
             onClick={() => setMenuOpen(false)}
             style={{
               marginTop: 24,
               background: tokens.gold,
-              borderRadius: 999,
+              borderRadius: 2,
               color: tokens.ink,
               textDecoration: 'none',
               fontFamily: tokens.body,
@@ -421,7 +426,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               padding: '16px 34px',
             }}
           >
-            Get a Quote
+            Shop Now
           </Link>
 
           <Link

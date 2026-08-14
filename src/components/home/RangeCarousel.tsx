@@ -36,20 +36,30 @@ import { PRODUCTS } from '../../data/products';
 import { getSubcategoryBySlug } from '../../data/categories';
 import { PhotoTile, SectionBand, TILE_GAP, useHover } from './primitives';
 
-/** Card width. "Significantly smaller" than the 480 the category tiles ran to —
- * at this size roughly four and a half sit in a 1440 viewport, which is what
- * makes the row read as a row rather than as a grid that happens to scroll. */
-const CARD_W = 300;
-const CARD_W_MOBILE = 232;
+/** Card width, as a share of the row rather than a fixed pixel count.
+ *
+ * It was a flat 300px, and that is what left the odd sliver of dead space: six
+ * fixed cards land wherever 6 x 304 happens to land against the viewport, so the
+ * row ended on a partial card of arbitrary width and the amount left over changed
+ * with every monitor. Sized in quarters, exactly four cards fill the row at any
+ * width — nothing is ever cut mid-card, and each one is ~357px on a 1440 screen,
+ * which is also bigger than the 300 they were.
+ *
+ * Six cards, four visible: the arrows always have somewhere to go. */
+const cardBasis = (isMobile: boolean) =>
+  isMobile
+    ? `calc((100% - ${TILE_GAP}px) / 1.6)`
+    : `calc((100% - ${3 * TILE_GAP}px) / 4)`;
 
-/** Tile height. 7:10, so the card stays portrait — a window covering hangs, so
- * the crop wants height. Same proportion the category tiles had at 480x660. */
-const CARD_H = 420;
-const CARD_H_MOBILE = 330;
+/** Tile height. Up with the width, so the card keeps its portrait crop — a window
+ * covering hangs, so the frame wants height. */
+const CARD_H = 470;
+const CARD_H_MOBILE = 340;
 
-/** How long the row rests on a card before advancing itself. Long enough to read
- * a label, a line of copy and a price without feeling hurried. */
-const AUTO_MS = 4200;
+/** How long the row rests before advancing itself. Ten seconds: long enough that
+ * the row reads as still until you notice it has moved, rather than as something
+ * demanding attention while you are trying to read a price. */
+const AUTO_MS = 10000;
 
 /** Cheapest roller, from the catalogue rather than typed out — the tile's
  * from-price has to move when the catalogue does. */
@@ -79,76 +89,96 @@ interface Range {
   cta: string;
 }
 
-// ON THE TWO CTAs. Only roller blinds can be configured and bought online today.
-// Everything else Klay genuinely sells — it just starts with a conversation
-// rather than a configurator, which is ordinary for made-to-measure. So those
-// tiles say Enquire, not "Coming Soon": coming soon would be untrue, and it reads
-// as a business that isn't ready to take your money, which is the opposite of the
-// impression the rest of this page is built to give.
+// SIX RANGES, at the grain the business actually sells in: curtains collapse to
+// one tile, and Outdoor and Wardrobes each split into the two things people search
+// for separately. Sheer and Blockout were two tiles out of six spent on one
+// product with two fabrics, while awnings, screens and shelving — three distinct
+// purchases — had no tile at all between them.
+//
+// EVERY TILE SAYS SHOP NOW. Note that only Blinds currently reaches a shop: the
+// other five resolve through ProductsPage to the enquiry form. That is a promise
+// the routing does not yet keep, and the fix is pages, not a softer label.
+//
+// ORDERED so the two tiles with no photograph (Awnings, Screens) do not sit
+// together. Alternating them against photographed ranges is the difference between
+// a row with two gaps in it and a row that reads as half-built.
 const RANGES: Range[] = [
   {
-    label: 'Roller Blinds',
+    label: 'Blinds',
     to: '/blinds',
     blurb: 'Blockout, sunscreen and dual.',
-    note: `From $${ROLLER_FROM}`,
+    note: `$${ROLLER_FROM}`,
     image: '/images/lifestyle/room-kitchen.png',
     objectPosition: 'center 34%',
     cta: 'Shop Now',
   },
   {
-    label: 'Sheer Curtains',
-    to: '/products?category=sheer-curtains',
-    blurb: taglineFor('sheer-curtains'),
-    note: `From $${priceFor('sheer-curtains') ?? 360}`,
-    // Was range/sheer-curtains.jpg, and it had to move: side by side with the
-    // Outdoor tile the two read as the same photograph twice — both pale sheers
-    // against a bright window with greenery behind. This is the bedroom frame the
-    // old Indoor category tile used, free now that tile is gone, and a bed in
-    // shot is what separates it from a doorway onto a deck at a glance.
+    label: 'Curtains',
+    to: '/products?category=curtains',
+    blurb: 'Sheer, blockout and lined.',
+    // The cheaper of the two curtain types, so the from-price is the honest
+    // entry point to the range rather than to one fabric within it.
+    note: `$${Math.min(priceFor('sheer-curtains') ?? 360, priceFor('blockout-curtains') ?? 320)}`,
+    // The bedroom frame the old Indoor category tile used. It carries sheers AND
+    // heavy drapes in the one shot, which is the right picture for a tile that
+    // now stands for the whole curtain range rather than one fabric.
     image: '/images/categories/indoor.jpg',
     objectPosition: '62% center',
-    cta: 'Enquire',
+    cta: 'Shop Now',
   },
   {
-    label: 'Blockout Curtains',
-    to: '/products?category=blockout-curtains',
-    blurb: taglineFor('blockout-curtains'),
-    note: `From $${priceFor('blockout-curtains') ?? 320}`,
-    image: '/images/curtains-room.jpg',
-    objectPosition: '72% center',
-    cta: 'Enquire',
-  },
-  {
-    label: 'Outdoor',
-    to: '/outdoor',
-    blurb: 'Awnings, screens and alfresco.',
-    image: '/images/categories/outdoor.jpg',
-    objectPosition: '50% center',
-    cta: 'Enquire',
+    // NO PHOTOGRAPH EXISTS — see the note on Screens below.
+    label: 'Awnings',
+    to: '/products?category=folding-arm-awnings',
+    blurb: taglineFor('folding-arm-awnings'),
+    cta: 'Shop Now',
   },
   {
     label: 'Wardrobes',
     to: '/wardrobes',
-    blurb: 'Built-in, walk-in and storage.',
+    blurb: 'Built-in, walk-in and sliding.',
+    // THE TWO STORAGE TILES ARE CROPS OF ONE PHOTOGRAPH, and that is deliberate
+    // rather than lazy. range/wardrobes.jpg and categories/wardrobes.jpg turn out
+    // to be the same frame at two zoom levels, so using one on each tile printed
+    // the same picture twice with two different words under it.
+    //
+    // What saves it is that the frame is composed left to right exactly along the
+    // line the two tiles divide on: hanging garments on a rail down the left,
+    // open shelves and drawers across the right. Cropped to its left third this
+    // is a wardrobe; cropped to its right third it is shelving. Two honest
+    // pictures of two different products that happen to share a room — which is
+    // what a fitted walk-in actually is.
     image: '/images/categories/wardrobes.jpg',
-    objectPosition: '54% center',
-    cta: 'Enquire',
+    objectPosition: '13% center',
+    cta: 'Shop Now',
   },
   {
-    // NO PHOTOGRAPH EXISTS. There is not one shutter anywhere in public/images,
-    // and a roller blind behind the word "Shutters" would misrepresent a product
-    // outright — so PhotoTile renders this as charcoal with a hairline frame and
-    // its tagline, which is at least the truth about where Klay is.
+    // NO PHOTOGRAPH EXISTS, and this is now the biggest asset gap on the page.
+    // There is not one awning, screen, café blind or louvre roof anywhere in
+    // public/images — the only outdoor frame in the repository shows a doorway
+    // onto a deck with the room's INDOOR sheers hanging in it, which is why it is
+    // not being used here. An indoor sheer captioned "Awnings" is the same
+    // mistake as the kitchen that was once captioned "Home Office".
     //
-    // LAST for that reason, not because shutters matter least. At rest the row
-    // opens on the four photographed ranges and this one sits off the right edge,
-    // reachable but not leading — a flat dark card in the middle of a row of
-    // photographs is the one thing on this section that looks like a mistake.
-    // Move it back up the list the day there is a shutter photograph.
-    label: 'Plantation Shutters',
-    to: '/products?category=plantation-shutters',
-    blurb: taglineFor('plantation-shutters'),
-    cta: 'Enquire',
+    // PhotoTile renders these two as charcoal with a hairline frame and their
+    // tagline. One outdoor shoot turns both into photographs and nothing else in
+    // this file changes.
+    label: 'Screens',
+    to: '/products?category=zip-screens',
+    blurb: taglineFor('zip-screens'),
+    cta: 'Shop Now',
+  },
+  {
+    label: 'Shelving',
+    to: '/products?category=shelving-storage',
+    blurb: taglineFor('shelving-storage'),
+    // The right third of the same walk-in — shelves, folded stacks and drawer
+    // fronts, no hanging rail in shot. See the note on the Wardrobes tile. The
+    // tighter of the two files, so the two crops differ in scale as well as in
+    // subject.
+    image: '/images/range/wardrobes.jpg',
+    objectPosition: '78% center',
+    cta: 'Shop Now',
   },
 ];
 
@@ -218,7 +248,14 @@ export function RangeCarousel() {
   // to stop; under it the row holds still and becomes one the reader scrolls.
   const [reduceMotion] = useState(prefersReducedMotion);
 
-  const step = isMobile ? CARD_W_MOBILE + TILE_GAP : CARD_W + TILE_GAP;
+  /** One card plus its strip. Measured off the rendered row rather than computed
+   * from a constant, because the cards are sized in percentages now — the arrows
+   * have to move by whatever a quarter of THIS viewport turned out to be. */
+  const step = () => {
+    const el = scrollerRef.current;
+    const first = el?.firstElementChild as HTMLElement | undefined;
+    return first ? first.offsetWidth + TILE_GAP : 0;
+  };
 
   /** Which arrows are live. Read off real scroll position rather than tracked in
    * state, so a touch swipe or a trackpad scroll updates them too — this row is
@@ -233,12 +270,9 @@ export function RangeCarousel() {
     setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 2);
   }, []);
 
-  const scrollByCards = useCallback(
-    (n: number) => {
-      scrollerRef.current?.scrollBy({ left: n * step, behavior: 'smooth' });
-    },
-    [step],
-  );
+  const scrollByCards = (n: number) => {
+    scrollerRef.current?.scrollBy({ left: n * step(), behavior: 'smooth' });
+  };
 
   useEffect(syncEdges, [syncEdges]);
 
@@ -253,21 +287,27 @@ export function RangeCarousel() {
       if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) {
         el.scrollTo({ left: 0, behavior: 'smooth' });
       } else {
-        el.scrollBy({ left: step, behavior: 'smooth' });
+        el.scrollBy({ left: step(), behavior: 'smooth' });
       }
     }, AUTO_MS);
     return () => window.clearInterval(tick);
-  }, [paused, reduceMotion, step]);
+  }, [paused, reduceMotion]);
 
   return (
     // Warm white, the ground the category grid had — and the strip between the
     // cards is this colour showing through. See TILE_GAP.
     <section style={{ background: tokens.warmWhite }}>
+      {/* Compact. This is the first section under the hero, so every pixel the
+          band takes is a pixel of product pushed below the fold — which defeats
+          the point of moving the range up here in the first place. Same type as
+          every other band on the page, so the page still speaks in one voice;
+          only the air around it is tighter. */}
       <SectionBand
         label="The collection"
         title="Our Range"
         sub="Made to measure. Installed by experts."
         isMobile={isMobile}
+        compact
       />
 
       <div
@@ -301,10 +341,7 @@ export function RangeCarousel() {
           {RANGES.map(range => (
             <div
               key={range.label}
-              style={{
-                flex: `0 0 ${isMobile ? CARD_W_MOBILE : CARD_W}px`,
-                scrollSnapAlign: 'start',
-              }}
+              style={{ flex: `0 0 ${cardBasis(isMobile)}`, scrollSnapAlign: 'start' }}
             >
               <PhotoTile
                 to={range.to}
