@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { tokens, eyebrow, headline, layout, prefersReducedMotion } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { CtaButton, CtaLink, scrollToId } from './primitives';
-import { HeroProductRail } from './HeroProductRail';
+import { HeroRangeRail } from './HeroRangeRail';
 
 const HERO_VIDEO = '/hero_video.mp4';
 
@@ -43,9 +43,14 @@ const NAV_HEIGHT = 80;
 const ABOVE_CARDS = 38 + 54 + 220;
 const ABOVE_CARDS_MOBILE = 38 + 52 + 180;
 
-/** The share of the hero given to the video. The remaining 30% is held for the
- * product rail that will run beside it — see the note on the reserved column. */
-const MEDIA_COLUMN = '70%';
+/** The share of the hero given to the video. The remaining 24% is held for the
+ * range rail that runs beside it — see the note on the reserved column.
+ *
+ * Was 70/30, and the rail was a product card. 24% is not enough width to put a
+ * named SKU and a price in front of anyone properly, which is what forced the
+ * question of what that column is actually for: it is the range, one category at
+ * a time, and a category needs a photograph and two lines rather than a card. */
+const MEDIA_COLUMN = '76%';
 
 /** Shared by the video and its still fallback, so the two fill the section
  * identically and swapping between them can't shift the framing. */
@@ -78,8 +83,8 @@ export function Hero() {
         maxHeight: 1000,
         overflow: 'hidden',
         background: tokens.charcoal,
-        // 70/30. The video and the copy take the left; the right is held empty
-        // for the product rail. One column on a phone, where 30% of the width is
+        // 76/24. The video and the copy take the left; the right is held empty
+        // for the range rail. One column on a phone, where 24% of the width is
         // not enough to run anything in.
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : `${MEDIA_COLUMN} 1fr`,
@@ -124,7 +129,7 @@ export function Hero() {
 
       {/* Left-to-right, for the copy. Its stops moved right with the column: the
           same ramp that cleared the headline across a full-width hero runs out of
-          scrim well before the right edge of a 70% one, because the copy now
+          scrim well before the right edge of a 76% one, because the copy now
           occupies a much larger share of the frame it sits on. */}
       <div
         style={{
@@ -166,8 +171,8 @@ export function Hero() {
         <div style={{ maxWidth: 700 }}>
           <p style={{ ...eyebrow, marginBottom: 20 }}>Klay Interiors</p>
           {/* Below the shared hero scale. That clamp tops out at 100px, sized for
-              a hero running the full width of the viewport; inside a 70% column
-              with 80px of inset there are about 848px to play with, and "The
+              a hero running the full width of the viewport; inside a 76% column
+              with 80px of inset there are about 934px to play with, and "The
               finishing layer" sets to roughly 855 at 100px — it would have
               wrapped mid-phrase on exactly the widths this is tuned for. */}
           <h1
@@ -228,11 +233,11 @@ export function Hero() {
       </div>
       </div>
 
-      {/* The 30%: one product at a time, on white, changing every five seconds.
+      {/* The 24%: one category at a time, on white, changing every five seconds.
           Desktop only — at phone widths there is no second column to put it in,
           and the range row a screen below is the same job done properly for that
           viewport. */}
-      {!isMobile && <HeroProductRail />}
+      {!isMobile && <HeroRangeRail />}
     </section>
   );
 }
