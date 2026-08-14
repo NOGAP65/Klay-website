@@ -24,7 +24,7 @@
 
 import { tokens, layout } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { SectionHead, TextLink } from './primitives';
+import { SectionBand, TextLink } from './primitives';
 
 // Each body is trimmed to land on exactly two lines in a quarter-width column.
 // That is not fussiness: at three lines one column ran deeper than the others and
@@ -72,25 +72,31 @@ export function HowItWorksSteps() {
         // and the four step photographs are light enough to gain from the
         // contrast rather than fight it.
         background: tokens.charcoal,
-        // 44, against the standard 120. Everything here is information; none of
-        // it is atmosphere, so none of it needs room to breathe.
-        padding: isMobile ? '48px 24px' : '44px 80px',
       }}
     >
-      <div style={{ maxWidth: layout.containerMax, margin: '0 auto' }}>
-        <SectionHead
-          label="How it works"
-          title="From your screen to your window — we handle everything."
-          align="center"
-          onDark
-          // Wide enough, at this size, for the whole sentence to sit on ONE line
-          // on a desktop. It was two lines at 44/820 and three at the 64px
-          // section scale — 90px of headline for eleven words.
-          maxWidth={1040}
-          titleSize="clamp(26px, 3vw, 38px)"
-          style={{ marginBottom: 30 }}
-        />
+      {/* The page's shared band, and the reason this section stopped looking
+          bolted on. It was the only one of the nine that opened with SectionHead
+          instead — a 38px centred headline with 44px of padding, against the 56px
+          headline and 76px the bands give every other section. One section
+          introducing itself in a different voice and at two-thirds the scale is
+          most of what "it doesn't hang together" actually is, and it is invisible
+          in isolation: you only see it scrolling past the sections either side.
+          The tighter padding also put the eyebrow underneath the fixed nav
+          whenever the hero's How It Works button scrolled here, so the section
+          opened on a headline with its label hidden.
 
+          The headline lost "— we handle everything" with the change. At the band's
+          scale the full sentence ran to two lines, and the four steps below it are
+          the proof of that clause anyway. */}
+      <SectionBand
+        label="How it works"
+        title="From your screen to your window."
+        isMobile={isMobile}
+        onDark
+      />
+
+      <div style={{ padding: isMobile ? '0 24px 72px' : '0 80px 96px' }}>
+        <div style={{ maxWidth: layout.containerMax, margin: '0 auto' }}>
         <div
           style={{
             display: 'grid',
@@ -178,10 +184,11 @@ export function HowItWorksSteps() {
             than conversion, and a filled CTA cost 50px of button plus the air
             around it to repeat what the nav and the editorial panel both already
             offer. */}
-        <div style={{ marginTop: isMobile ? 30 : 28, textAlign: 'center' }}>
+        <div style={{ marginTop: isMobile ? 34 : 40, textAlign: 'center' }}>
           <TextLink to="/how-it-works" onDark>
             See the full process →
           </TextLink>
+        </div>
         </div>
       </div>
     </section>
