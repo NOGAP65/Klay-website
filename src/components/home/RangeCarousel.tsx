@@ -321,13 +321,20 @@ export function RangeCarousel() {
       {/* paddingBottom closes the section. Without it the last row of Shop Now
           chips sat hard against the charcoal band below, so the row read as
           having been cut off rather than as having ended — the strips frame it on
-          three sides and the fourth was the next section. */}
+          three sides and the fourth was the next section.
+
+          Deliberately thin, and it was 64. That is a section's worth of air: it
+          separated the row from the banner below instead of finishing it, leaving
+          a band of empty warm white doing nothing between two things that both
+          want attention. This is a margin closing a section, not a gap between
+          two — closer in weight to the 4px strips framing the other three sides
+          than to the padding a real section carries. */}
       <div
         style={{
           position: 'relative',
           paddingLeft: TILE_GAP,
           paddingRight: TILE_GAP,
-          paddingBottom: isMobile ? 44 : 64,
+          paddingBottom: isMobile ? 20 : 26,
         }}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
