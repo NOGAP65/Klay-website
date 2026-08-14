@@ -56,10 +56,11 @@ const cardBasis = (isMobile: boolean) =>
 const CARD_H = 470;
 const CARD_H_MOBILE = 340;
 
-/** How long the row rests before advancing itself. Ten seconds: long enough that
- * the row reads as still until you notice it has moved, rather than as something
- * demanding attention while you are trying to read a price. */
-const AUTO_MS = 10000;
+/** How long the row rests before advancing itself. Five seconds — ten read as a
+ * row that had stopped rather than one that was waiting, since with four of six
+ * cards on screen a whole minute could pass without the visitor seeing it move
+ * at all. Still slow enough to read a label, a line and a price before it goes. */
+const AUTO_MS = 5000;
 
 /** Cheapest roller, from the catalogue rather than typed out — the tile's
  * from-price has to move when the catalogue does. */
@@ -310,8 +311,15 @@ export function RangeCarousel() {
         compact
       />
 
+      {/* The same strip down the outside edges as between the cards, so the row
+          is framed on all four sides by warm white rather than running off into
+          the viewport on the left and right. Grid gap and flex gap both only
+          apply BETWEEN items, so the outer two have to be padding — and putting
+          it here rather than on the scroller matters: padding on a scroll
+          container sits at the start and end of the scrollable CONTENT, so it
+          would slide away with the row instead of holding the edges. */}
       <div
-        style={{ position: 'relative' }}
+        style={{ position: 'relative', paddingLeft: TILE_GAP, paddingRight: TILE_GAP }}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >

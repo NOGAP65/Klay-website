@@ -69,6 +69,7 @@ import { SocialProof } from '../components/home/SocialProof';
 import { InspirationTiles } from '../components/home/InspirationTiles';
 import { Testimonials } from '../components/home/Testimonials';
 import { FinalCta } from '../components/home/FinalCta';
+import { StepsBar } from '../components/home/StepsBar';
 
 export default function HomePage() {
   const setScrollY = useKlayStore((s) => s.setScrollY);
@@ -140,7 +141,12 @@ export default function HomePage() {
         {/* 13 — One last ask, pointing back at the tool. */}
         <FinalCta />
 
-        {/* 14 — Footer. */}
+        {/* 14 — The four steps in one gold line, bookending the trust ticker at
+            the very top. Last thing before the footer, for the reader who has
+            reached the closing CTA still asking what happens after they click. */}
+        <StepsBar />
+
+        {/* 15 — Footer. */}
         <Footer />
       </main>
     </>

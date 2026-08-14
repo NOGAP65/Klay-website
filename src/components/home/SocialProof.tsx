@@ -123,7 +123,13 @@ export function SocialProof() {
         style={
           isMobile
             ? { display: 'flex', gap: TILE_GAP, overflowX: 'auto', padding: '0 24px 8px' }
-            : { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: TILE_GAP }
+            : {
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: TILE_GAP,
+                // The outer two strips — see the note in InspirationTiles.
+                padding: `0 ${TILE_GAP}px`,
+              }
         }
       >
         {SHOTS.map(shot => (

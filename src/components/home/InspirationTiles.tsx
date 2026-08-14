@@ -94,6 +94,11 @@ export function InspirationTiles() {
           // four screens of scroll for a section that is not trying to convert.
           gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
           gap: TILE_GAP,
+          // The outer two strips. Gap only applies between items, so the edges
+          // have to be padding — same treatment as the range row, so every tile
+          // row on the page is framed rather than one being framed and two
+          // running off into the viewport.
+          padding: `0 ${TILE_GAP}px`,
         }}
       >
         {TILES.map(tile => (

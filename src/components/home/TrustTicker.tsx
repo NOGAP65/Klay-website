@@ -60,20 +60,20 @@ function Run() {
             fontWeight: 400,
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
-            color: tokens.warmWhite,
-            opacity: 0.92,
+            // Ink on gold — 6.8:1, and the same pairing every primary CTA on the
+            // site uses. The brand has no black in it, so the "black text" this
+            // bar reads as is ink.
+            color: tokens.ink,
             whiteSpace: 'nowrap',
           }}
         >
           {credential}
-          {/* The separator is gold and the credential is warm white, so the eye
-              parses the strip as a list of six rather than as one long sentence.
-              It is inside the span rather than between spans so the spacing can
-              never collapse to a bare dot at a wrap point. */}
-          <span
-            aria-hidden="true"
-            style={{ color: tokens.gold, padding: '0 22px', opacity: 0.9 }}
-          >
+          {/* Ink at low opacity, so the eye parses the strip as a list of six
+              rather than as one long sentence. It was gold on charcoal; on a gold
+              ground the separator has to invert with everything else or it
+              disappears. Inside the span rather than between spans so the spacing
+              can never collapse to a bare dot at a wrap point. */}
+          <span aria-hidden="true" style={{ color: 'rgba(28,24,16,0.42)', padding: '0 22px' }}>
             ·
           </span>
         </span>
@@ -119,7 +119,12 @@ export function TrustTicker() {
       // is read as an ordinary list and a live region would interrupt.
       style={{
         height: BAR_HEIGHT,
-        background: tokens.charcoal,
+        // Gold, not charcoal. It is the first thing on the page and it now
+        // bookends the gold steps bar at the foot of it — the two close the page
+        // around everything between them. It also stops the top of the document
+        // being charcoal ticker over charcoal nav over a dark hero, which was
+        // three darks stacked before a single word had been read.
+        background: tokens.gold,
         display: 'flex',
         alignItems: 'center',
         // Hidden while it animates, scrollable when it does not — under reduced

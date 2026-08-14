@@ -30,7 +30,12 @@ import { SectionBand, TextLink } from './primitives';
 // That is not fussiness: at three lines one column ran deeper than the others and
 // the row's baselines stopped agreeing, which is the kind of unevenness that
 // makes a tight section look accidental rather than compressed.
-const STEPS = [
+// Exported so the gold summary bar at the foot of the page reads its labels from
+// here rather than keeping a second copy. The two are the same four steps stated
+// at two lengths — a strip and a section — and a page that contradicts itself
+// about its own process between the top and the bottom is worse than one that
+// only states it once.
+export const STEPS = [
   {
     label: 'Design online',
     body: 'Choose fabric, colour, size and operation, and see it on your own window.',
