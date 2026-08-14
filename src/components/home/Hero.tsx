@@ -25,6 +25,27 @@ const HERO_STILL = '/images/lifestyle/room-living.png';
  * the hero copy out from under it — see the note on the content container. */
 const NAV_HEIGHT = 80;
 
+/** Everything between the top of the document and the first product photograph,
+ * excluding the hero: the trust ticker (38), the steps bar (54) and the range
+ * band that carries the eyebrow, "Our Range" and its one line (220, measured in
+ * the running page).
+ *
+ * The hero is sized to fill exactly what is left, so a visitor landing on the
+ * page sees the hero, the steps bar and the whole of the range heading — and the
+ * cards start one pixel below the fold. That is deliberate: the heading is the
+ * promise of product, and stopping there is what makes the page ask to be
+ * scrolled rather than showing a row of half-cut cards on arrival.
+ *
+ * The nav is not in this sum. It is position:fixed and overlays the hero rather
+ * than taking a row of its own, which is also why the hero still carries
+ * NAV_HEIGHT of top padding to keep its copy clear of it. */
+const ABOVE_CARDS = 38 + 54 + 220;
+const ABOVE_CARDS_MOBILE = 38 + 52 + 180;
+
+/** The share of the hero given to the video. The remaining 30% is held for the
+ * product rail that will run beside it — see the note on the reserved column. */
+const MEDIA_COLUMN = '70%';
+
 /** Shared by the video and its still fallback, so the two fill the section
  * identically and swapping between them can't shift the framing. */
 const backdropStyle: React.CSSProperties = {
@@ -46,16 +67,29 @@ export function Hero() {
   return (
     <section
       style={{
-        position: 'relative',
-        // Just short of the viewport, so the bottom edge of the section is
-        // visible on load and the page reads as continuing.
-        height: isMobile ? '88vh' : '96vh',
-        minHeight: isMobile ? 540 : 660,
+        // Sized to land the fold exactly on the range heading — see ABOVE_CARDS.
+        // It was a flat 96vh, which put the hero's own bottom edge just above the
+        // fold and everything below it wherever it happened to fall.
+        height: `calc(100vh - ${isMobile ? ABOVE_CARDS_MOBILE : ABOVE_CARDS}px)`,
+        // Floors, so the hero survives a short laptop or a landscape phone. Below
+        // these the sum stops being achievable and legibility wins over the fold.
+        minHeight: isMobile ? 420 : 460,
         maxHeight: 1000,
         overflow: 'hidden',
         background: tokens.charcoal,
+        // 70/30. The video and the copy take the left; the right is held empty
+        // for the product rail. One column on a phone, where 30% of the width is
+        // not enough to run anything in.
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : `${MEDIA_COLUMN} 1fr`,
       }}
     >
+      {/* The media column. position:relative moved here from the section, so the
+          video, its scrim and the copy all size to 70% rather than to the full
+          width — absolutely-positioned children resolve against their nearest
+          positioned ancestor, and left on the section they would have spanned the
+          reserved column too. */}
+      <div style={{ position: 'relative', overflow: 'hidden' }}>
       {reduceMotion ? (
         <img
           src={HERO_STILL}
@@ -87,26 +121,23 @@ export function Hero() {
         </video>
       )}
 
-      {/* Left-to-right, for the copy */}
+      {/* Left-to-right, for the copy. Its stops moved right with the column: the
+          same ramp that cleared the headline across a full-width hero runs out of
+          scrim well before the right edge of a 70% one, because the copy now
+          occupies a much larger share of the frame it sits on. */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           background:
-            'linear-gradient(100deg, rgba(28,24,16,0.86) 0%, rgba(28,24,16,0.62) 38%, rgba(28,24,16,0.20) 78%, rgba(28,24,16,0.10) 100%)',
+            'linear-gradient(100deg, rgba(28,24,16,0.88) 0%, rgba(28,24,16,0.66) 45%, rgba(28,24,16,0.28) 85%, rgba(28,24,16,0.15) 100%)',
         }}
       />
-      {/* Top-down, for the nav */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 220,
-          background: 'linear-gradient(180deg, rgba(28,24,16,0.55) 0%, rgba(28,24,16,0) 100%)',
-        }}
-      />
+      {/* The top-down gradient is gone. It existed for one reason — keeping the
+          nav's links legible where they crossed a bright frame of the video — and
+          the nav is opaque charcoal at every scroll position now, so it carries
+          its own ground and the wash was darkening the top of the picture to
+          solve a problem that no longer exists. */}
 
       {/* Flush to the viewport edge, NOT inside a centred gridMax container
           like the sections below it. This is the alignment the previous hero
@@ -115,10 +146,10 @@ export function Hero() {
           a wide monitor the copy would drift towards the middle of the
           photograph while the section itself stayed edge to edge.
 
-          paddingTop is the nav's height. The nav is transparent and overlays
-          this section, so centring against the section's full height puts the
-          copy behind it and reads high; this centres it in the space the nav
-          leaves, which is what the old hero got from its marginTop. */}
+          paddingTop is the nav's height. The nav overlays this section rather
+          than sitting above it, so centring against the section's full height
+          puts the copy behind it and reads high; this centres it in the space the
+          nav leaves. */}
       <div
         style={{
           position: 'relative',
@@ -131,9 +162,20 @@ export function Hero() {
       >
         {/* Written out rather than going through SectionHead, which emits an
             h2 — this is the page's one h1. */}
-        <div style={{ maxWidth: 780 }}>
-          <p style={{ ...eyebrow, marginBottom: 24 }}>Klay Interiors</p>
-          <h1 style={{ ...headline.hero, color: tokens.warmWhite }}>
+        <div style={{ maxWidth: 700 }}>
+          <p style={{ ...eyebrow, marginBottom: 20 }}>Klay Interiors</p>
+          {/* Below the shared hero scale. That clamp tops out at 100px, sized for
+              a hero running the full width of the viewport; inside a 70% column
+              with 80px of inset there are about 848px to play with, and "The
+              finishing layer" sets to roughly 855 at 100px — it would have
+              wrapped mid-phrase on exactly the widths this is tuned for. */}
+          <h1
+            style={{
+              ...headline.hero,
+              fontSize: 'clamp(38px, 5.4vw, 76px)',
+              color: tokens.warmWhite,
+            }}
+          >
             The finishing layer
             <br />
             of <span style={{ fontStyle: 'italic', color: tokens.gold }}>your home.</span>
@@ -148,7 +190,10 @@ export function Hero() {
               lineHeight: 1.7,
               color: 'rgba(245,242,237,0.86)',
               margin: 0,
-              marginTop: 26,
+              marginTop: 22,
+              // Kept well inside the column so the line breaks where it reads
+              // best rather than at whatever width the 70% happens to be.
+              maxWidth: 560,
             }}
           >
             Blinds, curtains and wardrobes. Measured and installed by experts. See it in your
@@ -162,7 +207,7 @@ export function Hero() {
             alignItems: 'center',
             flexWrap: 'wrap',
             gap: 14,
-            marginTop: isMobile ? 36 : 48,
+            marginTop: isMobile ? 32 : 40,
           }}
         >
           {/* Design Yours scrolls to the visualiser rather than navigating: the
@@ -180,6 +225,16 @@ export function Hero() {
           </CtaLink>
         </div>
       </div>
+      </div>
+
+      {/* THE RESERVED 30% — deliberately empty, and it will not stay that way.
+          This is where the product rail goes: one product at a time, cycling,
+          beside the hero rather than below it.
+          It is charcoal and nothing else on purpose. A placeholder with a label
+          or a box on it is the kind of thing that ships by accident, and an empty
+          column is unmistakable — it reads as unfinished to anyone who sees it,
+          which is exactly what it is until the rail lands. */}
+      {!isMobile && <div style={{ background: tokens.charcoal }} />}
     </section>
   );
 }

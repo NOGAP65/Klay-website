@@ -97,9 +97,12 @@ export default function HomePage() {
           away and the nav takes the top edge for the rest of the page. */}
       <TrustTicker />
 
-      {/* 2 — Nav. Transparent over the hero (solid={false}), solid charcoal once
-          compressed, and offset by the ticker's height until it's gone. */}
-      <Nav solid={false} stickBelow={BAR_HEIGHT} />
+      {/* 2 — Nav. Solid charcoal at every scroll position, like every other page
+          on the site — it used to start transparent over the hero and fill in on
+          scroll, which meant the logo and the links sat on whatever frame of the
+          video happened to be playing behind them. Still offset by the ticker's
+          height until that has scrolled away. */}
+      <Nav stickBelow={BAR_HEIGHT} />
 
       <main style={{ background: tokens.warmWhite }}>
         {/* 3 — The promise, full bleed under the transparent nav. */}
