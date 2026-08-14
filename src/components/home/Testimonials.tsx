@@ -167,11 +167,12 @@ export function Testimonials() {
   }, [paused, reduceMotion]);
 
   return (
-    // Warm white. It was parchment for as long as the install strip sat directly
-    // above it — two warm whites touching would have run together as one field.
-    // The journal tiles divide them again now, and they are charcoal, so this can
-    // go back to the brand's own testimonial ground.
-    <section id="reviews" style={{ background: tokens.warmWhite }}>
+    // Parchment again. This was warm white for exactly as long as the charcoal
+    // journal tiles sat between this section and the install strip; with those
+    // gone the install strip is directly above once more, and it is warm white —
+    // two warm whites touching run together as one field with no join. Nothing
+    // else about this section changes, only the ground it stands on.
+    <section id="reviews" style={{ background: tokens.parchment }}>
       <SectionBand label="Reviews" title="What our customers say" isMobile={isMobile} />
 
       <div

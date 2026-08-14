@@ -127,7 +127,10 @@ export function SocialProof() {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(5, 1fr)',
                 gap: TILE_GAP,
-                // The outer two strips — see the note in InspirationTiles.
+                // The outer two strips. Gap only applies between items, so the
+                // edges have to be padding — same treatment as the range row, so
+                // every tile row on the page is framed rather than one being
+                // framed and the others running off into the viewport.
                 padding: `0 ${TILE_GAP}px`,
               }
         }

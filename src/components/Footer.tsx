@@ -1,9 +1,16 @@
 // ---------------------------------------------------------------------------
 // 12. Footer.
 //
-// Warm white, four columns, one hairline at the top. The hairline is doing real
-// work: several pages close on warmWhite themselves, and without it the footer
-// and the last section run together into one undifferentiated block.
+// Ink, four columns, one hairline at the top. It was warm white, and the
+// hairline was load-bearing then — several pages close on warmWhite themselves,
+// and without a rule the footer and the last section ran together. On ink the
+// separation is the ground doing it, and the hairline stays only as the line
+// under the columns.
+//
+// One consequence worth keeping in mind: this footer is on every page, so it is
+// now the last thing on pages that were entirely light. That is the intent — the
+// page ends on a dark band rather than fading out — but it does mean the section
+// immediately above it should not also be dark, or the join disappears.
 //
 // Every link is a react-router <Link>, not an <a href>. The previous footer
 // used bare anchors, so clicking any of them tore down the SPA and re-fetched
@@ -34,7 +41,7 @@ const linkStyle: React.CSSProperties = {
  * links on the page that didn't light up. */
 function FooterLink({ to, children }: { to: string; children: React.ReactNode }) {
   const [hover, setHover] = useState(false);
-  const style = { ...linkStyle, color: hover ? tokens.gold : tokens.inkSoft };
+  const style = { ...linkStyle, color: hover ? tokens.gold : tokens.onDarkMuted };
   const bind = {
     onMouseEnter: () => setHover(true),
     onMouseLeave: () => setHover(false),
@@ -77,9 +84,10 @@ const COLUMNS: { heading: string; links: { label: string; to: string }[] }[] = [
     links: [
       { label: 'How It Works', to: '/how-it-works' },
       { label: 'About Klay', to: '/about' },
-      // The blog does not exist yet — see InspirationTiles. Points at the
-      // process page until it does, rather than at nothing.
-      { label: 'Journal', to: '/how-it-works' },
+      // Journal is gone with the homepage tiles that were the only other place
+      // it appeared. It never had a blog behind it — the link pointed at
+      // /how-it-works — so a nav entry for it was promising a section of the
+      // site that does not exist. Put it back when there is something to read.
       { label: 'Contact', to: '/contact' },
     ],
   },
@@ -98,8 +106,8 @@ export function Footer() {
   return (
     <footer
       style={{
-        background: tokens.warmWhite,
-        borderTop: `1px solid ${tokens.line}`,
+        background: tokens.ink,
+        borderTop: `1px solid ${tokens.onDarkLine}`,
         padding: isMobile ? '64px 24px 32px' : '96px 80px 40px',
       }}
     >
@@ -126,7 +134,7 @@ export function Footer() {
                 fontFamily: tokens.body,
                 fontSize: 14,
                 lineHeight: 1.75,
-                color: tokens.inkSoft,
+                color: tokens.onDarkMuted,
                 margin: '20px 0 0',
                 maxWidth: 260,
               }}
@@ -151,7 +159,7 @@ export function Footer() {
                   links, so they sit outside the loop rather than being faked
                   into it with a dead href. */}
               {col.heading === 'Contact' && (
-                <div style={{ ...linkStyle, color: tokens.inkSoft }}>
+                <div style={{ ...linkStyle, color: tokens.onDarkMuted }}>
                   18 Maltings Cct, Epping VIC 3076
                   <br />
                   Mon–Fri 8am–6pm
@@ -170,10 +178,10 @@ export function Footer() {
             gap: 14,
             marginTop: isMobile ? 48 : 72,
             paddingTop: 28,
-            borderTop: `1px solid ${tokens.lineFaint}`,
+            borderTop: `1px solid ${tokens.onDarkLine}`,
           }}
         >
-          <span style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.textMuted }}>
+          <span style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.onDarkMuted }}>
             © {new Date().getFullYear()} Klay Interiors · Grand Kaman Pty Ltd · ABN 98 151 010 007
           </span>
           <div style={{ display: 'flex', gap: 26 }}>

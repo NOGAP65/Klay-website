@@ -11,16 +11,14 @@
 //
 //    1  Is this legitimate?              trust ticker
 //    3  What is this?                    hero
-//    4  Where do I start?                category grid
-//    5  What can I buy, what's it cost?  range grid
+//    4  Where do I start?                steps bar
+//    5  What can I buy, what's it cost?  range carousel
 //    6  What if I don't know?            recommendation banner
 //    7  What will it look like?          visualiser
-//    8  Why curtains / why blinds?       editorial panels
-//    9  Who actually does the work?      how it works
-//   10  Does it really look like that?   install strip
-//   11  Anything else to know?           journal tiles
-//   12  Does anyone else trust them?     reviews
-//   13  Right — how do I start?          final CTA
+//    8  Who actually does the work?      about panel
+//    9  Does it really look like that?   install strip
+//   10  Does anyone else trust them?     reviews
+//   11  Right — how do I start?          final CTA
 //
 // THE BIG CHANGE: PRODUCTS FOLLOW CATEGORIES DIRECTLY. How It Works used to sit
 // between them, and that is where the page fell over. The customer picks a
@@ -64,9 +62,8 @@ import { StepsBar } from '../components/home/StepsBar';
 import { RangeCarousel } from '../components/home/RangeCarousel';
 import { RecommendationBanner } from '../components/home/RecommendationBanner';
 import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
-import { AlternatingPanels } from '../components/home/AlternatingPanels';
+import { AboutPanel } from '../components/home/AboutPanel';
 import { SocialProof } from '../components/home/SocialProof';
-import { InspirationTiles } from '../components/home/InspirationTiles';
 import { Testimonials } from '../components/home/Testimonials';
 import { FinalCta } from '../components/home/FinalCta';
 
@@ -128,24 +125,20 @@ export default function HomePage() {
         {/* 7 — The centrepiece: configure it, see it on your own window, buy it. */}
         <VisualiserShowcase />
 
-        {/* 8 — One panel per range, one idea each: light, then control. The long
-            copy on the page, and the only place either range is argued for. */}
-        <AlternatingPanels />
+        {/* 8 — Who turns up at the house. The long copy on the page, and the
+            only section that is about Klay rather than about a product. */}
+        <AboutPanel />
 
         {/* 9 — What it looks like once it's up. Trust, not conversion. */}
         <SocialProof />
 
-        {/* 10 — Four journal tiles. The one section not trying to sell, which is
-            what stops the page reading as a catalogue. */}
-        <InspirationTiles />
-
-        {/* 11 — Reviews, moving. */}
+        {/* 10 — Reviews, moving. */}
         <Testimonials />
 
-        {/* 12 — One last ask, pointing back at the tool. */}
+        {/* 11 — One last ask, pointing back at the tool. */}
         <FinalCta />
 
-        {/* 13 — Footer. */}
+        {/* 12 — Footer. */}
         <Footer />
       </main>
     </>
