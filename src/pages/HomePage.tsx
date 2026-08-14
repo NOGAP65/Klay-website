@@ -60,9 +60,8 @@ import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { TrustTicker, BAR_HEIGHT } from '../components/home/TrustTicker';
 import { Hero } from '../components/home/Hero';
-import { CategoryGrid } from '../components/home/CategoryGrid';
 import { HowItWorksSteps } from '../components/home/HowItWorksSteps';
-import { RangeGrid } from '../components/home/RangeGrid';
+import { RangeCarousel } from '../components/home/RangeCarousel';
 import { RecommendationBanner } from '../components/home/RecommendationBanner';
 import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
 import { AlternatingPanels } from '../components/home/AlternatingPanels';
@@ -106,16 +105,13 @@ export default function HomePage() {
         {/* 3 — The promise, full bleed under the transparent nav. */}
         <Hero />
 
-        {/* 4 — Indoor / Outdoor / Wardrobes. Each tile is a real page. */}
-        <CategoryGrid />
+        {/* 4 — The whole range in one row: six tiles, arrows, and it advances on
+            its own. This is the category grid and the SKU grid merged — they were
+            asking the same question twice, and neither was asking it the way a
+            customer thinks. See the note at the top of RangeCarousel. */}
+        <RangeCarousel />
 
-        {/* 5 — Four products with their prices on them, straight off the back of
-            the category tiles. The section that says Klay does not hide numbers
-            behind a quote form, and it is here rather than three sections lower
-            because this is the moment the customer is asking. */}
-        <RangeGrid />
-
-        {/* 6 — The catch, for anyone who read four prices and still doesn't know
+        {/* 5 — The catch, for anyone who read the range and still doesn't know
             which one is theirs. */}
         <RecommendationBanner />
 

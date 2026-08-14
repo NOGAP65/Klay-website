@@ -328,6 +328,7 @@ export function PhotoTile({
   note,
   blurb,
   cta,
+  ctaBelow = false,
 }: {
   to: string;
   label: string;
@@ -357,6 +358,14 @@ export function PhotoTile({
    * Always-on rather than hover-only because a hover-only CTA does not exist on
    * a touch screen, and this is the primary path into a category. */
   cta?: string;
+  /** Puts the CTA chip UNDER the label block instead of beside it.
+   *
+   * For narrow tiles. The side-by-side row is right on a 480px category tile,
+   * where the label and the chip each have room; on the 300px range cards it
+   * leaves about 130px for the label once the chip has taken its share, which
+   * put "Blockout Curtains" onto three lines. Stacked, the label gets the full
+   * width and the chip sits beneath it. */
+  ctaBelow?: boolean;
 }) {
   const { hover, bind } = useHover();
   const isMobile = useIsMobile();
@@ -457,9 +466,9 @@ export function PhotoTile({
           right: isMobile ? 22 : 32,
           bottom: isMobile ? 22 : 28,
           display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'space-between',
-          gap: 16,
+          ...(ctaBelow
+            ? { flexDirection: 'column' as const, alignItems: 'flex-start', gap: 14 }
+            : { alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }),
           // The row lifts with the hover rather than staying put, so the whole
           // tile reads as one object responding to the pointer.
           transform: hover ? 'translateY(-4px)' : 'translateY(0)',
@@ -511,6 +520,12 @@ export function PhotoTile({
               textTransform: 'uppercase',
               color: tokens.gold,
               marginTop: 10,
+              // The label and the blurb both carry one and the price did not,
+              // which is backwards: gold on a sunlit windowsill is far closer to
+              // its background than warm white is, so "FROM $220" was the one
+              // line on the tile you could not read. Deeper than theirs for the
+              // same reason.
+              textShadow: image ? '0 1px 10px rgba(28,24,16,0.75)' : undefined,
             }}
           >
             {note}
@@ -536,7 +551,10 @@ export function PhotoTile({
               // it is pinned to, so it grows inward rather than pushing itself
               // past the edge of the tile.
               transform: hover ? 'scale(1.08)' : 'scale(1)',
-              transformOrigin: 'bottom right',
+              // The corner the chip is pinned to, so it grows inward rather than
+              // pushing itself past the edge of the tile — which side that is
+              // depends on whether it sits beside the label or under it.
+              transformOrigin: ctaBelow ? 'bottom left' : 'bottom right',
               transition: 'transform 0.28s ease, background 0.28s ease',
             }}
           >
