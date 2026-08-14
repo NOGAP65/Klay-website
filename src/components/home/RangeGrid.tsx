@@ -32,11 +32,11 @@
 // ---------------------------------------------------------------------------
 
 import { Link } from 'react-router-dom';
-import { tokens, layout } from '../../theme';
+import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { PRODUCTS } from '../../data/products';
 import { getSubcategoryBySlug } from '../../data/categories';
-import { ArrowLink, CtaLink, SectionBand, useHover } from './primitives';
+import { ArrowLink, CtaLink, SectionBand, TILE_GAP, useHover } from './primitives';
 
 interface RangeCard {
   name: string;
@@ -105,7 +105,12 @@ function Card({ card, isMobile }: { card: RangeCard; isMobile: boolean }) {
         transition: 'background 0.3s ease',
       }}
     >
-      <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '4 / 5' }}>
+      {/* 3:4, not the 4:5 it started at. This section now follows the category
+          grid directly, and those tiles stand 660px tall — a product row at 450
+          dropped the page's scale the moment the customer got to the thing they
+          came to buy. At full bleed on a 1440 viewport these are ~480, which
+          holds the line the categories set. */}
+      <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '3 / 4' }}>
         <img
           src={card.image}
           alt={`${card.name} ${card.type}`}
@@ -196,14 +201,14 @@ export function RangeGrid() {
       <div
         style={{
           display: 'grid',
-          // Gapless, and capped at the wider grid max — these are photographs
-          // first, and 1200 would shrink four of them below the point of being
-          // persuasive. Two columns on a phone rather than one: a single column
-          // of four cards is four full screens of scroll for one section.
+          // Two columns on a phone rather than one: a single column of four cards
+          // is four full screens of scroll for one section.
           gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-          gap: 0,
-          maxWidth: layout.gridMax,
-          margin: '0 auto',
+          gap: TILE_GAP,
+          // Full bleed, uncapped. It was held to gridMax, which on a wide monitor
+          // walked the products into a centred block while the category tiles
+          // directly above ran to both edges — the page narrowed at exactly the
+          // point the customer reached the thing they came to buy.
         }}
       >
         {CARDS.map(card => (

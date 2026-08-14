@@ -20,7 +20,7 @@
 import { Link } from 'react-router-dom';
 import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { SectionBand, useHover } from './primitives';
+import { SectionBand, TILE_GAP, useHover } from './primitives';
 
 const INSTAGRAM = 'https://www.instagram.com/klayinteriors';
 
@@ -122,8 +122,8 @@ export function SocialProof() {
         className="klay-hscroll"
         style={
           isMobile
-            ? { display: 'flex', gap: 8, overflowX: 'auto', padding: '0 24px 8px' }
-            : { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0 }
+            ? { display: 'flex', gap: TILE_GAP, overflowX: 'auto', padding: '0 24px 8px' }
+            : { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: TILE_GAP }
         }
       >
         {SHOTS.map(shot => (

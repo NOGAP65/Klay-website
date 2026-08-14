@@ -27,7 +27,7 @@
 import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { CATEGORIES } from '../../data/categories';
-import { PhotoTile, SectionBand } from './primitives';
+import { PhotoTile, SectionBand, TILE_GAP } from './primitives';
 
 // The three tiles come from the category data now rather than being written out
 // here, so a tile, its page and the nav dropdown cannot disagree about what a
@@ -55,9 +55,11 @@ export function CategoryGrid() {
         style={{
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-          // Zero. The three photographs meet with nothing between them; any gap
-          // turns a wall of categories into three cards.
-          gap: 0,
+          // A hairline of the section's own warm white, not zero. Butted together
+          // these three read as one wide photograph with three captions on it —
+          // the join between Indoor and Outdoor was especially bad, both pale
+          // curtain frames meeting with nothing to separate them. See TILE_GAP.
+          gap: TILE_GAP,
         }}
       >
         {CATEGORIES.map(category => (

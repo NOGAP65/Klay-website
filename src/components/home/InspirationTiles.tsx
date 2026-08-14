@@ -20,7 +20,7 @@
 
 import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { PhotoTile, SectionBand } from './primitives';
+import { PhotoTile, SectionBand, TILE_GAP } from './primitives';
 
 // ON THE PHOTOGRAPHY. None of these four appears in the install strip directly
 // above or the editorial panel directly above that — the same photograph twice
@@ -93,7 +93,7 @@ export function InspirationTiles() {
           // Two-up on a phone rather than one. Four full-width tiles stacked is
           // four screens of scroll for a section that is not trying to convert.
           gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-          gap: 0,
+          gap: TILE_GAP,
         }}
       >
         {TILES.map(tile => (
