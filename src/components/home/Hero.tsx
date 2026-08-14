@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { tokens, eyebrow, headline, layout, prefersReducedMotion } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { CtaButton, scrollToId } from './primitives';
+import { CtaButton, CtaLink, scrollToId } from './primitives';
 
 const HERO_VIDEO = '/hero_video.mp4';
 
@@ -169,9 +169,15 @@ export function Hero() {
               tool it promises is on this page, and a page load to reach
               something already loaded is a cost with no benefit. */}
           <CtaButton onClick={scrollToId('visualiser')}>Design Yours</CtaButton>
-          <CtaButton variant="ghost" onClick={scrollToId('how-it-works')}>
+          {/* Navigates now rather than scrolling. It pointed at #how-it-works,
+              which was a section on this page until that section was replaced by
+              the gold steps bar immediately below this hero — the anchor no longer
+              exists, and scrollIntoView on a missing element fails silently, so
+              the button would have looked broken rather than errored. The full
+              process, photographs and all, is the /how-it-works page. */}
+          <CtaLink variant="ghost" to="/how-it-works">
             How It Works
-          </CtaButton>
+          </CtaLink>
         </div>
       </div>
     </section>

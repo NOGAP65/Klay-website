@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { tokens, eyebrow, headline, motion, supporting } from '../theme';
+import { STEPS, type Step } from '../data/steps';
 
 // GOLD / DARK / PARCHMENT used to be declared here as local literals. DARK was
 // '#0f0d09' — a near-black darker than ink and outside the palette entirely —
@@ -80,6 +81,36 @@ const STEP_NUMBER: React.CSSProperties = {
   lineHeight: 1,
 };
 
+/** The photograph beside a step.
+ *
+ * These four moved here from the homepage's How It Works section, which no longer
+ * exists — the homepage states the process as a gold bar under the hero and sends
+ * anyone who wants it in full to this page. They are the strongest assets in the
+ * repository, purpose-shot for these exact four beats, and until now this page —
+ * the page actually about the process — carried one image: an empty blue room
+ * captioned "A Klay technician measuring a window". Steps three and four had
+ * cream boxes with a line of text in them.
+ *
+ * 3:2 and a fixed height so all four sit at the same size whichever side of the
+ * row they land on. */
+function StepPhoto({ step }: { step: Step }) {
+  return (
+    <div style={{ height: 320, overflow: 'hidden', border: `1px solid ${tokens.line}` }}>
+      <img
+        src={step.image}
+        alt={step.alt}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: step.objectPosition,
+          display: 'block',
+        }}
+      />
+    </div>
+  );
+}
+
 const stepSection = (ground: string): React.CSSProperties => ({
   background: ground,
   padding: '120px 80px',
@@ -136,9 +167,7 @@ export default function HowItWorksPage() {
       {/* Step 2 — warm white */}
       <section style={stepSection(tokens.warmWhite)}>
         <div style={{ flex: '1 1 360px' }}>
-          <div style={{ height: 320, overflow: 'hidden', border: `1px solid ${tokens.line}` }}>
-            <img src="/images/room-2.png" alt="A Klay technician measuring a window" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
-          </div>
+          <StepPhoto step={STEPS[1]} />
         </div>
         <div style={{ flex: '1 1 400px' }}>
           <div style={STEP_NUMBER}>02</div>
@@ -164,12 +193,8 @@ export default function HowItWorksPage() {
             Finished blinds are freighted to Melbourne in as little as 2 business days, then quality checked again before your installation is booked.
           </p>
         </div>
-        <div style={{ flex: '1 1 360px', display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: '100%', maxWidth: 360, height: 220, border: `1px solid ${tokens.line}`, background: tokens.cream, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontFamily: tokens.display, fontSize: 14, color: tokens.textMid, letterSpacing: '0.2em', textTransform: 'uppercase' }}>
-              Cut to the millimetre
-            </span>
-          </div>
+        <div style={{ flex: '1 1 360px' }}>
+          <StepPhoto step={STEPS[2]} />
         </div>
       </section>
 
@@ -185,12 +210,8 @@ export default function HowItWorksPage() {
             Before and after photos are sent to you the same day, and every installation is covered by our 5-year warranty on top of standard product cover.
           </p>
         </div>
-        <div style={{ flex: '1 1 360px', display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: '100%', maxWidth: 360, height: 220, border: `1px solid ${tokens.goldLine}`, background: tokens.cream, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontFamily: tokens.display, fontSize: 14, color: tokens.gold, letterSpacing: '0.2em', textTransform: 'uppercase' }}>
-              5-Year Warranty
-            </span>
-          </div>
+        <div style={{ flex: '1 1 360px' }}>
+          <StepPhoto step={STEPS[3]} />
         </div>
       </section>
 

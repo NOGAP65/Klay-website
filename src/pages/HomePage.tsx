@@ -60,7 +60,7 @@ import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { TrustTicker, BAR_HEIGHT } from '../components/home/TrustTicker';
 import { Hero } from '../components/home/Hero';
-import { HowItWorksSteps } from '../components/home/HowItWorksSteps';
+import { StepsBar } from '../components/home/StepsBar';
 import { RangeCarousel } from '../components/home/RangeCarousel';
 import { RecommendationBanner } from '../components/home/RecommendationBanner';
 import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
@@ -69,7 +69,6 @@ import { SocialProof } from '../components/home/SocialProof';
 import { InspirationTiles } from '../components/home/InspirationTiles';
 import { Testimonials } from '../components/home/Testimonials';
 import { FinalCta } from '../components/home/FinalCta';
-import { StepsBar } from '../components/home/StepsBar';
 
 export default function HomePage() {
   const setScrollY = useKlayStore((s) => s.setScrollY);
@@ -106,13 +105,20 @@ export default function HomePage() {
         {/* 3 — The promise, full bleed under the transparent nav. */}
         <Hero />
 
-        {/* 4 — The whole range in one row: six tiles, arrows, and it advances on
+        {/* 4 — The whole process in one gold line. It replaces a 635px How It
+            Works section: the four steps are reassurance rather than persuasion,
+            and answering "who does the work?" here means the customer meets the
+            range already knowing how buying works. The detail moved to
+            /how-it-works, which the bar links to. */}
+        <StepsBar />
+
+        {/* 5 — The whole range in one row: six tiles, arrows, and it advances on
             its own. This is the category grid and the SKU grid merged — they were
             asking the same question twice, and neither was asking it the way a
             customer thinks. See the note at the top of RangeCarousel. */}
         <RangeCarousel />
 
-        {/* 5 — The catch, for anyone who read the range and still doesn't know
+        {/* 6 — The catch, for anyone who read the range and still doesn't know
             which one is theirs. */}
         <RecommendationBanner />
 
@@ -123,30 +129,20 @@ export default function HomePage() {
             copy on the page, and the only place either range is argued for. */}
         <AlternatingPanels />
 
-        {/* 9 — Who does the work. After the panels have made the case for a
-            product, because "who measures and installs it?" is the objection that
-            follows wanting one — not the one that precedes browsing. */}
-        <HowItWorksSteps />
-
-        {/* 10 — What it looks like once it's up. Trust, not conversion. */}
+        {/* 9 — What it looks like once it's up. Trust, not conversion. */}
         <SocialProof />
 
-        {/* 11 — Four journal tiles. The one section not trying to sell, which is
+        {/* 10 — Four journal tiles. The one section not trying to sell, which is
             what stops the page reading as a catalogue. */}
         <InspirationTiles />
 
-        {/* 12 — Reviews, moving. */}
+        {/* 11 — Reviews, moving. */}
         <Testimonials />
 
-        {/* 13 — One last ask, pointing back at the tool. */}
+        {/* 12 — One last ask, pointing back at the tool. */}
         <FinalCta />
 
-        {/* 14 — The four steps in one gold line, bookending the trust ticker at
-            the very top. Last thing before the footer, for the reader who has
-            reached the closing CTA still asking what happens after they click. */}
-        <StepsBar />
-
-        {/* 15 — Footer. */}
+        {/* 13 — Footer. */}
         <Footer />
       </main>
     </>

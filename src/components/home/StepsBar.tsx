@@ -1,17 +1,27 @@
 // ---------------------------------------------------------------------------
-// 13. The gold steps bar — the four steps in one line, at the foot of the page.
+// 4. The gold steps bar — the whole process in one line, directly under the hero.
 //
-// It bookends the trust ticker at the top: same gold ground, same ink text, same
-// thin single line. The top bar says what Klay guarantees before you have read
-// anything; this one says how it works after you have read everything, and the
-// two golds close the page around the whole of it.
+// IT REPLACES A SECTION. The homepage used to carry a full How It Works block —
+// 635px of four photographs and four sentences — and this bar does that job in
+// 54px. That trade is right for one reason: the four steps are reassurance, not
+// persuasion. Nobody buys because the process has four steps rather than three;
+// they buy once they know somebody competent turns up. A visitor reads a bar like
+// this without stopping, and a visitor who wants more than a bar wants the whole
+// story, which is a page rather than a section.
 //
-// NOT A SECOND HOW-IT-WORKS SECTION. That section is four photographs and four
-// sentences and it earns its height; this is a strip you take in without reading,
-// for the visitor who has scrolled past that section and arrived at the last CTA
-// still holding the question "so what actually happens after I click?". The
-// labels come from the same array the section uses — see STEPS — so the two can
-// never end up describing different processes.
+// UNDER THE HERO, because that is where the question is asked. "Made to measure
+// and installed" raises "installed by whom, and what do I have to do?" — and
+// answering it before the range means the customer reaches the products already
+// knowing how buying works, instead of meeting an explanation halfway through
+// shopping.
+//
+// It also bookends the trust ticker: same gold, same ink, same thin line, with
+// the hero framed between them. The ticker says what is guaranteed; this says
+// what happens.
+//
+// The whole bar is a link to /how-it-works — the detail did not disappear with
+// the section, it moved to the page that was always about it, photographs and
+// all. See data/steps.ts.
 //
 // ON THE TEXT COLOUR. Ink, not black. Ink on gold measures 6.8:1, and the brand
 // has no black in it at all — the "black text on gold" this bar was asked for is
@@ -19,21 +29,32 @@
 // ink on top.
 // ---------------------------------------------------------------------------
 
+import { Link } from 'react-router-dom';
 import { tokens } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { STEPS } from './HowItWorksSteps';
+import { STEPS } from '../../data/steps';
+import { useHover } from './primitives';
 
 export function StepsBar() {
   const isMobile = useIsMobile();
+  const { hover, bind } = useHover();
 
   return (
-    <section
-      aria-label="How Klay works"
+    <Link
+      {...bind}
+      to="/how-it-works"
+      aria-label="How Klay works — see the full process"
       style={{
-        background: tokens.gold,
+        display: 'block',
+        textDecoration: 'none',
+        // Lifts a step on hover, so the bar answers the pointer and reads as the
+        // link it is. Nothing else changes — a colour shift on a gold ground this
+        // saturated has nowhere to go that isn't worse.
+        background: hover ? tokens.goldLight : tokens.gold,
+        transition: 'background 0.25s ease',
         // Thin. It is a rule across the page that happens to carry four words,
         // not a section — at any real padding it stops being a bar and starts
-        // competing with the closing CTA immediately above it.
+        // being the section it was brought in to replace.
         padding: isMobile ? '0 0' : '0 24px',
       }}
     >
@@ -98,6 +119,6 @@ export function StepsBar() {
           </div>
         ))}
       </div>
-    </section>
+    </Link>
   );
 }

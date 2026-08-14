@@ -318,8 +318,17 @@ export function RangeCarousel() {
           it here rather than on the scroller matters: padding on a scroll
           container sits at the start and end of the scrollable CONTENT, so it
           would slide away with the row instead of holding the edges. */}
+      {/* paddingBottom closes the section. Without it the last row of Shop Now
+          chips sat hard against the charcoal band below, so the row read as
+          having been cut off rather than as having ended — the strips frame it on
+          three sides and the fourth was the next section. */}
       <div
-        style={{ position: 'relative', paddingLeft: TILE_GAP, paddingRight: TILE_GAP }}
+        style={{
+          position: 'relative',
+          paddingLeft: TILE_GAP,
+          paddingRight: TILE_GAP,
+          paddingBottom: isMobile ? 44 : 64,
+        }}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
