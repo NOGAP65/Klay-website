@@ -61,9 +61,12 @@ function StepButton({
         width: 30,
         height: 30,
         borderRadius: 2,
-        border: `1px solid ${active ? tokens.gold : tokens.lineStrong}`,
+        // On the black card now, so the hairline and the glyph both invert. The
+        // hover fill does not: gold with ink on it is the selection language the
+        // pills next to this use, and it holds on either ground.
+        border: `1px solid ${active ? tokens.gold : tokens.onDarkEdge}`,
         background: active ? tokens.gold : 'transparent',
-        color: active ? tokens.ink : tokens.inkSoft,
+        color: active ? tokens.ink : tokens.onDarkMuted,
         fontFamily: tokens.body,
         fontSize: 15,
         lineHeight: 1,
@@ -89,10 +92,13 @@ function WindowCount({ value, onChange }: { value: number; onChange: (n: number)
           marginBottom: 9,
         }}
       >
-        <span style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, color: tokens.ink }}>
+        {/* Matched to VisualiserControls' own Field labels — this row sits
+            directly under them and has to read as one more field, not as a
+            different component that happens to be nearby. */}
+        <span style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, color: tokens.warmWhite }}>
           Number of windows
         </span>
-        <span style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkFaint }}>
+        <span style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.onDarkMuted }}>
           {value === 1 ? '1 window' : `${value} windows`}
         </span>
       </div>
@@ -112,7 +118,7 @@ function WindowCount({ value, onChange }: { value: number; onChange: (n: number)
             fontFamily: tokens.body,
             fontSize: 15,
             fontWeight: 500,
-            color: tokens.ink,
+            color: tokens.warmWhite,
             minWidth: 24,
             textAlign: 'center',
           }}
@@ -164,19 +170,19 @@ export function VisualiserShowcase() {
   };
 
   return (
-    // Charcoal. The centrepiece is a bright cream panel, and on parchment the two
-    // light tones sat a single step apart so the card had nothing to be bright
-    // against — it read as a slightly paler rectangle on a pale ground. On a dark
-    // ground the panel reads as a lit screen in a dark room, which is what it is,
-    // and the white heading above it separates instead of blending.
+    // INVERTED. This was ink — the page's one near-black ground — carrying a
+    // bright cream card, on the reasoning that the deepest ground under the
+    // brightest panel is what marks the centrepiece. The pairing still holds; it
+    // is the assignment that has swapped. The card is the black object now and
+    // the section is the white it sits on, which puts the contrast on the
+    // instrument itself rather than on the band around it.
     //
-    // Ink, and the only ink on the page. Two reasons it moved off charcoal: How
-    // It Works sits immediately above it and is charcoal, so as charcoal too this
-    // section merged straight into it once the light band between them was
-    // removed — and the deepest ground in the palette under the brightest panel
-    // is what makes the one section that does real work read as the centrepiece
-    // rather than as another band. Charcoal stays the page's ordinary dark.
-    <section id="visualiser" style={{ background: tokens.ink }}>
+    // Cream, not warmWhite, and that is load-bearing rather than a shade of
+    // preference. AlternatingPanels immediately below is warm white, so warm
+    // white here would run two identical grounds together and lose the join —
+    // the page's rule is that no two adjacent sections share one. Cream is also
+    // simply the whitest thing in the palette, which is what was asked for.
+    <section id="visualiser" style={{ background: tokens.cream }}>
       {/* The same band as the category and range sections, from the same
           component, so the page's three big sections are introduced identically
           rather than in three slightly different voices. It supplies this
@@ -195,22 +201,41 @@ export function VisualiserShowcase() {
         }
         sub="Upload a photo of your window and configure in real time."
         isMobile={isMobile}
-        onDark
       />
 
       {/* Two elements, not one: the inset lives on the outer and the cap on the
           inner. Putting both on one div made the cap include the padding — every
           global box-sizing is border-box here — which quietly took 160px off the
           card and 100px off the canvas the moment this section moved to a band. */}
-      <div style={{ padding: isMobile ? '0 24px 72px' : '0 80px 96px' }}>
-        <div style={{ maxWidth: layout.containerMax, margin: '0 auto' }}>
-        {/* ONE CARD, two columns at 30/70. Both columns share the card's cream
+      {/* No horizontal padding on desktop any more. The card sizes itself at 75%
+          of the viewport now, so an 80px inset either side would be measuring
+          that 75% against a container the padding had already narrowed — the
+          card would land at 75% of 1280 on a 1440 screen, not 75% of 1440. */}
+      <div style={{ padding: isMobile ? '0 24px 72px' : '0 0 96px' }}>
+        <div
+          style={{
+            // 75% of the screen, centred. Capped at gridMax so the card cannot
+            // become the one element on the page that ignores the layout system
+            // — and the cap is not reached until 1920, so every ordinary desktop
+            // width gets the full 75%.
+            width: isMobile ? '100%' : '75%',
+            maxWidth: isMobile ? undefined : layout.gridMax,
+            margin: '0 auto',
+          }}
+        >
+        {/* ONE CARD, two columns at 30/70. Both columns share the card's ink
             ground and its radius, so the controls read as part of the same
             instrument as the render rather than as a form sitting next to a
             picture. The canvas keeps its own charcoal box — that is
-            KlayConfigurator's, it is protected, and a dark surround is right
-            behind a photograph anyway: inside this card it reads as the screen
-            in the panel.
+            KlayConfigurator's and it is left alone — which on an ink card now
+            reads as a screen set very slightly proud of the panel around it
+            rather than as the dark hole it was against cream.
+
+            The controls take `onDark` for the same reason. They are the one
+            thing in here with no colour of their own, so on a black card every
+            label, hairline and unselected pill has to be told to invert; the
+            flag is opt-in, and the three other places that embed this panel are
+            all still on cream and still pass nothing.
 
             Controls are first in the DOM so they come first to a screen reader
             and to anyone tabbing in; `order` puts the canvas above them on a
@@ -222,11 +247,16 @@ export function VisualiserShowcase() {
             flexDirection: isMobile ? 'column' : 'row',
             gap: isMobile ? 28 : 32,
             alignItems: 'stretch',
-            background: tokens.cream,
+            // The black rectangle. Ink rather than charcoal — charcoal is the
+            // page's ordinary dark and is already doing that job in the nav, the
+            // steps bar and the canvas box inside this very card. Ink is a step
+            // deeper, which is what lets the canvas box read as a screen set into
+            // the card rather than as the same surface continuing.
+            background: tokens.ink,
             // No border. It was a hairline of ink at 0.08, which existed to lift
             // a cream card off a parchment ground one step away from it. Against
-            // charcoal the card separates completely on its own, and the hairline
-            // would only muddy the edge that is now doing the work.
+            // cream the black card separates completely on its own, and the
+            // hairline would only muddy the edge that is now doing the work.
             borderRadius: CARD_RADIUS,
             padding: isMobile ? 20 : 28,
           }}
@@ -246,7 +276,7 @@ export function VisualiserShowcase() {
               gap: isMobile ? 16 : 22,
             }}
           >
-            <VisualiserControls compact />
+            <VisualiserControls compact onDark />
             <WindowCount value={windows} onChange={setWindows} />
           </div>
 
