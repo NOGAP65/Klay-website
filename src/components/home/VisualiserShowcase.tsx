@@ -26,14 +26,75 @@ import { productByBlindType } from '../../data/products';
 import { bookingLink } from '../../lib/bookingLink';
 import KlayConfigurator from '../../visualiser/KlayConfigurator';
 import VisualiserControls from '../../visualiser/VisualiserControls';
-import { useVisualiserStore } from '../../visualiser/useVisualiserStore';
-import { CtaButton, SectionBand, TextLink, useHover } from './primitives';
+import { useVisualiserStore, type ProductCategory } from '../../visualiser/useVisualiserStore';
+import { CtaButton, CtaLink, SectionBand, TextLink, useHover } from './primitives';
 
 const MAX_WINDOWS = 12;
+
+/** Where a curtain enquiry goes. Curtains are configurable here and in the
+ * visualiser page, but they are not buyable anywhere on the site: every curtain
+ * subcategory in data/categories.ts is available:false, and ProductsPage already
+ * resolves all of them to this same form. Sending them to the cart instead would
+ * be the one place on the site that pretends otherwise — and CartItem could not
+ * describe the order anyway, since it has no mount, no wave-fold heading and a
+ * windowSize that stops at large where curtains go to XL. */
+const CURTAIN_ENQUIRY = '/contact';
 
 /** Matches the RADIUS the visualiser's own surfaces use, so the card and the
  * canvas box inside it agree rather than being 2px and 12px apart. */
 const CARD_RADIUS = 2;
+
+/** Blinds / Curtains, at the top of the control panel.
+ *
+ * VisualiserPage has its own version of this and keeps it: that one is written
+ * for a cream sidebar and fills the active tab with ink, which on this card
+ * would be an invisible tab on an identical ground. This one uses the panel's
+ * own selection language instead — gold fill with ink on it for the active tab,
+ * hairline and muted text for the other — so it reads as the first field of the
+ * form rather than as a widget above it.
+ *
+ * It has to exist for curtains to be reachable at all. VisualiserControls only
+ * renders its curtain branch when the store's category is already 'curtain', and
+ * nothing on the homepage could set that before this. */
+function CategoryTabs() {
+  const { productCategory, setProductCategory } = useVisualiserStore();
+  const tabs: { id: ProductCategory; label: string }[] = [
+    { id: 'blind', label: 'Blinds' },
+    { id: 'curtain', label: 'Curtains' },
+  ];
+
+  return (
+    <div style={{ display: 'flex', gap: 6 }}>
+      {tabs.map(tab => {
+        const active = productCategory === tab.id;
+        return (
+          <button
+            key={tab.id}
+            aria-pressed={active}
+            onClick={() => setProductCategory(tab.id)}
+            style={{
+              flex: 1,
+              padding: '11px 12px',
+              borderRadius: 2,
+              fontFamily: tokens.body,
+              fontSize: 10.5,
+              fontWeight: 500,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              border: `1px solid ${active ? tokens.gold : tokens.onDarkEdge}`,
+              background: active ? tokens.gold : 'transparent',
+              color: active ? tokens.ink : tokens.onDarkMuted,
+              transition: motion.button,
+            }}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 /** Square stepper button. Same selection language as the configurator's own
  * pills — hairline at rest, gold on hover — so the row reads as part of the
@@ -142,8 +203,23 @@ export function VisualiserShowcase() {
   const [windows, setWindows] = useState(1);
 
   const addItem = useCartStore(s => s.addItem);
-  const { blindType, fabricColour, hardwareColour, windowSize, operation, getCurrentPrice } =
-    useVisualiserStore();
+  const {
+    blindType,
+    fabricColour,
+    hardwareColour,
+    windowSize,
+    operation,
+    productCategory,
+    getCurrentPrice,
+    getCurtainPrice,
+  } = useVisualiserStore();
+
+  const isCurtain = productCategory === 'curtain';
+  // The two categories price on different axes — a curtain off CURTAIN_BASE_PRICES
+  // and its own motor add, a blind off pricePerBlind. Reading the blind figure
+  // while the panel is showing curtain controls is how the button and the price
+  // box immediately above it end up quoting two different numbers.
+  const unitPrice = isCurtain ? getCurtainPrice() : getCurrentPrice();
 
   const handleBuyNow = () => {
     // The catalogue entry for the configured blind type — the cart line needs a
@@ -158,7 +234,7 @@ export function VisualiserShowcase() {
       hardwareColour,
       windowSize,
       operation,
-      price: getCurrentPrice(),
+      price: unitPrice,
     };
     for (let i = 0; i < windows; i += 1) addItem(line);
     // Straight to the cart, because the button says Buy Now. When it read "Add to
@@ -268,15 +344,23 @@ export function VisualiserShowcase() {
               order: isMobile ? 2 : 1,
               display: 'flex',
               flexDirection: 'column',
-              // Centred against the canvas, which is the taller of the two. Top
-              // aligned, the ~170px the controls don't need collected into one
-              // dead cream block at the foot of the card; split above and below
-              // it reads as the card's own margin.
-              justifyContent: isMobile ? 'flex-start' : 'center',
+              // space-between, not centre. Centred, the height the controls did
+              // not need was split into a dead band above the panel and another
+              // below it — about 31px each once the tabs were added, and a good
+              // deal more before that. Spread instead, the tabs sit on the
+              // canvas's top edge and the window stepper on its bottom, so the
+              // configuration is as tall as the thing it configures and the
+              // slack becomes breathing room between groups rather than two
+              // margins doing nothing.
+              justifyContent: isMobile ? 'flex-start' : 'space-between',
               gap: isMobile ? 16 : 22,
             }}
           >
-            <VisualiserControls compact onDark />
+            <CategoryTabs />
+            {/* showCurtainControls is what lets the panel switch branches at all
+                — without it the tabs would move the store and the renderer but
+                leave blind fields on screen. */}
+            <VisualiserControls compact onDark showCurtainControls />
             <WindowCount value={windows} onChange={setWindows} />
           </div>
 
@@ -303,26 +387,39 @@ export function VisualiserShowcase() {
             gap: isMobile ? 20 : 28,
           }}
         >
-          {/* Buy Now, the same words as every tile on the page. The price rides on
-              the label because this is the only one of them that knows what the
-              thing costs — a bare "Buy Now" under a configured render would hide
-              the number the customer just built. */}
-          <CtaButton onClick={handleBuyNow} style={{ minWidth: 280 }}>
-            Buy Now — ${getCurrentPrice() * windows}
-          </CtaButton>
-          <TextLink
-            accent
-            to={bookingLink({
-              blindType,
-              windowSize,
-              operation,
-              quantity: windows,
-              fabricColour,
-              hardwareColour,
-            })}
-          >
-            or get a free quote →
-          </TextLink>
+          {/* The action splits by category, because only one of the two can be
+              bought. A curtain gets an enquiry — see CURTAIN_ENQUIRY — and no
+              second link beside it, since a quote link next to a quote button is
+              the same destination twice.
+
+              Blinds are unchanged: Buy Now, the same words as every tile on the
+              page, with the price on the label because this is the only one of
+              them that knows what the thing costs — a bare "Buy Now" under a
+              configured render would hide the number the customer just built. */}
+          {isCurtain ? (
+            <CtaLink to={CURTAIN_ENQUIRY} style={{ minWidth: 280 }}>
+              Enquire — from ${unitPrice}
+            </CtaLink>
+          ) : (
+            <>
+              <CtaButton onClick={handleBuyNow} style={{ minWidth: 280 }}>
+                Buy Now — ${unitPrice * windows}
+              </CtaButton>
+              <TextLink
+                accent
+                to={bookingLink({
+                  blindType,
+                  windowSize,
+                  operation,
+                  quantity: windows,
+                  fabricColour,
+                  hardwareColour,
+                })}
+              >
+                or get a free quote →
+              </TextLink>
+            </>
+          )}
           </div>
         </div>
       </div>
