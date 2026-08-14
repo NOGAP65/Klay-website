@@ -15,18 +15,20 @@
 // knowing how buying works, instead of meeting an explanation halfway through
 // shopping.
 //
-// It also bookends the trust ticker: same gold, same ink, same thin line, with
-// the hero framed between them. The ticker says what is guaranteed; this says
-// what happens.
+// CHARCOAL, NOT GOLD. It was gold to match the trust ticker at the top of the
+// page, and with only the hero between them the two golds read as one thing
+// stated twice rather than as a pair — the gold stopped meaning anything because
+// it was the only thing either bar was saying. Inverted, the ticker keeps gold to
+// itself and this bar takes the other half of the same pairing: charcoal ground,
+// gold text, which is the site's dark-CTA rule and measures 5.6:1.
+//
+// Charcoal rather than black, because Klay has no black in it — #000000 and
+// #1A1A1A are both banned outright, and ink is spoken for as the visualiser's
+// one deep ground further down the page.
 //
 // The whole bar is a link to /how-it-works — the detail did not disappear with
 // the section, it moved to the page that was always about it, photographs and
 // all. See data/steps.ts.
-//
-// ON THE TEXT COLOUR. Ink, not black. Ink on gold measures 6.8:1, and the brand
-// has no black in it at all — the "black text on gold" this bar was asked for is
-// the primary-CTA pairing the whole site already uses, which is gold ground with
-// ink on top.
 // ---------------------------------------------------------------------------
 
 import { Link } from 'react-router-dom';
@@ -47,10 +49,9 @@ export function StepsBar() {
       style={{
         display: 'block',
         textDecoration: 'none',
-        // Lifts a step on hover, so the bar answers the pointer and reads as the
-        // link it is. Nothing else changes — a colour shift on a gold ground this
-        // saturated has nowhere to go that isn't worse.
-        background: hover ? tokens.goldLight : tokens.gold,
+        // Deepens to ink on hover, so the bar answers the pointer and reads as
+        // the link it is. Same move the dark CTA makes everywhere else.
+        background: hover ? tokens.ink : tokens.charcoal,
         transition: 'background 0.25s ease',
         // Thin. It is a rule across the page that happens to carry four words,
         // not a section — at any real padding it stops being a bar and starts
@@ -86,7 +87,7 @@ export function StepsBar() {
               // rule would be cut mid-stroke at the edge of the viewport.
               padding: isMobile ? 0 : '0 30px',
               borderLeft:
-                !isMobile && i > 0 ? '1px solid rgba(28,24,16,0.22)' : undefined,
+                !isMobile && i > 0 ? `1px solid ${tokens.onDarkEdge}` : undefined,
             }}
           >
             <span
@@ -95,10 +96,10 @@ export function StepsBar() {
                 fontSize: 15,
                 fontWeight: 400,
                 lineHeight: 1,
-                // Down at 0.5 so the numeral marks the order without competing
-                // with the words — it is a bullet here, not a decorative numeral
-                // the way it is in the section itself.
-                color: 'rgba(28,24,16,0.5)',
+                // Gold at half, so the numeral marks the order without competing
+                // with the words beside it — a bullet, not the decorative numeral
+                // the process page gives the same step.
+                color: 'rgba(200,151,58,0.5)',
               }}
             >
               {String(i + 1).padStart(2, '0')}
@@ -110,7 +111,7 @@ export function StepsBar() {
                 fontWeight: 500,
                 letterSpacing: '0.13em',
                 textTransform: 'uppercase',
-                color: tokens.ink,
+                color: tokens.gold,
                 whiteSpace: 'nowrap',
               }}
             >
