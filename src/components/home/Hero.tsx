@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { tokens, eyebrow, headline, layout, prefersReducedMotion } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { CtaButton, CtaLink, scrollToId } from './primitives';
+import { HeroProductRail } from './HeroProductRail';
 
 const HERO_VIDEO = '/hero_video.mp4';
 
@@ -227,14 +228,11 @@ export function Hero() {
       </div>
       </div>
 
-      {/* THE RESERVED 30% — deliberately empty, and it will not stay that way.
-          This is where the product rail goes: one product at a time, cycling,
-          beside the hero rather than below it.
-          It is charcoal and nothing else on purpose. A placeholder with a label
-          or a box on it is the kind of thing that ships by accident, and an empty
-          column is unmistakable — it reads as unfinished to anyone who sees it,
-          which is exactly what it is until the rail lands. */}
-      {!isMobile && <div style={{ background: tokens.charcoal }} />}
+      {/* The 30%: one product at a time, on white, changing every five seconds.
+          Desktop only — at phone widths there is no second column to put it in,
+          and the range row a screen below is the same job done properly for that
+          viewport. */}
+      {!isMobile && <HeroProductRail />}
     </section>
   );
 }
