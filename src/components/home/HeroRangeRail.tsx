@@ -73,10 +73,12 @@ const NAV_CLEARANCE = 80 + 24;
  * that shrinks by a constant rather than proportionally.
  *
  * The min() is the floor for the type. The name, the descriptor and Shop Now
- * need about 96px between them, and on a short window the 58% does not leave
+ * need about 116px between them, and on a short window the 58% does not leave
  * that — under roughly 1000px of viewport the photograph gives way instead of
- * squeezing the words, which is the right way round for this to fail. */
-const IMAGE_HEIGHT = 'min(calc(58% + 100px), calc(100% - 96px))';
+ * squeezing the words, which is the right way round for this to fail. The floor
+ * went up from 96 when Shop Now became a filled chip: padding on a button is
+ * height the words underneath it do not get. */
+const IMAGE_HEIGHT = 'min(calc(58% + 100px), calc(100% - 116px))';
 
 /** How many characters the descriptor line can run to before it wraps. The panel
  * is 24% of the viewport less 26px of padding either side — about 294px at
@@ -298,25 +300,30 @@ function CategorySlide({ category, active }: { category: Category; active: boole
         >
           {descriptorFor(category)}
         </div>
-        {/* Gold at rest, so it reads as the slide's action from across the page
-            rather than only once the pointer is on it. That is why this is
-            written out instead of using ArrowLink, whose rest colour is ink —
-            correct for a card in a grid of cards, too quiet for the one action
-            on a panel this narrow. */}
+        {/* A filled gold chip, not the underlined ArrowLink the cards elsewhere
+            use. Same reasoning as PhotoTile's corner chip: a photograph with a
+            word under it is not obviously clickable, and on a panel this narrow
+            the slide has no other affordance — the fill is what says the whole
+            block is a link.
+
+            A <span> rather than a <button> because this sits INSIDE the slide's
+            Link and a nested interactive element would be invalid; the Link is
+            what handles the click. */}
         <span
           style={{
             display: 'inline-block',
             marginTop: 12,
+            padding: '11px 20px',
             fontFamily: tokens.body,
-            fontSize: 11,
+            fontSize: 10.5,
             fontWeight: 500,
-            letterSpacing: '0.16em',
+            letterSpacing: '0.18em',
             textTransform: 'uppercase',
-            color: hover ? tokens.goldDeep : tokens.gold,
-            borderBottom: `1px solid ${hover ? tokens.goldDeep : tokens.goldLine}`,
-            paddingBottom: 3,
+            color: tokens.ink,
+            background: hover ? tokens.goldLight : tokens.gold,
+            borderRadius: 2,
             whiteSpace: 'nowrap',
-            transition: motion.link,
+            transition: motion.button,
           }}
         >
           Shop Now →
