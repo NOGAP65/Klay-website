@@ -149,15 +149,7 @@ export const getSubcategoryBySlug = (categorySlug: string, subSlug: string): Sub
  * slugs it resolves and the slugs that exist have not drifted apart. */
 export const ALL_SUBCATEGORY_SLUGS = CATEGORIES.flatMap(c => c.subcategories.map(s => s.slug))
 
-/** For the nav dropdowns. The top-level slugs are real routes now, which is new:
- * the nav used to point at /curtains and /wardrobes, neither of which existed,
- * so two of its three category links went to the 404 page. */
-export const NAV_CATEGORIES = CATEGORIES.map(c => ({
-  name: c.name,
-  slug: c.slug,
-  subcategories: c.subcategories.map(s => ({
-    name: s.name,
-    slug: s.slug,
-    available: s.available,
-  })),
-}))
+// NAV_CATEGORIES used to live here — the projection the nav read to build three
+// Indoor/Outdoor/Wardrobes dropdowns. The nav speaks in ranges now (see
+// data/ranges.ts) and nothing consumed this, so it is gone rather than left
+// behind as a second, quietly wrong description of the menu.

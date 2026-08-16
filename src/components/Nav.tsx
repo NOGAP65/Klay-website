@@ -1,10 +1,133 @@
+// ---------------------------------------------------------------------------
+// THE NAV — two menus and a link: OUR RANGE, ABOUT, CONTACT.
+//
+// It used to be three top-level category items (Indoor, Outdoor, Wardrobes),
+// each with its own dropdown of product types. That put the business's own
+// filing system in the most valuable row on the site: nobody arrives wanting
+// "Indoor", they arrive wanting curtains, and finding curtains meant knowing
+// they were filed under Indoor first. Three dropdowns of nine, six and four
+// items also meant nineteen destinations in the bar, of which one was buyable.
+//
+// Now there is ONE range menu, holding the six things Klay actually sells —
+// Blinds, Curtains, Awnings, Wardrobes, Screens, Shelving. That list is not
+// written here; it comes off data/ranges.ts, the same array the homepage
+// carousel and hero rail read, so the nav cannot say a different range to the
+// page underneath it. The Indoor/Outdoor/Wardrobes pages still exist and are
+// still routed — they are just no longer the way in.
+//
+// THE PANEL IS DARK. It was a white rounded card with a soft shadow dropping
+// out of a charcoal bar, which read as a different site's component borrowed
+// into this one — 12px radius on a site whose every button is a 2px rectangle,
+// and a bright rectangle punched into a dark bar. Charcoal on charcoal, with a
+// hairline and a square corner, reads as the bar extending downwards.
+// ---------------------------------------------------------------------------
+
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useKlayStore } from '../store';
 import { useCartStore } from '../store/cartStore';
 import { tokens, motion } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { NAV_CATEGORIES } from '../data/categories';
+import { RANGES } from '../data/ranges';
+
+/** What a menu drops. Kept deliberately flat — a label and a destination — so
+ * that adding a menu is adding an array, not another block of panel markup. */
+interface MenuItem {
+  label: string;
+  to: string;
+}
+
+interface Menu {
+  /** The word in the bar. */
+  label: string;
+  /** Where the word itself goes when clicked rather than hovered. A menu whose
+   * heading is inert forces the visitor through the panel to get anywhere, and
+   * on touch there is no hover to open it with. */
+  to: string;
+  items: MenuItem[];
+}
+
+const MENUS: Menu[] = [
+  {
+    label: 'Our Range',
+    // /products is the one page that lists everything, so the heading itself is
+    // the "all of it" click.
+    to: '/products',
+    items: RANGES.map(r => ({ label: r.label, to: r.to })),
+  },
+  {
+    label: 'About',
+    to: '/about',
+    items: [
+      { label: 'About Us', to: '/about' },
+      { label: 'How It Works', to: '/how-it-works' },
+    ],
+  },
+];
+
+/** The dark panel. One component for both menus, because the range menu having
+ * its own look was half of what made the old dropdown feel bolted on.
+ *
+ * The 16px of top padding is a bridge, not a gap: it is transparent and it is
+ * inside the hover target, so the pointer can travel from the word to the first
+ * item without crossing dead space and closing the menu on the way. */
+function DropdownPanel({ items, onNavigate }: { items: MenuItem[]; onNavigate?: () => void }) {
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: '100%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        paddingTop: 16,
+        zIndex: 100,
+      }}
+    >
+      <div
+        style={{
+          background: tokens.charcoal,
+          borderRadius: 2,
+          border: `1px solid ${tokens.goldLine}`,
+          // Deep and soft. The panel is the same colour as the bar above it, so
+          // without a shadow the two merge into one shape and the panel stops
+          // reading as something that opened.
+          boxShadow: '0 22px 52px rgba(0,0,0,0.45)',
+          padding: '10px 0',
+          minWidth: 208,
+        }}
+      >
+        {items.map((item) => {
+          const isHovered = hoveredItem === item.to;
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              onClick={onNavigate}
+              onMouseEnter={() => setHoveredItem(item.to)}
+              onMouseLeave={() => setHoveredItem(cur => (cur === item.to ? null : cur))}
+              style={{
+                display: 'block',
+                padding: '11px 26px',
+                textDecoration: 'none',
+                fontFamily: tokens.body,
+                fontSize: 13,
+                letterSpacing: '0.06em',
+                whiteSpace: 'nowrap',
+                color: isHovered ? tokens.gold : tokens.warmWhite,
+                opacity: isHovered ? 1 : 0.78,
+                background: isHovered ? 'rgba(200,151,58,0.10)' : 'transparent',
+                transition: 'color 0.2s ease, background 0.2s ease, opacity 0.2s ease',
+              }}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 interface NavProps {
   onLight?: boolean;
@@ -94,113 +217,68 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               alignItems: 'center',
             }}
           >
-            {/* Category dropdowns */}
-            {NAV_CATEGORIES.map((category) => (
-              <div
-                key={category.slug}
-                style={{ position: 'relative' }}
-                onMouseEnter={() => setDropdownOpen(category.slug)}
-                onMouseLeave={() => setDropdownOpen(null)}
-              >
-                <Link
-                  to={`/${category.slug}`}
-                  style={{
-                    color: dropdownOpen === category.slug ? tokens.gold : linkColor,
-                    textDecoration: 'none',
-                    fontFamily: tokens.body,
-                    fontSize: 13,
-                    fontWeight: 400,
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    opacity: dropdownOpen === category.slug ? 1 : 0.82,
-                    paddingBottom: 3,
-                    borderBottom: `1px solid ${dropdownOpen === category.slug ? tokens.gold : 'transparent'}`,
-                    transition: `${motion.link}, opacity 0.2s ease`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                  }}
+            {/* The two menus — Our Range, About. The chevron rotates rather
+                than swapping character, so an open menu is legible at a glance
+                without the word beside it shifting by a pixel. */}
+            {MENUS.map((menu) => {
+              const isOpen = dropdownOpen === menu.label;
+              return (
+                <div
+                  key={menu.label}
+                  style={{ position: 'relative' }}
+                  onMouseEnter={() => setDropdownOpen(menu.label)}
+                  onMouseLeave={() => setDropdownOpen(cur => (cur === menu.label ? null : cur))}
                 >
-                  {category.name}
-                  <span style={{ fontSize: 8, opacity: 0.6 }}>▼</span>
-                </Link>
-
-                {/* Dropdown */}
-                {dropdownOpen === category.slug && (
-                  <div
+                  <Link
+                    to={menu.to}
                     style={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      paddingTop: 16,
-                      zIndex: 100,
+                      color: isOpen ? tokens.gold : linkColor,
+                      textDecoration: 'none',
+                      fontFamily: tokens.body,
+                      fontSize: 13,
+                      fontWeight: 400,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      opacity: isOpen ? 1 : 0.82,
+                      paddingBottom: 3,
+                      borderBottom: `1px solid ${isOpen ? tokens.gold : 'transparent'}`,
+                      transition: `${motion.link}, opacity 0.2s ease`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 7,
                     }}
                   >
-                    <div
+                    {menu.label}
+                    <svg
+                      width="8"
+                      height="5"
+                      viewBox="0 0 8 5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       style={{
-                        background: tokens.warmWhite,
-                        borderRadius: 12,
-                        boxShadow: '0 16px 48px rgba(28,24,16,0.15)',
-                        border: `1px solid ${tokens.lineFaint}`,
-                        padding: '16px 8px',
-                        minWidth: 220,
+                        opacity: 0.7,
+                        transform: isOpen ? 'rotate(180deg)' : 'none',
+                        transition: 'transform 0.25s ease',
                       }}
                     >
-                      {category.subcategories.map((sub) => (
-                        <Link
-                          key={sub.slug}
-                          to={sub.available ? `/${category.slug}/${sub.slug}` : '#'}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '12px 16px',
-                            borderRadius: 8,
-                            textDecoration: 'none',
-                            fontFamily: tokens.body,
-                            fontSize: 14,
-                            color: sub.available ? tokens.ink : tokens.textMuted,
-                            transition: 'background 0.2s ease',
-                            background: 'transparent',
-                          }}
-                          onMouseEnter={(e) => {
-                            if (sub.available) {
-                              e.currentTarget.style.background = 'rgba(200,151,58,0.08)';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                          }}
-                        >
-                          <span>{sub.name}</span>
-                          {!sub.available && (
-                            <span
-                              style={{
-                                fontSize: 10,
-                                color: tokens.gold,
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                              }}
-                            >
-                              Soon
-                            </span>
-                          )}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                      <path d="M1 1l3 3 3-3" />
+                    </svg>
+                  </Link>
 
-            {/* Four links in the centre and one action on the right. Reviews and
-                Design Yours were dropped from here: Reviews pointed at a
-                homepage anchor that read as a page, and Design Yours competed
-                with the gold CTA for the same click while /visualiser is behind
-                a host allowlist. Both are still reachable — from the hero, from
-                the closing CTA, and from the footer. */}
-            {[{ label: 'How It Works', to: '/how-it-works' }].map((l) => {
+                  {isOpen && <DropdownPanel items={menu.items} />}
+                </div>
+              );
+            })}
+
+            {/* Contact stays a direct link rather than a third menu — it is one
+                destination, and burying a one-item menu behind a chevron is a
+                click spent on nothing. How It Works moved into the About menu;
+                Reviews and Design Yours are still off the bar, reachable from
+                the hero, the closing CTA and the footer. */}
+            {[{ label: 'Contact', to: '/contact' }].map((l) => {
               const isHovered = hovered === l.to;
               return (
                 <Link
@@ -355,10 +433,13 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             padding: '80px 24px',
           }}
         >
-          {NAV_CATEGORIES.map((category) => (
-            <div key={category.slug} style={{ textAlign: 'center' }}>
+          {/* Everything is open on mobile — there is no hover to open a panel
+              with, and a tap-to-expand accordion two levels deep is worse than
+              a list you scroll. Same two menus, same order as the bar. */}
+          {MENUS.map((menu) => (
+            <div key={menu.label} style={{ textAlign: 'center' }}>
               <Link
-                to={`/${category.slug}`}
+                to={menu.to}
                 onClick={() => setMenuOpen(false)}
                 style={{
                   color: tokens.gold,
@@ -370,23 +451,23 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                   marginBottom: 12,
                 }}
               >
-                {category.name}
+                {menu.label}
               </Link>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {category.subcategories.map((sub) => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {menu.items.map((item) => (
                   <Link
-                    key={sub.slug}
-                    to={sub.available ? `/${category.slug}/${sub.slug}` : '#'}
-                    onClick={() => sub.available && setMenuOpen(false)}
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMenuOpen(false)}
                     style={{
-                      color: sub.available ? tokens.warmWhite : tokens.textMuted,
+                      color: tokens.warmWhite,
                       textDecoration: 'none',
                       fontFamily: tokens.body,
                       fontSize: 15,
-                      opacity: sub.available ? 0.8 : 0.5,
+                      opacity: 0.8,
                     }}
                   >
-                    {sub.name} {!sub.available && '(Soon)'}
+                    {item.label}
                   </Link>
                 ))}
               </div>
@@ -394,18 +475,18 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
           ))}
 
           <Link
-            to="/how-it-works"
+            to="/contact"
             onClick={() => setMenuOpen(false)}
             style={{
-              marginTop: 16,
-              color: tokens.warmWhite,
+              marginTop: 4,
+              color: tokens.gold,
               textDecoration: 'none',
-              fontFamily: tokens.body,
-              fontSize: 16,
-              opacity: 0.8,
+              fontFamily: tokens.display,
+              fontSize: 32,
+              letterSpacing: '0.04em',
             }}
           >
-            How It Works
+            Contact
           </Link>
 
           {/* Same action, destination and fill as the desktop button. */}
