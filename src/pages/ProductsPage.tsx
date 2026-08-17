@@ -195,7 +195,13 @@ export default function ProductsPage() {
                 fontFamily: tokens.display,
                 fontSize: isMobile ? 36 : 52,
                 fontWeight: 300,
-                color: tokens.warmWhite,
+                // Gold, matching the gold SHOP in the nav that brought you
+                // here — the bar and the page it opens say the same word in the
+                // same colour, so arriving feels like landing rather than
+                // navigating. It is also the only large type on this banner:
+                // the eyebrow went when the breadcrumb arrived, so there is no
+                // second gold thing above it to compete with.
+                color: tokens.gold,
                 lineHeight: 1.1,
                 margin: 0,
               }}

@@ -275,6 +275,57 @@ export function ProductCard({
           {tagline}
         </p>
       ) : null}
+
+      {/* THE CALL TO ACTION, and it is a worded link rather than a filled gold
+          button. Twenty-two gold buttons on one screen is the wall this card was
+          rebuilt to remove — gold is meant to mean "the one action here" and
+          cannot mean it twenty-two times. Set as a small caps line with an
+          arrow, it still reads as a CTA and still leaves the photographs as the
+          loudest thing in the grid.
+
+          THE WORDING IS PER CARD, NOT UNIFORM. "Shop Now" only where the click
+          genuinely reaches a shop; the other sixteen products are made to
+          measure with no price grid and land on the enquiry form. A Shop Now
+          under a line that already says PRICE ON MEASURE contradicts itself
+          inside twenty pixels — this is one string to change if the label
+          should be the same everywhere regardless. */}
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 7,
+          marginTop: 14,
+          fontFamily: tokens.body,
+          fontSize: 11,
+          fontWeight: 500,
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+          color: hover ? tokens.gold : tokens.ink,
+          paddingBottom: 2,
+          borderBottom: `1px solid ${hover ? tokens.gold : 'rgba(28,24,16,0.25)'}`,
+          transition: 'color 0.25s ease, border-color 0.25s ease',
+        }}
+      >
+        {buyable ? 'Shop Now' : 'Enquire'}
+        <svg
+          width="13"
+          height="8"
+          viewBox="0 0 13 8"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{
+            // Nudges forward under the pointer. The card has no other movement
+            // now that it does not lift, so this is the whole of its feedback.
+            transform: hover ? 'translateX(3px)' : 'none',
+            transition: 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+          }}
+        >
+          <path d="M0.5 4H11.5M8.5 1L11.8 4L8.5 7" />
+        </svg>
+      </span>
     </Link>
   );
 }
