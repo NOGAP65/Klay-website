@@ -17,15 +17,15 @@
 // redirecting, so an old homepage tile lands on the shop already narrowed. See
 // rangeForCategoryParam.
 //
-// THE HERO IS TYPE, NOT A PHOTOGRAPH. Every other landing band on the site runs
-// a room shot behind its heading, and doing it here would mean choosing one
-// product's photograph to stand for all twenty-two — the grid below is the
-// photography, and putting a nineteenth room shot above it competes with the
-// thing the page exists to show.
+// IT OPENS ON THE SAME PHOTOGRAPHIC BAND the blind listing pages use — same
+// height, same gradient, same breadcrumb and heading treatment — so the shop and
+// the pages beneath it read as one section of the site rather than two designs
+// that happen to share a nav. See the note on the banner below for why that
+// particular frame.
 // ---------------------------------------------------------------------------
 
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { ProductCard } from '../components/ProductCard';
@@ -91,36 +91,77 @@ export default function ProductsPage() {
       <Nav />
 
       <main style={{ background: tokens.warmWhite, minHeight: '100vh' }}>
-        {/* The band. Type on parchment — see the note at the top of the file. */}
+        {/* The banner — the same photographic band the blind listing pages open
+            with, so the shop and the pages under it are recognisably one
+            section of the site rather than two designs.
+
+            THE FRAME IS THE BEDROOM WITH SHEERS AND DRAPES, and choosing it took
+            some care: a banner over a grid of twenty-two products is one
+            photograph standing in for all of them. hero-room.jpg — the obvious
+            candidate — has no window covering in it at all, just an armchair,
+            which is a poor advertisement for a window furnishings shop. This one
+            carries two products in the one shot and reads as "window", and it is
+            the only frame in the repository that does. It is also not used
+            anywhere in the grid below, so the banner is not a duplicate of a
+            card thirty pixels under it. */}
         <section
           style={{
-            background: tokens.parchment,
-            padding: isMobile ? '112px 24px 40px' : '150px 80px 52px',
+            position: 'relative',
+            height: isMobile ? 280 : 360,
+            paddingTop: 72,
+            overflow: 'hidden',
           }}
         >
-          <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-            <p
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: "url('/images/categories/indoor.jpg')",
+              backgroundSize: 'cover',
+              backgroundPosition: '62% center',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(90deg, rgba(28,24,16,0.7) 0%, rgba(28,24,16,0.3) 100%)',
+            }}
+          />
+          <div
+            style={{
+              position: 'relative',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              padding: isMobile ? '0 24px' : '0 80px',
+              maxWidth: 1240,
+              margin: '0 auto',
+            }}
+          >
+            <nav
               style={{
                 fontFamily: tokens.body,
-                fontSize: 11,
-                fontWeight: 500,
-                color: tokens.gold,
-                textTransform: 'uppercase',
-                letterSpacing: '0.2em',
-                margin: 0,
+                fontSize: 12,
+                color: 'rgba(245,242,237,0.5)',
+                marginBottom: 16,
               }}
             >
-              The Shop
-            </p>
+              <Link to="/" style={{ color: 'rgba(245,242,237,0.5)', textDecoration: 'none' }}>
+                Home
+              </Link>
+              <span style={{ margin: '0 8px' }}>/</span>
+              <span style={{ color: tokens.warmWhite }}>Shop</span>
+            </nav>
             <h1
               style={{
                 fontFamily: tokens.display,
-                fontSize: isMobile ? 38 : 60,
+                fontSize: isMobile ? 36 : 52,
                 fontWeight: 300,
-                color: tokens.ink,
-                lineHeight: 1.05,
+                color: tokens.warmWhite,
+                lineHeight: 1.1,
                 margin: 0,
-                marginTop: 14,
               }}
             >
               Everything we make.
@@ -129,11 +170,11 @@ export default function ProductsPage() {
               style={{
                 fontFamily: tokens.body,
                 fontSize: 15,
-                color: 'rgba(28,24,16,0.55)',
-                lineHeight: 1.65,
+                color: 'rgba(245,242,237,0.7)',
+                lineHeight: 1.6,
                 margin: 0,
-                marginTop: 14,
-                maxWidth: 560,
+                marginTop: 12,
+                maxWidth: 520,
               }}
             >
               Blinds, curtains, awnings, wardrobes, screens and shelving — measured, made
