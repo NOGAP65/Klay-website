@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { CATEGORIES } from './data/categories';
 import { BLIND_TYPES } from './data/blindTypes';
 import HomePage from './pages/HomePage';
@@ -15,8 +16,42 @@ import BookingConfirmedPage from './pages/BookingConfirmedPage';
 import CartPage from './pages/CartPage';
 import NotFoundPage from './pages/NotFoundPage';
 
+/** Scrolls to `#id` after the route renders.
+ *
+ * The nav's VISUALISE points at /#visualiser — the homepage's visualiser
+ * section rather than the standalone /visualiser page — and react-router does
+ * not act on a hash by itself. From another page the element does not exist
+ * until the homepage has mounted, so this waits a frame and then a beat: the
+ * homepage carries a video hero and several images above the target, and
+ * scrolling on the first frame lands on a layout that is still settling.
+ *
+ * Smooth, because arriving mid-page with no travel reads as a broken link —
+ * the movement is what tells you the section was already part of this page. */
+function ScrollToHash() {
+  const { pathname, hash } = useLocation();
+
+  useEffect(() => {
+    if (!hash) return;
+    const id = hash.slice(1);
+    let raf = 0;
+    const timer = window.setTimeout(() => {
+      raf = requestAnimationFrame(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }, 120);
+    return () => {
+      window.clearTimeout(timer);
+      cancelAnimationFrame(raf);
+    };
+  }, [pathname, hash]);
+
+  return null;
+}
+
 export default function App() {
   return (
+    <>
+    <ScrollToHash />
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/products" element={<ProductsPage />} />
@@ -57,5 +92,6 @@ export default function App() {
       <Route path="/cart" element={<CartPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </>
   );
 }

@@ -42,6 +42,87 @@ export const RANGE_NAMES = RANGES.map(r => r.label)
 
 export type RangeName = (typeof RANGE_NAMES)[number]
 
+// ---------------------------------------------------------------------------
+// THE FACETS. Four, and they are not four flat lists.
+//
+// FAMILY sits ABOVE range, and it is the reason the filters are a left rail
+// rather than a row of pills. Six flat pills say Blinds and Wardrobes are the
+// same kind of thing; they are not. Klay sells window coverings, outdoor shade
+// and storage, and a horizontal bar physically cannot show that nesting.
+//
+// WHERE is the old Indoor/Outdoor taxonomy, which made a poor primary
+// navigation — nobody arrives wanting "Indoor" — but makes a genuinely good
+// filter. This is the right place for it.
+//
+// LIGHT IS MULTI-VALUED, and that is what makes it work at this grain. "Roman
+// Blinds" is one card covering blockout, light-filter and textured fabrics, so
+// it cannot be filed under a single value; it carries all of them and matches
+// if ANY selected value hits. Products that are not about light — wardrobes,
+// shelving — carry none and simply drop out when a light filter is on, which is
+// correct.
+//
+// AVAILABILITY is standing in for a price filter, on purpose. Only six of the
+// twenty-two have a price; a "under $X" slider would delete two thirds of the
+// shop the moment anyone touched it, and imply prices exist that do not. Buy
+// online / Price on measure asks the same question — what can I just buy — and
+// is true for all of them. It becomes a real price facet, in brackets rather
+// than a slider, when the other ranges get price grids.
+// ---------------------------------------------------------------------------
+
+export type Family = 'Window Coverings' | 'Shade' | 'Storage'
+export type Location = 'Indoor' | 'Outdoor'
+export type Availability = 'Buy online' | 'Price on measure'
+
+/** Which family each range belongs to. The rail's top group is generated from
+ * this, so a range added to data/ranges.ts has to be filed here too — which is
+ * the point: an unfiled range would otherwise silently vanish from the shop's
+ * primary filter. */
+export const FAMILY_OF: Record<string, Family> = {
+  Blinds: 'Window Coverings',
+  Curtains: 'Window Coverings',
+  Screens: 'Window Coverings',
+  Awnings: 'Shade',
+  Wardrobes: 'Storage',
+  Shelving: 'Storage',
+}
+
+export const FAMILIES: Family[] = ['Window Coverings', 'Shade', 'Storage']
+
+/** The light-control vocabulary, in the order it reads on the rail: most light
+ * blocked to least. */
+export const LIGHT_VALUES = ['Blockout', 'Light filter', 'Sunscreen', 'Sheer'] as const
+
+/** Blind-type filter ids map onto that vocabulary where they describe light
+ * rather than material — `aluminium`, `timber`, `faux` and `textured` describe
+ * what the thing is made of and say nothing about what it does to daylight. */
+const LIGHT_FROM_FILTER: Record<string, string[]> = {
+  blockout: ['Blockout'],
+  sunscreen: ['Sunscreen'],
+  lightfilter: ['Light filter'],
+  dual: ['Blockout', 'Sunscreen'],
+}
+
+/** EDITORIAL, AND EASY TO CORRECT. Where the taxonomy carries no light
+ * information at all — venetians and shutters are filed by material, curtains
+ * by construction — these are a judgment about what the product does to
+ * daylight, not a fact read out of a data file. A venetian with its slats
+ * closed is close to blockout and open is a light filter; a lined curtain is
+ * effectively blockout. If any of these are wrong commercially, this map is the
+ * one place to fix them. */
+const LIGHT_OVERRIDES: Record<string, string[]> = {
+  'venetian-blinds': ['Blockout', 'Light filter'],
+  'plantation-shutters': ['Blockout', 'Light filter'],
+  'sheer-curtains': ['Sheer'],
+  'blockout-curtains': ['Blockout'],
+  'lined-curtains': ['Blockout'],
+  // Outdoor shade is light control too, and a customer filtering for sunscreen
+  // on a deck should find these.
+  'zip-screens': ['Sunscreen'],
+  'cafe-blinds': ['Sunscreen'],
+  'straight-drop-awnings': ['Sunscreen'],
+  'outdoor-roller-blinds': ['Blockout', 'Sunscreen'],
+}
+
 export interface CatalogueItem {
   id: string
   name: string
@@ -62,6 +143,10 @@ export interface CatalogueItem {
    * range. See components/ProductGlyph. */
   glyph?: string
   colours?: { name: string; hex: string }[]
+  /** Facets — see the block above. `light` is an array because a single card
+   * can legitimately span several light behaviours. */
+  location: Location
+  light?: string[]
 }
 
 /** Tagline for a product type, read out of the taxonomy rather than retyped
@@ -85,6 +170,12 @@ const imageOf = (slug: string): string | undefined =>
  * product should not have to retype which one. */
 const enquire = (name: string) => `/contact?product=${encodeURIComponent(name)}`
 
+/** Indoor or Outdoor, read off which top-level category the taxonomy files this
+ * slug under rather than restated here. Outdoor is the smaller set, so it is
+ * the one that gets asked about. */
+const locationOf = (slug: string): Location =>
+  getSubcategoryBySlug('outdoor', slug) ? 'Outdoor' : 'Indoor'
+
 /** An item built from a subcategory slug in the taxonomy. */
 const fromTaxonomy = (
   slug: string,
@@ -106,6 +197,8 @@ const fromTaxonomy = (
     priceFrom: priceOf(slug),
     image: imageOf(slug),
     glyph,
+    location: locationOf(slug),
+    light: LIGHT_OVERRIDES[slug],
     ...overrides,
   }
 }
@@ -123,6 +216,10 @@ const ROLLERS: CatalogueItem[] = PRODUCTS.map(p => ({
   priceFrom: p.priceFrom,
   image: p.image,
   colours: RYNAMIC_COLOURS,
+  location: 'Indoor',
+  // Straight off the product's own blindType, which is the one place the
+  // catalogue records what each fabric does to daylight.
+  light: LIGHT_FROM_FILTER[p.blindType] ?? [],
 }))
 
 /** The four non-roller blind types, straight off BLIND_TYPES so a type added
@@ -142,6 +239,14 @@ const BLIND_TYPE_ITEMS: CatalogueItem[] = BLIND_TYPES.filter(
   to: `/blinds/${t.slug}`,
   image: t.heroImage,
   glyph: t.slug,
+  location: 'Indoor' as Location,
+  // Derived from the type's OWN filter pills where those describe light, so a
+  // roman blind offering blockout and light-filter fabrics matches either — see
+  // the note on multi-valued light above. Venetians file by material and carry
+  // no light information at all, so they fall through to the editorial map.
+  light:
+    LIGHT_OVERRIDES[t.slug] ??
+    [...new Set(t.filters.flatMap(f => LIGHT_FROM_FILTER[f.id] ?? []))],
 }))
 
 // --- EVERYTHING ELSE ------------------------------------------------------
@@ -209,14 +314,74 @@ export const CATALOGUE: CatalogueItem[] = [
   ...SHELVING,
 ]
 
-/** Filter pills, built from what is actually in the catalogue rather than typed
- * out — a range with nothing in it would otherwise show a pill that filters to
- * an empty grid. Counts ride along so the bar can say how many are behind each. */
+/** Filter options, built from what is actually in the catalogue rather than
+ * typed out — a range with nothing in it would otherwise show a control that
+ * filters to an empty grid. */
 export const RANGE_FILTERS = RANGE_NAMES.map(name => ({
   id: name,
   label: name,
   count: CATALOGUE.filter(i => i.range === name).length,
 })).filter(f => f.count > 0)
+
+/** The rail's top group: families, each with the ranges filed under it. Built
+ * by grouping rather than declared, so it cannot disagree with FAMILY_OF. */
+export const FAMILY_GROUPS = FAMILIES.map(family => ({
+  family,
+  ranges: RANGE_FILTERS.filter(r => FAMILY_OF[r.id] === family),
+})).filter(g => g.ranges.length > 0)
+
+/** What the shop is currently filtered to. Empty sets mean "no constraint on
+ * this facet" rather than "nothing" — an empty rail shows everything. */
+export interface Facets {
+  ranges: Set<string>
+  locations: Set<string>
+  lights: Set<string>
+  availability: Set<string>
+}
+
+export const EMPTY_FACETS: Facets = {
+  ranges: new Set(),
+  locations: new Set(),
+  lights: new Set(),
+  availability: new Set(),
+}
+
+export const availabilityOf = (item: CatalogueItem): Availability =>
+  item.priceFrom === undefined ? 'Price on measure' : 'Buy online'
+
+/** AND between facets, OR within one. Selecting Blinds and Curtains widens the
+ * result; selecting Blinds and then Outdoor narrows it. That is what every
+ * faceted shop does and what people expect from checkboxes stacked in groups.
+ *
+ * `light` is the only facet matched against an array: an item passes if ANY of
+ * its light behaviours is selected. An item with no light information — a
+ * wardrobe — never passes a light filter, which is correct. */
+export const matches = (item: CatalogueItem, f: Facets): boolean => {
+  if (f.ranges.size && !f.ranges.has(item.range)) return false
+  if (f.locations.size && !f.locations.has(item.location)) return false
+  if (f.lights.size && !(item.light ?? []).some(l => f.lights.has(l))) return false
+  if (f.availability.size && !f.availability.has(availabilityOf(item))) return false
+  return true
+}
+
+export const applyFacets = (f: Facets): CatalogueItem[] => CATALOGUE.filter(i => matches(i, f))
+
+/** How many products an option WOULD show, counted with every other facet still
+ * applied but this facet's own selections ignored.
+ *
+ * Counting against the unfiltered catalogue instead is the version that lies:
+ * with Outdoor selected it would still offer "Wardrobes 3", and clicking it
+ * gives an empty grid. Ignoring the option's own facet is what keeps the group
+ * usable — inside a group the options OR together, so the other choices in that
+ * group must not suppress each other's counts. */
+export const countFor = (f: Facets, facet: keyof Facets, value: string): number => {
+  const withoutOwnFacet: Facets = { ...f, [facet]: new Set<string>() }
+  const probe: Facets = { ...withoutOwnFacet, [facet]: new Set([value]) }
+  return CATALOGUE.filter(i => matches(i, probe)).length
+}
+
+export const facetCount = (f: Facets): number =>
+  f.ranges.size + f.locations.size + f.lights.size + f.availability.size
 
 /** Legacy links. The homepage tiles, the category pages and the hero rail all
  * point at /products?category=<slug>, and those slugs are subcategory slugs

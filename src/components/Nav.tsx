@@ -84,7 +84,12 @@ interface NavLink {
  * back down the road the previous three versions took. */
 const LINKS: NavLink[] = [
   { label: 'Shop', to: '/products', accent: true },
-  { label: 'Visualise', to: '/visualiser' },
+  // The homepage's visualiser section, not the standalone /visualiser page.
+  // The section is the better surface — it introduces the tool, sits in the run
+  // of the page and has the range around it — and /visualiser is gated to an
+  // allowlist of hosts, so a bare link to it can dead-end depending on where
+  // the site is served from. App's ScrollToHash does the scrolling.
+  { label: 'Visualise', to: '/#visualiser' },
   { label: 'About', to: '/about' },
   { label: 'Contact', to: '/contact' },
 ];
