@@ -256,6 +256,36 @@ const SWAY_SHAPE_POWER = 1.7;
  * supporting cue, and overdone it looks like the curtain is breathing. */
 const SWAY_BILLOW = 0.18;
 
+/** The disturbance takes TIME to travel down the panel, and this is what makes
+ * the difference between cloth and a shape function.
+ *
+ * The lag used to be applied as sway·vy^p on every row of the same frame, so the
+ * whole panel deformed to its new shape at once: pull the heading and the hem
+ * responds in the same instant, only by less. Real cloth does not do that — the
+ * heading moves, and a moment later the hem finds out.
+ *
+ * On a chain hanging under its own weight the transverse wave speed at depth x is
+ * sqrt(g·x), so the time to reach depth h is 2·sqrt(h/g), and the delay profile
+ * down the drop goes as sqrt(vy). That is the shape used below.
+ *
+ * Divided by SWAY_FREQ_SCALE for exactly the reason that constant exists: an
+ * ideal limp chain is slower than a curtain, which is stiffer across its width
+ * and much lighter. Keeping the two tied together means the panel's travel time
+ * and its swing period stay consistent with each other. */
+const SWAY_TRAVEL_SCALE = 0.62;
+
+/** Spread in arrival time between neighbouring folds, as a fraction of the full
+ * travel time. Folds are coupled by the heading tape but not welded to each
+ * other, and without this the panel ripples as one rigid sheet — every fold
+ * reaching its extreme on precisely the same frame, which is the tell that it is
+ * a formula and not cloth. Small: past a few percent it stops reading as slack
+ * and starts reading as a wobble. */
+const SWAY_FOLD_STAGGER = 0.16;
+
+/** How many past lag values to keep. At 60fps this covers about 0.8s, comfortably
+ * longer than any travel time the formula produces. */
+const SWAY_HISTORY = 50;
+
 /** Below these the cloth is at rest and the animation loop stops, so a settled
  * curtain costs nothing. Both have to be met — a hem at zero offset travelling at
  * speed is mid-swing, not settled. */
@@ -279,6 +309,12 @@ interface SwayState {
   lastSpan: number;
   /** Leading-edge velocity last frame, px/s — differenced for acceleration. */
   lastVelocity: number;
+  /** Ring buffer of recent lag values, so a row partway down the drop can be
+   *  drawn with the lag the panel had when the wave passed it. Newest at head. */
+  histT: Float64Array;
+  histV: Float64Array;
+  head: number;
+  filled: number;
 }
 
 const newSwayState = (span: number): SwayState => ({
@@ -286,7 +322,46 @@ const newSwayState = (span: number): SwayState => ({
   speed: 0,
   lastSpan: span,
   lastVelocity: 0,
+  histT: new Float64Array(SWAY_HISTORY),
+  histV: new Float64Array(SWAY_HISTORY),
+  head: -1,
+  filled: 0,
 });
+
+/** Pushes the current lag onto the history. */
+function recordSway(state: SwayState, t: number, value: number): void {
+  state.head = (state.head + 1) % SWAY_HISTORY;
+  state.histT[state.head] = t;
+  state.histV[state.head] = value;
+  if (state.filled < SWAY_HISTORY) state.filled++;
+}
+
+/** The lag as it was at time `t`, linearly interpolated.
+ *
+ * Walks back from newest to oldest, which is the right direction: the samples
+ * being asked for are always recent, so this exits within a few steps rather
+ * than scanning the buffer. Clamps at both ends — before the history starts the
+ * panel was at rest, and past the newest sample there is nothing to predict. */
+function sampleSway(state: SwayState, t: number): number {
+  if (state.filled === 0) return 0;
+  let prevIdx = state.head;
+  if (t >= state.histT[prevIdx]) return state.histV[prevIdx];
+
+  for (let n = 1; n < state.filled; n++) {
+    const idx = (state.head - n + SWAY_HISTORY * 2) % SWAY_HISTORY;
+    if (state.histT[idx] <= t) {
+      const t0 = state.histT[idx];
+      const t1 = state.histT[prevIdx];
+      const span = t1 - t0;
+      if (span <= 1e-9) return state.histV[idx];
+      const f = (t - t0) / span;
+      return state.histV[idx] + (state.histV[prevIdx] - state.histV[idx]) * f;
+    }
+    prevIdx = idx;
+  }
+  // Older than anything recorded: the panel had not started moving yet.
+  return state.histV[prevIdx];
+}
 
 /** Advances the cloth one step and returns the lag to draw with.
  *
@@ -302,6 +377,8 @@ function stepSway(
   /** Distance from the leading edge to the shut position — i.e. to the centre of
    * the window, where the other panel is. */
   roomToCentre: number,
+  /** Now, in seconds. Stamps the history the delayed rows read back from. */
+  nowSec: number,
 ): number {
   if (dt <= 0) {
     state.lastSpan = span;
@@ -342,6 +419,10 @@ function stepSway(
     state.offset = -maxOffset;
     if (state.speed < 0) state.speed = 0;
   }
+
+  // Recorded AFTER clamping, so what the rows below read back is the lag the
+  // panel actually had, not one the cloth was never allowed to reach.
+  recordSway(state, nowSec, state.offset);
 
   return state.offset;
 }
@@ -616,6 +697,12 @@ interface PanelWrite {
   bottomY: number;
   /** Hem lag from the cloth solver, px along the panel. See stepSway. */
   sway?: number;
+  /** The lag as it was `secondsAgo` ago. Rows further down the drop read further
+   *  back, which is how the disturbance is made to travel. Omitted for a static
+   *  draw, where every row just uses `sway`. See SWAY_TRAVEL_SCALE. */
+  swayAgo?: (secondsAgo: number) => number;
+  /** Time for the wave to reach the hem, seconds. */
+  travelTime?: number;
 }
 
 /** Rewrites one panel's vertex data for a new openness.
@@ -627,7 +714,7 @@ interface PanelWrite {
  * per COLUMN and copied down, which is ROWS times less work than per vertex, and
  * needs no cross products at all. */
 function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
-  const { layout, wallX, towardCentre, topY, bottomY, sway = 0 } = w;
+  const { layout, wallX, towardCentre, topY, bottomY, sway = 0, swayAgo, travelTime = 0 } = w;
   const { widths, depths, compressions, span, overall } = layout;
   const { positions, normals, compression, depth, cols, count } = mesh;
   const height = topY - bottomY;
@@ -647,6 +734,11 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
   const colNx = new Float64Array(cols + 1);
   const colNz = new Float64Array(cols + 1);
   const colComp = new Float64Array(cols + 1);
+  /** Extra arrival delay for this column, seconds. Interpolated between waves
+   *  rather than stepped, or the panel creases where two neighbours are reading
+   *  the history at different times. */
+  const colStagger = new Float64Array(cols + 1);
+  const staggerScale = travelTime * SWAY_FOLD_STAGGER;
 
   let cum = 0;      // distance from the leading edge at the current wave's start
   let wave = 0;
@@ -675,6 +767,15 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     // room while the heading stays pinned to its end carrier.
     colX[c] = span - offset;
     colComp[c] = compressions[wave];
+
+    // Per-fold arrival offset, interpolated between wave centres on the same
+    // t/i0/f the depth uses — so it varies smoothly along the panel instead of
+    // stepping at every wave boundary. Reuses the deterministic wave jitter, so
+    // the fold that hangs a little deeper is also the one that arrives a little
+    // late, which is what an irregular curtain actually does.
+    const s0 = waveJitter(i0 < 0 ? 0 : i0 > count - 1 ? count - 1 : i0, 5.3);
+    const s1 = waveJitter(i0 + 1 < 0 ? 0 : i0 + 1 > count - 1 ? count - 1 : i0 + 1, 5.3);
+    colStagger[c] = staggerScale * (s0 + (s1 - s0) * f);
 
     // Slope: dz/dp over dx/dp. dx/dp is -width (offset grows with p, distance
     // from the wall shrinks), and the dominant dz/dp term is the sine's own
@@ -715,15 +816,28 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
 
     // The lag at this height. Zero at the heading, since that is bolted to the
     // carriers, growing superlinearly to the full value at the hem.
-    const lagAtRow = sway * Math.pow(vy, SWAY_SHAPE_POWER);
+    //
+    // Read from the PAST, not from this frame: the wave that is arriving at this
+    // depth now left the heading `travelTime·sqrt(vy)` ago, so that is the lag
+    // this row is still working through. sqrt because the wave speed on a sheet
+    // hanging under its own weight goes as sqrt(depth). See SWAY_TRAVEL_SCALE.
+    const rowDelay = travelTime * Math.sqrt(vy);
+    const rowSway = swayAgo ? swayAgo(rowDelay) : sway;
+    const lagAtRow = rowSway * Math.pow(vy, SWAY_SHAPE_POWER);
 
     for (let c = 0; c <= cols; c++, v++) {
       const i3 = v * 3;
       const z = colZ[c] * deepen;
+      // Folds are coupled by the heading tape but not welded to each other, so
+      // each one arrives a fraction early or late. Without it the panel ripples
+      // as a single rigid sheet. See SWAY_FOLD_STAGGER.
+      const colLag = swayAgo && colStagger[c] !== 0
+        ? swayAgo(Math.max(0, rowDelay + colStagger[c])) * Math.pow(vy, SWAY_SHAPE_POWER)
+        : lagAtRow;
       // Scaled by how far along the panel this column sits, because that is how
       // much it is actually being moved: the wall end is stacked and stationary
       // however hard the leading edge is pulled, so it has nothing to lag behind.
-      const lag = lagAtRow * (colX[c] / spanForLag);
+      const lag = colLag * (colX[c] / spanForLag);
       positions[i3] = wallX + towardCentre * (colX[c] * splay + lag);
       positions[i3 + 1] = y - z * swing - sink;
       positions[i3 + 2] = z;
@@ -854,10 +968,31 @@ void main() {
   // actually describes the fold, so it survives while the broad ramp above gives
   // way. Stronger once the waves pack together and start shading each other.
   float cavity = max(0.0, -vDepth);
-  shade *= 1.0 - cavity * mix(0.05, 0.14, vCompression);
+  // Weighted toward the bottom of the trough rather than ramping straight out of
+  // the crest. Ambient light falls off with how much of the room a point can
+  // still see, and that closes up quickly once you are down inside a fold —
+  // linear in depth spread the same darkening evenly and flattened the fold.
+  float cavityShaped = mix(cavity, cavity * cavity, 0.55);
+  shade *= 1.0 - cavityShaped * mix(0.07, 0.20, vCompression);
+
+  // And the crest is the part that sees the most room, so it lifts slightly.
+  // Cheaper on contrast than pushing the troughs further down, and it is the
+  // separation between one fold and the next that carries the shape.
+  shade *= 1.0 + max(0.0, vDepth) * 0.045;
+
+  // THE TRACK'S OWN SHADOW. It hangs directly over the heading and blocks the
+  // ceiling light, so the top of the cloth sits in a band of shade — much deeper
+  // inside the folds, which the track closes off almost entirely. This is what
+  // attaches the fabric to the hardware: without it the panel reads as starting
+  // below the track rather than hanging from it.
+  float underTrack = smoothstep(0.80, 1.0, vUv.y);
+  shade *= 1.0 - underTrack * (0.10 + cavity * 0.14);
 
   // Packed fabric is denser — more layers, less light through and around it.
-  shade *= mix(1.0, 0.95, vCompression);
+  // Squared, so only genuinely stacked cloth darkens: a half-open panel is still
+  // a curtain, not a bundle. The old flat 0.95 barely registered at full stack,
+  // where the fabric is several layers thick and visibly heavier.
+  shade *= mix(1.0, 0.89, vCompression * vCompression);
 
   // The hem picks up floor bounce rather than window light, so it sits a shade
   // below the heading. Barely there on purpose: overdone it reads as the curtain
@@ -1323,6 +1458,9 @@ interface Layout {
   /** Natural frequency of the hem's swing, rad/s. From the drop in METRES, which
    * is why the renderer needs a physical scale at all. */
   omega: number;
+  /** Time for a disturbance at the heading to reach the hem, seconds.
+   *  See SWAY_TRAVEL_SCALE. */
+  travelTime: number;
   /** Ceiling on the hem's lag, px. */
   maxSway: number;
   /** One panel's width with the curtain shut, px — the centre line, as far as the
@@ -1368,10 +1506,15 @@ export default function Canvas2DCurtainRenderer({
   const swayRef = useRef<SwayState | null>(null);
   const frameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
+  /** When the solver went still, seconds. The loop runs on past it for one
+   *  travelTime so the wave can finish running down the drop. */
+  const settledAtRef = useRef<number | null>(null);
 
   /** Repositions both panels and repaints. Writes into buffers allocated once at
    * setup — see createPanelMesh. */
-  const draw = (open: number, sway: number) => {
+  /** `nowSec` is only passed from the solver loop. A static draw — a fresh trace,
+   *  a colour change — has no history to read and every row uses `sway`. */
+  const draw = (open: number, sway: number, nowSec?: number) => {
     const layout = layoutRef.current;
     const left = leftMeshRef.current;
     const right = rightMeshRef.current;
@@ -1384,22 +1527,23 @@ export default function Canvas2DCurtainRenderer({
     // One layout serves both panels — the wave widths are identical.
     const shaped = panelLayout(waveCount, shutWaveWidth, open);
 
-    writePanelMesh(left, {
+    const state = swayRef.current;
+    const swayAgo =
+      nowSec !== undefined && state
+        ? (secondsAgo: number) => sampleSway(state, nowSec - secondsAgo)
+        : undefined;
+
+    const common = {
       layout: shaped,
-      wallX: windowLeft,
-      towardCentre: 1,
       topY: windowTop,
       bottomY: windowBottom,
       sway,
-    });
-    writePanelMesh(right, {
-      layout: shaped,
-      wallX: windowRight,
-      towardCentre: -1,
-      topY: windowTop,
-      bottomY: windowBottom,
-      sway,
-    });
+      swayAgo,
+      travelTime: layout.travelTime,
+    };
+
+    writePanelMesh(left, { ...common, wallX: windowLeft, towardCentre: 1 });
+    writePanelMesh(right, { ...common, wallX: windowRight, towardCentre: -1 });
 
     renderer.render(scene, camera);
   };
@@ -1430,11 +1574,13 @@ export default function Canvas2DCurtainRenderer({
       // between it and the fabric is not linear. Physics has to see the pixels the
       // cloth is actually being moved through.
       const span = panelLayout(layout.waveCount, layout.shutWaveWidth, open).span;
+      const nowSec = now / 1000;
       const offset = stepSway(
         sway, span, dt, layout.omega, layout.maxSway,
         layout.shutPanelWidth - span,
+        nowSec,
       );
-      draw(open, offset);
+      draw(open, offset, nowSec);
 
       // Keep going while the cloth is moving OR the input still is. The input test
       // is on the velocity the solver just recorded, not on a span comparison —
@@ -1443,13 +1589,28 @@ export default function Canvas2DCurtainRenderer({
       // can pass through zero between frames and would otherwise look settled
       // mid-motion.
       const inputMoving = Math.abs(sway.lastVelocity) > 1e-3;
-      if (!swaySettled(sway) || inputMoving) {
+      const settled = swaySettled(sway) && !inputMoving;
+
+      // The hem being still is no longer the end of the motion. Rows down the
+      // drop are reading the lag from up to travelTime ago, so when the solver
+      // settles they still have that much history to work through. Stopping on
+      // the solver alone would snap the lower half of the panel straight, which
+      // is the exact tail-end flick this model exists to show.
+      if (!settled) settledAtRef.current = null;
+      else if (settledAtRef.current === null) settledAtRef.current = nowSec;
+
+      const drained =
+        settledAtRef.current !== null &&
+        nowSec - settledAtRef.current >= layout.travelTime;
+
+      if (!settled || !drained) {
         frameRef.current = requestAnimationFrame(tick);
       } else {
         // Land exactly at rest so a settled panel is bit-identical frame to frame
         // and never leaves a sub-pixel shimmer behind.
         sway.offset = 0;
         sway.speed = 0;
+        settledAtRef.current = null;
         draw(open, 0);
       }
     };
@@ -1525,6 +1686,11 @@ export default function Canvas2DCurtainRenderer({
       const pxPerMm = shutWaveWidth / WAVE_PITCH_MM;
       const dropMetres = Math.max(0.3, (windowTop - windowBottom) / pxPerMm / 1000);
       const omega = SWAY_FREQ_SCALE * 1.2024 * Math.sqrt(GRAVITY / dropMetres);
+      // Time for the wave to run the drop: 2·sqrt(h/g) for a sheet hanging under
+      // its own weight, corrected by the same factor as the frequency so the two
+      // stay consistent. See SWAY_TRAVEL_SCALE.
+      const travelTime =
+        (2 * Math.sqrt(dropMetres / GRAVITY) * SWAY_TRAVEL_SCALE) / SWAY_FREQ_SCALE;
 
       // TRACK AND MOUNT. A face-fixed (window mount) track hangs off brackets, so
       // it sits below its fixing line with a visible gap; a ceiling-mounted one
@@ -1549,6 +1715,7 @@ export default function Canvas2DCurtainRenderer({
         waveCount,
         shutWaveWidth,
         omega,
+        travelTime,
         maxSway: shutWaveWidth * SWAY_MAX_RATIO,
         shutPanelWidth,
       };

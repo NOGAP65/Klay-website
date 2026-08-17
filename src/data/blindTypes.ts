@@ -67,7 +67,7 @@ export interface BlindType {
   intro: string
   /** The hero photograph, where one exists — which today means rollers only.
    * Without it the hero is a charcoal band carrying the mechanism drawing (see
-   * components/BlindGlyph) rather than a photograph of a roller blind under the
+   * components/ProductGlyph) rather than a photograph of a roller blind under the
    * word "Venetian". */
   heroImage?: string
   heroPosition?: string
