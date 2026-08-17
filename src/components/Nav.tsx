@@ -68,6 +68,20 @@ import { RANGES } from '../data/ranges';
  * holds all of it, comfortably — see the panel below. */
 const NAV_COLLAPSE = '(max-width: 1240px)';
 
+/** How far ABOUT slides toward the cart, in px.
+ *
+ * The right cluster is one flex row with a single gap, which spaced About, the
+ * cart and Shop Now identically — and identical spacing was wrong here, because
+ * the three are not peers. The cart and the button are a pair of controls; About
+ * is a word. Left at the shared 18px it floated in the ~120px of air between the
+ * range row and the controls, belonging to neither.
+ *
+ * Applied as a NEGATIVE right margin rather than by shrinking the cluster's gap,
+ * because the cluster is anchored to the bar's right edge: pulling in the shared
+ * gap would drag the cart rightwards too. Cancelling half of it on one side moves
+ * only the item to its left, which is exactly and only About. */
+const ABOUT_NUDGE = 9;
+
 /** What a menu drops. Kept deliberately flat — a label and a destination — so
  * that adding a menu is adding an array, not another block of panel markup. */
 interface MenuItem {
@@ -347,7 +361,11 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               return (
                 <div
                   key={menu.label}
-                  style={{ position: 'relative' }}
+                  // Sits closer to the cart than the cluster's own gap allows.
+                  // The cluster is anchored to the right edge, so tightening the
+                  // gap on About's right moves ABOUT rightwards and leaves the
+                  // cart and Shop Now where they are — see ABOUT_NUDGE.
+                  style={{ position: 'relative', marginRight: -ABOUT_NUDGE }}
                   onMouseEnter={() => setDropdownOpen(menu.label)}
                   onMouseLeave={() => setDropdownOpen(cur => (cur === menu.label ? null : cur))}
                 >
