@@ -1,25 +1,34 @@
 // ---------------------------------------------------------------------------
-// THE NAV — two menus and a link: OUR RANGE, ABOUT, CONTACT.
+// THE NAV — the range spelled out, then ABOUT and CONTACT.
 //
-// It used to be three top-level category items (Indoor, Outdoor, Wardrobes),
-// each with its own dropdown of product types. That put the business's own
-// filing system in the most valuable row on the site: nobody arrives wanting
-// "Indoor", they arrive wanting curtains, and finding curtains meant knowing
-// they were filed under Indoor first. Three dropdowns of nine, six and four
-// items also meant nineteen destinations in the bar, of which one was buyable.
+// BLINDS · CURTAINS · AWNINGS · WARDROBES · SCREENS · SHELVING | ABOUT ▾ | CONTACT
 //
-// Now there is ONE range menu, holding the six things Klay actually sells —
-// Blinds, Curtains, Awnings, Wardrobes, Screens, Shelving. That list is not
-// written here; it comes off data/ranges.ts, the same array the homepage
-// carousel and hero rail read, so the nav cannot say a different range to the
-// page underneath it. The Indoor/Outdoor/Wardrobes pages still exist and are
-// still routed — they are just no longer the way in.
+// Two versions preceded this. First, three category items — Indoor, Outdoor,
+// Wardrobes — each dropping its own list of product types. That put the
+// business's filing system in the most valuable row on the site: nobody arrives
+// wanting "Indoor", they arrive wanting curtains, and finding curtains meant
+// knowing it was filed under Indoor first.
 //
-// THE PANEL IS DARK. It was a white rounded card with a soft shadow dropping
-// out of a charcoal bar, which read as a different site's component borrowed
-// into this one — 12px radius on a site whose every button is a 2px rectangle,
-// and a bright rectangle punched into a dark bar. Charcoal on charcoal, with a
-// hairline and a square corner, reads as the bar extending downwards.
+// Then one OUR RANGE menu holding the six. Better, but still a click to find out
+// what a window furnishings company sells, and "Our Range" is a label that says
+// nothing — every word of the actual answer was hidden behind it.
+//
+// So the range is spelled out. Six words, no chevron, no hover, no panel: the
+// visitor reads what Klay sells without touching anything, and reaching any of
+// it is one click rather than two. It costs the bar most of its spare width,
+// which is what the tightened gap and the 12px type below are paying for, and
+// it is worth it — this row IS the range.
+//
+// The six come off data/ranges.ts, the same array the homepage carousel and hero
+// rail read, so the nav cannot say a different range to the page underneath it.
+// The Indoor/Outdoor/Wardrobes pages still exist and are still routed — they are
+// just no longer the way in.
+//
+// ABOUT KEEPS ITS PANEL, because About Us and How It Works are two spellings of
+// the same errand and neither earns a word in a row this full. That panel is
+// dark: it was a white rounded card dropping out of a charcoal bar, 12px radius
+// on a site whose every button is a 2px rectangle. Charcoal on charcoal with a
+// hairline and a square corner reads as the bar extending downwards.
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
@@ -27,8 +36,27 @@ import { Link } from 'react-router-dom';
 import { useKlayStore } from '../store';
 import { useCartStore } from '../store/cartStore';
 import { tokens, motion } from '../theme';
-import { useIsMobile } from '../hooks/useIsMobile';
+import { useIsMobile, useMediaQuery } from '../hooks/useIsMobile';
 import { RANGES } from '../data/ranges';
+
+/** WHERE THE BAR GIVES UP AND BECOMES A DRAWER — and it is not the site's 768px
+ * phone breakpoint, which is the whole reason this constant exists.
+ *
+ * Measured, not guessed. The centre row is 689px wide with the range spelled
+ * out; the logo takes 120, the Shop Now button and cart take 185, and the bar
+ * carries 5vw of padding either side. Those add up to a collision at 1180px —
+ * the words run into the button, and at 1024 they run under the logo as well.
+ * Every laptop between 1024 and 1200, and every windowed browser, sat in that
+ * range while `isMobile` still said desktop.
+ *
+ * The alternative was shrinking the type and the gaps until eight words fit a
+ * 1024 bar, which buys a legible layout at one width by making it cramped at
+ * every other. The drawer already holds all of it, comfortably.
+ *
+ * 1200 rather than 1180: the measurement is the failure point, and a breakpoint
+ * set exactly at the failure point fails at the first font that renders a pixel
+ * wider than Chrome's. */
+const NAV_COLLAPSE = '(max-width: 1200px)';
 
 /** What a menu drops. Kept deliberately flat — a label and a destination — so
  * that adding a menu is adding an array, not another block of panel markup. */
@@ -47,17 +75,13 @@ interface Menu {
   items: MenuItem[];
 }
 
+/** The six ranges, straight into the bar. Off data/ranges.ts rather than typed
+ * here — this row and the homepage's range carousel have to be the same list. */
+const RANGE_LINKS: MenuItem[] = RANGES.map(r => ({ label: r.label, to: r.to }));
+
+/** What is left with a panel. One entry, and the type is kept plural because the
+ * shape is the reusable one: adding a second menu is adding an object. */
 const MENUS: Menu[] = [
-  {
-    label: 'Our Range',
-    // There is no all-ranges index yet — /products is a resolver that redirects
-    // to whatever ?category it is given and falls through to rollers on its own.
-    // Until one exists the heading goes where the first item goes, which is also
-    // the only range that reaches a real shop. This is the link to change when
-    // the range index is built.
-    to: '/blinds',
-    items: RANGES.map(r => ({ label: r.label, to: r.to })),
-  },
   {
     label: 'About',
     to: '/about',
@@ -67,6 +91,32 @@ const MENUS: Menu[] = [
     ],
   },
 ];
+
+/** The one link with no panel under it. */
+const CONTACT_LINK: MenuItem = { label: 'Contact', to: '/contact' };
+
+/** Every word in the bar shares this. It was written out three times — once for
+ * the range links, once for a menu heading and once for Contact — and the three
+ * copies had already drifted on `gap` before this pulled them together.
+ *
+ * `active` covers both states that light a word up: the pointer being on it, and
+ * its panel being open. They look identical on purpose. */
+const barLink = (active: boolean, linkColor: string) => ({
+  color: active ? tokens.gold : linkColor,
+  textDecoration: 'none',
+  fontFamily: tokens.body,
+  // 12px, down from 13. Eight words plus a logo plus two buttons is most of a
+  // 1440 bar, and the pixel comes back as breathing room between them.
+  fontSize: 12,
+  fontWeight: 400,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase' as const,
+  whiteSpace: 'nowrap' as const,
+  opacity: active ? 1 : 0.82,
+  paddingBottom: 3,
+  borderBottom: `1px solid ${active ? tokens.gold : 'transparent'}`,
+  transition: `${motion.link}, opacity 0.2s ease`,
+});
 
 /** The dark panel. One component for both menus, because the range menu having
  * its own look was half of what made the old dropdown feel bolted on.
@@ -147,7 +197,12 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
   const scrollY = useKlayStore((s) => s.scrollY);
   const cartItemCount = useCartStore((s) => s.getItemCount());
   const compressed = scrollY > 60;
+  // Two thresholds, and they are not the same question. `isMobile` (768) sizes
+  // the logo and the bar's padding — that is about a phone. `collapsed` (1200)
+  // decides whether the links are a row or a drawer — that is about whether
+  // eight words fit, which stops being true long before a phone. See NAV_COLLAPSE.
   const isMobile = useIsMobile();
+  const collapsed = useMediaQuery(NAV_COLLAPSE);
   const [menuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const [ctaHover, setCtaHover] = useState(false);
@@ -207,22 +262,59 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
         />
       </Link>
 
-      {!isMobile && (
+      {!collapsed && (
         <>
-          {/* Center: All nav links */}
+          {/* Center: the range, then the divider, then About and Contact. */}
           <div
             style={{
               position: 'absolute',
               left: '50%',
               transform: 'translateX(-50%)',
               display: 'flex',
-              gap: 28,
+              // 22px, down from 28. Eight words in this row rather than three;
+              // the gap is what pays for the six that are new.
+              gap: 22,
               alignItems: 'center',
             }}
           >
-            {/* The two menus — Our Range, About. The chevron rotates rather
-                than swapping character, so an open menu is legible at a glance
-                without the word beside it shifting by a pixel. */}
+            {/* THE RANGE, SPELLED OUT. Six plain links — no chevron, no panel,
+                nothing to open. The whole point of moving them out of a menu is
+                that the visitor reads what Klay sells without acting. */}
+            {RANGE_LINKS.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                onMouseEnter={() => setHovered(l.to)}
+                onMouseLeave={() => setHovered(cur => (cur === l.to ? null : cur))}
+                style={barLink(hovered === l.to, linkColor)}
+              >
+                {l.label}
+              </Link>
+            ))}
+
+            {/* A hairline between the range and the rest. Without it eight
+                identically-set words read as one undifferentiated list, and
+                ABOUT sits in the row looking like a seventh thing Klay sells.
+                Sized to the type rather than the bar so it never becomes a rule
+                across the nav. */}
+            <span
+              aria-hidden="true"
+              style={{
+                width: 1,
+                height: 13,
+                background: onDarkGround ? tokens.onDarkEdge : tokens.line,
+                opacity: 0.55,
+                // Cancels half the flex gap on either side, so the divider sits
+                // in a slightly tighter well than the words do — it is a seam,
+                // not another item in the row.
+                margin: '0 -4px',
+              }}
+            />
+
+            {/* About keeps its panel: About Us and How It Works are two
+                spellings of one errand, and neither earns a word in a row this
+                full. The chevron rotates rather than swapping character, so an
+                open menu is legible without the word beside it shifting. */}
             {MENUS.map((menu) => {
               const isOpen = dropdownOpen === menu.label;
               return (
@@ -235,20 +327,10 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                   <Link
                     to={menu.to}
                     style={{
-                      color: isOpen ? tokens.gold : linkColor,
-                      textDecoration: 'none',
-                      fontFamily: tokens.body,
-                      fontSize: 13,
-                      fontWeight: 400,
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                      opacity: isOpen ? 1 : 0.82,
-                      paddingBottom: 3,
-                      borderBottom: `1px solid ${isOpen ? tokens.gold : 'transparent'}`,
-                      transition: `${motion.link}, opacity 0.2s ease`,
+                      ...barLink(isOpen, linkColor),
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 7,
+                      gap: 6,
                     }}
                   >
                     {menu.label}
@@ -276,37 +358,18 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               );
             })}
 
-            {/* Contact stays a direct link rather than a third menu — it is one
-                destination, and burying a one-item menu behind a chevron is a
-                click spent on nothing. How It Works moved into the About menu;
-                Reviews and Design Yours are still off the bar, reachable from
-                the hero, the closing CTA and the footer. */}
-            {[{ label: 'Contact', to: '/contact' }].map((l) => {
-              const isHovered = hovered === l.to;
-              return (
-                <Link
-                  key={l.to}
-                  to={l.to}
-                  onMouseEnter={() => setHovered(l.to)}
-                  onMouseLeave={() => setHovered(cur => (cur === l.to ? null : cur))}
-                  style={{
-                    color: isHovered ? tokens.gold : linkColor,
-                    textDecoration: 'none',
-                    fontFamily: tokens.body,
-                    fontSize: 13,
-                    fontWeight: 400,
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    opacity: isHovered ? 1 : 0.82,
-                    paddingBottom: 3,
-                    borderBottom: `1px solid ${isHovered ? tokens.gold : 'transparent'}`,
-                    transition: `${motion.link}, opacity 0.2s ease`,
-                  }}
-                >
-                  {l.label}
-                </Link>
-              );
-            })}
+            {/* Contact is one destination, so burying it behind a chevron would
+                be a click spent on nothing. Reviews and Design Yours are still
+                off the bar — reachable from the hero, the closing CTA and the
+                footer — and there is now less room for them than ever. */}
+            <Link
+              to={CONTACT_LINK.to}
+              onMouseEnter={() => setHovered(CONTACT_LINK.to)}
+              onMouseLeave={() => setHovered(cur => (cur === CONTACT_LINK.to ? null : cur))}
+              style={barLink(hovered === CONTACT_LINK.to, linkColor)}
+            >
+              {CONTACT_LINK.label}
+            </Link>
           </div>
 
           {/* Right: the gold pill, then the cart. The pill is the nav's one
@@ -394,7 +457,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
         </>
       )}
 
-      {isMobile && (
+      {collapsed && (
         <button
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           onClick={() => setMenuOpen((v) => !v)}
@@ -417,7 +480,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
         </button>
       )}
 
-      {isMobile && menuOpen && (
+      {collapsed && menuOpen && (
         <div
           style={{
             position: 'fixed',
@@ -436,9 +499,40 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             padding: '80px 24px',
           }}
         >
-          {/* Everything is open on mobile — there is no hover to open a panel
-              with, and a tap-to-expand accordion two levels deep is worse than
-              a list you scroll. Same two menus, same order as the bar. */}
+          {/* The range, in the same order as the bar. Set in the display face at
+              26 rather than the 32 the headings take — six of them at 32 fill a
+              phone on their own and push About and Contact below the fold, and
+              the panel scrolls but a menu you have to scroll to find Contact in
+              is a menu that has hidden Contact. */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+            {RANGE_LINKS.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  color: tokens.gold,
+                  textDecoration: 'none',
+                  fontFamily: tokens.display,
+                  fontSize: 26,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* The same seam the bar carries, between what Klay sells and
+              everything else. */}
+          <span
+            aria-hidden="true"
+            style={{ width: 56, height: 1, background: tokens.onDarkEdge }}
+          />
+
+          {/* About is open rather than collapsed — there is no hover to open a
+              panel with, and a tap-to-expand accordion is worse than two lines
+              you can already see. */}
           {MENUS.map((menu) => (
             <div key={menu.label} style={{ textAlign: 'center' }}>
               <Link
@@ -448,10 +542,10 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                   color: tokens.gold,
                   textDecoration: 'none',
                   fontFamily: tokens.display,
-                  fontSize: 32,
+                  fontSize: 26,
                   letterSpacing: '0.04em',
                   display: 'block',
-                  marginBottom: 12,
+                  marginBottom: 10,
                 }}
               >
                 {menu.label}
@@ -481,11 +575,11 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             to="/contact"
             onClick={() => setMenuOpen(false)}
             style={{
-              marginTop: 4,
+              marginTop: 2,
               color: tokens.gold,
               textDecoration: 'none',
               fontFamily: tokens.display,
-              fontSize: 32,
+              fontSize: 26,
               letterSpacing: '0.04em',
             }}
           >
