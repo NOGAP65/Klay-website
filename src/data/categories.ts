@@ -150,6 +150,13 @@ export const getSubcategoryBySlug = (categorySlug: string, subSlug: string): Sub
 export const ALL_SUBCATEGORY_SLUGS = CATEGORIES.flatMap(c => c.subcategories.map(s => s.slug))
 
 // NAV_CATEGORIES used to live here — the projection the nav read to build three
-// Indoor/Outdoor/Wardrobes dropdowns. The nav speaks in ranges now (see
-// data/ranges.ts) and nothing consumed this, so it is gone rather than left
-// behind as a second, quietly wrong description of the menu.
+// Indoor/Outdoor/Wardrobes dropdowns. The nav is four flat links now and the
+// shop owns the taxonomy (data/catalogue.ts), so nothing consumed it.
+//
+// WHAT THIS FILE IS FOR NOW, since most of what it described has moved: it
+// still backs the /indoor, /outdoor and /wardrobes category pages, and it is
+// where blindTypes.ts reads product names and taglines from. It is NOT the
+// product list — data/catalogue.ts is, and the two disagree deliberately: this
+// one still carries Panel Blinds, Café Blinds and the rest, which the business
+// does not sell. Trimming it is a separate job from listing the real range, and
+// doing it means checking the category pages' grid maths still divides.

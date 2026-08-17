@@ -24,18 +24,21 @@
 // evenly or it leaves holes, and that constraint is what forced every previous
 // version of this section into either three tiles or four — always fewer than the
 // range Klay actually sells. A row has no such constraint, so this is the first
-// version of this section that shows all six ranges without dropping one to make
-// the maths work. The drift is also the only honest way to say "there is more here
-// than fits", which is exactly the message.
+// version of this section that shows the whole range without dropping one to make
+// the maths work. The drift is also the only honest way to say "there is more
+// here than fits", which is exactly the message.
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { tokens, motion, prefersReducedMotion } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-// The six ranges themselves live in data/ranges.ts — the nav's OUR RANGE
-// dropdown reads the same array, and two copies of the range is exactly the
-// drift that file exists to stop.
-import { RANGES } from '../../data/ranges';
+// The row reads data/catalogue.ts — the same fourteen products the shop lists,
+// in the same order, rendered by the same tile. It used to read a data/ranges.ts
+// of its own holding six invented ranges, which meant the homepage and the shop
+// described the business differently: the homepage offered "Screens" and
+// "Shelving" as peers of "Blinds", and neither Honeycomb Blinds nor Roller
+// Shutters nor Frameless Shower Screens appeared anywhere on it.
+import { CATALOGUE } from '../../data/catalogue';
 import { PhotoTile, SectionBand, TILE_GAP, useHover } from './primitives';
 
 /** Card width, as a share of the row rather than a fixed pixel count.
@@ -47,7 +50,7 @@ import { PhotoTile, SectionBand, TILE_GAP, useHover } from './primitives';
  * width — nothing is ever cut mid-card, and each one is ~357px on a 1440 screen,
  * which is also bigger than the 300 they were.
  *
- * Six cards, four visible: the arrows always have somewhere to go. */
+ * Fourteen cards, four visible: the arrows always have somewhere to go. */
 const cardBasis = (isMobile: boolean) =>
   isMobile
     ? `calc((100% - ${TILE_GAP}px) / 1.6)`
@@ -243,19 +246,19 @@ export function RangeCarousel() {
             scrollSnapType: 'x mandatory',
           }}
         >
-          {RANGES.map(range => (
+          {CATALOGUE.map(item => (
             <div
-              key={range.label}
+              key={item.id}
               style={{ flex: `0 0 ${cardBasis(isMobile)}`, scrollSnapAlign: 'start' }}
             >
               <PhotoTile
-                to={range.to}
-                label={range.label}
-                image={range.image}
-                objectPosition={range.objectPosition}
-                blurb={range.blurb}
-                note={range.note}
-                cta={range.cta}
+                to={item.to}
+                label={item.name}
+                image={item.image}
+                objectPosition={item.imagePosition}
+                blurb={item.colours ? undefined : item.tagline}
+                note={item.priceFrom !== undefined ? `$${item.priceFrom}` : 'Price on measure'}
+                cta="Shop Now"
                 // Stacked, not beside the label — see ctaBelow. These cards are
                 // 300px wide against the category tiles' 480.
                 ctaBelow
@@ -264,6 +267,13 @@ export function RangeCarousel() {
                 // wide, 40px of Cormorant put "Blockout Curtains" onto three
                 // lines and left no room under it for the blurb and the price.
                 labelSize="clamp(19px, 1.7vw, 23px)"
+                glyph={item.glyph}
+                colours={item.colours}
+                alt={`${item.name} — ${item.group}`}
+                // Same reason as the shop's cards: the label block runs name,
+                // price, sometimes a swatch row and a stacked chip, which reaches
+                // well up a pale photograph.
+                scrim="deep"
               />
             </div>
           ))}
