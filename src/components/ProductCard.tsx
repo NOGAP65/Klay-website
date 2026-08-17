@@ -150,16 +150,17 @@ export function ProductCard({
       to={to}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      // A COLUMN, FULL HEIGHT, so the buttons bottom-align across a row. Grid
-      // items stretch by default, so with `marginTop: auto` on the button every
-      // card in a row ends on the same line no matter whether its tagline ran
-      // to one line or two. It did not matter when the CTA was a small worded
-      // link; a row of gold boxes at three different heights is immediately
-      // obvious.
+      // Still a column, but no longer stretched to full height. It was, so a
+      // bottom-pinned button could bottom-align across a row; now the button
+      // sits with the price instead, cards end where their content ends, and
+      // the column is only here so `align-self` can size the button to its own
+      // words rather than to the card.
+      // Items stay stretched — the photograph and the name/price row both need
+      // the full card width. Only the button opts out, via `align-self`, so it
+      // sizes to its own words instead of spanning the card.
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
         textDecoration: 'none',
       }}
     >
@@ -266,10 +267,53 @@ export function ProductCard({
             color: buyable ? tokens.ink : 'rgba(28,24,16,0.42)',
           }}
         >
-          {buyable ? `From $${priceFrom}` : 'Price on measure'}
+          {/* No "From". The figure is already the cheapest configuration of a
+              made-to-measure product, and the word was doing the hedging twice
+              — once in the price and again in PRICE ON MEASURE beside it. */}
+          {buyable ? `$${priceFrom}` : 'Price on measure'}
         </span>
       </div>
 
+      {/* THE CALL TO ACTION — a small gold box, directly under the price.
+          Same wording on every card.
+
+          IT WAS FULL WIDTH AND PINNED TO THE BOTTOM of the card. Twenty-two
+          full-bleed gold bars turned the grid into a wall of buttons, and the
+          bottom-pinning meant a short card carried a stretch of dead ground
+          between its price and its button. Sized to its own words and sitting
+          straight under the price, it reads as the price's action rather than
+          as a separate block of furniture, and the grid goes back to being
+          photographs.
+
+          Wording is uniform by decision: per-card labelling ("Enquire" where
+          there is no price) was tried and overruled in favour of one consistent
+          action. Sixteen of these still land on the enquiry form rather than a
+          checkout — the fix for that is price grids and product pages, not a
+          softer label, and it is the same note data/ranges.ts already carries
+          about the homepage tiles. */}
+      <span
+        style={{
+          display: 'inline-block',
+          alignSelf: 'flex-start',
+          marginTop: 12,
+          padding: '9px 18px',
+          borderRadius: 2,
+          background: hover ? tokens.goldLight : tokens.gold,
+          color: tokens.ink,
+          fontFamily: tokens.body,
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: '0.13em',
+          textTransform: 'uppercase',
+          transition: 'background 0.25s ease',
+        }}
+      >
+        Shop Now
+      </span>
+
+      {/* Colours where there is a colour card, the descriptor line where there
+          is not — below the action now rather than above it, so the price and
+          its button stay together as one block. */}
       {colours ? (
         <SwatchRow colours={colours} />
       ) : tagline ? (
@@ -280,58 +324,12 @@ export function ProductCard({
             lineHeight: 1.45,
             color: 'rgba(28,24,16,0.5)',
             margin: 0,
-            marginTop: 10,
+            marginTop: 12,
           }}
         >
           {tagline}
         </p>
       ) : null}
-
-      {/* THE CALL TO ACTION — a filled gold box, on every card, saying the same
-          thing on every card.
-
-          Both of those were tried the other way first and were overruled, so
-          the reasoning is recorded rather than re-argued. A worded link was
-          quieter in a twenty-two card grid, and per-card wording ("Enquire"
-          where there is no price) avoided a Shop Now sitting under a line that
-          reads PRICE ON MEASURE. The brief is one consistent action across the
-          shop, which is a legitimate call: it makes the grid scannable and
-          every card behave identically.
-
-          What that leaves for later: sixteen of these still land on the enquiry
-          form rather than a checkout. The fix is price grids and product pages,
-          not a softer label — the same note data/ranges.ts carries about the
-          homepage tiles. Full width so it reads as a box rather than a chip,
-          and 2px cornered like every other button on the site. */}
-      <div
-        style={{
-          // `auto` on the WRAPPER, so the slack in a short card is absorbed
-          // above the button and every card in a row ends on the same line.
-          // The 16 is the minimum breathing room, for the tallest card in the
-          // row where there is no slack left to absorb.
-          marginTop: 'auto',
-          paddingTop: 16,
-        }}
-      >
-        <span
-          style={{
-            display: 'block',
-            padding: '13px 20px',
-            borderRadius: 2,
-            background: hover ? tokens.goldLight : tokens.gold,
-            color: tokens.ink,
-            fontFamily: tokens.body,
-            fontSize: 11,
-            fontWeight: 500,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            textAlign: 'center',
-            transition: 'background 0.25s ease',
-          }}
-        >
-          Shop Now
-        </span>
-      </div>
     </Link>
   );
 }

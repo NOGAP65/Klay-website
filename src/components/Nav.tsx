@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // THE NAV — four words, no menus.
 //
-//   KLAY        SHOP · VISUALISE · ABOUT · CONTACT        [cart] [BOOK A MEASURE]
+//   KLAY        SHOP · VISUALISE · ABOUT · CONTACT        [cart] [SHOP NOW]
 //
 // Three versions preceded this, and each one was the navigation trying to do a
 // page's job.
@@ -24,11 +24,16 @@
 // and can show all twenty-two products at once — see the note at the top of
 // ProductsPage. So the bar is four destinations and nothing opens on hover.
 //
-// THE GOLD BUTTON IS "BOOK A MEASURE", not "Shop Now". With SHOP as the first
-// word in the bar, a Shop Now button beside it is the same link twice, and the
-// gold slot is the most valuable pixel on the page — it should carry the one
-// thing the nav links do not. Booking a measure is where this business actually
-// converts.
+// THE GOLD BUTTON AND THE GOLD WORD BOTH SAY SHOP, and both go to /products.
+// The button was "Book a Measure" for a while, on the argument that with SHOP
+// already in the bar a Shop Now button beside it is the same link twice and the
+// most valuable pixel on the page should carry what the links do not. That was
+// overruled and the reasoning is worth recording either way: the shop is the
+// priority, and duplicating the route means a visitor who never registers a
+// 12px word in the middle of a bar still has one unmissable gold way in.
+//
+// Booking a measure is still reachable — it is the CTA on the homepage, on the
+// category pages and in the footer.
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
@@ -276,11 +281,14 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               )}
             </Link>
 
-            {/* Book a Measure — see the note at the top of the file for why this
-                is no longer "Shop Now". Square, like every other CTA on the
-                site. */}
+            {/* Shop Now. It was Book a Measure for a while, on the argument
+                that with SHOP already in the bar a Shop Now button beside it is
+                the same link twice and the gold slot should carry what the
+                links do not. Overruled: the shop is the priority, and a visitor
+                who has not registered the small word in the middle of the bar
+                still has one unmissable gold way in. Both go to /products. */}
             <Link
-              to="/book"
+              to="/products"
               onMouseEnter={() => setCtaHover(true)}
               onMouseLeave={() => setCtaHover(false)}
               style={{
@@ -302,7 +310,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 transition: motion.button,
               }}
             >
-              Book a Measure
+              Shop Now
             </Link>
           </div>
         </>
@@ -377,7 +385,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
 
           {/* Same action, destination and fill as the desktop button. */}
           <Link
-            to="/book"
+            to="/products"
             onClick={() => setMenuOpen(false)}
             style={{
               marginTop: 6,
@@ -393,7 +401,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               padding: '16px 34px',
             }}
           >
-            Book a Measure
+            Shop Now
           </Link>
 
           <Link
