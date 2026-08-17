@@ -314,7 +314,12 @@ export function ProductCard({
       <span
         style={{
           display: 'inline-block',
-          alignSelf: 'flex-start',
+          // RANGED RIGHT, under the price. The price is the right-hand end of
+          // the name row, so the button lands directly beneath it and the two
+          // read as a column: what it costs, and the way to buy it. Left-
+          // aligned it sat under the name instead, which put the action under
+          // the label rather than under the number.
+          alignSelf: 'flex-end',
           marginTop: 14,
           padding: '9px 18px',
           borderRadius: 2,
