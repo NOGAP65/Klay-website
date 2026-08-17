@@ -50,9 +50,12 @@ interface Menu {
 const MENUS: Menu[] = [
   {
     label: 'Our Range',
-    // /products is the one page that lists everything, so the heading itself is
-    // the "all of it" click.
-    to: '/products',
+    // There is no all-ranges index yet — /products is a resolver that redirects
+    // to whatever ?category it is given and falls through to rollers on its own.
+    // Until one exists the heading goes where the first item goes, which is also
+    // the only range that reaches a real shop. This is the link to change when
+    // the range index is built.
+    to: '/blinds',
     items: RANGES.map(r => ({ label: r.label, to: r.to })),
   },
   {

@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { CATEGORIES } from './data/categories';
+import { BLIND_TYPES } from './data/blindTypes';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
@@ -31,8 +32,14 @@ export default function App() {
       {CATEGORIES.map((c) => (
         <Route key={c.slug} path={`/${c.slug}`} element={<CategoryPage slug={c.slug} />} />
       ))}
+      {/* One listing page per blind type, generated from the taxonomy so a type
+          added to data/blindTypes.ts cannot end up unrouted. Bare /blinds keeps
+          showing rollers — that is what every existing link to it expects, and
+          the type strip on the page is how you reach the other four. */}
       <Route path="/blinds" element={<BlindsPage />} />
-      <Route path="/blinds/roller-blinds" element={<BlindsPage />} />
+      {BLIND_TYPES.map((t) => (
+        <Route key={t.slug} path={`/blinds/${t.slug}`} element={<BlindsPage slug={t.slug} />} />
+      ))}
       {/* One page per product, carrying the whole configurator. The old
           category tier (/products/blockout) and per-SKU tier
           (/products/blockout/dusk-white) are gone; ProductDetailPage

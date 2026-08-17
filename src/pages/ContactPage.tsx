@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { FormField, DANGER } from '../components/FormField';
@@ -29,7 +30,24 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [ctaHover, setCtaHover] = useState(false);
 
-  const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '' });
+  // ?product=<name> — set by every GET A QUOTE card on the blind listing pages.
+  // Somebody who has just clicked a specific product should not have to retype
+  // which one, and an enquiry that arrives saying only "hi" costs a phone call
+  // to find out. The line is editable like any other message; it is a starting
+  // point, not a locked field.
+  //
+  // Read once, in the initialiser, rather than in an effect — an effect would
+  // overwrite whatever had been typed if the URL changed under the form.
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState(() => {
+    const product = searchParams.get('product');
+    return {
+      name: '',
+      email: '',
+      phone: '',
+      notes: product ? `I'd like a quote for: ${product}\n\n` : '',
+    };
+  });
   const set = (key: keyof typeof form) => (value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
 

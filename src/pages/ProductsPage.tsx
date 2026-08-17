@@ -27,9 +27,15 @@ const BY_CATEGORY: Record<string, string> = {
   outdoor: '/outdoor',
   wardrobes: '/wardrobes',
 
-  // The one product type that is actually routed and buyable, plus the blind-type
-  // slugs the visualiser and the product pages use.
+  // All five blind types have listing pages now — see data/blindTypes.ts. Only
+  // rollers are priced and buyable; the other four list their real finishes and
+  // resolve each card to the enquiry form. Either way the customer lands on a
+  // page about the thing they clicked rather than on a page of roller blinds.
   'roller-blinds': '/blinds/roller-blinds',
+  'venetian-blinds': '/blinds/venetian-blinds',
+  'roman-blinds': '/blinds/roman-blinds',
+  'vertical-blinds': '/blinds/vertical-blinds',
+  'panel-blinds': '/blinds/panel-blinds',
   'dual-roller': '/products/duo',
   blockout: '/products/dusk',
   sunscreen: '/products/veil',
