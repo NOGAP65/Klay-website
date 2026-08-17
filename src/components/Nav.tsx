@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // THE NAV — the range spelled out, then ABOUT and CONTACT.
 //
-// BLINDS · CURTAINS · AWNINGS · WARDROBES · SCREENS · SHELVING | ABOUT ▾ | CONTACT
+// BLINDS · CURTAINS · AWNINGS · WARDROBES · SCREENS · SHELVING | ABOUT ▾
 //
 // Two versions preceded this. First, three category items — Indoor, Outdoor,
 // Wardrobes — each dropping its own list of product types. That put the
@@ -42,21 +42,31 @@ import { RANGES } from '../data/ranges';
 /** WHERE THE BAR GIVES UP AND BECOMES A DRAWER — and it is not the site's 768px
  * phone breakpoint, which is the whole reason this constant exists.
  *
- * Measured, not guessed. The centre row is 689px wide with the range spelled
- * out; the logo takes 120, the Shop Now button and cart take 185, and the bar
- * carries 5vw of padding either side. Those add up to a collision at 1180px —
- * the words run into the button, and at 1024 they run under the logo as well.
- * Every laptop between 1024 and 1200, and every windowed browser, sat in that
- * range while `isMobile` still said desktop.
+ * Measured in the running page, not guessed. The centre row of six ranges is
+ * 524px; the right cluster — About, cart, Shop Now — is 267; the logo is 120;
+ * and the bar carries 5vw of padding either side. Because the centre is
+ * absolutely centred on the viewport rather than flowed between the two, the
+ * binding constraint is the RIGHT side, which is the wider of the two ends:
  *
- * The alternative was shrinking the type and the gaps until eight words fit a
- * 1024 bar, which buys a legible layout at one width by making it cramped at
- * every other. The drawer already holds all of it, comfortably.
+ *     gap = viewport/2 − 0.05·viewport − 267 − 262
  *
- * 1200 rather than 1180: the measurement is the failure point, and a breakpoint
- * set exactly at the failure point fails at the first font that renders a pixel
- * wider than Chrome's. */
-const NAV_COLLAPSE = '(max-width: 1200px)';
+ * That reaches zero at 1176px, so the words run into the Shop Now button just
+ * under 1180. Below about 1024 they would run under the logo as well. Every
+ * laptop in that range, and every windowed browser, was getting the desktop bar
+ * because `isMobile` says 768.
+ *
+ * 1240 leaves ~30px of real clearance at the handover instead of trusting the
+ * measurement to the pixel — Chrome's metrics are not every browser's, and a
+ * breakpoint set at the failure point fails on the first font that renders a
+ * hair wider. It moved up from 1200 when Shop Now and the cart gained About as
+ * a neighbour: the centre got NARROWER in that change and the bar still needs
+ * more width, which is the whole argument for measuring both ends rather than
+ * counting words.
+ *
+ * The alternative was shrinking type and gaps until it all fits a 1024 bar,
+ * which buys one width by making every other one cramped. The drawer already
+ * holds all of it, comfortably — see the panel below. */
+const NAV_COLLAPSE = '(max-width: 1240px)';
 
 /** What a menu drops. Kept deliberately flat — a label and a destination — so
  * that adding a menu is adding an array, not another block of panel markup. */
@@ -79,8 +89,14 @@ interface Menu {
  * here — this row and the homepage's range carousel have to be the same list. */
 const RANGE_LINKS: MenuItem[] = RANGES.map(r => ({ label: r.label, to: r.to }));
 
-/** What is left with a panel. One entry, and the type is kept plural because the
- * shape is the reusable one: adding a second menu is adding an object. */
+/** Everything that is not a range. One menu, and the type is kept plural because
+ * the shape is the reusable one: adding a second menu is adding an object.
+ *
+ * Contact sits in here rather than beside it. Three errands — who Klay is, how
+ * the job runs, how to reach someone — are one errand as far as the bar is
+ * concerned, and a seventh word in a row of six ranges reads as a seventh thing
+ * Klay sells. It is still one hover and one click, and the footer and every
+ * page's closing CTA carry a direct line to it besides. */
 const MENUS: Menu[] = [
   {
     label: 'About',
@@ -88,12 +104,10 @@ const MENUS: Menu[] = [
     items: [
       { label: 'About Us', to: '/about' },
       { label: 'How It Works', to: '/how-it-works' },
+      { label: 'Contact', to: '/contact' },
     ],
   },
 ];
-
-/** The one link with no panel under it. */
-const CONTACT_LINK: MenuItem = { label: 'Contact', to: '/contact' };
 
 /** Every word in the bar shares this. It was written out three times — once for
  * the range links, once for a menu heading and once for Contact — and the three
@@ -124,15 +138,28 @@ const barLink = (active: boolean, linkColor: string) => ({
  * The 16px of top padding is a bridge, not a gap: it is transparent and it is
  * inside the hover target, so the pointer can travel from the word to the first
  * item without crossing dead space and closing the menu on the way. */
-function DropdownPanel({ items, onNavigate }: { items: MenuItem[]; onNavigate?: () => void }) {
+function DropdownPanel({
+  items,
+  onNavigate,
+  align = 'center',
+}: {
+  items: MenuItem[];
+  onNavigate?: () => void;
+  /** 'center' hangs the panel under the middle of its word. 'right' pins its
+   * right edge to the word's — which is what a menu near the right margin of
+   * the bar needs, since a 208px panel centred on a five-letter word that close
+   * to the edge overhangs the viewport and adds a horizontal scrollbar. */
+  align?: 'center' | 'right';
+}) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   return (
     <div
       style={{
         position: 'absolute',
         top: '100%',
-        left: '50%',
-        transform: 'translateX(-50%)',
+        ...(align === 'right'
+          ? { right: 0 }
+          : { left: '50%', transform: 'translateX(-50%)' }),
         paddingTop: 16,
         zIndex: 100,
       }}
@@ -264,22 +291,29 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
 
       {!collapsed && (
         <>
-          {/* Center: the range, then the divider, then About and Contact. */}
+          {/* CENTRE: THE RANGE, AND NOTHING ELSE. Six plain links — no chevron,
+              no panel, nothing to open. Everything that is not something Klay
+              sells has moved to the right cluster, so the middle of the bar
+              answers exactly one question: what do you make?
+
+              That also means the centre is now genuinely optically centred.
+              With About sitting in here the row was six product words plus a
+              menu, so the true middle of the range fell left of the logo's
+              centre line — the eye reads the products as the row, and the row
+              was off. */}
           <div
             style={{
               position: 'absolute',
               left: '50%',
               transform: 'translateX(-50%)',
               display: 'flex',
-              // 22px, down from 28. Eight words in this row rather than three;
-              // the gap is what pays for the six that are new.
-              gap: 22,
+              // 26px. It was 22 when eight words shared this row; two of them
+              // left, so the six get the space back rather than the bar getting
+              // a wider empty middle.
+              gap: 26,
               alignItems: 'center',
             }}
           >
-            {/* THE RANGE, SPELLED OUT. Six plain links — no chevron, no panel,
-                nothing to open. The whole point of moving them out of a menu is
-                that the visitor reads what Klay sells without acting. */}
             {RANGE_LINKS.map((l) => (
               <Link
                 key={l.to}
@@ -291,30 +325,23 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 {l.label}
               </Link>
             ))}
+          </div>
 
-            {/* A hairline between the range and the rest. Without it eight
-                identically-set words read as one undifferentiated list, and
-                ABOUT sits in the row looking like a seventh thing Klay sells.
-                Sized to the type rather than the bar so it never becomes a rule
-                across the nav. */}
-            <span
-              aria-hidden="true"
-              style={{
-                width: 1,
-                height: 13,
-                background: onDarkGround ? tokens.onDarkEdge : tokens.line,
-                opacity: 0.55,
-                // Cancels half the flex gap on either side, so the divider sits
-                // in a slightly tighter well than the words do — it is a seam,
-                // not another item in the row.
-                margin: '0 -4px',
-              }}
-            />
+          {/* RIGHT: About, then the cart, then Shop Now hard against the edge.
+              Ordered by how committed the click is — read about us, look at what
+              you have picked, buy — so the row builds left to right into the one
+              gold thing on the bar.
 
-            {/* About keeps its panel: About Us and How It Works are two
-                spellings of one errand, and neither earns a word in a row this
-                full. The chevron rotates rather than swapping character, so an
-                open menu is legible without the word beside it shifting. */}
+              The cart sits between them rather than outside because Shop Now is
+              the terminal action and terminal actions belong at the end of the
+              row; a utility parked to the right of the primary CTA reads as the
+              last word when it is the least important thing there. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: '0 0 auto' }}>
+            {/* About, and it keeps its panel — About Us, How It Works and
+                Contact are three spellings of one errand, and none of the three
+                belongs in a row reserved for what Klay sells. The chevron
+                rotates rather than swapping character, so an open menu is
+                legible without the word beside it shifting by a pixel. */}
             {MENUS.map((menu) => {
               const isOpen = dropdownOpen === menu.label;
               return (
@@ -353,59 +380,14 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                     </svg>
                   </Link>
 
-                  {isOpen && <DropdownPanel items={menu.items} />}
+                  {/* Ranged right rather than centred under the word. This menu
+                      is near the edge of the bar now, and a panel centred on a
+                      five-letter word that close to the right margin hangs off
+                      the side of the viewport. */}
+                  {isOpen && <DropdownPanel items={menu.items} align="right" />}
                 </div>
               );
             })}
-
-            {/* Contact is one destination, so burying it behind a chevron would
-                be a click spent on nothing. Reviews and Design Yours are still
-                off the bar — reachable from the hero, the closing CTA and the
-                footer — and there is now less room for them than ever. */}
-            <Link
-              to={CONTACT_LINK.to}
-              onMouseEnter={() => setHovered(CONTACT_LINK.to)}
-              onMouseLeave={() => setHovered(cur => (cur === CONTACT_LINK.to ? null : cur))}
-              style={barLink(hovered === CONTACT_LINK.to, linkColor)}
-            >
-              {CONTACT_LINK.label}
-            </Link>
-          </div>
-
-          {/* Right: the gold pill, then the cart. The pill is the nav's one
-              action; the cart is a utility and stays an outline so the two
-              don't read as two competing CTAs. */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: '0 0 auto' }}>
-            {/* Shop Now, and square. It was a "Get a Quote" pill pointing at the
-                enquiry form — a quote request is the gatekeeping this brand is
-                built to remove, and it was the only rounded button on a site whose
-                every other CTA is a 2px rectangle. It goes to the blinds listing
-                now: the one place on the site you can genuinely shop. */}
-            <Link
-              to="/blinds"
-              onMouseEnter={() => setQuoteHover(true)}
-              onMouseLeave={() => setQuoteHover(false)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: 44,
-                padding: '0 26px',
-                borderRadius: 2,
-                background: quoteHover ? tokens.goldLight : tokens.gold,
-                color: tokens.ink,
-                fontFamily: tokens.body,
-                fontSize: 11,
-                fontWeight: 500,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                textDecoration: 'none',
-                whiteSpace: 'nowrap',
-                transition: motion.button,
-              }}
-            >
-              Shop Now
-            </Link>
 
             <Link
               to="/cart"
@@ -452,6 +434,43 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                   {cartItemCount}
                 </span>
               )}
+            </Link>
+
+            {/* Shop Now, hard against the right edge, and square. It was a "Get
+                a Quote" pill pointing at the enquiry form — a quote request is
+                the gatekeeping this brand is built to remove, and it was the
+                only rounded button on a site whose every other CTA is a 2px
+                rectangle. It goes to the blinds listing: the one place on the
+                site you can genuinely shop.
+
+                It sat to the LEFT of the cart until now, which put a utility
+                icon in the most valuable pixel on the bar and made the gold
+                button read as one of two things ranged right rather than as the
+                end of the row. */}
+            <Link
+              to="/blinds"
+              onMouseEnter={() => setQuoteHover(true)}
+              onMouseLeave={() => setQuoteHover(false)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: 44,
+                padding: '0 26px',
+                borderRadius: 2,
+                background: quoteHover ? tokens.goldLight : tokens.gold,
+                color: tokens.ink,
+                fontFamily: tokens.body,
+                fontSize: 11,
+                fontWeight: 500,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+                transition: motion.button,
+              }}
+            >
+              Shop Now
             </Link>
           </div>
         </>
@@ -571,20 +590,10 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             </div>
           ))}
 
-          <Link
-            to="/contact"
-            onClick={() => setMenuOpen(false)}
-            style={{
-              marginTop: 2,
-              color: tokens.gold,
-              textDecoration: 'none',
-              fontFamily: tokens.display,
-              fontSize: 26,
-              letterSpacing: '0.04em',
-            }}
-          >
-            Contact
-          </Link>
+          {/* Contact used to be a heading of its own here. It is one of the
+              three lines under About now, exactly as it is in the bar — the
+              drawer and the row have to agree about where things live, or the
+              same site teaches two different maps depending on window width. */}
 
           {/* Same action, destination and fill as the desktop button. */}
           <Link
