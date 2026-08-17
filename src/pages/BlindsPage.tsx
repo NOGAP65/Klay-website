@@ -1,6 +1,7 @@
 // ---------------------------------------------------------------------------
-// ONE LISTING PAGE, FIVE BLIND TYPES — /blinds/roller-blinds, /venetian-blinds,
-// /roman-blinds, /vertical-blinds, /panel-blinds.
+// ONE LISTING PAGE PER BLIND TYPE — /blinds/roller-blinds, /venetian-blinds,
+// /roman-blinds and /vertical-blinds. Panel blinds were here too until the
+// business supplied its real product list and they were not on it.
 //
 // This was a page about roller blinds with the roller catalogue, the roller
 // intro and the roller FAQ written into the markup. Four of the five blind types
@@ -467,7 +468,7 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
                   // above it rather than to the photograph below — with an even
                   // gap the price of one blind floats midway to the next.
                   columnGap: isMobile ? 12 : 20,
-                  rowGap: isMobile ? 36 : 56,
+                  rowGap: isMobile ? 12 : 20,
                 }}
               >
                 {filteredItems.map(item => (

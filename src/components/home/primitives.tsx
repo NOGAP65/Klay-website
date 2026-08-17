@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { tokens, eyebrow, headline, motion } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { ProductGlyph } from '../ProductGlyph';
 
 /** The strip between tiles in every edge-to-edge grid on the page — categories,
  * the range, the install shots, the journal row.
@@ -336,6 +337,61 @@ export function SectionBand({
 // occupies one corner.
 // ---------------------------------------------------------------------------
 
+/** How many fabric colours print before the row becomes a count. Seven fits the
+ * narrowest tile without wrapping. */
+const SWATCHES_SHOWN = 7;
+
+/** The colour row, over the photograph, under the note.
+ *
+ * SAMPLED ACROSS THE CARD, NOT SLICED OFF THE TOP. The colour lists are ordered
+ * light to dark, so the first seven are seven near-identical creams and the
+ * greens, reds and navies all hide inside the "+7". An even stride spans the
+ * whole card, which is the question the row exists to answer: how wide is this
+ * range. First and last are always included.
+ *
+ * SQUARES, NOT CIRCLES — circles read as bullets, squares read as cut cloth, and
+ * they sit with a brand whose every button is a 2px rectangle. The hairline is
+ * warm white here rather than ink: these sit on a darkened photograph, where an
+ * ink border would vanish and the pale swatches would bleed into each other. */
+function TileSwatches({ colours }: { colours: { name: string; hex: string }[] }) {
+  const shown =
+    colours.length <= SWATCHES_SHOWN
+      ? colours
+      : Array.from({ length: SWATCHES_SHOWN }, (_, i) =>
+          colours[Math.round((i * (colours.length - 1)) / (SWATCHES_SHOWN - 1))],
+        );
+  const rest = colours.length - shown.length;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 12 }}>
+      {shown.map(c => (
+        <span
+          key={c.name}
+          title={c.name}
+          style={{
+            width: 13,
+            height: 13,
+            borderRadius: 1,
+            background: c.hex,
+            border: '1px solid rgba(245,242,237,0.45)',
+          }}
+        />
+      ))}
+      {rest > 0 && (
+        <span
+          style={{
+            fontFamily: tokens.body,
+            fontSize: 11,
+            color: 'rgba(245,242,237,0.75)',
+            marginLeft: 4,
+          }}
+        >
+          +{rest}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function PhotoTile({
   to,
   label,
@@ -347,6 +403,10 @@ export function PhotoTile({
   blurb,
   cta,
   ctaBelow = false,
+  alt,
+  scrim = 'normal',
+  glyph,
+  colours,
 }: {
   to: string;
   label: string;
@@ -384,6 +444,30 @@ export function PhotoTile({
    * put "Blockout Curtains" onto three lines. Stacked, the label gets the full
    * width and the chip sits beneath it. */
   ctaBelow?: boolean;
+  /** Drawn in the middle of a photoless tile — see components/ProductGlyph.
+   * Without it a tile with no photograph is a hairline frame around nothing,
+   * which is what the Awnings and Screens tiles were. A line drawing of the
+   * mechanism says the one thing the label cannot: what the product IS. */
+  glyph?: string;
+  /** The fabric colour card, printed as a swatch row under the note. Present
+   * only where a real colour list exists — it is the most useful thing a tile
+   * can say about a made-to-measure product, and the thing several near
+   * identical photographs of roller blinds cannot say at all. */
+  colours?: { name: string; hex: string }[];
+  /** Alt text, where the label alone is too thin to describe the photograph.
+   * Defaults to the label, which is right for a tile captioned "Curtains" over
+   * a picture of curtains and wrong for one where the caption is a product name
+   * and the picture is a room. */
+  alt?: string;
+  /** How much of the photograph the darkening ramp covers.
+   *
+   * 'deep' is for tiles whose label block is TALL — a name, a price, a swatch
+   * row and a stacked chip. The default ramp puts its weight in the last
+   * fifteen percent of the tile, which is right when the block is a name and a
+   * price, and leaves the top of a four-element block sitting on bare
+   * photograph. On the pale roller frames that made "Veil" and "$220" almost
+   * invisible. Deep starts the ramp higher and finishes darker. */
+  scrim?: 'normal' | 'deep';
 }) {
   const { hover, bind } = useHover();
   const isMobile = useIsMobile();
@@ -414,7 +498,7 @@ export function PhotoTile({
       {image && (
         <img
           src={image}
-          alt={label}
+          alt={alt ?? label}
           style={{
             position: 'absolute',
             inset: 0,
@@ -439,8 +523,28 @@ export function PhotoTile({
             inset: 16,
             border: `1px solid ${hover ? tokens.goldLine : tokens.onDarkLine}`,
             transition: 'border-color 0.3s ease',
+            // The mechanism drawing, centred in the frame and held clear of the
+            // label block at the bottom. It scales on hover for the same reason
+            // a photograph does — the tile has to answer the pointer, and on a
+            // photoless tile there is nothing else to move.
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingBottom: '22%',
           }}
-        />
+        >
+          {glyph && (
+            <span
+              style={{
+                display: 'block',
+                transform: hover ? 'scale(1.06)' : 'scale(1)',
+                transition: 'transform 0.7s ease',
+              }}
+            >
+              <ProductGlyph type={glyph} size={140} opacity={hover ? 0.6 : 0.42} />
+            </span>
+          )}
+        </div>
       )}
       {/* Two stops rather than one. Several of these photographs are pale at the
           bottom edge — a bedspread, a bare floorboard — and a single linear ramp
@@ -457,13 +561,15 @@ export function PhotoTile({
             left: 0,
             right: 0,
             bottom: 0,
-            height: '58%',
+            height: scrim === 'deep' ? '82%' : '58%',
             // Deeper and taller than it was. The labels were getting lost on
             // these photographs — they are warm and bright right down to the
             // bottom edge, and warm white at weight 300 over a sunlit floorboard
             // is decoration rather than a label you notice.
             background:
-              'linear-gradient(180deg, rgba(28,24,16,0) 0%, rgba(28,24,16,0.30) 48%, rgba(28,24,16,0.92) 100%)',
+              scrim === 'deep'
+                ? 'linear-gradient(180deg, rgba(28,24,16,0) 0%, rgba(28,24,16,0.42) 38%, rgba(28,24,16,0.80) 66%, rgba(28,24,16,0.95) 100%)'
+                : 'linear-gradient(180deg, rgba(28,24,16,0) 0%, rgba(28,24,16,0.30) 48%, rgba(28,24,16,0.92) 100%)',
           }}
         />
       )}
@@ -556,6 +662,7 @@ export function PhotoTile({
             {note}
           </div>
         )}
+        {colours && <TileSwatches colours={colours} />}
         </div>
 
         {cta && (

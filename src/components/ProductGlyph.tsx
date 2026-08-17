@@ -214,6 +214,75 @@ function Paths({ type, ground }: { type: string; ground: string }) {
         </>
       );
 
+    // Honeycomb: the cells, seen in section. Two rows of hexagonal pockets
+    // between a head rail and a bottom bar. The cell is the entire product —
+    // it is what traps the air — so the drawing is the cell and nothing else.
+    case 'honeycomb-blinds':
+      return (
+        <>
+          <path d="M16 16 H84" strokeWidth="4" />
+          {[26, 42, 58].map(y => (
+            <g key={y}>
+              <path d={`M20 ${y} H80`} />
+              {[20, 32, 44, 56, 68, 80].map(x => (
+                <path key={x} d={`M${x} ${y} L${x + 6} ${y + 8} L${x} ${y + 16}`} strokeWidth="0.9" />
+              ))}
+            </g>
+          ))}
+          <path d="M20 74 H80" strokeWidth="3" />
+        </>
+      );
+
+    // A roller shutter: interlocking slats in side guides, with the housing box
+    // above. The guides and the box are what separate it from an indoor roller
+    // — this is a security and insulation product bolted to the outside wall.
+    case 'roller-shutters':
+      return (
+        <>
+          <rect x="14" y="14" width="72" height="13" rx="1" strokeWidth="2.4" />
+          <path d="M18 27 V84" strokeWidth="3" />
+          <path d="M82 27 V84" strokeWidth="3" />
+          {[36, 44, 52, 60, 68].map(y => (
+            <path key={y} d={`M18 ${y} H82`} strokeWidth="1.6" />
+          ))}
+          <path d="M18 76 H82" strokeWidth="4" />
+        </>
+      );
+
+    // A pleated flyscreen: concertina mesh part-drawn across its track, so the
+    // pleats bunch at one side and the opening stays clear on the other. The
+    // whole selling point is that it folds away to nothing, which a fully closed
+    // screen cannot show.
+    case 'pleated-flyscreens':
+      return (
+        <>
+          <path d="M12 18 H88" strokeWidth="3" />
+          <path d="M12 82 H88" strokeWidth="3" />
+          {[16, 22, 28, 34, 40, 46].map(x => (
+            <path key={x} d={`M${x} 20 L${x + 3} 50 L${x} 80`} strokeWidth="1.1" />
+          ))}
+          <path d="M50 20 V80" strokeWidth="2.4" />
+          <path d="M50 50 H84" strokeDasharray="3 5" strokeWidth="0.9" />
+        </>
+      );
+
+    // A frameless shower screen: a fixed panel and a hinged door, drawn as two
+    // sheets of glass with hinges and a handle and no frame anywhere. The
+    // absence of a surround IS the product, so the only heavy strokes are the
+    // hardware.
+    case 'shower-screens':
+      return (
+        <>
+          <rect x="14" y="16" width="30" height="68" strokeWidth="1.1" />
+          <rect x="50" y="16" width="36" height="68" strokeWidth="1.1" />
+          <path d="M50 28 H44" strokeWidth="3" />
+          <path d="M50 72 H44" strokeWidth="3" />
+          <path d="M79 46 V58" strokeWidth="3" />
+          <path d="M20 24 L28 24" strokeWidth="0.8" />
+          <path d="M20 30 L34 30" strokeWidth="0.8" />
+        </>
+      );
+
     // A zip screen or café blind: mesh in a track, with the tracked edges drawn
     // heavier down both sides. Cross-hatching says weave, and the tracks say the
     // edges are held — which is exactly the difference between a zip screen and

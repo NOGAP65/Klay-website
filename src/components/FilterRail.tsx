@@ -24,12 +24,7 @@
 // ---------------------------------------------------------------------------
 
 import { tokens } from '../theme';
-import {
-  FAMILY_GROUPS,
-  LIGHT_VALUES,
-  countFor,
-  type Facets,
-} from '../data/catalogue';
+import { GROUP_FILTERS, LIGHT_VALUES, countFor, type Facets } from '../data/catalogue';
 
 const GROUP_LABEL = {
   fontFamily: tokens.body,
@@ -137,60 +132,23 @@ export function FilterRail({
     onChange({ ...facets, [key]: next });
   };
 
-  /** The family control writes RANGES, never a family of its own — see the note
-   * at the top. Ticking it selects every range underneath; unticking clears
-   * them. */
-  const toggleFamily = (ranges: string[], allOn: boolean) => {
-    const next = new Set(facets.ranges);
-    ranges.forEach(r => (allOn ? next.delete(r) : next.add(r)));
-    onChange({ ...facets, ranges: next });
-  };
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 34 }}>
       <div>
+        {/* The business's own grouping — Indoor, Outdoor, Other — rather than an
+            invented family layer above it. It was Window Coverings / Shade /
+            Storage with the six ranges nested underneath, which was a taxonomy
+            the site had made up for itself; when the real product list arrived
+            it came grouped this way, so the rail follows it. */}
         <p style={GROUP_LABEL}>Shop by</p>
-        {FAMILY_GROUPS.map(group => {
-          const ids = group.ranges.map(r => r.id);
-          const on = ids.filter(id => facets.ranges.has(id)).length;
-          const state = on === 0 ? 'off' : on === ids.length ? 'on' : 'partial';
-          const familyCount = group.ranges.reduce(
-            (sum, r) => sum + countFor(facets, 'ranges', r.id),
-            0,
-          );
-          return (
-            <div key={group.family} style={{ marginBottom: 12 }}>
-              <Row
-                label={group.family}
-                count={familyCount}
-                state={state}
-                strong
-                onToggle={() => toggleFamily(ids, state === 'on')}
-              />
-              {group.ranges.map(r => (
-                <Row
-                  key={r.id}
-                  label={r.label}
-                  count={countFor(facets, 'ranges', r.id)}
-                  state={facets.ranges.has(r.id) ? 'on' : 'off'}
-                  indent
-                  onToggle={() => toggle('ranges', r.id)}
-                />
-              ))}
-            </div>
-          );
-        })}
-      </div>
-
-      <div>
-        <p style={GROUP_LABEL}>Where</p>
-        {(['Indoor', 'Outdoor'] as const).map(v => (
+        {GROUP_FILTERS.map(g => (
           <Row
-            key={v}
-            label={v}
-            count={countFor(facets, 'locations', v)}
-            state={facets.locations.has(v) ? 'on' : 'off'}
-            onToggle={() => toggle('locations', v)}
+            key={g.id}
+            label={g.label}
+            count={countFor(facets, 'groups', g.id)}
+            state={facets.groups.has(g.id) ? 'on' : 'off'}
+            strong
+            onToggle={() => toggle('groups', g.id)}
           />
         ))}
       </div>

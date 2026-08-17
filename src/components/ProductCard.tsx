@@ -1,134 +1,58 @@
 // ---------------------------------------------------------------------------
-// THE LISTING CARD — one component, used by the single products page and by the
-// five blind-type pages.
+// THE LISTING CARD — now the same object as the homepage's range tile.
 //
-// It lived inside BlindsPage and knew about BlindType/BlindItem. The products
-// page needs the same card for curtains, awnings, wardrobes and shelving, none
-// of which are blinds, so it takes plain presentational props now and neither
-// page owns the design.
+// It used to be its own design: a photograph with a block of type underneath it
+// and a gold bar at the bottom. That was built against Kookai and Allbirds and
+// it was a decent card, but it meant the site had TWO card designs — one on the
+// homepage's Our Range row and a different one in the shop — and a visitor
+// moving between them met the same six ranges wearing different clothes.
 //
-// Built against Kookai, Allbirds and DIY Blinds. All three agree on the thing
-// Klay's original card was doing wrong:
+// So this delegates to PhotoTile. Everything sits on the photograph: the name
+// in Cormorant italic bottom-left, the price under it in gold, the colour row
+// under that, and a gold SHOP NOW chip. Same hover as the homepage — the image
+// pushes in, the whole tile darkens, the label block lifts, the chip pops
+// forward and lightens.
 //
-// NO CARD. There is no box — no white panel, no 12px radius, no border, no drop
-// shadow, and nothing lifts on hover. The photograph sits straight on the
-// section's ground and the type sits under it. A listing grid is a wall of
-// photographs, and putting each one in a raised white tray means the eye reads
-// twelve trays before it reads a single blind. The original had all five of
-// those decorations at once.
+// THE CHIP IS ALWAYS VISIBLE, which is PhotoTile's own rule and the reason it
+// suits this page: a photograph with a word on it is not obviously clickable,
+// the push-in alone is too subtle to carry that, and a hover-only action does
+// not exist at all on a touch screen.
 //
-// PORTRAIT, NOT SQUARE. 4:5 — a window covering hangs, so the frame wants
-// height, and every reference grid is portrait for the same reason its subject
-// is.
-//
-// NO BUTTON. The whole tile is the link. A filled gold DESIGN YOURS on every
-// card turned the grid into a row of buttons with pictures above them, and gold
-// is meant to mean "the one action here" — it cannot mean that twenty times on
-// one screen. The only thing the button carried that mattered is whether the
-// item is buyable, and the price line says that better: a real number against
-// PRICE ON MEASURE.
-//
-// THE LAST ROW IS WHATEVER VARIES. Colours where a colour card exists; the
-// descriptor line where one does not — a venetian has no swatches and its names
-// (25mm vs 50mm Aluminium) mean nothing without the sentence.
+// What this file is now is the ADAPTER — it turns a catalogue item's vocabulary
+// (priceFrom, eyebrow, tagline, glyph) into PhotoTile's (note, blurb, label).
+// The design lives in one place; the mapping lives here.
 // ---------------------------------------------------------------------------
 
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { tokens } from '../theme';
-import { ProductGlyph } from './ProductGlyph';
-
-/** How many fabric colours print before the row becomes a count. Seven fits the
- * narrowest column without wrapping, and a wrapped swatch row costs a line of
- * height on every card in the grid to show colours nobody is choosing from a
- * listing page anyway. */
-const SWATCHES_SHOWN = 7;
+import { PhotoTile } from './home/primitives';
 
 export interface Swatch {
   name: string;
   hex: string;
 }
 
-/** The swatch row — the most useful thing one of these cards can say.
- *
- * Four roller blinds photographed in four similar rooms look like the same
- * product four times; what separates them is the fabric, and what makes any of
- * them feel buyable is that it comes in fourteen colours. Kookai and Allbirds
- * both put the colourway row on the card for exactly this reason.
- *
- * SQUARES, NOT CIRCLES. Circles read as bullets or status dots; squares read as
- * cut cloth, and they sit with a brand whose every button is a 2px rectangle.
- * This also replaced three hardware dots that described the bracket rather than
- * the blind and were the same three greys on every card in the grid. */
-function SwatchRow({ colours }: { colours: Swatch[] }) {
-  // SAMPLED ACROSS THE CARD, NOT SLICED OFF THE TOP. The colour list is ordered
-  // light to dark, so the first seven were seven near-identical creams, under
-  // which the range appeared to be beige and beige only — Forest Green, Red,
-  // Deep Ocean Blue and Black were all hidden inside the "+7". An even stride
-  // spans the whole card, which is the question the row exists to answer: how
-  // wide is this range. First and last are always included.
-  const shown =
-    colours.length <= SWATCHES_SHOWN
-      ? colours
-      : Array.from({ length: SWATCHES_SHOWN }, (_, i) =>
-          colours[Math.round((i * (colours.length - 1)) / (SWATCHES_SHOWN - 1))],
-        );
-  const rest = colours.length - shown.length;
-
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 12 }}>
-      {shown.map(c => (
-        <span
-          key={c.name}
-          title={c.name}
-          style={{
-            width: 13,
-            height: 13,
-            borderRadius: 1,
-            background: c.hex,
-            // A hairline on every swatch, not only the pale ones. Without it
-            // White and Surfmist dissolve into the parchment ground and the row
-            // appears to start three swatches in.
-            border: '1px solid rgba(28,24,16,0.16)',
-          }}
-        />
-      ))}
-      {rest > 0 && (
-        <span
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 11,
-            color: 'rgba(28,24,16,0.45)',
-            marginLeft: 4,
-            letterSpacing: '0.02em',
-          }}
-        >
-          +{rest}
-        </span>
-      )}
-    </div>
-  );
-}
-
 export interface ProductCardProps {
   /** Where the whole tile goes. */
   to: string;
   name: string;
-  /** Small caps line above the name. The range on the all-products grid, the
-   * fabric or finish on a single-type page — whichever is the useful
-   * distinction in that context. */
+  /** The range or the fabric. Not rendered as its own line any more — over a
+   * photograph a fourth stacked string is one too many, and the name plus the
+   * price carry the identification. Kept in the props because it is still the
+   * image's alt text, which is where it does real work. */
   eyebrow: string;
-  /** Shown in the last row when there are no `colours`. */
+  /** One supporting line under the name. */
   tagline?: string;
-  /** Present only where the item is genuinely priced and buyable. Without it
-   * the card says PRICE ON MEASURE, which is the honest state for everything
-   * Klay makes to measure and has never had a price grid for. */
+  /** Present only where the item is genuinely priced. Without it the tile says
+   * PRICE ON MEASURE, which is the honest state for everything Klay makes to
+   * measure and has never had a price grid for. */
   priceFrom?: number;
   image?: string;
   imagePosition?: string;
-  /** ProductGlyph key, drawn on charcoal where no photograph exists. */
+  /** ProductGlyph key, drawn on the charcoal of a photoless tile. */
   glyph?: string;
   colours?: Swatch[];
+  /** Tile height. The shop and the blind pages run different column counts, so
+   * the height comes from the caller rather than being fixed here. */
+  minHeight?: number;
 }
 
 export function ProductCard({
@@ -141,243 +65,41 @@ export function ProductCard({
   imagePosition,
   glyph,
   colours,
+  minHeight = 420,
 }: ProductCardProps) {
-  const [hover, setHover] = useState(false);
-  const buyable = priceFrom !== undefined;
-
   return (
-    <Link
+    <PhotoTile
       to={to}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      // A FULL-HEIGHT COLUMN, so the bottom-pinned bar lands on the same line
-      // in every card of a row regardless of whether a tagline wrapped. Grid
-      // items stretch by default; `margin-top: auto` on the footer does the
-      // rest.
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        textDecoration: 'none',
-      }}
-    >
-      <div
-        style={{
-          position: 'relative',
-          aspectRatio: '4 / 5',
-          overflow: 'hidden',
-          borderRadius: 2,
-          background: image ? '#EEEAE4' : tokens.charcoal,
-        }}
-      >
-        {image ? (
-          <img
-            src={image}
-            alt={`${name} — ${eyebrow}`}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: imagePosition ?? 'center',
-              display: 'block',
-              // The only thing hover does. The card does not move, gain a
-              // shadow or change colour — the photograph breathes, and that is
-              // enough to say the tile is live.
-              transform: hover ? 'scale(1.04)' : 'scale(1)',
-              transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-            }}
-          />
-        ) : (
-          // NO PHOTOGRAPH OF THIS PRODUCT EXISTS — see the note at the top of
-          // ProductGlyph. A line drawing of the mechanism, rather than a
-          // photograph of the wrong product or the item's own name repeated a
-          // centimetre above where it already appears. One shoot replaces this
-          // with an `image` in the data and nothing here changes.
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transform: hover ? 'scale(1.04)' : 'scale(1)',
-              transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
-            }}
-          >
-            <ProductGlyph type={glyph ?? ''} size="58%" opacity={hover ? 0.68 : 0.5} />
-          </div>
-        )}
-
-        {/* A GOLD HAIRLINE INSET INTO THE PHOTOGRAPH, on hover only. Sits a few
-            pixels in from the edge so it reads as a mount around the image
-            rather than as a border on the tile — a frame drawn on the picture,
-            which is the one gold gesture that does not fight the photograph for
-            attention. Fades rather than draws, because the image is already
-            moving underneath it and two animations on one element is one too
-            many. */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            inset: 8,
-            border: `1px solid ${tokens.gold}`,
-            opacity: hover ? 0.85 : 0,
-            transition: 'opacity 0.45s ease',
-            pointerEvents: 'none',
-          }}
-        />
-      </div>
-
-      {/* Muted rather than gold: gold on every card in a twenty-card grid stops
-          being an accent and becomes the grid's body colour. */}
-      <div
-        style={{
-          fontFamily: tokens.body,
-          fontSize: 10,
-          fontWeight: 500,
-          letterSpacing: '0.14em',
-          textTransform: 'uppercase',
-          color: 'rgba(28,24,16,0.45)',
-          marginTop: 16,
-        }}
-      >
-        {eyebrow}
-      </div>
-
-      {/* Name and price share a baseline. Two rows would push the swatches below
-          the fold on a short viewport, and name-left / price-right is the
-          arrangement every reference grid uses. */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          gap: 12,
-          marginTop: 5,
-        }}
-      >
-        <h3
-          style={{
-            fontFamily: tokens.display,
-            fontSize: 21,
-            fontWeight: 300,
-            lineHeight: 1.15,
-            margin: 0,
-            color: hover ? tokens.gold : tokens.ink,
-            transition: 'color 0.25s ease',
-          }}
-        >
-          {name}
-        </h3>
-        <span
-          style={{
-            fontFamily: tokens.body,
-            // The buyable/enquiry distinction the gold button used to carry. A
-            // price is a number; "price on measure" is a sentence, so it is set
-            // smaller and quieter rather than pretending to be one.
-            fontSize: buyable ? 14 : 10,
-            fontWeight: buyable ? 500 : 400,
-            letterSpacing: buyable ? undefined : '0.1em',
-            textTransform: buyable ? undefined : 'uppercase',
-            whiteSpace: 'nowrap',
-            color: buyable ? tokens.ink : 'rgba(28,24,16,0.42)',
-          }}
-        >
-          {/* No "From". The figure is already the cheapest configuration of a
-              made-to-measure product, and the word was doing the hedging twice
-              — once in the price and again in PRICE ON MEASURE beside it. */}
-          {buyable ? `$${priceFrom}` : 'Price on measure'}
-        </span>
-      </div>
-
-      {/* Colours where there is a colour card, the descriptor line where there
-          is not. Above the button: the stack runs name and price, then what
-          varies, then the action — so the button is the last thing in the card
-          and nothing appears underneath it. */}
-      {colours ? (
-        <SwatchRow colours={colours} />
-      ) : tagline ? (
-        <p
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 13,
-            lineHeight: 1.45,
-            color: 'rgba(28,24,16,0.5)',
-            margin: 0,
-            marginTop: 10,
-          }}
-        >
-          {tagline}
-        </p>
-      ) : null}
-
-      {/* THE FOOTER — a rule, then the full-width bar, both pinned to the
-          bottom of the card.
-
-          The bar went back to full width after a small ranged-right version was
-          tried: sized to its own words it read as a chip floating in the card,
-          and ranged right it left an obvious notch of empty ground on the left
-          of every card in the grid. Full width gives the card a base to sit on
-          and every tile the same silhouette.
-
-          `margin-top: auto` absorbs the slack of a short card above the rule,
-          so the bars land on one line across a row no matter whether a tagline
-          wrapped to two lines.
-
-          Wording is uniform by decision: per-card labelling ("Enquire" where
-          there is no price) was tried and overruled in favour of one consistent
-          action. Sixteen of these still land on the enquiry form rather than a
-          checkout — the fix is price grids and product pages, not a softer
-          label, and it is the same note data/ranges.ts carries about the
-          homepage tiles. */}
-      <div style={{ marginTop: 'auto', paddingTop: 16 }}>
-        {/* THE GOLD LINE, AND IT DRAWS. A hairline of ink at rest with a gold
-            one laid over it, scaled to nothing and anchored left; on hover it
-            runs across the card in half a second. A line that simply changes
-            colour reads as a state; a line that travels reads as a response,
-            and it is the only thing on the card that moves horizontally — the
-            photograph scales, the frame fades, this draws. */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'relative',
-            height: 1,
-            background: 'rgba(28,24,16,0.12)',
-            overflow: 'hidden',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: tokens.gold,
-              transform: hover ? 'scaleX(1)' : 'scaleX(0)',
-              transformOrigin: 'left center',
-              transition: 'transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)',
-            }}
-          />
-        </div>
-
-        <span
-          style={{
-            display: 'block',
-            marginTop: 14,
-            padding: '12px 20px',
-            borderRadius: 2,
-            background: hover ? tokens.goldLight : tokens.gold,
-            color: tokens.ink,
-            fontFamily: tokens.body,
-            fontSize: 10,
-            fontWeight: 500,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            textAlign: 'center',
-            transition: 'background 0.25s ease',
-          }}
-        >
-          Shop Now
-        </span>
-      </div>
-    </Link>
+      label={name}
+      image={image}
+      objectPosition={imagePosition}
+      minHeight={minHeight}
+      // Smaller than the homepage row's default. These tiles are narrower and
+      // carry more under the label — a price, sometimes a swatch row — so a
+      // 32px name crowds everything below it.
+      labelSize="clamp(21px, 1.7vw, 26px)"
+      // The buyable/enquiry distinction, in the one line that was always gold.
+      // No "From": the figure is already the cheapest configuration of a
+      // made-to-measure product.
+      note={priceFrom !== undefined ? `$${priceFrom}` : 'Price on measure'}
+      blurb={colours ? undefined : tagline}
+      // Uniform wording by decision. Per-card labelling ("Enquire" where there
+      // is no price) was tried and overruled in favour of one consistent
+      // action; sixteen of these still resolve to the enquiry form, and the fix
+      // for that is price grids and product pages rather than a softer label.
+      cta="Shop Now"
+      // Stacked under the label rather than beside it: these columns are narrow
+      // enough that a chip taking its share off the right puts a name like
+      // "Straight Drop Awnings" onto three lines.
+      ctaBelow
+      // The label block here is four elements deep — name, price, sometimes a
+      // swatch row, then the chip — so it reaches well up the photograph. The
+      // default ramp puts its weight in the last fifteen percent and left "Veil"
+      // and "$220" almost invisible on the pale roller frames.
+      scrim="deep"
+      glyph={glyph}
+      colours={colours}
+      alt={`${name} — ${eyebrow}`}
+    />
   );
 }

@@ -15,7 +15,7 @@
 //
 // The old ?category= links still work — they preselect a filter rather than
 // redirecting, so an old homepage tile lands on the shop already narrowed. See
-// rangeForCategoryParam.
+// groupForCategoryParam.
 //
 // IT OPENS ON THE SAME PHOTOGRAPHIC BAND the blind listing pages use — same
 // height, same gradient, same breadcrumb and heading treatment — so the shop and
@@ -37,7 +37,7 @@ import {
   EMPTY_FACETS,
   applyFacets,
   facetCount,
-  rangeForCategoryParam,
+  groupForCategoryParam,
   type CatalogueItem,
   type Facets,
 } from '../data/catalogue';
@@ -73,8 +73,8 @@ export default function ProductsPage() {
   // an old link keeps meaning what it meant. After that the rail owns it —
   // re-reading on every render would fight the clicks.
   const [facets, setFacets] = useState<Facets>(() => {
-    const range = rangeForCategoryParam(searchParams.get('category'));
-    return range === 'All' ? EMPTY_FACETS : { ...EMPTY_FACETS, ranges: new Set([range]) };
+    const range = groupForCategoryParam(searchParams.get('category'));
+    return range === 'All' ? EMPTY_FACETS : { ...EMPTY_FACETS, groups: new Set([range]) };
   });
   const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -108,7 +108,7 @@ export default function ProductsPage() {
    * and each chip knows which group to remove itself from. */
   const activeChips = useMemo(
     () =>
-      (['ranges', 'locations', 'lights', 'availability'] as const).flatMap(facet =>
+      (['groups', 'lights', 'availability'] as const).flatMap(facet =>
         [...facets[facet]].map(value => ({ facet, value })),
       ),
     [facets],
@@ -130,8 +130,8 @@ export default function ProductsPage() {
             section of the site rather than two designs.
 
             THE FRAME IS THE BEDROOM WITH SHEERS AND DRAPES, and choosing it took
-            some care: a banner over a grid of twenty-two products is one
-            photograph standing in for all of them. hero-room.jpg — the obvious
+            some care: a banner over the whole catalogue is one photograph
+            standing in for every product on the page. hero-room.jpg — the obvious
             candidate — has no window covering in it at all, just an armchair,
             which is a poor advertisement for a window furnishings shop. This one
             carries two products in the one shot and reads as "window", and it is
@@ -219,8 +219,8 @@ export default function ProductsPage() {
                 maxWidth: 520,
               }}
             >
-              Blinds, curtains, awnings, wardrobes, screens and shelving — measured, made
-              and installed by hand across Victoria.
+              Blinds, curtains, shutters, awnings, wardrobes and shower screens — measured,
+              made and installed by hand across Victoria.
             </p>
           </div>
         </section>
@@ -454,8 +454,13 @@ export default function ProductsPage() {
                     // Columns tight so adjacent photographs read as one wall;
                     // rows wide so the price of one product does not float
                     // midway to the picture below it.
+                    // Even now the cards are self-contained tiles rather than
+                    // a photograph with type under it. The wide row gap existed
+                    // to stop one card's price floating toward the picture below
+                    // it; with everything inside the tile there is nothing to
+                    // separate, and an even gap reads as a wall of photographs.
                     columnGap: narrow ? 12 : 20,
-                    rowGap: narrow ? 36 : 56,
+                    rowGap: narrow ? 12 : 20,
                   }}
                 >
                   {items.map(item => (
@@ -463,7 +468,7 @@ export default function ProductsPage() {
                       key={item.id}
                       to={item.to}
                       name={item.name}
-                      eyebrow={item.range}
+                      eyebrow={item.group}
                       tagline={item.tagline}
                       priceFrom={item.priceFrom}
                       image={item.image}

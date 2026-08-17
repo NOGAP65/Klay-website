@@ -317,57 +317,6 @@ const TYPES: BlindType[] = [
       },
     ],
   },
-
-  {
-    slug: 'panel-blinds',
-    name: nameFor('panel-blinds', 'Panel Blinds'),
-    intro: 'Wide flat panels that glide past one another on a track. The quietest way to cover a very large opening.',
-    filters: [
-      { id: 'blockout', label: 'Blockout' },
-      { id: 'lightfilter', label: 'Light Filter' },
-      { id: 'sunscreen', label: 'Sunscreen' },
-    ],
-    items: [
-      {
-        id: 'panel-blockout',
-        name: 'Blockout Panel',
-        label: 'Panel Glide',
-        tagline: 'Opaque panels, edge to edge when closed.',
-        filter: 'blockout',
-      },
-      {
-        id: 'panel-lightfilter',
-        name: 'Light Filter Panel',
-        label: 'Panel Glide',
-        tagline: 'An even wash of daylight across the glass.',
-        filter: 'lightfilter',
-      },
-      {
-        id: 'panel-sunscreen',
-        name: 'Sunscreen Panel',
-        label: 'Panel Glide',
-        tagline: 'Holds the view through the whole opening.',
-        filter: 'sunscreen',
-      },
-      {
-        id: 'panel-room-divider',
-        name: 'Room Divider',
-        label: 'Panel Glide',
-        tagline: 'The same track, used to split a room.',
-        filter: 'blockout',
-      },
-    ],
-    faqs: [
-      {
-        q: 'What are panel blinds?',
-        a: 'Large flat panels of fabric on a multi-channel track, sliding behind one another like a wardrobe door. Stacked, they take up very little of the opening.',
-      },
-      {
-        q: 'How wide can they go?',
-        a: 'Wider than any other fabric system we make — the track simply gains channels as the opening grows. They are the usual answer to a full wall of glass or a stacker door.',
-      },
-    ],
-  },
 ]
 
 /** Every type, with the shared questions appended once rather than repeated in
