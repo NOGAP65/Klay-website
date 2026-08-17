@@ -125,18 +125,30 @@ export default function HomePage() {
         {/* 7 — The centrepiece: configure it, see it on your own window, buy it. */}
         <VisualiserShowcase />
 
-        {/* 8 — Who turns up at the house. The long copy on the page, and the
-            only section that is about Klay rather than about a product. */}
-        <AboutPanel />
-
-        {/* 9 — What it looks like once it's up. Trust, not conversion. */}
+        {/* 8 — What it looks like once it's up. Trust, not conversion. */}
         <SocialProof />
 
-        {/* 10 — Reviews, moving. */}
+        {/* 9 — Reviews, moving. */}
         <Testimonials />
 
-        {/* 11 — One last ask, pointing back at the tool. */}
+        {/* 10 — One last ask, pointing back at the tool. */}
         <FinalCta />
+
+        {/* 11 — Who turns up at the house. The long copy on the page, and the
+            only section that is about Klay rather than about a product.
+
+            LAST, and directly above the footer. It sat at 8, between the
+            visualiser and the social proof, where it interrupted the run of
+            evidence — the page went tool, then a page of prose about the
+            company, then back to photographs and reviews. Nobody arrives
+            wanting to read about a window furnishings business; they read it
+            after they have decided they might buy, which is exactly here.
+
+            It also gives the page a proper close. The footer is black, the
+            about panel above it is the page's one long-form passage, and the
+            two together read as the end of a document rather than the page
+            simply running out after a CTA. */}
+        <AboutPanel />
 
         {/* 12 — Footer. */}
         <Footer />

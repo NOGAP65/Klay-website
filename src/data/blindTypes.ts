@@ -31,7 +31,7 @@
 // a photograph of a roller blind under the word "Venetian".
 // ---------------------------------------------------------------------------
 
-import { PRODUCTS } from './products'
+import { PRODUCTS, RYNAMIC_COLOURS } from './products'
 import { getSubcategoryBySlug } from './categories'
 
 export interface BlindItem {
@@ -50,6 +50,12 @@ export interface BlindItem {
   /** Omitted where no photograph of this product exists, which is everything
    * that is not a roller. See the note at the top of the file. */
   image?: string
+  /** The fabric colour card this item is made in. Present on buyable items
+   * only, because it is the one place a real colour list exists — the listing
+   * card prints it as a swatch row, which is the single most useful thing a
+   * card can say about a made-to-measure product and the thing four near
+   * identical photographs of four roller blinds cannot say at all. */
+  colours?: { name: string; hex: string }[]
 }
 
 export interface BlindType {
@@ -92,6 +98,11 @@ const productItem = (slug: string, filter: string): BlindItem => {
     productSlug: p.slug,
     priceFrom: p.priceFrom,
     image: p.image,
+    // Every roller is made in the one Rynamic card, so this is a reference to
+    // the real list rather than a per-product copy of it. A colour added there
+    // appears on all four cards at once, which is correct — they are four
+    // fabrics off one colour range, not four ranges.
+    colours: RYNAMIC_COLOURS,
   }
 }
 

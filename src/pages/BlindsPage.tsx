@@ -33,7 +33,11 @@ import { useKlayStore } from '../store';
 import { tokens } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { BlindGlyph } from '../components/BlindGlyph';
-import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
+// HARDWARE_HEX/HARDWARE_OPTIONS used to be imported here, for the three bracket
+// dots the old card printed. They were the same three greys on every card in the
+// grid and described the bracket rather than the blind; the fabric swatch row
+// replaced them. Hardware is still chosen, in the configurator, where it is a
+// decision rather than decoration.
 import {
   BLIND_TYPE_LINKS,
   blindTypeBySlug,
@@ -62,6 +66,103 @@ const columnsFor = (n: number) => (n % 4 === 0 ? 4 : n < 4 ? n : 3);
 const enquiryLink = (type: BlindType, item: BlindItem) =>
   `/contact?product=${encodeURIComponent(`${type.name} — ${item.name}`)}`;
 
+/** How many fabric colours print on a card before the row becomes a count.
+ * Seven fits the narrowest column without wrapping, and a wrapped swatch row
+ * costs a line of height on every card to show colours eight through fourteen
+ * that nobody is choosing from a listing page anyway. */
+const SWATCHES_SHOWN = 7;
+
+/** The swatch row — the single most useful thing one of these cards can say.
+ *
+ * Four roller blinds photographed in four similar rooms look like the same
+ * product four times; what actually separates them is the fabric, and what
+ * makes any of them feel buyable is that it comes in fourteen colours. Kookai
+ * and Allbirds both put the colourway row on the card for exactly this reason,
+ * and it is the thing Klay's old card was missing.
+ *
+ * SQUARES, NOT CIRCLES. Circles read as bullets or as status dots; squares read
+ * as swatches — a cut piece of cloth — and they sit with a brand whose every
+ * button is a 2px rectangle. This also replaces the three hardware dots the old
+ * card carried, which described the bracket rather than the blind and were the
+ * same three greys on every card in the grid. */
+function SwatchRow({ colours }: { colours: { name: string; hex: string }[] }) {
+  // SAMPLED ACROSS THE CARD, NOT THE FIRST SEVEN. RYNAMIC_COLOURS is ordered
+  // light to dark, so slicing off the top gave White, Surfmist, Light Grey,
+  // Dune, Cream, Sand and Beige — seven near identical creams, under which the
+  // range appeared to be beige and beige only. Forest Green, Red, Deep Ocean
+  // Blue and Black were all inside the "+7".
+  //
+  // Taking an even stride through the list instead spans the whole card, so the
+  // row answers the question it is there to answer: how wide is this range.
+  // Index 0 and the last index are always included — the extremes are the two
+  // that matter most.
+  const shown =
+    colours.length <= SWATCHES_SHOWN
+      ? colours
+      : Array.from({ length: SWATCHES_SHOWN }, (_, i) =>
+          colours[Math.round((i * (colours.length - 1)) / (SWATCHES_SHOWN - 1))],
+        );
+  const rest = colours.length - shown.length;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 12 }}>
+      {shown.map(c => (
+        <span
+          key={c.name}
+          title={c.name}
+          style={{
+            width: 13,
+            height: 13,
+            borderRadius: 1,
+            background: c.hex,
+            // A hairline on every swatch, not just the pale ones. Without it
+            // White and Surfmist dissolve into the parchment ground and the row
+            // appears to start three swatches in.
+            border: '1px solid rgba(28,24,16,0.16)',
+          }}
+        />
+      ))}
+      {rest > 0 && (
+        <span
+          style={{
+            fontFamily: tokens.body,
+            fontSize: 11,
+            color: 'rgba(28,24,16,0.45)',
+            marginLeft: 4,
+            letterSpacing: '0.02em',
+          }}
+        >
+          +{rest}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// THE CARD. Rebuilt against Kookai, Allbirds and DIY Blinds — all three of which
+// agree on the thing Klay's card was doing wrong.
+//
+// NO CARD. There is no box: no white panel, no 12px radius, no border, no drop
+// shadow, and nothing lifts on hover. The photograph sits straight on the
+// section's ground and the type sits under it. Every reference does this, and
+// the reason is that a listing grid is a wall of photographs — putting each one
+// in a raised white tray means the eye reads twelve trays before it reads a
+// single blind. Klay's old card had all five of those decorations at once.
+//
+// PORTRAIT, NOT SQUARE. 4:5. A window covering hangs, so the frame wants height,
+// and every reference grid is portrait for the same reason its subject is.
+//
+// NO BUTTON. The whole tile is the link. A filled gold DESIGN YOURS on all four
+// cards turned the grid into a row of buttons with pictures above them, and gold
+// is meant to mean "the one action here" — it cannot mean that twelve times on
+// one screen. What the button was carrying that mattered is whether this item is
+// buyable, and the price line says that better: "From $220" against "Price on
+// measure".
+//
+// THE LAST ROW IS WHAT VARIES. Colours for a roller; the descriptor line for a
+// venetian, which has no colour card and whose names (25mm vs 50mm Aluminium)
+// mean nothing without it. Same slot, same rhythm, different fact.
+// ---------------------------------------------------------------------------
 function ItemCard({ type, item }: { type: BlindType; item: BlindItem }) {
   const [hover, setHover] = useState(false);
   const buyable = Boolean(item.productSlug);
@@ -71,21 +172,17 @@ function ItemCard({ type, item }: { type: BlindType; item: BlindItem }) {
       to={buyable ? `/products/${item.productSlug}` : enquiryLink(type, item)}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      style={{
-        display: 'block',
-        textDecoration: 'none',
-        background: tokens.warmWhite,
-        borderRadius: 12,
-        overflow: 'hidden',
-        border: `1px solid ${hover ? 'rgba(200,151,58,0.2)' : tokens.lineFaint}`,
-        boxShadow: hover
-          ? '0 16px 40px rgba(28,24,16,0.12)'
-          : '0 2px 12px rgba(28,24,16,0.04)',
-        transform: hover ? 'translateY(-4px)' : 'translateY(0)',
-        transition: 'all 0.3s ease',
-      }}
+      style={{ display: 'block', textDecoration: 'none' }}
     >
-      <div style={{ position: 'relative', aspectRatio: '1 / 1', overflow: 'hidden', background: '#f5f3ef' }}>
+      <div
+        style={{
+          position: 'relative',
+          aspectRatio: '4 / 5',
+          overflow: 'hidden',
+          borderRadius: 2,
+          background: item.image ? '#EEEAE4' : tokens.charcoal,
+        }}
+      >
         {item.image ? (
           <img
             src={item.image}
@@ -96,8 +193,11 @@ function ItemCard({ type, item }: { type: BlindType; item: BlindItem }) {
               objectFit: 'cover',
               objectPosition: 'center',
               display: 'block',
-              transform: hover ? 'scale(1.03)' : 'scale(1)',
-              transition: 'transform 0.4s ease',
+              // The only thing hover does. The card does not move, gain a
+              // shadow or change colour — the photograph breathes and that is
+              // enough to say "this is live".
+              transform: hover ? 'scale(1.04)' : 'scale(1)',
+              transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
             }}
           />
         ) : (
@@ -113,125 +213,92 @@ function ItemCard({ type, item }: { type: BlindType; item: BlindItem }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: tokens.charcoal,
-              transform: hover ? 'scale(1.03)' : 'scale(1)',
-              transition: 'transform 0.4s ease',
+              transform: hover ? 'scale(1.04)' : 'scale(1)',
+              transition: 'transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)',
             }}
           >
-            <BlindGlyph type={type.slug} size="62%" opacity={hover ? 0.7 : 0.5} />
+            <BlindGlyph type={type.slug} size="58%" opacity={hover ? 0.68 : 0.5} />
           </div>
         )}
       </div>
 
-      <div style={{ padding: '20px 16px 24px' }}>
-        <span
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 10,
-            color: tokens.gold,
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            fontWeight: 500,
-          }}
-        >
-          {item.label}
-        </span>
+      {/* Eyebrow — the fabric or the finish. Muted rather than gold: gold on
+          every card in a twelve-card grid stops being an accent and becomes the
+          grid's body colour. */}
+      <div
+        style={{
+          fontFamily: tokens.body,
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+          color: 'rgba(28,24,16,0.45)',
+          marginTop: 16,
+        }}
+      >
+        {item.label}
+      </div>
 
+      {/* Name and price on one baseline. Two rows here would push the swatches
+          below the fold of a short viewport, and name-left / price-right is the
+          arrangement every reference grid uses. */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: 12,
+          marginTop: 5,
+        }}
+      >
         <h3
           style={{
             fontFamily: tokens.display,
-            fontSize: 24,
+            fontSize: 21,
             fontWeight: 300,
-            color: tokens.ink,
+            lineHeight: 1.15,
             margin: 0,
-            marginTop: 8,
-            lineHeight: 1.2,
+            color: hover ? tokens.gold : tokens.ink,
+            transition: 'color 0.25s ease',
           }}
         >
           {item.name}
         </h3>
+        <span
+          style={{
+            fontFamily: tokens.body,
+            // The buyable/enquiry distinction the gold button used to carry.
+            // A price is a number; "price on measure" is a sentence, so it is
+            // set smaller and quieter rather than pretending to be one.
+            fontSize: buyable ? 14 : 10,
+            fontWeight: buyable ? 500 : 400,
+            letterSpacing: buyable ? undefined : '0.1em',
+            textTransform: buyable ? undefined : 'uppercase',
+            whiteSpace: 'nowrap',
+            color: buyable ? tokens.ink : 'rgba(28,24,16,0.42)',
+          }}
+        >
+          {buyable ? `From $${item.priceFrom}` : 'Price on measure'}
+        </span>
+      </div>
 
+      {/* What varies within this item. */}
+      {item.colours ? (
+        <SwatchRow colours={item.colours} />
+      ) : (
         <p
           style={{
             fontFamily: tokens.body,
             fontSize: 13,
+            lineHeight: 1.45,
             color: 'rgba(28,24,16,0.5)',
-            lineHeight: 1.5,
             margin: 0,
-            marginTop: 8,
-            height: 40,
-            overflow: 'hidden',
+            marginTop: 10,
           }}
         >
           {item.tagline}
         </p>
-
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginTop: 16,
-            paddingTop: 16,
-            borderTop: `1px solid ${tokens.lineFaint}`,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: tokens.body,
-              fontSize: buyable ? 15 : 11,
-              fontWeight: 500,
-              letterSpacing: buyable ? undefined : '0.1em',
-              textTransform: buyable ? undefined : 'uppercase',
-              color: buyable ? tokens.ink : 'rgba(28,24,16,0.45)',
-            }}
-          >
-            {buyable ? `From $${item.priceFrom}` : 'Price on measure'}
-          </span>
-          {/* The hardware dots are a roller fact — three finishes on a roller
-              bracket. They do not describe a venetian ladder or a panel track,
-              so they only appear where they are true. */}
-          {buyable && (
-            <span style={{ display: 'flex', gap: 4 }}>
-              {HARDWARE_OPTIONS.map(h => (
-                <span
-                  key={h.id}
-                  style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: '50%',
-                    background: HARDWARE_HEX[h.id],
-                    border: `1px solid rgba(28,24,16,0.1)`,
-                  }}
-                />
-              ))}
-            </span>
-          )}
-        </div>
-
-        <span
-          style={{
-            display: 'block',
-            marginTop: 16,
-            padding: '12px 20px',
-            borderRadius: 6,
-            // Gold is the site's buy action. An enquiry is not a purchase, so it
-            // takes the outline rather than the fill — the two cards sit in the
-            // same grid and the button has to tell you which one you clicked.
-            background: buyable ? tokens.gold : 'transparent',
-            border: buyable ? '1px solid transparent' : `1px solid ${tokens.line}`,
-            color: tokens.ink,
-            fontFamily: tokens.body,
-            fontSize: 12,
-            fontWeight: 500,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            textAlign: 'center',
-          }}
-        >
-          {buyable ? 'Design Yours' : 'Get a Quote'}
-        </span>
-      </div>
+      )}
     </Link>
   );
 }
@@ -626,7 +693,14 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
                   gridTemplateColumns: isMobile
                     ? 'repeat(2, 1fr)'
                     : `repeat(${columns}, 1fr)`,
-                  gap: isMobile ? 16 : 24,
+                  // Asymmetric now that the cards have no boxes. Columns run
+                  // tight, because adjacent photographs reading as one wall is
+                  // the effect every reference grid is after. Rows run wide,
+                  // because the type under a card has to belong to the card
+                  // above it rather than to the photograph below — with an even
+                  // gap the price of one blind floats midway to the next.
+                  columnGap: isMobile ? 12 : 20,
+                  rowGap: isMobile ? 36 : 56,
                 }}
               >
                 {filteredItems.map(item => (
