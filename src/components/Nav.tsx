@@ -68,19 +68,27 @@ import { RANGES } from '../data/ranges';
  * holds all of it, comfortably — see the panel below. */
 const NAV_COLLAPSE = '(max-width: 1240px)';
 
-/** How far ABOUT slides toward the cart, in px.
+/** The gap between the cart and Shop Now — two controls, sitting as a pair. */
+const CONTROL_GAP = 18;
+
+/** The gap between ABOUT and the cart, which is deliberately NOT CONTROL_GAP.
  *
- * The right cluster is one flex row with a single gap, which spaced About, the
- * cart and Shop Now identically — and identical spacing was wrong here, because
- * the three are not peers. The cart and the button are a pair of controls; About
- * is a word. Left at the shared 18px it floated in the ~120px of air between the
- * range row and the controls, belonging to neither.
+ * The right cluster is one flex row, so a single gap spaced About, the cart and
+ * Shop Now identically — and identical spacing is wrong here, because the three
+ * are not peers. The cart and the button are a pair of controls; About is a
+ * word, and a word set as tight to an icon as the icon is to a button reads as
+ * a label ON the control rather than as a link beside it.
  *
- * Applied as a NEGATIVE right margin rather than by shrinking the cluster's gap,
- * because the cluster is anchored to the bar's right edge: pulling in the shared
- * gap would drag the cart rightwards too. Cancelling half of it on one side moves
- * only the item to its left, which is exactly and only About. */
-const ABOUT_NUDGE = 9;
+ * So it is wider than CONTROL_GAP, not narrower. Tried at 9 first, which pulled
+ * About so close it looked like the cart's caption; the fix for a word floating
+ * between two groups is not to weld it to one of them.
+ *
+ * Expressed as a real gap and applied as the DIFFERENCE from CONTROL_GAP,
+ * because the cluster is anchored to the bar's right edge: changing the shared
+ * gap would drag the cart with it. A margin on one side moves only the item to
+ * its left, which is exactly and only About. This is the one number to change if
+ * it wants to sit further either way. */
+const ABOUT_GAP = 26;
 
 /** What a menu drops. Kept deliberately flat — a label and a destination — so
  * that adding a menu is adding an array, not another block of panel markup. */
@@ -350,7 +358,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               the terminal action and terminal actions belong at the end of the
               row; a utility parked to the right of the primary CTA reads as the
               last word when it is the least important thing there. */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: '0 0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: CONTROL_GAP, flex: '0 0 auto' }}>
             {/* About, and it keeps its panel — About Us, How It Works and
                 Contact are three spellings of one errand, and none of the three
                 belongs in a row reserved for what Klay sells. The chevron
@@ -361,11 +369,11 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               return (
                 <div
                   key={menu.label}
-                  // Sits closer to the cart than the cluster's own gap allows.
-                  // The cluster is anchored to the right edge, so tightening the
-                  // gap on About's right moves ABOUT rightwards and leaves the
-                  // cart and Shop Now where they are — see ABOUT_NUDGE.
-                  style={{ position: 'relative', marginRight: -ABOUT_NUDGE }}
+                  // Its own spacing to the cart, wider than the two controls
+                  // give each other — see ABOUT_GAP. The cluster is anchored to
+                  // the bar's right edge, so a margin here moves ABOUT and
+                  // leaves the cart and Shop Now exactly where they are.
+                  style={{ position: 'relative', marginRight: ABOUT_GAP - CONTROL_GAP }}
                   onMouseEnter={() => setDropdownOpen(menu.label)}
                   onMouseLeave={() => setDropdownOpen(cur => (cur === menu.label ? null : cur))}
                 >
