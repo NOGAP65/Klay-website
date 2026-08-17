@@ -125,29 +125,32 @@ export default function HomePage() {
         {/* 7 — The centrepiece: configure it, see it on your own window, buy it. */}
         <VisualiserShowcase />
 
-        {/* 8 — What it looks like once it's up. Trust, not conversion. */}
-        <SocialProof />
-
-        {/* 9 — Reviews, moving. */}
+        {/* 8 — Reviews, moving. */}
         <Testimonials />
 
-        {/* 10 — One last ask, pointing back at the tool. */}
+        {/* 9 — One last ask, pointing back at the tool. */}
         <FinalCta />
 
-        {/* 11 — Who turns up at the house. The long copy on the page, and the
-            only section that is about Klay rather than about a product.
+        {/* 10 + 11 — THE CLOSE, and these two are now a pair.
+            "Here are real jobs" followed immediately by "here is who did them"
+            is one argument told in two registers — photographs, then the
+            sentences behind them. Split apart they were two isolated trust
+            sections; together the install strip functions as the about panel's
+            evidence and the panel functions as the strip's caption.
 
-            LAST, and directly above the footer. It sat at 8, between the
-            visualiser and the social proof, where it interrupted the run of
-            evidence — the page went tool, then a page of prose about the
-            company, then back to photographs and reviews. Nobody arrives
-            wanting to read about a window furnishings business; they read it
-            after they have decided they might buy, which is exactly here.
+            The strip sat at 8, straight after the visualiser, where its job was
+            answering "does it look like that once it's up?" — a fair question,
+            but asked before the page had made its ask. It reads better after
+            the CTA: the closing sequence is now ask, show, then say who we are,
+            and the page ends on the one long-form passage above a black footer
+            rather than running out after a button. */}
+        <SocialProof />
 
-            It also gives the page a proper close. The footer is black, the
-            about panel above it is the page's one long-form passage, and the
-            two together read as the end of a document rather than the page
-            simply running out after a CTA. */}
+        {/* Who turns up at the house — the only section about Klay rather than
+            about a product. It used to sit at 8 as well, between the visualiser
+            and the install strip, interrupting the run of evidence with a page
+            of prose. Nobody arrives wanting to read about a window furnishings
+            business; they read it once they have decided they might buy. */}
         <AboutPanel />
 
         {/* 12 — Footer. */}
