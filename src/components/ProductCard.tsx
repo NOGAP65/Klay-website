@@ -150,7 +150,18 @@ export function ProductCard({
       to={to}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      style={{ display: 'block', textDecoration: 'none' }}
+      // A COLUMN, FULL HEIGHT, so the buttons bottom-align across a row. Grid
+      // items stretch by default, so with `marginTop: auto` on the button every
+      // card in a row ends on the same line no matter whether its tagline ran
+      // to one line or two. It did not matter when the CTA was a small worded
+      // link; a row of gold boxes at three different heights is immediately
+      // obvious.
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        textDecoration: 'none',
+      }}
     >
       <div
         style={{
@@ -276,56 +287,51 @@ export function ProductCard({
         </p>
       ) : null}
 
-      {/* THE CALL TO ACTION, and it is a worded link rather than a filled gold
-          button. Twenty-two gold buttons on one screen is the wall this card was
-          rebuilt to remove — gold is meant to mean "the one action here" and
-          cannot mean it twenty-two times. Set as a small caps line with an
-          arrow, it still reads as a CTA and still leaves the photographs as the
-          loudest thing in the grid.
+      {/* THE CALL TO ACTION — a filled gold box, on every card, saying the same
+          thing on every card.
 
-          THE WORDING IS PER CARD, NOT UNIFORM. "Shop Now" only where the click
-          genuinely reaches a shop; the other sixteen products are made to
-          measure with no price grid and land on the enquiry form. A Shop Now
-          under a line that already says PRICE ON MEASURE contradicts itself
-          inside twenty pixels — this is one string to change if the label
-          should be the same everywhere regardless. */}
-      <span
+          Both of those were tried the other way first and were overruled, so
+          the reasoning is recorded rather than re-argued. A worded link was
+          quieter in a twenty-two card grid, and per-card wording ("Enquire"
+          where there is no price) avoided a Shop Now sitting under a line that
+          reads PRICE ON MEASURE. The brief is one consistent action across the
+          shop, which is a legitimate call: it makes the grid scannable and
+          every card behave identically.
+
+          What that leaves for later: sixteen of these still land on the enquiry
+          form rather than a checkout. The fix is price grids and product pages,
+          not a softer label — the same note data/ranges.ts carries about the
+          homepage tiles. Full width so it reads as a box rather than a chip,
+          and 2px cornered like every other button on the site. */}
+      <div
         style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 7,
-          marginTop: 14,
-          fontFamily: tokens.body,
-          fontSize: 11,
-          fontWeight: 500,
-          letterSpacing: '0.14em',
-          textTransform: 'uppercase',
-          color: hover ? tokens.gold : tokens.ink,
-          paddingBottom: 2,
-          borderBottom: `1px solid ${hover ? tokens.gold : 'rgba(28,24,16,0.25)'}`,
-          transition: 'color 0.25s ease, border-color 0.25s ease',
+          // `auto` on the WRAPPER, so the slack in a short card is absorbed
+          // above the button and every card in a row ends on the same line.
+          // The 16 is the minimum breathing room, for the tallest card in the
+          // row where there is no slack left to absorb.
+          marginTop: 'auto',
+          paddingTop: 16,
         }}
       >
-        {buyable ? 'Shop Now' : 'Enquire'}
-        <svg
-          width="13"
-          height="8"
-          viewBox="0 0 13 8"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <span
           style={{
-            // Nudges forward under the pointer. The card has no other movement
-            // now that it does not lift, so this is the whole of its feedback.
-            transform: hover ? 'translateX(3px)' : 'none',
-            transition: 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+            display: 'block',
+            padding: '13px 20px',
+            borderRadius: 2,
+            background: hover ? tokens.goldLight : tokens.gold,
+            color: tokens.ink,
+            fontFamily: tokens.body,
+            fontSize: 11,
+            fontWeight: 500,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            textAlign: 'center',
+            transition: 'background 0.25s ease',
           }}
         >
-          <path d="M0.5 4H11.5M8.5 1L11.8 4L8.5 7" />
-        </svg>
-      </span>
+          Shop Now
+        </span>
+      </div>
     </Link>
   );
 }
