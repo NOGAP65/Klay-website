@@ -150,17 +150,14 @@ export function ProductCard({
       to={to}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      // Still a column, but no longer stretched to full height. It was, so a
-      // bottom-pinned button could bottom-align across a row; now the button
-      // sits with the price instead, cards end where their content ends, and
-      // the column is only here so `align-self` can size the button to its own
-      // words rather than to the card.
-      // Items stay stretched — the photograph and the name/price row both need
-      // the full card width. Only the button opts out, via `align-self`, so it
-      // sizes to its own words instead of spanning the card.
+      // A FULL-HEIGHT COLUMN, so the bottom-pinned bar lands on the same line
+      // in every card of a row regardless of whether a tagline wrapped. Grid
+      // items stretch by default; `margin-top: auto` on the footer does the
+      // rest.
       style={{
         display: 'flex',
         flexDirection: 'column',
+        height: '100%',
         textDecoration: 'none',
       }}
     >
@@ -210,6 +207,25 @@ export function ProductCard({
             <ProductGlyph type={glyph ?? ''} size="58%" opacity={hover ? 0.68 : 0.5} />
           </div>
         )}
+
+        {/* A GOLD HAIRLINE INSET INTO THE PHOTOGRAPH, on hover only. Sits a few
+            pixels in from the edge so it reads as a mount around the image
+            rather than as a border on the tile — a frame drawn on the picture,
+            which is the one gold gesture that does not fight the photograph for
+            attention. Fades rather than draws, because the image is already
+            moving underneath it and two animations on one element is one too
+            many. */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 8,
+            border: `1px solid ${tokens.gold}`,
+            opacity: hover ? 0.85 : 0,
+            transition: 'opacity 0.45s ease',
+            pointerEvents: 'none',
+          }}
+        />
       </div>
 
       {/* Muted rather than gold: gold on every card in a twenty-card grid stops
@@ -295,46 +311,73 @@ export function ProductCard({
         </p>
       ) : null}
 
-      {/* THE CALL TO ACTION — a small gold box, last in the card, sized to its
-          own words.
+      {/* THE FOOTER — a rule, then the full-width bar, both pinned to the
+          bottom of the card.
 
-          IT WAS FULL WIDTH AND PINNED TO THE CARD'S BOTTOM. Twenty-two
-          full-bleed gold bars turned the grid into a wall of buttons, and the
-          pinning left a stretch of dead ground between a short card's content
-          and its button. Sized to its words and sitting tight under the colour
-          row, it reads as this product's action rather than as a block of
-          furniture, and the grid goes back to being photographs.
+          The bar went back to full width after a small ranged-right version was
+          tried: sized to its own words it read as a chip floating in the card,
+          and ranged right it left an obvious notch of empty ground on the left
+          of every card in the grid. Full width gives the card a base to sit on
+          and every tile the same silhouette.
+
+          `margin-top: auto` absorbs the slack of a short card above the rule,
+          so the bars land on one line across a row no matter whether a tagline
+          wrapped to two lines.
 
           Wording is uniform by decision: per-card labelling ("Enquire" where
           there is no price) was tried and overruled in favour of one consistent
           action. Sixteen of these still land on the enquiry form rather than a
-          checkout — the fix for that is price grids and product pages, not a
-          softer label, and it is the same note data/ranges.ts already carries
-          about the homepage tiles. */}
-      <span
-        style={{
-          display: 'inline-block',
-          // RANGED RIGHT, under the price. The price is the right-hand end of
-          // the name row, so the button lands directly beneath it and the two
-          // read as a column: what it costs, and the way to buy it. Left-
-          // aligned it sat under the name instead, which put the action under
-          // the label rather than under the number.
-          alignSelf: 'flex-end',
-          marginTop: 14,
-          padding: '9px 18px',
-          borderRadius: 2,
-          background: hover ? tokens.goldLight : tokens.gold,
-          color: tokens.ink,
-          fontFamily: tokens.body,
-          fontSize: 10,
-          fontWeight: 500,
-          letterSpacing: '0.13em',
-          textTransform: 'uppercase',
-          transition: 'background 0.25s ease',
-        }}
-      >
-        Shop Now
-      </span>
+          checkout — the fix is price grids and product pages, not a softer
+          label, and it is the same note data/ranges.ts carries about the
+          homepage tiles. */}
+      <div style={{ marginTop: 'auto', paddingTop: 16 }}>
+        {/* THE GOLD LINE, AND IT DRAWS. A hairline of ink at rest with a gold
+            one laid over it, scaled to nothing and anchored left; on hover it
+            runs across the card in half a second. A line that simply changes
+            colour reads as a state; a line that travels reads as a response,
+            and it is the only thing on the card that moves horizontally — the
+            photograph scales, the frame fades, this draws. */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'relative',
+            height: 1,
+            background: 'rgba(28,24,16,0.12)',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: tokens.gold,
+              transform: hover ? 'scaleX(1)' : 'scaleX(0)',
+              transformOrigin: 'left center',
+              transition: 'transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)',
+            }}
+          />
+        </div>
+
+        <span
+          style={{
+            display: 'block',
+            marginTop: 14,
+            padding: '12px 20px',
+            borderRadius: 2,
+            background: hover ? tokens.goldLight : tokens.gold,
+            color: tokens.ink,
+            fontFamily: tokens.body,
+            fontSize: 10,
+            fontWeight: 500,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            textAlign: 'center',
+            transition: 'background 0.25s ease',
+          }}
+        >
+          Shop Now
+        </span>
+      </div>
     </Link>
   );
 }
