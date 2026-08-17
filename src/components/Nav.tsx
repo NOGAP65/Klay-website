@@ -59,33 +59,54 @@ const CONTROL_GAP = 18;
 interface NavLink {
   label: string;
   to: string;
+  /** Set on the one word that is not just a destination. Gold, at rest,
+   * against three warm-white ones — see the note on LINKS. */
+  accent?: boolean;
 }
 
 /** Four destinations, flat. SHOP is first because it is what the site is for;
  * VISUALISE is second because it is the thing Klay has that its competitors do
  * not, and burying it in a footer wastes it.
  *
+ * SHOP IS GOLD AT REST. Four words set identically is a list, and a list has no
+ * first item — the eye picks whichever is nearest, which on a centred row is
+ * whichever the pointer happened to land beside. Colouring the one that leads to
+ * the catalogue makes the bar say where to start without adding a word, a
+ * chevron or a second button.
+ *
+ * It does not collide with the gold button beside it. That is a filled block and
+ * this is a coloured word; they read as the same brand rather than as two CTAs,
+ * and they point at different things — browse the range, versus book someone to
+ * come and measure.
+ *
  * How It Works is deliberately not here. It is one page of process copy, it is
  * linked from /about and from the footer, and a fifth word would start this bar
  * back down the road the previous three versions took. */
 const LINKS: NavLink[] = [
-  { label: 'Shop', to: '/products' },
+  { label: 'Shop', to: '/products', accent: true },
   { label: 'Visualise', to: '/visualiser' },
   { label: 'About', to: '/about' },
   { label: 'Contact', to: '/contact' },
 ];
 
 /** Every word in the bar shares this, so the four cannot drift apart. */
-const barLink = (active: boolean, linkColor: string) => ({
-  color: active ? tokens.gold : linkColor,
+const barLink = (active: boolean, linkColor: string, accent = false) => ({
+  // An accented word is already gold, so hover has to move somewhere else or
+  // the link appears dead under the pointer. It goes lighter; the plain words
+  // go gold.
+  color: accent ? (active ? tokens.goldLight : tokens.gold) : active ? tokens.gold : linkColor,
   textDecoration: 'none',
   fontFamily: tokens.body,
   fontSize: 12,
-  fontWeight: 400,
+  // Half a step heavier when accented. Gold on charcoal at 12px is a lower
+  // contrast pairing than warm white on charcoal, and at weight 400 it reads
+  // thinner than the words either side of it rather than more important.
+  fontWeight: accent ? 500 : 400,
   letterSpacing: '0.1em',
   textTransform: 'uppercase' as const,
   whiteSpace: 'nowrap' as const,
-  opacity: active ? 1 : 0.82,
+  // Gold is the accent; dimming it to 0.82 is just a muddier gold.
+  opacity: accent || active ? 1 : 0.82,
   paddingBottom: 3,
   borderBottom: `1px solid ${active ? tokens.gold : 'transparent'}`,
   transition: `${motion.link}, opacity 0.2s ease`,
@@ -190,7 +211,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 to={l.to}
                 onMouseEnter={() => setHovered(l.to)}
                 onMouseLeave={() => setHovered(cur => (cur === l.to ? null : cur))}
-                style={barLink(hovered === l.to, linkColor)}
+                style={barLink(hovered === l.to, linkColor, l.accent)}
               >
                 {l.label}
               </Link>
