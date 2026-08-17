@@ -21,6 +21,7 @@ import { useKlayStore } from '../store';
 import { tokens, layout } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { getCategoryBySlug } from '../data/categories';
+import { blindTypeBySlug } from '../data/blindTypes';
 import { PhotoTile, SectionBand, CtaLink } from '../components/home/primitives';
 
 /** The slug arrives as a prop from the route App.tsx generated for it, not as a
@@ -153,8 +154,21 @@ export default function CategoryPage({ slug }: { slug: string }) {
               label={sub.name}
               image={sub.image}
               blurb={sub.image ? undefined : sub.tagline}
-              note={sub.priceFrom ? `From $${sub.priceFrom}` : 'Coming soon'}
-              cta={sub.priceFrom ? 'Buy Now' : undefined}
+              // Three states, not two. A from-price where one exists; "Price on
+              // measure" where the type has a listing page you can actually
+              // reach and enquire from — every blind type does now, see
+              // data/blindTypes.ts; and "Coming soon" only where the click
+              // still lands on a bare enquiry form. A tile saying COMING SOON
+              // over a page full of real options is the page calling itself
+              // unfinished when it isn't.
+              note={
+                sub.priceFrom
+                  ? `From $${sub.priceFrom}`
+                  : blindTypeBySlug(sub.slug)
+                    ? 'Price on measure'
+                    : 'Coming soon'
+              }
+              cta={sub.priceFrom ? 'Buy Now' : blindTypeBySlug(sub.slug) ? 'View Range' : undefined}
               minHeight={isMobile ? 300 : 420}
             />
           ))}
