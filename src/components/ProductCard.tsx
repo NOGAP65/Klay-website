@@ -274,16 +274,36 @@ export function ProductCard({
         </span>
       </div>
 
-      {/* THE CALL TO ACTION — a small gold box, directly under the price.
-          Same wording on every card.
+      {/* Colours where there is a colour card, the descriptor line where there
+          is not. Above the button: the stack runs name and price, then what
+          varies, then the action — so the button is the last thing in the card
+          and nothing appears underneath it. */}
+      {colours ? (
+        <SwatchRow colours={colours} />
+      ) : tagline ? (
+        <p
+          style={{
+            fontFamily: tokens.body,
+            fontSize: 13,
+            lineHeight: 1.45,
+            color: 'rgba(28,24,16,0.5)',
+            margin: 0,
+            marginTop: 10,
+          }}
+        >
+          {tagline}
+        </p>
+      ) : null}
 
-          IT WAS FULL WIDTH AND PINNED TO THE BOTTOM of the card. Twenty-two
+      {/* THE CALL TO ACTION — a small gold box, last in the card, sized to its
+          own words.
+
+          IT WAS FULL WIDTH AND PINNED TO THE CARD'S BOTTOM. Twenty-two
           full-bleed gold bars turned the grid into a wall of buttons, and the
-          bottom-pinning meant a short card carried a stretch of dead ground
-          between its price and its button. Sized to its own words and sitting
-          straight under the price, it reads as the price's action rather than
-          as a separate block of furniture, and the grid goes back to being
-          photographs.
+          pinning left a stretch of dead ground between a short card's content
+          and its button. Sized to its words and sitting tight under the colour
+          row, it reads as this product's action rather than as a block of
+          furniture, and the grid goes back to being photographs.
 
           Wording is uniform by decision: per-card labelling ("Enquire" where
           there is no price) was tried and overruled in favour of one consistent
@@ -295,7 +315,7 @@ export function ProductCard({
         style={{
           display: 'inline-block',
           alignSelf: 'flex-start',
-          marginTop: 12,
+          marginTop: 14,
           padding: '9px 18px',
           borderRadius: 2,
           background: hover ? tokens.goldLight : tokens.gold,
@@ -310,26 +330,6 @@ export function ProductCard({
       >
         Shop Now
       </span>
-
-      {/* Colours where there is a colour card, the descriptor line where there
-          is not — below the action now rather than above it, so the price and
-          its button stay together as one block. */}
-      {colours ? (
-        <SwatchRow colours={colours} />
-      ) : tagline ? (
-        <p
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 13,
-            lineHeight: 1.45,
-            color: 'rgba(28,24,16,0.5)',
-            margin: 0,
-            marginTop: 12,
-          }}
-        >
-          {tagline}
-        </p>
-      ) : null}
     </Link>
   );
 }
