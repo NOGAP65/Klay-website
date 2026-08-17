@@ -125,33 +125,39 @@ export default function HomePage() {
         {/* 7 — The centrepiece: configure it, see it on your own window, buy it. */}
         <VisualiserShowcase />
 
-        {/* 8 — Reviews, moving. */}
-        <Testimonials />
-
-        {/* 9 — One last ask, pointing back at the tool. */}
-        <FinalCta />
-
-        {/* 10 + 11 — THE CLOSE, and these two are now a pair.
+        {/* 8 + 9 — THE EVIDENCE, and these two are a pair.
             "Here are real jobs" followed immediately by "here is who did them"
             is one argument told in two registers — photographs, then the
             sentences behind them. Split apart they were two isolated trust
             sections; together the install strip functions as the about panel's
-            evidence and the panel functions as the strip's caption.
-
-            The strip sat at 8, straight after the visualiser, where its job was
-            answering "does it look like that once it's up?" — a fair question,
-            but asked before the page had made its ask. It reads better after
-            the CTA: the closing sequence is now ask, show, then say who we are,
-            and the page ends on the one long-form passage above a black footer
-            rather than running out after a button. */}
+            evidence and the panel functions as the strip's caption. */}
         <SocialProof />
 
         {/* Who turns up at the house — the only section about Klay rather than
-            about a product. It used to sit at 8 as well, between the visualiser
-            and the install strip, interrupting the run of evidence with a page
-            of prose. Nobody arrives wanting to read about a window furnishings
+            about a product. It used to sit between the visualiser and the
+            install strip, interrupting the run of evidence with a page of
+            prose. Nobody arrives wanting to read about a window furnishings
             business; they read it once they have decided they might buy. */}
         <AboutPanel />
+
+        {/* 10 — One last ask.
+            IT CANNOT SIT DIRECTLY UNDER THE VISUALISER, which is where it was.
+            Its button is Start Designing and it does not navigate — it scrolls
+            to #visualiser. Immediately below that section the CTA bounces you a
+            few hundred pixels back up to the thing you just scrolled past,
+            which reads as a broken button rather than an invitation. Down here
+            it is a real journey back to the top of the page's centrepiece. */}
+        <FinalCta />
+
+        {/* 11 — Reviews, moving, and last.
+            After the ask rather than before it, which is the unusual way round.
+            The reasoning: the nav carries Book a Measure on every screen, so the
+            ask is never actually more than a glance away, and what somebody
+            wants at the very bottom of a long page is not another button but
+            other people saying it went fine. It also means the page ends on
+            somebody else's voice instead of Klay's, which is a better last
+            impression than a second CTA. */}
+        <Testimonials />
 
         {/* 12 — Footer. */}
         <Footer />
