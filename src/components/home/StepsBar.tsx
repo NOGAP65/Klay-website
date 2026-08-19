@@ -57,6 +57,20 @@ import { useHover } from './primitives';
  * own contents stop fitting. */
 const STEPS_COLLAPSE = '(max-width: 1000px)';
 
+/** THE BAR'S OWN RENDERED HEIGHT, exported so the hero can subtract it rather
+ * than carrying a literal.
+ *
+ * Derived, not measured: the row's vertical padding (`space.md` top and bottom)
+ * plus the label's own line box. The label is `type.label` — 12px at
+ * line-height 1.6 — which lays out at 19.2, and the numeral beside it is set to
+ * line-height 1 so it cannot be the taller of the two.
+ *
+ * It exists because the hero used to subtract a hardcoded 54 for this bar. That
+ * number was already wrong before this pass (the bar measured 53.59) and the v2
+ * padding change moved it again. A literal here goes stale silently — the hero
+ * simply overhangs the fold by a few pixels and nobody notices. */
+export const STEPS_BAR_HEIGHT = space.md * 2 + Math.round(12 * 1.6);
+
 export function StepsBar() {
   // Named `isMobile` still, because every branch below asks the same question:
   // is this row a centred bar or a sideways scroller. See STEPS_COLLAPSE.

@@ -133,7 +133,22 @@ interface NavProps {
 export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps = {}) {
   const scrollY = useKlayStore((s) => s.scrollY);
   const cartItemCount = useCartStore((s) => s.getItemCount());
-  const compressed = scrollY > 60;
+  // Past the hero. On the homepage the nav is transparent over the hero and
+  // solidifies once it has been scrolled past; 60 was tuned for a nav that was
+  // opaque anyway, so crossing it changed only the padding. With a transparent
+  // nav the threshold has to be the hero's own height, or the bar solidifies
+  // while it is still over the creative.
+  //
+  // Measured off the rendered hero rather than recomputed: it derives its own
+  // height from two other components now, and duplicating that sum here is
+  // exactly the kind of literal that goes stale.
+  //
+  // Falls back to 60 wherever there is no hero — every page but the homepage
+  // passes solid, so on those `compressed` only drives the padding and the old
+  // threshold is still the right one.
+  const heroEl = typeof document !== 'undefined' ? document.querySelector('section') : null;
+  const heroHeight = solid ? 60 : (heroEl?.clientHeight ?? 60);
+  const compressed = scrollY > heroHeight;
 
   // Two thresholds, and they are not the same question. `isMobile` (768) sizes
   // the logo and the bar's padding — that is about a phone. `collapsed` (860)
@@ -171,10 +186,12 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
         background: solidBar ? tokens.charcoal : 'transparent',
         backdropFilter: 'none',
         WebkitBackdropFilter: 'none',
-        borderBottom: 'none',
+        borderBottom: solidBar ? `1px solid ${tokens.onDarkLine}` : '1px solid transparent',
         // `top` is deliberately NOT transitioned — it tracks scroll position
         // frame by frame, and easing it would make the nav lag the page.
-        transition: 'padding 0.5s ease, background 0.5s ease, border-color 0.5s ease',
+        // 300ms on the ground and the hairline together, so the bar arrives as
+        // one object rather than fading in before its own edge does.
+        transition: 'padding 0.5s ease, background 0.3s ease, border-color 0.3s ease',
       }}
     >
       {/* Left: Logo */}

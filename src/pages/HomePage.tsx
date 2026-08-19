@@ -99,7 +99,12 @@ export default function HomePage() {
           scroll, which meant the logo and the links sat on whatever frame of the
           video happened to be playing behind them. Still offset by the ticker's
           height until that has scrolled away. */}
-      <Nav stickBelow={BAR_HEIGHT} />
+      {/* solid={false}: the nav is TRANSPARENT over the hero and cross-fades to
+          charcoal once the scroll passes it. The hero's own top gradient carries
+          the links' legibility, so the nav needs no ground of its own up there —
+          an opaque 80px charcoal band across the top of the creative was the
+          largest single thing obscuring it. See the note on . */}
+      <Nav solid={false} stickBelow={BAR_HEIGHT} />
 
       <main style={{ background: tokens.warmWhite }}>
         {/* 3 — The promise, full bleed under the transparent nav. */}

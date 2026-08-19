@@ -56,19 +56,20 @@ function Run() {
             alignItems: 'center',
             flexShrink: 0,
             ...typeScale.micro,
-            // Brand gold on charcoal — 5.53:1. See the note on the bar's ground
-            // below for why this inverted.
-            color: tokens.gold,
+            // Ink on gold — 6.8:1, and the same pairing every primary CTA on the
+            // site uses. The brand has no black in it, so the "black text" this
+            // bar reads as is ink.
+            color: tokens.ink,
             whiteSpace: 'nowrap',
           }}
         >
           {credential}
-          {/* Warm white at low opacity, so the eye parses the strip as a list of
-              six rather than as one long sentence. It was ink at 0.42 on gold,
-              which measured 2.16 and failed 1.4.11; on charcoal at 0.45 it
-              measures 3.88. Inside the span rather than between spans so the
-              spacing can never collapse to a bare dot at a wrap point. */}
-          <span aria-hidden="true" style={{ color: tokens.onDarkEdge, padding: `0 ${space.md}px` }}>
+          {/* Ink at 0.70, so the eye parses the strip as a list of six rather
+              than as one long sentence. It was 0.42, which measured 2.16 on gold
+              and failed 1.4.11's 3:1; 0.70 measures 3.88. Inside the span rather
+              than between spans so the spacing can never collapse to a bare dot
+              at a wrap point. */}
+          <span aria-hidden="true" style={{ color: 'rgba(28,24,16,0.70)', padding: `0 ${space.md}px` }}>
             ·
           </span>
         </span>
@@ -114,24 +115,16 @@ export function TrustTicker() {
       // is read as an ordinary list and a live region would interrupt.
       style={{
         height: BAR_HEIGHT,
-        // CHARCOAL, NOT GOLD — this is the gold budget.
+        // GOLD. It was moved to charcoal on the gold-budget argument — a
+        // full-bleed 38px gold bar paints 4.2% of a 900px viewport before the
+        // customer has been given anything, and gold's perceived value falls
+        // with the area it covers. Overruled: the gold bar reads better, and it
+        // is the first thing on the page.
         //
-        // At a 900px viewport a full-bleed 38px gold bar paints 54,720px² of
-        // gold, and with the nav CTA, the Shop label and the cart badge the top
-        // of the page was spending roughly 60,400px² — 4.7% of the viewport,
-        // before the customer had been given anything. Gold's perceived value is
-        // inversely proportional to the area it covers, so the bar was making
-        // the actual gold CTAs read as more of the same rather than as the one
-        // action on the page. On charcoal the same top viewport spends well
-        // under 1%.
-        //
-        // It fixes the contrast at the same time: the separator on gold measured
-        // 2.16, and brand gold text on charcoal measures 5.53.
-        //
-        // The previous argument for gold — that it stopped the top of the
-        // document being three stacked darks — is answered by the ticker and the
-        // nav being the same charcoal, so they read as one bar rather than two.
-        background: tokens.charcoal,
+        // The contrast half of that change is kept rather than reverted with it.
+        // The separator below is ink at 0.70 rather than the 0.42 it was, which
+        // measured 2.16 on gold and failed; 0.70 measures 3.88.
+        background: tokens.gold,
         display: 'flex',
         alignItems: 'center',
         // Hidden while it animates, scrollable when it does not — under reduced
