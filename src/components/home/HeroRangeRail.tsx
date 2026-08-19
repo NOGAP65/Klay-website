@@ -52,7 +52,7 @@ const FADE_MS = 300;
  * and justify-content:flex-end parked the whole block low enough to clear the
  * nav by accident. This one fills the panel, so the clearance has to be real:
  * without it "OUR RANGE" renders underneath the nav bar and is simply not there. */
-const NAV_CLEARANCE = 80 + 24;
+const NAV_CLEARANCE = 80 + space.md;
 
 /** The photograph's height — 58% of the VISIBLE panel, and neither of the two
  * things that makes it is the box the percentage is declared against.
@@ -293,7 +293,7 @@ function CategorySlide({ category, active }: { category: Category; active: boole
         />
       </div>
 
-      <div style={{ flex: '1 1 auto', minHeight: 0, paddingTop: 16 }}>
+      <div style={{ flex: '1 1 auto', minHeight: 0, paddingTop: space.md }}>
         <div
           style={{
             fontFamily: tokens.display,

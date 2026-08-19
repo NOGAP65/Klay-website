@@ -135,7 +135,7 @@ function RollSlider({ value, onChange }: { value: number; onChange: (v: number) 
         flexDirection: 'column',
         alignItems: 'center',
         gap: space.xs,
-        padding: '12px 9px',
+        padding: `${space.sm}px`,
         borderRadius: RADIUS,
         background: 'linear-gradient(180deg, rgba(44,40,36,0.92) 0%, rgba(28,24,16,0.92) 100%)',
         border: `1px solid ${tokens.onDarkLine}`,
@@ -548,7 +548,7 @@ export default function KlayConfigurator({
         display: 'flex',
         flexDirection: 'column',
         gap: space.xs,
-        padding: '12px 10px',
+        padding: `${space.sm}px`,
         borderRadius: RADIUS,
         background: 'linear-gradient(180deg, rgba(44,40,36,0.92) 0%, rgba(28,24,16,0.92) 100%)',
         border: `1px solid ${tokens.onDarkLine}`,
@@ -607,7 +607,7 @@ export default function KlayConfigurator({
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            padding: 24,
+            padding: space.md,
           }}
         >
           <div style={{ maxWidth: 360, margin: '0 auto' }}>
@@ -715,7 +715,7 @@ export default function KlayConfigurator({
             justifyContent: 'center',
             alignItems: 'center',
             gap: space.sm,
-            padding: '13px 18px',
+            padding: `${space.sm}px ${space.md}px`,
             borderTop: `1px solid ${tokens.onDarkLine}`,
           }}
         >

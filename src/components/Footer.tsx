@@ -118,7 +118,7 @@ export function Footer() {
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-            gap: isMobile ? '40px 24px' : 48,
+            gap: `${space.lg}px ${space.md}px`,
           }}
         >
           {/* Column one is the brand rather than a list of links: mark, one line

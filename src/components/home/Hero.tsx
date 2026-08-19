@@ -217,7 +217,7 @@ export function Hero() {
             alignItems: 'center',
             flexWrap: 'wrap',
             gap: space.sm,
-            marginTop: isMobile ? 32 : 40,
+            marginTop: space.lg,
           }}
         >
           {/* Design Yours scrolls to the visualiser rather than navigating: the

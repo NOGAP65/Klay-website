@@ -401,7 +401,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             background: sk.boxFill,
             border: `1px solid ${sk.hairline}`,
             borderRadius: RADIUS,
-            padding: compact ? '12px 14px' : '16px 18px',
+            padding: `${space.md}px`,
           }}
         >
           <div
@@ -420,7 +420,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               fontWeight: 300,
               lineHeight: 1.1,
               color: sk.label,
-              marginTop: compact ? 4 : 6,
+              marginTop: space.xxs,
             }}
           >
             ${store.getCurtainPrice()}
@@ -529,7 +529,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
           background: sk.boxFill,
           border: `1px solid ${sk.hairline}`,
           borderRadius: RADIUS,
-          padding: compact ? '12px 14px' : '16px 18px',
+          padding: `${space.md}px`,
         }}
       >
         <div
@@ -548,7 +548,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             fontWeight: 300,
             lineHeight: 1.1,
             color: sk.label,
-            marginTop: compact ? 4 : 6,
+            marginTop: space.xxs,
           }}
         >
           ${store.getCurrentPrice()}

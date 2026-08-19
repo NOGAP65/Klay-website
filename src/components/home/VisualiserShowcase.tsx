@@ -367,7 +367,7 @@ export function VisualiserShowcase() {
               // slack becomes breathing room between groups rather than two
               // margins doing nothing.
               justifyContent: isMobile ? 'flex-start' : 'space-between',
-              gap: isMobile ? 16 : 22,
+              gap: space.md,
             }}
           >
             <CategoryTabs />
@@ -393,12 +393,12 @@ export function VisualiserShowcase() {
             under it, so the section closes on a single line. */}
         <div
           style={{
-            marginTop: isMobile ? 32 : 44,
+            marginTop: space.lg,
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: isMobile ? 20 : 28,
+            gap: space.md,
           }}
         >
           {/* The action splits by category, because only one of the two can be
