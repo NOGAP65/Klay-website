@@ -1,17 +1,11 @@
 // ---------------------------------------------------------------------------
 // 4. Our Range — one row of product cards, arrows, and it moves on its own.
 //
-// A CARD IS TWO HALVES: the photograph, and a configurator of exactly the same
-// width and height directly beneath it. The top half says what the product is;
-// the bottom half is where it gets specified and bought. Nothing about a
-// product is a page away any more — the whole transaction happens in the row.
-//
-// That is the change this section has been working towards. It went from two
-// grids that asked "what do you want to shop for" (below), to one row that
-// answered it with a photograph and a from-price, to a row where the answer
-// includes the fabric, the size, the motor and the price of that exact
-// specification. See RangeConfigurator for the panel and data/configOptions
-// for what each of the fourteen products is allowed to ask.
+// A CARD IS A PHOTOGRAPH AND A NAME. It was a photograph with a full
+// configurator welded underneath it — a 470px tile over a 470px panel of chips.
+// That made the card 940 tall against MONDAY Haircare's 642 and Sixpenny's 504,
+// showed three products of fourteen, and rendered fourteen simultaneous forms on
+// what is meant to be a browse surface. See the note on RangeCard.
 //
 // This replaces TWO sections: the Indoor/Outdoor/Wardrobes category grid and the
 // Dusk/Veil/Duo SKU grid that followed it. They were the same question asked
@@ -42,7 +36,7 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { tokens, motion, prefersReducedMotion, space, type as typeScale } from '../../theme';
+import { tokens, motion, prefersReducedMotion, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 // The row reads data/catalogue.ts — the same fourteen products the shop lists,
 // in the same order, rendered by the same tile. It used to read a data/ranges.ts
@@ -50,9 +44,10 @@ import { useIsMobile } from '../../hooks/useIsMobile';
 // described the business differently: the homepage offered "Screens" and
 // "Shelving" as peers of "Blinds", and neither Honeycomb Blinds nor Roller
 // Shutters nor Frameless Shower Screens appeared anywhere on it.
-import { CATALOGUE } from '../../data/catalogue';
-import { PhotoTile, SectionBand, TILE_GAP, useHover } from './primitives';
-import { RangeConfigurator } from './RangeConfigurator';
+import { CATALOGUE, type CatalogueItem } from '../../data/catalogue';
+import { ArrowLink, CtaLink, TILE_GAP, useHover } from './primitives';
+import { Link } from 'react-router-dom';
+import { ProductGlyph } from '../ProductGlyph';
 
 /** How much of the viewport the row is allowed, centred in what is left.
  *
@@ -63,7 +58,12 @@ import { RangeConfigurator } from './RangeConfigurator';
  * margins are what tell you there is more page here than this.
  *
  * Full width on mobile, where seventy percent of a phone is not a column. */
-const ROW_WIDTH = '70%';
+// FULL CONTAINER, not 70%. At 70% the row was 1000px inside a 1440 viewport —
+// 220px of dead margin down each side while the cards were simultaneously
+// cramped enough to need a 280px floor under them. Narrow and tight at once,
+// which is the tell that the width was not derived from the content. MONDAY's
+// row is 1340 of 1440; every reference measured sits between 1330 and 1374.
+const ROW_WIDTH = '100%';
 
 /** Card width, as a share of the row rather than a fixed pixel count.
  *
@@ -73,39 +73,22 @@ const ROW_WIDTH = '70%';
  * with every monitor. Sized in even shares, exactly three cards fill the row at
  * any width — nothing is ever cut mid-card.
  *
- * THREE, NOT FOUR, and that follows from the row being narrowed to 70%. Four
- * shares of ~1000px is 250px a card, below the 300 the labels were already
- * tight at — "Frameless Shower Screens" needs the width. Three keeps each card
- * at ~330px, which is where it was when the row ran edge to edge.
- *
- * WITH A FLOOR UNDER IT. Three shares of 70% is 331px on a 1440 screen and
- * 234px on a 1024 one, and at 234 the card stops working: the configurator's
- * chips wrap to three rows and the seventeen-colour curtain card no longer
- * clears its own action bar. The floor holds the card at 280px and lets the
- * third one hang half off the row instead — a partial card at the edge of a
- * scroller is a normal thing that says "keep going", where a cramped one just
- * looks wrong.
- *
- * Fourteen cards, three visible: the arrows always have somewhere to go. */
-const CARD_MIN = 280;
+ * Fourteen cards, four visible: the arrows always have somewhere to go. */
 
 const cardBasis = (isMobile: boolean) =>
   isMobile
     ? `calc((100% - ${TILE_GAP}px) / 1.6)`
-    : `max(${CARD_MIN}px, calc((100% - ${2 * TILE_GAP}px) / 3))`;
+    // FOUR ACROSS, not three. With the configurator off the card and the row
+    // at full width there is room for four ~307px cards, which is what every
+    // reference shows — MONDAY, Sixpenny and HAY are all four-up at 310-335.
+    // The CARD_MIN floor goes with the three-up maths that needed it.
+    : `calc((100% - ${3 * TILE_GAP}px) / 4)`;
 
-/** Tile height. Up with the width, so the card keeps its portrait crop — a window
- * covering hangs, so the frame wants height.
- *
- * THE CONFIGURATOR UNDER IT IS THE SAME NUMBER, so a card is a photograph with
- * an equal panel of controls beneath it and the row has one shared baseline —
- * see RangeConfigurator. A card is therefore twice this tall overall, which is
- * the price of putting the whole specification on the homepage instead of two
- * pages further in. */
+/** The tile height the arrows centre on. The card is taller than this — the
+ * name block sits under the tile — but the arrows belong on the PHOTOGRAPH, not
+ * on the card's own midpoint, which would put them over the type. */
 const CARD_H = 470;
-const CARD_H_MOBILE = 340;
 
-const cardHeight = (isMobile: boolean) => (isMobile ? CARD_H_MOBILE : CARD_H);
 
 /** How long the row rests before advancing itself. Five seconds — ten read as a
  * row that had stopped rather than one that was waiting, since with four of six
@@ -181,19 +164,148 @@ function Arrow({
   );
 }
 
+// ---------------------------------------------------------------------------
+// THE CARD — a clean photograph, then the name underneath it.
+//
+// Built against MONDAY Haircare's range row, which is the reference: seventeen
+// products in a horizontal scroller, cards at 315 × 642, and NOTHING on the
+// photograph. The name sits below the tile in the display face at heading size,
+// with a small caps category above it and one line of meta below.
+//
+// Two things that buys, and neither is decoration:
+//
+//   THE PHOTOGRAPH IS NEVER TOUCHED. Nothing is set over it, so it needs no
+//     scrim, no text-shadow and no deep gradient — the same lesson the hero
+//     just learned. Klay's case is stronger than MONDAY's, because ten of the
+//     fourteen tiles carry a line drawing rather than a photograph and type
+//     over those was competing with the drawing for the same dark ground.
+//
+//   THE NAME GETS TO BE BIG. Over a photograph a product name has to stay small
+//     enough to sit in a corner and light enough not to fight the picture. Under
+//     it, "Frameless Shower Screens" can be set in Cormorant at the card scale
+//     and read as the loudest thing on the card, which is what MONDAY's
+//     personality actually comes from — type scale, not ornament.
+//
+// The configurator that used to hang under every tile is gone from the row. It
+// made the card 940px tall against MONDAY's 642, which meant three products
+// visible instead of four and fourteen simultaneous forms on a browse surface.
+// RangeConfigurator.tsx is left in the tree, unused — restoring it is one line.
+// ---------------------------------------------------------------------------
+function RangeCard({ item, isMobile }: { item: CatalogueItem; isMobile: boolean }) {
+  const { hover, bind } = useHover();
+  return (
+    <Link
+      {...bind}
+      to={item.to}
+      style={{ display: 'block', textDecoration: 'none' }}
+    >
+      {/* The tile carries its own ground, one step off the section's. On the ten
+          photoless products it is what stops the card reading as a hole punched
+          in the page; on the four photographed ones it is the mount the picture
+          sits in. MONDAY does the same — its tiles are a shade off the page
+          white, which is what makes the row read as a set of objects rather than
+          as pictures floating on a background. */}
+      <div
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 2,
+          // 4:5 — the site's one portrait ratio, shared with the install strip
+          // and the About panel.
+          aspectRatio: '4 / 5',
+          background: item.image ? tokens.parchment : tokens.charcoal,
+        }}
+      >
+        {item.image ? (
+          <img
+            src={item.image}
+            alt={`${item.name} — ${item.group}`}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: item.imagePosition ?? 'center',
+              display: 'block',
+              transform: hover ? 'scale(1.04)' : 'scale(1)',
+              transition: 'transform 0.7s ease',
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              position: 'absolute',
+              inset: space.md,
+              border: `1px solid ${hover ? tokens.goldLine : tokens.onDarkLine}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'border-color 0.3s ease',
+            }}
+          >
+            <ProductGlyph type={item.glyph ?? ''} size={140} opacity={hover ? 0.6 : 0.42} />
+          </div>
+        )}
+      </div>
+
+      {/* Small caps category, big name, one line of meta — MONDAY's stack
+          exactly, in Klay's faces. */}
+      <div
+        style={{
+          fontFamily: tokens.body,
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: '0.3em',
+          textTransform: 'uppercase',
+          color: tokens.inkSoft,
+          marginTop: space.md,
+        }}
+      >
+        {item.group}
+      </div>
+
+      <h3
+        style={{
+          ...typeScale.card,
+          color: hover ? tokens.goldText : tokens.ink,
+          marginTop: space.xs,
+          transition: 'color 0.25s ease',
+        }}
+      >
+        {item.name}
+      </h3>
+
+      {/* Where MONDAY puts a star rating. Klay has no review data per product,
+          so the honest equivalent is the thing a made-to-measure buyer actually
+          wants next: what it costs, or that it is quoted on measure. */}
+      <div
+        style={{
+          fontFamily: tokens.body,
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: '0.3em',
+          textTransform: 'uppercase',
+          color: tokens.goldText,
+          marginTop: space.xs,
+        }}
+      >
+        {item.priceFrom !== undefined ? `From $${item.priceFrom}` : 'Price on measure'}
+      </div>
+
+      {!isMobile && (
+        <div style={{ marginTop: space.sm }}>
+          <ArrowLink label="Shop Now" hovered={hover} />
+        </div>
+      )}
+    </Link>
+  );
+}
+
 export function RangeCarousel() {
   const isMobile = useIsMobile();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   const [paused, setPaused] = useState(false);
-  /** Set the first time anyone touches a control in any card's configurator,
-   * and never cleared. Hovering already pauses the drift, but hover does not
-   * exist on a touch screen — and a row that carries the card off the edge
-   * while someone is halfway through choosing a fabric is worse than a row
-   * that does not move at all. Once the visitor is specifying something, the
-   * row has done its job of showing there is more and stops. */
-  const [frozen, setFrozen] = useState(false);
   // Read once. A row that advances itself is exactly what this preference exists
   // to stop; under it the row holds still and becomes one the reader scrolls.
   const [reduceMotion] = useState(prefersReducedMotion);
@@ -230,7 +342,7 @@ export function RangeCarousel() {
   // and on reaching the end it returns to the start rather than stopping — a
   // carousel that quietly dies after one pass looks broken rather than finished.
   useEffect(() => {
-    if (reduceMotion || paused || frozen) return;
+    if (reduceMotion || paused) return;
     const tick = window.setInterval(() => {
       const el = scrollerRef.current;
       if (!el) return;
@@ -241,7 +353,7 @@ export function RangeCarousel() {
       }
     }, AUTO_MS);
     return () => window.clearInterval(tick);
-  }, [paused, frozen, reduceMotion]);
+  }, [paused, reduceMotion]);
 
   return (
     // Warm white, the ground the category grid had — and the strip between the
@@ -252,13 +364,39 @@ export function RangeCarousel() {
           the point of moving the range up here in the first place. Same type as
           every other band on the page, so the page still speaks in one voice;
           only the air around it is tighter. */}
-      <SectionBand
-        label="The collection"
-        title="Our Range"
-        sub="Made to measure. Installed by experts."
-        isMobile={isMobile}
-        compact
-      />
+      {/* THE HEADER IS RANGED LEFT WITH THE ACTION OPPOSITE, which is the other
+          half of what MONDAY's range section is doing. Their heading sits hard
+          left at display scale, the supporting line under it, and "Where To Buy"
+          alone on the right of the same band.
+          Centred — which this was, through SectionBand — is the safe
+          arrangement and it reads as a caption above a row. Ranged left with
+          something opposite it uses the full width and reads as a section
+          heading with a decision attached. */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'flex-start' : 'flex-end',
+          justifyContent: 'space-between',
+          gap: space.lg,
+          maxWidth: layout.gridMax,
+          margin: '0 auto',
+          padding: isMobile
+            ? `${space.xl}px ${layout.inlinePad(isMobile)}px ${space.lg}px`
+            : `${space.xxl}px ${layout.inlinePad(isMobile)}px ${space.lg}px`,
+        }}
+      >
+        <div>
+          <p style={{ ...eyebrow, marginBottom: space.md }}>The collection</p>
+          <h2 style={{ ...headline.section, color: tokens.ink }}>Our Range</h2>
+          <p style={{ ...supporting.onLight, marginTop: space.md, maxWidth: 460 }}>
+            Made to measure. Installed by experts.
+          </p>
+        </div>
+        <CtaLink to="/products" variant="onDark">
+          Shop All
+        </CtaLink>
+      </div>
 
       {/* The same strip down the outside edges as between the cards, so the row
           is framed on all four sides by warm white rather than running off into
@@ -278,17 +416,21 @@ export function RangeCarousel() {
           want attention. This is a margin closing a section, not a gap between
           two — closer in weight to the 4px strips framing the other three sides
           than to the padding a real section carries. */}
-      {/* Seventy percent of the viewport, centred — see ROW_WIDTH. The margins
-          are auto rather than a symmetric padding so the row stays centred
-          whatever the section is nested in. */}
+      {/* THE SAME CONTAINER AS THE HEADER ABOVE IT, so the first card's left
+          edge lands on the same vertical line as "Our Range". It ran edge to
+          edge, which put the heading 80px in and the row at 0 — two different
+          left margins in one section, and the first card cut by the viewport.
+          Aligning them is most of what makes the section read as composed
+          rather than assembled. */}
       <div
         style={{
           position: 'relative',
-          width: isMobile ? 'auto' : ROW_WIDTH,
-          marginLeft: isMobile ? undefined : 'auto',
-          marginRight: isMobile ? undefined : 'auto',
-          paddingLeft: TILE_GAP,
-          paddingRight: TILE_GAP,
+          width: ROW_WIDTH,
+          maxWidth: layout.gridMax,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          paddingLeft: layout.inlinePad(isMobile),
+          paddingRight: layout.inlinePad(isMobile),
           paddingBottom: space.md,
         }}
         onMouseEnter={() => setPaused(true)}
@@ -322,39 +464,7 @@ export function RangeCarousel() {
               key={item.id}
               style={{ flex: `0 0 ${cardBasis(isMobile)}`, scrollSnapAlign: 'start' }}
             >
-              {/* The picture. No chip and no swatch row on it any more: the
-                  panel below owns the colours and owns the action, and a Shop
-                  Now on the photograph would be a second, different way to buy
-                  the same product sitting 20px above the first. The tile still
-                  links to the product for anyone who wants to read first. */}
-              <PhotoTile
-                to={item.to}
-                label={item.name}
-                image={item.image}
-                objectPosition={item.imagePosition}
-                blurb={item.tagline}
-                note={item.priceFrom !== undefined ? `From $${item.priceFrom}` : 'Price on measure'}
-                minHeight={cardHeight(isMobile)}
-                // Down from the category tiles' clamp(28px, 3vw, 40px). At 300px
-                // wide, 40px of Cormorant put "Blockout Curtains" onto three
-                // lines and left no room under it for the blurb and the price.
-                // The card-headline role. It was a 23px clamp of its own, which
-                // made a fourth Cormorant size for a heading.
-                labelSize={`${typeScale.card.fontSize}px`}
-                glyph={item.glyph}
-                alt={`${item.name} — ${item.group}`}
-                // Same reason as the shop's cards: the label block runs a name,
-                // a line of copy and a price, which reaches well up a pale
-                // photograph.
-                scrim="deep"
-              />
-              {/* Its other half — same width, same height. */}
-              <RangeConfigurator
-                item={item}
-                height={cardHeight(isMobile)}
-                isMobile={isMobile}
-                onInteract={() => setFrozen(true)}
-              />
+              <RangeCard item={item} isMobile={isMobile} />
             </div>
           ))}
         </div>
