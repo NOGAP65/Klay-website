@@ -9,7 +9,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
-import { tokens, eyebrow, headline, layout, prefersReducedMotion } from '../../theme';
+import { tokens, eyebrow, headline, layout, prefersReducedMotion, space, type as typeScale } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { CtaButton, CtaLink, scrollToId } from './primitives';
 import { HeroRangeRail } from './HeroRangeRail';
@@ -169,16 +169,21 @@ export function Hero() {
         {/* Written out rather than going through SectionHead, which emits an
             h2 — this is the page's one h1. */}
         <div style={{ maxWidth: 700 }}>
-          <p style={{ ...eyebrow, marginBottom: 20 }}>Klay Interiors</p>
+          {/* Brand gold: this eyebrow is on the dark hero, where goldText would
+              be dark on dark. goldText is for LIGHT grounds. */}
+          <p style={{ ...eyebrow, color: tokens.gold, marginBottom: space.md }}>Klay Interiors</p>
           {/* Below the shared hero scale. That clamp tops out at 100px, sized for
               a hero running the full width of the viewport; inside a 76% column
               with 80px of inset there are about 934px to play with, and "The
               finishing layer" sets to roughly 855 at 100px — it would have
               wrapped mid-phrase on exactly the widths this is tuned for. */}
+          {/* The clamp that used to be declared here is now `type.hero` — same
+              value, same rendered 76 at full width, read from the token instead
+              of written inline. The hero's proportions are locked; this is a
+              relocation, not a change. */}
           <h1
             style={{
               ...headline.hero,
-              fontSize: 'clamp(38px, 5.4vw, 76px)',
               color: tokens.warmWhite,
             }}
           >
@@ -192,11 +197,10 @@ export function Hero() {
           <p
             style={{
               fontFamily: tokens.body,
-              fontSize: 17,
-              lineHeight: 1.7,
+              ...typeScale.lead,
               color: 'rgba(245,242,237,0.86)',
               margin: 0,
-              marginTop: 22,
+              marginTop: space.md,
               // Kept well inside the column so the line breaks where it reads
               // best rather than at whatever width the 70% happens to be.
               maxWidth: 560,
@@ -212,7 +216,7 @@ export function Hero() {
             display: 'flex',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: 14,
+            gap: space.sm,
             marginTop: isMobile ? 32 : 40,
           }}
         >

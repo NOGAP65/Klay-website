@@ -40,7 +40,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useKlayStore } from '../store';
 import { useCartStore } from '../store/cartStore';
-import { tokens, motion } from '../theme';
+import { tokens, motion, space, type as typeScale } from '../theme';
 import { useIsMobile, useMediaQuery } from '../hooks/useIsMobile';
 
 /** WHERE THE BAR BECOMES A DRAWER.
@@ -59,7 +59,7 @@ const NAV_COLLAPSE = '(max-width: 860px)';
 
 /** The gap between the cart and the gold button — two controls, sitting as a
  * pair. The links keep their own, wider gap from the cluster. */
-const CONTROL_GAP = 18;
+const CONTROL_GAP = 20;
 
 interface NavLink {
   label: string;
@@ -106,18 +106,15 @@ const barLink = (active: boolean, linkColor: string, accent = false) => ({
   // go gold.
   color: accent ? (active ? tokens.goldLight : tokens.gold) : active ? tokens.gold : linkColor,
   textDecoration: 'none',
-  fontFamily: tokens.body,
-  fontSize: 12,
+  ...typeScale.label,
   // Half a step heavier when accented. Gold on charcoal at 12px is a lower
   // contrast pairing than warm white on charcoal, and at weight 400 it reads
   // thinner than the words either side of it rather than more important.
   fontWeight: accent ? 500 : 400,
-  letterSpacing: '0.1em',
-  textTransform: 'uppercase' as const,
   whiteSpace: 'nowrap' as const,
   // Gold is the accent; dimming it to 0.82 is just a muddier gold.
   opacity: accent || active ? 1 : 0.82,
-  paddingBottom: 3,
+  paddingBottom: space.xxs,
   borderBottom: `1px solid ${active ? tokens.gold : 'transparent'}`,
   transition: `${motion.link}, opacity 0.2s ease`,
 });
@@ -196,8 +193,13 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
           alt="Klay Interiors"
           style={
             isMobile
-              ? { width: '100px', height: '40px', objectFit: 'contain', display: 'block' }
-              : { width: '120px', height: '48px', objectFit: 'contain', display: 'block' }
+              // THE LOGO'S OWN RATIO, so nothing letterboxes. The source is
+              // 558 × 220 = 2.536; these boxes were 2.50 (120 × 48) and the
+              // footer's was 2.51, so `object-fit: contain` was padding the
+              // artwork inside both — by a different amount in each, which is
+              // why the mark sat at two apparent sizes.
+              ? { width: '101px', height: '40px', objectFit: 'contain', display: 'block' }
+              : { width: '122px', height: '48px', objectFit: 'contain', display: 'block' }
           }
         />
       </Link>
@@ -211,7 +213,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               left: '50%',
               transform: 'translateX(-50%)',
               display: 'flex',
-              gap: 30,
+              gap: space.lg,
               alignItems: 'center',
             }}
           >
@@ -243,8 +245,10 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: 44,
-                height: 44,
+                // 52, matching the CTA beside it — the cart and the button are a
+                // pair of controls and were 44 against 52.
+                width: 52,
+                height: 52,
                 borderRadius: 2,
                 border: `1px solid ${cartHover ? tokens.gold : onDarkGround ? tokens.onDarkEdge : tokens.line}`,
                 background: cartHover ? 'rgba(200,151,58,0.1)' : 'transparent',
@@ -264,13 +268,14 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                   position: 'absolute',
                   top: -4,
                   right: -4,
-                  width: 18,
-                  height: 18,
+                  width: 20,
+                  height: 20,
                   borderRadius: '50%',
                   background: tokens.gold,
                   color: tokens.ink,
                   fontFamily: tokens.body,
-                  fontSize: 10,
+                  ...typeScale.micro,
+                  letterSpacing: 'normal',
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
@@ -295,16 +300,13 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: 44,
-                padding: '0 24px',
+                height: 52,
+                padding: `0 ${space.lg}px`,
                 borderRadius: 2,
                 background: ctaHover ? tokens.goldLight : tokens.gold,
                 color: tokens.ink,
-                fontFamily: tokens.body,
-                fontSize: 11,
-                fontWeight: 500,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
+                ...typeScale.label,
+                lineHeight: 1,
                 textDecoration: 'none',
                 whiteSpace: 'nowrap',
                 transition: motion.button,
@@ -327,7 +329,8 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             borderRadius: 2,
             background: 'transparent',
             color: tokens.gold,
-            fontSize: 18,
+            ...typeScale.card,
+            fontSize: 20,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

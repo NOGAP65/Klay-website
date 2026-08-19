@@ -18,7 +18,7 @@
 // filled button, which carries ink on top of it and so brings its own contrast.
 // ---------------------------------------------------------------------------
 
-import { tokens, headline, layout } from '../../theme';
+import { tokens, headline, layout, space, supporting, type as typeScale } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { CtaButton, scrollToId } from './primitives';
 
@@ -35,11 +35,16 @@ export function FinalCta() {
       style={{
         position: 'relative',
         overflow: 'hidden',
-        minHeight: isMobile ? 420 : 520,
+        // 562 = 1440 / 2.56, the same crop the recommendation banner now takes.
+        // Both are full-bleed photographic bands doing the same job, and they
+        // were cropping at two different ratios.
+        minHeight: isMobile ? 420 : 562,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: isMobile ? '96px 24px' : '150px 80px',
+        // One of the two focal sections at `xxxl`. Air is how this and the
+        // visualiser are marked as more important than their neighbours.
+        padding: layout.sectionPadFocal(isMobile),
         textAlign: 'center',
         // Behind the photograph rather than beside it — it is what shows while
         // the image is still loading, and charcoal keeps that moment on-brand
@@ -82,30 +87,32 @@ export function FinalCta() {
         </h2>
         <p
           style={{
-            fontFamily: tokens.body,
-            fontSize: 16,
-            lineHeight: 1.7,
+            ...supporting.onDark,
+            // Warm white rather than the muted variant — this sits on a
+            // photograph, not a flat charcoal ground.
             color: tokens.warmWhite,
-            margin: 0,
-            marginTop: 22,
+            marginTop: space.md,
             opacity: 0.88,
           }}
         >
           Design online. We measure, manufacture and install. Every time.
         </p>
-        <div style={{ marginTop: isMobile ? 40 : 52 }}>
+        {/* Between-group: `xl` against the `md` inside the head block above,
+            which is the 2.6× the hierarchy rule asks for. */}
+        <div style={{ marginTop: space.xl }}>
           <CtaButton onClick={scrollToId('visualiser')}>Start Designing</CtaButton>
         </div>
         {/* The two objections that stop a last-section click, in one line and
             deliberately quiet — it reassures without becoming a second CTA. */}
         <p
           style={{
-            fontFamily: tokens.body,
-            fontSize: 12,
+            ...typeScale.label,
+            letterSpacing: 'normal',
+            textTransform: 'none',
+            fontWeight: 400,
             color: tokens.warmWhite,
             opacity: 0.7,
-            margin: 0,
-            marginTop: 22,
+            marginTop: space.md,
           }}
         >
           Free measure &amp; installation included. No obligation.

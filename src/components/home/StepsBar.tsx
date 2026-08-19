@@ -32,13 +32,35 @@
 // ---------------------------------------------------------------------------
 
 import { Link } from 'react-router-dom';
-import { tokens } from '../../theme';
-import { useIsMobile } from '../../hooks/useIsMobile';
+import { tokens, space, type as typeScale } from '../../theme';
+import { useMediaQuery } from '../../hooks/useIsMobile';
 import { STEPS } from '../../data/steps';
 import { useHover } from './primitives';
 
+/** WHERE THE ROW COLLAPSES TO A SCROLLER — and it is 860, not the site's 768.
+ *
+ * This is the other half of the §7 overflow fix. The bar collapsed at 768 while
+ * the nav collapses at 860, so between those two thresholds the bar was still in
+ * its desktop branch, centring four steps that no longer fit. `body { overflow-x:
+ * hidden }` then hid the fourth step's right edge instead of letting the row
+ * scroll, so the step was silently clipped rather than reachable.
+ *
+
+ * 1000, NOT the 860 the work order projected. With the per-step padding down to
+ * 20 the row was predicted to need 824; measured in the running page it needs
+ * 889 of content and only clears its container from about 1000 up (984 in 984 at
+ * 1024, against 889 in 860 at 900). The projection assumed narrower labels than
+ * "Choose", "Measure", "Manufacture", "Install" actually set to.
+ *
+ * So this sits above the nav's 860 rather than matching it. That is fine — the
+ * two do not have to collapse together, they have to each collapse before their
+ * own contents stop fitting. */
+const STEPS_COLLAPSE = '(max-width: 1000px)';
+
 export function StepsBar() {
-  const isMobile = useIsMobile();
+  // Named `isMobile` still, because every branch below asks the same question:
+  // is this row a centred bar or a sideways scroller. See STEPS_COLLAPSE.
+  const isMobile = useMediaQuery(STEPS_COLLAPSE);
   const { hover, bind } = useHover();
 
   return (
@@ -56,7 +78,7 @@ export function StepsBar() {
         // Thin. It is a rule across the page that happens to carry four words,
         // not a section — at any real padding it stops being a bar and starts
         // being the section it was brought in to replace.
-        padding: isMobile ? '0 0' : '0 24px',
+        padding: isMobile ? 0 : `0 ${space.md}px`,
       }}
     >
       <div
@@ -64,13 +86,14 @@ export function StepsBar() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          // Spread on desktop. On a phone four steps cannot share one line at any
-          // legible size, so the row scrolls sideways rather than wrapping into a
-          // block — wrapped, this stops being a bar, which is the one thing it is.
+          // Spread on desktop. Below the collapse threshold four steps cannot
+          // share one line at any legible size, so the row scrolls sideways
+          // rather than wrapping into a block — wrapped, this stops being a bar,
+          // which is the one thing it is.
           justifyContent: isMobile ? 'flex-start' : 'center',
-          gap: isMobile ? 26 : 0,
+          gap: isMobile ? space.md : 0,
           overflowX: isMobile ? 'auto' : 'visible',
-          padding: isMobile ? '16px 24px' : '18px 0',
+          padding: isMobile ? `${space.md}px ${space.md}px` : `${space.md}px 0`,
         }}
       >
         {STEPS.map((step, i) => (
@@ -79,38 +102,44 @@ export function StepsBar() {
             style={{
               display: 'flex',
               alignItems: 'baseline',
-              gap: 9,
+              gap: space.xs,
               flexShrink: 0,
               // A divider between steps rather than after the last one, drawn in
               // ink at low opacity so it separates without becoming a fifth thing
               // to look at. Off entirely on mobile, where the row scrolls and a
               // rule would be cut mid-stroke at the edge of the viewport.
-              padding: isMobile ? 0 : '0 30px',
+              //
+              // 20, down from 30, and this is half of the §7 overflow fix: four
+              // steps at 30 put the fourth step's right edge at 904 against an
+              // 860 viewport, where `body { overflow-x: hidden }` silently
+              // clipped it rather than letting it scroll. Reclaiming 80px across
+              // the row brings that to 824. The other half is the collapse
+              // threshold below.
+              padding: isMobile ? 0 : `0 ${space.md}px`,
               borderLeft:
                 !isMobile && i > 0 ? `1px solid ${tokens.onDarkEdge}` : undefined,
             }}
           >
             <span
               style={{
+                ...typeScale.label,
                 fontFamily: tokens.display,
-                fontSize: 15,
-                fontWeight: 400,
+                letterSpacing: 'normal',
                 lineHeight: 1,
-                // Gold at half, so the numeral marks the order without competing
-                // with the words beside it — a bullet, not the decorative numeral
-                // the process page gives the same step.
-                color: 'rgba(200,151,58,0.5)',
+                // FULL GOLD. It was gold at 0.5, which measured 2.45 on charcoal
+                // — the numeral was decoration the eye could not resolve rather
+                // than the ordering mark it is there to be. At full strength it
+                // measures 5.53. It still reads as subordinate to the label
+                // because it is set in the display face at label size, which is
+                // a quieter difference than opacity and a legible one.
+                color: tokens.gold,
               }}
             >
               {String(i + 1).padStart(2, '0')}
             </span>
             <span
               style={{
-                fontFamily: tokens.body,
-                fontSize: 11,
-                fontWeight: 500,
-                letterSpacing: '0.13em',
-                textTransform: 'uppercase',
+                ...typeScale.label,
                 color: tokens.gold,
                 whiteSpace: 'nowrap',
               }}

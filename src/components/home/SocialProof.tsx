@@ -18,7 +18,7 @@
 // ---------------------------------------------------------------------------
 
 import { Link } from 'react-router-dom';
-import { tokens } from '../../theme';
+import { tokens, space, type as typeScale } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { SectionBand, TILE_GAP, useHover } from './primitives';
 
@@ -85,14 +85,10 @@ function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: bool
       >
         <span
           style={{
-            fontFamily: tokens.body,
-            fontSize: 10,
-            fontWeight: 500,
-            letterSpacing: '0.2em',
-            textTransform: 'uppercase',
+            ...typeScale.micro,
             color: tokens.warmWhite,
             border: `1px solid ${tokens.onDarkEdge}`,
-            padding: '10px 18px',
+            padding: `${space.sm}px ${space.md}px`,
           }}
         >
           See Product
@@ -122,7 +118,7 @@ export function SocialProof() {
         className="klay-hscroll"
         style={
           isMobile
-            ? { display: 'flex', gap: TILE_GAP, overflowX: 'auto', padding: '0 24px 8px' }
+            ? { display: 'flex', gap: TILE_GAP, overflowX: 'auto', padding: `0 ${space.md}px ${space.xs}px` }
             : {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(5, 1fr)',
@@ -143,8 +139,8 @@ export function SocialProof() {
       <div
         style={{
           textAlign: 'center',
-          paddingTop: isMobile ? 32 : 44,
-          paddingBottom: isMobile ? 72 : 96,
+          paddingTop: isMobile ? space.lg : space.xl,
+          paddingBottom: isMobile ? space.xl : space.xxl,
         }}
       >
         <a
@@ -153,13 +149,13 @@ export function SocialProof() {
           target="_blank"
           rel="noreferrer noopener"
           style={{
-            fontFamily: tokens.body,
-            fontSize: 13,
-            letterSpacing: '0.1em',
-            color: tokens.gold,
+            ...typeScale.body,
+            // goldText: @klayinteriors sits on warm white, where brand gold
+            // measures 2.37.
+            color: tokens.goldText,
             textDecoration: 'none',
-            borderBottom: `1px solid ${hover ? tokens.gold : 'transparent'}`,
-            paddingBottom: 3,
+            borderBottom: `1px solid ${hover ? tokens.goldText : 'transparent'}`,
+            paddingBottom: space.xxs,
             transition: 'border-color 0.2s ease',
           }}
         >

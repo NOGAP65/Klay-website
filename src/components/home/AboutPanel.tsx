@@ -21,7 +21,7 @@
 // if a claim changes it has to change in those places too.
 // ---------------------------------------------------------------------------
 
-import { tokens, headline, eyebrow, layout } from '../../theme';
+import { tokens, headline, eyebrow, layout, space, supporting } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { CtaLink } from './primitives';
 
@@ -40,14 +40,29 @@ export function AboutPanel() {
   const isMobile = useIsMobile();
 
   const image = (
-    <div style={{ minHeight: isMobile ? 320 : 620, overflow: 'hidden' }}>
+    // CAPPED AT 4:5 RATHER THAN STRETCHED TO THE COPY'S HEIGHT.
+    //
+    // It rendered at 720 × 787 — a 0.91 ratio, arbitrary because the column was
+    // matching whatever height the prose beside it happened to make. Cropped
+    // from a 1.78 source that is a 49% horizontal crop: half the room was gone,
+    // and the amount that was gone changed with the copy.
+    //
+    // 4:5 is the install strip's ratio, so the site has one portrait crop
+    // instead of two. `alignSelf: start` is what stops the grid stretching it.
+    <div
+      style={{
+        overflow: 'hidden',
+        aspectRatio: '4 / 5',
+        alignSelf: 'start',
+        width: '100%',
+      }}
+    >
       <img
         src={IMAGE}
         alt=""
         style={{
           width: '100%',
           height: '100%',
-          minHeight: isMobile ? 320 : 620,
           objectFit: 'cover',
           objectPosition: 'center 40%',
           display: 'block',
@@ -62,13 +77,19 @@ export function AboutPanel() {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        // The inner edge gets less inset than the outer one, so the copy sits
-        // closer to the photograph it belongs to than to the page edge.
-        padding: isMobile ? '64px 24px' : `96px 72px 96px ${layout.inlinePad(isMobile)}px`,
+        // SYMMETRIC NOW: 84 / 80 / 84 / 80. The inner edge used to get 72
+        // against the outer 80, on the reasoning that the copy should sit closer
+        // to its photograph than to the page edge. It was the only horizontally
+        // asymmetric padding on the page, and an 8px difference is far too small
+        // to read as intent — once every other inset is on a scale it reads as a
+        // mistake instead.
+        padding: isMobile
+          ? `${space.xl}px ${space.md}px`
+          : `${space.xxl}px ${layout.inlinePad(isMobile)}px`,
       }}
     >
       <div style={{ maxWidth: 480 }}>
-        <p style={{ ...eyebrow, marginBottom: 22 }}>Who makes them</p>
+        <p style={{ ...eyebrow, marginBottom: space.md }}>Who makes them</p>
         <h2 style={{ ...headline.section, color: tokens.ink }}>
           Measured, made and hung
           <br />
@@ -76,14 +97,13 @@ export function AboutPanel() {
         </h2>
         <div
           style={{
-            fontFamily: tokens.body,
-            fontSize: 15,
-            lineHeight: 1.85,
-            color: tokens.inkSoft,
-            marginTop: 26,
+            ...supporting.onLight,
+            marginTop: space.md,
             display: 'flex',
             flexDirection: 'column',
-            gap: 18,
+            // Between paragraphs: within-group, so `md`. The `xl` below is the
+            // between-group step to the CTA — 2.6×, which is the hierarchy rule.
+            gap: space.md,
           }}
         >
           {BODY.map(para => (
@@ -92,7 +112,7 @@ export function AboutPanel() {
             </p>
           ))}
         </div>
-        <div style={{ marginTop: 36 }}>
+        <div style={{ marginTop: space.xl }}>
           <CtaLink to="/about">About Klay →</CtaLink>
         </div>
       </div>

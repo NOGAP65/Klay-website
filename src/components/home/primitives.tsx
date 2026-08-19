@@ -13,7 +13,7 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { tokens, eyebrow, headline, motion } from '../../theme';
+import { tokens, eyebrow, headline, motion, space, supporting, type as typeScale } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { ProductGlyph } from '../ProductGlyph';
 
@@ -50,22 +50,32 @@ export function useHover() {
 
 export type CtaVariant = 'gold' | 'onDark' | 'ghost';
 
+/** THE PRIMARY CTA — one definition, and the height is EXPLICIT.
+ *
+ * The page rendered this button at six heights (40 / 44 / 51.19 / 55 / 59.19),
+ * and the 55-vs-59.19 pair is the tell: `CtaButton` renders a <button> and
+ * `CtaLink` renders an <a>, both sized from padding plus whatever line-height
+ * the UA applies to that element. Two elements, two UA defaults, one padding —
+ * they will drift apart forever. Setting `height` ends it permanently, which is
+ * why the vertical padding is gone rather than merely equalised. */
 const ctaBase: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontFamily: tokens.body,
-  fontSize: 12,
-  fontWeight: 500,
-  letterSpacing: '0.14em',
-  textTransform: 'uppercase',
+  ...typeScale.label,
   textDecoration: 'none',
   whiteSpace: 'nowrap',
   cursor: 'pointer',
   borderRadius: 2,
-  padding: '19px 42px',
+  height: 52,
+  padding: `0 ${space.lg}px`,
   border: '1px solid transparent',
   transition: motion.button,
+  // Belt and braces on the two element types: a <button> inherits a UA
+  // line-height that can still push the flex box taller than `height` at some
+  // zoom levels.
+  boxSizing: 'border-box',
+  lineHeight: 1,
 };
 
 function ctaFill(variant: CtaVariant, hover: boolean): React.CSSProperties {
@@ -149,18 +159,21 @@ export function TextLink({
   accent?: boolean;
 }) {
   const { hover, bind } = useHover();
-  const rest = accent ? tokens.gold : onDark ? tokens.onDarkMuted : tokens.inkSoft;
+  // On a light ground the gold that reads is goldText (5.05 on parchment); the
+  // brand gold measures 2.11 there and was failing on both the rest and hover
+  // states of every accent link on the page.
+  const goldFor = onDark ? tokens.gold : tokens.goldText;
+  const rest = accent ? goldFor : onDark ? tokens.onDarkMuted : tokens.inkSoft;
   return (
     <Link
       {...bind}
       to={to}
       style={{
-        fontFamily: tokens.body,
-        fontSize: 13,
-        color: hover ? tokens.gold : rest,
+        ...typeScale.body,
+        color: hover ? goldFor : rest,
         textDecoration: 'none',
-        borderBottom: `1px solid ${hover ? tokens.gold : 'currentColor'}`,
-        paddingBottom: 2,
+        borderBottom: `1px solid ${hover ? goldFor : 'currentColor'}`,
+        paddingBottom: space.xxs,
         transition: motion.link,
       }}
     >
@@ -179,7 +192,6 @@ export function SectionHead({
   align = 'left',
   onDark = false,
   maxWidth = 720,
-  titleSize,
   style,
 }: {
   label?: string;
@@ -188,11 +200,6 @@ export function SectionHead({
   align?: 'left' | 'center';
   onDark?: boolean;
   maxWidth?: number;
-  /** Overrides the section scale for a headline that has to be quieter than its
-   * neighbours — a long one, or one in a section that is deliberately compact.
-   * Note that `style` lands on the WRAPPER, not the heading, so a fontSize
-   * passed there silently does nothing. */
-  titleSize?: string;
   style?: React.CSSProperties;
 }) {
   const centred = align === 'center';
@@ -206,12 +213,21 @@ export function SectionHead({
         ...style,
       }}
     >
-      {label && <p style={{ ...eyebrow, marginBottom: 22 }}>{label}</p>}
+      {label && (
+        <p
+          style={{
+            ...eyebrow,
+            ...(onDark ? { color: tokens.gold } : null),
+            marginBottom: space.md,
+          }}
+        >
+          {label}
+        </p>
+      )}
       <h2
         style={{
           ...headline.section,
           color: onDark ? tokens.warmWhite : tokens.ink,
-          ...(titleSize ? { fontSize: titleSize } : null),
         }}
       >
         {title}
@@ -219,12 +235,11 @@ export function SectionHead({
       {sub && (
         <p
           style={{
-            fontFamily: tokens.body,
-            fontSize: 16,
-            lineHeight: 1.7,
-            color: onDark ? tokens.onDarkMuted : tokens.inkSoft,
-            margin: 0,
-            marginTop: 20,
+            ...(onDark ? supporting.onDark : supporting.onLight),
+            // Within the head group — eyebrow, headline and sub are one object,
+            // so they sit at `md` and the section's own padding provides the
+            // between-group distance.
+            marginTop: space.md,
             maxWidth: 560,
             marginLeft: centred ? 'auto' : undefined,
             marginRight: centred ? 'auto' : undefined,
@@ -282,25 +297,35 @@ export function SectionBand({
   return (
     <div
       style={{
+        // On the scale. `compact` is the tighter band used where the row below
+        // is the section's real content and the heading is only naming it.
         padding: compact
           ? isMobile
-            ? '34px 24px 30px'
-            : '46px 80px 40px'
+            ? `${space.lg}px ${space.md}px`
+            : `${space.xl}px 80px ${space.lg}px`
           : isMobile
-            ? '52px 24px'
-            : '76px 80px',
+            ? `${space.xl}px ${space.md}px`
+            : `${space.xxl}px 80px`,
         textAlign: 'center',
       }}
     >
-      <p style={{ ...eyebrow, marginBottom: 16 }}>{label}</p>
+      <p
+        style={{
+          ...eyebrow,
+          // On charcoal the brand gold is the legible one (5.53); goldText is
+          // for light grounds only.
+          ...(onDark ? { color: tokens.gold } : null),
+          marginBottom: space.md,
+        }}
+      >
+        {label}
+      </p>
+      {/* Consumes headline.section rather than declaring a 56px clamp of its
+          own — the third of the three sizes this role had drifted into. */}
       <h2
         style={{
-          fontFamily: tokens.display,
-          fontSize: 'clamp(34px, 4.4vw, 56px)',
-          fontWeight: 300,
-          lineHeight: 1.05,
+          ...headline.section,
           color: onDark ? tokens.warmWhite : tokens.ink,
-          margin: 0,
         }}
       >
         {title}
@@ -308,11 +333,8 @@ export function SectionBand({
       {sub && (
         <p
           style={{
-            fontFamily: tokens.body,
-            fontSize: 15,
-            lineHeight: 1.7,
-            color: onDark ? tokens.onDarkMuted : tokens.inkSoft,
-            margin: '18px auto 0',
+            ...(onDark ? supporting.onDark : supporting.onLight),
+            margin: `${space.md}px auto 0`,
             maxWidth: 520,
           }}
         >
@@ -362,27 +384,32 @@ function TileSwatches({ colours }: { colours: { name: string; hex: string }[] })
         );
   const rest = colours.length - shown.length;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 12 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: space.xxs, marginTop: space.sm }}>
       {shown.map(c => (
         <span
           key={c.name}
           title={c.name}
+          // ONE SWATCH DEFINITION: 20×20, radius 2. It was 13 here, 22 in the
+          // configurator and 20 in the visualiser controls — and radius 1 in one
+          // place against 50% in another, which drew the same object as a square
+          // in one panel and a circle in the next.
           style={{
-            width: 13,
-            height: 13,
-            borderRadius: 1,
+            width: 20,
+            height: 20,
+            borderRadius: 2,
             background: c.hex,
-            border: '1px solid rgba(245,242,237,0.45)',
+            border: `1px solid ${tokens.onDarkEdge}`,
           }}
         />
       ))}
       {rest > 0 && (
         <span
           style={{
-            fontFamily: tokens.body,
-            fontSize: 11,
-            color: 'rgba(245,242,237,0.75)',
-            marginLeft: 4,
+            ...typeScale.micro,
+            letterSpacing: 'normal',
+            textTransform: 'none',
+            color: tokens.onDarkMuted,
+            marginLeft: space.xxs,
           }}
         >
           +{rest}
@@ -593,13 +620,13 @@ export function PhotoTile({
       <div
         style={{
           position: 'absolute',
-          left: isMobile ? 22 : 32,
-          right: isMobile ? 22 : 32,
-          bottom: isMobile ? 22 : 28,
+          left: isMobile ? space.md : space.lg,
+          right: isMobile ? space.md : space.lg,
+          bottom: isMobile ? space.md : space.lg,
           display: 'flex',
           ...(ctaBelow
-            ? { flexDirection: 'column' as const, alignItems: 'flex-start', gap: 14 }
-            : { alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }),
+            ? { flexDirection: 'column' as const, alignItems: 'flex-start', gap: space.md }
+            : { alignItems: 'flex-end', justifyContent: 'space-between', gap: space.md }),
           // The row lifts with the hover rather than staying put, so the whole
           // tile reads as one object responding to the pointer.
           transform: hover ? 'translateY(-4px)' : 'translateY(0)',
@@ -629,11 +656,9 @@ export function PhotoTile({
         {blurb && (
           <div
             style={{
-              fontFamily: tokens.body,
-              fontSize: 13,
-              lineHeight: 1.6,
+              ...typeScale.body,
               color: 'rgba(245,242,237,0.82)',
-              marginTop: 8,
+              marginTop: space.xs,
               maxWidth: 280,
               textShadow: image ? '0 1px 10px rgba(28,24,16,0.5)' : undefined,
             }}
@@ -644,13 +669,11 @@ export function PhotoTile({
         {note && (
           <div
             style={{
-              fontFamily: tokens.body,
-              fontSize: 10.5,
-              fontWeight: 500,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
+              ...typeScale.micro,
+              // Brand gold, and it stays: this note sits over a darkened
+              // photograph, not a light ground, so goldText would go muddy here.
               color: tokens.gold,
-              marginTop: 10,
+              marginTop: space.sm,
               // The label and the blurb both carry one and the price did not,
               // which is backwards: gold on a sunlit windowsill is far closer to
               // its background than warm white is, so "FROM $220" was the one
@@ -669,13 +692,17 @@ export function PhotoTile({
           <span
             style={{
               flexShrink: 0,
-              display: 'inline-block',
-              padding: isMobile ? '10px 18px' : '12px 22px',
-              fontFamily: tokens.body,
-              fontSize: 10.5,
-              fontWeight: 500,
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
+              // THE SELECTABLE-PILL BOX, one definition: height 32, 20 either
+              // side, radius 2. It was three heights (27 / 34.38 / 37) at three
+              // sizes across the page.
+              display: 'inline-flex',
+              alignItems: 'center',
+              height: 32,
+              padding: `0 ${space.md}px`,
+              borderRadius: 2,
+              boxSizing: 'border-box',
+              ...typeScale.label,
+              lineHeight: 1,
               color: tokens.ink,
               background: hover ? tokens.goldLight : tokens.gold,
               whiteSpace: 'nowrap',
@@ -705,14 +732,12 @@ export function ArrowLink({ label, hovered }: { label: string; hovered: boolean 
   return (
     <span
       style={{
-        fontFamily: tokens.body,
-        fontSize: 11,
-        fontWeight: 500,
-        letterSpacing: '0.16em',
-        textTransform: 'uppercase',
-        color: hovered ? tokens.gold : tokens.ink,
-        borderBottom: `1px solid ${hovered ? tokens.gold : tokens.line}`,
-        paddingBottom: 3,
+        ...typeScale.label,
+        // goldText: this link sits on a light card ground, where the brand gold
+        // measures 2.11–2.47.
+        color: hovered ? tokens.goldText : tokens.ink,
+        borderBottom: `1px solid ${hovered ? tokens.goldText : tokens.line}`,
+        paddingBottom: space.xxs,
         whiteSpace: 'nowrap',
         transition: motion.link,
       }}

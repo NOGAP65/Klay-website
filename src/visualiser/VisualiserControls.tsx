@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { tokens } from '../theme';
+import { tokens, space, type as typeScale } from '../theme';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
@@ -121,11 +121,22 @@ function Pill({
         display: 'inline-flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: sub ? '7px 14px' : '9px 14px',
+        justifyContent: 'center',
+        // ONE PILL: height 32, 20 either side, radius 2. It was three heights
+        // across the site (27 / 34.38 / 37) at three sizes, and the two paddings
+        // here — 7px with a sub-label and 9px without — meant the same row of
+        // pills changed height depending on which options it was showing.
+        //
+        // A pill carrying a sub-label needs the room, so that variant is the one
+        // exception and it takes the next step up rather than an arbitrary
+        // number.
+        height: sub ? space.xl : 32,
+        padding: `0 ${space.md}px`,
+        boxSizing: 'border-box',
         borderRadius: RADIUS,
-        fontFamily: tokens.body,
-        fontSize: 11.5,
-        fontWeight: 500,
+        ...typeScale.label,
+        letterSpacing: 'normal',
+        textTransform: 'none',
         lineHeight: 1.25,
         textAlign: 'center',
         cursor: 'pointer',
@@ -139,7 +150,7 @@ function Pill({
       }}
     >
       <span>{label}</span>
-      {sub && <span style={{ fontSize: 9.5, marginTop: 1, opacity: 0.75 }}>{sub}</span>}
+      {sub && <span style={{ ...typeScale.micro, letterSpacing: 'normal', textTransform: 'none', opacity: 0.75 }}>{sub}</span>}
     </button>
   );
 }
@@ -149,17 +160,19 @@ function Swatch({
   label,
   active,
   onClick,
-  compact = false,
   onDark = false,
 }: {
   hex: string;
   label: string;
   active: boolean;
   onClick: () => void;
-  compact?: boolean;
   onDark?: boolean;
 }) {
-  const size = compact ? 22 : 26;
+  // ONE SWATCH: 20 x 20 at every size, radius 2. It was 22 or 26 here, 13 on
+  // the range tiles and 20 in the visualiser controls — and this one was a
+  // circle while the configurator's was a 1px-radius square, so the same object
+  // was drawn as two different shapes on one page.
+  const size = 20;
   const sk = skin(onDark);
   return (
     <button
@@ -169,7 +182,7 @@ function Swatch({
       style={{
         width: size,
         height: size,
-        borderRadius: '50%',
+        borderRadius: 2,
         cursor: 'pointer',
         padding: 0,
         background: hex,
@@ -193,13 +206,10 @@ function GroupHeading({ children, onDark = false }: { children: React.ReactNode;
   return (
     <div
       style={{
-        fontFamily: tokens.body,
-        fontSize: 10,
+        ...typeScale.micro,
         color: tokens.gold,
-        textTransform: 'uppercase',
-        letterSpacing: '0.2em',
-        paddingBottom: 10,
-        marginBottom: 18,
+        paddingBottom: space.sm,
+        marginBottom: space.md,
         borderBottom: `1px solid ${skin(onDark).hairline}`,
       }}
     >
@@ -229,15 +239,15 @@ function Field({
           display: 'flex',
           alignItems: 'baseline',
           justifyContent: 'space-between',
-          gap: 12,
-          marginBottom: 9,
+          gap: space.sm,
+          marginBottom: space.xs,
         }}
       >
-        <span style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, color: sk.label }}>
+        <span style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', color: sk.label }}>
           {label}
         </span>
         {caption && (
-          <span style={{ fontFamily: tokens.body, fontSize: 11, color: sk.caption }}>
+          <span style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', fontWeight: 400, color: sk.caption }}>
             {caption}
           </span>
         )}
@@ -279,12 +289,12 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
   // Curtain controls
   if (isCurtain) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 16 : 30 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? space.md : space.lg }}>
         <section>
           <GroupHeading onDark={onDark}>Your curtain</GroupHeading>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 12 : 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
             <Field onDark={onDark} label="Type">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {CURTAIN_TYPE_OPTIONS.map(t => (
                   <Pill
                     onDark={onDark}
@@ -298,7 +308,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             </Field>
 
             <Field onDark={onDark} label="Fabric colour" caption={selectedColour?.name}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: compact ? 6 : 9, marginLeft: 2, paddingRight: 2 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
                 {palette.map(c => (
                   <Swatch
                     onDark={onDark}
@@ -307,7 +317,6 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                     label={c.name}
                     active={store.fabricColour === c.name}
                     onClick={() => store.setFabricColour(c.name)}
-                    compact={compact}
                   />
                 ))}
               </div>
@@ -317,9 +326,9 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
 
         <section>
           <GroupHeading onDark={onDark}>Details</GroupHeading>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 12 : 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
             <Field onDark={onDark} label="Hardware" caption={selectedHardware?.label}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: compact ? 6 : 9, marginLeft: 2, paddingRight: 2 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
                 {HARDWARE_OPTIONS.map(h => (
                   <Swatch
                     onDark={onDark}
@@ -328,14 +337,13 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                     label={h.label}
                     active={store.hardwareColour === h.id}
                     onClick={() => store.setHardwareColour(h.id)}
-                    compact={compact}
                   />
                 ))}
               </div>
             </Field>
 
             <Field onDark={onDark} label="Window size">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {CURTAIN_SIZE_OPTIONS.map(s => (
                   <Pill
                     onDark={onDark}
@@ -350,7 +358,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             </Field>
 
             <Field onDark={onDark} label="Operation">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {CURTAIN_OPERATION_OPTIONS.map(o => (
                   <Pill
                     onDark={onDark}
@@ -364,7 +372,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             </Field>
 
             <Field onDark={onDark} label="Mount">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {CURTAIN_MOUNT_OPTIONS.map(m => (
                   <Pill
                     onDark={onDark}
@@ -381,7 +389,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 rather than dropped, because it is a spec the customer is
                 buying and its absence would read as an omission. */}
             <Field onDark={onDark} label="Heading">
-              <div style={{ fontFamily: tokens.body, fontSize: 11.5, color: sk.quiet }}>
+              <div style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', fontWeight: 400, color: sk.quiet }}>
                 Wave fold — one wave every 160mm of track
               </div>
             </Field>
@@ -399,10 +407,8 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
           <div
             style={{
               fontFamily: tokens.body,
-              fontSize: 10,
+              ...typeScale.micro,
               color: tokens.gold,
-              textTransform: 'uppercase',
-              letterSpacing: '0.2em',
             }}
           >
             Estimated price
@@ -410,7 +416,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
           <div
             style={{
               fontFamily: tokens.display,
-              fontSize: compact ? 32 : 38,
+              ...typeScale.numeric,
               fontWeight: 300,
               lineHeight: 1.1,
               color: sk.label,
@@ -419,7 +425,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
           >
             ${store.getCurtainPrice()}
           </div>
-          <div style={{ fontFamily: tokens.body, fontSize: 11, color: sk.caption, marginTop: 4 }}>
+          <div style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', fontWeight: 400, color: sk.caption, marginTop: space.xxs }}>
             + installation across Australia
           </div>
         </div>
@@ -429,14 +435,14 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
 
   // Blind controls (default)
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 16 : 30 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? space.md : space.lg }}>
       {/* --- TIER 1: the decisions that change what you see ---------------- */}
       <section>
         <GroupHeading onDark={onDark}>Your blind</GroupHeading>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 12 : 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
           {!store.lockedRange && (
             <Field onDark={onDark} label="Type">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {BLIND_TYPE_OPTIONS.map(t => (
                   <Pill
                     onDark={onDark}
@@ -451,7 +457,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
           )}
 
           <Field onDark={onDark} label="Fabric colour" caption={selectedColour?.name}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: compact ? 6 : 9, marginLeft: 2, paddingRight: 2 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
               {palette.map(c => (
                 <Swatch
                   onDark={onDark}
@@ -460,7 +466,6 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                   label={c.name}
                   active={store.fabricColour === c.name}
                   onClick={() => store.setFabricColour(c.name)}
-                  compact={compact}
                 />
               ))}
             </div>
@@ -471,9 +476,9 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
       {/* --- TIER 2: specification, quieter ------------------------------- */}
       <section>
         <GroupHeading onDark={onDark}>Details</GroupHeading>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 12 : 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
           <Field onDark={onDark} label="Hardware" caption={selectedHardware?.label}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: compact ? 6 : 9, marginLeft: 2, paddingRight: 2 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
               {HARDWARE_OPTIONS.map(h => (
                 <Swatch
                   onDark={onDark}
@@ -482,14 +487,13 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                   label={h.label}
                   active={store.hardwareColour === h.id}
                   onClick={() => store.setHardwareColour(h.id)}
-                  compact={compact}
                 />
               ))}
             </div>
           </Field>
 
           <Field onDark={onDark} label="Window size">
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
               {SIZE_OPTIONS.map(s => (
                 <Pill
                   onDark={onDark}
@@ -504,7 +508,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
           </Field>
 
           <Field onDark={onDark} label="Operation">
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
               {OPERATION_OPTIONS.map(o => (
                 <Pill
                   onDark={onDark}
@@ -531,10 +535,8 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
         <div
           style={{
             fontFamily: tokens.body,
-            fontSize: 10,
+            ...typeScale.micro,
             color: tokens.gold,
-            textTransform: 'uppercase',
-            letterSpacing: '0.2em',
           }}
         >
           Estimated price
@@ -542,7 +544,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
         <div
           style={{
             fontFamily: tokens.display,
-            fontSize: compact ? 32 : 38,
+            ...typeScale.numeric,
             fontWeight: 300,
             lineHeight: 1.1,
             color: sk.label,
@@ -551,7 +553,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
         >
           ${store.getCurrentPrice()}
         </div>
-        <div style={{ fontFamily: tokens.body, fontSize: 11, color: sk.caption, marginTop: 4 }}>
+        <div style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', fontWeight: 400, color: sk.caption, marginTop: space.xxs }}>
           + installation across Australia
         </div>
       </div>

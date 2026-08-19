@@ -29,7 +29,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { tokens, eyebrow, motion, prefersReducedMotion } from '../../theme';
+import { tokens, eyebrow, motion, prefersReducedMotion, space, type as typeScale } from '../../theme';
 import { CATEGORIES, type Category } from '../../data/categories';
 import { CtaLink, useHover } from './primitives';
 
@@ -151,12 +151,12 @@ export function HeroRangeRail() {
         // nav, where it reads as air, rather than above the View All button,
         // where it reads as the button having come loose from the panel.
         justifyContent: 'flex-end',
-        padding: `${NAV_CLEARANCE}px 26px 26px`,
+        padding: `${NAV_CLEARANCE}px ${space.md}px ${space.md}px`,
         minWidth: 0,
         overflow: 'hidden',
       }}
     >
-      <p style={{ ...eyebrow, marginBottom: 14, flexShrink: 0 }}>Our Range</p>
+      <p style={{ ...eyebrow, marginBottom: space.sm, flexShrink: 0 }}>Our Range</p>
 
       {/* The stack. Takes whatever the eyebrow, the dots and the button leave —
           that leftover is the 100% every percentage inside a slide resolves
@@ -177,7 +177,7 @@ export function HeroRangeRail() {
       {/* Dots. Real buttons, not decoration: they are the only way to reach the
           other categories under a reduced-motion preference, where the timer
           never runs. */}
-      <div style={{ display: 'flex', gap: 7, marginTop: 18, flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: space.xs, marginTop: space.md, flexShrink: 0 }}>
         {CATEGORIES.map((category, i) => (
           <button
             key={category.slug}
@@ -189,8 +189,14 @@ export function HeroRangeRail() {
               height: 7,
               padding: 0,
               border: 'none',
-              borderRadius: 4,
-              background: i === index ? tokens.gold : tokens.line,
+              borderRadius: 2,
+              // fillFaint, not `line`. This is a dot, and `line` is the token
+              // for a UI component's edge — it was a border colour doing duty as
+              // a fill, which is the second of the two colour corrections the
+              // locked hero takes in this pass. Same 0.15 weight as before, so
+              // nothing here changes visually; it just stops the dots tracking a
+              // token that had to be darkened for borders.
+              background: i === index ? tokens.gold : tokens.fillFaint,
               cursor: 'pointer',
               transition: `width 0.4s ease, ${motion.button}`,
             }}
@@ -207,9 +213,19 @@ export function HeroRangeRail() {
         variant="gold"
         style={{
           width: '100%',
-          marginTop: 16,
-          padding: '15px 0',
-          color: tokens.charcoal,
+          marginTop: space.md,
+          // The `color` override is gone — it was charcoal (#2C2824) on gold,
+          // where every other gold button on the site puts ink (#1C1810). One
+          // button spelling the label colour differently from the other nine is
+          // the first of the two colour corrections the locked hero takes; the
+          // CTA's own fill now supplies it.
+          //
+          // The vertical padding is gone with it: the CTA sets an explicit
+          // height of 52 now, and padding on top of that is what made this
+          // button 59.19 against the same component's 55 elsewhere. Full-width
+          // variants keep the height and drop the horizontal padding, which is
+          // what `padding: 0` does here.
+          padding: 0,
           flexShrink: 0,
         }}
       >
@@ -281,6 +297,7 @@ function CategorySlide({ category, active }: { category: Category; active: boole
         <div
           style={{
             fontFamily: tokens.display,
+            ...typeScale.card,
             fontSize: 26,
             fontWeight: 400,
             lineHeight: 1.1,
@@ -292,10 +309,10 @@ function CategorySlide({ category, active }: { category: Category; active: boole
         <div
           style={{
             fontFamily: tokens.body,
-            fontSize: 11,
+            ...typeScale.body,
             lineHeight: 1.5,
             color: tokens.inkSoft,
-            marginTop: 6,
+            marginTop: space.xxs,
           }}
         >
           {descriptorFor(category)}
@@ -311,14 +328,14 @@ function CategorySlide({ category, active }: { category: Category; active: boole
             what handles the click. */}
         <span
           style={{
-            display: 'inline-block',
-            marginTop: 12,
-            padding: '11px 20px',
-            fontFamily: tokens.body,
-            fontSize: 10.5,
-            fontWeight: 500,
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
+            marginTop: space.sm,
+            // The one pill definition: height 32, 20 either side.
+            display: 'inline-flex',
+            alignItems: 'center',
+            height: 32,
+            padding: `0 ${space.md}px`,
+            ...typeScale.label,
+            lineHeight: 1,
             color: tokens.ink,
             background: hover ? tokens.goldLight : tokens.gold,
             borderRadius: 2,

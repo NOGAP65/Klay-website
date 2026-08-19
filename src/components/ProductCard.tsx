@@ -23,6 +23,7 @@
 // The design lives in one place; the mapping lives here.
 // ---------------------------------------------------------------------------
 
+import { type as typeScale } from '../theme';
 import { PhotoTile } from './home/primitives';
 
 export interface Swatch {
@@ -77,7 +78,7 @@ export function ProductCard({
       // Smaller than the homepage row's default. These tiles are narrower and
       // carry more under the label — a price, sometimes a swatch row — so a
       // 32px name crowds everything below it.
-      labelSize="clamp(21px, 1.7vw, 26px)"
+      labelSize={`${typeScale.card.fontSize}px`}
       // The buyable/enquiry distinction, in the one line that was always gold.
       // No "From": the figure is already the cheapest configuration of a
       // made-to-measure product.

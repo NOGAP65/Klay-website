@@ -42,7 +42,7 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { tokens, motion, prefersReducedMotion } from '../../theme';
+import { tokens, motion, prefersReducedMotion, space, type as typeScale } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 // The row reads data/catalogue.ts — the same fourteen products the shop lists,
 // in the same order, rendered by the same tile. It used to read a data/ranges.ts
@@ -146,17 +146,24 @@ function Arrow({
       style={{
         position: 'absolute',
         top,
-        [direction === 'prev' ? 'left' : 'right']: 20,
+        [direction === 'prev' ? 'left' : 'right']: space.md,
         transform: 'translateY(-50%)',
         zIndex: 2,
-        width: 46,
-        height: 46,
-        borderRadius: '50%',
-        border: 'none',
+        // 52 and radius 2 — the site's one control height and its one radius.
+        // It was a 46px circle, which made it the only round object on the page
+        // and one of seven radii.
+        width: 52,
+        height: 52,
+        borderRadius: 2,
+        // A hairline instead of the drop shadow it carried. §5.5 gives the
+        // homepage exactly one elevated object — the visualiser card — so a
+        // second shadow here would spend the hierarchy that buys. The border
+        // does the job the shadow was actually doing, which was separating a
+        // warm-white control from a pale photograph rather than lifting it.
+        border: `1px solid ${tokens.line}`,
         background: active ? tokens.gold : tokens.warmWhite,
         color: tokens.ink,
-        fontFamily: tokens.body,
-        fontSize: 17,
+        ...typeScale.body,
         lineHeight: 1,
         display: 'flex',
         alignItems: 'center',
@@ -166,7 +173,6 @@ function Arrow({
         // stays where the pointer expects it.
         opacity: disabled ? 0 : 1,
         pointerEvents: disabled ? 'none' : 'auto',
-        boxShadow: '0 4px 14px rgba(28,24,16,0.22)',
         transition: `${motion.button}, opacity 0.3s ease`,
       }}
     >
@@ -283,7 +289,7 @@ export function RangeCarousel() {
           marginRight: isMobile ? undefined : 'auto',
           paddingLeft: TILE_GAP,
           paddingRight: TILE_GAP,
-          paddingBottom: isMobile ? 20 : 26,
+          paddingBottom: space.md,
         }}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
@@ -332,7 +338,9 @@ export function RangeCarousel() {
                 // Down from the category tiles' clamp(28px, 3vw, 40px). At 300px
                 // wide, 40px of Cormorant put "Blockout Curtains" onto three
                 // lines and left no room under it for the blurb and the price.
-                labelSize="clamp(19px, 1.7vw, 23px)"
+                // The card-headline role. It was a 23px clamp of its own, which
+                // made a fourth Cormorant size for a heading.
+                labelSize={`${typeScale.card.fontSize}px`}
                 glyph={item.glyph}
                 alt={`${item.name} — ${item.group}`}
                 // Same reason as the shop's cards: the label block runs a name,

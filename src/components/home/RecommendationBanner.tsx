@@ -34,7 +34,7 @@
 // promise is kept, just not self-service. Point it at the quiz once that is built.
 // ---------------------------------------------------------------------------
 
-import { tokens, headline, layout } from '../../theme';
+import { tokens, headline, layout, space, supporting } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { CtaLink } from './primitives';
 
@@ -51,11 +51,20 @@ export function RecommendationBanner() {
         // Taller than the flat band it replaces. At 300px a photograph is a strip
         // rather than a scene, and there is no point carrying one at all if it
         // cannot show a room.
-        minHeight: isMobile ? 380 : 440,
+        // ONE RATIO FOR THE FULL-BLEED BANNER ROLE. This and the closing CTA are
+        // the same object doing the same job, and they were cropping their
+        // ~1.79 sources at 3.27 and 2.56 — this one was discarding 45% of its
+        // image vertically against the other's 30%. Both take 2.56, the
+        // shallower of the two, so the role has one crop.
+        //
+        // Expressed as a height rather than an aspect-ratio so the two match at
+        // every width: at the 1440 container these are full-bleed, so
+        // 1440/2.56 = 562.
+        minHeight: isMobile ? 380 : 562,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: isMobile ? '72px 24px' : '96px 80px',
+        padding: isMobile ? `${space.xl}px ${space.md}px` : `${space.xxl}px 80px`,
         textAlign: 'center',
         // Behind the photograph rather than beside it — it is what shows while the
         // image is still loading, and charcoal keeps that moment on-brand instead
@@ -96,29 +105,32 @@ export function RecommendationBanner() {
             convert, and at the full 64px it competed with the range headline
             above it and the visualiser headline below — three headlines of equal
             weight in one screen, one of which is a passing offer. */}
+        {/* Consumes headline.section rather than declaring a 48px clamp of its
+            own. This was one of the three sizes the section-headline role had
+            drifted into. */}
         <h2
           style={{
             ...headline.section,
             color: tokens.warmWhite,
-            fontSize: 'clamp(32px, 4vw, 48px)',
           }}
         >
           Not sure where to start?
         </h2>
         <p
           style={{
-            fontFamily: tokens.body,
-            fontSize: 15,
-            lineHeight: 1.7,
+            ...supporting.onDark,
+            // Warm white rather than the token's muted variant: this sits over a
+            // photograph under a radial scrim, not a flat charcoal ground, so
+            // the muted 0.6 loses the line in the bright half of the frame.
             color: tokens.warmWhite,
-            margin: '18px auto 0',
+            margin: `${space.md}px auto 0`,
             maxWidth: 560,
             opacity: 0.88,
           }}
         >
           Answer a few questions and we&rsquo;ll recommend the right product for your room.
         </p>
-        <div style={{ marginTop: 32 }}>
+        <div style={{ marginTop: space.xl }}>
           <CtaLink to="/contact">Get My Recommendation</CtaLink>
         </div>
       </div>

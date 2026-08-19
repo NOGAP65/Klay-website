@@ -21,15 +21,15 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { tokens, eyebrow, layout, motion } from '../theme';
+import { tokens, eyebrow, layout, motion, space, type as typeScale } from '../theme';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { PRODUCTS } from '../data/products';
 
 const linkStyle: React.CSSProperties = {
-  fontFamily: tokens.body,
+  // Body role. It was 14 at line-height 2.1 — the loosest leading on the page,
+  // and one of six body sizes.
+  ...typeScale.body,
   fontWeight: 400,
-  fontSize: 14,
-  lineHeight: 2.1,
   textDecoration: 'none',
   display: 'block',
   width: 'fit-content',
@@ -108,7 +108,9 @@ export function Footer() {
       style={{
         background: tokens.ink,
         borderTop: `1px solid ${tokens.onDarkLine}`,
-        padding: isMobile ? '64px 24px 32px' : '96px 80px 40px',
+        padding: isMobile
+          ? `${space.xl}px ${space.md}px ${space.lg}px`
+          : `${space.xxl}px 80px ${space.xl}px`,
       }}
     >
       <div style={{ maxWidth: layout.containerMax, margin: '0 auto' }}>
@@ -127,13 +129,16 @@ export function Footer() {
             <img
               src="/images/klay-logo.png"
               alt="Klay Interiors"
-              style={{ width: 128, height: 51, objectFit: 'contain', objectPosition: 'left', display: 'block' }}
+              // 132 x 52 — the logo's own 2.536 ratio (558 x 220), so
+              // object-fit: contain has nothing to letterbox. It was 128 x 51,
+              // a 2.51 box, which padded the artwork by a different amount than
+              // the nav's 2.50 box did.
+              style={{ width: 132, height: 52, objectFit: 'contain', objectPosition: 'left', display: 'block' }}
             />
             <p
               style={{
                 fontFamily: tokens.body,
-                fontSize: 14,
-                lineHeight: 1.75,
+                ...typeScale.body,
                 color: tokens.onDarkMuted,
                 margin: '20px 0 0',
                 maxWidth: 260,
@@ -142,14 +147,16 @@ export function Footer() {
               Australian made-to-measure blinds, curtains and wardrobes — measured and installed
               by hand across Victoria.
             </p>
-            <div style={{ marginTop: 18 }}>
+            <div style={{ marginTop: space.md }}>
               <FooterLink to="https://www.instagram.com/klayinteriors">@klayinteriors</FooterLink>
             </div>
           </div>
 
           {COLUMNS.map(col => (
             <div key={col.heading}>
-              <h4 style={{ ...eyebrow, marginBottom: 18 }}>{col.heading}</h4>
+              {/* Brand gold — the footer is ink, and goldText is for light
+                  grounds only. */}
+              <h4 style={{ ...eyebrow, color: tokens.gold, marginBottom: space.md }}>{col.heading}</h4>
               {col.links.map(l => (
                 <FooterLink key={l.label} to={l.to}>
                   {l.label}
@@ -175,19 +182,19 @@ export function Footer() {
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: 14,
-            marginTop: isMobile ? 48 : 72,
-            paddingTop: 28,
+            gap: space.sm,
+            marginTop: isMobile ? space.xl : space.xxl,
+            paddingTop: space.lg,
             borderTop: `1px solid ${tokens.onDarkLine}`,
           }}
         >
-          <span style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.onDarkMuted }}>
+          <span style={{ ...typeScale.body, color: tokens.onDarkMuted }}>
             © {new Date().getFullYear()} Klay Interiors · Grand Kaman Pty Ltd · ABN 98 151 010 007
           </span>
-          <div style={{ display: 'flex', gap: 26 }}>
+          <div style={{ display: 'flex', gap: space.md }}>
             {['Privacy', 'Terms', 'Warranty'].map(l => (
               <FooterLink key={l} to="/contact">
-                <span style={{ fontSize: 12, lineHeight: 1 }}>{l}</span>
+                <span style={{ ...typeScale.body, lineHeight: 1 }}>{l}</span>
               </FooterLink>
             ))}
           </div>

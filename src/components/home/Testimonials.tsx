@@ -21,7 +21,7 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
-import { tokens, prefersReducedMotion } from '../../theme';
+import { tokens, prefersReducedMotion, space, layout, type as typeScale } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { SectionBand } from './primitives';
 
@@ -76,21 +76,20 @@ function Quote({ q, isMobile }: { q: (typeof QUOTES)[number]; isMobile: boolean 
         margin: 0,
         // The cards are separated by air, not by rules or card edges — the same
         // restraint the grid had.
-        paddingRight: isMobile ? 32 : 56,
+        paddingRight: isMobile ? space.lg : space.xl,
       }}
     >
       <div
         aria-hidden="true"
         style={{
-          fontFamily: tokens.display,
-          // Cormorant sets its quotation marks small relative to the em, so this
-          // has to run well past the headline sizes to read as the large mark it
-          // is meant to be.
-          fontSize: 116,
-          fontWeight: 400,
-          lineHeight: 0.62,
-          color: tokens.gold,
-          marginBottom: 18,
+          // Cormorant sets its quotation marks small relative to the em, so the
+          // ornament role runs well past the headline sizes to read as the large
+          // mark it is meant to be.
+          ...typeScale.ornament,
+          // goldText: this sits on a light card ground where the brand gold
+          // measures 2.47.
+          color: tokens.goldText,
+          marginBottom: space.md,
           userSelect: 'none',
         }}
       >
@@ -98,27 +97,22 @@ function Quote({ q, isMobile }: { q: (typeof QUOTES)[number]; isMobile: boolean 
       </div>
       <blockquote
         style={{
-          fontFamily: tokens.display,
-          fontSize: isMobile ? 19 : 21,
+          ...typeScale.card,
           fontStyle: 'italic',
-          fontWeight: 300,
           lineHeight: 1.5,
           color: tokens.ink,
-          margin: 0,
         }}
       >
         {q.quote}
       </blockquote>
       <figcaption
         style={{
-          fontFamily: tokens.body,
-          fontSize: 10,
-          fontWeight: 500,
-          letterSpacing: '0.2em',
-          textTransform: 'uppercase',
-          color: tokens.inkFaint,
-          marginTop: 24,
-          lineHeight: 1.9,
+          ...typeScale.micro,
+          // inkSoft, not inkFaint. At 0.4 this measured 2.50 on cream and 2.44
+          // on parchment — it was the clearest case of a non-text token
+          // carrying text. inkSoft at 0.7 measures 5.86–6.33.
+          color: tokens.inkSoft,
+          marginTop: space.md,
         }}
       >
         <span style={{ color: tokens.ink }}>{q.name}</span>
@@ -167,12 +161,16 @@ export function Testimonials() {
   }, [paused, reduceMotion]);
 
   return (
-    // Parchment again. This was warm white for exactly as long as the charcoal
-    // journal tiles sat between this section and the install strip; with those
-    // gone the install strip is directly above once more, and it is warm white —
-    // two warm whites touching run together as one field with no join. Nothing
-    // else about this section changes, only the ground it stands on.
-    <section id="reviews" style={{ background: tokens.parchment }}>
+    // WARM WHITE. The section-ground sequence is reassigned in this pass so no
+    // two adjacent sections share one, and this is the last light section before
+    // the ink footer: about panel (parchment) → final CTA (charcoal) → reviews
+    // (warm white) → footer (ink).
+    //
+    // The old note here reasoned that two warm whites touching would run
+    // together as one field. That was true when the install strip sat directly
+    // above; the charcoal final CTA sits between them now, so the join it was
+    // guarding against no longer exists.
+    <section id="reviews" style={{ background: tokens.warmWhite }}>
       <SectionBand label="Reviews" title="What our customers say" isMobile={isMobile} />
 
       <div
@@ -184,8 +182,8 @@ export function Testimonials() {
           // motion the reader needs some way to reach the quotes that are off
           // screen.
           overflowX: reduceMotion ? 'auto' : 'hidden',
-          paddingBottom: isMobile ? 68 : 92,
-          paddingLeft: isMobile ? 24 : 80,
+          paddingBottom: isMobile ? space.xl : space.xxl,
+          paddingLeft: layout.inlinePad(isMobile),
         }}
       >
         <div

@@ -24,7 +24,7 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
-import { tokens, prefersReducedMotion } from '../../theme';
+import { tokens, prefersReducedMotion, space, type as typeScale } from '../../theme';
 
 /** Pixels per second. Faster than the reviews marquee at 26 — these are five-word
  * fragments rather than sentences, so they read at a glance and a slow crawl
@@ -55,25 +55,20 @@ function Run() {
             display: 'inline-flex',
             alignItems: 'center',
             flexShrink: 0,
-            fontFamily: tokens.body,
-            fontSize: 11,
-            fontWeight: 400,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            // Ink on gold — 6.8:1, and the same pairing every primary CTA on the
-            // site uses. The brand has no black in it, so the "black text" this
-            // bar reads as is ink.
-            color: tokens.ink,
+            ...typeScale.micro,
+            // Brand gold on charcoal — 5.53:1. See the note on the bar's ground
+            // below for why this inverted.
+            color: tokens.gold,
             whiteSpace: 'nowrap',
           }}
         >
           {credential}
-          {/* Ink at low opacity, so the eye parses the strip as a list of six
-              rather than as one long sentence. It was gold on charcoal; on a gold
-              ground the separator has to invert with everything else or it
-              disappears. Inside the span rather than between spans so the spacing
-              can never collapse to a bare dot at a wrap point. */}
-          <span aria-hidden="true" style={{ color: 'rgba(28,24,16,0.42)', padding: '0 22px' }}>
+          {/* Warm white at low opacity, so the eye parses the strip as a list of
+              six rather than as one long sentence. It was ink at 0.42 on gold,
+              which measured 2.16 and failed 1.4.11; on charcoal at 0.45 it
+              measures 3.88. Inside the span rather than between spans so the
+              spacing can never collapse to a bare dot at a wrap point. */}
+          <span aria-hidden="true" style={{ color: tokens.onDarkEdge, padding: `0 ${space.md}px` }}>
             ·
           </span>
         </span>
@@ -119,12 +114,24 @@ export function TrustTicker() {
       // is read as an ordinary list and a live region would interrupt.
       style={{
         height: BAR_HEIGHT,
-        // Gold, not charcoal. It is the first thing on the page and it now
-        // bookends the gold steps bar at the foot of it — the two close the page
-        // around everything between them. It also stops the top of the document
-        // being charcoal ticker over charcoal nav over a dark hero, which was
-        // three darks stacked before a single word had been read.
-        background: tokens.gold,
+        // CHARCOAL, NOT GOLD — this is the gold budget.
+        //
+        // At a 900px viewport a full-bleed 38px gold bar paints 54,720px² of
+        // gold, and with the nav CTA, the Shop label and the cart badge the top
+        // of the page was spending roughly 60,400px² — 4.7% of the viewport,
+        // before the customer had been given anything. Gold's perceived value is
+        // inversely proportional to the area it covers, so the bar was making
+        // the actual gold CTAs read as more of the same rather than as the one
+        // action on the page. On charcoal the same top viewport spends well
+        // under 1%.
+        //
+        // It fixes the contrast at the same time: the separator on gold measured
+        // 2.16, and brand gold text on charcoal measures 5.53.
+        //
+        // The previous argument for gold — that it stopped the top of the
+        // document being three stacked darks — is answered by the ticker and the
+        // nav being the same charcoal, so they read as one bar rather than two.
+        background: tokens.charcoal,
         display: 'flex',
         alignItems: 'center',
         // Hidden while it animates, scrollable when it does not — under reduced
@@ -143,7 +150,7 @@ export function TrustTicker() {
           // Keeps the track on its own compositor layer; without it a transform
           // this wide repaints the bar every frame.
           willChange: 'transform',
-          paddingLeft: 24,
+          paddingLeft: space.md,
         }}
       >
         <Run />

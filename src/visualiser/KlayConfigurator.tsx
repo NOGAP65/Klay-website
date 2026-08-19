@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { tokens } from '../theme';
+import { tokens, space, type as typeScale } from '../theme';
 import { useVisualiserStore, BlindType } from './useVisualiserStore';
 import { usePhotoUpload } from './usePhotoUpload';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
@@ -24,13 +24,13 @@ const MAX_MEDIA_VH = 72;
 type ButtonVariant = 'primary' | 'ghost' | 'accent';
 
 const buttonBase: React.CSSProperties = {
-  fontFamily: tokens.body,
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: '0.14em',
-  textTransform: 'uppercase',
-  height: 38,
-  padding: '0 20px',
+  ...typeScale.label,
+  lineHeight: 1,
+  // 32 — the pill height. These are the configurator's own small controls
+  // (Open, Shut, Reset), not the page's primary CTA, so they take the pill's
+  // box rather than the CTA's 52.
+  height: 32,
+  padding: `0 ${space.md}px`,
   borderRadius: RADIUS,
   cursor: 'pointer',
   display: 'inline-flex',
@@ -102,10 +102,7 @@ function Button({
 }
 
 const controlLabelStyle: React.CSSProperties = {
-  fontFamily: tokens.body,
-  fontSize: 8.5,
-  letterSpacing: '0.18em',
-  textTransform: 'uppercase',
+  ...typeScale.micro,
   color: tokens.onDarkMuted,
   userSelect: 'none',
 };
@@ -137,7 +134,7 @@ function RollSlider({ value, onChange }: { value: number; onChange: (v: number) 
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 9,
+        gap: space.xs,
         padding: '12px 9px',
         borderRadius: RADIUS,
         background: 'linear-gradient(180deg, rgba(44,40,36,0.92) 0%, rgba(28,24,16,0.92) 100%)',
@@ -181,7 +178,7 @@ function RollSlider({ value, onChange }: { value: number; onChange: (v: number) 
           position: 'relative',
           width: 12,
           height: 148,
-          borderRadius: 999,
+          borderRadius: 2,
           cursor: 'pointer',
           // Groove: dark inside with a lit lower lip, so it reads as cut in.
           background: 'rgba(0,0,0,0.5)',
@@ -197,7 +194,7 @@ function RollSlider({ value, onChange }: { value: number; onChange: (v: number) 
             left: 0,
             right: 0,
             height: `${pct}%`,
-            borderRadius: 999,
+            borderRadius: 2,
             background: `linear-gradient(180deg, ${tokens.goldDeep} 0%, ${tokens.gold} 100%)`,
             boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.35)',
             pointerEvents: 'none',
@@ -212,7 +209,7 @@ function RollSlider({ value, onChange }: { value: number; onChange: (v: number) 
             transform: 'translate(-50%, -50%)',
             width: 24,
             height: 15,
-            borderRadius: 3,
+            borderRadius: 2,
             background: `linear-gradient(180deg, ${tokens.goldLight} 0%, ${tokens.gold} 55%, ${tokens.goldDeep} 100%)`,
             border: `1px solid ${tokens.goldDeep}`,
             boxShadow: dragging ? PRESSED_SHADOW : RAISED_SHADOW,
@@ -550,7 +547,7 @@ export default function KlayConfigurator({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 8,
+        gap: space.xs,
         padding: '12px 10px',
         borderRadius: RADIUS,
         background: 'linear-gradient(180deg, rgba(44,40,36,0.92) 0%, rgba(28,24,16,0.92) 100%)',
@@ -560,16 +557,16 @@ export default function KlayConfigurator({
       }}
     >
       <span style={{ ...controlLabelStyle, textAlign: 'center' }}>Motor</span>
-      <Button onClick={() => { stopAuto(); animateRollTo(0, 1200); }} style={{ height: 32, padding: '0 12px' }}>
+      <Button onClick={() => { stopAuto(); animateRollTo(0, 1200); }} style={{ height: 32, padding: `0 ${space.sm}px` }}>
         Open
       </Button>
-      <Button onClick={() => { stopAuto(); animateRollTo(1, 1200); }} style={{ height: 32, padding: '0 12px' }}>
+      <Button onClick={() => { stopAuto(); animateRollTo(1, 1200); }} style={{ height: 32, padding: `0 ${space.sm}px` }}>
         Shut
       </Button>
       <Button
         variant={autoRunning ? 'primary' : 'accent'}
         onClick={() => (autoRunning ? stopAuto() : startAuto())}
-        style={{ height: 32, padding: '0 12px' }}
+        style={{ height: 32, padding: `0 ${space.sm}px` }}
       >
         {autoRunning ? 'Stop' : 'Auto'}
       </Button>
@@ -614,17 +611,17 @@ export default function KlayConfigurator({
           }}
         >
           <div style={{ maxWidth: 360, margin: '0 auto' }}>
-            <h2 style={{ fontFamily: tokens.display, fontSize: 28, fontWeight: 300, color: tokens.onDark, margin: 0 }}>
+            <h2 style={{ ...typeScale.card, color: tokens.onDark }}>
               Upload a photo of your window
             </h2>
-            <p style={{ fontFamily: tokens.body, fontSize: 13, color: tokens.onDarkMuted, marginTop: 8 }}>
+            <p style={{ ...typeScale.body, color: tokens.onDarkMuted, marginTop: space.xs }}>
               or choose a preset room
             </p>
-            <div style={{ display: 'flex', gap: 12, marginTop: 24, justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: space.sm, marginTop: space.md, justifyContent: 'center' }}>
               <Button variant="primary" onClick={handleUpload}>Upload photo</Button>
               <Button onClick={handleTakePhoto}>Take photo</Button>
             </div>
-            <div style={{ display: 'flex', gap: 16, marginTop: 32, justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: space.md, marginTop: space.lg, justifyContent: 'center' }}>
               {PRESET_ROOMS.map(url => (
                 <img
                   key={url}
@@ -717,12 +714,12 @@ export default function KlayConfigurator({
             flexWrap: 'wrap',
             justifyContent: 'center',
             alignItems: 'center',
-            gap: 10,
+            gap: space.sm,
             padding: '13px 18px',
             borderTop: `1px solid ${tokens.onDarkLine}`,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>{footerButtons}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: space.sm }}>{footerButtons}</div>
         </div>
       )}
     </div>

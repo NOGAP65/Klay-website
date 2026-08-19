@@ -24,7 +24,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { tokens, motion } from '../../theme';
+import { tokens, motion, space, type as typeScale } from '../../theme';
 import type { CatalogueItem } from '../../data/catalogue';
 import {
   configuredLine,
@@ -42,13 +42,11 @@ import { useHover } from './primitives';
  * than the choices themselves: the question is scaffolding, the answers are
  * what the customer is reading. */
 const labelStyle: React.CSSProperties = {
-  fontFamily: tokens.body,
-  fontSize: 9.5,
-  fontWeight: 500,
-  letterSpacing: '0.18em',
-  textTransform: 'uppercase',
-  color: tokens.inkFaint,
-  marginBottom: 6,
+  ...typeScale.micro,
+  // inkSoft, not inkFaint — at 0.4 these field labels measured 2.44 on
+  // parchment and were the second place a non-text token was carrying text.
+  color: tokens.inkSoft,
+  marginBottom: space.xs,
 };
 
 /** One choice, as a rectangle. Selected is a gold fill with ink text — the same
@@ -71,12 +69,19 @@ function Chip({
       aria-pressed={selected}
       style={{
         fontFamily: tokens.body,
-        fontSize: 11,
+        ...typeScale.label,
+        letterSpacing: 'normal',
+        textTransform: 'none',
         fontWeight: 500,
         lineHeight: 1,
         // Tight, because the tallest product asks five questions and all of
         // them have to clear the action bar inside a fixed 470px panel.
-        padding: '7px 10px',
+        // The one pill: height 32, 20 either side.
+        display: 'inline-flex',
+        alignItems: 'center',
+        height: 32,
+        boxSizing: 'border-box',
+        padding: `0 ${space.md}px`,
         borderRadius: 2,
         cursor: 'pointer',
         whiteSpace: 'nowrap',
@@ -113,10 +118,13 @@ function Swatch({
       aria-label={choice.label}
       aria-pressed={selected}
       style={{
+        // One swatch definition: 20 x 20, radius 2. It was radius 1 here against
+        // 50% in the visualiser controls — the same object as a square in one
+        // panel and a circle in the next.
         width: 20,
         height: 20,
         padding: 0,
-        borderRadius: 1,
+        borderRadius: 2,
         cursor: 'pointer',
         background: choice.hex,
         border: `1px solid ${tokens.line}`,
@@ -145,10 +153,10 @@ function Field({
             unreadable without it, and "Fabric colour · Woodland Grey" is what
             the customer will repeat back on the phone. */}
         {field.kind === 'swatches' && value && (
-          <span style={{ color: tokens.inkSoft, letterSpacing: '0.08em' }}> · {value}</span>
+          <span style={{ color: tokens.inkSoft, letterSpacing: '0.3em' }}> · {value}</span>
         )}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
         {field.choices.map(c =>
           field.kind === 'swatches' ? (
             <Swatch key={c.id} choice={c} selected={c.id === value} onSelect={() => onChange(c.id)} />
@@ -211,7 +219,7 @@ export function RangeConfigurator({
         borderLeft: `1px solid ${tokens.lineFaint}`,
         borderRight: `1px solid ${tokens.lineFaint}`,
         borderBottom: `1px solid ${tokens.lineFaint}`,
-        padding: isMobile ? '16px 16px 14px' : '20px 20px 18px',
+        padding: `${space.md}px`,
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -241,8 +249,8 @@ export function RangeConfigurator({
             display: 'flex',
             alignItems: 'baseline',
             justifyContent: 'space-between',
-            gap: 8,
-            marginBottom: 8,
+            gap: space.xs,
+            marginBottom: space.xs,
           }}
         >
           {/* Priced products show the figure this exact configuration costs —
@@ -251,22 +259,19 @@ export function RangeConfigurator({
               say what they are: quoted once someone has measured. */}
           {price !== null ? (
             <>
-              <span style={{ fontFamily: tokens.display, fontSize: 26, fontWeight: 300, color: tokens.ink, lineHeight: 1 }}>
+              <span style={{ ...typeScale.numeric, color: tokens.ink, lineHeight: 1 }}>
                 ${price}
               </span>
-              <span style={{ fontFamily: tokens.body, fontSize: 10, color: tokens.inkFaint }}>
+              <span style={{ ...typeScale.micro, letterSpacing: 'normal', textTransform: 'none', color: tokens.inkSoft }}>
                 + install
               </span>
             </>
           ) : (
             <span
               style={{
-                fontFamily: tokens.body,
-                fontSize: 10,
-                fontWeight: 500,
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
-                color: tokens.gold,
+                ...typeScale.micro,
+                // goldText: this sits on a light panel, where brand gold is 2.11.
+                color: tokens.goldText,
               }}
             >
               Price on measure
@@ -278,14 +283,16 @@ export function RangeConfigurator({
           onClick={checkout}
           style={{
             width: '100%',
-            padding: '13px 16px',
+            padding: `0 ${space.md}px`,
+            height: 52,
+            boxSizing: 'border-box',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             background: hover ? tokens.goldLight : tokens.gold,
             color: tokens.ink,
-            fontFamily: tokens.body,
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: '0.16em',
-            textTransform: 'uppercase',
+            ...typeScale.label,
+            lineHeight: 1,
             border: 'none',
             borderRadius: 2,
             cursor: 'pointer',

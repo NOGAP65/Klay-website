@@ -19,7 +19,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { tokens, layout, motion } from '../../theme';
+import { tokens, layout, motion, space, type as typeScale, shadow } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCartStore } from '../../store/cartStore';
 import { productByBlindType } from '../../data/products';
@@ -64,7 +64,7 @@ function CategoryTabs() {
   ];
 
   return (
-    <div style={{ display: 'flex', gap: 6 }}>
+    <div style={{ display: 'flex', gap: space.xxs }}>
       {tabs.map(tab => {
         const active = productCategory === tab.id;
         return (
@@ -74,12 +74,12 @@ function CategoryTabs() {
             onClick={() => setProductCategory(tab.id)}
             style={{
               flex: 1,
-              padding: '11px 12px',
+              padding: `${space.sm}px`,
               borderRadius: 2,
               fontFamily: tokens.body,
-              fontSize: 10.5,
+              fontSize: 10,
               fontWeight: 500,
-              letterSpacing: '0.18em',
+              letterSpacing: '0.3em',
               textTransform: 'uppercase',
               cursor: 'pointer',
               border: `1px solid ${active ? tokens.gold : tokens.onDarkEdge}`,
@@ -119,8 +119,9 @@ function StepButton({
       disabled={disabled}
       onClick={onClick}
       style={{
-        width: 30,
-        height: 30,
+        // 32 x 32, on the scale and matching the pill height beside it.
+        width: 32,
+        height: 32,
         borderRadius: 2,
         // On the black card now, so the hairline and the glyph both invert. The
         // hover fill does not: gold with ink on it is the selection language the
@@ -149,21 +150,21 @@ function WindowCount({ value, onChange }: { value: number; onChange: (n: number)
           display: 'flex',
           alignItems: 'baseline',
           justifyContent: 'space-between',
-          gap: 12,
-          marginBottom: 9,
+          gap: space.sm,
+          marginBottom: space.xs,
         }}
       >
         {/* Matched to VisualiserControls' own Field labels — this row sits
             directly under them and has to read as one more field, not as a
             different component that happens to be nearby. */}
-        <span style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, color: tokens.warmWhite }}>
+        <span style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', color: tokens.warmWhite }}>
           Number of windows
         </span>
-        <span style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.onDarkMuted }}>
+        <span style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', fontWeight: 400, color: tokens.onDarkMuted }}>
           {value === 1 ? '1 window' : `${value} windows`}
         </span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: space.sm }}>
         <StepButton
           label="−"
           ariaLabel="One window fewer"
@@ -176,11 +177,10 @@ function WindowCount({ value, onChange }: { value: number; onChange: (n: number)
             the body face. */}
         <span
           style={{
-            fontFamily: tokens.body,
-            fontSize: 15,
+            ...typeScale.body,
             fontWeight: 500,
             color: tokens.warmWhite,
-            minWidth: 24,
+            minWidth: space.md,
             textAlign: 'center',
           }}
         >
@@ -253,12 +253,18 @@ export function VisualiserShowcase() {
     // the section is the white it sits on, which puts the contrast on the
     // instrument itself rather than on the band around it.
     //
-    // Cream, not warmWhite, and that is load-bearing rather than a shade of
-    // preference. AlternatingPanels immediately below is warm white, so warm
-    // white here would run two identical grounds together and lose the join —
-    // the page's rule is that no two adjacent sections share one. Cream is also
-    // simply the whitest thing in the palette, which is what was asked for.
-    <section id="visualiser" style={{ background: tokens.cream }}>
+    // PARCHMENT, NOT CREAM — cream is retired as a section ground.
+    //
+    // Measured, cream sits at luminance 0.935 and warm white at 0.890: 4.5%
+    // apart, which is the same ground to the eye. The site has two perceptually
+    // distinct light grounds, not three, and the token's own comment says what
+    // cream is actually for — "cards sitting on parchment". Using it as a band
+    // was spending a card colour on a section.
+    //
+    // The join this was guarding is still guarded: the install strip below is
+    // warm white and the range row above is warm white, so parchment separates
+    // from both. No two adjacent sections share a ground.
+    <section id="visualiser" style={{ background: tokens.parchment }}>
       {/* The same band as the category and range sections, from the same
           component, so the page's three big sections are introduced identically
           rather than in three slightly different voices. It supplies this
@@ -287,7 +293,7 @@ export function VisualiserShowcase() {
           of the viewport now, so an 80px inset either side would be measuring
           that 75% against a container the padding had already narrowed — the
           card would land at 75% of 1280 on a 1440 screen, not 75% of 1440. */}
-      <div style={{ padding: isMobile ? '0 24px 72px' : '0 0 96px' }}>
+      <div style={{ padding: isMobile ? `0 ${space.md}px ${space.xl}px` : `0 0 ${space.xxl}px` }}>
         <div
           style={{
             // 75% of the screen, centred. Capped at gridMax so the card cannot
@@ -321,7 +327,7 @@ export function VisualiserShowcase() {
           style={{
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? 28 : 32,
+            gap: space.lg,
             alignItems: 'stretch',
             // The black rectangle. Ink rather than charcoal — charcoal is the
             // page's ordinary dark and is already doing that job in the nav, the
@@ -330,11 +336,19 @@ export function VisualiserShowcase() {
             // the card rather than as the same surface continuing.
             background: tokens.ink,
             // No border. It was a hairline of ink at 0.08, which existed to lift
-            // a cream card off a parchment ground one step away from it. Against
-            // cream the black card separates completely on its own, and the
-            // hairline would only muddy the edge that is now doing the work.
+            // a cream card off a parchment ground one step away from it. The
+            // black card separates completely on its own, and the hairline would
+            // only muddy the edge that is now doing the work.
             borderRadius: CARD_RADIUS,
-            padding: isMobile ? 20 : 28,
+            padding: isMobile ? space.md : space.lg,
+            // THE ONE ELEVATED OBJECT ON THE PAGE. Four shadow tokens were
+            // declared and nothing consumed any of them, so nothing on the
+            // homepage sat ON the surface rather than in it. One raised object
+            // on a flat page is read as the most important thing on it, which is
+            // the cheapest hierarchy available and costs one property — and this
+            // is the section the page is built around. Deliberately nowhere else
+            // on the homepage: a second lifted card halves the value of this one.
+            boxShadow: shadow.rest,
           }}
         >
           <div
