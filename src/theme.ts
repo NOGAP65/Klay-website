@@ -31,26 +31,6 @@ export const tokens = {
   goldLight: '#D9AE60',
   goldDeep: '#A87F2F', // bottom stop of the raised-button gradient
 
-  /** THE TEXT-SAFE GOLD. Use this wherever gold carries meaning at body size.
-   *
-   * `gold` above is #C8973A, which measures 2.37:1 against warmWhite — WCAG AA
-   * wants 4.5:1 for body text, so the brand gold fails by a wide margin and
-   * every gold label on the site has been decorative-at-best. This is the same
-   * hue taken down until it passes, computed rather than eyeballed:
-   *
-   *     on warmWhite #F5F2ED   5.57:1   ✓
-   *     on parchment #EAE5DC   4.96:1   ✓
-   *     on cream     #FAF7F2   5.82:1   ✓
-   *
-   * The bright gold keeps its job — hairlines, hover states, fills on dark —
-   * where contrast against small type is not what is being asked of it. */
-  goldText: '#7A5C1E',
-
-  /** Body copy on a light ground. inkSoft (0.6) composites to 4.47:1 on
-   * warmWhite, which fails AA by a hair; 0.7 gives 6.20:1. Anything a reader
-   * has to READ uses this — inkSoft stays for hairline-adjacent furniture. */
-  inkBody: 'rgba(28,24,16,0.7)',
-
   // --- warm neutrals, spaced a real step apart rather than near-identical ---
   /** Trust/social-proof bands — one deliberate step below warmWhite. Set by
    * brand direction to #EAE5DC; an earlier pass had narrowed it to #F2EDE4,
@@ -105,107 +85,6 @@ export const tokens = {
 // ---------------------------------------------------------------------------
 
 type Style = Record<string, string | number>;
-
-// ---------------------------------------------------------------------------
-// THE PROPORTIONAL SYSTEM
-//
-// One base unit and one scale. Every measurement in a section built from here
-// on is a value from `space` — no ad-hoc numbers, ever. The scale is
-// Fibonacci-derived, so each step is ≈1.618× the last (136→220 is φ to three
-// decimals) and every value is a whole pixel, which pure φ does not give you.
-//
-// The point is not the number 1.618. Preference for it is an artefact of
-// stimulus range and clusters anywhere across ≈1.5–1.8 (Godkewitsch 1974, and
-// the implicit-association replications since). The point is CONSISTENCY: one
-// ratio applied everywhere produces processing fluency, and fluency is
-// experienced as beauty (Reber, Schwarz & Winkielman 2004). Any single
-// consistent ratio would do; this one also lands on integers.
-//
-// THE GROUPING LAW that goes with it: space between groups must be at least
-// 2.5× the space within a group. Two adjacent steps (32 vs 20) do NOT satisfy
-// it — skip a step. 52 against 20 does, 32 against 12 does.
-// ---------------------------------------------------------------------------
-
-export const space = {
-  /** Optical nudge. Never a gap in its own right — the 4px that makes a text
-   * block's 92% bottom padding land on a whole pixel. */
-  nudge: 4,
-  /** Tightest real relationship: a name and the line under it. */
-  xs: 8,
-  /** A label and the control it labels. An image and its caption. */
-  sm: 12,
-  /** Within a group — one field to the next. Mobile gutter. */
-  md: 20,
-  /** Grid gap. Card to card. */
-  lg: 32,
-  /** Between groups. The smallest gap that reads as a boundary. */
-  xl: 52,
-  /** A section's header to its content. Desktop gutter. */
-  xxl: 84,
-  /** A section's own top and bottom padding. */
-  section: 136,
-  /** Reserved for full-bleed editorial breaks. */
-  epic: 220,
-} as const;
-
-/** Container: 1440 max, 12 columns, 32 gap. Column and span widths fall out of
- * it, which is where the hero card's proportion comes from rather than being
- * imposed on it — 6 columns against 3 columns at a 4:5 crop resolves to
- * 1.685:1, inside the 1.5–1.8 band and, more to the point, identical to every
- * other proportion on the page. */
-export const grid = {
-  max: 1440,
-  columns: 12,
-  gap: space.lg,
-  gutter: (isMobile: boolean) => (isMobile ? space.md : space.xxl),
-  /** Width of `n` columns inside a 1440 container with 84 gutters. */
-  span: (n: number) => {
-    const content = 1440 - 2 * space.xxl; // 1272
-    const col = (content - (12 - 1) * space.lg) / 12; // 76.67
-    return Math.round(n * col + (n - 1) * space.lg);
-  },
-} as const;
-
-// ---------------------------------------------------------------------------
-// THE TYPE SYSTEM
-//
-// Two zones with a deliberate hole between them. The functional zone steps at
-// ≈1.15 and stays quiet; the editorial zone steps at ≈φ and carries the voice.
-// Nothing lives between 17 and 34 — that 2× jump IS the personality, and
-// filling it with a 24 is what makes a page read as safe and anonymous.
-// ---------------------------------------------------------------------------
-
-export const type = {
-  /** Inter. Labels, fine print, body, lead. */
-  micro: 11,
-  fine: 13,
-  body: 15,
-  lead: 17,
-  /** Cormorant. Card title, section head, hero display. */
-  card: 34,
-  section: 56,
-  hero: 92,
-} as const;
-
-/** Micro-caps: the 11px gold label. Uses goldText, not gold — it is the one
- * place a small gold word has to be legible rather than decorative. */
-export const microCaps: Style = {
-  fontFamily: tokens.body,
-  fontSize: type.micro,
-  fontWeight: 500,
-  letterSpacing: '0.18em',
-  textTransform: 'uppercase',
-  color: tokens.goldText,
-  margin: 0,
-};
-
-/** Optical centring for a text block: cap-height and descender asymmetry make
- * mathematical centring look bottom-heavy, so the bottom pad runs ≈92% of the
- * top. Rounded to the 4px nudge so it stays on the scale. */
-export const opticalPad = (top: number) => ({
-  paddingTop: top,
-  paddingBottom: Math.round((top * 0.92) / space.nudge) * space.nudge,
-});
 
 /** Gold, 10px, 0.3em — the one eyebrow. At most one per section: it exists to
  * name the section before the headline lands, and a second one competes with

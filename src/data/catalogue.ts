@@ -41,32 +41,8 @@ export interface CatalogueItem {
   id: string
   name: string
   group: Group
-  /** One line under the name on the tile. PRODUCT-CENTRIC — describes the
-   * thing. Used by the shop's cards, where the visitor has already chosen to
-   * browse products and a description is what they came for. */
+  /** One line under the name on the tile. */
   tagline: string
-  /** SITUATION-CENTRIC — describes the READER, not the product. "For wide
-   * sliding doors and glass walls", not "Louvres that draw aside".
-   *
-   * The homepage range row uses this and nothing else. Same information, and
-   * the difference is who has to do the translating: a visitor scanning for
-   * their own problem finds it in the first three words and feels recognised,
-   * where a product description asks them to work out whether it applies. It
-   * is the single highest-leverage line in the section.
-   *
-   * Kept as a separate field rather than replacing the tagline because the two
-   * surfaces genuinely want different sentences — see tagline above. */
-  situation?: string
-  /** One true, specific number the card can stand on. Specific beats round:
-   * "17 fabric colours" is checkable, "a huge range of colours" is marketing,
-   * and a number that can be checked reads as real even when it is not the
-   * strongest claim available.
-   *
-   * EVERY VALUE HERE IS TRUE OF THE REPO AS IT STANDS — colour counts are
-   * counted off the colour cards below, and the warranty is what the product
-   * pages already publish. Nothing is invented. Review counts would be
-   * stronger than either; supply real ones and this is where they go. */
-  proof?: string
   /** Where the whole tile goes. */
   to: string
   /** Present only where the product is genuinely priced. Everything else says
@@ -114,17 +90,10 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Roller Blinds',
     group: 'Indoor',
     tagline: 'Clean lines. Blockout, sunscreen, light filter and dual.',
-    situation: 'For afternoon glare in the living room, and dark in the bedroom.',
     to: blindLink('roller-blinds', 'Roller Blinds'),
     priceFrom: ROLLER_FROM,
-    // The living room, not the kitchen it was. Klay sells light control, so
-    // the product demonstration IS a room full of daylight being managed —
-    // sunscreen rollers half drawn against a city view, the light landing on
-    // the floor. The kitchen shot is dimmer and tighter and argues, quietly,
-    // against the thing the business does. Landscape, which is what the wide
-    // hero card wants; the portrait satellites take portrait crops.
-    image: '/images/lifestyle/room-living.png',
-    imagePosition: 'center 42%',
+    image: '/images/lifestyle/room-kitchen.png',
+    imagePosition: 'center 34%',
     glyph: 'roller-blinds',
     colours: RYNAMIC_COLOURS,
     light: ['Blockout', 'Light filter', 'Sunscreen'],
@@ -134,7 +103,6 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Roman Blinds',
     group: 'Indoor',
     tagline: 'Soft folds that stack flat at the head of the window.',
-    situation: 'For rooms where a blind should read as soft furnishing.',
     to: blindLink('roman-blinds', 'Roman Blinds'),
     glyph: 'roman-blinds',
     light: ['Blockout', 'Light filter'],
@@ -144,7 +112,6 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Honeycomb Blinds',
     group: 'Indoor',
     tagline: 'Cellular pleats that trap air. The insulating blind.',
-    situation: 'For west-facing rooms that cook in summer and leak heat in winter.',
     to: enquire('Honeycomb Blinds'),
     glyph: 'honeycomb-blinds',
     light: ['Blockout', 'Light filter'],
@@ -154,7 +121,6 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Venetian Blinds',
     group: 'Indoor',
     tagline: 'Horizontal slats that tilt. Aluminium, timber or faux.',
-    situation: 'For studies and kitchens where you want light angled, not gone.',
     to: blindLink('venetian-blinds', 'Venetian Blinds'),
     glyph: 'venetian-blinds',
     light: ['Blockout', 'Light filter'],
@@ -164,7 +130,6 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Plantation Shutters',
     group: 'Indoor',
     tagline: 'Louvred joinery, fitted to the opening and built to last.',
-    situation: 'For street-facing windows that want privacy without curtains.',
     to: enquire('Plantation Shutters'),
     glyph: 'shutters',
     light: ['Blockout', 'Light filter'],
@@ -174,7 +139,6 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Vertical Blinds',
     group: 'Indoor',
     tagline: 'Louvres that draw aside. Made for sliding doors.',
-    situation: 'For wide sliding doors and glass walls.',
     to: blindLink('vertical-blinds', 'Vertical Blinds'),
     glyph: 'vertical-blinds',
     light: ['Blockout', 'Light filter', 'Sunscreen'],
@@ -184,16 +148,12 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Curtains',
     group: 'Indoor',
     tagline: 'Sheer, blockout and lined. S-fold, pinch pleat or wave.',
-    situation: 'For bedrooms, and for full-height glass that needs softening.',
     to: enquire('Curtains'),
-    // Sheers across a full-height glass wall, sunlight coming through the cloth
-    // and landing on the floorboards. Filed under categories/outdoor.jpg, which
-    // is a misnomer in the asset library rather than in this file — the
-    // photograph is curtains, and it is the brightest and most persuasive one
-    // Klay has. The bedroom frame it replaced (categories/indoor.jpg) is darker
-    // and reads as a room at dusk.
-    image: '/images/categories/outdoor.jpg',
-    imagePosition: '42% center',
+    // The bedroom frame carrying sheers AND heavy drapes in one shot, which is
+    // the right picture for a tile standing for the whole curtain range rather
+    // than one fabric.
+    image: '/images/categories/indoor.jpg',
+    imagePosition: '62% center',
     glyph: 'curtains',
     colours: CURTAIN_COLOURS,
     light: ['Blockout', 'Light filter', 'Sheer'],
@@ -205,7 +165,6 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Folding Arm Awnings',
     group: 'Outdoor',
     tagline: 'Shade on demand, with no posts in the way.',
-    situation: 'For a deck that is unusable between noon and four.',
     to: enquire('Folding Arm Awnings'),
     glyph: 'awning-folding',
     light: ['Sunscreen'],
@@ -215,7 +174,6 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Zip Guide Systems',
     group: 'Outdoor',
     tagline: 'Tracked edges. No gaps, no flap, no wind noise.',
-    situation: 'For an alfresco that both the wind and the western sun find.',
     to: enquire('Zip Guide Systems'),
     glyph: 'screens',
     light: ['Sunscreen', 'Blockout'],
@@ -225,7 +183,6 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Roller Shutters',
     group: 'Outdoor',
     tagline: 'Insulation, security and total darkness in one slat.',
-    situation: 'For street-facing bedrooms — heat, noise and light in one.',
     to: enquire('Roller Shutters'),
     glyph: 'roller-shutters',
     light: ['Blockout'],
@@ -235,7 +192,6 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Pleated Flyscreens',
     group: 'Outdoor',
     tagline: 'Mesh that folds away to nothing when you are not using it.',
-    situation: 'For doors you want open all summer without the insects.',
     to: enquire('Pleated Flyscreens'),
     glyph: 'pleated-flyscreens',
   },
@@ -246,7 +202,6 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Wardrobes',
     group: 'Other',
     tagline: 'Built-in, walk-in and sliding. Fitted wall to wall.',
-    situation: 'For a bedroom with one shallow robe and nowhere to put anything.',
     to: enquire('Wardrobes'),
     image: '/images/categories/wardrobes.jpg',
     imagePosition: '13% center',
@@ -257,7 +212,6 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Shelving',
     group: 'Other',
     tagline: 'Open shelving, drawers and racks, made to the room.',
-    situation: 'For a walk-in, a pantry or a garage that has outgrown itself.',
     to: enquire('Shelving'),
     // The right-hand crop of the same walk-in the wardrobe tile uses — one
     // photograph composed left to right along the line the two products divide
@@ -271,7 +225,6 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Frameless Shower Screens',
     group: 'Other',
     tagline: 'Toughened glass, no frame. The bathroom disappears.',
-    situation: 'For a small bathroom that needs to feel bigger.',
     to: enquire('Frameless Shower Screens'),
     glyph: 'shower-screens',
   },
@@ -290,34 +243,6 @@ export const CATALOGUE: CatalogueItem[] = [
 // all — the cart checks out as "Request Quote & Measure" rather than as a card
 // payment, so it can hold such a line honestly.
 // ---------------------------------------------------------------------------
-
-/** The card's proof line. Derived where a true number exists, so it cannot
- * drift out of step with the colour cards it counts: add a colour and the
- * homepage says 15 without anyone editing copy. Falls back to the warranty the
- * product pages already publish. */
-export const proofOf = (item: CatalogueItem): string =>
-  item.proof ?? (item.colours ? `${item.colours.length} fabric colours` : '5 year warranty')
-
-/** ---------------------------------------------------------------------
- *  PHOTOGRAPHED — the products the homepage range row is allowed to show.
- *
- *  A LINE ICON IS NOT A SUBSTITUTE FOR A PHOTOGRAPH. A drawn glyph sitting
- *  beside a photographed room does not read as "a different treatment", it
- *  reads as an inferior product or an unfinished website, and asymmetric
- *  visual quality across a row is taken as asymmetric PRODUCT quality. So the
- *  row is gated on real imagery rather than filled with drawings.
- *
- *  This is a CONTENT BLOCKER, not a design decision. Ten of the fourteen
- *  products have no photograph in public/images: roman blinds, honeycomb,
- *  venetians, plantation shutters, verticals, folding arm awnings, zip guides,
- *  roller shutters, pleated flyscreens and frameless shower screens. Every one
- *  of them is written and configurable and reachable from the shop — they are
- *  waiting on a photograph and nothing else.
- *
- *  Add `image` to a catalogue entry and its card joins the row. No component
- *  changes, no list to update here.
- *  --------------------------------------------------------------------- */
-export const PHOTOGRAPHED: CatalogueItem[] = CATALOGUE.filter(i => i.image)
 
 // ---------------------------------------------------------------------------
 // FACETS

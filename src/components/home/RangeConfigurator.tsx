@@ -1,36 +1,36 @@
 // ---------------------------------------------------------------------------
-// The controls. Everything a customer can specify about a product, and the one
-// action that puts it in the cart.
+// The configurator half of a range card.
 //
-// IT NO LONGER LIVES IN THE RANGE ROW. It used to sit under every card, which
-// fused two incompatible jobs into one object: the top half was editorial
-// aspiration and the bottom half was a form, so the row asked for about forty
-// decisions before it had given anyone a reason to want anything. The controls
-// are unchanged and every one of them is still reachable — they open in the
-// focused panel instead, one product at a time, once the visitor has chosen.
-// See RangeConfigurePanel.
+// It sits directly under the photograph, at the SAME WIDTH AND THE SAME HEIGHT,
+// so the pair reads as one tall card with a picture on top and its controls
+// beneath. That symmetry is the whole idea: the photograph tells you what the
+// product is and the panel under it is where you specify and buy it, without
+// either half being the poor relation.
 //
-// TWO CLUSTERS, NOT FIVE FIELDS. The fields are grouped into what the product
-// is and what opening it is going into, with a real boundary between them —
-// see data/configOptions' Cluster. Five equal controls in a column read as a
-// form; two short questions read as a conversation.
+// Same height across all fourteen, which is the constraint the layout is built
+// around. A roller asks five questions and a wardrobe asks one, so the panels
+// would otherwise be wildly different heights and the row would look broken.
+// The fields therefore live in a scrolling column and the action bar is pinned
+// to the bottom — every card's price and button land on the same line, and the
+// one product with a long colour card scrolls inside its own panel rather than
+// stretching the row.
 //
-// EVERY MEASUREMENT IS A VALUE FROM theme's `space`. Cluster to cluster 52,
-// field to field 20, label to control 12: between-group space is 2.6× the
-// within-group space, which is what makes the structure legible without a
-// single border or fill doing the work.
+// WHAT IT OFFERS IS NOT DECIDED HERE. The fields come from data/configOptions,
+// which is also what prices the selection and turns it into a cart line. This
+// file is the control surface and nothing else — no product knowledge, no
+// pricing rules, so a change to what a venetian offers is a change to one table
+// rather than to a component.
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { tokens, motion, space, type, microCaps } from '../../theme';
+import { tokens, motion } from '../../theme';
 import type { CatalogueItem } from '../../data/catalogue';
 import {
   configuredLine,
   defaultSelection,
   fieldsFor,
   priceFor,
-  type Cluster,
   type ConfigChoice,
   type ConfigField,
   type Selection,
@@ -38,25 +38,22 @@ import {
 import { useCartStore } from '../../store/cartStore';
 import { useHover } from './primitives';
 
-/** Field label. Ink rather than gold: the panel already carries one gold thing
- * (the price), and a column of gold labels above gold-selected chips is the
- * gold-on-gold-on-gold hierarchy that makes an accent stop being one. */
+/** Field label — the small caps line above each control. Deliberately quieter
+ * than the choices themselves: the question is scaffolding, the answers are
+ * what the customer is reading. */
 const labelStyle: React.CSSProperties = {
   fontFamily: tokens.body,
-  fontSize: type.micro,
+  fontSize: 9.5,
   fontWeight: 500,
   letterSpacing: '0.18em',
   textTransform: 'uppercase',
-  color: tokens.inkBody,
-  marginBottom: space.sm,
+  color: tokens.inkFaint,
+  marginBottom: 6,
 };
 
-/** One choice.
- *
- * Selected is INK, not gold. Gold's perceived value is inversely proportional
- * to the area it covers — at hairline and small-caps scale it reads as gilt, and
- * in five rows of filled pills it reads as ochre. Ink fill also gives the
- * selected state 15.8:1 against its own label, which no gold fill can. */
+/** One choice, as a rectangle. Selected is a gold fill with ink text — the same
+ * pairing every primary action on the site uses, so a chosen option reads as
+ * something the page has committed to rather than as a highlight. */
 function Chip({
   choice,
   selected,
@@ -74,21 +71,19 @@ function Chip({
       aria-pressed={selected}
       style={{
         fontFamily: tokens.body,
-        fontSize: type.fine,
+        fontSize: 11,
         fontWeight: 500,
         lineHeight: 1,
-        // 44px tall including the border — the minimum comfortable tap target,
-        // and the same on the desktop where it is a pointer target.
-        padding: '15px 20px',
+        // Tight, because the tallest product asks five questions and all of
+        // them have to clear the action bar inside a fixed 470px panel.
+        padding: '7px 10px',
         borderRadius: 2,
         cursor: 'pointer',
         whiteSpace: 'nowrap',
         transition: motion.button,
-        background: selected ? tokens.ink : 'transparent',
-        color: selected ? tokens.warmWhite : tokens.ink,
-        // Gold appears here and only here in the control set: a 1px line under
-        // the pointer. Hairline gold is the expensive kind.
-        border: `1px solid ${selected ? tokens.ink : hover ? tokens.gold : tokens.line}`,
+        background: selected ? tokens.gold : 'transparent',
+        color: selected ? tokens.ink : hover ? tokens.ink : tokens.inkSoft,
+        border: `1px solid ${selected ? tokens.gold : hover ? tokens.lineStrong : tokens.line}`,
       }}
     >
       {choice.label}
@@ -96,9 +91,10 @@ function Chip({
   );
 }
 
-/** A colour, as cut cloth. Selection is a ring held off the swatch by a gap
- * rather than a border drawn on it — a border would eat two pixels of the
- * colour being judged. */
+/** A colour, as cut cloth — square, hairlined, the same object the photo tile's
+ * swatch row uses. Selection is a gold ring held OFF the swatch by a white gap
+ * rather than a border drawn on it: a border would eat two pixels of a 22px
+ * colour and change the colour you are judging. */
 function Swatch({
   choice,
   selected,
@@ -117,19 +113,15 @@ function Swatch({
       aria-label={choice.label}
       aria-pressed={selected}
       style={{
-        width: space.lg,
-        height: space.lg,
+        width: 20,
+        height: 20,
         padding: 0,
         borderRadius: 1,
         cursor: 'pointer',
         background: choice.hex,
         border: `1px solid ${tokens.line}`,
-        outline: selected
-          ? `2px solid ${tokens.ink}`
-          : hover
-            ? `2px solid ${tokens.gold}`
-            : 'none',
-        outlineOffset: space.nudge,
+        outline: selected ? `1.5px solid ${tokens.gold}` : hover ? `1.5px solid ${tokens.lineStrong}` : 'none',
+        outlineOffset: 2,
         transition: 'outline-color 0.2s ease',
       }}
     />
@@ -150,13 +142,13 @@ function Field({
       <div style={labelStyle}>
         {field.label}
         {/* The chosen colour is named beside its label — a grid of squares is
-            unreadable without it, and the name is what gets repeated back on
-            the phone. */}
+            unreadable without it, and "Fabric colour · Woodland Grey" is what
+            the customer will repeat back on the phone. */}
         {field.kind === 'swatches' && value && (
-          <span style={{ color: tokens.inkBody, letterSpacing: '0.08em' }}> · {value}</span>
+          <span style={{ color: tokens.inkSoft, letterSpacing: '0.08em' }}> · {value}</span>
         )}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {field.choices.map(c =>
           field.kind === 'swatches' ? (
             <Swatch key={c.id} choice={c} selected={c.id === value} onSelect={() => onChange(c.id)} />
@@ -169,12 +161,22 @@ function Field({
   );
 }
 
-const CLUSTER_LABEL: Record<Cluster, string> = {
-  product: 'The product',
-  opening: 'The opening',
-};
-
-export function RangeConfigurator({ item, isMobile }: { item: CatalogueItem; isMobile: boolean }) {
+export function RangeConfigurator({
+  item,
+  height,
+  isMobile,
+  onInteract,
+}: {
+  item: CatalogueItem;
+  /** Matched to the photograph above it — see the file header. */
+  height: number;
+  isMobile: boolean;
+  /** Fired on the first touch of any control. The row advances itself every
+   * five seconds, and carrying a card off the screen mid-configuration is the
+   * one thing that would make this panel unusable, so the carousel stops for
+   * good once anyone starts specifying something. */
+  onInteract?: () => void;
+}) {
   const navigate = useNavigate();
   const addItem = useCartStore(s => s.addItem);
   const [sel, setSel] = useState<Selection>(() => defaultSelection(item));
@@ -182,9 +184,14 @@ export function RangeConfigurator({ item, isMobile }: { item: CatalogueItem; isM
 
   const fields = fieldsFor(item);
   const price = priceFor(item, sel);
-  const clusters: Cluster[] = ['product', 'opening'];
+
+  const choose = (fieldId: string) => (choiceId: string) => {
+    onInteract?.();
+    setSel(s => ({ ...s, [fieldId]: choiceId }));
+  };
 
   const checkout = () => {
+    onInteract?.();
     addItem(configuredLine(item, sel));
     navigate('/cart');
     // The app has no scroll restoration, so without this the cart opens at
@@ -193,75 +200,76 @@ export function RangeConfigurator({ item, isMobile }: { item: CatalogueItem; isM
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: space.xl }}>
-      {clusters.map(c => {
-        const inCluster = fields.filter(f => f.cluster === c);
-        if (!inCluster.length) return null;
-        return (
-          <div key={c} style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
-            {/* The cluster's own name, in the gold micro-caps. One per cluster,
-                so gold marks structure rather than decorating every label. */}
-            <p style={{ ...microCaps, letterSpacing: '0.24em' }}>{CLUSTER_LABEL[c]}</p>
-            {inCluster.map(f => (
-              <Field
-                key={f.id}
-                field={f}
-                value={sel[f.id]}
-                onChange={id => setSel(s => ({ ...s, [f.id]: id }))}
-              />
-            ))}
-          </div>
-        );
-      })}
+    <div
+      style={{
+        height,
+        boxSizing: 'border-box',
+        background: tokens.cream,
+        // Hairline on three sides only. The top edge is where the photograph
+        // ends, and a line there would cut the card in half rather than close
+        // it — the two halves are one object.
+        borderLeft: `1px solid ${tokens.lineFaint}`,
+        borderRight: `1px solid ${tokens.lineFaint}`,
+        borderBottom: `1px solid ${tokens.lineFaint}`,
+        padding: isMobile ? '16px 16px 14px' : '20px 20px 18px',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* The questions. Scrolls within the panel so every card in the row is
+          the same height whether it asks one question or five. */}
+      <div
+        className="klay-vscroll"
+        style={{
+          flex: '1 1 auto',
+          minHeight: 0,
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: isMobile ? 10 : 11,
+        }}
+      >
+        {fields.map(f => (
+          <Field key={f.id} field={f} value={sel[f.id]} onChange={choose(f.id)} />
+        ))}
+      </div>
 
-      {/* The action. One boundary above it — 52 against the clusters' 20. */}
-      <div>
+      {/* The action bar, pinned to the bottom of every card in the row. */}
+      <div style={{ flex: '0 0 auto', paddingTop: 12 }}>
         <div
           style={{
             display: 'flex',
             alignItems: 'baseline',
-            gap: space.sm,
-            marginBottom: space.md,
+            justifyContent: 'space-between',
+            gap: 8,
+            marginBottom: 8,
           }}
         >
-          {/* THE ONE GOLD MOMENT. The price of this exact configuration, in the
-              editorial face at card scale and in the text-safe gold — the
-              highest-value instant in the section, and the only place gold is
-              allowed to carry meaning. It is type, not a fill, so it costs the
-              section almost no gold area at all.
-
-              Where there is no price, the withheld figure is stated as a
-              service received rather than a barrier: "price on measure" reads
-              as we will not tell you, and a free measure reads as something
-              you are being given. Same fact. */}
+          {/* Priced products show the figure this exact configuration costs —
+              it moves as the size and the motor are chosen, because a price
+              that ignores the controls above it is worse than none. The rest
+              say what they are: quoted once someone has measured. */}
           {price !== null ? (
             <>
-              <span
-                style={{
-                  fontFamily: tokens.display,
-                  fontSize: type.card,
-                  fontWeight: 300,
-                  lineHeight: 1,
-                  color: tokens.goldText,
-                }}
-              >
+              <span style={{ fontFamily: tokens.display, fontSize: 26, fontWeight: 300, color: tokens.ink, lineHeight: 1 }}>
                 ${price}
               </span>
-              <span style={{ fontFamily: tokens.body, fontSize: type.fine, color: tokens.inkBody }}>
-                plus installation
+              <span style={{ fontFamily: tokens.body, fontSize: 10, color: tokens.inkFaint }}>
+                + install
               </span>
             </>
           ) : (
             <span
               style={{
-                fontFamily: tokens.display,
-                fontSize: type.card,
-                fontWeight: 300,
-                lineHeight: 1.1,
-                color: tokens.goldText,
+                fontFamily: tokens.body,
+                fontSize: 10,
+                fontWeight: 500,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                color: tokens.gold,
               }}
             >
-              Free measure and quote
+              Price on measure
             </span>
           )}
         </div>
@@ -269,29 +277,25 @@ export function RangeConfigurator({ item, isMobile }: { item: CatalogueItem; isM
           {...bind}
           onClick={checkout}
           style={{
-            // Ink, not gold. A full-width gold slab is the single largest
-            // cheapening force available to this palette; ink fill with a gold
-            // hairline on hover keeps the action unmistakable and the gold
-            // expensive.
-            width: isMobile ? '100%' : 'auto',
-            padding: '19px 52px',
-            background: hover ? tokens.charcoal : tokens.ink,
-            color: tokens.warmWhite,
+            width: '100%',
+            padding: '13px 16px',
+            background: hover ? tokens.goldLight : tokens.gold,
+            color: tokens.ink,
             fontFamily: tokens.body,
-            fontSize: type.fine,
+            fontSize: 11,
             fontWeight: 600,
             letterSpacing: '0.16em',
             textTransform: 'uppercase',
-            border: `1px solid ${hover ? tokens.gold : tokens.ink}`,
+            border: 'none',
             borderRadius: 2,
             cursor: 'pointer',
             transition: motion.button,
           }}
         >
-          {/* Never framed as self-design. "You chose, we craft" — the customer
-              specified it and Klay makes it, which is the premium reading;
-              "design it yourself" is the one that costs a premium brand money. */}
-          {price !== null ? 'Add to cart' : 'Request this quote'}
+          {/* Says where the click goes. "Add to cart" would leave the visitor
+              wondering whether anything more is needed; this is the last step
+              before the details form. */}
+          {price !== null ? 'Add & Checkout' : 'Add & Request Quote'}
         </button>
       </div>
     </div>
