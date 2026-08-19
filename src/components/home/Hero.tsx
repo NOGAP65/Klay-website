@@ -131,70 +131,22 @@ export function Hero() {
         </video>
       )}
 
-      {/* THE BOTTOM GRADIENT — protects the type stack and nothing else, and it
-          is STRONGER THROUGH THE TYPE BAND than the brief specified.
+      {/* NO SCRIM. Both overlay gradients are gone — the footage plays clean,
+          edge to edge, with nothing washed over it.
 
-          The published ramp was 0.80 / 0.50 / 0.15 / transparent at 0 / 20 / 36 /
-          50 percent, on the stated basis that warm white measures 5.44:1 at the
-          0.80 stop. The 5.44 is right and irrelevant: the type does not sit at
-          the 0.80 stop. With an 84px bottom inset the block runs from about 10%
-          to 43% of the way up the frame, which under that ramp puts the eyebrow
-          at roughly 0.07 alpha and the headline at 0.28.
+          They were there to hold the type's contrast, and they did: measured at
+          four timestamps the eyebrow ran 7.7–9.0 and the headline 8.9–10.4. But
+          the bottom ramp had to reach 0.70 alpha through the whole lower half of
+          the frame to get there, which is most of the picture darkened to protect
+          three lines of text, and it read as a shadow lying across the hero
+          rather than as part of it.
 
-          Measured at four timestamps across the montage, against the brightest
-          5% of pixels actually behind each element: eyebrow 1.60 / 3.05 / 1.62 /
-          2.03, headline 1.56 / 2.45 / 1.86 / 1.82. Every one fails the 4.5 the
-          brief's own §9.7 requires, and the headline fails even the 3:1
-          large-text threshold at three of the four.
+          The protection moved onto the glyphs instead — see the text-shadows on
+          the type below. A shadow that follows the letterforms costs a few
+          pixels around each character; a scrim costs half the frame.
 
-          Solved rather than guessed. Over a worst-case white frame the minimum
-          scrim alpha is 0.625 for 10px warm white at 4.5:1 and 0.500 for the 76px
-          headline at 3:1. This ramp holds 0.70 to 44% — above the eyebrow's 43%
-          — then falls away.
-
-          The clear band is still met: transparent by 55% of the frame height, so
-          with the 110px nav gradient above it, 31.3% of the frame carries zero
-          scrim alpha against §9.5's 30% floor. */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          background:
-            'linear-gradient(to top, rgba(28,24,16,0.88) 0%, rgba(28,24,16,0.70) 44%, rgba(28,24,16,0.30) 50%, transparent 55%)',
-        }}
-      />
-
-      {/* THE TOP GRADIENT — protects the nav, and nothing else. 110px, the nav's
-          own height plus a little. The nav is transparent over this section now
-          rather than carrying an opaque charcoal band, so this is what its links
-          read against.
-
-          ALSO STRONGER THAN SPECIFIED, for the same reason and by the same
-          method. The published 0.45-to-transparent ramp puts about 0.29 alpha at
-          the links' own baseline, and measured across the montage the links came
-          out at 1.53 / 4.05 / 1.40 / 1.59 — three of four failing.
-
-          §7 anticipated a fix and proposed raising the link opacity from 0.82.
-          That does not reach: at 0.29 scrim, even fully opaque warm white tops
-          out near 1.9. The scrim is what has to move. Solved, the minimum alpha
-          for warm white at 0.82 to clear 4.5:1 over a white frame is 0.700, so
-          this holds 0.72 across the band the links sit in and releases below it.
-
-          It stays 110px, so it is still a nav band rather than a second scrim —
-          it is denser, not taller. */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 110,
-          pointerEvents: 'none',
-          background:
-            'linear-gradient(to bottom, rgba(28,24,16,0.78) 0%, rgba(28,24,16,0.72) 60%, transparent 100%)',
-        }}
-      />
+          The nav no longer needs a band either: it is opaque charcoal at every
+          scroll position again, so it carries its own ground. */}
 
       {/* LOWER-LEFT, not centred. Centred type over video is the most templated
           hero pattern there is, and ranging it into one corner is what leaves the
@@ -216,14 +168,36 @@ export function Hero() {
             shows the footage and keeps a gold eyebrow legible.
             The upside is that gold now appears exactly once in the hero, as the
             CTA fill. */}
-        <p style={{ ...eyebrow, color: tokens.warmWhite, marginBottom: space.md }}>
+        {/* The shadows here are what replaced the scrim, and they are doubled on
+            purpose: a tight, dark, almost-opaque halo that hugs the letterform
+            and does the contrast work, plus a wider soft one that lifts the whole
+            word off a busy frame. One alone does not hold — the tight shadow
+            leaves the glyph fighting texture a few pixels out, and the soft one
+            on its own is a grey smudge rather than an edge. */}
+        <p
+          style={{
+            ...eyebrow,
+            color: tokens.warmWhite,
+            marginBottom: space.md,
+            textShadow: '0 1px 3px rgba(28,24,16,0.95), 0 2px 16px rgba(28,24,16,0.75)',
+          }}
+        >
           Klay Interiors
         </p>
 
         {/* The page's one h1, written out rather than going through SectionHead,
             which emits an h2. The line break and the italic gold second line are
             the existing treatment, unchanged. */}
-        <h1 style={{ ...headline.hero, color: tokens.warmWhite }}>
+        {/* Wider radii than the eyebrow's. At 76px the strokes are far apart, so
+            a 3px halo sits inside the letterform's own weight and does nothing —
+            the shadow has to be scaled to the type. */}
+        <h1
+          style={{
+            ...headline.hero,
+            color: tokens.warmWhite,
+            textShadow: '0 2px 6px rgba(28,24,16,0.85), 0 4px 32px rgba(28,24,16,0.7)',
+          }}
+        >
           The finishing layer
           <br />
           of <span style={{ fontStyle: 'italic', color: tokens.gold }}>your home.</span>
