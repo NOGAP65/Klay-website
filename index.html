@@ -66,6 +66,27 @@
         display: none;
       }
 
+      /* The opposite case: the field column inside a range card's configurator.
+         Every card in that row is the same height, so the one product with a
+         seventeen-colour card has to scroll inside its own panel — and there
+         the scrollbar is the only thing saying there is more to choose from, so
+         it stays. Thin and ink at low opacity, because it sits inside a card
+         rather than at the edge of the window. */
+      .klay-vscroll {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(28, 24, 16, 0.2) transparent;
+      }
+      .klay-vscroll::-webkit-scrollbar {
+        width: 4px;
+      }
+      .klay-vscroll::-webkit-scrollbar-thumb {
+        background: rgba(28, 24, 16, 0.2);
+        border-radius: 2px;
+      }
+      .klay-vscroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
       @keyframes klay-orb {
         0%   { transform: translate(0, 0) scale(1); }
         33%  { transform: translate(18vw, 8vh) scale(1.15); }

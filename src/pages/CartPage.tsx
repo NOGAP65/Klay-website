@@ -98,20 +98,21 @@ export default function CartPage() {
                       <p style={{ fontFamily: tokens.body, fontSize: 13, color: tokens.inkSoft, margin: '8px 0 0' }}>
                         {item.type}
                       </p>
+                      {/* A line configured on a card prints the questions it
+                          was actually asked; one from the visualiser prints the
+                          configurator's four fixed fields. See the cart store's
+                          `options` for why the two differ. */}
                       <div style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkFaint, marginTop: 12, lineHeight: 1.8 }}>
-                        <div>Fabric: {item.fabricColour}</div>
-                        <div>Hardware: {item.hardwareColour}</div>
-                        {/* Size and operation are omitted on a measure line.
-                            They are real choices on a configured blind and
-                            defaults on a line added straight from a card —
-                            "Size: medium" against a shower screen is the site
-                            stating something nobody has decided yet. */}
-                        {!item.priceOnMeasure && (
-                          <>
-                            <div>Size: {item.windowSize}</div>
-                            <div>Operation: {item.operation}</div>
-                          </>
-                        )}
+                        {item.options
+                          ? item.options.map(o => <div key={o.label}>{o.label}: {o.value}</div>)
+                          : (
+                            <>
+                              <div>Fabric: {item.fabricColour}</div>
+                              <div>Hardware: {item.hardwareColour}</div>
+                              <div>Size: {item.windowSize}</div>
+                              <div>Operation: {item.operation}</div>
+                            </>
+                          )}
                       </div>
                     </div>
 

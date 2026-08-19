@@ -18,6 +18,17 @@ export interface CartItem {
    * 0 on these rather than a guess. The cart checks out as a quote request, so
    * a priced line and a measure line can share the one basket. */
   priceOnMeasure?: boolean;
+  /** The configuration exactly as it was chosen, ready to print — "Light
+   * control: Blockout", "Slat: Timber". Present on anything added from the
+   * range row's card configurator.
+   *
+   * It exists because the five fixed fields above cannot describe fourteen
+   * different products: a wardrobe has no window size and a shower screen has
+   * no operation, so printing all five would have the cart stating defaults
+   * nobody chose. This lists only the questions that were actually asked. The
+   * fields stay populated underneath — they are what the line id is built from
+   * and what the quote reads. */
+  options?: { label: string; value: string }[];
 }
 
 interface CartStore {

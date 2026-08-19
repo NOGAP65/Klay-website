@@ -1,5 +1,17 @@
 // ---------------------------------------------------------------------------
-// 4. Our Range — one row of range tiles, arrows, and it moves on its own.
+// 4. Our Range — one row of product cards, arrows, and it moves on its own.
+//
+// A CARD IS TWO HALVES: the photograph, and a configurator of exactly the same
+// width and height directly beneath it. The top half says what the product is;
+// the bottom half is where it gets specified and bought. Nothing about a
+// product is a page away any more — the whole transaction happens in the row.
+//
+// That is the change this section has been working towards. It went from two
+// grids that asked "what do you want to shop for" (below), to one row that
+// answered it with a photograph and a from-price, to a row where the answer
+// includes the fabric, the size, the motor and the price of that exact
+// specification. See RangeConfigurator for the panel and data/configOptions
+// for what each of the fourteen products is allowed to ask.
 //
 // This replaces TWO sections: the Indoor/Outdoor/Wardrobes category grid and the
 // Dusk/Veil/Duo SKU grid that followed it. They were the same question asked
@@ -15,10 +27,10 @@
 // and three of its four cards were rollers, which made the range look narrower
 // than the business actually is.
 //
-// SAME TILE, SMALLER, IN A ROW. The tile is PhotoTile, unchanged — the same object
-// the category grid used, because that design works. What changed is the scale and
-// the axis: 300px wide against the category tiles' 480, and a horizontal scroller
-// instead of a grid.
+// SAME TILE, SMALLER, IN A ROW. The top half is PhotoTile, unchanged — the same
+// object the category grid used, because that design works. What changed is the
+// scale and the axis: ~330px wide against the category tiles' 480, and a
+// horizontal scroller instead of a grid.
 //
 // WHY A CAROUSEL EARNS ITS PLACE HERE. Not for motion's sake. A grid has to divide
 // evenly or it leaves holes, and that constraint is what forced every previous
@@ -30,18 +42,17 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { tokens, motion, prefersReducedMotion } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { useCartStore } from '../../store/cartStore';
 // The row reads data/catalogue.ts — the same fourteen products the shop lists,
 // in the same order, rendered by the same tile. It used to read a data/ranges.ts
 // of its own holding six invented ranges, which meant the homepage and the shop
 // described the business differently: the homepage offered "Screens" and
 // "Shelving" as peers of "Blinds", and neither Honeycomb Blinds nor Roller
 // Shutters nor Frameless Shower Screens appeared anywhere on it.
-import { CATALOGUE, standardBuild } from '../../data/catalogue';
+import { CATALOGUE } from '../../data/catalogue';
 import { PhotoTile, SectionBand, TILE_GAP, useHover } from './primitives';
+import { RangeConfigurator } from './RangeConfigurator';
 
 /** How much of the viewport the row is allowed, centred in what is left.
  *
@@ -67,16 +78,34 @@ const ROW_WIDTH = '70%';
  * tight at — "Frameless Shower Screens" needs the width. Three keeps each card
  * at ~330px, which is where it was when the row ran edge to edge.
  *
+ * WITH A FLOOR UNDER IT. Three shares of 70% is 331px on a 1440 screen and
+ * 234px on a 1024 one, and at 234 the card stops working: the configurator's
+ * chips wrap to three rows and the seventeen-colour curtain card no longer
+ * clears its own action bar. The floor holds the card at 280px and lets the
+ * third one hang half off the row instead — a partial card at the edge of a
+ * scroller is a normal thing that says "keep going", where a cramped one just
+ * looks wrong.
+ *
  * Fourteen cards, three visible: the arrows always have somewhere to go. */
+const CARD_MIN = 280;
+
 const cardBasis = (isMobile: boolean) =>
   isMobile
     ? `calc((100% - ${TILE_GAP}px) / 1.6)`
-    : `calc((100% - ${2 * TILE_GAP}px) / 3)`;
+    : `max(${CARD_MIN}px, calc((100% - ${2 * TILE_GAP}px) / 3))`;
 
 /** Tile height. Up with the width, so the card keeps its portrait crop — a window
- * covering hangs, so the frame wants height. */
+ * covering hangs, so the frame wants height.
+ *
+ * THE CONFIGURATOR UNDER IT IS THE SAME NUMBER, so a card is a photograph with
+ * an equal panel of controls beneath it and the row has one shared baseline —
+ * see RangeConfigurator. A card is therefore twice this tall overall, which is
+ * the price of putting the whole specification on the homepage instead of two
+ * pages further in. */
 const CARD_H = 470;
 const CARD_H_MOBILE = 340;
+
+const cardHeight = (isMobile: boolean) => (isMobile ? CARD_H_MOBILE : CARD_H);
 
 /** How long the row rests before advancing itself. Five seconds — ten read as a
  * row that had stopped rather than one that was waiting, since with four of six
@@ -95,10 +124,16 @@ function Arrow({
   direction,
   onClick,
   disabled,
+  top,
 }: {
   direction: 'prev' | 'next';
   onClick: () => void;
   disabled: boolean;
+  /** Centred on the PHOTOGRAPH rather than on the card, which is twice as tall
+   * now that a configurator hangs under every tile. At the card's own midpoint
+   * the arrows landed exactly on the seam between the two halves, reading as
+   * controls belonging to the panel and sitting over its first row of chips. */
+  top: number;
 }) {
   const { hover, bind } = useHover();
   const active = hover && !disabled;
@@ -110,7 +145,7 @@ function Arrow({
       aria-label={direction === 'prev' ? 'Previous ranges' : 'Next ranges'}
       style={{
         position: 'absolute',
-        top: '50%',
+        top,
         [direction === 'prev' ? 'left' : 'right']: 20,
         transform: 'translateY(-50%)',
         zIndex: 2,
@@ -142,12 +177,17 @@ function Arrow({
 
 export function RangeCarousel() {
   const isMobile = useIsMobile();
-  const navigate = useNavigate();
-  const addItem = useCartStore(s => s.addItem);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   const [paused, setPaused] = useState(false);
+  /** Set the first time anyone touches a control in any card's configurator,
+   * and never cleared. Hovering already pauses the drift, but hover does not
+   * exist on a touch screen — and a row that carries the card off the edge
+   * while someone is halfway through choosing a fabric is worse than a row
+   * that does not move at all. Once the visitor is specifying something, the
+   * row has done its job of showing there is more and stops. */
+  const [frozen, setFrozen] = useState(false);
   // Read once. A row that advances itself is exactly what this preference exists
   // to stop; under it the row holds still and becomes one the reader scrolls.
   const [reduceMotion] = useState(prefersReducedMotion);
@@ -180,30 +220,11 @@ export function RangeCarousel() {
 
   useEffect(syncEdges, [syncEdges]);
 
-  /** Shop Now. The product's standard build goes in the cart and the visitor
-   * lands on the cart, where the next click is checkout — see data/catalogue's
-   * standardBuild for what each product goes in as.
-   *
-   * Navigating rather than staying put with a "✓ Added" flash, because the
-   * point of the change is the two-click path out. A confirmation that leaves
-   * the visitor on the homepage has spent one of those two clicks on being
-   * told something. */
-  const shopNow = (item: (typeof CATALOGUE)[number]) => () => {
-    addItem(standardBuild(item));
-    navigate('/cart');
-    // The app keeps the window's scroll position across a route change — it has
-    // no scroll restoration of any kind — so a click from a row two thirds down
-    // the homepage arrived at the cart's FOOTER, showing the site's contact
-    // details rather than the thing just added. Reset here rather than adding a
-    // global handler, which would be a change to every route on the site.
-    window.scrollTo(0, 0);
-  };
-
   // The row moves on its own when it is left alone. It pauses under the pointer,
   // and on reaching the end it returns to the start rather than stopping — a
   // carousel that quietly dies after one pass looks broken rather than finished.
   useEffect(() => {
-    if (reduceMotion || paused) return;
+    if (reduceMotion || paused || frozen) return;
     const tick = window.setInterval(() => {
       const el = scrollerRef.current;
       if (!el) return;
@@ -214,7 +235,7 @@ export function RangeCarousel() {
       }
     }, AUTO_MS);
     return () => window.clearInterval(tick);
-  }, [paused, reduceMotion]);
+  }, [paused, frozen, reduceMotion]);
 
   return (
     // Warm white, the ground the category grid had — and the strip between the
@@ -272,8 +293,8 @@ export function RangeCarousel() {
             a 232px card cover most of it. */}
         {!isMobile && (
           <>
-            <Arrow direction="prev" onClick={() => scrollByCards(-1)} disabled={atStart} />
-            <Arrow direction="next" onClick={() => scrollByCards(1)} disabled={atEnd} />
+            <Arrow direction="prev" onClick={() => scrollByCards(-1)} disabled={atStart} top={CARD_H / 2} />
+            <Arrow direction="next" onClick={() => scrollByCards(1)} disabled={atEnd} top={CARD_H / 2} />
           </>
         )}
 
@@ -295,32 +316,36 @@ export function RangeCarousel() {
               key={item.id}
               style={{ flex: `0 0 ${cardBasis(isMobile)}`, scrollSnapAlign: 'start' }}
             >
+              {/* The picture. No chip and no swatch row on it any more: the
+                  panel below owns the colours and owns the action, and a Shop
+                  Now on the photograph would be a second, different way to buy
+                  the same product sitting 20px above the first. The tile still
+                  links to the product for anyone who wants to read first. */}
               <PhotoTile
                 to={item.to}
                 label={item.name}
                 image={item.image}
                 objectPosition={item.imagePosition}
-                blurb={item.colours ? undefined : item.tagline}
-                note={item.priceFrom !== undefined ? `$${item.priceFrom}` : 'Price on measure'}
-                cta="Shop Now"
-                // The chip adds and goes to the cart; the rest of the tile
-                // still opens the product. See PhotoTile's onCta.
-                onCta={shopNow(item)}
-                // Stacked, not beside the label — see ctaBelow. These cards are
-                // 300px wide against the category tiles' 480.
-                ctaBelow
-                minHeight={isMobile ? CARD_H_MOBILE : CARD_H}
+                blurb={item.tagline}
+                note={item.priceFrom !== undefined ? `From $${item.priceFrom}` : 'Price on measure'}
+                minHeight={cardHeight(isMobile)}
                 // Down from the category tiles' clamp(28px, 3vw, 40px). At 300px
                 // wide, 40px of Cormorant put "Blockout Curtains" onto three
                 // lines and left no room under it for the blurb and the price.
                 labelSize="clamp(19px, 1.7vw, 23px)"
                 glyph={item.glyph}
-                colours={item.colours}
                 alt={`${item.name} — ${item.group}`}
-                // Same reason as the shop's cards: the label block runs name,
-                // price, sometimes a swatch row and a stacked chip, which reaches
-                // well up a pale photograph.
+                // Same reason as the shop's cards: the label block runs a name,
+                // a line of copy and a price, which reaches well up a pale
+                // photograph.
                 scrim="deep"
+              />
+              {/* Its other half — same width, same height. */}
+              <RangeConfigurator
+                item={item}
+                height={cardHeight(isMobile)}
+                isMobile={isMobile}
+                onInteract={() => setFrozen(true)}
               />
             </div>
           ))}
