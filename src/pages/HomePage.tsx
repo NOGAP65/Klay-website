@@ -59,7 +59,7 @@ import { Footer } from '../components/Footer';
 import { TrustTicker, BAR_HEIGHT } from '../components/home/TrustTicker';
 import { Hero } from '../components/home/Hero';
 import { StepsBar } from '../components/home/StepsBar';
-import { RangeCarousel } from '../components/home/RangeCarousel';
+import { RangeSection } from '../components/home/RangeSection';
 import { RecommendationBanner } from '../components/home/RecommendationBanner';
 import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
 import { AboutPanel } from '../components/home/AboutPanel';
@@ -112,11 +112,11 @@ export default function HomePage() {
             /how-it-works, which the bar links to. */}
         <StepsBar />
 
-        {/* 5 — The whole range in one row: six tiles, arrows, and it advances on
-            its own. This is the category grid and the SKU grid merged — they were
-            asking the same question twice, and neither was asking it the way a
-            customer thinks. See the note at the top of RangeCarousel. */}
-        <RangeCarousel />
+        {/* 5 — The range, doing one job: which of these is mine. A dominant
+            hero card and its satellites, no controls and no prices; choosing one
+            opens the configurator in place. See the note at the top of
+            RangeSection. */}
+        <RangeSection />
 
         {/* 6 — The catch, for anyone who read the range and still doesn't know
             which one is theirs. */}

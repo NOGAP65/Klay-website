@@ -48,11 +48,21 @@ export interface ConfigChoice {
   hex?: string
 }
 
+/** Which half of the question this field belongs to.
+ *
+ * Five controls in a flat list read as undifferentiated soup — the gap between
+ * a label and its control and the gap between one field and the next end up
+ * nearly identical, and the eye gets no structure to hold. Split in two, with a
+ * real boundary between them, the panel becomes two short questions instead of
+ * one long form: what the product is, and what opening it is going into. */
+export type Cluster = 'product' | 'opening'
+
 export interface ConfigField {
   id: FieldId
   /** What the customer reads above the control. */
   label: string
   kind: 'chips' | 'swatches'
+  cluster: Cluster
   choices: ConfigChoice[]
 }
 
@@ -206,24 +216,49 @@ const FALLBACK: ProductOptions = {
 export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
   const opts = PRODUCT_OPTIONS[item.id] ?? FALLBACK
   const fields: ConfigField[] = [
-    { id: 'variant', label: opts.variantLabel, kind: 'chips', choices: opts.variants },
+    {
+      id: 'variant',
+      label: opts.variantLabel,
+      kind: 'chips',
+      cluster: 'product',
+      choices: opts.variants,
+    },
   ]
   if (item.colours) {
     fields.push({
       id: 'colour',
       label: opts.colourLabel ?? 'Colour',
       kind: 'swatches',
+      cluster: 'product',
       choices: item.colours.map(c => ({ id: c.name, label: c.name, hex: c.hex })),
     })
   }
   if (opts.hardware) {
-    fields.push({ id: 'hardware', label: 'Hardware', kind: 'chips', choices: HARDWARE_CHOICES })
+    fields.push({
+      id: 'hardware',
+      label: 'Hardware',
+      kind: 'chips',
+      cluster: 'product',
+      choices: HARDWARE_CHOICES,
+    })
   }
   if (opts.size) {
-    fields.push({ id: 'size', label: 'Window size', kind: 'chips', choices: SIZE_CHOICES })
+    fields.push({
+      id: 'size',
+      label: 'Window size',
+      kind: 'chips',
+      cluster: 'opening',
+      choices: SIZE_CHOICES,
+    })
   }
   if (opts.operation) {
-    fields.push({ id: 'operation', label: 'Operation', kind: 'chips', choices: OPERATION_CHOICES })
+    fields.push({
+      id: 'operation',
+      label: 'Operation',
+      kind: 'chips',
+      cluster: 'opening',
+      choices: OPERATION_CHOICES,
+    })
   }
   return fields
 }

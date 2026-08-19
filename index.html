@@ -66,25 +66,33 @@
         display: none;
       }
 
-      /* The opposite case: the field column inside a range card's configurator.
-         Every card in that row is the same height, so the one product with a
-         seventeen-colour card has to scroll inside its own panel — and there
-         the scrollbar is the only thing saying there is more to choose from, so
-         it stays. Thin and ink at low opacity, because it sits inside a card
-         rather than at the edge of the window. */
-      .klay-vscroll {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(28, 24, 16, 0.2) transparent;
+      /* THE CURTAIN. The range section's one signature moment: choosing a
+         product draws its panel aside left to right, revealing the photograph
+         and the controls by the edge travelling over them rather than by
+         fading them in. A keyframe rather than a transition because it plays
+         once on mount and has to be replayable per product — see
+         RangeConfigurePanel, which keys the element on the product id.
+
+         The section's own prefers-reduced-motion handling drops the animation
+         entirely rather than shortening it; this rule is the belt to that
+         braces, for anything that mounts before the hook has read the query. */
+      @keyframes klay-curtain {
+        from {
+          clip-path: inset(0 100% 0 0);
+          opacity: 0.4;
+        }
+        to {
+          clip-path: inset(0 0 0 0);
+          opacity: 1;
+        }
       }
-      .klay-vscroll::-webkit-scrollbar {
-        width: 4px;
-      }
-      .klay-vscroll::-webkit-scrollbar-thumb {
-        background: rgba(28, 24, 16, 0.2);
-        border-radius: 2px;
-      }
-      .klay-vscroll::-webkit-scrollbar-track {
-        background: transparent;
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
       }
 
       @keyframes klay-orb {
