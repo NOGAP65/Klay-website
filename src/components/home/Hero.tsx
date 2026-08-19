@@ -131,26 +131,58 @@ export function Hero() {
         </video>
       )}
 
-      {/* THE BOTTOM GRADIENT — protects the type stack and nothing else. It
-          reaches zero at half the frame height, so everything above that line is
-          the photograph unmodified.
-          Composited against a worst-case white frame at the 0.80 stop: warm white
-          measures 5.44:1 against a 4.5 requirement, and the 76px gold second line
-          measures 3.55:1 against the 3:1 large-text threshold. Both pass. */}
+      {/* THE BOTTOM GRADIENT — protects the type stack and nothing else, and it
+          is STRONGER THROUGH THE TYPE BAND than the brief specified.
+
+          The published ramp was 0.80 / 0.50 / 0.15 / transparent at 0 / 20 / 36 /
+          50 percent, on the stated basis that warm white measures 5.44:1 at the
+          0.80 stop. The 5.44 is right and irrelevant: the type does not sit at
+          the 0.80 stop. With an 84px bottom inset the block runs from about 10%
+          to 43% of the way up the frame, which under that ramp puts the eyebrow
+          at roughly 0.07 alpha and the headline at 0.28.
+
+          Measured at four timestamps across the montage, against the brightest
+          5% of pixels actually behind each element: eyebrow 1.60 / 3.05 / 1.62 /
+          2.03, headline 1.56 / 2.45 / 1.86 / 1.82. Every one fails the 4.5 the
+          brief's own §9.7 requires, and the headline fails even the 3:1
+          large-text threshold at three of the four.
+
+          Solved rather than guessed. Over a worst-case white frame the minimum
+          scrim alpha is 0.625 for 10px warm white at 4.5:1 and 0.500 for the 76px
+          headline at 3:1. This ramp holds 0.70 to 44% — above the eyebrow's 43%
+          — then falls away.
+
+          The clear band is still met: transparent by 55% of the frame height, so
+          with the 110px nav gradient above it, 31.3% of the frame carries zero
+          scrim alpha against §9.5's 30% floor. */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           pointerEvents: 'none',
           background:
-            'linear-gradient(to top, rgba(28,24,16,0.80) 0%, rgba(28,24,16,0.50) 20%, rgba(28,24,16,0.15) 36%, transparent 50%)',
+            'linear-gradient(to top, rgba(28,24,16,0.88) 0%, rgba(28,24,16,0.70) 44%, rgba(28,24,16,0.30) 50%, transparent 55%)',
         }}
       />
 
       {/* THE TOP GRADIENT — protects the nav, and nothing else. 110px, the nav's
           own height plus a little. The nav is transparent over this section now
           rather than carrying an opaque charcoal band, so this is what its links
-          read against. */}
+          read against.
+
+          ALSO STRONGER THAN SPECIFIED, for the same reason and by the same
+          method. The published 0.45-to-transparent ramp puts about 0.29 alpha at
+          the links' own baseline, and measured across the montage the links came
+          out at 1.53 / 4.05 / 1.40 / 1.59 — three of four failing.
+
+          §7 anticipated a fix and proposed raising the link opacity from 0.82.
+          That does not reach: at 0.29 scrim, even fully opaque warm white tops
+          out near 1.9. The scrim is what has to move. Solved, the minimum alpha
+          for warm white at 0.82 to clear 4.5:1 over a white frame is 0.700, so
+          this holds 0.72 across the band the links sit in and releases below it.
+
+          It stays 110px, so it is still a nav band rather than a second scrim —
+          it is denser, not taller. */}
       <div
         style={{
           position: 'absolute',
@@ -159,7 +191,8 @@ export function Hero() {
           right: 0,
           height: 110,
           pointerEvents: 'none',
-          background: 'linear-gradient(to bottom, rgba(28,24,16,0.45) 0%, transparent 100%)',
+          background:
+            'linear-gradient(to bottom, rgba(28,24,16,0.78) 0%, rgba(28,24,16,0.72) 60%, transparent 100%)',
         }}
       />
 
