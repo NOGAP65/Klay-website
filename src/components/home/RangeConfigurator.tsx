@@ -1,19 +1,18 @@
 // ---------------------------------------------------------------------------
 // The configurator half of a range card.
 //
-// It sits directly under the photograph, at the SAME WIDTH AND THE SAME HEIGHT,
-// so the pair reads as one tall card with a picture on top and its controls
-// beneath. That symmetry is the whole idea: the photograph tells you what the
-// product is and the panel under it is where you specify and buy it, without
-// either half being the poor relation.
+// It sits under the name block, at the same width, and it SIZES ITSELF.
 //
-// Same height across all fourteen, which is the constraint the layout is built
-// around. A roller asks five questions and a wardrobe asks one, so the panels
-// would otherwise be wildly different heights and the row would look broken.
-// The fields therefore live in a scrolling column and the action bar is pinned
-// to the bottom — every card's price and button land on the same line, and the
-// one product with a long colour card scrolls inside its own panel rather than
-// stretching the row.
+// It used to be given a fixed height equal to the photograph above it, so the
+// pair read as one tall card split in half. That symmetry cost more than it
+// bought: a wardrobe asks one question and a roller asks five, so the shared
+// literal had to clear the worst case and every other card carried the slack —
+// which is how the card reached 940px against MONDAY Haircare's 642.
+//
+// Now the row's flex children stretch to the tallest card and this takes
+//  inside one, so every gold button still lands on the same line
+// without any component naming a height. The field column keeps its overflow
+// guard for the one product with a seventeen-colour card.
 //
 // WHAT IT OFFERS IS NOT DECIDED HERE. The fields come from data/configOptions,
 // which is also what prices the selection and turns it into a cart line. This
@@ -38,6 +37,11 @@ import {
 import { useCartStore } from '../../store/cartStore';
 import { useHover } from './primitives';
 
+/** The panel's height, shared by all fourteen so every gold button lands on one
+ * line. Derived: three fields at 56 plus their gaps, the price row, the 52px
+ * button and the panel's own padding. */
+const CONFIG_H = 372;
+
 /** Field label — the small caps line above each control. Deliberately quieter
  * than the choices themselves: the question is scaffolding, the answers are
  * what the customer is reading. */
@@ -46,7 +50,7 @@ const labelStyle: React.CSSProperties = {
   // inkSoft, not inkFaint — at 0.4 these field labels measured 2.44 on
   // parchment and were the second place a non-text token was carrying text.
   color: tokens.inkSoft,
-  marginBottom: space.xs,
+  marginBottom: space.xxs,
 };
 
 /** One choice, as a rectangle. Selected is a gold fill with ink text — the same
@@ -171,14 +175,9 @@ function Field({
 
 export function RangeConfigurator({
   item,
-  height,
-  isMobile,
   onInteract,
 }: {
   item: CatalogueItem;
-  /** Matched to the photograph above it — see the file header. */
-  height: number;
-  isMobile: boolean;
   /** Fired on the first touch of any control. The row advances itself every
    * five seconds, and carrying a card off the screen mid-configuration is the
    * one thing that would make this panel unusable, so the carousel stops for
@@ -210,12 +209,18 @@ export function RangeConfigurator({
   return (
     <div
       style={{
-        height,
+        // A CAP, NOT A MATCH. It used to be handed the photograph's own height —
+        // 470 — which is what made the card 940. This is sized to the median
+        // card instead: three fields, a price and a button. The roller, which
+        // asks five, scrolls the last one into view inside its own panel rather
+        // than making all fourteen cards tall enough for the worst case.
+        height: CONFIG_H,
+        flex: '0 0 auto',
+        minHeight: 0,
         boxSizing: 'border-box',
         background: tokens.cream,
-        // Hairline on three sides only. The top edge is where the photograph
-        // ends, and a line there would cut the card in half rather than close
-        // it — the two halves are one object.
+        // Hairline on three sides. The top edge is where the name block ends,
+        // and a rule there would read as a divider inside one object.
         borderLeft: `1px solid ${tokens.lineFaint}`,
         borderRight: `1px solid ${tokens.lineFaint}`,
         borderBottom: `1px solid ${tokens.lineFaint}`,
@@ -234,7 +239,7 @@ export function RangeConfigurator({
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: isMobile ? 10 : 11,
+          gap: space.sm,
         }}
       >
         {fields.map(f => (
@@ -243,7 +248,7 @@ export function RangeConfigurator({
       </div>
 
       {/* The action bar, pinned to the bottom of every card in the row. */}
-      <div style={{ flex: '0 0 auto', paddingTop: 12 }}>
+      <div style={{ flex: '0 0 auto', paddingTop: space.sm }}>
         <div
           style={{
             display: 'flex',

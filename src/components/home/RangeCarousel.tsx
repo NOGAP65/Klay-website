@@ -1,11 +1,19 @@
 // ---------------------------------------------------------------------------
 // 4. Our Range — one row of product cards, arrows, and it moves on its own.
 //
-// A CARD IS A PHOTOGRAPH AND A NAME. It was a photograph with a full
-// configurator welded underneath it — a 470px tile over a 470px panel of chips.
-// That made the card 940 tall against MONDAY Haircare's 642 and Sixpenny's 504,
-// showed three products of fourteen, and rendered fourteen simultaneous forms on
-// what is meant to be a browse surface. See the note on RangeCard.
+// A CARD IS A PHOTOGRAPH, A NAME, AND THE CONFIGURATOR. The top two thirds are
+// built against MONDAY Haircare's range row; the last third is Klay's own
+// economics. MONDAY sells four shampoos off a shelf and its cards carry no
+// controls at all. Klay sells made to measure, where the configuration IS the
+// product — pushing it a page away costs a click and a page load to ask
+// something the row could have asked directly.
+//
+// What did not survive is the old geometry. The tile and the panel were given
+// the SAME fixed height, 470 and 470, which made the card 940 against MONDAY at
+// 642 and Sixpenny at 504, showed three products of fourteen, and forced the
+// panel to scroll inside itself because a wardrobe asks one question and a
+// roller asks five. Both size to their own content now, and the row's flex
+// children stretch so every gold button still lands on one line.
 //
 // This replaces TWO sections: the Indoor/Outdoor/Wardrobes category grid and the
 // Dusk/Veil/Duo SKU grid that followed it. They were the same question asked
@@ -45,19 +53,11 @@ import { useIsMobile } from '../../hooks/useIsMobile';
 // "Shelving" as peers of "Blinds", and neither Honeycomb Blinds nor Roller
 // Shutters nor Frameless Shower Screens appeared anywhere on it.
 import { CATALOGUE, type CatalogueItem } from '../../data/catalogue';
-import { ArrowLink, CtaLink, TILE_GAP, useHover } from './primitives';
+import { CtaLink, TILE_GAP, useHover } from './primitives';
 import { Link } from 'react-router-dom';
 import { ProductGlyph } from '../ProductGlyph';
+import { RangeConfigurator } from './RangeConfigurator';
 
-/** How much of the viewport the row is allowed, centred in what is left.
- *
- * It ran the full width, and at that scale the section owned the whole screen:
- * four tall cards edge to edge is a wall, and a wall reads as the page rather
- * than as one section of it. Held to seventy percent with the warm white
- * showing down both sides, it reads as a row of product ON the page — the
- * margins are what tell you there is more page here than this.
- *
- * Full width on mobile, where seventy percent of a phone is not a column. */
 // FULL CONTAINER, not 70%. At 70% the row was 1000px inside a 1440 viewport —
 // 220px of dead margin down each side while the cards were simultaneously
 // cramped enough to need a 280px floor under them. Narrow and tight at once,
@@ -112,10 +112,9 @@ function Arrow({
   direction: 'prev' | 'next';
   onClick: () => void;
   disabled: boolean;
-  /** Centred on the PHOTOGRAPH rather than on the card, which is twice as tall
-   * now that a configurator hangs under every tile. At the card's own midpoint
-   * the arrows landed exactly on the seam between the two halves, reading as
-   * controls belonging to the panel and sitting over its first row of chips. */
+  /** Centred on the PHOTOGRAPH rather than on the card. At the card’s own
+   * midpoint the arrows land on the configurator panel, reading as controls
+   * belonging to it and sitting over its first row of chips. */
   top: number;
 }) {
   const { hover, bind } = useHover();
@@ -191,14 +190,31 @@ function Arrow({
 // visible instead of four and fourteen simultaneous forms on a browse surface.
 // RangeConfigurator.tsx is left in the tree, unused — restoring it is one line.
 // ---------------------------------------------------------------------------
-function RangeCard({ item, isMobile }: { item: CatalogueItem; isMobile: boolean }) {
+function RangeCard({
+  item,
+  onInteract,
+}: {
+  item: CatalogueItem;
+  onInteract: () => void;
+}) {
   const { hover, bind } = useHover();
   return (
-    <Link
-      {...bind}
-      to={item.to}
-      style={{ display: 'block', textDecoration: 'none' }}
-    >
+    // A COLUMN, FULL HEIGHT. The scroller's children stretch to the tallest
+    // card, so giving the configurator `flex: 1` inside this lands every card's
+    // gold button on one line without anyone declaring a height. That is what
+    // the old fixed 470 was for, and it is why the panel had to scroll
+    // internally — a wardrobe asks one question and a roller asks five, so a
+    // shared literal had to be tall enough for the worst case and every other
+    // card carried the slack.
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Only the picture and the name are inside the link. The configurator
+          below carries real buttons, and a <button> nested inside an <a> is
+          invalid and swallows its own clicks. */}
+      <Link
+        {...bind}
+        to={item.to}
+        style={{ display: 'block', textDecoration: 'none', flex: '0 0 auto' }}
+      >
       {/* The tile carries its own ground, one step off the section's. On the ten
           photoless products it is what stops the card reading as a hole punched
           in the page; on the four photographed ones it is the mount the picture
@@ -274,29 +290,22 @@ function RangeCard({ item, isMobile }: { item: CatalogueItem; isMobile: boolean 
         {item.name}
       </h3>
 
-      {/* Where MONDAY puts a star rating. Klay has no review data per product,
-          so the honest equivalent is the thing a made-to-measure buyer actually
-          wants next: what it costs, or that it is quoted on measure. */}
-      <div
-        style={{
-          fontFamily: tokens.body,
-          fontSize: 10,
-          fontWeight: 500,
-          letterSpacing: '0.3em',
-          textTransform: 'uppercase',
-          color: tokens.goldText,
-          marginTop: space.xs,
-        }}
-      >
-        {item.priceFrom !== undefined ? `From $${item.priceFrom}` : 'Price on measure'}
-      </div>
+        {/* The from-price and the Shop Now link that used to sit here are gone,
+            and both are now the configurator's job: it shows the price of the
+            exact configuration rather than a from-figure, and its gold button is
+            the action. Two prices and two ways to buy on one card is the thing
+            that made the old version hard to read. */}
+      </Link>
 
-      {!isMobile && (
-        <div style={{ marginTop: space.sm }}>
-          <ArrowLink label="Shop Now" hovered={hover} />
-        </div>
-      )}
-    </Link>
+      {/* THE TRANSACTION, BACK ON THE CARD. It came off when the card was
+          rebuilt against MONDAY Haircare, whose cards carry no controls — but
+          MONDAY sells four shampoos off a shelf and Klay sells made-to-measure,
+          where the configuration IS the product. Taking it off cost a click and
+          a page load to reach something the row could have asked directly.
+          What does not come back is the old geometry: this is sized by its own
+          content now rather than padded out to match the photograph above it. */}
+      <RangeConfigurator item={item} onInteract={onInteract} />
+    </div>
   );
 }
 
@@ -306,6 +315,11 @@ export function RangeCarousel() {
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   const [paused, setPaused] = useState(false);
+  /** Set the first time anyone touches a control in any card configurator, and
+   * never cleared. Hover already pauses the drift, but hover does not exist on
+   * a touch screen — and carrying a card off the edge while someone is halfway
+   * through choosing a fabric is worse than a row that never moves. */
+  const [frozen, setFrozen] = useState(false);
   // Read once. A row that advances itself is exactly what this preference exists
   // to stop; under it the row holds still and becomes one the reader scrolls.
   const [reduceMotion] = useState(prefersReducedMotion);
@@ -342,7 +356,7 @@ export function RangeCarousel() {
   // and on reaching the end it returns to the start rather than stopping — a
   // carousel that quietly dies after one pass looks broken rather than finished.
   useEffect(() => {
-    if (reduceMotion || paused) return;
+    if (reduceMotion || paused || frozen) return;
     const tick = window.setInterval(() => {
       const el = scrollerRef.current;
       if (!el) return;
@@ -353,7 +367,7 @@ export function RangeCarousel() {
       }
     }, AUTO_MS);
     return () => window.clearInterval(tick);
-  }, [paused, reduceMotion]);
+  }, [paused, frozen, reduceMotion]);
 
   return (
     // Warm white, the ground the category grid had — and the strip between the
@@ -464,7 +478,7 @@ export function RangeCarousel() {
               key={item.id}
               style={{ flex: `0 0 ${cardBasis(isMobile)}`, scrollSnapAlign: 'start' }}
             >
-              <RangeCard item={item} isMobile={isMobile} />
+              <RangeCard item={item} onInteract={() => setFrozen(true)} />
             </div>
           ))}
         </div>
