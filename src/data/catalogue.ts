@@ -231,6 +231,72 @@ export const CATALOGUE: CatalogueItem[] = [
 ]
 
 // ---------------------------------------------------------------------------
+// THE STANDARD BUILD
+//
+// Every product in the catalogue carries one, and it is what a Shop Now click
+// drops straight into the cart. The point is the two-click path: Shop Now, then
+// checkout. Before this, every card in the range row navigated — to a listing
+// page for the four types that have one and to a prefilled contact form for the
+// other ten — so the fastest route from the homepage to an order was four or
+// five clicks and a form.
+//
+// A PRICED BUILD IS THE ONE THE CARD QUOTES. Roller Blinds shows $220, so its
+// standard build is the configuration $220 actually buys: small, manual, first
+// colour on the card. Defaulting it to medium would have put a $260 line in the
+// cart under a tile that said $220, which is the kind of small discrepancy that
+// costs an order at the moment the customer notices it.
+//
+// EVERYTHING ELSE GOES IN AT PRICE ON MEASURE, carrying no figure at all. That
+// is deliberate and it is the same rule the rest of this file follows: no price
+// is invented for a made-to-measure product, because an invented figure is one
+// the business then has to honour. The cart already checks out as "Request
+// Quote & Measure" rather than as a card payment, so a line with no price is
+// something it can carry honestly — it becomes a measure request for that
+// product instead of a priced order line.
+// ---------------------------------------------------------------------------
+
+/** What a Shop Now click adds. Shaped to the cart's own line so it can be
+ * handed to addItem directly rather than mapped at each call site. */
+export interface StandardBuild {
+  name: string
+  type: string
+  blindType: string
+  fabricColour: string
+  hardwareColour: string
+  windowSize: 'small' | 'medium' | 'large'
+  operation: 'manual' | 'motorised'
+  price: number
+  /** No price yet — the cart shows PRICE ON MEASURE for this line and leaves it
+   * out of the total, rather than printing $0. */
+  priceOnMeasure: boolean
+}
+
+/** Placeholder for a choice that genuinely has not been made yet. Printed as-is
+ * in the cart, because "Fabric: Chosen at measure" is a truthful line and a
+ * blank one reads as data the site lost. */
+const AT_MEASURE = 'Chosen at measure'
+
+export const standardBuild = (item: CatalogueItem): StandardBuild => {
+  const priced = item.priceFrom !== undefined
+  return {
+    name: item.name,
+    type: `Made to measure · ${item.group}`,
+    // The product id, not a visualiser blind type. It only has to be stable and
+    // unique per product — the cart builds its line id out of it, so two
+    // different products can never collapse into one line.
+    blindType: item.id,
+    // The first colour on the card, which is the one the from-price quotes.
+    fabricColour: item.colours?.[0]?.name ?? AT_MEASURE,
+    hardwareColour: item.colours ? 'White' : AT_MEASURE,
+    // See the note above: small is what a quoted from-price buys.
+    windowSize: priced ? 'small' : 'medium',
+    operation: 'manual',
+    price: item.priceFrom ?? 0,
+    priceOnMeasure: !priced,
+  }
+}
+
+// ---------------------------------------------------------------------------
 // FACETS
 // ---------------------------------------------------------------------------
 

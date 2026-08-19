@@ -30,31 +30,48 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { tokens, motion, prefersReducedMotion } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { useCartStore } from '../../store/cartStore';
 // The row reads data/catalogue.ts — the same fourteen products the shop lists,
 // in the same order, rendered by the same tile. It used to read a data/ranges.ts
 // of its own holding six invented ranges, which meant the homepage and the shop
 // described the business differently: the homepage offered "Screens" and
 // "Shelving" as peers of "Blinds", and neither Honeycomb Blinds nor Roller
 // Shutters nor Frameless Shower Screens appeared anywhere on it.
-import { CATALOGUE } from '../../data/catalogue';
+import { CATALOGUE, standardBuild } from '../../data/catalogue';
 import { PhotoTile, SectionBand, TILE_GAP, useHover } from './primitives';
+
+/** How much of the viewport the row is allowed, centred in what is left.
+ *
+ * It ran the full width, and at that scale the section owned the whole screen:
+ * four tall cards edge to edge is a wall, and a wall reads as the page rather
+ * than as one section of it. Held to seventy percent with the warm white
+ * showing down both sides, it reads as a row of product ON the page — the
+ * margins are what tell you there is more page here than this.
+ *
+ * Full width on mobile, where seventy percent of a phone is not a column. */
+const ROW_WIDTH = '70%';
 
 /** Card width, as a share of the row rather than a fixed pixel count.
  *
  * It was a flat 300px, and that is what left the odd sliver of dead space: six
  * fixed cards land wherever 6 x 304 happens to land against the viewport, so the
  * row ended on a partial card of arbitrary width and the amount left over changed
- * with every monitor. Sized in quarters, exactly four cards fill the row at any
- * width — nothing is ever cut mid-card, and each one is ~357px on a 1440 screen,
- * which is also bigger than the 300 they were.
+ * with every monitor. Sized in even shares, exactly three cards fill the row at
+ * any width — nothing is ever cut mid-card.
  *
- * Fourteen cards, four visible: the arrows always have somewhere to go. */
+ * THREE, NOT FOUR, and that follows from the row being narrowed to 70%. Four
+ * shares of ~1000px is 250px a card, below the 300 the labels were already
+ * tight at — "Frameless Shower Screens" needs the width. Three keeps each card
+ * at ~330px, which is where it was when the row ran edge to edge.
+ *
+ * Fourteen cards, three visible: the arrows always have somewhere to go. */
 const cardBasis = (isMobile: boolean) =>
   isMobile
     ? `calc((100% - ${TILE_GAP}px) / 1.6)`
-    : `calc((100% - ${3 * TILE_GAP}px) / 4)`;
+    : `calc((100% - ${2 * TILE_GAP}px) / 3)`;
 
 /** Tile height. Up with the width, so the card keeps its portrait crop — a window
  * covering hangs, so the frame wants height. */
@@ -125,6 +142,8 @@ function Arrow({
 
 export function RangeCarousel() {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const addItem = useCartStore(s => s.addItem);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
@@ -160,6 +179,25 @@ export function RangeCarousel() {
   };
 
   useEffect(syncEdges, [syncEdges]);
+
+  /** Shop Now. The product's standard build goes in the cart and the visitor
+   * lands on the cart, where the next click is checkout — see data/catalogue's
+   * standardBuild for what each product goes in as.
+   *
+   * Navigating rather than staying put with a "✓ Added" flash, because the
+   * point of the change is the two-click path out. A confirmation that leaves
+   * the visitor on the homepage has spent one of those two clicks on being
+   * told something. */
+  const shopNow = (item: (typeof CATALOGUE)[number]) => () => {
+    addItem(standardBuild(item));
+    navigate('/cart');
+    // The app keeps the window's scroll position across a route change — it has
+    // no scroll restoration of any kind — so a click from a row two thirds down
+    // the homepage arrived at the cart's FOOTER, showing the site's contact
+    // details rather than the thing just added. Reset here rather than adding a
+    // global handler, which would be a change to every route on the site.
+    window.scrollTo(0, 0);
+  };
 
   // The row moves on its own when it is left alone. It pauses under the pointer,
   // and on reaching the end it returns to the start rather than stopping — a
@@ -213,9 +251,15 @@ export function RangeCarousel() {
           want attention. This is a margin closing a section, not a gap between
           two — closer in weight to the 4px strips framing the other three sides
           than to the padding a real section carries. */}
+      {/* Seventy percent of the viewport, centred — see ROW_WIDTH. The margins
+          are auto rather than a symmetric padding so the row stays centred
+          whatever the section is nested in. */}
       <div
         style={{
           position: 'relative',
+          width: isMobile ? 'auto' : ROW_WIDTH,
+          marginLeft: isMobile ? undefined : 'auto',
+          marginRight: isMobile ? undefined : 'auto',
           paddingLeft: TILE_GAP,
           paddingRight: TILE_GAP,
           paddingBottom: isMobile ? 20 : 26,
@@ -259,6 +303,9 @@ export function RangeCarousel() {
                 blurb={item.colours ? undefined : item.tagline}
                 note={item.priceFrom !== undefined ? `$${item.priceFrom}` : 'Price on measure'}
                 cta="Shop Now"
+                // The chip adds and goes to the cart; the rest of the tile
+                // still opens the product. See PhotoTile's onCta.
+                onCta={shopNow(item)}
                 // Stacked, not beside the label — see ctaBelow. These cards are
                 // 300px wide against the category tiles' 480.
                 ctaBelow

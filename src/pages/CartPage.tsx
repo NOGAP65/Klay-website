@@ -35,6 +35,9 @@ export default function CartPage() {
   };
 
   const total = getTotal();
+  /** How many lines carry no price yet. Drives whether the foot of the cart
+   * reads as a total or as a quote request — see the total block below. */
+  const measureCount = items.filter(i => i.priceOnMeasure).length;
 
   return (
     <>
@@ -98,15 +101,33 @@ export default function CartPage() {
                       <div style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkFaint, marginTop: 12, lineHeight: 1.8 }}>
                         <div>Fabric: {item.fabricColour}</div>
                         <div>Hardware: {item.hardwareColour}</div>
-                        <div>Size: {item.windowSize}</div>
-                        <div>Operation: {item.operation}</div>
+                        {/* Size and operation are omitted on a measure line.
+                            They are real choices on a configured blind and
+                            defaults on a line added straight from a card —
+                            "Size: medium" against a shower screen is the site
+                            stating something nobody has decided yet. */}
+                        {!item.priceOnMeasure && (
+                          <>
+                            <div>Size: {item.windowSize}</div>
+                            <div>Operation: {item.operation}</div>
+                          </>
+                        )}
                       </div>
                     </div>
 
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontFamily: tokens.display, fontSize: 24, fontWeight: 300, color: tokens.ink }}>
-                        ${item.price * item.quantity}
-                      </div>
+                      {/* A made-to-measure line carries no figure — see the
+                          cart store's priceOnMeasure. Printing $0 would read as
+                          free, and printing a guess is worse. */}
+                      {item.priceOnMeasure ? (
+                        <div style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: tokens.gold, paddingTop: 8 }}>
+                          Price on measure
+                        </div>
+                      ) : (
+                        <div style={{ fontFamily: tokens.display, fontSize: 24, fontWeight: 300, color: tokens.ink }}>
+                          ${item.price * item.quantity}
+                        </div>
+                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12, justifyContent: 'flex-end' }}>
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -163,16 +184,27 @@ export default function CartPage() {
                   </div>
                 ))}
 
+                {/* The total is the priced lines only. A cart of nothing but
+                    measure requests shows no total at all rather than a $0 one
+                    — there is genuinely no figure to give until someone has
+                    measured, and that is what the row says. */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 0', borderBottom: `2px solid ${tokens.ink}` }}>
                   <span style={{ fontFamily: tokens.body, fontSize: 14, fontWeight: 600, color: tokens.ink, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    Total
+                    {/* SUBTOTAL only when the basket is mixed, because that is
+                        the only case where the figure beside it is a part
+                        rather than the whole. */}
+                    {measureCount > 0 && measureCount < items.length ? 'Subtotal' : 'Total'}
                   </span>
                   <span style={{ fontFamily: tokens.display, fontSize: 32, fontWeight: 300, color: tokens.ink }}>
-                    ${total}
+                    {measureCount === items.length ? 'On measure' : `$${total}`}
                   </span>
                 </div>
                 <p style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkFaint, marginTop: 8 }}>
-                  + installation across Australia
+                  {measureCount > 0 && measureCount < items.length
+                    ? `+ installation across Australia. ${measureCount} ${measureCount === 1 ? 'item is' : 'items are'} priced at measure.`
+                    : measureCount === items.length
+                      ? 'Every item here is made to measure. We quote once we have measured.'
+                      : '+ installation across Australia'}
                 </p>
               </div>
 

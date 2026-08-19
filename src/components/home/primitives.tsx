@@ -403,6 +403,7 @@ export function PhotoTile({
   blurb,
   cta,
   ctaBelow = false,
+  onCta,
   alt,
   scrim = 'normal',
   glyph,
@@ -444,6 +445,18 @@ export function PhotoTile({
    * put "Blockout Curtains" onto three lines. Stacked, the label gets the full
    * width and the chip sits beneath it. */
   ctaBelow?: boolean;
+  /** Makes the chip its OWN action rather than part of the tile's link.
+   *
+   * The range row uses it to put the product straight in the cart: the tile
+   * still navigates to the product for anyone who wants to read about it, and
+   * the chip is the express path for anyone who has already decided. Two
+   * destinations on one card, which is why the chip has to swallow the click
+   * before the surrounding Link sees it.
+   *
+   * A span rather than a button, because a <button> inside an <a> is invalid
+   * HTML — nested interactive content. It carries the button role and answers
+   * Enter and Space itself, so a keyboard gets both actions the pointer does. */
+  onCta?: () => void;
   /** Drawn in the middle of a photoless tile — see components/ProductGlyph.
    * Without it a tile with no photograph is a hairline frame around nothing,
    * which is what the Awnings and Screens tiles were. A line drawing of the
@@ -667,6 +680,26 @@ export function PhotoTile({
 
         {cta && (
           <span
+            {...(onCta
+              ? {
+                  role: 'button',
+                  tabIndex: 0,
+                  onClick: (e: React.MouseEvent) => {
+                    // Both, and both matter: preventDefault stops the Link
+                    // navigating, stopPropagation stops the tile's own handlers
+                    // treating this as a click on the card.
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onCta();
+                  },
+                  onKeyDown: (e: React.KeyboardEvent) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onCta();
+                  },
+                }
+              : null)}
             style={{
               flexShrink: 0,
               display: 'inline-block',

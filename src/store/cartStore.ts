@@ -12,6 +12,12 @@ export interface CartItem {
   operation: 'manual' | 'motorised';
   price: number;
   quantity: number;
+  /** A made-to-measure line with no price yet — most of the catalogue. It sits
+   * in the cart as a measure request: the row prints PRICE ON MEASURE instead
+   * of a figure and contributes nothing to the total, which is why `price` is
+   * 0 on these rather than a guess. The cart checks out as a quote request, so
+   * a priced line and a measure line can share the one basket. */
+  priceOnMeasure?: boolean;
 }
 
 interface CartStore {
