@@ -905,9 +905,14 @@ export function RangeCarousel() {
             Made to measure. Installed by experts.
           </p>
         </div>
-        <CtaLink to="/products" variant="onDark">
-          Shop All
-        </CtaLink>
+        {/* GOLD WITH INK ON IT, the site's one primary-action pairing, which is
+            also what the fourteen Shop Now buttons in the row below are. It was
+            the `onDark` variant — a charcoal box with gold text — which made the
+            section's own action the odd one out: the darkest object in a warm
+            white section, sitting above a row of gold buttons that all mean the
+            same thing. Ink on gold measures 6.8:1 against the charcoal
+            variant's 5.6, so it reads better as well as matching. */}
+        <CtaLink to="/products">Shop All</CtaLink>
       </div>
 
       {/* The same strip down the outside edges as between the cards, so the row
