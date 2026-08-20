@@ -168,6 +168,22 @@ const PANEL_H = 560;
 
 const WIDE_ROW = '(min-width: 1250px)';
 
+/** HOW FAR THE GOLD FRAME STANDS OFF THE CARD.
+ *
+ * The frame cannot grow outwards. Its outer edge already sits on the slot's own
+ * bounds, and the slots carry `contain: paint`, which clips every descendant to
+ * the slot's padding box — anything drawn past it is simply not painted. Growing
+ * the slot instead would mean fewer cards across the row.
+ *
+ * So the frame keeps its size and the card insets inside it. The visible change
+ * is the same one either way: a band of the section's own ground between the gold
+ * line and the photograph, which is what makes it read as a frame around the card
+ * rather than as a stroke on the card's edge.
+ *
+ * 4, the smallest step on the scale, and it is also exactly the strip between two
+ * cards — so the air inside the frame and the air between frames match. */
+const FRAME = space.xxs;
+
 /** Round arrow, overlaid on the row's edge and vertically centred.
  *
  * Overlaid rather than parked above the row, because the section's heading band
@@ -317,8 +333,13 @@ function RangeCard({
         flexDirection: isMobile ? 'column' : 'row',
         alignItems: 'stretch',
         height: '100%',
-        // For the in-cart border, which is an overlay — see below.
+        // For the gold frame, which is an overlay — see below.
         position: 'relative',
+        // THE STANDOFF. The frame is drawn on this box's outer edge and the
+        // contents sit in from it, so the gold line never touches the
+        // photograph or the gold buttons. See FRAME.
+        padding: FRAME,
+        boxSizing: 'border-box',
       }}
     >
       {/* A GOLD BORDER ON EVERY CARD, WHICH TAKES IN THE CONFIGURATOR WHEN ONE
@@ -654,7 +675,10 @@ export function RangeCarousel() {
   useEffect(() => {
     const row = scrollerRef.current;
     if (!row) return;
-    const measure = () => setCardPx(sharePx(row.clientWidth, isMobile));
+    // Less the frame's standoff on both sides: the card column sits inside the
+    // wrapper's padding box, not inside the slot, so a full share would overflow
+    // it by exactly 2 * FRAME.
+    const measure = () => setCardPx(sharePx(row.clientWidth, isMobile) - 2 * FRAME);
     measure();
     // The row's width is the only input, so the row is what has to be watched —
     // not the window, which also fires on height changes that cannot affect it.
