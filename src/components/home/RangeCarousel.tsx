@@ -282,6 +282,7 @@ function RangeCard({
   item,
   open,
   ready,
+  framed,
   onToggle,
   isMobile,
   cardPx,
@@ -293,6 +294,10 @@ function RangeCard({
   /** True once the width animation has finished. The configurator waits for it
    * — see the note where the panel renders. */
   ready: boolean;
+  /** Whether to draw the gold frame. Not the same as `open`: it stays true for
+   * the width transition after the card closes, so the frame shrinks back with
+   * the card instead of vanishing at full width. */
+  framed: boolean;
   onToggle: () => void;
   isMobile: boolean;
   /** The card's width in pixels, measured off a closed slot. Null until the
@@ -342,16 +347,24 @@ function RangeCard({
         boxSizing: 'border-box',
       }}
     >
-      {/* A GOLD BORDER ON EVERY CARD, WHICH TAKES IN THE CONFIGURATOR WHEN ONE
-          OPENS. This wrapper IS the shape that has to be drawn: the card column
-          and the panel are its two children, so one rectangle wraps the card
-          alone while it is shut and card-plus-configurator the moment it is not,
-          and it closes back up on its own. Neither of them has to know.
+      {/* THE GOLD FRAME, ON THE SELECTED CARD ONLY. Nothing carries it while the
+          row is just being browsed; opening one with Shop Now draws it, and it
+          encloses the card and the configurator together because this wrapper IS
+          that combined shape — the card column and the panel are its two
+          children. So it grows with the expansion rather than being a second
+          thing that has to be animated in step with it.
 
-          It is not conditional on anything. It was briefly drawn only on
-          products sitting in the cart, which was a misreading — this is the
-          row's own frame, on all fourteen, and what changes when a card is
-          clicked is how much it encloses.
+          IT OUTLASTS THE CLOSE ON PURPOSE, by `framed` rather than by `open`.
+          `open` goes false the moment the id is cleared, which is the moment the
+          slot STARTS its 450ms narrowing — so the line would vanish at full
+          width and the card would shrink behind nothing. Held for the width
+          transition, the frame shrinks back with the card and the close is the
+          open in reverse, which is what the rest of this component already does.
+
+          THE STANDOFF STAYS WHETHER THE LINE IS DRAWN OR NOT. The 4px padding
+          below is unconditional: making it appear with the frame would resize
+          the card on every open, and the tile is 4:5, so 8px of width would
+          become 10 of height and the whole row would move.
 
           AN OVERLAY, NOT A BORDER, and that is not a style preference. A real
           border on this box adds two pixels to the card's width and height,
@@ -365,17 +378,19 @@ function RangeCard({
 
           Painted last and pointer-transparent, so it sits over the photograph
           and the chips without taking a single click off them. */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          border: `1px solid ${tokens.gold}`,
-          borderRadius: 2,
-          pointerEvents: 'none',
-          zIndex: 2,
-        }}
-      />
+      {framed && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            border: `1px solid ${tokens.gold}`,
+            borderRadius: 2,
+            pointerEvents: 'none',
+            zIndex: 2,
+          }}
+        />
+      )}
       {/* THE CARD IS PINNED TO A PIXEL WIDTH, open or shut, and this is the one
           thing that stops it changing size. Every expression of it as a share of
           the SLOT was wrong, because the slot is what animates:
@@ -723,6 +738,23 @@ export function RangeCarousel() {
     return () => window.clearTimeout(t);
   }, [closing]);
 
+  /** WHICH CARD WEARS THE GOLD FRAME. It tracks `openId` on the way in and lags
+   * it by the width transition on the way out.
+   *
+   * The lag is the whole reason it is not just `openId`. Clearing the id is what
+   * STARTS the 450ms narrowing, so a frame keyed on the id disappears at full
+   * width and leaves the card shrinking behind nothing. Held for exactly that
+   * transition, the frame narrows with the card and the close mirrors the open. */
+  const [framedId, setFramedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (openId) {
+      setFramedId(openId);
+      return;
+    }
+    const t = window.setTimeout(() => setFramedId(null), EXPAND_MS);
+    return () => window.clearTimeout(t);
+  }, [openId]);
+
   /** True once the open card has finished widening. The configurator waits for
    * it, so the width animates against an empty box and the form arrives into
    * one that has stopped moving — see the note where the panel mounts. */
@@ -984,6 +1016,7 @@ export function RangeCarousel() {
                 item={item}
                 open={open}
                 ready={open && ready && !closing}
+                framed={framedId === item.id}
                 isMobile={isMobile}
                 cardPx={cardPx}
                 onToggle={() => toggle(item.id)}
