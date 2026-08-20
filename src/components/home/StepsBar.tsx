@@ -57,8 +57,8 @@ import { useHover } from './primitives';
  * own contents stop fitting. */
 const STEPS_COLLAPSE = '(max-width: 1000px)';
 
-/** THE BAR'S OWN RENDERED HEIGHT, exported so the hero can subtract it rather
- * than carrying a literal.
+/** THE BAR'S OWN RENDERED HEIGHT, exported so the hero can position the fold
+ * against it rather than carrying a literal.
  *
  * Derived, not measured: the row's vertical padding (`space.md` top and bottom)
  * plus the label's own line box. The label is `type.label` — 12px at
@@ -68,7 +68,11 @@ const STEPS_COLLAPSE = '(max-width: 1000px)';
  * It exists because the hero used to subtract a hardcoded 54 for this bar. That
  * number was already wrong before this pass (the bar measured 53.59) and the v2
  * padding change moved it again. A literal here goes stale silently — the hero
- * simply overhangs the fold by a few pixels and nobody notices. */
+ * simply lands the fold in the wrong place and nobody notices.
+ *
+ * The hero now subtracts HALF of it rather than all of it, so the bar is cut by
+ * the fold instead of sitting squarely above it. Same reason the constant has to
+ * be derived: half of a stale number is still stale. */
 export const STEPS_BAR_HEIGHT = space.md * 2 + Math.round(12 * 1.6);
 
 export function StepsBar() {

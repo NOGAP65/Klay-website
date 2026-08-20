@@ -78,8 +78,8 @@ export function Hero() {
   return (
     <section
       style={{
-        // DERIVED, NEVER HARDCODED — the viewport less the two fixed-height bars
-        // above and below it, each read from its own definition.
+        // DERIVED, NEVER HARDCODED — the viewport less the bar above it and half
+        // the bar below it, each read from its own definition.
         //
         // It used to subtract 312: ticker 38, steps bar 54, and 220 reserved so
         // the Our Range band would peek above the fold. Two things were wrong
@@ -87,13 +87,28 @@ export function Hero() {
         // design-system pass moved it again — and a literal goes wrong silently,
         // leaving the hero a few pixels over the fold with nothing to flag it.
         // The 220 cost the hero 274px and left it at 588, shorter than four of
-        // the page's content sections. The steps bar sitting on the fold is the
-        // scroll cue now, at ~58px instead of 274.
+        // the page's content sections.
+        //
+        // HALF THE STEPS BAR, NOT ALL OF IT, so the bar is CUT by the fold rather
+        // than sitting squarely above it. Subtracting the whole bar put its
+        // bottom edge exactly on the fold at every viewport height, which read as
+        // a footer pinned to the window rather than as the next thing down the
+        // page — in a 900px window it sat at 841 with nothing under it.
+        //
+        // Subtracting NOTHING for it does not work either, and that is worth
+        // recording because it looks like it should: the ticker occupies the
+        // first 38px, so a hero of `100svh - 38` ends at exactly 100svh and the
+        // bar starts precisely ON the fold, showing zero pixels. Measured at
+        // 900, 800, 700 and 844 — the bar's top landed on the fold every time.
+        //
+        // Half of it puts the fold through the middle of the bar: enough to read
+        // the first step and see that the row is severed, which is what says the
+        // page continues.
         //
         // svh rather than vh: on mobile `100vh` is the viewport with the address
         // bar hidden, so a vh-sized hero jumps by the bar's height the moment the
         // page scrolls. svh is the smallest stable viewport and does not move.
-        height: `calc(100svh - ${TICKER_HEIGHT + STEPS_BAR_HEIGHT}px)`,
+        height: `calc(100svh - ${TICKER_HEIGHT + Math.round(STEPS_BAR_HEIGHT / 2)}px)`,
         // Floors, so the hero survives a short laptop or a landscape phone. Below
         // these the sum stops being achievable and legibility wins over the fold.
         minHeight: isMobile ? 420 : 460,
