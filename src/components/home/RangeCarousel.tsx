@@ -44,8 +44,8 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { tokens, motion, prefersReducedMotion, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
-import { useIsMobile } from '../../hooks/useIsMobile';
+import { tokens, motion, prefersReducedMotion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
+import { useIsMobile, useMediaQuery } from '../../hooks/useIsMobile';
 // The row reads data/catalogue.ts — the same fourteen products the shop lists,
 // in the same order, rendered by the same tile. It used to read a data/ranges.ts
 // of its own holding six invented ranges, which meant the homepage and the shop
@@ -101,8 +101,19 @@ const cardBasis = (isMobile: boolean) =>
  *
  * On mobile the card already takes most of the row, so it goes to the whole of
  * it and the panel stacks under the photograph instead of beside it. */
-const cardBasisOpen = (isMobile: boolean) =>
-  isMobile ? '100%' : `calc(((100% - ${3 * TILE_GAP}px) / 4) * 2 + ${TILE_GAP}px)`;
+const cardBasisOpen = (isMobile: boolean, wide: boolean) =>
+  isMobile
+    ? '100%'
+    : wide
+      ? `calc(((100% - ${3 * TILE_GAP}px) / 4) * 2 + ${TILE_GAP}px)`
+      // THREE SHARES on a narrow desktop, and this is the fix for the section
+      // jump rather than a cosmetic choice. Two shares of a 940px row leaves the
+      // panel about 232px wide, at which point every chip row wraps and the
+      // panel grows to 719px against a 443px card — the row stretches and the
+      // section below leaps 276px. Three shares gives the panel ~464px, the
+      // chips fit the rows they were designed for, and the panel stays within
+      // the card's own height.
+      : `calc(((100% - ${3 * TILE_GAP}px) / 4) * 3 + ${2 * TILE_GAP}px)`;
 
 /** The tile height the arrows centre on. The card is taller than this — the
  * name block sits under the tile — but the arrows belong on the PHOTOGRAPH, not
@@ -121,6 +132,20 @@ const AUTO_MS = 5000;
  * out of step — the nudge in particular has to start AFTER the width has
  * settled, or two layout animations run at once. */
 const EXPAND_MS = 450;
+
+/** Above this the open card takes two shares; below it, three. See
+ * cardBasisOpen — it is about how wide the panel ends up, not about the card. */
+/** How long the panel takes to leave before the card starts narrowing. Shorter
+ * than EXPAND_MS: a thing arriving wants to be seen, a thing leaving wants to be
+ * out of the way. */
+const COLLAPSE_MS = 220;
+
+/** The configuration panel's own height, measured in the running page: a
+ * header, up to four fields, the price line and the 52px button come to this at
+ * every viewport the panel is wide enough for. The row reserves it. */
+const PANEL_H = 560;
+
+const WIDE_ROW = '(min-width: 1250px)';
 
 /** Round arrow, overlaid on the row's edge and vertically centred.
  *
@@ -219,15 +244,22 @@ function Arrow({
 function RangeCard({
   item,
   open,
+  ready,
   onToggle,
   isMobile,
+  wideRow,
 }: {
   item: CatalogueItem;
   /** Whether this card's configuration panel is showing. One at a time across
    * the whole row — the carousel owns which. */
   open: boolean;
+  /** True once the width animation has finished. The configurator waits for it
+   * — see the note where the panel renders. */
+  ready: boolean;
   onToggle: () => void;
   isMobile: boolean;
+  /** Two shares when open, rather than three — see cardBasisOpen. */
+  wideRow: boolean;
 }) {
   const { hover, bind } = useHover();
   const [sel, setSel] = useState<Selection>(() => defaultSelection(item));
@@ -250,6 +282,11 @@ function RangeCard({
   const tileGround = !item.image && chosen?.hex ? chosen.hex : undefined;
   const glyphOnLight = tileGround ? luminance(tileGround) > 0.45 : false;
 
+  // THE CARD KEEPS ONE SHARE of the widened slot whatever the slot became, so
+  // the photograph never stretches and every extra share goes to the panel. Two
+  // shares open means the card is half of it; three means a third.
+  const cardShareOfOpen = wideRow ? '50%' : '33.333%';
+
   return (
     // TWO COLUMNS WHEN OPEN, one when shut. The card itself widens — see the
     // note on the scroller item — and the configurator takes the width that
@@ -269,7 +306,7 @@ function RangeCard({
           beside it. */}
       <div
         style={{
-          flex: isMobile ? '0 0 auto' : `0 0 ${open ? `calc(50% - ${TILE_GAP / 2}px)` : '100%'}`,
+          flex: isMobile ? '0 0 auto' : `0 0 ${open ? cardShareOfOpen : '100%'}`,
           minWidth: 0,
           display: 'flex',
           flexDirection: 'column',
@@ -298,6 +335,11 @@ function RangeCard({
           // and the About panel.
           aspectRatio: '4 / 5',
           background: tileGround ?? (item.image ? tokens.parchment : tokens.charcoal),
+          // THE CARD KEEPS ITS SHADOW. It sits on the box rather than being
+          // animated, so it costs one paint at mount and nothing per frame —
+          // the expensive version was the 450ms background FADE that used to
+          // sit here, not the shadow.
+          boxShadow: shadow.rest,
           // NO TRANSITION on the ground. It faded over 0.45s, which repaints a
           // 317x396 box every frame for the whole of that — and it fired at the
           // same moment the row was animating flex-basis, so two expensive
@@ -410,9 +452,7 @@ function RangeCard({
       {/* THE PANEL — in the flow, in the space the row just made.
           It is a flex sibling rather than an overlay, so it covers nothing and
           the neighbouring cards genuinely move aside instead of being hidden
-          behind it. Fading and sliding in over 0.45s rather than appearing:
-          without that the width animation finishes and the contents pop, which
-          reads as two events instead of one. */}
+          behind it. */}
       {open && (
         <div
           style={{
@@ -425,7 +465,15 @@ function RangeCard({
             border: `1px solid ${tokens.line}`,
             borderRadius: 2,
             overflow: 'hidden',
-            animation: 'klay-panel-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both',
+            boxShadow: shadow.rest,
+            // Fades in only once the width has finished, so the panel arrives
+            // into a box that has stopped moving. Animating it during the
+            // expansion meant a fade and a layout animation on the same frames.
+            // Fades in once the width has settled, and back out before it
+            // narrows — the same move in reverse. Opacity carries both, so a
+            // close that interrupts an open just runs from wherever it got to.
+            opacity: ready ? 1 : 0,
+            transition: 'opacity ' + COLLAPSE_MS + 'ms ease',
           }}
         >
           {/* Names what is being configured, and carries the close. The gold
@@ -459,7 +507,15 @@ function RangeCard({
               ✕
             </button>
           </div>
-          <RangeConfigurator item={item} sel={sel} onChange={choose} fill />
+          {/* MOUNTED ONLY ONCE THE EXPANSION IS DONE. Profiled, the click
+              frame cost 139ms at 4x throttle, and it was not the animation —
+              it persisted identically with every animation disabled via
+              prefers-reduced-motion. It is React mounting the fields, the chips
+              and up to seventeen swatches, on the same frame the layout
+              animation starts. Deferring it means the width animates against an
+              empty box and the form arrives into a box that has stopped moving:
+              two cheap frames instead of one expensive one. */}
+          {ready && <RangeConfigurator item={item} sel={sel} onChange={choose} fill />}
         </div>
       )}
     </div>
@@ -468,6 +524,7 @@ function RangeCard({
 
 export function RangeCarousel() {
   const isMobile = useIsMobile();
+  const wideRow = useMediaQuery(WIDE_ROW);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
@@ -481,6 +538,71 @@ export function RangeCarousel() {
    * point of moving the controls off the card is that the visitor reads one set
    * of options rather than fourteen. */
   const [openId, setOpenId] = useState<string | null>(null);
+
+  /** The height the row holds whether a card is open or not, so opening one
+   * never moves the section below. See the note where it is applied.
+   *
+   * A CONSTANT, and measured rather than guessed. The panel is content-sized —
+   * a header, up to four fields, a price line and the button — and it comes out
+   * at 559px at both 1440 and 1100, because none of that content depends on the
+   * viewport once the panel is wide enough not to wrap. The card, being a 4:5
+   * tile, DOES shrink with the viewport: 549 at 1440 but 443 at 1100. So the
+   * panel is the taller of the two on a narrow desktop and it is the panel that
+   * has to be reserved for.
+   *
+   * Reserved up front rather than grown on first open. Growing it measured
+   * correctly but only after the fact, so the first card opened still moved the
+   * page — which is the whole thing this exists to stop. */
+  const rowMinHeight = PANEL_H;
+
+  /** THE CLOSE REVERSES THE OPEN, rather than the panel vanishing and the card
+   * then shrinking behind it.
+   *
+   * Opening runs widen, then fade in. Closing has to run fade out, then narrow —
+   * so a click cannot simply clear `openId`, which would unmount the panel on
+   * the spot and leave the width animating against an empty box. `closing` holds
+   * the card open at full width while the panel fades, and only then is the id
+   * cleared.
+   *
+   * Switching straight from one card to another skips the wait: the outgoing
+   * panel has somewhere to go, so making the visitor watch it leave first would
+   * be a delay with nothing behind it. */
+  const [closing, setClosing] = useState(false);
+
+  const toggle = (id: string) => {
+    if (openId !== id) {
+      // Opening stops the row for good. Carrying a card off the edge
+      // mid-configuration is the one thing that would make this unusable, and
+      // hover does not exist on a touch screen.
+      setFrozen(true);
+      setClosing(false);
+      setOpenId(id);
+      return;
+    }
+    setClosing(true);
+  };
+
+  useEffect(() => {
+    if (!closing) return;
+    const t = window.setTimeout(() => {
+      setOpenId(null);
+      setClosing(false);
+    }, COLLAPSE_MS);
+    return () => window.clearTimeout(t);
+  }, [closing]);
+
+  /** True once the open card has finished widening. The configurator waits for
+   * it, so the width animates against an empty box and the form arrives into
+   * one that has stopped moving — see the note where the panel mounts. */
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    if (!openId) {
+      setReady(false);
+      return;
+    }
+    const t = window.setTimeout(() => setReady(true), EXPAND_MS);
+    return () => window.clearTimeout(t);
+  }, [openId]);
 
   /** BRING THE EXPANDED CARD FULLY INTO VIEW. Opening the rightmost visible
    * card doubles its width, which measured put its right edge at 1681 against a
@@ -527,7 +649,7 @@ export function RangeCarousel() {
   useEffect(() => {
     if (!openId) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpenId(null);
+      if (e.key === 'Escape') setClosing(true);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -680,6 +802,18 @@ export function RangeCarousel() {
             display: 'flex',
             gap: TILE_GAP,
             overflowX: 'auto',
+            // THE SECTION RESERVES ITS OPEN HEIGHT. Measured: opening the roller
+            // card — five fields and a fourteen-colour row — grew the section
+            // from 832 to 841 at 1440, and from 716 to 992 at 1100, because a
+            // narrower card wraps the panel's chips onto more rows. The section
+            // below leapt down by 276px mid-animation, which is the glitch.
+            //
+            // The row is tall enough for the open state from the start, so the
+            // page below never moves. `alignItems: flex-start` is what stops the
+            // reserve stretching the closed cards to fill it — they keep their
+            // own height and the spare sits underneath.
+            minHeight: rowMinHeight,
+            alignItems: 'flex-start',
             // Snaps to card edges so the row never rests showing two half cards,
             // however it was moved — arrow, thumb or trackpad.
             // Off while a card is open — see the note on the slot below.
@@ -705,7 +839,7 @@ export function RangeCarousel() {
               // for a single card opening before this.
               className="klay-slot"
               style={{
-                flex: `0 0 ${open ? cardBasisOpen(isMobile) : cardBasis(isMobile)}`,
+                flex: `0 0 ${open ? cardBasisOpen(isMobile, wideRow) : cardBasis(isMobile)}`,
                 // SNAP OFF WHILE OPEN. Mandatory snapping and a programmatic
                 // scroll fight each other — the browser re-snaps to the nearest
                 // card edge and undoes the nudge that was bringing the open card
@@ -717,17 +851,10 @@ export function RangeCarousel() {
               <RangeCard
                 item={item}
                 open={open}
+                ready={open && ready && !closing}
                 isMobile={isMobile}
-                onToggle={() =>
-                  setOpenId(cur => {
-                    const next = cur === item.id ? null : item.id;
-                    // Opening a panel stops the row for good. Carrying a card
-                    // off the edge mid-configuration is the one thing that would
-                    // make this unusable, and hover does not exist on touch.
-                    if (next) setFrozen(true);
-                    return next;
-                  })
-                }
+                wideRow={wideRow}
+                onToggle={() => toggle(item.id)}
               />
             </div>
             );
