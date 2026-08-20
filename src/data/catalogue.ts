@@ -105,6 +105,21 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Soft folds that stack flat at the head of the window.',
     to: blindLink('roman-blinds', 'Roman Blinds'),
     glyph: 'roman-blinds',
+    // THE FABRIC BLINDS SHARE THE RYNAMIC CARD, and this is an editorial claim
+    // in the same class as LIGHT_OVERRIDES above — worth a commercial check.
+    //
+    // The reasoning: Rynamic is the fabric range Klay already sells rollers in,
+    // and a roman, a honeycomb and a vertical are all fabric products cut from
+    // the same kind of cloth. Saying they come in nothing was the less accurate
+    // of the two available claims.
+    //
+    // It also makes the range row work. The card's lead control is a colour
+    // swatch where a colour card exists, and repainting the tile's ground with
+    // the chosen colour is the one way a photoless product can SHOW a selection
+    // rather than just record it — see the note on SwatchRow in RangeCarousel.
+    // With colours on rollers and curtains alone, both of which have
+    // photographs, that never fired once.
+    colours: RYNAMIC_COLOURS,
     light: ['Blockout', 'Light filter'],
   },
   {
@@ -114,6 +129,8 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Cellular pleats that trap air. The insulating blind.',
     to: enquire('Honeycomb Blinds'),
     glyph: 'honeycomb-blinds',
+    // See the note on Roman Blinds — the fabric blinds share the Rynamic card.
+    colours: RYNAMIC_COLOURS,
     light: ['Blockout', 'Light filter'],
   },
   {
@@ -141,6 +158,8 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Louvres that draw aside. Made for sliding doors.',
     to: blindLink('vertical-blinds', 'Vertical Blinds'),
     glyph: 'vertical-blinds',
+    // See the note on Roman Blinds — the fabric blinds share the Rynamic card.
+    colours: RYNAMIC_COLOURS,
     light: ['Blockout', 'Light filter', 'Sunscreen'],
   },
   {

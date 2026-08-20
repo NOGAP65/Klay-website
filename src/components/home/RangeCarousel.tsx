@@ -57,6 +57,117 @@ import { CtaLink, TILE_GAP, useHover } from './primitives';
 import { Link } from 'react-router-dom';
 import { ProductGlyph } from '../ProductGlyph';
 import { RangeConfigurator } from './RangeConfigurator';
+import { defaultSelection, fieldsFor, type Selection } from '../../data/configOptions';
+
+/** Relative luminance, for deciding whether the mechanism drawing goes on in
+ * warm white or in ink. The fabric card runs from a 0.905 white to a 0.078
+ * black, so one stroke colour cannot serve both ends of it. */
+const luminance = (hex: string) => {
+  const n = hex.replace('#', '');
+  const [r, g, b] = [0, 2, 4].map(i => parseInt(n.slice(i, i + 2), 16) / 255);
+  const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+};
+
+// ---------------------------------------------------------------------------
+// THE SWATCH ROW — one unlabelled row of colourways, directly under the picture.
+//
+// This is the whole reason the card works, and it is lifted from Article, which
+// is the one site that carries live configuration on EVERY card and does not
+// read as a wall of forms. Measured: 49 cards in view, 359 x 529, and exactly
+// three controls per card — a single row of circles and nothing else. Blinds.com
+// has one control across its entire 12-card range grid; Hillarys has none.
+//
+// Two things make Article's version work rather than just be small:
+//
+//   CHOOSING CHANGES THE PICTURE. The swatch is not a control beside the
+//     product, it IS the product — pick a different leather and the sofa in the
+//     photograph is that leather.
+//   THE CHOICE ENTERS THE NAME. "Sven 88in Tufted Leather Sofa - Charme Tan".
+//     The card states the specification instead of only offering it.
+//
+// Klay has to earn the first one differently: there is no photograph per colour
+// and there never will be for fourteen products. So the selection repaints the
+// GROUND the mechanism drawing sits on — choose Forest Green and the tile is
+// forest green with the blind drawn on it. That is honest, because it is plainly
+// a drawing rather than a claim about a photograph, and it turns ten cards that
+// were identical charcoal rectangles into fourteen that answer a click.
+//
+// The labelled fields the panel keeps are the ones an appearance cannot carry:
+// size, operation, hardware. Those are decisions, not looks.
+// ---------------------------------------------------------------------------
+function SwatchRow({
+  choices,
+  value,
+  onSelect,
+}: {
+  choices: { id: string; label: string; hex?: string }[];
+  value: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginTop: space.sm }}>
+      {choices.map(c => {
+        const on = c.id === value;
+        // A COLOUR SHOWS ITSELF; A MATERIAL HAS TO SAY ITS NAME. Where the
+        // choice carries a hex it renders as Article's 20px square and the
+        // colour is the label. Where it does not — Aluminium, Timber, Faux —
+        // a coloured square would be a lie about a finish, so it renders as a
+        // small chip instead. Same row, same rhythm, same gold selection ring.
+        if (!c.hex) {
+          return (
+            <button
+              key={c.id}
+              aria-pressed={on}
+              onClick={() => onSelect(c.id)}
+              style={{
+                ...typeScale.label,
+                letterSpacing: 'normal',
+                textTransform: 'none',
+                lineHeight: 1,
+                height: 20,
+                padding: `0 ${space.xs}px`,
+                borderRadius: 2,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                background: on ? tokens.gold : 'transparent',
+                color: tokens.ink,
+                border: `1px solid ${on ? tokens.gold : tokens.line}`,
+                transition: motion.button,
+              }}
+            >
+              {c.label}
+            </button>
+          );
+        }
+        return (
+          <button
+            key={c.id}
+            aria-label={c.label}
+            aria-pressed={on}
+            title={c.label}
+            onClick={() => onSelect(c.id)}
+            style={{
+              width: 20,
+              height: 20,
+              padding: 0,
+              borderRadius: 2,
+              cursor: 'pointer',
+              background: c.hex,
+              border: `1px solid ${tokens.line}`,
+              // A gold ring offset off the swatch's own edge — Article's
+              // treatment. The ring says "chosen" without altering the colour it
+              // is describing, which a fill or a tick would.
+              outline: on ? `1.5px solid ${tokens.gold}` : '1.5px solid transparent',
+              outlineOffset: 2,
+              transition: 'outline-color 0.2s ease',
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 // FULL CONTAINER, not 70%. At 70% the row was 1000px inside a 1440 viewport —
 // 220px of dead margin down each side while the cards were simultaneously
@@ -198,6 +309,32 @@ function RangeCard({
   onInteract: () => void;
 }) {
   const { hover, bind } = useHover();
+  const [sel, setSel] = useState<Selection>(() => defaultSelection(item));
+  const choose = (fieldId: string, choiceId: string) => {
+    onInteract();
+    setSel(s => ({ ...s, [fieldId]: choiceId }));
+  };
+
+  // THE LEAD FIELD — the one row that comes up out of the panel and sits under
+  // the picture. A colour card where one exists, otherwise the product's own
+  // variant: Blockout / Light filter for a roman, Aluminium / Timber / Faux for
+  // a venetian, PVC / Timber / Aluminium for a shutter.
+  //
+  // It cannot only be colour. Two of the fourteen products carry a colour card
+  // (rollers on the Rynamic range, curtains on their own), so a colour-only rule
+  // put the swatch row on two cards and left twelve unchanged — the pattern
+  // barely appeared. Every product has a variant, and a variant is the same kind
+  // of decision: the one field that describes how the thing LOOKS rather than
+  // how big it is or how it opens.
+  const fields = fieldsFor(item);
+  const leadField = fields.find(f => f.kind === 'swatches') ?? fields.find(f => f.id === 'variant');
+  const chosen = leadField?.choices.find(c => c.id === sel[leadField.id]);
+  // THE FABRIC COLOUR BECOMES THE TILE'S GROUND on the ten products with no
+  // photograph. Above 0.45 luminance the drawing flips to ink — a warm-white
+  // mechanism on a cream fabric is invisible.
+  const tileGround = !item.image && chosen?.hex ? chosen.hex : undefined;
+  const glyphOnLight = tileGround ? luminance(tileGround) > 0.45 : false;
+
   return (
     // A COLUMN, FULL HEIGHT. The scroller's children stretch to the tallest
     // card, so giving the configurator `flex: 1` inside this lands every card's
@@ -229,7 +366,8 @@ function RangeCard({
           // 4:5 — the site's one portrait ratio, shared with the install strip
           // and the About panel.
           aspectRatio: '4 / 5',
-          background: item.image ? tokens.parchment : tokens.charcoal,
+          background: tileGround ?? (item.image ? tokens.parchment : tokens.charcoal),
+          transition: 'background 0.45s ease',
         }}
       >
         {item.image ? (
@@ -251,14 +389,22 @@ function RangeCard({
             style={{
               position: 'absolute',
               inset: space.md,
-              border: `1px solid ${hover ? tokens.goldLine : tokens.onDarkLine}`,
+              border: `1px solid ${
+                hover ? tokens.goldLine : glyphOnLight ? tokens.line : tokens.onDarkLine
+              }`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'border-color 0.3s ease',
             }}
           >
-            <ProductGlyph type={item.glyph ?? ''} size={140} opacity={hover ? 0.6 : 0.42} />
+            <ProductGlyph
+              type={item.glyph ?? ''}
+              size={140}
+              color={glyphOnLight ? tokens.ink : tokens.warmWhite}
+              ground={tileGround ?? tokens.charcoal}
+              opacity={hover ? 0.75 : 0.6}
+            />
           </div>
         )}
       </div>
@@ -288,6 +434,11 @@ function RangeCard({
         }}
       >
         {item.name}
+        {/* THE SELECTION IS IN THE NAME. Article writes the chosen colourway
+            into the product title — "Sven 88in Tufted Leather Sofa - Charme
+            Tan" — so the card states what you have specified rather than only
+            showing you the control that specified it. */}
+        {chosen && <span style={{ color: tokens.inkSoft }}> — {chosen.label}</span>}
       </h3>
 
         {/* The from-price and the Shop Now link that used to sit here are gone,
@@ -297,6 +448,18 @@ function RangeCard({
             that made the old version hard to read. */}
       </Link>
 
+      {/* Outside the link, because these are buttons — and directly under the
+          picture, because this is the one field whose effect is visible in it. */}
+      {leadField && (
+        <SwatchRow
+          choices={leadField.choices}
+          // Falls back to the first choice. `defaultSelection` always sets this
+          // field, so the coalesce is only here to satisfy the index signature.
+          value={sel[leadField.id] ?? leadField.choices[0].id}
+          onSelect={id => choose(leadField.id, id)}
+        />
+      )}
+
       {/* THE TRANSACTION, BACK ON THE CARD. It came off when the card was
           rebuilt against MONDAY Haircare, whose cards carry no controls — but
           MONDAY sells four shampoos off a shelf and Klay sells made-to-measure,
@@ -304,7 +467,13 @@ function RangeCard({
           a page load to reach something the row could have asked directly.
           What does not come back is the old geometry: this is sized by its own
           content now rather than padded out to match the photograph above it. */}
-      <RangeConfigurator item={item} onInteract={onInteract} />
+      <RangeConfigurator
+        item={item}
+        sel={sel}
+        onChange={choose}
+        leadFieldId={leadField?.id}
+        onInteract={onInteract}
+      />
     </div>
   );
 }

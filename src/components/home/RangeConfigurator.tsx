@@ -21,13 +21,13 @@
 // rather than to a component.
 // ---------------------------------------------------------------------------
 
-import { useState } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import { tokens, motion, space, type as typeScale } from '../../theme';
 import type { CatalogueItem } from '../../data/catalogue';
 import {
   configuredLine,
-  defaultSelection,
+
   fieldsFor,
   priceFor,
   type ConfigChoice,
@@ -38,9 +38,13 @@ import { useCartStore } from '../../store/cartStore';
 import { useHover } from './primitives';
 
 /** The panel's height, shared by all fourteen so every gold button lands on one
- * line. Derived: three fields at 56 plus their gaps, the price row, the 52px
- * button and the panel's own padding. */
-const CONFIG_H = 372;
+ * line. Derived: TWO fields at 52 plus their gap, the price row, the 52px button
+ * and the panel's own padding.
+ *
+ * Two, not three, because the lead field came out of here and onto the card —
+ * see the note on SwatchRow. The 60px the swatch row costs above is the 60px
+ * this gives back, so promoting it was free. */
+const CONFIG_H = 312;
 
 /** Field label — the small caps line above each control. Deliberately quieter
  * than the choices themselves: the question is scaffolding, the answers are
@@ -175,9 +179,24 @@ function Field({
 
 export function RangeConfigurator({
   item,
+  sel,
+  onChange,
+  leadFieldId,
   onInteract,
 }: {
   item: CatalogueItem;
+  /** THE SELECTION LIVES ON THE CARD, not in here.
+   *
+   * It used to be local state, which meant the photograph above this panel could
+   * not know what fabric had been chosen — so choosing "Forest Green" changed
+   * some chips and nothing else. Article's whole trick is that selecting a
+   * colourway changes the PICTURE; lifting the state one level is what makes
+   * that possible. */
+  sel: Selection;
+  onChange: (fieldId: string, choiceId: string) => void;
+  /** The field the CARD took up under the picture. Excluded here so it is not
+   * asked twice. */
+  leadFieldId?: string;
   /** Fired on the first touch of any control. The row advances itself every
    * five seconds, and carrying a card off the screen mid-configuration is the
    * one thing that would make this panel unusable, so the carousel stops for
@@ -186,16 +205,12 @@ export function RangeConfigurator({
 }) {
   const navigate = useNavigate();
   const addItem = useCartStore(s => s.addItem);
-  const [sel, setSel] = useState<Selection>(() => defaultSelection(item));
   const { hover, bind } = useHover();
 
   const fields = fieldsFor(item);
   const price = priceFor(item, sel);
 
-  const choose = (fieldId: string) => (choiceId: string) => {
-    onInteract?.();
-    setSel(s => ({ ...s, [fieldId]: choiceId }));
-  };
+  const choose = (fieldId: string) => (choiceId: string) => onChange(fieldId, choiceId);
 
   const checkout = () => {
     onInteract?.();
@@ -242,9 +257,15 @@ export function RangeConfigurator({
           gap: space.sm,
         }}
       >
-        {fields.map(f => (
-          <Field key={f.id} field={f} value={sel[f.id]} onChange={choose(f.id)} />
-        ))}
+        {/* The colour swatches are NOT here. They render on the card, directly
+            under the photograph, because they are the one field whose effect is
+            visible in the picture — see the note on RangeCard. This panel keeps
+            the fields that are decisions rather than appearances. */}
+        {fields
+          .filter(f => f.id !== leadFieldId)
+          .map(f => (
+            <Field key={f.id} field={f} value={sel[f.id]} onChange={choose(f.id)} />
+          ))}
       </div>
 
       {/* The action bar, pinned to the bottom of every card in the row. */}
