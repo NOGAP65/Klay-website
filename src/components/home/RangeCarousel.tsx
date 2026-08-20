@@ -266,10 +266,10 @@ function RangeCard({
   const choose = (fieldId: string, choiceId: string) =>
     setSel(s => ({ ...s, [fieldId]: choiceId }));
 
-  // The chosen variant or colour, read back so the card can SHOW the selection
-  // rather than only hold it. A colour card where one exists, otherwise the
-  // product's own variant — Blockout / Light filter for a roman, Aluminium /
-  // Timber / Faux for a venetian.
+  // The chosen colour, read back so the tile can take it as its ground. A colour
+  // card where one exists, otherwise the product's own variant — Blockout /
+  // Light filter for a roman, Aluminium / Timber / Faux for a venetian, neither
+  // of which carries a hex and so leaves the tile alone.
   const fields = fieldsFor(item);
   const leadField = fields.find(f => f.kind === 'swatches') ?? fields.find(f => f.id === 'variant');
   const chosen = leadField?.choices.find(c => c.id === sel[leadField.id]);
@@ -282,10 +282,22 @@ function RangeCard({
   const tileGround = !item.image && chosen?.hex ? chosen.hex : undefined;
   const glyphOnLight = tileGround ? luminance(tileGround) > 0.45 : false;
 
-  // THE CARD KEEPS ONE SHARE of the widened slot whatever the slot became, so
-  // the photograph never stretches and every extra share goes to the panel. Two
-  // shares open means the card is half of it; three means a third.
-  const cardShareOfOpen = wideRow ? '50%' : '33.333%';
+  // THE CARD KEEPS ONE SHARE of the widened slot, EXACTLY — not a round half or
+  // third of it. This was `50%`, and it was wrong by half a gap: the open slot
+  // is two shares PLUS the gap between them, so 50% of it is one share plus
+  // gap/2. Measured, the tile went 317x396 shut and 319x399 open — the
+  // photograph grew 2px mid-animation, which is precisely the card changing size
+  // that it must not do. The same arithmetic overflowed the slot by 8px, because
+  // the card and the panel were each given half of a box that also had to hold
+  // the gap.
+  //
+  // One share of a two-share slot is `50% - gap/2`; of a three-share slot,
+  // `33.333% - 2*gap/3`. Both come straight out of slot = n*share + (n-1)*gap.
+  // The panel then takes whatever is left rather than a share of its own, so the
+  // two can never add up to more than the slot.
+  const cardShareOfOpen = wideRow
+    ? `calc(50% - ${TILE_GAP / 2}px)`
+    : `calc(33.3333% - ${(2 * TILE_GAP) / 3}px)`;
 
   return (
     // TWO COLUMNS WHEN OPEN, one when shut. The card itself widens — see the
@@ -410,12 +422,14 @@ function RangeCard({
           transition: 'color 0.25s ease',
         }}
       >
+        {/* THE NAME IS THE NAME. It used to carry the chosen colourway after an
+            em dash — "Roller Blinds — White" — on the Article pattern, where the
+            product title states what you have specified. It reads differently
+            here: every card in the row defaults to a selection nobody has made
+            yet, so the row opened saying White fourteen times and the product's
+            actual name was the shorter half of a longer label. The panel names
+            the colour above its swatches, where the choice is being made. */}
         {item.name}
-        {/* THE SELECTION IS IN THE NAME. Article writes the chosen colourway
-            into the product title — "Sven 88in Tufted Leather Sofa - Charme
-            Tan" — so the card states what you have specified rather than only
-            showing you the control that specified it. */}
-        {chosen && <span style={{ color: tokens.inkSoft }}> — {chosen.label}</span>}
       </h3>
 
         {/* No price here. The panel prices the actual configuration, and a
@@ -456,7 +470,12 @@ function RangeCard({
       {open && (
         <div
           style={{
-            flex: isMobile ? '1 1 auto' : `0 0 calc(50% - ${TILE_GAP / 2}px)`,
+            // WHATEVER IS LEFT, not a share of its own. Giving the card and the
+            // panel half each of a box that also has to hold the gap between
+            // them overflowed the slot by exactly one gap. The card is sized
+            // first, to precisely one share; the panel takes the remainder, so
+            // the two cannot add up to more than the slot at any width.
+            flex: isMobile ? '1 1 auto' : '1 1 0',
             minWidth: 0,
             marginTop: isMobile ? TILE_GAP : 0,
             display: 'flex',
