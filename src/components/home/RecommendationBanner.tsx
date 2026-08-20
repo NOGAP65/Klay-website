@@ -168,40 +168,72 @@ export function RecommendationBanner() {
         >
           {STEPS.map((step, i) => (
             <li key={step.label}>
-              {/* A RULE OVER EACH STEP, which is what makes four sentences read
-                  as a sequence rather than as a paragraph in four pieces. Gold on
-                  the first, warm white at low opacity on the rest: the eye needs
-                  to be told where the sequence starts, and on a row of four
-                  identical columns nothing else says it. */}
+              {/* ONE RULE, SEVERED FOUR TIMES — a timeline, not four captions.
+                  Every rule is the same gold now. It was gold on the first and
+                  warm white on the other three, to say where the sequence
+                  started; the numerals already say that, and making one entry
+                  differ breaks the thing that lets a reader compare the four at
+                  a glance. Identical rules separated only by the grid's gaps read
+                  as a single line running the width of the banner and cut between
+                  steps, which is the sequence stated in one stroke. */}
               <div
                 style={{
                   height: 1,
-                  background: i === 0 ? tokens.gold : tokens.onDarkEdge,
+                  background: tokens.gold,
                   marginBottom: space.md,
                 }}
               />
+
+              {/* NUMERAL AND VERB ON ONE LINE. Stacked, the numeral was a
+                  separate object above the label and the eye had to assemble
+                  "01" and "Design" into one thing. Set together, baseline
+                  aligned, they read as "01 Design" — which is what the step is
+                  called. Stacking was only necessary while the labels were long
+                  enough to wrap. */}
               <div
                 style={{
-                  ...typeScale.numeric,
-                  // Gold, and it is the reason the scrim is as heavy as it is:
-                  // at 32px this is large text, so 3:1 applies, and gold on the
-                  // brightest pixel in the frame is the tightest ratio in the
-                  // section — 3.17:1 against warm white's 7.49:1. See SCRIM.
-                  color: tokens.gold,
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: space.sm,
                   marginBottom: space.xs,
                 }}
               >
-                {String(i + 1).padStart(2, '0')}
+                <span
+                  style={{
+                    ...typeScale.numeric,
+                    // Gold, and it is the reason the scrim is as heavy as it is:
+                    // at 32px this is large text, so 3:1 applies, and gold on
+                    // the brightest pixel in the frame is the tightest ratio in
+                    // the section — 3.17:1 against warm white's 7.49:1.
+                    color: tokens.gold,
+                    lineHeight: 1,
+                    flexShrink: 0,
+                  }}
+                >
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <h3 style={{ ...typeScale.card, color: tokens.warmWhite }}>{step.label}</h3>
               </div>
-              <h3
+
+              {/* WHO DOES IT, in the same slot in all four. This is the argument
+                  the section is actually making — the customer does one of these
+                  and Klay does three — and it used to be buried inside two of the
+                  labels and missing from the other two.
+                  Warm white rather than gold, though gold is what a secondary
+                  line like this would normally take here. At 10px it is small
+                  text, so it needs 4.5:1, and gold measures 3.17 on this
+                  photograph. The caps and the letter-spacing separate it from the
+                  sentence below without spending colour on it. */}
+              <div
                 style={{
-                  ...typeScale.card,
+                  ...typeScale.micro,
                   color: tokens.warmWhite,
                   marginBottom: space.sm,
                 }}
               >
-                {step.label}
-              </h3>
+                {step.actor}
+              </div>
+
               <p
                 style={{
                   ...typeScale.body,
