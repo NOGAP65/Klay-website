@@ -86,14 +86,35 @@ const ROW_WIDTH = '100%';
  *
  * Fourteen cards, four visible: the arrows always have somewhere to go. */
 
+/** FOUR ACROSS, not three. With the configurator off the card and the row at
+ * full width there is room for four ~307px cards, which is what every reference
+ * shows — MONDAY, Sixpenny and HAY are all four-up at 310-335. The CARD_MIN
+ * floor goes with the three-up maths that needed it.
+ *
+ * On mobile, 1.6 rather than 1: the card takes most of the row and the sliver of
+ * the next one is what says the row scrolls. */
+const COLS = 4;
+const COLS_MOBILE = 1.6;
+
+/** One share, as a CSS length for the slots. */
 const cardBasis = (isMobile: boolean) =>
   isMobile
-    ? `calc((100% - ${TILE_GAP}px) / 1.6)`
-    // FOUR ACROSS, not three. With the configurator off the card and the row
-    // at full width there is room for four ~307px cards, which is what every
-    // reference shows — MONDAY, Sixpenny and HAY are all four-up at 310-335.
-    // The CARD_MIN floor goes with the three-up maths that needed it.
-    : `calc((100% - ${3 * TILE_GAP}px) / 4)`;
+    ? `calc((100% - ${TILE_GAP}px) / ${COLS_MOBILE})`
+    : `calc((100% - ${(COLS - 1) * TILE_GAP}px) / ${COLS})`;
+
+/** THE SAME SHARE IN PIXELS, from the row's own width — the identical
+ * arithmetic, so the two cannot disagree.
+ *
+ * This exists because the card has to be pinned to a pixel width (see the note
+ * where it is applied), and every way of MEASURING that width off the live DOM
+ * has a race in it: a slot's offsetWidth is mid-transition for 450ms after
+ * either a card opening or a card closing, and reading it then gives a number
+ * between one share and two. Computing it from the row's clientWidth has no such
+ * window, because opening a card does not change how wide the row is. */
+const sharePx = (rowWidth: number, isMobile: boolean) =>
+  isMobile
+    ? (rowWidth - TILE_GAP) / COLS_MOBILE
+    : (rowWidth - (COLS - 1) * TILE_GAP) / COLS;
 
 /** The open card's slot: TWO shares, so the configurator gets a full card's
  * width beside the photograph and needs no scrolling of its own. Every card
@@ -105,7 +126,7 @@ const cardBasisOpen = (isMobile: boolean, wide: boolean) =>
   isMobile
     ? '100%'
     : wide
-      ? `calc(((100% - ${3 * TILE_GAP}px) / 4) * 2 + ${TILE_GAP}px)`
+      ? `calc(((100% - ${(COLS - 1) * TILE_GAP}px) / ${COLS}) * 2 + ${TILE_GAP}px)`
       // THREE SHARES on a narrow desktop, and this is the fix for the section
       // jump rather than a cosmetic choice. Two shares of a 940px row leaves the
       // panel about 232px wide, at which point every chip row wraps and the
@@ -113,7 +134,7 @@ const cardBasisOpen = (isMobile: boolean, wide: boolean) =>
       // section below leaps 276px. Three shares gives the panel ~464px, the
       // chips fit the rows they were designed for, and the panel stays within
       // the card's own height.
-      : `calc(((100% - ${3 * TILE_GAP}px) / 4) * 3 + ${2 * TILE_GAP}px)`;
+      : `calc(((100% - ${(COLS - 1) * TILE_GAP}px) / ${COLS}) * 3 + ${2 * TILE_GAP}px)`;
 
 /** The tile height the arrows centre on. The card is taller than this — the
  * name block sits under the tile — but the arrows belong on the PHOTOGRAPH, not
@@ -583,33 +604,35 @@ export function RangeCarousel() {
   const rowMinHeight = PANEL_H;
 
   /** THE CARD'S WIDTH IN PIXELS, so nothing about the slot's transition can
-   * reach it. Every card in the row is the same width, and a closed slot is
-   * already exactly that width — it is `cardBasis`, resolved by the browser
-   * against this viewport — so one closed slot is the honest source for it. The
-   * alternative was expressing the card as a percentage of its own slot, and
-   * the slot is the thing that animates: whatever the percentage, it resolves
-   * against the slot's CURRENT width, so the card moved for the whole 450ms.
+   * reach it. See the note where it is applied for why a percentage of the slot
+   * cannot work.
    *
-   * Re-measured on resize and whenever the open card changes, and it deliberately
-   * skips the open slot when picking which one to read. */
+   * COMPUTED FROM THE ROW'S WIDTH, not measured off a slot, and that is the
+   * whole point. Reading a closed sibling's offsetWidth looked like the honest
+   * source — it is the same calc(), already resolved — and it broke every card
+   * but the first. Closing a card clears `openId`, which re-runs this effect
+   * IMMEDIATELY, while that slot is still 638px wide and only beginning its
+   * 450ms shrink back to 317. So it measured 638, and every card opened after
+   * that took its whole slot: measured, the tile went 317x396 to 638x798 and the
+   * section jumped 842 to 1204.
+   *
+   * The row's own width has no such window. Opening a card does not change how
+   * wide the row is, so there is no moment at which this reads the wrong thing.
+   * clientWidth rather than offsetWidth because the scrollbar is hidden and it
+   * is the content box that a flex child's percentage resolves against — which
+   * is what makes this the same number `cardBasis` produces. */
   const [cardPx, setCardPx] = useState<number | null>(null);
   useEffect(() => {
     const row = scrollerRef.current;
     if (!row) return;
-    const measure = () => {
-      const closed = Array.from(row.children).find(
-        c => (c as HTMLElement).dataset.slot !== openId,
-      ) as HTMLElement | undefined;
-      if (closed) setCardPx(closed.offsetWidth);
-    };
+    const measure = () => setCardPx(sharePx(row.clientWidth, isMobile));
     measure();
-    // The row's width is what the card's width is derived from, so the row is
-    // what has to be watched — not the window, which also fires on a height
-    // change that cannot affect this.
+    // The row's width is the only input, so the row is what has to be watched —
+    // not the window, which also fires on height changes that cannot affect it.
     const ro = new ResizeObserver(measure);
     ro.observe(row);
     return () => ro.disconnect();
-  }, [openId]);
+  }, [isMobile]);
 
   /** THE CLOSE REVERSES THE OPEN, rather than the panel vanishing and the card
    * then shrinking behind it.
