@@ -116,6 +116,12 @@ const CARD_H = 470;
  * at all. Still slow enough to read a label, a line and a price before it goes. */
 const AUTO_MS = 5000;
 
+/** How long a card takes to widen. Shared by the slot transition, the panel's
+ * entrance and the scroll nudge that follows both, so the three cannot drift
+ * out of step — the nudge in particular has to start AFTER the width has
+ * settled, or two layout animations run at once. */
+const EXPAND_MS = 450;
+
 /** Round arrow, overlaid on the row's edge and vertically centred.
  *
  * Overlaid rather than parked above the row, because the section's heading band
@@ -292,7 +298,11 @@ function RangeCard({
           // and the About panel.
           aspectRatio: '4 / 5',
           background: tileGround ?? (item.image ? tokens.parchment : tokens.charcoal),
-          transition: 'background 0.45s ease',
+          // NO TRANSITION on the ground. It faded over 0.45s, which repaints a
+          // 317x396 box every frame for the whole of that — and it fired at the
+          // same moment the row was animating flex-basis, so two expensive
+          // animations overlapped. The colour change is legible instantly; it
+          // was the fade that cost, not the swap.
         }}
       >
         {item.image ? (
@@ -482,7 +492,16 @@ export function RangeCarousel() {
    * state changes, so measuring immediately reads the old geometry. */
   useEffect(() => {
     if (!openId) return;
-    const raf = requestAnimationFrame(() => {
+    // AFTER the width transition, not during it. Both a smooth scroll and a
+    // flex-basis transition force layout on every frame, and running them
+    // together was the jank: profiled at 4x CPU throttle the overlap produced
+    // frames of 91ms, 49ms and 242ms clustered in the first 300ms. Sequenced,
+    // each is a cheap animation on its own.
+    //
+    // It costs nothing in feel, because the card is already visibly expanding
+    // during those 450ms — the nudge only tidies the case where the expanded
+    // card would overhang the row's right edge.
+    const timer = window.setTimeout(() => {
       const row = scrollerRef.current;
       const slot = row?.querySelector<HTMLElement>(`[data-slot="${openId}"]`);
       if (!row || !slot) return;
@@ -499,8 +518,8 @@ export function RangeCarousel() {
       const target = closed ? closed.offsetWidth * 2 + TILE_GAP : slot.offsetWidth;
       const over = slot.offsetLeft + target - (row.scrollLeft + row.clientWidth);
       if (over > 0) row.scrollTo({ left: row.scrollLeft + over, behavior: 'smooth' });
-    });
-    return () => cancelAnimationFrame(raf);
+    }, EXPAND_MS);
+    return () => window.clearTimeout(timer);
   }, [openId]);
 
   // Escape closes the panel. A pop-out that can only be dismissed by finding
@@ -678,6 +697,13 @@ export function RangeCarousel() {
               // no card is covered and no space is wasted. Transitioning
               // flex-basis is what makes the row move rather than jump.
               data-slot={item.id}
+              // CONTAINMENT. The flex-basis transition changes this box every
+              // frame, and without a containment boundary the browser has to
+              // consider the whole row's subtree each time.  tells
+              // it nothing inside affects anything outside, so the per-frame
+              // work is scoped to one card. Measured: 432 style recalculations
+              // for a single card opening before this.
+              className="klay-slot"
               style={{
                 flex: `0 0 ${open ? cardBasisOpen(isMobile) : cardBasis(isMobile)}`,
                 // SNAP OFF WHILE OPEN. Mandatory snapping and a programmatic
@@ -685,7 +711,7 @@ export function RangeCarousel() {
                 // card edge and undoes the nudge that was bringing the open card
                 // into view. It comes back the moment the panel closes.
                 scrollSnapAlign: open ? 'none' : 'start',
-                transition: 'flex-basis 0.45s cubic-bezier(0.22, 1, 0.36, 1)',
+                transition: `flex-basis ${EXPAND_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
               }}
             >
               <RangeCard

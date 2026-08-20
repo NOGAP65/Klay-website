@@ -23,13 +23,21 @@
 // interact with, and a strip that halts under the pointer reads as broken.
 // ---------------------------------------------------------------------------
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { tokens, prefersReducedMotion, space, type as typeScale } from '../../theme';
 
-/** Pixels per second. Faster than the reviews marquee at 26 — these are five-word
- * fragments rather than sentences, so they read at a glance and a slow crawl
- * would make the bar feel stalled rather than calm. */
-const SPEED = 42;
+/** How long one full pass of the list takes.
+ *
+ * It was a pixels-per-second speed, which a rAF loop can honour directly and a
+ * CSS animation cannot — a keyframed transform is given a duration, and the
+ * distance is however wide the content turns out to be. Six credentials at this
+ * type size run roughly 1,700px, so 40s is about 42px/s: the same pace the loop
+ * ran at, expressed the way CSS needs it.
+ *
+ * The trade is that the pace now drifts slightly with the length of the list
+ * rather than being exact. For a credential bar that is not a real cost, and it
+ * buys back 296 style recalculations a second. */
+const DURATION_S = 40;
 
 export const BAR_HEIGHT = 38;
 
@@ -79,34 +87,10 @@ function Run() {
 }
 
 export function TrustTicker() {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const offsetRef = useRef(0);
   // Read once, on mount. A strip that slides sideways forever is precisely what
-  // this preference exists to stop.
+  // this preference exists to stop — index.html also kills every animation
+  // under the same query, so this is belt and braces for the DOM it renders.
   const [reduceMotion] = useState(prefersReducedMotion);
-
-  useEffect(() => {
-    if (reduceMotion) return;
-    let frame = 0;
-    let last: number | null = null;
-
-    const step = (now: number) => {
-      const track = trackRef.current;
-      if (track) {
-        const dt = last === null ? 0 : (now - last) / 1000;
-        last = now;
-        // Half the scroll width is one full pass of the list, because it is
-        // rendered twice.
-        const half = track.scrollWidth / 2;
-        if (half > 0) offsetRef.current = (offsetRef.current + dt * SPEED) % half;
-        track.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
-      }
-      frame = requestAnimationFrame(step);
-    };
-
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
-  }, [reduceMotion]);
 
   return (
     <div
@@ -134,15 +118,27 @@ export function TrustTicker() {
       }}
       className={reduceMotion ? 'klay-hscroll' : undefined}
     >
+      {/* A CSS ANIMATION, NOT A rAF LOOP.
+          It used to advance `style.transform` from JavaScript on every frame,
+          which invalidates style for this subtree on every frame — forever, on
+          every page, whether the bar is on screen or not. Measured with the
+          testimonials marquee doing the same thing: 592 style recalculations in
+          two IDLE seconds, about 296 a second, and 35% of a throttled CPU. That
+          is the glitchiness; it was starving every other animation on the page.
+          A keyframed transform runs on the compositor instead — zero style
+          recalc, zero layout, zero main-thread work per frame.
+          `klay-marquee` was already declared in index.html and unused, doing
+          precisely this. The JS was duplicating CSS that existed.
+          The list is rendered twice and the animation travels exactly -50%, so
+          the wrap always lands on an identical frame and cannot be seen. */}
       <div
-        ref={trackRef}
         style={{
           display: 'flex',
           alignItems: 'center',
           width: 'max-content',
-          // Keeps the track on its own compositor layer; without it a transform
-          // this wide repaints the bar every frame.
+          // Its own compositor layer, so the transform never repaints the bar.
           willChange: 'transform',
+          animation: reduceMotion ? undefined : `klay-marquee ${DURATION_S}s linear infinite`,
           paddingLeft: space.md,
         }}
       >

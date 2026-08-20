@@ -20,14 +20,18 @@
 // the words are the evidence.
 // ---------------------------------------------------------------------------
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { tokens, prefersReducedMotion, space, layout, type as typeScale } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { SectionBand } from './primitives';
 
-/** Pixels per second. Slow enough to read a quote as it passes — the point is
- * that the row is alive, not that it is going anywhere. */
-const SPEED = 26;
+/** How long one full pass of the five reviews takes. Slow — the point is that
+ * the row is alive, not that it is going anywhere.
+ *
+ * A duration rather than the pixels-per-second the rAF loop used, because that
+ * is what a keyframed transform takes. Ten cards at ~436px each is roughly
+ * 4,360px, so 160s is about 27px/s — the pace the loop ran at. */
+const DURATION_S = 160;
 
 const QUOTES = [
   {
@@ -125,40 +129,11 @@ function Quote({ q, isMobile }: { q: (typeof QUOTES)[number]; isMobile: boolean 
 
 export function Testimonials() {
   const isMobile = useIsMobile();
-  const trackRef = useRef<HTMLDivElement>(null);
-  const offsetRef = useRef(0);
   const [paused, setPaused] = useState(false);
   // Read once. A row that slides sideways forever is precisely what this
   // preference exists to stop, so under it the marquee holds still and becomes a
   // strip the reader scrolls themselves.
   const [reduceMotion] = useState(prefersReducedMotion);
-
-  useEffect(() => {
-    if (reduceMotion || paused) return;
-    let frame = 0;
-    let last: number | null = null;
-
-    const step = (now: number) => {
-      const track = trackRef.current;
-      if (track) {
-        // Delta-driven, so the speed is the same on a 60Hz and a 144Hz screen,
-        // and a paused-then-resumed row carries on from where it stopped rather
-        // than restarting from zero.
-        const dt = last === null ? 0 : (now - last) / 1000;
-        last = now;
-        // The list is rendered twice, so half the scroll width is one full pass.
-        // Wrapping there rather than at the end means the seam always lands on an
-        // identical frame and is invisible.
-        const half = track.scrollWidth / 2;
-        if (half > 0) offsetRef.current = (offsetRef.current + dt * SPEED) % half;
-        track.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
-      }
-      frame = requestAnimationFrame(step);
-    };
-
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
-  }, [paused, reduceMotion]);
 
   return (
     // WARM WHITE. The section-ground sequence is reassigned in this pass so no
@@ -186,14 +161,26 @@ export function Testimonials() {
           paddingLeft: layout.inlinePad(isMobile),
         }}
       >
+        {/* A CSS ANIMATION, NOT A rAF LOOP — see the same note in TrustTicker.
+            Between them the two marquees were writing `style.transform` from
+            JavaScript on every frame, forever, which invalidated style on both
+            subtrees every frame: 592 style recalculations in two idle seconds
+            and 35% of a throttled CPU, starving every other animation on the
+            page. `klay-testimonials` was already declared in index.html — twice,
+            in fact — and unused.
+            PAUSE IS animation-play-state, not a torn-down loop. The old version
+            cancelled its rAF on hover, which was the reason the offset had to
+            live in a ref: a restarted loop began from zero. Pausing the
+            animation holds the exact position with no bookkeeping at all. */}
         <div
-          ref={trackRef}
           style={{
             display: 'flex',
             width: 'max-content',
-            // willChange keeps the track on its own compositor layer; without it
-            // a transform this wide repaints the section every frame.
+            // Its own compositor layer; without it a transform this wide
+            // repaints the section every frame.
             willChange: 'transform',
+            animation: reduceMotion ? undefined : `klay-testimonials ${DURATION_S}s linear infinite`,
+            animationPlayState: paused ? 'paused' : 'running',
           }}
         >
           {/* Twice. The duplicate is what the wrap at half-width lands on, and it

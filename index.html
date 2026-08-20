@@ -161,9 +161,14 @@
         100% { transform: scale(1); }
       }
 
-      @keyframes klay-testimonials {
-        0%   { transform: translateX(0); }
-        100% { transform: translateX(-50%); }
+      /* CONTAINMENT ON THE RANGE SLOTS. Their flex-basis animates when a card
+         opens, and without a containment boundary the browser has to consider
+         the whole row's subtree on every frame of that transition — measured at
+         432 style recalculations for one card opening. `layout paint` tells it
+         nothing inside a slot affects anything outside it, so the per-frame work
+         is scoped to the one card that is actually changing. */
+      .klay-slot {
+        contain: layout paint;
       }
 
       @media (prefers-reduced-motion: reduce) {
