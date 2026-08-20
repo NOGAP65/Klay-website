@@ -182,6 +182,7 @@ export function RangeConfigurator({
   sel,
   onChange,
   leadFieldId,
+  fill = false,
   onInteract,
 }: {
   item: CatalogueItem;
@@ -197,6 +198,10 @@ export function RangeConfigurator({
   /** The field the CARD took up under the picture. Excluded here so it is not
    * asked twice. */
   leadFieldId?: string;
+  /** Fills its parent instead of taking the shared card height. Set when it is
+   * rendered inside the pop-out panel, which sizes itself to the card beside
+   * it — see the note on CONFIG_H. */
+  fill?: boolean;
   /** Fired on the first touch of any control. The row advances itself every
    * five seconds, and carrying a card off the screen mid-configuration is the
    * one thing that would make this panel unusable, so the carousel stops for
@@ -229,16 +234,17 @@ export function RangeConfigurator({
         // card instead: three fields, a price and a button. The roller, which
         // asks five, scrolls the last one into view inside its own panel rather
         // than making all fourteen cards tall enough for the worst case.
-        height: CONFIG_H,
-        flex: '0 0 auto',
+        ...(fill ? { flex: '1 1 auto' } : { height: CONFIG_H, flex: '0 0 auto' }),
         minHeight: 0,
         boxSizing: 'border-box',
         background: tokens.cream,
         // Hairline on three sides. The top edge is where the name block ends,
         // and a rule there would read as a divider inside one object.
-        borderLeft: `1px solid ${tokens.lineFaint}`,
-        borderRight: `1px solid ${tokens.lineFaint}`,
-        borderBottom: `1px solid ${tokens.lineFaint}`,
+        ...(fill ? null : {
+          borderLeft: `1px solid ${tokens.lineFaint}`,
+          borderRight: `1px solid ${tokens.lineFaint}`,
+          borderBottom: `1px solid ${tokens.lineFaint}`,
+        }),
         padding: `${space.md}px`,
         display: 'flex',
         flexDirection: 'column',

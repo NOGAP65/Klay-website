@@ -44,7 +44,7 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { tokens, motion, prefersReducedMotion, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
+import { tokens, motion, prefersReducedMotion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 // The row reads data/catalogue.ts — the same fourteen products the shop lists,
 // in the same order, rendered by the same tile. It used to read a data/ranges.ts
@@ -69,104 +69,56 @@ const luminance = (hex: string) => {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 };
 
-// ---------------------------------------------------------------------------
-// THE SWATCH ROW — one unlabelled row of colourways, directly under the picture.
-//
-// This is the whole reason the card works, and it is lifted from Article, which
-// is the one site that carries live configuration on EVERY card and does not
-// read as a wall of forms. Measured: 49 cards in view, 359 x 529, and exactly
-// three controls per card — a single row of circles and nothing else. Blinds.com
-// has one control across its entire 12-card range grid; Hillarys has none.
-//
-// Two things make Article's version work rather than just be small:
-//
-//   CHOOSING CHANGES THE PICTURE. The swatch is not a control beside the
-//     product, it IS the product — pick a different leather and the sofa in the
-//     photograph is that leather.
-//   THE CHOICE ENTERS THE NAME. "Sven 88in Tufted Leather Sofa - Charme Tan".
-//     The card states the specification instead of only offering it.
-//
-// Klay has to earn the first one differently: there is no photograph per colour
-// and there never will be for fourteen products. So the selection repaints the
-// GROUND the mechanism drawing sits on — choose Forest Green and the tile is
-// forest green with the blind drawn on it. That is honest, because it is plainly
-// a drawing rather than a claim about a photograph, and it turns ten cards that
-// were identical charcoal rectangles into fourteen that answer a click.
-//
-// The labelled fields the panel keeps are the ones an appearance cannot carry:
-// size, operation, hardware. Those are decisions, not looks.
-// ---------------------------------------------------------------------------
-function SwatchRow({
-  choices,
-  value,
-  onSelect,
-}: {
-  choices: { id: string; label: string; hex?: string }[];
-  value: string;
-  onSelect: (id: string) => void;
-}) {
-  return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginTop: space.sm }}>
-      {choices.map(c => {
-        const on = c.id === value;
-        // A COLOUR SHOWS ITSELF; A MATERIAL HAS TO SAY ITS NAME. Where the
-        // choice carries a hex it renders as Article's 20px square and the
-        // colour is the label. Where it does not — Aluminium, Timber, Faux —
-        // a coloured square would be a lie about a finish, so it renders as a
-        // small chip instead. Same row, same rhythm, same gold selection ring.
-        if (!c.hex) {
-          return (
-            <button
-              key={c.id}
-              aria-pressed={on}
-              onClick={() => onSelect(c.id)}
-              style={{
-                ...typeScale.label,
-                letterSpacing: 'normal',
-                textTransform: 'none',
-                lineHeight: 1,
-                height: 20,
-                padding: `0 ${space.xs}px`,
-                borderRadius: 2,
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                background: on ? tokens.gold : 'transparent',
-                color: tokens.ink,
-                border: `1px solid ${on ? tokens.gold : tokens.line}`,
-                transition: motion.button,
-              }}
-            >
-              {c.label}
-            </button>
-          );
-        }
-        return (
-          <button
-            key={c.id}
-            aria-label={c.label}
-            aria-pressed={on}
-            title={c.label}
-            onClick={() => onSelect(c.id)}
-            style={{
-              width: 20,
-              height: 20,
-              padding: 0,
-              borderRadius: 2,
-              cursor: 'pointer',
-              background: c.hex,
-              border: `1px solid ${tokens.line}`,
-              // A gold ring offset off the swatch's own edge — Article's
-              // treatment. The ring says "chosen" without altering the colour it
-              // is describing, which a fill or a tick would.
-              outline: on ? `1.5px solid ${tokens.gold}` : '1.5px solid transparent',
-              outlineOffset: 2,
-              transition: 'outline-color 0.2s ease',
-            }}
-          />
-        );
-      })}
-    </div>
-  );
+/** Where the panel goes, measured off the card and kept in step with scrolling.
+ *
+ * FIXED POSITION, NOT ABSOLUTE, and that is forced rather than chosen: the row
+ * is a horizontal scroller, `overflow-x: auto` establishes a clipping context,
+ * and anything hung off the side of a card inside it is cut at the card's own
+ * edge. A fixed layer escapes the scroller entirely.
+ *
+ * The cost of escaping it is that fixed coordinates do not follow the element,
+ * so the rect is recomputed on scroll and resize. rAF-throttled, because both
+ * fire far faster than a repaint is worth.
+ *
+ * IT FLIPS. Opening on the rightmost visible card would put the panel off the
+ * viewport, so when there is not room to the right it opens to the left. Same
+ * decision a dropdown near a window edge makes. */
+function usePanelRect(ref: React.RefObject<HTMLDivElement | null>, open: boolean) {
+  const [rect, setRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setRect(null);
+      return;
+    }
+    let frame = 0;
+    const measure = () => {
+      const el = ref.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const gap = TILE_GAP;
+      const right = r.right + gap;
+      // Room to the right? Otherwise mirror to the left of the card.
+      const left = right + r.width <= window.innerWidth - space.md ? right : r.left - gap - r.width;
+      setRect({ top: r.top, left, width: r.width, height: r.height });
+    };
+    const onMove = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    };
+    measure();
+    // Capture phase, so the row's own horizontal scroll is caught as well as the
+    // window's — the panel has to follow its card either way.
+    window.addEventListener('scroll', onMove, true);
+    window.addEventListener('resize', onMove);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', onMove, true);
+      window.removeEventListener('resize', onMove);
+    };
+  }, [ref, open]);
+
+  return rect;
 }
 
 // FULL CONTAINER, not 70%. At 70% the row was 1000px inside a 1440 viewport —
@@ -303,47 +255,40 @@ function Arrow({
 // ---------------------------------------------------------------------------
 function RangeCard({
   item,
-  onInteract,
+  open,
+  onToggle,
 }: {
   item: CatalogueItem;
-  onInteract: () => void;
+  /** Whether this card's configuration panel is showing. One at a time across
+   * the whole row — the carousel owns which. */
+  open: boolean;
+  onToggle: () => void;
 }) {
   const { hover, bind } = useHover();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const rect = usePanelRect(cardRef, open);
   const [sel, setSel] = useState<Selection>(() => defaultSelection(item));
-  const choose = (fieldId: string, choiceId: string) => {
-    onInteract();
+  const choose = (fieldId: string, choiceId: string) =>
     setSel(s => ({ ...s, [fieldId]: choiceId }));
-  };
 
-  // THE LEAD FIELD — the one row that comes up out of the panel and sits under
-  // the picture. A colour card where one exists, otherwise the product's own
-  // variant: Blockout / Light filter for a roman, Aluminium / Timber / Faux for
-  // a venetian, PVC / Timber / Aluminium for a shutter.
-  //
-  // It cannot only be colour. Two of the fourteen products carry a colour card
-  // (rollers on the Rynamic range, curtains on their own), so a colour-only rule
-  // put the swatch row on two cards and left twelve unchanged — the pattern
-  // barely appeared. Every product has a variant, and a variant is the same kind
-  // of decision: the one field that describes how the thing LOOKS rather than
-  // how big it is or how it opens.
+  // The chosen variant or colour, read back so the card can SHOW the selection
+  // rather than only hold it. A colour card where one exists, otherwise the
+  // product's own variant — Blockout / Light filter for a roman, Aluminium /
+  // Timber / Faux for a venetian.
   const fields = fieldsFor(item);
   const leadField = fields.find(f => f.kind === 'swatches') ?? fields.find(f => f.id === 'variant');
   const chosen = leadField?.choices.find(c => c.id === sel[leadField.id]);
   // THE FABRIC COLOUR BECOMES THE TILE'S GROUND on the ten products with no
-  // photograph. Above 0.45 luminance the drawing flips to ink — a warm-white
-  // mechanism on a cream fabric is invisible.
+  // photograph. It still works — better, in fact — now the controls sit in a
+  // panel BESIDE the card rather than under it: the card stays in view while
+  // you configure, so choosing Forest Green visibly repaints the tile next to
+  // the swatch you just clicked. Above 0.45 luminance the drawing flips to ink,
+  // because a warm-white mechanism on a cream fabric is invisible.
   const tileGround = !item.image && chosen?.hex ? chosen.hex : undefined;
   const glyphOnLight = tileGround ? luminance(tileGround) > 0.45 : false;
 
   return (
-    // A COLUMN, FULL HEIGHT. The scroller's children stretch to the tallest
-    // card, so giving the configurator `flex: 1` inside this lands every card's
-    // gold button on one line without anyone declaring a height. That is what
-    // the old fixed 470 was for, and it is why the panel had to scroll
-    // internally — a wardrobe asks one question and a roller asks five, so a
-    // shared literal had to be tall enough for the worst case and every other
-    // card carried the slack.
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div ref={cardRef} style={{ display: 'flex', flexDirection: 'column' }}>
       {/* Only the picture and the name are inside the link. The configurator
           below carries real buttons, and a <button> nested inside an <a> is
           invalid and swallows its own clicks. */}
@@ -441,39 +386,104 @@ function RangeCard({
         {chosen && <span style={{ color: tokens.inkSoft }}> — {chosen.label}</span>}
       </h3>
 
-        {/* The from-price and the Shop Now link that used to sit here are gone,
-            and both are now the configurator's job: it shows the price of the
-            exact configuration rather than a from-figure, and its gold button is
-            the action. Two prices and two ways to buy on one card is the thing
-            that made the old version hard to read. */}
+        {/* No price here. The panel prices the actual configuration, and a
+            from-figure on the card would be a second, vaguer number twenty
+            pixels above a real one. */}
       </Link>
 
-      {/* Outside the link, because these are buttons — and directly under the
-          picture, because this is the one field whose effect is visible in it. */}
-      {leadField && (
-        <SwatchRow
-          choices={leadField.choices}
-          // Falls back to the first choice. `defaultSelection` always sets this
-          // field, so the coalesce is only here to satisfy the index signature.
-          value={sel[leadField.id] ?? leadField.choices[0].id}
-          onSelect={id => choose(leadField.id, id)}
-        />
-      )}
+      {/* THE ONE ACTION. Gold, full width, and it does not navigate — it opens
+          the configuration panel beside this card. */}
+      <button
+        onClick={onToggle}
+        style={{
+          marginTop: space.md,
+          width: '100%',
+          height: 52,
+          boxSizing: 'border-box',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 2,
+          border: 'none',
+          cursor: 'pointer',
+          background: open || hover ? tokens.goldLight : tokens.gold,
+          color: tokens.ink,
+          ...typeScale.label,
+          lineHeight: 1,
+          transition: motion.button,
+        }}
+      >
+        {open ? 'Close' : 'Shop Now'}
+      </button>
 
-      {/* THE TRANSACTION, BACK ON THE CARD. It came off when the card was
-          rebuilt against MONDAY Haircare, whose cards carry no controls — but
-          MONDAY sells four shampoos off a shelf and Klay sells made-to-measure,
-          where the configuration IS the product. Taking it off cost a click and
-          a page load to reach something the row could have asked directly.
-          What does not come back is the old geometry: this is sized by its own
-          content now rather than padded out to match the photograph above it. */}
-      <RangeConfigurator
-        item={item}
-        sel={sel}
-        onChange={choose}
-        leadFieldId={leadField?.id}
-        onInteract={onInteract}
-      />
+      {/* THE PANEL, beside the card rather than under it.
+          Fixed-position and measured, not absolute: the row is a horizontal
+          scroller, and `overflow-x: auto` clips absolutely-positioned children
+          — a panel hung off the side of a card inside it would simply be cut at
+          the card's edge. See usePanelRect. */}
+      {open && rect && (
+        <>
+          {/* Catches the click that closes it. Transparent, because the card and
+              its neighbours have to stay legible — this is a panel beside a
+              product, not a modal over a page. */}
+          <div
+            onClick={onToggle}
+            style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              top: rect.top,
+              left: rect.left,
+              width: rect.width,
+              height: rect.height,
+              zIndex: 41,
+              display: 'flex',
+              flexDirection: 'column',
+              background: tokens.cream,
+              border: `1px solid ${tokens.line}`,
+              borderRadius: 2,
+              // The one lifted object rule is a HOMEPAGE-SECTION rule; this is a
+              // transient overlay and has to sit above its neighbours to read as
+              // one. Without it the panel and the card underneath merge.
+              boxShadow: shadow.lift,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                gap: space.sm,
+                padding: `${space.md}px ${space.md}px 0`,
+              }}
+            >
+              {/* Says what is being configured. The panel can sit over a
+                  neighbouring card, so it cannot rely on the one it belongs to
+                  being the nearest thing to it. */}
+              <h4 style={{ ...typeScale.card, color: tokens.ink }}>{item.name}</h4>
+              <button
+                onClick={onToggle}
+                aria-label="Close"
+                style={{
+                  flexShrink: 0,
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: space.xxs,
+                  lineHeight: 1,
+                  fontSize: 16,
+                  color: tokens.inkSoft,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <RangeConfigurator item={item} sel={sel} onChange={choose} fill />
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -489,6 +499,21 @@ export function RangeCarousel() {
    * a touch screen — and carrying a card off the edge while someone is halfway
    * through choosing a fabric is worse than a row that never moves. */
   const [frozen, setFrozen] = useState(false);
+  /** Which card has its configuration panel open. One at a time — the whole
+   * point of moving the controls off the card is that the visitor reads one set
+   * of options rather than fourteen. */
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  // Escape closes the panel. A pop-out that can only be dismissed by finding
+  // its own X is a pop-out people feel trapped by.
+  useEffect(() => {
+    if (!openId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenId(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openId]);
   // Read once. A row that advances itself is exactly what this preference exists
   // to stop; under it the row holds still and becomes one the reader scrolls.
   const [reduceMotion] = useState(prefersReducedMotion);
@@ -647,7 +672,20 @@ export function RangeCarousel() {
               key={item.id}
               style={{ flex: `0 0 ${cardBasis(isMobile)}`, scrollSnapAlign: 'start' }}
             >
-              <RangeCard item={item} onInteract={() => setFrozen(true)} />
+              <RangeCard
+                item={item}
+                open={openId === item.id}
+                onToggle={() =>
+                  setOpenId(cur => {
+                    const next = cur === item.id ? null : item.id;
+                    // Opening a panel stops the row for good. Carrying a card
+                    // off the edge mid-configuration is the one thing that would
+                    // make this unusable, and hover does not exist on touch.
+                    if (next) setFrozen(true);
+                    return next;
+                  })
+                }
+              />
             </div>
           ))}
         </div>
