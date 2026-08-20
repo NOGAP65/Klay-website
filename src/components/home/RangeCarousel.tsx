@@ -58,6 +58,7 @@ import { Link } from 'react-router-dom';
 import { ProductGlyph } from '../ProductGlyph';
 import { RangeConfigurator } from './RangeConfigurator';
 import { defaultSelection, fieldsFor, type Selection } from '../../data/configOptions';
+import { useCartStore } from '../../store/cartStore';
 
 /** Relative luminance, for deciding whether the mechanism drawing goes on in
  * warm white or in ink. The fabric card runs from a 0.905 white to a 0.078
@@ -288,6 +289,21 @@ function RangeCard({
   const choose = (fieldId: string, choiceId: string) =>
     setSel(s => ({ ...s, [fieldId]: choiceId }));
 
+  /** IS THIS PRODUCT IN THE CART. Read from the store rather than held as local
+   * state, so it survives the card closing, the row scrolling and a reload — the
+   * cart is persisted, and a marker that forgets itself on the next render is
+   * worse than none.
+   *
+   * Matched on the product, not on the exact configuration. A cart line's
+   * `blindType` is `[item.id, ...every choice].join(':')`, so two configurations
+   * of one roller are two lines; the card is one card either way, and "you have
+   * a roller in your cart" is the true statement about it. The `=== item.id`
+   * arm covers a product with no fields at all, where the join produces the bare
+   * id and no colon. */
+  const inCart = useCartStore(s =>
+    s.items.some(i => i.blindType === item.id || i.blindType.startsWith(item.id + ':')),
+  );
+
   // The chosen colour, read back so the tile can take it as its ground. A colour
   // card where one exists, otherwise the product's own variant — Blockout /
   // Light filter for a roman, Aluminium / Timber / Faux for a venetian, neither
@@ -316,8 +332,41 @@ function RangeCard({
         flexDirection: isMobile ? 'column' : 'row',
         alignItems: 'stretch',
         height: '100%',
+        // For the in-cart border, which is an overlay — see below.
+        position: 'relative',
       }}
     >
+      {/* ONE GOLD BORDER AROUND THE WHOLE THING once it is in the cart, drawn
+          over the card and the configurator together. This wrapper IS that
+          combined shape — the card column and the panel are its two children —
+          so a single rectangle marks both without either of them knowing about
+          it, and it closes up around the card alone when the panel collapses.
+
+          AN OVERLAY, NOT A BORDER, and that is not a style preference. A real
+          border on this box adds two pixels to the card's width and height,
+          which is the one thing that must never happen here: the tile is 4:5, so
+          two pixels of width become two and a half of height and the whole row
+          and every section below it moves. An outline would not affect layout
+          either, but the slots carry `contain: layout paint`, which clips
+          anything drawn outside the slot's own box — an outline sits outside the
+          border edge and would be cut off. An inset child is inside the
+          containment boundary and costs no layout at all.
+
+          Painted last and pointer-transparent, so it sits over the photograph
+          and the chips without taking a single click off them. */}
+      {inCart && (
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            border: `1px solid ${tokens.gold}`,
+            borderRadius: 2,
+            pointerEvents: 'none',
+            zIndex: 2,
+          }}
+        />
+      )}
       {/* THE CARD IS PINNED TO A PIXEL WIDTH, open or shut, and this is the one
           thing that stops it changing size. Every expression of it as a share of
           the SLOT was wrong, because the slot is what animates:
