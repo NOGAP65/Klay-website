@@ -247,7 +247,7 @@ function RangeCard({
   ready,
   onToggle,
   isMobile,
-  wideRow,
+  cardPx,
 }: {
   item: CatalogueItem;
   /** Whether this card's configuration panel is showing. One at a time across
@@ -258,8 +258,9 @@ function RangeCard({
   ready: boolean;
   onToggle: () => void;
   isMobile: boolean;
-  /** Two shares when open, rather than three — see cardBasisOpen. */
-  wideRow: boolean;
+  /** The card's width in pixels, measured off a closed slot. Null until the
+   * first measurement, when the card falls back to filling its slot. */
+  cardPx: number | null;
 }) {
   const { hover, bind } = useHover();
   const [sel, setSel] = useState<Selection>(() => defaultSelection(item));
@@ -282,23 +283,6 @@ function RangeCard({
   const tileGround = !item.image && chosen?.hex ? chosen.hex : undefined;
   const glyphOnLight = tileGround ? luminance(tileGround) > 0.45 : false;
 
-  // THE CARD KEEPS ONE SHARE of the widened slot, EXACTLY — not a round half or
-  // third of it. This was `50%`, and it was wrong by half a gap: the open slot
-  // is two shares PLUS the gap between them, so 50% of it is one share plus
-  // gap/2. Measured, the tile went 317x396 shut and 319x399 open — the
-  // photograph grew 2px mid-animation, which is precisely the card changing size
-  // that it must not do. The same arithmetic overflowed the slot by 8px, because
-  // the card and the panel were each given half of a box that also had to hold
-  // the gap.
-  //
-  // One share of a two-share slot is `50% - gap/2`; of a three-share slot,
-  // `33.333% - 2*gap/3`. Both come straight out of slot = n*share + (n-1)*gap.
-  // The panel then takes whatever is left rather than a share of its own, so the
-  // two can never add up to more than the slot.
-  const cardShareOfOpen = wideRow
-    ? `calc(50% - ${TILE_GAP / 2}px)`
-    : `calc(33.3333% - ${(2 * TILE_GAP) / 3}px)`;
-
   return (
     // TWO COLUMNS WHEN OPEN, one when shut. The card itself widens — see the
     // note on the scroller item — and the configurator takes the width that
@@ -313,12 +297,27 @@ function RangeCard({
         height: '100%',
       }}
     >
-      {/* The card proper. It keeps its own width while the wrapper grows, so the
-          photograph never stretches — the extra width goes entirely to the panel
-          beside it. */}
+      {/* THE CARD IS PINNED TO A PIXEL WIDTH, open or shut, and this is the one
+          thing that stops it changing size. Every expression of it as a share of
+          the SLOT was wrong, because the slot is what animates:
+
+            Shut it was `100%` and open `50% - gap/2`, and both resolve to 317 at
+            rest — but the basis flips on the tick the state changes, while the
+            slot is still 317 wide. So the card became 50% of 317, or 157, and
+            then grew back to 317 as the slot widened. Closing ran it in reverse:
+            `openId` cleared while the slot was still 638, so the card jumped to
+            the full 638 and shrank. The tile is 4:5, so its height followed —
+            396 to 195 and back — and every card and every section below it moved
+            with it. That is the glitch, and it was invisible at rest, which is
+            why measuring the endpoints did not find it.
+
+          A pixel width cannot be affected by the slot's transition at all. It is
+          measured off a closed slot rather than computed, so it is exactly the
+          same calc() the closed cards use, already resolved by the browser —
+          see the note on cardPx. */}
       <div
         style={{
-          flex: isMobile ? '0 0 auto' : `0 0 ${open ? cardShareOfOpen : '100%'}`,
+          flex: isMobile ? '0 0 auto' : cardPx ? `0 0 ${cardPx}px` : '0 0 100%',
           minWidth: 0,
           display: 'flex',
           flexDirection: 'column',
@@ -495,46 +494,55 @@ function RangeCard({
             transition: 'opacity ' + COLLAPSE_MS + 'ms ease',
           }}
         >
-          {/* Names what is being configured, and carries the close. The gold
-              button on the card says Close as well — two ways out, because the
-              X is where a pointer goes and the button is where the click that
-              opened it already was. */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'baseline',
-              justifyContent: 'space-between',
-              gap: space.sm,
-              padding: `${space.md}px ${space.md}px 0`,
-            }}
-          >
-            <h4 style={{ ...typeScale.card, color: tokens.ink }}>{item.name}</h4>
-            <button
-              onClick={onToggle}
-              aria-label="Close"
-              style={{
-                flexShrink: 0,
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: space.xxs,
-                lineHeight: 1,
-                fontSize: 16,
-                color: tokens.inkSoft,
-              }}
-            >
-              ✕
-            </button>
-          </div>
-          {/* MOUNTED ONLY ONCE THE EXPANSION IS DONE. Profiled, the click
-              frame cost 139ms at 4x throttle, and it was not the animation —
-              it persisted identically with every animation disabled via
-              prefers-reduced-motion. It is React mounting the fields, the chips
-              and up to seventeen swatches, on the same frame the layout
-              animation starts. Deferring it means the width animates against an
-              empty box and the form arrives into a box that has stopped moving:
-              two cheap frames instead of one expensive one. */}
-          {ready && <RangeConfigurator item={item} sel={sel} onChange={choose} fill />}
+          {/* MOUNTED ONLY ONCE THE EXPANSION IS DONE — the header along with the
+              fields, not just the fields.
+              Profiled, the click frame cost 139ms at 4x throttle, and it was not
+              the animation: it persisted identically with every animation
+              disabled via prefers-reduced-motion. It is React mounting the
+              fields, the chips and up to seventeen swatches on the same frame a
+              layout animation starts. Deferring it means the width animates
+              against an empty box.
+              The HEADER has to wait too, and for a second reason. The panel is
+              a few pixels wide on the first frames of the expansion, where a
+              product name and a close button wrap to one word per line and make
+              the panel taller than the card — which grows the row, which moves
+              the section below. An empty box cannot do that. */}
+          {ready && (
+            <>
+              {/* Names what is being configured, and carries the close. The gold
+                  button on the card says Close as well — two ways out, because
+                  the X is where a pointer goes and the button is where the click
+                  that opened it already was. */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  gap: space.sm,
+                  padding: `${space.md}px ${space.md}px 0`,
+                }}
+              >
+                <h4 style={{ ...typeScale.card, color: tokens.ink }}>{item.name}</h4>
+                <button
+                  onClick={onToggle}
+                  aria-label="Close"
+                  style={{
+                    flexShrink: 0,
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: space.xxs,
+                    lineHeight: 1,
+                    fontSize: 16,
+                    color: tokens.inkSoft,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              <RangeConfigurator item={item} sel={sel} onChange={choose} fill />
+            </>
+          )}
         </div>
       )}
     </div>
@@ -573,6 +581,35 @@ export function RangeCarousel() {
    * correctly but only after the fact, so the first card opened still moved the
    * page — which is the whole thing this exists to stop. */
   const rowMinHeight = PANEL_H;
+
+  /** THE CARD'S WIDTH IN PIXELS, so nothing about the slot's transition can
+   * reach it. Every card in the row is the same width, and a closed slot is
+   * already exactly that width — it is `cardBasis`, resolved by the browser
+   * against this viewport — so one closed slot is the honest source for it. The
+   * alternative was expressing the card as a percentage of its own slot, and
+   * the slot is the thing that animates: whatever the percentage, it resolves
+   * against the slot's CURRENT width, so the card moved for the whole 450ms.
+   *
+   * Re-measured on resize and whenever the open card changes, and it deliberately
+   * skips the open slot when picking which one to read. */
+  const [cardPx, setCardPx] = useState<number | null>(null);
+  useEffect(() => {
+    const row = scrollerRef.current;
+    if (!row) return;
+    const measure = () => {
+      const closed = Array.from(row.children).find(
+        c => (c as HTMLElement).dataset.slot !== openId,
+      ) as HTMLElement | undefined;
+      if (closed) setCardPx(closed.offsetWidth);
+    };
+    measure();
+    // The row's width is what the card's width is derived from, so the row is
+    // what has to be watched — not the window, which also fires on a height
+    // change that cannot affect this.
+    const ro = new ResizeObserver(measure);
+    ro.observe(row);
+    return () => ro.disconnect();
+  }, [openId]);
 
   /** THE CLOSE REVERSES THE OPEN, rather than the panel vanishing and the card
    * then shrinking behind it.
@@ -872,7 +909,7 @@ export function RangeCarousel() {
                 open={open}
                 ready={open && ready && !closing}
                 isMobile={isMobile}
-                wideRow={wideRow}
+                cardPx={cardPx}
                 onToggle={() => toggle(item.id)}
               />
             </div>
