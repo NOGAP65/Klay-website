@@ -1,81 +1,114 @@
 // ---------------------------------------------------------------------------
-// 6. The catch — for the customer who isn't ready to browse.
+// 6. How Klay works — the four steps, on the banner between the range and the
+// visualiser.
 //
-// It sits between the range and the visualiser deliberately. Someone who has just
-// scrolled the whole range without clicking a tile is telling you they don't know
-// which one is theirs, and the next thing they meet should be an offer to decide
-// for them rather than a configurator that assumes they already have.
+// IT USED TO BE A QUESTION AND A PROMISE: "Not sure where to start?", a line
+// offering a three-question recommender, and a button. Two things were wrong with
+// that. The recommender did not exist — there is no quiz route and no quiz
+// component in the app, so the button went to the enquiry form and the page was
+// describing a feature it did not have. And the slot was being spent on a mood
+// rather than on information: a visitor who has just scrolled fourteen products
+// is not asking "where do I start", they are asking "what actually happens if I
+// buy this".
 //
-// A PHOTOGRAPH NOW, not a flat charcoal band. It is the one section on the page
-// that asks a question rather than showing a product, and a full-bleed room behind
-// it is what makes it read as an invitation rather than as an interruption between
-// two things you were looking at. The frame is the whole back wall of a room in
-// sheers — atmosphere rather than a product shot, which is right for a section
-// that deliberately doesn't name a product.
+// SO THE FOUR STEPS GO HERE, and this is the first place on the homepage they are
+// stated properly. The gold bar under the hero names them in 54px and links away;
+// the /how-it-works page carries the photographs. Between those two the page had
+// no place where somebody could actually READ the process, which is the question
+// this position in the page raises.
 //
-// ON THE SCRIM, which is doing real work. This photograph is bright almost
-// everywhere: pale cloth, sunlight, blond timber. Two consequences.
+// WHY THE PROCESS AND NOT THE DIFFERENTIATORS. "What makes us different" was the
+// other option and it is the weaker one here, because the page already says it
+// twice: the trust ticker opens with six credentials — free measure, installation
+// included, made in Melbourne, warranty, coverage, no sales reps — and the about
+// panel restates them in prose. A third telling adds nothing. The process is
+// stated nowhere at length, and it is the thing that carries the answer to the
+// real objection at this point in the page: somebody comes to your house, twice,
+// and measures it himself.
 //
-//   1. THE HEADLINE CANNOT BE GOLD. It was, on charcoal, where gold measures
-//      5.6:1. Over this image even under a heavy scrim gold lands around 1.9:1 —
-//      it would be decoration you cannot read. Warm white on the same ground is
-//      4.4:1. The gold survives where it still holds: the filled CTA, which
-//      carries its own contrast with ink on top of it.
+// THE SCRIM IS FLAT NOW, and that follows from the content rather than being a
+// taste change. It was a flat 0.45 with a radial layer on top of it — dark in the
+// middle, thinning to 0.15 at 70% out — because the type was one centred column,
+// and a flat wash heavy enough to hold type in the centre dulled the whole
+// photograph to solve a problem that only existed there.
 //
-//   2. THE SCRIM IS RADIAL, not flat. The text is centred, so the darkness is
-//      needed in the middle and nowhere else — a flat wash heavy enough to hold
-//      type in the centre dulls the photograph everywhere to solve a problem that
-//      only exists in one place. This lands ~0.79 behind the words and ~0.53 at
-//      the edges, so the picture is still a picture out where nothing sits on it.
+// Four columns spread across the full width put type exactly where that radial
+// was thinnest. Two gradients also make the actual alpha behind any given word
+// unknowable: you cannot solve for a contrast ratio when the ground under the
+// fourth step depends on how far it happens to sit from the frame's centre. One
+// flat layer can be solved for, and is — see SCRIM.
 //
-// ON THE DESTINATION. The three-question recommender this CTA describes does not
-// exist — there is no quiz route and no quiz component in the app. The button goes
-// to the enquiry form, which is a real page staffed by a real person, so the
-// promise is kept, just not self-service. Point it at the quiz once that is built.
+// The photograph stays. It is the whole back wall of a room in sheers, which is
+// atmosphere rather than a product shot, and that is still right for the one
+// section on the page that is about the service rather than about a product.
 // ---------------------------------------------------------------------------
 
-import { tokens, headline, layout, space, supporting } from '../../theme';
-import { useIsMobile } from '../../hooks/useIsMobile';
+import { tokens, headline, layout, space, type as typeScale } from '../../theme';
+import { useMediaQuery } from '../../hooks/useIsMobile';
 import { CtaLink } from './primitives';
+import { STEPS } from '../../data/steps';
 
 const BANNER = '/images/range/sheer-curtains.jpg';
 
+/** WHERE FOUR COLUMNS STOP FITTING. Below this the row goes to two, and below
+ * STACK to one.
+ *
+ * 1000 rather than the site's 768 for the same reason the steps bar uses 1000:
+ * the labels are sentences — "We measure your space", "We install, you enjoy" —
+ * not single words, and four of them across a 940px row leaves 220px a column,
+ * where a 26px display label breaks to three lines and the step stops reading as
+ * a step. */
+const FOUR_UP = '(min-width: 1000px)';
+const STACK = '(max-width: 560px)';
+
+/** THE SCRIM, solved against the worst case rather than chosen.
+ *
+ * This photograph is pale cloth in sunlight, so the BRIGHT end governs. Sampled
+ * every pixel of the content box at 1440x562 under this crop, the brightest
+ * ground any type can land on is #F2EDE5 — 0.851 relative luminance, which is
+ * very nearly paper. Compositing ink (#1C1810) over it at alpha a:
+ *
+ *   warm white at 4.5:1  needs a >= 0.565
+ *   gold at 3:1          needs a >= 0.740
+ *
+ * GOLD IS WHAT SETS IT, not the body copy, and that is the opposite of what it
+ * looks like. 0.70 was the first value tried and it holds warm white at 6.34:1
+ * with room to spare while leaving the gold numerals at 2.68:1 — a fail, and
+ * one that would have shipped had the alpha been picked off the body copy alone.
+ * 0.75 measures warm white 7.49:1 and gold 3.17:1, clearing both with margin at
+ * the single brightest pixel in the frame; almost all of the area is darker
+ * still. A heavy wash, and right for what this section now is: the photograph is
+ * a ground under four columns of information, not the subject. */
+const SCRIM = 0.75;
+
 export function RecommendationBanner() {
-  const isMobile = useIsMobile();
+  const fourUp = useMediaQuery(FOUR_UP);
+  const stacked = useMediaQuery(STACK);
 
   return (
     <section
       style={{
         position: 'relative',
         overflow: 'hidden',
-        // Taller than the flat band it replaces. At 300px a photograph is a strip
-        // rather than a scene, and there is no point carrying one at all if it
-        // cannot show a room.
-        // ONE RATIO FOR THE FULL-BLEED BANNER ROLE. This and the closing CTA are
-        // the same object doing the same job, and they were cropping their
-        // ~1.79 sources at 3.27 and 2.56 — this one was discarding 45% of its
-        // image vertically against the other's 30%. Both take 2.56, the
-        // shallower of the two, so the role has one crop.
-        //
-        // Expressed as a height rather than an aspect-ratio so the two match at
-        // every width: at the 1440 container these are full-bleed, so
-        // 1440/2.56 = 562.
-        minHeight: isMobile ? 380 : 562,
+        // ONE RATIO FOR THE FULL-BLEED BANNER ROLE, shared with the closing CTA:
+        // 1440/2.56 = 562. A floor rather than a height, so the two-column and
+        // stacked arrangements can be as tall as their content needs while the
+        // desktop one holds the role's proportion exactly.
+        minHeight: stacked ? 0 : 562,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: isMobile ? `${space.xl}px ${space.md}px` : `${space.xxl}px 80px`,
-        textAlign: 'center',
-        // Behind the photograph rather than beside it — it is what shows while the
-        // image is still loading, and charcoal keeps that moment on-brand instead
-        // of flashing white.
+        padding: stacked ? `${space.xl}px ${space.md}px` : `${space.xxl}px 80px`,
+        // Behind the photograph rather than beside it — it is what shows while
+        // the image is still loading, and charcoal keeps that moment on-brand
+        // instead of flashing white.
         background: tokens.charcoal,
       }}
     >
       <img
         src={BANNER}
-        // Decorative. The headline carries the meaning and the room is not a
-        // product being described.
+        // Decorative. The steps carry the meaning and the room is not a product
+        // being described.
         alt=""
         style={{
           position: 'absolute',
@@ -91,47 +124,109 @@ export function RecommendationBanner() {
         }}
       />
 
+      {/* FLAT, not radial — see the note at the top of the file. One layer now
+          rather than two, because a flat wash under a radial one was two
+          gradients doing one job and made the real alpha behind any given word
+          impossible to reason about. */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          background: `linear-gradient(rgba(28,24,16,0.45), rgba(28,24,16,0.45)),
-            radial-gradient(ellipse at center, rgba(28,24,16,0.62) 0%, rgba(28,24,16,0.15) 70%)`,
+          background: `rgba(28,24,16,${SCRIM})`,
         }}
       />
 
-      <div style={{ position: 'relative', maxWidth: layout.containerMax }}>
-        {/* Below the section scale on purpose. This is a divider that happens to
-            convert, and at the full 64px it competed with the range headline
-            above it and the visualiser headline below — three headlines of equal
-            weight in one screen, one of which is a passing offer. */}
-        {/* Consumes headline.section rather than declaring a 48px clamp of its
-            own. This was one of the three sizes the section-headline role had
-            drifted into. */}
+      <div style={{ position: 'relative', width: '100%', maxWidth: layout.gridMax }}>
+        {/* THE SECTION'S NAME, and nothing else above the steps. The headline it
+            replaces was a question with a paragraph under it selling a feature
+            that does not exist; the steps below are the content now, so anything
+            here beyond naming them is text between the reader and the thing they
+            came to read. */}
         <h2
           style={{
             ...headline.section,
             color: tokens.warmWhite,
+            textAlign: 'center',
           }}
         >
-          Not sure where to start?
+          How Klay works
         </h2>
-        <p
+
+        {/* AN ORDERED LIST, because that is what this is. The numerals are
+            rendered rather than list markers so they can take the display face
+            at the step-number size, and the list-style goes with them. */}
+        <ol
           style={{
-            ...supporting.onDark,
-            // Warm white rather than the token's muted variant: this sits over a
-            // photograph under a radial scrim, not a flat charcoal ground, so
-            // the muted 0.6 loses the line in the bright half of the frame.
-            color: tokens.warmWhite,
-            margin: `${space.md}px auto 0`,
-            maxWidth: 560,
-            opacity: 0.88,
+            listStyle: 'none',
+            display: 'grid',
+            gridTemplateColumns: fourUp ? 'repeat(4, 1fr)' : stacked ? '1fr' : 'repeat(2, 1fr)',
+            gap: stacked ? space.lg : space.xl,
+            margin: `${space.xl}px 0 0`,
+            padding: 0,
+            textAlign: 'left',
           }}
         >
-          Answer a few questions and we&rsquo;ll recommend the right product for your room.
-        </p>
-        <div style={{ marginTop: space.xl }}>
-          <CtaLink to="/contact">Get My Recommendation</CtaLink>
+          {STEPS.map((step, i) => (
+            <li key={step.label}>
+              {/* A RULE OVER EACH STEP, which is what makes four sentences read
+                  as a sequence rather than as a paragraph in four pieces. Gold on
+                  the first, warm white at low opacity on the rest: the eye needs
+                  to be told where the sequence starts, and on a row of four
+                  identical columns nothing else says it. */}
+              <div
+                style={{
+                  height: 1,
+                  background: i === 0 ? tokens.gold : tokens.onDarkEdge,
+                  marginBottom: space.md,
+                }}
+              />
+              <div
+                style={{
+                  ...typeScale.numeric,
+                  // Gold, and it is the reason the scrim is as heavy as it is:
+                  // at 32px this is large text, so 3:1 applies, and gold on the
+                  // brightest pixel in the frame is the tightest ratio in the
+                  // section — 3.17:1 against warm white's 7.49:1. See SCRIM.
+                  color: tokens.gold,
+                  marginBottom: space.xs,
+                }}
+              >
+                {String(i + 1).padStart(2, '0')}
+              </div>
+              <h3
+                style={{
+                  ...typeScale.card,
+                  color: tokens.warmWhite,
+                  marginBottom: space.sm,
+                }}
+              >
+                {step.label}
+              </h3>
+              <p
+                style={{
+                  ...typeScale.body,
+                  // Warm white at full strength, not the onDarkMuted 0.6 the
+                  // supporting role uses. That token is defined against a flat
+                  // charcoal ground; over a photograph it loses the sentence in
+                  // the bright half of the frame even under this scrim.
+                  color: tokens.warmWhite,
+                  opacity: 0.88,
+                }}
+              >
+                {step.body}
+              </p>
+            </li>
+          ))}
+        </ol>
+
+        {/* ONE ACTION, and it is the one the steps have just described. It was
+            "Get My Recommendation" pointing at the enquiry form, which was the
+            right destination under the wrong name — the quiz it promised does not
+            exist. Step two is a technician coming to the house, so booking that
+            is what somebody who has read this wants to do next, and the enquiry
+            form is genuinely where it happens. */}
+        <div style={{ marginTop: space.xl, textAlign: 'center' }}>
+          <CtaLink to="/contact">Book a Free Measure</CtaLink>
         </div>
       </div>
     </section>
