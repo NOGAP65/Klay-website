@@ -50,6 +50,36 @@ export interface Step {
    * now carries the "a Klay technician comes to you" half of each and the
    * sentence no longer has to repeat it. */
   body: string
+  /** THE ONE FACT THE STEP EARNS TRUST WITH — five or six words, for the
+   * homepage marquee.
+   *
+   * The bar used to run the bare `label`s: DESIGN · MEASURE · MAKE · INSTALL.
+   * Four nouns, and a reader finished the bar knowing exactly what they knew
+   * before starting it, which is why it read as skippable furniture. Every
+   * competitor bar in the category has the same problem from the other
+   * direction — Wynstan runs five equal-weight badges, DIY Blinds four — and
+   * badge soup is what happens when a strip carries claims with nothing
+   * specific in them.
+   *
+   * So each step states the thing a customer does not already assume: that the
+   * measure costs nothing, that it is made here and how fast, and that the man
+   * who installs it is the man who measured it. `label` is still the ordering
+   * mark; this is the reason to read past it.
+   *
+   * A PREPOSITIONAL PHRASE, lower case, no verb and no pronoun — because the
+   * verb is already in `label` and this continues it. "DESIGN on your own
+   * window", "MEASURE free, in your home". Four phrases of one shape, which is
+   * the same discipline `label` is held to above and for the same reason.
+   *
+   * Written first as "See it on your own window" / "We come to you, free" /
+   * "Made in Australia in 7–10 days" / "The same technician fits it": an
+   * imperative, a we-clause, a passive and an article-clause. Four
+   * constructions in four slots — exactly the fault that got the old labels
+   * rewritten, reintroduced one field down.
+   *
+   * Distinct from `body`, which is a full sentence for the page and too long to
+   * pass a moving strip. Same fact, marquee length. */
+  promise: string
   image: string
   objectPosition: string
   /** Written out rather than derived from the label: these are photographs of
@@ -63,6 +93,7 @@ export const STEPS: Step[] = [
     label: 'Design',
     actor: 'You, online',
     body: 'Choose fabric, colour, size and operation, and see it on your own window.',
+    promise: 'on your own window',
     image: '/images/lifestyle/step-1-configure.png',
     objectPosition: 'center',
     alt: 'Configuring a blind on a laptop at a desk',
@@ -71,6 +102,7 @@ export const STEPS: Step[] = [
     label: 'Measure',
     actor: 'We come to you',
     body: 'A Klay technician measures every window himself. The visit is free.',
+    promise: 'free, in your home',
     image: '/images/lifestyle/step-2-measure.png',
     objectPosition: 'center 42%',
     alt: 'A Klay technician measuring a window with a tape measure',
@@ -79,6 +111,7 @@ export const STEPS: Step[] = [
     label: 'Make',
     actor: 'Our workshop',
     body: 'Cut and assembled to your exact measurements in Australia, in 7–10 days.',
+    promise: 'in Australia, in 7–10 days',
     image: '/images/lifestyle/step-3-manufacture.png',
     objectPosition: 'center',
     alt: 'Blind fabric being cut and finished on the factory floor',
@@ -87,6 +120,7 @@ export const STEPS: Step[] = [
     label: 'Install',
     actor: 'The same technician',
     body: 'He returns to fit it, and takes the packaging away with him.',
+    promise: 'by the same technician',
     image: '/images/lifestyle/step-4-install.png',
     objectPosition: '38% center',
     alt: 'A Klay technician fitting a finished blind above a window',
