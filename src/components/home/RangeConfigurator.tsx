@@ -245,7 +245,11 @@ export function RangeConfigurator({
           borderRight: `1px solid ${tokens.lineFaint}`,
           borderBottom: `1px solid ${tokens.lineFaint}`,
         }),
-        padding: `${space.md}px`,
+        // NO PADDING IN FILL MODE. The padding moves onto the two regions
+        // inside, so the action button can reach the panel's own edges — see the
+        // note on it. Padded here, it sat inset on all four sides and read as a
+        // button placed in a box rather than as the bar the card's Shop Now is.
+        padding: fill ? 0 : `${space.md}px`,
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -261,6 +265,9 @@ export function RangeConfigurator({
           display: 'flex',
           flexDirection: 'column',
           gap: space.sm,
+          // The padding the outer box gave up, so this region owns its own inset
+          // and the action bar below can be flush.
+          ...(fill ? { padding: `${space.md}px ${space.md}px 0` } : null),
         }}
       >
         {/* The colour swatches are NOT here. They render on the card, directly
@@ -283,6 +290,8 @@ export function RangeConfigurator({
             justifyContent: 'space-between',
             gap: space.xs,
             marginBottom: space.xs,
+            // Inset with the fields above it. Only the button goes flush.
+            ...(fill ? { padding: `0 ${space.md}px` } : null),
           }}
         >
           {/* Priced products show the figure this exact configuration costs —
@@ -326,7 +335,12 @@ export function RangeConfigurator({
             ...typeScale.label,
             lineHeight: 1,
             border: 'none',
-            borderRadius: 2,
+            // SQUARE AND FLUSH IN FILL MODE, so it is the same object as the
+            // card's Shop Now rather than a button inside a box: same 52px, same
+            // full width, same gold, and — because the panel is now exactly the
+            // card's height and sits flush against it — the same bottom edge.
+            // The two meet and read as one bar across the whole open card.
+            borderRadius: fill ? 0 : 2,
             cursor: 'pointer',
             transition: motion.button,
           }}

@@ -305,16 +305,16 @@ function RangeCard({
   const glyphOnLight = tileGround ? luminance(tileGround) > 0.45 : false;
 
   return (
-    // TWO COLUMNS WHEN OPEN, one when shut. The card itself widens — see the
-    // note on the scroller item — and the configurator takes the width that
-    // appears, at exactly the card's own height. Nothing overlays anything and
-    // nothing scrolls inside.
+    // TWO COLUMNS WHEN OPEN, one when shut, AND NO GAP BETWEEN THEM. The
+    // configurator was separated from the card by the row's own 4px strip, which
+    // made it a second object sitting next to the card rather than the card
+    // carrying on. Flush, with the panel's left corners square and its border
+    // gone, the pair reads as one shape that has been extended sideways.
     <div
       style={{
         display: 'flex',
         flexDirection: isMobile ? 'column' : 'row',
         alignItems: 'stretch',
-        gap: open ? TILE_GAP : 0,
         height: '100%',
       }}
     >
@@ -491,23 +491,34 @@ function RangeCard({
         <div
           style={{
             // WHATEVER IS LEFT, not a share of its own. Giving the card and the
-            // panel half each of a box that also has to hold the gap between
+            // panel half each of a box that also had to hold the gap between
             // them overflowed the slot by exactly one gap. The card is sized
             // first, to precisely one share; the panel takes the remainder, so
             // the two cannot add up to more than the slot at any width.
             flex: isMobile ? '1 1 auto' : '1 1 0',
             minWidth: 0,
             marginTop: isMobile ? TILE_GAP : 0,
-            display: 'flex',
-            flexDirection: 'column',
+            // EXACTLY THE CARD'S HEIGHT, and this is what enforces it. The panel
+            // holds its content in an absolutely-positioned child, so the panel
+            // itself has NO intrinsic height — which means the row's height is
+            // decided by the card alone, and `align-items: stretch` then hands
+            // that height back to the panel. Before this the panel was
+            // content-sized and the taller of the two on the products that ask
+            // most: the roller measured 559 against a 521 card at 1440, and 491
+            // against 415 at 1100. Whatever it contains now, it is the card's
+            // height, because it cannot report a height of its own.
+            position: 'relative',
             background: tokens.cream,
-            border: `1px solid ${tokens.line}`,
-            borderRadius: 2,
+            // NO BORDER, AND SQUARE ON THE LEFT. A hairline all the way round
+            // drew the panel as its own box; the left edge in particular put a
+            // rule down the join it is supposed to be crossing. Radius on the
+            // outer two corners only, so the shape ends where the card ends.
+            borderRadius: '0 2px 2px 0',
             overflow: 'hidden',
+            // The same shadow the tile carries, and it continues it rather than
+            // repeating it: the panel is flush and painted after, so it covers
+            // the tile's right-hand shadow and the pair casts one.
             boxShadow: shadow.rest,
-            // Fades in only once the width has finished, so the panel arrives
-            // into a box that has stopped moving. Animating it during the
-            // expansion meant a fade and a layout animation on the same frames.
             // Fades in once the width has settled, and back out before it
             // narrows — the same move in reverse. Opacity carries both, so a
             // close that interrupts an open just runs from wherever it got to.
@@ -528,41 +539,22 @@ function RangeCard({
               product name and a close button wrap to one word per line and make
               the panel taller than the card — which grows the row, which moves
               the section below. An empty box cannot do that. */}
+          {/* THE ABSOLUTE FILL. It is what lets the panel match the card rather
+              than the card's content stretching to match the panel — see the
+              note on position above. inset 0 against a box whose height came
+              from its sibling. */}
           {ready && (
-            <>
-              {/* Names what is being configured, and carries the close. The gold
-                  button on the card says Close as well — two ways out, because
-                  the X is where a pointer goes and the button is where the click
-                  that opened it already was. */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  justifyContent: 'space-between',
-                  gap: space.sm,
-                  padding: `${space.md}px ${space.md}px 0`,
-                }}
-              >
-                <h4 style={{ ...typeScale.card, color: tokens.ink }}>{item.name}</h4>
-                <button
-                  onClick={onToggle}
-                  aria-label="Close"
-                  style={{
-                    flexShrink: 0,
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: space.xxs,
-                    lineHeight: 1,
-                    fontSize: 16,
-                    color: tokens.inkSoft,
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+              {/* THE TITLE BAR IS GONE, and its 41px is what makes the rest fit.
+                  It repeated the product name, which is set at card scale a few
+                  pixels to the left and still on screen — the panel is beside the
+                  card, not on top of it, so there was nothing to re-establish.
+                  Its close button went with it: the card's own gold button reads
+                  Close while the panel is open and sits immediately to the left,
+                  and Escape still works. Two affordances for one action, one of
+                  which cost the panel the height it needed to stop scrolling. */}
               <RangeConfigurator item={item} sel={sel} onChange={choose} fill />
-            </>
+            </div>
           )}
         </div>
       )}
