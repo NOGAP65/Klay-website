@@ -110,6 +110,14 @@
         100% { transform: translateX(-50%); }
       }
 
+      /* The range card's configuration panel, sliding into the space the row
+         has just opened for it. Fade plus a short travel from the left, so it
+         reads as coming OUT of the card rather than appearing beside it. */
+      @keyframes klay-panel-in {
+        0%   { opacity: 0; transform: translateX(-12px); }
+        100% { opacity: 1; transform: translateX(0); }
+      }
+
       @keyframes klay-scroll-hint {
         0%   { transform: scaleY(0); transform-origin: top; }
         50%  { transform: scaleY(1); transform-origin: top; }

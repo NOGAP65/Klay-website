@@ -44,7 +44,7 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { tokens, motion, prefersReducedMotion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
+import { tokens, motion, prefersReducedMotion, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 // The row reads data/catalogue.ts — the same fourteen products the shop lists,
 // in the same order, rendered by the same tile. It used to read a data/ranges.ts
@@ -68,58 +68,6 @@ const luminance = (hex: string) => {
   const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 };
-
-/** Where the panel goes, measured off the card and kept in step with scrolling.
- *
- * FIXED POSITION, NOT ABSOLUTE, and that is forced rather than chosen: the row
- * is a horizontal scroller, `overflow-x: auto` establishes a clipping context,
- * and anything hung off the side of a card inside it is cut at the card's own
- * edge. A fixed layer escapes the scroller entirely.
- *
- * The cost of escaping it is that fixed coordinates do not follow the element,
- * so the rect is recomputed on scroll and resize. rAF-throttled, because both
- * fire far faster than a repaint is worth.
- *
- * IT FLIPS. Opening on the rightmost visible card would put the panel off the
- * viewport, so when there is not room to the right it opens to the left. Same
- * decision a dropdown near a window edge makes. */
-function usePanelRect(ref: React.RefObject<HTMLDivElement | null>, open: boolean) {
-  const [rect, setRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
-
-  useEffect(() => {
-    if (!open) {
-      setRect(null);
-      return;
-    }
-    let frame = 0;
-    const measure = () => {
-      const el = ref.current;
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      const gap = TILE_GAP;
-      const right = r.right + gap;
-      // Room to the right? Otherwise mirror to the left of the card.
-      const left = right + r.width <= window.innerWidth - space.md ? right : r.left - gap - r.width;
-      setRect({ top: r.top, left, width: r.width, height: r.height });
-    };
-    const onMove = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(measure);
-    };
-    measure();
-    // Capture phase, so the row's own horizontal scroll is caught as well as the
-    // window's — the panel has to follow its card either way.
-    window.addEventListener('scroll', onMove, true);
-    window.addEventListener('resize', onMove);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', onMove, true);
-      window.removeEventListener('resize', onMove);
-    };
-  }, [ref, open]);
-
-  return rect;
-}
 
 // FULL CONTAINER, not 70%. At 70% the row was 1000px inside a 1440 viewport —
 // 220px of dead margin down each side while the cards were simultaneously
@@ -146,6 +94,15 @@ const cardBasis = (isMobile: boolean) =>
     // reference shows — MONDAY, Sixpenny and HAY are all four-up at 310-335.
     // The CARD_MIN floor goes with the three-up maths that needed it.
     : `calc((100% - ${3 * TILE_GAP}px) / 4)`;
+
+/** The open card's slot: TWO shares, so the configurator gets a full card's
+ * width beside the photograph and needs no scrolling of its own. Every card
+ * after it slides along by exactly one share.
+ *
+ * On mobile the card already takes most of the row, so it goes to the whole of
+ * it and the panel stacks under the photograph instead of beside it. */
+const cardBasisOpen = (isMobile: boolean) =>
+  isMobile ? '100%' : `calc(((100% - ${3 * TILE_GAP}px) / 4) * 2 + ${TILE_GAP}px)`;
 
 /** The tile height the arrows centre on. The card is taller than this — the
  * name block sits under the tile — but the arrows belong on the PHOTOGRAPH, not
@@ -257,16 +214,16 @@ function RangeCard({
   item,
   open,
   onToggle,
+  isMobile,
 }: {
   item: CatalogueItem;
   /** Whether this card's configuration panel is showing. One at a time across
    * the whole row — the carousel owns which. */
   open: boolean;
   onToggle: () => void;
+  isMobile: boolean;
 }) {
   const { hover, bind } = useHover();
-  const cardRef = useRef<HTMLDivElement>(null);
-  const rect = usePanelRect(cardRef, open);
   const [sel, setSel] = useState<Selection>(() => defaultSelection(item));
   const choose = (fieldId: string, choiceId: string) =>
     setSel(s => ({ ...s, [fieldId]: choiceId }));
@@ -288,10 +245,33 @@ function RangeCard({
   const glyphOnLight = tileGround ? luminance(tileGround) > 0.45 : false;
 
   return (
-    <div ref={cardRef} style={{ display: 'flex', flexDirection: 'column' }}>
-      {/* Only the picture and the name are inside the link. The configurator
-          below carries real buttons, and a <button> nested inside an <a> is
-          invalid and swallows its own clicks. */}
+    // TWO COLUMNS WHEN OPEN, one when shut. The card itself widens — see the
+    // note on the scroller item — and the configurator takes the width that
+    // appears, at exactly the card's own height. Nothing overlays anything and
+    // nothing scrolls inside.
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: 'stretch',
+        gap: open ? TILE_GAP : 0,
+        height: '100%',
+      }}
+    >
+      {/* The card proper. It keeps its own width while the wrapper grows, so the
+          photograph never stretches — the extra width goes entirely to the panel
+          beside it. */}
+      <div
+        style={{
+          flex: isMobile ? '0 0 auto' : `0 0 ${open ? `calc(50% - ${TILE_GAP / 2}px)` : '100%'}`,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+      {/* Only the picture and the name are inside the link. The button below
+          and the panel beside carry real buttons, and a <button> nested inside
+          an <a> is invalid and swallows its own clicks. */}
       <Link
         {...bind}
         to={item.to}
@@ -415,74 +395,62 @@ function RangeCard({
       >
         {open ? 'Close' : 'Shop Now'}
       </button>
+      </div>
 
-      {/* THE PANEL, beside the card rather than under it.
-          Fixed-position and measured, not absolute: the row is a horizontal
-          scroller, and `overflow-x: auto` clips absolutely-positioned children
-          — a panel hung off the side of a card inside it would simply be cut at
-          the card's edge. See usePanelRect. */}
-      {open && rect && (
-        <>
-          {/* Catches the click that closes it. Transparent, because the card and
-              its neighbours have to stay legible — this is a panel beside a
-              product, not a modal over a page. */}
-          <div
-            onClick={onToggle}
-            style={{ position: 'fixed', inset: 0, zIndex: 40 }}
-          />
+      {/* THE PANEL — in the flow, in the space the row just made.
+          It is a flex sibling rather than an overlay, so it covers nothing and
+          the neighbouring cards genuinely move aside instead of being hidden
+          behind it. Fading and sliding in over 0.45s rather than appearing:
+          without that the width animation finishes and the contents pop, which
+          reads as two events instead of one. */}
+      {open && (
+        <div
+          style={{
+            flex: isMobile ? '1 1 auto' : `0 0 calc(50% - ${TILE_GAP / 2}px)`,
+            minWidth: 0,
+            marginTop: isMobile ? TILE_GAP : 0,
+            display: 'flex',
+            flexDirection: 'column',
+            background: tokens.cream,
+            border: `1px solid ${tokens.line}`,
+            borderRadius: 2,
+            overflow: 'hidden',
+            animation: 'klay-panel-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both',
+          }}
+        >
+          {/* Names what is being configured, and carries the close. The gold
+              button on the card says Close as well — two ways out, because the
+              X is where a pointer goes and the button is where the click that
+              opened it already was. */}
           <div
             style={{
-              position: 'fixed',
-              top: rect.top,
-              left: rect.left,
-              width: rect.width,
-              height: rect.height,
-              zIndex: 41,
               display: 'flex',
-              flexDirection: 'column',
-              background: tokens.cream,
-              border: `1px solid ${tokens.line}`,
-              borderRadius: 2,
-              // The one lifted object rule is a HOMEPAGE-SECTION rule; this is a
-              // transient overlay and has to sit above its neighbours to read as
-              // one. Without it the panel and the card underneath merge.
-              boxShadow: shadow.lift,
-              overflow: 'hidden',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: space.sm,
+              padding: `${space.md}px ${space.md}px 0`,
             }}
           >
-            <div
+            <h4 style={{ ...typeScale.card, color: tokens.ink }}>{item.name}</h4>
+            <button
+              onClick={onToggle}
+              aria-label="Close"
               style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                justifyContent: 'space-between',
-                gap: space.sm,
-                padding: `${space.md}px ${space.md}px 0`,
+                flexShrink: 0,
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: space.xxs,
+                lineHeight: 1,
+                fontSize: 16,
+                color: tokens.inkSoft,
               }}
             >
-              {/* Says what is being configured. The panel can sit over a
-                  neighbouring card, so it cannot rely on the one it belongs to
-                  being the nearest thing to it. */}
-              <h4 style={{ ...typeScale.card, color: tokens.ink }}>{item.name}</h4>
-              <button
-                onClick={onToggle}
-                aria-label="Close"
-                style={{
-                  flexShrink: 0,
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: space.xxs,
-                  lineHeight: 1,
-                  fontSize: 16,
-                  color: tokens.inkSoft,
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            <RangeConfigurator item={item} sel={sel} onChange={choose} fill />
+              ✕
+            </button>
           </div>
-        </>
+          <RangeConfigurator item={item} sel={sel} onChange={choose} fill />
+        </div>
       )}
     </div>
   );
@@ -503,6 +471,37 @@ export function RangeCarousel() {
    * point of moving the controls off the card is that the visitor reads one set
    * of options rather than fourteen. */
   const [openId, setOpenId] = useState<string | null>(null);
+
+  /** BRING THE EXPANDED CARD FULLY INTO VIEW. Opening the rightmost visible
+   * card doubles its width, which measured put its right edge at 1681 against a
+   * row ending at 1360 — the panel simply fell off the end. The row nudges
+   * itself along by however much is overhanging, and by nothing at all when the
+   * card already fits.
+   *
+   * Waits a frame: the flex-basis is still the closed width on the tick the
+   * state changes, so measuring immediately reads the old geometry. */
+  useEffect(() => {
+    if (!openId) return;
+    const raf = requestAnimationFrame(() => {
+      const row = scrollerRef.current;
+      const slot = row?.querySelector<HTMLElement>(`[data-slot="${openId}"]`);
+      if (!row || !slot) return;
+      // MEASURE AGAINST THE TARGET WIDTH, not the current one. The flex-basis is
+      // mid-transition on the frame after the state change — reading
+      // offsetWidth here gives a card partway between one share and two, and
+      // the nudge lands short. Measured that way the rightmost card still
+      // overhung by 241px.
+      //
+      // The target is two shares plus the gap between them, and a closed
+      // sibling is the honest source for one share: it is the same calc() the
+      // slot itself uses, already resolved by the browser.
+      const closed = Array.from(row.children).find(c => c !== slot) as HTMLElement | undefined;
+      const target = closed ? closed.offsetWidth * 2 + TILE_GAP : slot.offsetWidth;
+      const over = slot.offsetLeft + target - (row.scrollLeft + row.clientWidth);
+      if (over > 0) row.scrollTo({ left: row.scrollLeft + over, behavior: 'smooth' });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [openId]);
 
   // Escape closes the panel. A pop-out that can only be dismissed by finding
   // its own X is a pop-out people feel trapped by.
@@ -664,17 +663,35 @@ export function RangeCarousel() {
             overflowX: 'auto',
             // Snaps to card edges so the row never rests showing two half cards,
             // however it was moved — arrow, thumb or trackpad.
-            scrollSnapType: 'x mandatory',
+            // Off while a card is open — see the note on the slot below.
+            scrollSnapType: openId ? 'none' : 'x mandatory',
           }}
         >
-          {CATALOGUE.map(item => (
+          {CATALOGUE.map(item => {
+            const open = openId === item.id;
+            return (
             <div
               key={item.id}
-              style={{ flex: `0 0 ${cardBasis(isMobile)}`, scrollSnapAlign: 'start' }}
+              // THE ANIMATION IS THE LAYOUT. Opening a card widens its slot
+              // from one share to two, and because these are flex siblings in
+              // a row every card after it slides along by exactly that much —
+              // no card is covered and no space is wasted. Transitioning
+              // flex-basis is what makes the row move rather than jump.
+              data-slot={item.id}
+              style={{
+                flex: `0 0 ${open ? cardBasisOpen(isMobile) : cardBasis(isMobile)}`,
+                // SNAP OFF WHILE OPEN. Mandatory snapping and a programmatic
+                // scroll fight each other — the browser re-snaps to the nearest
+                // card edge and undoes the nudge that was bringing the open card
+                // into view. It comes back the moment the panel closes.
+                scrollSnapAlign: open ? 'none' : 'start',
+                transition: 'flex-basis 0.45s cubic-bezier(0.22, 1, 0.36, 1)',
+              }}
             >
               <RangeCard
                 item={item}
-                open={openId === item.id}
+                open={open}
+                isMobile={isMobile}
                 onToggle={() =>
                   setOpenId(cur => {
                     const next = cur === item.id ? null : item.id;
@@ -687,7 +704,8 @@ export function RangeCarousel() {
                 }
               />
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
