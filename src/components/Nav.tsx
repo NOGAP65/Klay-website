@@ -162,7 +162,19 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
 
   const alwaysSolid = solid || compressed;
   const solidBar = alwaysSolid && !menuOpen;
-  const onDarkGround = menuOpen || solidBar || (!compressed && !onLight);
+  /** THE SOLID BAR IS LIGHT NOW, which inverts what this used to mean.
+   *
+   * It read `menuOpen || solidBar || (!compressed && !onLight)` — solidBar was
+   * charcoal, so being solid was itself a reason to treat the ground as dark.
+   * The bar is paper, so the only two dark cases left are the drawer, which is a
+   * near-black full-screen overlay, and a transparent bar sitting over a hero
+   * photograph on a page that has not declared itself light.
+   *
+   * Every caller takes the default `solid = true`, so in practice this resolves
+   * to `menuOpen`. It stays written out because `solid={false}` is still a
+   * supported prop and a transparent bar over a photograph genuinely does need
+   * the light treatment. */
+  const onDarkGround = menuOpen || (!solidBar && !onLight);
   const linkColor = onDarkGround ? tokens.warmWhite : tokens.ink;
 
   // scrollY is only published by pages that install the listener (the
@@ -182,10 +194,18 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: compressed ? '12px 5vw' : isMobile ? '14px 5vw' : '16px 5vw',
-        background: solidBar ? tokens.charcoal : 'transparent',
+        // PAPER, not charcoal. Same value as the page ground, which is how the
+        // references do it — Monday runs a black marquee straight into a nav the
+        // colour of the page, and the hairline below is the only thing dividing
+        // them. Paper is also the logo's own export field, so the dark mark sits
+        // in this bar without a seam behind it.
+        background: solidBar ? tokens.paper : 'transparent',
         backdropFilter: 'none',
         WebkitBackdropFilter: 'none',
-        borderBottom: solidBar ? `1px solid ${tokens.onDarkLine}` : '1px solid transparent',
+        // The edge has to carry the whole separation now that the bar and the
+        // page are the same colour, so it is a light-ground hairline rather than
+        // the on-dark one. `lineFaint` over paper resolves to about #E5E5E5.
+        borderBottom: solidBar ? `1px solid ${tokens.lineFaint}` : '1px solid transparent',
         // `top` is deliberately NOT transitioned — it tracks scroll position
         // frame by frame, and easing it would make the nav lag the page.
         // 300ms on the ground and the hairline together, so the bar arrives as
@@ -204,26 +224,24 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
           flex: '0 0 auto',
         }}
       >
-        {/* THE LIGHT VARIANT, because this bar is charcoal.
-            `klay-logo.png` is the mark in #303030 for light grounds;
-            `klay-logo-light.png` is the same artwork with its greyscale part
-            in #F8F8F8 and the tan leg of the k untouched. Both are generated
-            from public/images/logo_full.png.
+        {/* THE DARK MARK ON THE LIGHT BAR, and it follows the ground rather than
+            being pinned to one file — the drawer is still a near-black overlay
+            and a #303030 mark would vanish into it.
 
-            It was pointing at a file that does not exist. `/images/klay-logo.png`
-            was never in public/ — only in dist/ — so Vite served the SPA HTML
-            fallback for it and this slot rendered a broken-image icon with the
-            alt text beside it, in the browser's default font, on every page.
-            The footer had the same bug.
+            `klay-logo.png` is the mark in #303030 for light grounds;
+            `klay-logo-light.png` is the same artwork with its greyscale part in
+            #F8F8F8. The tan leg of the k is untouched in both, so it is the one
+            thing that does not change with the ground. Both are generated from
+            public/images/logo_full.png.
 
             HEIGHT-ONLY, NO EXPLICIT WIDTH, AND NO object-fit. The comment this
-            replaces set both axes to chase the old artwork's 2.536 ratio and
-            used `contain` to absorb the error. The new asset is cropped to its
+            replaced set both axes to chase the old gold wordmark's 2.536 ratio
+            and used `contain` to absorb the error. This asset is cropped to its
             own bounding box — the source was 2000 × 2000 with the mark inset and
             92% of it empty field — so its ratio is 2.074, and letting width be
             `auto` means there is no ratio to match and nothing to letterbox. */}
         <img
-          src="/images/klay-logo-light.png"
+          src={onDarkGround ? '/images/klay-logo-light.png' : '/images/klay-logo.png'}
           alt="Klay Interiors"
           style={{ height: isMobile ? 34 : 40, width: 'auto', display: 'block' }}
         />
@@ -276,7 +294,15 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 height: 52,
                 borderRadius: 2,
                 border: `1px solid ${cartHover ? tokens.line : onDarkGround ? tokens.onDarkEdge : tokens.line}`,
-                background: cartHover ? 'rgba(248,248,248,0.12)' : 'transparent',
+                // The hover wash follows the ground. A paper wash at 0.12 was
+                // the right move on a charcoal bar and is invisible on a paper
+                // one, so on light it inverts to ink at 0.06 — enough to read as
+                // a pressed state without becoming a second button.
+                background: cartHover
+                  ? onDarkGround
+                    ? 'rgba(248,248,248,0.12)'
+                    : 'rgba(29,29,29,0.06)'
+                  : 'transparent',
                 color: linkColor,
                 textDecoration: 'none',
                 transition: 'all 0.2s ease',
@@ -375,7 +401,10 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             left: 0,
             width: '100%',
             height: '100vh',
-            background: 'rgba(44,40,36,0.98)',
+            // The drawer stays dark — it is a full-screen overlay, not the bar. The
+            // literal was rgba(44,40,36,0.98), the old warm charcoal, which the
+            // hex sweep did not catch because it was written as rgba.
+            background: 'rgba(29,29,29,0.98)',
             zIndex: 8900,
             display: 'flex',
             flexDirection: 'column',

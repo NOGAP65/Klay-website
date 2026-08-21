@@ -43,7 +43,7 @@ export default function AboutPage() {
           alt="A Klay-fitted living room"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
         />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(15deg, rgba(44,40,36,0.88) 0%, rgba(44,40,36,0.66) 55%, rgba(44,40,36,0.42) 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(15deg, rgba(48,48,48,0.88) 0%, rgba(48,48,48,0.66) 55%, rgba(48,48,48,0.42) 100%)' }} />
         <div style={{ position: 'relative', maxWidth: 900, textAlign: 'center' }}>
           <div style={{ ...eyebrow, color: tokens.onDarkMuted, marginBottom: 22 }}>Why We Exist</div>
           <h1
