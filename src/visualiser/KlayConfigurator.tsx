@@ -47,19 +47,19 @@ const PRESSED_SHADOW = '0 2px 5px rgba(0,0,0,0.5) inset, 0 1px 0 rgba(255,255,25
 
 const VARIANT_FILL: Record<ButtonVariant, { background: string; color: string; border: string }> = {
   primary: {
-    background: `linear-gradient(180deg, ${tokens.goldLight} 0%, ${tokens.gold} 52%, ${tokens.goldDeep} 100%)`,
-    color: tokens.ink,
-    border: `1px solid ${tokens.goldDeep}`,
+    background: `linear-gradient(180deg, ${tokens.fillStrongHover} 0%, ${tokens.fillStrong} 52%, ${tokens.ink} 100%)`,
+    color: tokens.onFillStrong,
+    border: `1px solid ${tokens.ink}`,
   },
   ghost: {
-    background: 'linear-gradient(180deg, rgba(245,242,237,0.14) 0%, rgba(245,242,237,0.05) 100%)',
+    background: 'linear-gradient(180deg, rgba(248,248,248,0.14) 0%, rgba(248,248,248,0.05) 100%)',
     color: tokens.onDark,
     border: `1px solid ${tokens.onDarkLine}`,
   },
   accent: {
-    background: 'linear-gradient(180deg, rgba(200,151,58,0.22) 0%, rgba(200,151,58,0.08) 100%)',
-    color: tokens.gold,
-    border: `1px solid ${tokens.goldLine}`,
+    background: 'linear-gradient(180deg, rgba(248,248,248,0.22) 0%, rgba(248,248,248,0.08) 100%)',
+    color: tokens.onDark,
+    border: `1px solid ${tokens.onDarkEdge}`,
   },
 };
 
@@ -137,7 +137,7 @@ function RollSlider({ value, onChange }: { value: number; onChange: (v: number) 
         gap: space.xs,
         padding: `${space.sm}px`,
         borderRadius: RADIUS,
-        background: 'linear-gradient(180deg, rgba(44,40,36,0.92) 0%, rgba(28,24,16,0.92) 100%)',
+        background: 'linear-gradient(180deg, rgba(44,40,36,0.92) 0%, rgba(29,29,29,0.92) 100%)',
         border: `1px solid ${tokens.onDarkLine}`,
         boxShadow: RAISED_SHADOW,
         backdropFilter: 'blur(6px)',
@@ -195,7 +195,7 @@ function RollSlider({ value, onChange }: { value: number; onChange: (v: number) 
             right: 0,
             height: `${pct}%`,
             borderRadius: 2,
-            background: `linear-gradient(180deg, ${tokens.goldDeep} 0%, ${tokens.gold} 100%)`,
+            background: `linear-gradient(180deg, ${tokens.ink} 0%, ${tokens.fillStrong} 100%)`,
             boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.35)',
             pointerEvents: 'none',
           }}
@@ -210,8 +210,8 @@ function RollSlider({ value, onChange }: { value: number; onChange: (v: number) 
             width: 24,
             height: 15,
             borderRadius: 2,
-            background: `linear-gradient(180deg, ${tokens.goldLight} 0%, ${tokens.gold} 55%, ${tokens.goldDeep} 100%)`,
-            border: `1px solid ${tokens.goldDeep}`,
+            background: `linear-gradient(180deg, ${tokens.fillStrongHover} 0%, ${tokens.fillStrong} 55%, ${tokens.ink} 100%)`,
+            border: `1px solid ${tokens.ink}`,
             boxShadow: dragging ? PRESSED_SHADOW : RAISED_SHADOW,
             pointerEvents: 'none',
           }}
@@ -550,7 +550,7 @@ export default function KlayConfigurator({
         gap: space.xs,
         padding: `${space.sm}px`,
         borderRadius: RADIUS,
-        background: 'linear-gradient(180deg, rgba(44,40,36,0.92) 0%, rgba(28,24,16,0.92) 100%)',
+        background: 'linear-gradient(180deg, rgba(44,40,36,0.92) 0%, rgba(29,29,29,0.92) 100%)',
         border: `1px solid ${tokens.onDarkLine}`,
         boxShadow: RAISED_SHADOW,
         backdropFilter: 'blur(6px)',
@@ -592,7 +592,7 @@ export default function KlayConfigurator({
         background: tokens.charcoal,
         borderRadius: RADIUS,
         overflow: 'hidden',
-        boxShadow: '0 16px 40px rgba(28,24,16,0.22)',
+        boxShadow: '0 16px 40px rgba(29,29,29,0.22)',
       }}
     >
       <div style={{ position: 'relative', width: '100%', aspectRatio: String(photoRatio) }}>

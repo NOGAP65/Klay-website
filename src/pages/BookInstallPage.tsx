@@ -43,7 +43,7 @@ function tomorrowISO(): string {
 const sectionHeading: React.CSSProperties = {
   fontFamily: tokens.body,
   fontSize: 11,
-  color: tokens.gold,
+  color: tokens.onDark,
   textTransform: 'uppercase',
   letterSpacing: '0.2em',
   marginBottom: 18,
@@ -179,7 +179,7 @@ export default function BookInstallPage() {
           }}
         >
           <div style={{ maxWidth: 520, textAlign: 'center' }}>
-            <div style={{ width: 40, height: 1, background: tokens.gold, margin: '0 auto 28px' }} />
+            <div style={{ width: 40, height: 1, background: tokens.fillStrong, margin: '0 auto 28px' }} />
             <h1 style={{ ...headline.section, color: tokens.ink, marginBottom: 20 }}>
               Request received
             </h1>
@@ -199,7 +199,7 @@ export default function BookInstallPage() {
                 textTransform: 'uppercase',
                 color: tokens.ink,
                 textDecoration: 'none',
-                borderBottom: `1px solid ${tokens.gold}`,
+                borderBottom: `1px solid ${tokens.line}`,
                 paddingBottom: 4,
               }}
             >
@@ -219,7 +219,7 @@ export default function BookInstallPage() {
       <main style={{ background: tokens.warmWhite, paddingTop: 140, paddingBottom: 120 }}>
         <div style={{ maxWidth: layout.containerMax, margin: '0 auto', padding: '0 5vw' }}>
           <div style={{ maxWidth: 640, marginBottom: 56 }}>
-            <p style={{ ...eyebrow, color: tokens.gold, marginBottom: 18 }}>Book an install</p>
+            <p style={{ ...eyebrow, color: tokens.onDark, marginBottom: 18 }}>Book an install</p>
             <h1 style={{ ...headline.section, color: tokens.ink, marginBottom: 20 }}>
               Two ways to go ahead.
             </h1>
@@ -236,7 +236,7 @@ export default function BookInstallPage() {
               style={{
                 background: tokens.cream,
                 border: `1px solid ${tokens.line}`,
-                borderLeft: `2px solid ${tokens.gold}`,
+                borderLeft: `2px solid ${tokens.line}`,
                 padding: '16px 20px',
                 marginBottom: 40,
                 fontFamily: tokens.body,
@@ -484,8 +484,8 @@ export default function BookInstallPage() {
                   width: '100%',
                   marginTop: 28,
                   padding: '17px 16px',
-                  background: busy ? tokens.inkFaint : tokens.gold,
-                  color: tokens.ink,
+                  background: busy ? tokens.inkFaint : tokens.fillStrong,
+                  color: tokens.onFillStrong,
                   fontFamily: tokens.body,
                   fontSize: 11,
                   fontWeight: 600,

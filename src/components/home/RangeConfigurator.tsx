@@ -94,9 +94,13 @@ function Chip({
         cursor: 'pointer',
         whiteSpace: 'nowrap',
         transition: motion.button,
-        background: selected ? tokens.gold : 'transparent',
-        color: selected ? tokens.ink : hover ? tokens.ink : tokens.inkSoft,
-        border: `1px solid ${selected ? tokens.gold : hover ? tokens.lineStrong : tokens.line}`,
+        background: selected ? tokens.fillStrong : 'transparent',
+        // A SELECTED PILL IS A FILLED PILL, so its label inverts. The selected
+        // fill was gold with ink on it; when the fill went black the label had to
+        // follow, and it did not — the audit caught ink on ink at 1:1, which made
+        // every selected option read as a solid black lozenge with no word in it.
+        color: selected ? tokens.onFillStrong : hover ? tokens.ink : tokens.inkSoft,
+        border: `1px solid ${selected ? tokens.line : hover ? tokens.lineStrong : tokens.line}`,
       }}
     >
       {choice.label}
@@ -136,7 +140,7 @@ function Swatch({
         cursor: 'pointer',
         background: choice.hex,
         border: `1px solid ${tokens.line}`,
-        outline: selected ? `1.5px solid ${tokens.gold}` : hover ? `1.5px solid ${tokens.lineStrong}` : 'none',
+        outline: selected ? `1.5px solid ${tokens.line}` : hover ? `1.5px solid ${tokens.lineStrong}` : 'none',
         outlineOffset: 2,
         transition: 'outline-color 0.2s ease',
       }}
@@ -312,7 +316,7 @@ export function RangeConfigurator({
               style={{
                 ...typeScale.micro,
                 // goldText: this sits on a light panel, where brand gold is 2.11.
-                color: tokens.goldText,
+                color: tokens.ink,
               }}
             >
               Price on measure
@@ -330,8 +334,8 @@ export function RangeConfigurator({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: hover ? tokens.goldLight : tokens.gold,
-            color: tokens.ink,
+            background: hover ? tokens.fillStrongHover : tokens.fillStrong,
+            color: tokens.onFillStrong,
             ...typeScale.label,
             lineHeight: 1,
             border: 'none',

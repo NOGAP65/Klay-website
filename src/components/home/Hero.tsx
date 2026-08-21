@@ -194,7 +194,7 @@ export function Hero() {
             ...eyebrow,
             color: tokens.warmWhite,
             marginBottom: space.md,
-            textShadow: '0 1px 3px rgba(28,24,16,0.95), 0 2px 16px rgba(28,24,16,0.75)',
+            textShadow: '0 1px 3px rgba(29,29,29,0.95), 0 2px 16px rgba(29,29,29,0.75)',
           }}
         >
           Klay Interiors
@@ -210,12 +210,12 @@ export function Hero() {
           style={{
             ...headline.hero,
             color: tokens.warmWhite,
-            textShadow: '0 2px 6px rgba(28,24,16,0.85), 0 4px 32px rgba(28,24,16,0.7)',
+            textShadow: '0 2px 6px rgba(29,29,29,0.85), 0 4px 32px rgba(29,29,29,0.7)',
           }}
         >
           The finishing layer
           <br />
-          of <span style={{ fontStyle: 'italic', color: tokens.gold }}>your home.</span>
+          of <span style={{ fontStyle: 'italic', color: tokens.onDark }}>your home.</span>
         </h1>
 
         {/* Design Yours scrolls to the visualiser rather than navigating: the

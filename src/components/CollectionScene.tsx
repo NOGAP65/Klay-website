@@ -406,7 +406,7 @@ export function CollectionScene() {
                 <a
                   href={`/products/${p.productSlug}`}
                   onClick={(e) => e.stopPropagation()}
-                  style={{ display: 'inline-block', fontFamily: tokens.body, fontSize: 11, fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: tokens.gold, marginTop: 8 }}
+                  style={{ display: 'inline-block', fontFamily: tokens.body, fontSize: 11, fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: tokens.onDark, marginTop: 8 }}
                 >
                   Explore range →
                 </a>
@@ -476,11 +476,11 @@ export function CollectionScene() {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 10,
             fontFamily: tokens.body, fontSize: 12, fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase',
-            padding: '16px 32px', border: `1px solid ${tokens.gold}`, background: 'transparent', color: tokens.gold,
+            padding: '16px 32px', border: `1px solid ${tokens.line}`, background: 'transparent', color: tokens.onDark,
             cursor: 'pointer', transition: 'background 0.3s ease, color 0.3s ease',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = tokens.gold; e.currentTarget.style.color = tokens.dark; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tokens.gold; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = tokens.fillStrong; e.currentTarget.style.color = tokens.dark; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tokens.fillStrong; }}
         >
           View All Blinds →
         </button>

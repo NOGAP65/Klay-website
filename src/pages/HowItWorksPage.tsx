@@ -59,11 +59,11 @@ function VisualiserMock() {
         ))}
       </div>
       <div style={{ position: 'relative', height: 220, border: `1px solid ${tokens.line}`, overflow: 'hidden', background: 'linear-gradient(180deg, #2a3a4a, #4a5a6a)' }}>
-        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'rgba(245,242,237,0.2)' }} />
-        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(245,242,237,0.2)' }} />
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%', background: 'repeating-linear-gradient(180deg, rgba(232,228,222,0.85) 0px, rgba(232,228,222,0.85) 1px, transparent 1px, transparent 3px), #E8E4DE' }} />
+        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'rgba(248,248,248,0.2)' }} />
+        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(248,248,248,0.2)' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%', background: 'repeating-linear-gradient(180deg, rgba(232,228,222,0.85) 0px, rgba(232,228,222,0.85) 1px, transparent 1px, transparent 3px), #EDEDED' }} />
       </div>
-      <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.gold, marginTop: 16, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+      <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.textMuted, marginTop: 16, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
         Blockout Roller — from $220
       </div>
     </div>
@@ -77,7 +77,16 @@ const STEP_NUMBER: React.CSSProperties = {
   fontFamily: tokens.display,
   fontSize: 120,
   fontWeight: 300,
-  color: tokens.gold,
+  // `textFaint`, not `onDark`. The four steps alternate between paper and band,
+  // which are BOTH light — every step's body copy is `supporting.onLight` — so
+  // an on-dark colour was never right here for any of them, and since onDark is
+  // paper these numerals rendered at 1:1 and 1.1:1 on their own grounds. They
+  // have been invisible for as long as the token has been paper.
+  //
+  // 120px is large text, so the floor is 3:1, and textFaint clears it on both
+  // grounds (4.34 on paper, 3.94 on band) while staying the quiet ordering mark
+  // it is meant to be rather than competing with the step's headline.
+  color: tokens.textFaint,
   lineHeight: 1,
 };
 
@@ -133,7 +142,7 @@ export default function HowItWorksPage() {
           statement, and the contrast that makes the first step feel like the
           page opening up. */}
       <section style={{ background: tokens.charcoal, padding: '200px 80px 120px' }}>
-        <div style={{ ...eyebrow, marginBottom: 22 }}>The Klay Process</div>
+        <div style={{ ...eyebrow, color: tokens.onDarkMuted, marginBottom: 22 }}>The Klay Process</div>
         <h1 style={{ ...headline.hero, color: tokens.warmWhite, maxWidth: 900 }}>
           Four steps to a perfectly dressed window.
         </h1>
@@ -175,7 +184,7 @@ export default function HowItWorksPage() {
           <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
             A Klay technician visits your home within 7–10 days to measure every window precisely — no guesswork, no relying on your own tape measure. They will also talk through hardware and fabric options in person.
           </p>
-          <div style={{ fontFamily: tokens.display, fontStyle: 'italic', fontSize: 20, color: tokens.gold, marginTop: 20 }}>
+          <div style={{ fontFamily: tokens.display, fontStyle: 'italic', fontSize: 20, color: tokens.onDark, marginTop: 20 }}>
             Free measure — no charge, ever.
           </div>
         </div>
@@ -244,7 +253,7 @@ export default function HowItWorksPage() {
                   }}
                 >
                   {f.q}
-                  <span style={{ color: tokens.gold, fontSize: 20, marginLeft: 24, flexShrink: 0, transform: open ? 'rotate(45deg)' : 'none', transition: 'transform 0.25s ease' }}>
+                  <span style={{ color: tokens.onDark, fontSize: 20, marginLeft: 24, flexShrink: 0, transform: open ? 'rotate(45deg)' : 'none', transition: 'transform 0.25s ease' }}>
                     +
                   </span>
                 </button>
@@ -285,8 +294,8 @@ export default function HowItWorksPage() {
             textTransform: 'uppercase',
             padding: '18px 40px',
             borderRadius: 2,
-            background: ctaHover ? tokens.goldLight : tokens.gold,
-            color: tokens.ink,
+            background: ctaHover ? tokens.fillStrongHover : tokens.fillStrong,
+            color: tokens.onFillStrong,
             transition: motion.button,
           }}
         >

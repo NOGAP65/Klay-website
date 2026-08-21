@@ -16,7 +16,7 @@ function Cassette() {
     <div
       style={{
         height: 16,
-        background: `linear-gradient(180deg, ${tokens.goldLight}, ${tokens.gold})`,
+        background: `linear-gradient(180deg, ${tokens.fillStrongHover}, ${tokens.fillStrong})`,
         boxShadow: '0 3px 8px rgba(0,0,0,0.45)',
         position: 'relative',
         zIndex: 2,
@@ -32,7 +32,7 @@ function Rail({ dark }: { dark?: boolean }) {
         height: 10,
         background: dark
           ? 'linear-gradient(180deg, #3a3a3a, #1f1f1f)'
-          : `linear-gradient(180deg, ${tokens.gold}, ${tokens.goldLight})`,
+          : `linear-gradient(180deg, ${tokens.fillStrong}, ${tokens.fillStrongHover})`,
         boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
       }}
     />

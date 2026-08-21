@@ -64,7 +64,7 @@ export function ProcessSection() {
                 fontFamily: tokens.body,
                 fontSize: 11,
                 fontWeight: 500,
-                color: tokens.gold,
+                color: tokens.onDark,
                 textTransform: 'uppercase',
                 letterSpacing: '0.2em',
                 margin: 0,
@@ -101,8 +101,8 @@ export function ProcessSection() {
               textTransform: 'uppercase',
               cursor: 'pointer',
               transition: 'all 0.25s ease',
-              background: ctaHover ? tokens.goldLight : tokens.gold,
-              color: tokens.ink,
+              background: ctaHover ? tokens.fillStrongHover : tokens.fillStrong,
+              color: tokens.onFillStrong,
               border: 'none',
               flexShrink: 0,
             }}
@@ -174,7 +174,7 @@ export function ProcessSection() {
                         fontFamily: tokens.display,
                         fontSize: 32,
                         fontWeight: 200,
-                        color: tokens.gold,
+                        color: tokens.onDark,
                         lineHeight: 1,
                       }}
                     >
@@ -184,7 +184,7 @@ export function ProcessSection() {
                       style={{
                         flex: 1,
                         height: 1,
-                        background: `linear-gradient(90deg, ${tokens.gold}40 0%, transparent 100%)`,
+                        background: `linear-gradient(90deg, ${tokens.fillStrong}40 0%, transparent 100%)`,
                       }}
                     />
                   </div>

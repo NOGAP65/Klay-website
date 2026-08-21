@@ -45,7 +45,7 @@ export default function AboutPage() {
         />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(15deg, rgba(44,40,36,0.88) 0%, rgba(44,40,36,0.66) 55%, rgba(44,40,36,0.42) 100%)' }} />
         <div style={{ position: 'relative', maxWidth: 900, textAlign: 'center' }}>
-          <div style={{ ...eyebrow, marginBottom: 22 }}>Why We Exist</div>
+          <div style={{ ...eyebrow, color: tokens.onDarkMuted, marginBottom: 22 }}>Why We Exist</div>
           <h1
             style={{
               ...headline.hero,
@@ -123,7 +123,13 @@ export default function AboutPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 48, marginTop: 64 }}>
             {CREDENTIALS.map((c) => (
               <div key={c.label}>
-                <div style={{ fontFamily: tokens.display, fontSize: 56, fontWeight: 300, lineHeight: 1, color: tokens.gold }}>
+                {/* `ink`, not `onDark`. This was onDark on a warmWhite section —
+                    and onDark IS warmWhite, before this pass and after it, so
+                    these four figures have always rendered invisible on their own
+                    ground. Found by the contrast audit at exactly 1:1, which is
+                    the signature of a token used on the surface it is named
+                    against. */}
+                <div style={{ fontFamily: tokens.display, fontSize: 56, fontWeight: 300, lineHeight: 1, color: tokens.ink }}>
                   {c.figure}
                 </div>
                 <div style={{ ...supporting.onLight, fontSize: 13, marginTop: 12, maxWidth: 180 }}>
@@ -152,8 +158,8 @@ export default function AboutPage() {
                 textTransform: 'uppercase',
                 padding: '18px 40px',
                 borderRadius: 2,
-                background: ctaHover ? tokens.goldLight : tokens.gold,
-                color: tokens.ink,
+                background: ctaHover ? tokens.fillStrongHover : tokens.fillStrong,
+                color: tokens.onFillStrong,
                 whiteSpace: 'nowrap',
                 transition: motion.button,
               }}

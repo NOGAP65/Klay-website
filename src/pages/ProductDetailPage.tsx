@@ -16,7 +16,7 @@ import VisualiserControls from '../visualiser/VisualiserControls';
 import { useVisualiserStore } from '../visualiser/useVisualiserStore';
 import { bookingLink } from '../lib/bookingLink';
 
-const INK_55 = 'rgba(28,24,16,0.55)';
+const INK_55 = 'rgba(29,29,29,0.55)';
 
 // SVG Icons for features
 const FeatureIcon = ({ type }: { type: string }) => {
@@ -141,7 +141,7 @@ function FaqRow({ q, a, open, onToggle }: { q: string; a: string; open: boolean;
   }, [open, a]);
 
   return (
-    <div style={{ borderBottom: `1px solid rgba(28,24,16,0.1)` }}>
+    <div style={{ borderBottom: `1px solid rgba(29,29,29,0.1)` }}>
       <button
         onClick={onToggle}
         style={{
@@ -160,7 +160,7 @@ function FaqRow({ q, a, open, onToggle }: { q: string; a: string; open: boolean;
         }}
       >
         <span style={{ fontFamily: tokens.body, fontSize: 15, fontWeight: 500, color: tokens.ink }}>{q}</span>
-        <span style={{ flexShrink: 0, color: tokens.gold, fontSize: 20, fontWeight: 300, transform: open ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>+</span>
+        <span style={{ flexShrink: 0, color: tokens.onDark, fontSize: 20, fontWeight: 300, transform: open ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>+</span>
       </button>
       <div style={{ height, overflow: 'hidden', transition: 'height 0.3s ease' }}>
         <p ref={bodyRef} style={{ fontFamily: tokens.body, fontSize: 14, lineHeight: 1.7, color: INK_55, paddingBottom: 20, margin: 0 }}>{a}</p>
@@ -241,7 +241,7 @@ export default function ProductDetailPage() {
               {/* Star rating */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
                 <div style={{ display: 'flex', gap: 2 }}>
-                  {[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.gold, fontSize: 14 }}>★</span>)}
+                  {[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.onDark, fontSize: 14 }}>★</span>)}
                 </div>
                 <span style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkSoft }}>5.0 (47 reviews)</span>
               </div>
@@ -272,7 +272,7 @@ export default function ProductDetailPage() {
                 style={{
                   width: '100%',
                   padding: '18px 24px',
-                  background: addedToCart ? tokens.charcoal : (cartHover ? tokens.goldLight : tokens.gold),
+                  background: addedToCart ? tokens.charcoal : (cartHover ? tokens.fillStrongHover : tokens.fillStrong),
                   color: addedToCart ? tokens.warmWhite : tokens.ink,
                   fontFamily: tokens.body,
                   fontSize: 14,
@@ -296,13 +296,13 @@ export default function ProductDetailPage() {
                   width: '100%',
                   padding: '18px 24px',
                   background: 'transparent',
-                  color: quoteHover ? tokens.gold : tokens.ink,
+                  color: quoteHover ? tokens.textMuted : tokens.ink,
                   fontFamily: tokens.body,
                   fontSize: 14,
                   fontWeight: 600,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
-                  border: `1px solid ${quoteHover ? tokens.gold : tokens.lineStrong}`,
+                  border: `1px solid ${quoteHover ? tokens.line : tokens.lineStrong}`,
                   borderRadius: 6,
                   cursor: 'pointer',
                   transition: motion.button,
@@ -321,15 +321,15 @@ export default function ProductDetailPage() {
         <section style={{ background: tokens.charcoal, padding: isMobile ? '64px 24px' : '80px 80px' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
-              <p style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, color: tokens.gold, textTransform: 'uppercase', letterSpacing: '0.25em', margin: 0 }}>Why Choose {product.name}</p>
+              <p style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, color: tokens.onDark, textTransform: 'uppercase', letterSpacing: '0.25em', margin: 0 }}>Why Choose {product.name}</p>
               <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.warmWhite, margin: '12px 0 0' }}>Built for the way you live.</h2>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 24 : 32 }}>
               {features.map((f) => (
-                <div key={f.title} style={{ textAlign: 'center', padding: 24, background: 'rgba(245,242,237,0.05)', borderRadius: 8, border: '1px solid rgba(245,242,237,0.1)' }}>
-                  <div style={{ color: tokens.gold, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><FeatureIcon type={f.icon} /></div>
+                <div key={f.title} style={{ textAlign: 'center', padding: 24, background: 'rgba(248,248,248,0.05)', borderRadius: 8, border: '1px solid rgba(248,248,248,0.1)' }}>
+                  <div style={{ color: tokens.onDark, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><FeatureIcon type={f.icon} /></div>
                   <h3 style={{ fontFamily: tokens.display, fontSize: 20, fontWeight: 400, color: tokens.warmWhite, margin: 0 }}>{f.title}</h3>
-                  <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(245,242,237,0.65)', margin: '8px 0 0', lineHeight: 1.5 }}>{f.desc}</p>
+                  <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(248,248,248,0.65)', margin: '8px 0 0', lineHeight: 1.5 }}>{f.desc}</p>
                 </div>
               ))}
             </div>
@@ -343,7 +343,7 @@ export default function ProductDetailPage() {
               <GoldLabel>Specifications</GoldLabel>
               <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.ink, margin: '12px 0 0' }}>The details that matter.</h2>
             </div>
-            <div style={{ background: tokens.warmWhite, borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 24px rgba(28,24,16,0.06)' }}>
+            <div style={{ background: tokens.warmWhite, borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 24px rgba(29,29,29,0.06)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <tbody>
                   {specRows.map((row, i) => (
@@ -406,7 +406,7 @@ export default function ProductDetailPage() {
           left: 0,
           width: '100%',
           zIndex: 50,
-          background: 'rgba(245,242,237,0.98)',
+          background: 'rgba(248,248,248,0.98)',
           backdropFilter: 'blur(8px)',
           borderTop: `1px solid ${tokens.lineFaint}`,
           padding: isMobile ? '8px 24px' : '10px 80px',
@@ -426,7 +426,7 @@ export default function ProductDetailPage() {
               onMouseLeave={() => setBarQuoteHover(false)}
               style={{
                 background: 'transparent',
-                color: barQuoteHover ? tokens.gold : tokens.ink,
+                color: barQuoteHover ? tokens.textMuted : tokens.ink,
                 fontFamily: tokens.body,
                 fontSize: 11,
                 fontWeight: 600,
@@ -434,7 +434,7 @@ export default function ProductDetailPage() {
                 letterSpacing: '0.1em',
                 padding: isMobile ? '8px 16px' : '10px 20px',
                 borderRadius: 4,
-                border: `1px solid ${barQuoteHover ? tokens.gold : tokens.lineStrong}`,
+                border: `1px solid ${barQuoteHover ? tokens.line : tokens.lineStrong}`,
                 cursor: 'pointer',
                 textDecoration: 'none',
                 transition: motion.button,
@@ -460,7 +460,7 @@ export default function ProductDetailPage() {
               onMouseEnter={() => setBarCartHover(true)}
               onMouseLeave={() => setBarCartHover(false)}
               style={{
-                background: addedToCart ? tokens.charcoal : (barCartHover ? tokens.goldLight : tokens.gold),
+                background: addedToCart ? tokens.charcoal : (barCartHover ? tokens.fillStrongHover : tokens.fillStrong),
                 color: addedToCart ? tokens.warmWhite : tokens.ink,
                 fontFamily: tokens.body,
                 fontSize: 11,

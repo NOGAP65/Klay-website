@@ -34,7 +34,7 @@ export default function VisualiserSection() {
           <div style={{ flex:'1 1 40%', display:'flex', flexDirection:'column', gap:'8px', paddingTop:'8px' }}>
             {FEATURES.map(f => (
               <div key={f} style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                <div style={{ width:'14px', height:'1px', background:tokens.gold, flexShrink:0 }} />
+                <div style={{ width:'14px', height:'1px', background:tokens.fillStrong, flexShrink:0 }} />
                 <span style={{ fontFamily:tokens.body, fontSize:'12px', color:tokens.inkSoft }}>{f}</span>
               </div>
             ))}
@@ -66,8 +66,8 @@ export default function VisualiserSection() {
                 display:'block',
                 width:'100%',
                 padding:'14px 16px',
-                background: ctaHover ? tokens.goldLight : tokens.gold,
-                color:tokens.ink,
+                background: ctaHover ? tokens.fillStrongHover : tokens.fillStrong,
+                color: tokens.onFillStrong,
                 fontFamily:tokens.body,
                 fontSize:'11px',
                 fontWeight:600,

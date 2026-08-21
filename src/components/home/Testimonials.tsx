@@ -92,7 +92,7 @@ function Quote({ q, isMobile }: { q: (typeof QUOTES)[number]; isMobile: boolean 
           ...typeScale.ornament,
           // goldText: this sits on a light card ground where the brand gold
           // measures 2.47.
-          color: tokens.goldText,
+          color: tokens.ink,
           marginBottom: space.md,
           userSelect: 'none',
         }}

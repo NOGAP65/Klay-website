@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/png" href="/images/klay-mark.png" />
+    <meta name="theme-color" content="#303030" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Klay Interiors — Made-to-Measure Window Coverings</title>
     <meta name="description" content="Premium Australian made-to-measure blinds, curtains and shutters. Designed with you, installed by hand across Victoria." />
@@ -31,16 +32,28 @@
         box-sizing: border-box;
       }
 
+      /* NO BROWSER BLUE. An audit of the running pages found #0000EE — the UA's
+         default link colour — on 823 elements: every <a> that styles its text in
+         a child span rather than on itself keeps the default on the anchor. None
+         of them showed while the children were painted over the top, but the
+         palette has no chroma in it and one unstyled anchor would have been the
+         only colour on the site. Inherit is the correct default here because
+         every link on this site is coloured by the surface it sits on. */
+      a {
+        color: inherit;
+      }
+
       html {
         scroll-behavior: smooth;
       }
 
-      /* Charcoal, matching tokens.charcoal. This is only ever seen behind a
-         short page or past the end of a scroll; it was #1A1A1A, a cold
-         near-black that greyed the warm palette sitting on top of it. */
+      /* #303030, matching tokens.charcoal, which is the value sampled off the
+         logo artwork. Only ever seen behind a short page or past the end of a
+         scroll. The note this replaces argued for warmth over #1A1A1A — that
+         argument is void now the palette has no warm axis to protect. */
       body {
-        background: #2C2824;
-        color: #F5F2ED;
+        background: #303030;
+        color: #F8F8F8;
         font-family: 'Inter', sans-serif;
         font-weight: 300;
         line-height: 1.6;
@@ -48,9 +61,12 @@
         -webkit-font-smoothing: antialiased;
       }
 
+      /* Selection was the gold fill with ink on it. Inverted rather than
+         greyed: ink ground, paper text. A grey selection band is invisible
+         against a grey palette, and inversion is what every neutral site does. */
       ::selection {
-        background: #C8973A;
-        color: #1C1810;
+        background: #1D1D1D;
+        color: #F8F8F8;
       }
 
       /* The horizontal rails on the homepage — the category strip and the range
@@ -74,13 +90,13 @@
          rather than at the edge of the window. */
       .klay-vscroll {
         scrollbar-width: thin;
-        scrollbar-color: rgba(28, 24, 16, 0.2) transparent;
+        scrollbar-color: rgba(29, 29, 29, 0.2) transparent;
       }
       .klay-vscroll::-webkit-scrollbar {
         width: 4px;
       }
       .klay-vscroll::-webkit-scrollbar-thumb {
-        background: rgba(28, 24, 16, 0.2);
+        background: rgba(29, 29, 29, 0.2);
         border-radius: 2px;
       }
       .klay-vscroll::-webkit-scrollbar-track {

@@ -141,12 +141,12 @@ function Run() {
               // measures 5.53. It still reads as subordinate to the label
               // because it is set in the display face at label size, which is
               // a quieter difference than opacity and a legible one.
-              color: tokens.gold,
+              color: tokens.onDark,
             }}
           >
             {String(i + 1).padStart(2, '0')}
           </span>
-          <span style={{ ...typeScale.label, color: tokens.gold }}>{step.label}</span>
+          <span style={{ ...typeScale.label, color: tokens.onDark }}>{step.label}</span>
           {/* THE PROMISE, in micro rather than label and sentence case rather
               than caps — but at FULL GOLD, not dimmed.
               It has to sit beside the label without competing with it: the label
@@ -164,7 +164,7 @@ function Run() {
               ...typeScale.micro,
               textTransform: 'none',
               letterSpacing: '0.06em',
-              color: tokens.gold,
+              color: tokens.onDark,
               paddingLeft: space.xs,
             }}
           >

@@ -64,7 +64,7 @@ export function FormField({
 
   // Error outranks focus — a red border that turns gold when you click into it
   // would hide the problem at the exact moment you are trying to fix it.
-  const borderColour = error ? DANGER : focused ? tokens.gold : tokens.line;
+  const borderColour = error ? DANGER : focused ? tokens.fillStrong : tokens.line;
 
   const style: React.CSSProperties = {
     width: '100%',
@@ -96,7 +96,7 @@ export function FormField({
     <div style={{ marginBottom: 20 }}>
       <label style={labelStyle} htmlFor={id}>
         {label}
-        {required && <span style={{ color: tokens.gold, marginLeft: 4 }}>*</span>}
+        {required && <span style={{ color: tokens.onDark, marginLeft: 4 }}>*</span>}
       </label>
 
       {textarea ? (

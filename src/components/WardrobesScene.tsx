@@ -68,7 +68,7 @@ export function WardrobesScene() {
           as="h2"
           words={[
             ...splitWords('Storage that becomes'),
-            { text: 'architecture.', italic: true, color: tokens.gold },
+            { text: 'architecture.', italic: true, color: tokens.onDark },
           ]}
           style={{ fontWeight: 300, fontSize: 'clamp(36px, 4.4vw, 64px)', color: tokens.warmWhite, lineHeight: 1.08, marginBottom: 18 }}
         />
@@ -110,8 +110,8 @@ export function WardrobesScene() {
               fontWeight: 500,
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              color: tokens.gold,
-              border: `1px solid ${tokens.gold}`,
+              color: tokens.onDark,
+              border: `1px solid ${tokens.line}`,
               padding: '8px 18px',
             }}
           >
@@ -141,7 +141,7 @@ export function WardrobesScene() {
               width: 14,
               height: 14,
               borderRadius: '50%',
-              background: tokens.gold,
+              background: tokens.fillStrong,
             }}
           />
         </div>
@@ -168,7 +168,7 @@ export function WardrobesScene() {
               width: 14,
               height: 14,
               borderRadius: '50%',
-              background: tokens.gold,
+              background: tokens.fillStrong,
             }}
           />
         </div>

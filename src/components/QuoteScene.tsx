@@ -53,7 +53,7 @@ export function QuoteScene() {
           zIndex: 1,
         }}
       >
-        <g stroke={tokens.gold} strokeWidth="1" fill="none">
+        <g stroke={tokens.fillStrong} strokeWidth="1" fill="none">
           {Array.from({ length: 36 }).map((_, i) => {
             const angle = (i * 10 * Math.PI) / 180;
             return (
@@ -78,9 +78,9 @@ export function QuoteScene() {
           as="h2"
           words={[
             ...splitWords("The light in a room isn't what you let in — it's what you"),
-            { text: 'choose', italic: true, color: tokens.gold },
-            { text: 'to', italic: true, color: tokens.gold },
-            { text: 'keep.', italic: true, color: tokens.gold },
+            { text: 'choose', italic: true, color: tokens.onDark },
+            { text: 'to', italic: true, color: tokens.onDark },
+            { text: 'keep.', italic: true, color: tokens.onDark },
           ]}
           style={{
             fontWeight: 300,

@@ -51,7 +51,7 @@ export function FinalScene() {
             fontFamily: tokens.body,
             fontSize: 11,
             fontWeight: 500,
-            color: tokens.gold,
+            color: tokens.onDark,
             textTransform: 'uppercase',
             letterSpacing: '0.2em',
             margin: 0,
@@ -119,8 +119,8 @@ export function FinalScene() {
               textTransform: 'uppercase',
               textDecoration: 'none',
               transition: 'all 0.25s ease',
-              background: primaryHover ? tokens.goldLight : tokens.gold,
-              color: tokens.ink,
+              background: primaryHover ? tokens.fillStrongHover : tokens.fillStrong,
+              color: tokens.onFillStrong,
               boxShadow: primaryHover
                 ? '0 14px 30px rgba(28,24,16,0.40)'
                 : '0 8px 20px rgba(28,24,16,0.28)',
@@ -143,8 +143,8 @@ export function FinalScene() {
               textDecoration: 'none',
               transition: 'all 0.25s ease',
               background: 'transparent',
-              color: secondaryHover ? tokens.gold : tokens.warmWhite,
-              border: `1px solid ${secondaryHover ? tokens.gold : 'rgba(245,242,237,0.3)'}`,
+              color: secondaryHover ? tokens.card : tokens.onDarkMuted,
+              border: `1px solid ${secondaryHover ? tokens.line : 'rgba(245,242,237,0.3)'}`,
             }}
           >
             Design Yours
@@ -175,7 +175,7 @@ export function FinalScene() {
                   width: 5,
                   height: 5,
                   borderRadius: '50%',
-                  background: tokens.gold,
+                  background: tokens.fillStrong,
                 }}
               />
               <span

@@ -46,7 +46,7 @@ function skin(onDark: boolean) {
     /** The price box's fill. On dark it is a lift off the card rather than a
      * panel of its own colour — a cream box on a black card would read as a
      * hole punched in it. */
-    boxFill: onDark ? 'rgba(245,242,237,0.06)' : tokens.cream,
+    boxFill: onDark ? 'rgba(248,248,248,0.06)' : tokens.cream,
   };
 }
 
@@ -140,12 +140,17 @@ function Pill({
         lineHeight: 1.25,
         textAlign: 'center',
         cursor: 'pointer',
-        border: `1px solid ${active ? tokens.gold : sk.edge}`,
-        // The active pill is gold-filled with ink on it on BOTH grounds. It is
+        border: `1px solid ${active ? tokens.line : sk.edge}`,
+        // The active pill is ink-filled with paper on it on BOTH grounds. It is
         // the one thing in the panel that should not change with the ground —
         // the selection has to read the same wherever this is embedded.
-        background: active ? tokens.gold : 'transparent',
-        color: active ? tokens.ink : sk.quiet,
+        //
+        // It was gold-filled with ink on it, and that is exactly why the label
+        // had to move: when the fill became ink the label stayed ink, and the
+        // audit found the selected pill rendering as a solid black lozenge with
+        // no word in it at 1:1.
+        background: active ? tokens.fillStrong : 'transparent',
+        color: active ? tokens.onFillStrong : sk.quiet,
         transition: 'background 0.2s ease, border-color 0.2s ease, color 0.2s ease',
       }}
     >
@@ -192,8 +197,8 @@ function Swatch({
         // separate on their own and it is the dark end of the card that needs
         // help — so the inset goes light rather than ink.
         boxShadow: active
-          ? `0 0 0 2px ${tokens.gold}`
-          : `inset 0 0 0 1px ${onDark ? 'rgba(245,242,237,0.14)' : tokens.lineFaint}`,
+          ? `0 0 0 2px ${tokens.fillStrong}`
+          : `inset 0 0 0 1px ${onDark ? 'rgba(248,248,248,0.14)' : tokens.lineFaint}`,
         transition: 'box-shadow 0.2s ease',
       }}
     />
@@ -207,7 +212,7 @@ function GroupHeading({ children, onDark = false }: { children: React.ReactNode;
     <div
       style={{
         ...typeScale.micro,
-        color: tokens.gold,
+        color: tokens.onDark,
         paddingBottom: space.sm,
         marginBottom: space.md,
         borderBottom: `1px solid ${skin(onDark).hairline}`,
@@ -408,7 +413,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             style={{
               fontFamily: tokens.body,
               ...typeScale.micro,
-              color: tokens.gold,
+              color: tokens.onDark,
             }}
           >
             Estimated price
@@ -536,7 +541,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
           style={{
             fontFamily: tokens.body,
             ...typeScale.micro,
-            color: tokens.gold,
+            color: tokens.onDark,
           }}
         >
           Estimated price

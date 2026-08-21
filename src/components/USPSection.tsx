@@ -36,7 +36,7 @@ export function USPSection() {
           style={{
             fontFamily: tokens.body,
             fontSize: 11,
-            color: tokens.gold,
+            color: tokens.onDark,
             textTransform: 'uppercase',
             letterSpacing: '0.3em',
             marginBottom: 16,
@@ -54,7 +54,7 @@ export function USPSection() {
           }}
         >
           Four steps.{' '}
-          <span style={{ fontStyle: 'italic', color: tokens.gold }}>One team.</span>
+          <span style={{ fontStyle: 'italic', color: tokens.onDark }}>One team.</span>
         </h2>
       </div>
 
@@ -83,7 +83,7 @@ export function USPSection() {
                 fontFamily: tokens.display,
                 fontSize: 48,
                 fontWeight: 300,
-                color: tokens.gold,
+                color: tokens.onDark,
                 lineHeight: 1,
               }}
             >

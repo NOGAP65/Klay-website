@@ -438,11 +438,11 @@ export function CurtainsScene() {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 10,
             fontFamily: tokens.body, fontSize: 12, fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase',
-            padding: '16px 32px', border: `1px solid ${tokens.gold}`, background: 'transparent', color: tokens.gold,
+            padding: '16px 32px', border: `1px solid ${tokens.line}`, background: 'transparent', color: tokens.onDark,
             cursor: 'pointer', transition: 'background 0.3s ease, color 0.3s ease',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = tokens.gold; e.currentTarget.style.color = tokens.dark; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tokens.gold; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = tokens.fillStrong; e.currentTarget.style.color = tokens.dark; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = tokens.fillStrong; }}
         >
           View All Curtains →
         </button>
@@ -529,7 +529,7 @@ function CurtainPanel({
           pointerEvents: 'none',
         }}
       >
-        <span style={{ fontFamily: tokens.body, fontSize: 10, fontWeight: 500, letterSpacing: '0.2em', textTransform: 'uppercase', color: tokens.gold }}>
+        <span style={{ fontFamily: tokens.body, fontSize: 10, fontWeight: 500, letterSpacing: '0.2em', textTransform: 'uppercase', color: tokens.onDark }}>
           {closed ? 'Click to open' : 'Click to close'}
         </span>
       </div>

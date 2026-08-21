@@ -25,7 +25,7 @@ function Card({ t }: { t: (typeof testimonials)[number] }) {
         // separation, so each testimonial reads as its own card instead of a
         // bordered region of the section behind it.
         background: tokens.cream,
-        border: `1px solid ${hover ? tokens.goldLine : tokens.lineFaint}`,
+        border: `1px solid ${hover ? tokens.onDarkEdge : tokens.lineFaint}`,
         borderRadius: 2,
         padding: '34px 32px',
         display: 'flex',
@@ -39,7 +39,7 @@ function Card({ t }: { t: (typeof testimonials)[number] }) {
         transition: motion.card,
       }}
     >
-      <div style={{ color: tokens.gold, fontSize: 15, letterSpacing: '0.2em' }}>★★★★★</div>
+      <div style={{ color: tokens.onDark, fontSize: 15, letterSpacing: '0.2em' }}>★★★★★</div>
       <p style={{ fontFamily: tokens.display, fontStyle: 'italic', fontWeight: 400, fontSize: 23, lineHeight: 1.4, color: tokens.textMid }}>
         “{t.quote}”
       </p>
@@ -81,8 +81,8 @@ export function ReviewsScene() {
           as="h2"
           words={[
             ...splitWords('Homes that'),
-            { text: 'chose', italic: true, color: tokens.gold },
-            { text: 'Klay', italic: true, color: tokens.gold },
+            { text: 'chose', italic: true, color: tokens.onDark },
+            { text: 'Klay', italic: true, color: tokens.onDark },
           ]}
           style={{ ...headline.section, color: tokens.ink, marginTop: 16 }}
         />

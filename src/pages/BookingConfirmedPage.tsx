@@ -130,8 +130,8 @@ export default function BookingConfirmedPage() {
         }}
       >
         <div style={{ maxWidth: 560, textAlign: 'center' }}>
-          <div style={{ width: 40, height: 1, background: tokens.gold, margin: '0 auto 28px' }} />
-          <p style={{ ...eyebrow, color: tokens.gold, marginBottom: 18 }}>{copy.kicker}</p>
+          <div style={{ width: 40, height: 1, background: tokens.fillStrong, margin: '0 auto 28px' }} />
+          <p style={{ ...eyebrow, color: tokens.onDark, marginBottom: 18 }}>{copy.kicker}</p>
           <h1 style={{ ...headline.section, color: tokens.ink, marginBottom: 20 }}>{copy.heading}</h1>
           <p
             style={{
@@ -170,6 +170,6 @@ const linkStyle: React.CSSProperties = {
   textTransform: 'uppercase',
   color: tokens.ink,
   textDecoration: 'none',
-  borderBottom: `1px solid ${tokens.gold}`,
+  borderBottom: `1px solid ${tokens.line}`,
   paddingBottom: 4,
 };

@@ -65,8 +65,8 @@ const STACK = '(max-width: 560px)';
  *
  * This photograph is pale cloth in sunlight, so the BRIGHT end governs. Sampled
  * every pixel of the content box at 1440x562 under this crop, the brightest
- * ground any type can land on is #F2EDE5 — 0.851 relative luminance, which is
- * very nearly paper. Compositing ink (#1C1810) over it at alpha a:
+ * ground any type can land on is #EDEDED — 0.851 relative luminance, which is
+ * very nearly paper. Compositing ink (#1D1D1D) over it at alpha a:
  *
  *   warm white at 4.5:1  needs a >= 0.565
  *   gold at 3:1          needs a >= 0.740
@@ -132,7 +132,7 @@ export function RecommendationBanner() {
         style={{
           position: 'absolute',
           inset: 0,
-          background: `rgba(28,24,16,${SCRIM})`,
+          background: `rgba(29,29,29,${SCRIM})`,
         }}
       />
 
@@ -179,7 +179,7 @@ export function RecommendationBanner() {
               <div
                 style={{
                   height: 1,
-                  background: tokens.gold,
+                  background: tokens.fillStrong,
                   marginBottom: space.md,
                 }}
               />
@@ -205,7 +205,7 @@ export function RecommendationBanner() {
                     // at 32px this is large text, so 3:1 applies, and gold on
                     // the brightest pixel in the frame is the tightest ratio in
                     // the section — 3.17:1 against warm white's 7.49:1.
-                    color: tokens.gold,
+                    color: tokens.onDark,
                     lineHeight: 1,
                     flexShrink: 0,
                   }}

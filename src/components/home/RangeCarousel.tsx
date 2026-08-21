@@ -231,7 +231,7 @@ function Arrow({
         // does the job the shadow was actually doing, which was separating a
         // warm-white control from a pale photograph rather than lifting it.
         border: `1px solid ${tokens.line}`,
-        background: active ? tokens.gold : tokens.warmWhite,
+        background: active ? tokens.card : tokens.onDarkMuted,
         color: tokens.ink,
         ...typeScale.body,
         lineHeight: 1,
@@ -384,7 +384,7 @@ function RangeCard({
           style={{
             position: 'absolute',
             inset: 0,
-            border: `1px solid ${tokens.gold}`,
+            border: `1px solid ${tokens.line}`,
             borderRadius: 2,
             pointerEvents: 'none',
             zIndex: 2,
@@ -472,7 +472,7 @@ function RangeCard({
               position: 'absolute',
               inset: space.md,
               border: `1px solid ${
-                hover ? tokens.goldLine : glyphOnLight ? tokens.line : tokens.onDarkLine
+                hover ? tokens.onDarkEdge : glyphOnLight ? tokens.line : tokens.onDarkLine
               }`,
               display: 'flex',
               alignItems: 'center',
@@ -510,7 +510,7 @@ function RangeCard({
       <h3
         style={{
           ...typeScale.card,
-          color: hover ? tokens.goldText : tokens.ink,
+          color: hover ? tokens.ink : tokens.ink,
           marginTop: space.xs,
           transition: 'color 0.25s ease',
         }}
@@ -545,8 +545,8 @@ function RangeCard({
           borderRadius: 2,
           border: 'none',
           cursor: 'pointer',
-          background: open || hover ? tokens.goldLight : tokens.gold,
-          color: tokens.ink,
+          background: open || hover ? tokens.fillStrongHover : tokens.fillStrong,
+          color: tokens.onFillStrong,
           ...typeScale.label,
           lineHeight: 1,
           transition: motion.button,

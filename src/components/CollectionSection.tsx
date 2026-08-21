@@ -62,7 +62,7 @@ export function CollectionSection() {
             <h2 style={{ ...headline.section, color: tokens.ink, marginTop: 18 }}>
               Four blinds.
               <br />
-              <em style={{ fontStyle: 'italic', color: tokens.gold }}>Every kind of light.</em>
+              <em style={{ fontStyle: 'italic', color: tokens.onDark }}>Every kind of light.</em>
             </h2>
             <p style={{ ...supporting.onLight, marginTop: 20, maxWidth: 440 }}>
               Made to measure, professionally installed, and priced before you commit to
@@ -86,7 +86,7 @@ export function CollectionSection() {
                 transition: motion.link,
                 whiteSpace: 'nowrap',
               }}
-              onMouseEnter={e => (e.currentTarget.style.borderBottomColor = tokens.gold)}
+              onMouseEnter={e => (e.currentTarget.style.borderBottomColor = tokens.fillStrong)}
               onMouseLeave={e => (e.currentTarget.style.borderBottomColor = tokens.lineStrong)}
             >
               View all products
@@ -162,7 +162,7 @@ export function CollectionSection() {
                       gap: 6,
                       padding: '8px 14px',
                       borderRadius: 999,
-                      background: on ? tokens.gold : 'rgba(255,255,255,0.94)',
+                      background: on ? tokens.fillStrong : 'rgba(255,255,255,0.94)',
                       color: tokens.ink,
                       fontFamily: tokens.body,
                       fontSize: 10.5,
@@ -256,7 +256,7 @@ export function CollectionSection() {
                         fontWeight: 500,
                         letterSpacing: '0.14em',
                         textTransform: 'uppercase',
-                        color: on ? tokens.gold : tokens.textMuted,
+                        color: on ? tokens.fillStrong : tokens.textMuted,
                         transition: motion.link,
                         whiteSpace: 'nowrap',
                       }}

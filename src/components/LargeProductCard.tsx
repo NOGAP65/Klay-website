@@ -48,7 +48,7 @@ export function LargeProductCard({
     >
       <div style={{ flex: '7 1 0%', ...fabricStyle }} />
       <div style={{ flex: '3 1 0%', padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <span style={{ color: tokens.gold, fontFamily: tokens.body, fontSize: 11, fontWeight: 500, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+        <span style={{ color: tokens.onDark, fontFamily: tokens.body, fontSize: 11, fontWeight: 500, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
           {label}
         </span>
         <h3 style={{ fontFamily: tokens.display, fontWeight: 400, fontSize: 22, color: tokens.warmWhite, margin: '6px 0 4px' }}>

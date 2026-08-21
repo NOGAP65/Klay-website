@@ -5,7 +5,7 @@ function IconBox({ size, children }: { size: number; children: React.ReactNode }
 }
 
 export function RulerIcon({ size }: { size: number }) {
-  const gold = tokens.gold;
+  const gold = tokens.fillStrong;
   return (
     <IconBox size={size}>
       <div style={{ position: 'absolute', bottom: '19%', left: '9%', right: '9%', height: '25%', border: `1px solid ${gold}`, borderTop: 'none' }} />
@@ -17,7 +17,7 @@ export function RulerIcon({ size }: { size: number }) {
 }
 
 export function HandIcon({ size }: { size: number }) {
-  const gold = tokens.gold;
+  const gold = tokens.fillStrong;
   return (
     <IconBox size={size}>
       <div style={{ position: 'absolute', bottom: '12%', left: '28%', width: '50%', height: '44%', border: `1px solid ${gold}`, borderTop: 'none', borderRadius: '0 0 30% 30%' }} />
@@ -29,7 +29,7 @@ export function HandIcon({ size }: { size: number }) {
 }
 
 export function ShieldIcon({ size }: { size: number }) {
-  const gold = tokens.gold;
+  const gold = tokens.fillStrong;
   return (
     <IconBox size={size}>
       <div style={{ position: 'absolute', top: '9%', left: '22%', right: '22%', bottom: '9%', border: `1px solid ${gold}`, borderRadius: '15% 15% 45% 45%' }} />

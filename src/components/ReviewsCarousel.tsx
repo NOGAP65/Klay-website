@@ -42,7 +42,7 @@ function StarRating({ rating }: { rating: number }) {
         <span
           key={i}
           style={{
-            color: i < rating ? tokens.gold : 'rgba(28,24,16,0.15)',
+            color: i < rating ? tokens.fillStrong : 'rgba(28,24,16,0.15)',
             fontSize: 14,
           }}
         >
@@ -99,7 +99,7 @@ export function ReviewsCarousel() {
               fontFamily: tokens.body,
               fontSize: 11,
               fontWeight: 500,
-              color: tokens.gold,
+              color: tokens.onDark,
               textTransform: 'uppercase',
               letterSpacing: '0.2em',
               margin: 0,

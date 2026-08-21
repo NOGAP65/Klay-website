@@ -17,7 +17,7 @@ export function ScrollProgress() {
         left: 0,
         height: 2,
         width: `${progress * 100}%`,
-        background: tokens.gold,
+        background: tokens.fillStrong,
         zIndex: 999,
         pointerEvents: 'none',
         transition: 'width 0.1s linear',

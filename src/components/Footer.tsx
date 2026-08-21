@@ -41,7 +41,7 @@ const linkStyle: React.CSSProperties = {
  * links on the page that didn't light up. */
 function FooterLink({ to, children }: { to: string; children: React.ReactNode }) {
   const [hover, setHover] = useState(false);
-  const style = { ...linkStyle, color: hover ? tokens.gold : tokens.onDarkMuted };
+  const style = { ...linkStyle, color: hover ? tokens.onDark : tokens.onDarkMuted };
   const bind = {
     onMouseEnter: () => setHover(true),
     onMouseLeave: () => setHover(false),
@@ -127,13 +127,14 @@ export function Footer() {
               from the footer and not a row of grey social glyphs. */}
           <div style={{ gridColumn: isMobile ? 'span 2' : undefined }}>
             <img
-              src="/images/klay-logo.png"
+              src="/images/klay-logo-light.png"
               alt="Klay Interiors"
-              // 132 x 52 — the logo's own 2.536 ratio (558 x 220), so
-              // object-fit: contain has nothing to letterbox. It was 128 x 51,
-              // a 2.51 box, which padded the artwork by a different amount than
-              // the nav's 2.50 box did.
-              style={{ width: 132, height: 52, objectFit: 'contain', objectPosition: 'left', display: 'block' }}
+              // The light variant, because the footer ground is tokens.ink.
+              // Height-only: the asset is cropped to its own bounding box, so
+              // there is no ratio to match and object-fit has nothing to do.
+              // This was pointing at /images/klay-logo.png, which does not exist
+              // in public/ — the slot rendered a broken-image icon. See Nav.
+              style={{ height: 44, width: 'auto', display: 'block' }}
             />
             <p
               style={{
@@ -156,7 +157,7 @@ export function Footer() {
             <div key={col.heading}>
               {/* Brand gold — the footer is ink, and goldText is for light
                   grounds only. */}
-              <h4 style={{ ...eyebrow, color: tokens.gold, marginBottom: space.md }}>{col.heading}</h4>
+              <h4 style={{ ...eyebrow, color: tokens.onDark, marginBottom: space.md }}>{col.heading}</h4>
               {col.links.map(l => (
                 <FooterLink key={l.label} to={l.to}>
                   {l.label}

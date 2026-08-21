@@ -32,7 +32,7 @@ const GROUP_LABEL = {
   fontWeight: 600,
   letterSpacing: '0.16em',
   textTransform: 'uppercase' as const,
-  color: 'rgba(28,24,16,0.4)',
+  color: 'rgba(29,29,29,0.4)',
   margin: '0 0 14px',
 };
 
@@ -48,8 +48,8 @@ function Box({ state }: { state: 'off' | 'on' | 'partial' }) {
         height: 15,
         flexShrink: 0,
         borderRadius: 2,
-        border: `1px solid ${state === 'off' ? 'rgba(28,24,16,0.25)' : tokens.gold}`,
-        background: state === 'off' ? 'transparent' : tokens.gold,
+        border: `1px solid ${state === 'off' ? 'rgba(29,29,29,0.25)' : tokens.fillStrong}`,
+        background: state === 'off' ? 'transparent' : tokens.fillStrong,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -57,12 +57,14 @@ function Box({ state }: { state: 'off' | 'on' | 'partial' }) {
       }}
     >
       {state === 'on' && (
-        <svg width="9" height="7" viewBox="0 0 9 7" fill="none" stroke={tokens.ink} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="9" height="7" viewBox="0 0 9 7" fill="none" stroke={tokens.onFillStrong} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M1 3.6 L3.4 6 L8 1" />
         </svg>
       )}
+      {/* The partial dash sits on the same filled box as the tick above, so it
+          takes the same inverted colour. Both were ink on gold. */}
       {state === 'partial' && (
-        <span style={{ width: 7, height: 1.6, background: tokens.ink, borderRadius: 1 }} />
+        <span style={{ width: 7, height: 1.6, background: tokens.onFillStrong, borderRadius: 1 }} />
       )}
     </span>
   );
@@ -111,7 +113,7 @@ function Row({
     >
       <Box state={state} />
       <span style={{ flex: 1 }}>{label}</span>
-      <span style={{ fontSize: 11, color: 'rgba(28,24,16,0.4)' }}>{count}</span>
+      <span style={{ fontSize: 11, color: 'rgba(29,29,29,0.4)' }}>{count}</span>
     </button>
   );
 }

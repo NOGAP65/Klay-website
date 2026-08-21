@@ -78,7 +78,7 @@ export default function HeroScene() {
             fontFamily: tokens.body,
             fontSize: 10,
             fontWeight: 500,
-            color: tokens.gold,
+            color: tokens.onDark,
             textTransform: 'uppercase',
             letterSpacing: '0.25em',
             margin: 0,
@@ -99,7 +99,7 @@ export default function HeroScene() {
         >
           <span style={{ color: tokens.warmWhite }}>Light,</span>
           <br />
-          <span style={{ color: tokens.gold, fontStyle: 'italic' }}>curated</span>
+          <span style={{ color: tokens.onDark, fontStyle: 'italic' }}>curated</span>
           <br />
           <span style={{ color: tokens.warmWhite }}>for you.</span>
         </h1>
@@ -144,8 +144,8 @@ export default function HeroScene() {
               padding: '20px 66px',
               fontSize: '13px',
               letterSpacing: '0.14em',
-              background: primaryHover ? tokens.goldLight : tokens.gold,
-              color: tokens.ink,
+              background: primaryHover ? tokens.fillStrongHover : tokens.fillStrong,
+              color: tokens.onFillStrong,
               border: 'none',
               boxShadow: primaryHover
                 ? '0 14px 30px rgba(28,24,16,0.30)'
@@ -161,8 +161,8 @@ export default function HeroScene() {
             style={{
               ...buttonBase,
               background: 'transparent',
-              color: secondaryHover ? tokens.gold : tokens.warmWhite,
-              border: `1px solid ${secondaryHover ? tokens.gold : 'rgba(245,242,237,0.3)'}`,
+              color: secondaryHover ? tokens.card : tokens.onDarkMuted,
+              border: `1px solid ${secondaryHover ? tokens.line : 'rgba(245,242,237,0.3)'}`,
             }}
           >
             Design Yours

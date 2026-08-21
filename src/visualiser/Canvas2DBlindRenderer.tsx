@@ -1485,7 +1485,7 @@ const cassetteHeightRatio = (p: number): number =>
 /** The white acrylic backing on every blockout in the range. Not pure white —
  * it is a warm off-white, and pure #FFF next to a photographed room reads as a
  * blown-out hole rather than as fabric. */
-const BLOCKOUT_BACKING_HEX = '#F1EDE6';
+const BLOCKOUT_BACKING_HEX = '#EDEDED';
 
 /** Which way a fabric rolls, and therefore what colour its roll is. */
 const rollsFaceOut = (blindType: string): boolean =>
@@ -1712,7 +1712,7 @@ const drawCassette = (
   // BEFORE: showLeftCap = yRotation < -0.05 || isFlat (WRONG - backwards)
   // AFTER:  showLeftCap = yRotation > 0.05 || isFlat (viewer to LEFT sees left)
   const capW = Math.max(3, scaleToBlind(6, avgW));
-  const capColor = '#F5F2ED';
+  const capColor = '#F8F8F8';
   const isFlat = Math.abs(yRotation) < 0.05;
   const showLeftCap = yRotation > 0.05 || isFlat;   // viewer to LEFT sees left end
   const showRightCap = yRotation < -0.05 || isFlat; // viewer to RIGHT sees right end
@@ -2854,7 +2854,7 @@ const drawNewCurtainArea = (
   // Hardware material colours per spec (edge = shadow for white/black)
   const TRACK_COLOURS: Record<'white' | 'black' | 'chrome', { base: string; highlight: string; edge: string }> = {
     white: { base: '#F0EEE9', highlight: '#FFFFFF', edge: '#D8D6D0' },
-    black: { base: '#2C2824', highlight: '#3E3A34', edge: '#1A1816' },
+    black: { base: '#303030', highlight: '#3E3A34', edge: '#1A1816' },
     chrome: { base: '#C8C8C8', highlight: '#E8E8E8', edge: '#888888' },
   };
 

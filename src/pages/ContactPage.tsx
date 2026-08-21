@@ -236,8 +236,8 @@ export default function ContactPage() {
                     display: 'inline-flex', alignItems: 'center', gap: 10,
                     fontFamily: tokens.body, fontSize: 12, fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase',
                     padding: '18px 40px', border: 'none',
-                    background: busy ? tokens.inkFaint : ctaHover ? tokens.goldLight : tokens.gold,
-                    color: tokens.ink,
+                    background: busy ? tokens.inkFaint : ctaHover ? tokens.fillStrongHover : tokens.fillStrong,
+                    color: tokens.onFillStrong,
                     cursor: busy ? 'progress' : 'pointer',
                     transition: motion.button,
                   }}

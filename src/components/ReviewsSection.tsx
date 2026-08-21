@@ -50,7 +50,7 @@ export function ReviewsSection() {
                 fontFamily: tokens.body,
                 fontSize: 11,
                 fontWeight: 500,
-                color: tokens.gold,
+                color: tokens.onDark,
                 textTransform: 'uppercase',
                 letterSpacing: '0.2em',
                 margin: 0,
@@ -81,7 +81,7 @@ export function ReviewsSection() {
                   fontFamily: tokens.display,
                   fontSize: 36,
                   fontWeight: 300,
-                  color: tokens.gold,
+                  color: tokens.onDark,
                   lineHeight: 1,
                 }}
               >
@@ -104,7 +104,7 @@ export function ReviewsSection() {
                   fontFamily: tokens.display,
                   fontSize: 36,
                   fontWeight: 300,
-                  color: tokens.gold,
+                  color: tokens.onDark,
                   lineHeight: 1,
                 }}
               >
@@ -153,7 +153,7 @@ export function ReviewsSection() {
                 {/* Stars */}
                 <div
                   style={{
-                    color: tokens.gold,
+                    color: tokens.onDark,
                     fontSize: 14,
                     letterSpacing: '0.05em',
                     marginBottom: 16,
@@ -196,7 +196,7 @@ export function ReviewsSection() {
                       justifyContent: 'center',
                       fontFamily: tokens.display,
                       fontSize: 14,
-                      color: tokens.gold,
+                      color: tokens.onDark,
                     }}
                   >
                     {review.name.charAt(0)}

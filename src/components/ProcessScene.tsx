@@ -119,7 +119,7 @@ export function ProcessScene() {
                 }}
               >
                 <StepIcon type={s.icon} />
-                <div style={{ fontFamily: tokens.display, fontSize: 72, fontWeight: 300, lineHeight: 1, color: tokens.gold, letterSpacing: '0.1em', marginBottom: 8 }}>
+                <div style={{ fontFamily: tokens.display, fontSize: 72, fontWeight: 300, lineHeight: 1, color: tokens.onDark, letterSpacing: '0.1em', marginBottom: 8 }}>
                   {s.n}
                 </div>
                 <h3 style={{ fontFamily: tokens.display, fontSize: 28, fontWeight: 400, color: '#1E1A16', marginTop: 12 }}>

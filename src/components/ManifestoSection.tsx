@@ -32,7 +32,7 @@ export function ManifestoSection() {
             fontFamily: tokens.body,
             fontSize: 10,
             fontWeight: 500,
-            color: tokens.gold,
+            color: tokens.onDark,
             textTransform: 'uppercase',
             letterSpacing: '0.3em',
             margin: 0,
@@ -99,7 +99,7 @@ export function ManifestoSection() {
                   fontFamily: tokens.display,
                   fontSize: isMobile ? 48 : 64,
                   fontWeight: 300,
-                  color: tokens.gold,
+                  color: tokens.onDark,
                   lineHeight: 1,
                 }}
               >

@@ -82,9 +82,9 @@ function CategoryTabs() {
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
               cursor: 'pointer',
-              border: `1px solid ${active ? tokens.gold : tokens.onDarkEdge}`,
-              background: active ? tokens.gold : 'transparent',
-              color: active ? tokens.ink : tokens.onDarkMuted,
+              border: `1px solid ${active ? tokens.line : tokens.onDarkEdge}`,
+              background: active ? tokens.fillStrong : 'transparent',
+              color: active ? tokens.onFillStrong : tokens.onDarkMuted,
               transition: motion.button,
             }}
           >
@@ -123,12 +123,12 @@ function StepButton({
         width: 32,
         height: 32,
         borderRadius: 2,
-        // On the black card now, so the hairline and the glyph both invert. The
-        // hover fill does not: gold with ink on it is the selection language the
-        // pills next to this use, and it holds on either ground.
-        border: `1px solid ${active ? tokens.gold : tokens.onDarkEdge}`,
-        background: active ? tokens.gold : 'transparent',
-        color: active ? tokens.ink : tokens.onDarkMuted,
+        // On the black card, so the hairline and the glyph both invert. The
+        // active fill is the ink pill the tabs above use, and its label inverts
+        // with it -- it was ink on gold, and became ink on ink.
+        border: `1px solid ${active ? tokens.line : tokens.onDarkEdge}`,
+        background: active ? tokens.fillStrong : 'transparent',
+        color: active ? tokens.onFillStrong : tokens.onDarkMuted,
         fontFamily: tokens.body,
         fontSize: 15,
         lineHeight: 1,

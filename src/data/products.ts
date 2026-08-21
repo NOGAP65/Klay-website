@@ -164,7 +164,7 @@ export const RYNAMIC_COLOURS = [
   { name: 'Forest Green', hex: '#2C4A30' },
   { name: 'Red', hex: '#8C2820' },
   { name: 'Brown', hex: '#6C4830' },
-  { name: 'Black', hex: '#2C2824' },
+  { name: 'Black', hex: '#303030' },
   { name: 'Deep Ocean Blue', hex: '#1C3048' },
   { name: 'Woodland Grey', hex: '#686460' },
   { name: 'Monument', hex: '#4C4844' },
@@ -228,8 +228,8 @@ export const COLOUR_COUNT = RYNAMIC_COLOURS.length
 // hex lookup and the canvas renderer's flat fill — these were previously
 // written out separately in all three places. Black is the brand charcoal.
 export const HARDWARE_HEX = {
-  white: '#E8E4DE',
-  black: '#2C2824',
+  white: '#EDEDED',
+  black: '#303030',
   chrome: '#B0AEA8',
 } as const
 

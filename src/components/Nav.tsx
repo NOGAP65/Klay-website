@@ -24,13 +24,17 @@
 // and can show all twenty-two products at once — see the note at the top of
 // ProductsPage. So the bar is four destinations and nothing opens on hover.
 //
-// THE GOLD BUTTON AND THE GOLD WORD BOTH SAY SHOP, and both go to /products.
+// THE BUTTON AND THE FIRST WORD BOTH SAY SHOP, and both go to /products.
 // The button was "Book a Measure" for a while, on the argument that with SHOP
 // already in the bar a Shop Now button beside it is the same link twice and the
 // most valuable pixel on the page should carry what the links do not. That was
 // overruled and the reasoning is worth recording either way: the shop is the
 // priority, and duplicating the route means a visitor who never registers a
-// 12px word in the middle of a bar still has one unmissable gold way in.
+// 12px word in the middle of a bar still has one unmissable way in.
+//
+// Both were gold. The button is now the black `fillStrong` fill every reference
+// brand uses, and the word is distinguished by weight rather than colour — see
+// the note on barLink.
 //
 // Booking a measure is still reachable — it is the CTA on the homepage, on the
 // category pages and in the footer.
@@ -57,15 +61,15 @@ import { useIsMobile, useMediaQuery } from '../hooks/useIsMobile';
  * time the nav grew. */
 const NAV_COLLAPSE = '(max-width: 860px)';
 
-/** The gap between the cart and the gold button — two controls, sitting as a
+/** The gap between the cart and the CTA button — two controls, sitting as a
  * pair. The links keep their own, wider gap from the cluster. */
 const CONTROL_GAP = 20;
 
 interface NavLink {
   label: string;
   to: string;
-  /** Set on the one word that is not just a destination. Gold, at rest,
-   * against three warm-white ones — see the note on LINKS. */
+  /** Set on the one word that is not just a destination. Weight 500 at full
+   * opacity, against three at 400 and 0.82 — see the note on LINKS. */
   accent?: boolean;
 }
 
@@ -73,16 +77,21 @@ interface NavLink {
  * VISUALISE is second because it is the thing Klay has that its competitors do
  * not, and burying it in a footer wastes it.
  *
- * SHOP IS GOLD AT REST. Four words set identically is a list, and a list has no
- * first item — the eye picks whichever is nearest, which on a centred row is
- * whichever the pointer happened to land beside. Colouring the one that leads to
- * the catalogue makes the bar say where to start without adding a word, a
+ * SHOP IS SET APART AT REST. Four words set identically is a list, and a list
+ * has no first item — the eye picks whichever is nearest, which on a centred row
+ * is whichever the pointer happened to land beside. Marking the one that leads
+ * to the catalogue makes the bar say where to start without adding a word, a
  * chevron or a second button.
  *
- * It does not collide with the gold button beside it. That is a filled block and
- * this is a coloured word; they read as the same brand rather than as two CTAs,
- * and they point at different things — browse the range, versus book someone to
- * come and measure.
+ * That mark used to be gold. It is now weight and opacity, because the palette
+ * has no accent hue left to spend — see barLink. The distinction survived the
+ * colour being removed, which is the argument for the whole neutral pass in
+ * miniature.
+ *
+ * It does not collide with the button beside it. That is a filled black block
+ * and this is a word in the bar's own colour; they read as one system rather
+ * than as two CTAs, and they point at different things — browse the range,
+ * versus book someone to come and measure.
  *
  * How It Works is deliberately not here. It is one page of process copy, it is
  * linked from /about and from the footer, and a fifth word would start this bar
@@ -99,23 +108,28 @@ const LINKS: NavLink[] = [
   { label: 'Contact', to: '/contact' },
 ];
 
-/** Every word in the bar shares this, so the four cannot drift apart. */
+/** Every word in the bar shares this, so the four cannot drift apart.
+ *
+ * THE ACCENT IS NO LONGER A COLOUR, and this is the clearest case on the site of
+ * why it could not stay one. SHOP was gold against three warm-white siblings.
+ * With the palette neutral there is no second hue to promote it with, and the
+ * mechanical swap made it `fillStrong` — #1D1D1D on a #303030 bar, which the
+ * contrast audit caught at 1.28:1. The accent word had become invisible.
+ *
+ * Every word now takes `linkColor`, and the two devices that were already here
+ * do the whole job: SHOP is weight 500 at full opacity, the other three are
+ * weight 400 at 0.82. That is a real difference at 12px — and it is the same
+ * difference the bar was making before, with the colour merely sitting on top of
+ * it. The active word additionally takes the underline it always had. */
 const barLink = (active: boolean, linkColor: string, accent = false) => ({
-  // An accented word is already gold, so hover has to move somewhere else or
-  // the link appears dead under the pointer. It goes lighter; the plain words
-  // go gold.
-  color: accent ? (active ? tokens.goldLight : tokens.gold) : active ? tokens.gold : linkColor,
+  color: linkColor,
   textDecoration: 'none',
   ...typeScale.label,
-  // Half a step heavier when accented. Gold on charcoal at 12px is a lower
-  // contrast pairing than warm white on charcoal, and at weight 400 it reads
-  // thinner than the words either side of it rather than more important.
   fontWeight: accent ? 500 : 400,
   whiteSpace: 'nowrap' as const,
-  // Gold is the accent; dimming it to 0.82 is just a muddier gold.
   opacity: accent || active ? 1 : 0.82,
   paddingBottom: space.xxs,
-  borderBottom: `1px solid ${active ? tokens.gold : 'transparent'}`,
+  borderBottom: `1px solid ${active ? tokens.line : 'transparent'}`,
   transition: `${motion.link}, opacity 0.2s ease`,
 });
 
@@ -190,19 +204,28 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
           flex: '0 0 auto',
         }}
       >
+        {/* THE LIGHT VARIANT, because this bar is charcoal.
+            `klay-logo.png` is the mark in #303030 for light grounds;
+            `klay-logo-light.png` is the same artwork with its greyscale part
+            in #F8F8F8 and the tan leg of the k untouched. Both are generated
+            from public/images/logo_full.png.
+
+            It was pointing at a file that does not exist. `/images/klay-logo.png`
+            was never in public/ — only in dist/ — so Vite served the SPA HTML
+            fallback for it and this slot rendered a broken-image icon with the
+            alt text beside it, in the browser's default font, on every page.
+            The footer had the same bug.
+
+            HEIGHT-ONLY, NO EXPLICIT WIDTH, AND NO object-fit. The comment this
+            replaces set both axes to chase the old artwork's 2.536 ratio and
+            used `contain` to absorb the error. The new asset is cropped to its
+            own bounding box — the source was 2000 × 2000 with the mark inset and
+            92% of it empty field — so its ratio is 2.074, and letting width be
+            `auto` means there is no ratio to match and nothing to letterbox. */}
         <img
-          src="/images/klay-logo.png"
+          src="/images/klay-logo-light.png"
           alt="Klay Interiors"
-          style={
-            isMobile
-              // THE LOGO'S OWN RATIO, so nothing letterboxes. The source is
-              // 558 × 220 = 2.536; these boxes were 2.50 (120 × 48) and the
-              // footer's was 2.51, so `object-fit: contain` was padding the
-              // artwork inside both — by a different amount in each, which is
-              // why the mark sat at two apparent sizes.
-              ? { width: '101px', height: '40px', objectFit: 'contain', display: 'block' }
-              : { width: '122px', height: '48px', objectFit: 'contain', display: 'block' }
-          }
+          style={{ height: isMobile ? 34 : 40, width: 'auto', display: 'block' }}
         />
       </Link>
 
@@ -252,9 +275,9 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 width: 52,
                 height: 52,
                 borderRadius: 2,
-                border: `1px solid ${cartHover ? tokens.gold : onDarkGround ? tokens.onDarkEdge : tokens.line}`,
-                background: cartHover ? 'rgba(200,151,58,0.1)' : 'transparent',
-                color: cartHover ? tokens.gold : linkColor,
+                border: `1px solid ${cartHover ? tokens.line : onDarkGround ? tokens.onDarkEdge : tokens.line}`,
+                background: cartHover ? 'rgba(248,248,248,0.12)' : 'transparent',
+                color: linkColor,
                 textDecoration: 'none',
                 transition: 'all 0.2s ease',
               }}
@@ -273,8 +296,8 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                   width: 20,
                   height: 20,
                   borderRadius: '50%',
-                  background: tokens.gold,
-                  color: tokens.ink,
+                  background: tokens.fillStrong,
+                  color: tokens.onFillStrong,
                   fontFamily: tokens.body,
                   ...typeScale.micro,
                   letterSpacing: 'normal',
@@ -305,8 +328,8 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 height: 52,
                 padding: `0 ${space.lg}px`,
                 borderRadius: 2,
-                background: ctaHover ? tokens.goldLight : tokens.gold,
-                color: tokens.ink,
+                background: ctaHover ? tokens.fillStrongHover : tokens.fillStrong,
+                color: tokens.onFillStrong,
                 ...typeScale.label,
                 lineHeight: 1,
                 textDecoration: 'none',
@@ -327,10 +350,10 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
           style={{
             width: 40,
             height: 40,
-            border: `1px solid ${tokens.gold}`,
+            border: `1px solid ${tokens.line}`,
             borderRadius: 2,
             background: 'transparent',
-            color: tokens.gold,
+            color: tokens.onDark,
             ...typeScale.card,
             fontSize: 20,
             display: 'flex',
@@ -372,7 +395,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               to={l.to}
               onClick={() => setMenuOpen(false)}
               style={{
-                color: tokens.gold,
+                color: tokens.onDark,
                 textDecoration: 'none',
                 fontFamily: tokens.display,
                 fontSize: 34,
@@ -394,9 +417,9 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             onClick={() => setMenuOpen(false)}
             style={{
               marginTop: 6,
-              background: tokens.gold,
+              background: tokens.fillStrong,
               borderRadius: 2,
-              color: tokens.ink,
+              color: tokens.onFillStrong,
               textDecoration: 'none',
               fontFamily: tokens.body,
               fontSize: 13,

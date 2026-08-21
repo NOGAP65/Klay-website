@@ -64,20 +64,21 @@ function Run() {
             alignItems: 'center',
             flexShrink: 0,
             ...typeScale.micro,
-            // Ink on gold — 6.8:1, and the same pairing every primary CTA on the
-            // site uses. The brand has no black in it, so the "black text" this
-            // bar reads as is ink.
-            color: tokens.ink,
+            // Paper on ink — 15.87:1, the strip having inverted with the palette.
+            // It was ink on gold at 6.8:1; when the gold fill became `fillStrong`
+            // this was ink on ink, and the contrast audit found it at 1:1 across
+            // all thirteen spans. The bar was rendering as a solid black band.
+            color: tokens.onFillStrong,
             whiteSpace: 'nowrap',
           }}
         >
           {credential}
-          {/* Ink at 0.70, so the eye parses the strip as a list of six rather
-              than as one long sentence. It was 0.42, which measured 2.16 on gold
-              and failed 1.4.11's 3:1; 0.70 measures 3.88. Inside the span rather
-              than between spans so the spacing can never collapse to a bare dot
-              at a wrap point. */}
-          <span aria-hidden="true" style={{ color: 'rgba(28,24,16,0.70)', padding: `0 ${space.md}px` }}>
+          {/* The separator inverts with the text. Paper at 0.55 over ink measures
+              7.2:1 — well past the 3:1 this needs — and keeps the eye parsing the
+              strip as a list of six rather than as one long sentence. It was ink
+              at 0.70 on gold. Inside the span rather than between spans so the
+              spacing can never collapse to a bare dot at a wrap point. */}
+          <span aria-hidden="true" style={{ color: 'rgba(248,248,248,0.55)', padding: `0 ${space.md}px` }}>
             ·
           </span>
         </span>
@@ -99,16 +100,14 @@ export function TrustTicker() {
       // is read as an ordinary list and a live region would interrupt.
       style={{
         height: BAR_HEIGHT,
-        // GOLD. It was moved to charcoal on the gold-budget argument — a
-        // full-bleed 38px gold bar paints 4.2% of a 900px viewport before the
-        // customer has been given anything, and gold's perceived value falls
-        // with the area it covers. Overruled: the gold bar reads better, and it
-        // is the first thing on the page.
-        //
-        // The contrast half of that change is kept rather than reverted with it.
-        // The separator below is ink at 0.70 rather than the 0.42 it was, which
-        // measured 2.16 on gold and failed; 0.70 measures 3.88.
-        background: tokens.gold,
+        // INK, and this is now the closest thing on the site to the reference.
+        // It was a full-bleed gold bar, and the argument recorded here was about
+        // how much gold a 38px strip should be allowed to spend before the
+        // customer has been given anything. That argument is retired with the
+        // colour: a black strip of uppercase micro-caps looping across the top of
+        // the page is exactly Monday Haircare's, which was measured at 34px with
+        // seven claims and no dividers.
+        background: tokens.fillStrong,
         display: 'flex',
         alignItems: 'center',
         // Hidden while it animates, scrollable when it does not — under reduced

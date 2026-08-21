@@ -83,24 +83,24 @@ function ctaFill(variant: CtaVariant, hover: boolean): React.CSSProperties {
     // Gold ground, ink text. The page's primary action.
     case 'gold':
       return {
-        background: hover ? tokens.goldLight : tokens.gold,
-        color: tokens.ink,
-        borderColor: hover ? tokens.goldLight : tokens.gold,
+        background: hover ? tokens.fillStrongHover : tokens.fillStrong,
+        color: tokens.onFillStrong,
+        borderColor: hover ? tokens.fillStrongHover : tokens.line,
       };
     // Charcoal ground, gold text — the inverse, for use on light sections
     // where a gold fill would be the third gold thing in view.
     case 'onDark':
       return {
         background: hover ? tokens.ink : tokens.charcoal,
-        color: tokens.gold,
+        color: tokens.onDark,
         borderColor: hover ? tokens.ink : tokens.charcoal,
       };
     // No fill. Only over photography, where it reads as the quieter of two.
     case 'ghost':
       return {
         background: 'transparent',
-        color: hover ? tokens.gold : tokens.warmWhite,
-        borderColor: hover ? tokens.gold : tokens.onDarkEdge,
+        color: hover ? tokens.card : tokens.onDarkMuted,
+        borderColor: hover ? tokens.line : tokens.onDarkEdge,
       };
   }
 }
@@ -154,25 +154,34 @@ export function TextLink({
   to: string;
   children: React.ReactNode;
   onDark?: boolean;
-  /** Gold at rest, not just on hover — for the one secondary link that has to
-   * hold its own beside a gold button rather than recede from it. */
+  /** Full strength at rest, not just on hover — for the one secondary link that
+   * has to hold its own beside a button rather than recede from it. */
   accent?: boolean;
 }) {
   const { hover, bind } = useHover();
-  // On a light ground the gold that reads is goldText (5.05 on parchment); the
-  // brand gold measures 2.11 there and was failing on both the rest and hover
-  // states of every accent link on the page.
-  const goldFor = onDark ? tokens.gold : tokens.goldText;
-  const rest = accent ? goldFor : onDark ? tokens.onDarkMuted : tokens.inkSoft;
+  /** THE STRONGEST TEXT COLOUR THE GROUND ALLOWS, which is what the accent and
+   * the hover state both resolve to.
+   *
+   * It was `goldFor`, and the name outlived the colour: on dark it returned the
+   * gold that measured 5.53 on charcoal, on light the goldText that measured
+   * 5.05 on parchment. The mechanical pass mapped the dark branch to
+   * `fillStrong` — ink on a dark ground — so every accent link and every hover
+   * on a dark section resolved to near-black on near-black.
+   *
+   * Now it is simply the top of the ramp for whichever ground it is on, and the
+   * accent reads as "full strength against muted siblings" rather than as a
+   * second colour. Same trade as the nav's SHOP. */
+  const strongest = onDark ? tokens.onDark : tokens.ink;
+  const rest = accent ? strongest : onDark ? tokens.onDarkMuted : tokens.inkSoft;
   return (
     <Link
       {...bind}
       to={to}
       style={{
         ...typeScale.body,
-        color: hover ? goldFor : rest,
+        color: hover ? strongest : rest,
         textDecoration: 'none',
-        borderBottom: `1px solid ${hover ? goldFor : 'currentColor'}`,
+        borderBottom: `1px solid ${hover ? strongest : 'currentColor'}`,
         paddingBottom: space.xxs,
         transition: motion.link,
       }}
@@ -217,7 +226,7 @@ export function SectionHead({
         <p
           style={{
             ...eyebrow,
-            ...(onDark ? { color: tokens.gold } : null),
+            ...(onDark ? { color: tokens.onDark } : null),
             marginBottom: space.md,
           }}
         >
@@ -314,7 +323,7 @@ export function SectionBand({
           ...eyebrow,
           // On charcoal the brand gold is the legible one (5.53); goldText is
           // for light grounds only.
-          ...(onDark ? { color: tokens.gold } : null),
+          ...(onDark ? { color: tokens.onDark } : null),
           marginBottom: space.md,
         }}
       >
@@ -548,7 +557,7 @@ export function PhotoTile({
           style={{
             position: 'absolute',
             inset: 16,
-            border: `1px solid ${hover ? tokens.goldLine : tokens.onDarkLine}`,
+            border: `1px solid ${hover ? tokens.onDarkEdge : tokens.onDarkLine}`,
             transition: 'border-color 0.3s ease',
             // The mechanism drawing, centred in the frame and held clear of the
             // label block at the bottom. It scales on hover for the same reason
@@ -595,8 +604,8 @@ export function PhotoTile({
             // is decoration rather than a label you notice.
             background:
               scrim === 'deep'
-                ? 'linear-gradient(180deg, rgba(28,24,16,0) 0%, rgba(28,24,16,0.42) 38%, rgba(28,24,16,0.80) 66%, rgba(28,24,16,0.95) 100%)'
-                : 'linear-gradient(180deg, rgba(28,24,16,0) 0%, rgba(28,24,16,0.30) 48%, rgba(28,24,16,0.92) 100%)',
+                ? 'linear-gradient(180deg, rgba(29,29,29,0) 0%, rgba(29,29,29,0.42) 38%, rgba(29,29,29,0.80) 66%, rgba(29,29,29,0.95) 100%)'
+                : 'linear-gradient(180deg, rgba(29,29,29,0) 0%, rgba(29,29,29,0.30) 48%, rgba(29,29,29,0.92) 100%)',
           }}
         />
       )}
@@ -607,7 +616,7 @@ export function PhotoTile({
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(28,24,16,0.66)',
+          background: 'rgba(29,29,29,0.66)',
           opacity: hover ? 1 : 0,
           transition: 'opacity 0.3s ease',
           pointerEvents: 'none',
@@ -648,7 +657,7 @@ export function PhotoTile({
             // Not decoration — it is what guarantees the label reads on the light
             // photographs without deepening the gradient over the dark ones.
             // Mixed from ink, so it stays warm rather than greying the picture.
-            textShadow: image ? '0 1px 12px rgba(28,24,16,0.55)' : undefined,
+            textShadow: image ? '0 1px 12px rgba(29,29,29,0.55)' : undefined,
           }}
         >
           {label}
@@ -657,10 +666,10 @@ export function PhotoTile({
           <div
             style={{
               ...typeScale.body,
-              color: 'rgba(245,242,237,0.82)',
+              color: 'rgba(248,248,248,0.82)',
               marginTop: space.xs,
               maxWidth: 280,
-              textShadow: image ? '0 1px 10px rgba(28,24,16,0.5)' : undefined,
+              textShadow: image ? '0 1px 10px rgba(29,29,29,0.5)' : undefined,
             }}
           >
             {blurb}
@@ -672,14 +681,14 @@ export function PhotoTile({
               ...typeScale.micro,
               // Brand gold, and it stays: this note sits over a darkened
               // photograph, not a light ground, so goldText would go muddy here.
-              color: tokens.gold,
+              color: tokens.onDark,
               marginTop: space.sm,
               // The label and the blurb both carry one and the price did not,
               // which is backwards: gold on a sunlit windowsill is far closer to
               // its background than warm white is, so "FROM $220" was the one
               // line on the tile you could not read. Deeper than theirs for the
               // same reason.
-              textShadow: image ? '0 1px 10px rgba(28,24,16,0.75)' : undefined,
+              textShadow: image ? '0 1px 10px rgba(29,29,29,0.75)' : undefined,
             }}
           >
             {note}
@@ -703,8 +712,8 @@ export function PhotoTile({
               boxSizing: 'border-box',
               ...typeScale.label,
               lineHeight: 1,
-              color: tokens.ink,
-              background: hover ? tokens.goldLight : tokens.gold,
+              color: tokens.onFillStrong,
+              background: hover ? tokens.fillStrongHover : tokens.fillStrong,
               whiteSpace: 'nowrap',
               // Pops forward on hover. transformOrigin is the bottom-right corner
               // it is pinned to, so it grows inward rather than pushing itself
@@ -735,8 +744,8 @@ export function ArrowLink({ label, hovered }: { label: string; hovered: boolean 
         ...typeScale.label,
         // goldText: this link sits on a light card ground, where the brand gold
         // measures 2.11–2.47.
-        color: hovered ? tokens.goldText : tokens.ink,
-        borderBottom: `1px solid ${hovered ? tokens.goldText : tokens.line}`,
+        color: hovered ? tokens.ink : tokens.ink,
+        borderBottom: `1px solid ${hovered ? tokens.ink : tokens.line}`,
         paddingBottom: space.xxs,
         whiteSpace: 'nowrap',
         transition: motion.link,

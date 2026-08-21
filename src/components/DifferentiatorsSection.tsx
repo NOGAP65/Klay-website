@@ -92,7 +92,7 @@ function FeatureBlock({
             fontFamily: tokens.display,
             fontSize: 80,
             fontWeight: 200,
-            color: tokens.gold,
+            color: tokens.onDark,
             opacity: 0.3,
             lineHeight: 0.9,
             display: 'block',
@@ -107,7 +107,7 @@ function FeatureBlock({
             fontFamily: tokens.body,
             fontSize: 12,
             fontWeight: 500,
-            color: tokens.gold,
+            color: tokens.onDark,
             textTransform: 'uppercase',
             letterSpacing: '0.15em',
             margin: 0,
@@ -152,7 +152,7 @@ function FeatureBlock({
           style={{
             width: 80,
             height: 2,
-            background: `linear-gradient(90deg, ${tokens.gold} 0%, transparent 100%)`,
+            background: `linear-gradient(90deg, ${tokens.fillStrong} 0%, transparent 100%)`,
             marginTop: 40,
           }}
         />
@@ -179,7 +179,7 @@ export function DifferentiatorsSection() {
               fontFamily: tokens.body,
               fontSize: 12,
               fontWeight: 500,
-              color: tokens.gold,
+              color: tokens.onDark,
               textTransform: 'uppercase',
               letterSpacing: '0.2em',
               margin: 0,

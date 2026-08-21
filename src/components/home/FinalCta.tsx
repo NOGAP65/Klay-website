@@ -76,8 +76,8 @@ export function FinalCta() {
         style={{
           position: 'absolute',
           inset: 0,
-          background: `linear-gradient(rgba(28,24,16,0.5), rgba(28,24,16,0.5)),
-            radial-gradient(ellipse at center, rgba(28,24,16,0.62) 0%, rgba(28,24,16,0.15) 70%)`,
+          background: `linear-gradient(rgba(29,29,29,0.5), rgba(29,29,29,0.5)),
+            radial-gradient(ellipse at center, rgba(29,29,29,0.62) 0%, rgba(29,29,29,0.15) 70%)`,
         }}
       />
 

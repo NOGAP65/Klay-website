@@ -49,7 +49,7 @@ export function SectionCounter() {
         fontFamily: tokens.display,
         fontSize: 80,
         fontWeight: 300,
-        color: tokens.gold,
+        color: tokens.onDark,
         opacity: fade ? 0.05 : 0,
         pointerEvents: 'none',
         transition: 'opacity 0.3s ease',

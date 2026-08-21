@@ -472,8 +472,8 @@ const RENDER_MAX_WIDTH = 1400;
 const WEAVE_REPEAT = 1;
 
 const HARDWARE_HEX: Record<string, string> = {
-  white: '#E8E4DE',
-  black: '#2C2824',
+  white: '#EDEDED',
+  black: '#303030',
   chrome: '#B0AEA8',
 };
 
@@ -1111,7 +1111,7 @@ void main() {
   //
   // diffuse is the anodising or paint. It MULTIPLIES the hardware colour, so it
   // carries the hue — but multiplying is all the old shader did, and that is why
-  // only the white track worked. On #2C2824 black the entire 0.4-1.06 range
+  // only the white track worked. On #303030 black the entire 0.4-1.06 range
   // collapses into near-black: channel, chamfers and gliders all landed within a
   // few levels of each other and the profile read as a flat sticker.
   //

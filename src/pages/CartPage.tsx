@@ -59,8 +59,8 @@ export default function CartPage() {
                 style={{
                   display: 'inline-block',
                   padding: '14px 32px',
-                  background: tokens.gold,
-                  color: tokens.ink,
+                  background: tokens.fillStrong,
+                  color: tokens.onFillStrong,
                   fontFamily: tokens.body,
                   fontSize: 13,
                   fontWeight: 600,
@@ -121,7 +121,7 @@ export default function CartPage() {
                           cart store's priceOnMeasure. Printing $0 would read as
                           free, and printing a guess is worse. */}
                       {item.priceOnMeasure ? (
-                        <div style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: tokens.gold, paddingTop: 8 }}>
+                        <div style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: tokens.onDark, paddingTop: 8 }}>
                           Price on measure
                         </div>
                       ) : (
@@ -439,8 +439,8 @@ export default function CartPage() {
                         width: '100%',
                         marginTop: 24,
                         padding: '18px 24px',
-                        background: checkoutHover ? tokens.goldLight : tokens.gold,
-                        color: tokens.ink,
+                        background: checkoutHover ? tokens.fillStrongHover : tokens.fillStrong,
+                        color: tokens.onFillStrong,
                         fontFamily: tokens.body,
                         fontSize: 14,
                         fontWeight: 600,

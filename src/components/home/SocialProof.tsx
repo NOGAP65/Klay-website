@@ -78,7 +78,7 @@ function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: bool
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'rgba(28,24,16,0.42)',
+          background: 'rgba(29,29,29,0.42)',
           opacity: hover ? 1 : 0,
           transition: 'opacity 0.3s ease',
         }}
@@ -152,9 +152,9 @@ export function SocialProof() {
             ...typeScale.body,
             // goldText: @klayinteriors sits on warm white, where brand gold
             // measures 2.37.
-            color: tokens.goldText,
+            color: tokens.ink,
             textDecoration: 'none',
-            borderBottom: `1px solid ${hover ? tokens.goldText : 'transparent'}`,
+            borderBottom: `1px solid ${hover ? tokens.ink : 'transparent'}`,
             paddingBottom: space.xxs,
             transition: 'border-color 0.2s ease',
           }}

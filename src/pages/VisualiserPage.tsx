@@ -35,9 +35,9 @@ function CategorySwitcher() {
           onClick={() => setProductCategory(tab.id)}
           style={{
             ...CATEGORY_TAB_STYLE,
-            background: productCategory === tab.id ? '#1C1810' : 'transparent',
-            color: productCategory === tab.id ? '#F5F2ED' : '#1C1810',
-            border: productCategory === tab.id ? 'none' : '1px solid rgba(28,24,16,0.2)',
+            background: productCategory === tab.id ? '#1D1D1D' : 'transparent',
+            color: productCategory === tab.id ? '#F8F8F8' : '#1D1D1D',
+            border: productCategory === tab.id ? 'none' : '1px solid rgba(29,29,29,0.2)',
           }}
         >
           {tab.label}
@@ -65,7 +65,7 @@ export default function VisualiserPage() {
   if (!isAllowed) {
     return (
       <div style={{ background: tokens.ink, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ fontFamily: tokens.body, fontSize: '13px', color: 'rgba(245,242,237,0.2)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Authorised access only.</p>
+        <p style={{ fontFamily: tokens.body, fontSize: '13px', color: 'rgba(248,248,248,0.2)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>Authorised access only.</p>
       </div>
     );
   }
@@ -94,8 +94,8 @@ export default function VisualiserPage() {
               display: 'block',
               width: '100%',
               padding: '15px 16px',
-              background: tokens.gold,
-              color: tokens.ink,
+              background: tokens.fillStrong,
+              color: tokens.onFillStrong,
               fontFamily: tokens.body,
               fontSize: 11,
               fontWeight: 600,

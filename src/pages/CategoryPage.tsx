@@ -92,7 +92,7 @@ export default function CategoryPage({ slug }: { slug: string }) {
               position: 'absolute',
               inset: 0,
               background:
-                'linear-gradient(180deg, rgba(28,24,16,0.62) 0%, rgba(28,24,16,0.40) 45%, rgba(28,24,16,0.72) 100%)',
+                'linear-gradient(180deg, rgba(29,29,29,0.62) 0%, rgba(29,29,29,0.40) 45%, rgba(29,29,29,0.72) 100%)',
             }}
           />
           <div
@@ -112,7 +112,7 @@ export default function CategoryPage({ slug }: { slug: string }) {
                 fontFamily: tokens.body,
                 fontSize: 10,
                 fontWeight: 500,
-                color: tokens.gold,
+                color: tokens.onDark,
                 textTransform: 'uppercase',
                 letterSpacing: '0.3em',
                 margin: 0,

@@ -78,9 +78,9 @@ function SocialIcon({ social }: { social: Social }) {
         borderRadius: 2,
         // Light-ground values now the section is parchment — onDarkLine and
         // onDark are warmWhite-derived and were invisible against it.
-        border: `1px solid ${hover ? tokens.gold : tokens.line}`,
+        border: `1px solid ${hover ? tokens.line : tokens.line}`,
         background: hover ? 'rgba(200,151,58,0.12)' : 'transparent',
-        color: hover ? tokens.gold : tokens.ink,
+        color: hover ? tokens.textMuted : tokens.ink,
         transition: `${motion.link}, background 0.2s ease, transform 0.25s ease`,
         transform: hover ? 'translateY(-2px)' : 'translateY(0)',
       }}
@@ -152,7 +152,7 @@ function PostTile({ post }: { post: Post }) {
             fontSize: 9,
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
-            color: tokens.gold,
+            color: tokens.onDark,
             marginBottom: 6,
           }}
         >
@@ -205,7 +205,7 @@ export function SocialSection() {
             </h2>
             <p style={{ ...supporting.onLight, marginTop: 20, maxWidth: 460 }}>
               Every install we finish across Victoria, as we finish it. Follow{' '}
-              <span style={{ color: tokens.gold }}>{HANDLE}</span> for rooms,
+              <span style={{ color: tokens.onDark }}>{HANDLE}</span> for rooms,
               fabrics and the occasional before-and-after.
             </p>
           </div>

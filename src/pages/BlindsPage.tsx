@@ -110,9 +110,9 @@ function TypeStrip({ current, isMobile }: { current: string; isMobile: boolean }
                 textTransform: 'uppercase',
                 whiteSpace: 'nowrap',
                 textDecoration: 'none',
-                color: active ? tokens.ink : 'rgba(28,24,16,0.5)',
+                color: active ? tokens.ink : 'rgba(29,29,29,0.5)',
                 paddingBottom: 5,
-                borderBottom: `1px solid ${active ? tokens.gold : 'transparent'}`,
+                borderBottom: `1px solid ${active ? tokens.line : 'transparent'}`,
                 transition: 'color 0.2s ease, border-color 0.2s ease',
               }}
             >
@@ -221,7 +221,7 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  background: 'linear-gradient(90deg, rgba(28,24,16,0.7) 0%, rgba(28,24,16,0.3) 100%)',
+                  background: 'linear-gradient(90deg, rgba(29,29,29,0.7) 0%, rgba(29,29,29,0.3) 100%)',
                 }}
               />
             </>
@@ -265,15 +265,15 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
               style={{
                 fontFamily: tokens.body,
                 fontSize: 12,
-                color: 'rgba(245,242,237,0.5)',
+                color: 'rgba(248,248,248,0.5)',
                 marginBottom: 16,
               }}
             >
-              <Link to="/" style={{ color: 'rgba(245,242,237,0.5)', textDecoration: 'none' }}>
+              <Link to="/" style={{ color: 'rgba(248,248,248,0.5)', textDecoration: 'none' }}>
                 Home
               </Link>
               <span style={{ margin: '0 8px' }}>/</span>
-              <Link to="/blinds" style={{ color: 'rgba(245,242,237,0.5)', textDecoration: 'none' }}>
+              <Link to="/blinds" style={{ color: 'rgba(248,248,248,0.5)', textDecoration: 'none' }}>
                 Blinds
               </Link>
               <span style={{ margin: '0 8px' }}>/</span>
@@ -295,7 +295,7 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
               style={{
                 fontFamily: tokens.body,
                 fontSize: 15,
-                color: 'rgba(245,242,237,0.7)',
+                color: 'rgba(248,248,248,0.7)',
                 lineHeight: 1.6,
                 margin: 0,
                 marginTop: 12,
@@ -363,7 +363,7 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
                 style={{
                   fontFamily: tokens.body,
                   fontSize: 13,
-                  color: 'rgba(28,24,16,0.5)',
+                  color: 'rgba(29,29,29,0.5)',
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -408,7 +408,7 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
                         background: tokens.warmWhite,
                         border: `1px solid ${tokens.lineFaint}`,
                         borderRadius: 8,
-                        boxShadow: '0 8px 24px rgba(28,24,16,0.12)',
+                        boxShadow: '0 8px 24px rgba(29,29,29,0.12)',
                         overflow: 'hidden',
                         zIndex: 99,
                         minWidth: 180,
@@ -490,7 +490,7 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '80px 24px' }}>
-                <p style={{ fontFamily: tokens.body, fontSize: 16, color: 'rgba(28,24,16,0.5)' }}>
+                <p style={{ fontFamily: tokens.body, fontSize: 16, color: 'rgba(29,29,29,0.5)' }}>
                   Nothing here under that filter.
                 </p>
                 <button
@@ -503,8 +503,8 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
                     fontSize: 13,
                     fontWeight: 500,
                     cursor: 'pointer',
-                    background: tokens.gold,
-                    color: tokens.ink,
+                    background: tokens.fillStrong,
+                    color: tokens.onFillStrong,
                     border: 'none',
                   }}
                 >
@@ -529,7 +529,7 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
                   fontFamily: tokens.body,
                   fontSize: 11,
                   fontWeight: 500,
-                  color: tokens.gold,
+                  color: tokens.onDark,
                   textTransform: 'uppercase',
                   letterSpacing: '0.2em',
                   margin: 0,
@@ -585,7 +585,7 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
                       <span
                         style={{
                           fontSize: 24,
-                          color: tokens.gold,
+                          color: tokens.onDark,
                           fontWeight: 300,
                           transition: 'transform 0.3s ease',
                           transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)',
@@ -606,7 +606,7 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
                         style={{
                           fontFamily: tokens.body,
                           fontSize: 15,
-                          color: 'rgba(28,24,16,0.65)',
+                          color: 'rgba(29,29,29,0.65)',
                           lineHeight: 1.7,
                           margin: 0,
                         }}
@@ -620,9 +620,9 @@ export default function BlindsPage({ slug = 'roller-blinds' }: BlindsPageProps =
             </div>
 
             <div style={{ textAlign: 'center', marginTop: 48 }}>
-              <p style={{ fontFamily: tokens.body, fontSize: 15, color: 'rgba(28,24,16,0.6)', margin: 0 }}>
+              <p style={{ fontFamily: tokens.body, fontSize: 15, color: 'rgba(29,29,29,0.6)', margin: 0 }}>
                 Still have questions?{' '}
-                <Link to="/visualiser" style={{ color: tokens.gold, textDecoration: 'none', fontWeight: 500 }}>
+                <Link to="/visualiser" style={{ color: tokens.onDark, textDecoration: 'none', fontWeight: 500 }}>
                   Try the Visualiser
                 </Link>{' '}
                 or call 1300 00 KLAY

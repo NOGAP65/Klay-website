@@ -159,7 +159,7 @@ export default function ProductsPage() {
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'linear-gradient(90deg, rgba(28,24,16,0.7) 0%, rgba(28,24,16,0.3) 100%)',
+              background: 'linear-gradient(90deg, rgba(29,29,29,0.7) 0%, rgba(29,29,29,0.3) 100%)',
             }}
           />
           <div
@@ -180,11 +180,11 @@ export default function ProductsPage() {
               style={{
                 fontFamily: tokens.body,
                 fontSize: 12,
-                color: 'rgba(245,242,237,0.5)',
+                color: 'rgba(248,248,248,0.5)',
                 marginBottom: 16,
               }}
             >
-              <Link to="/" style={{ color: 'rgba(245,242,237,0.5)', textDecoration: 'none' }}>
+              <Link to="/" style={{ color: 'rgba(248,248,248,0.5)', textDecoration: 'none' }}>
                 Home
               </Link>
               <span style={{ margin: '0 8px' }}>/</span>
@@ -201,7 +201,7 @@ export default function ProductsPage() {
                 // navigating. It is also the only large type on this banner:
                 // the eyebrow went when the breadcrumb arrived, so there is no
                 // second gold thing above it to compete with.
-                color: tokens.gold,
+                color: tokens.onDark,
                 lineHeight: 1.1,
                 margin: 0,
               }}
@@ -212,7 +212,7 @@ export default function ProductsPage() {
               style={{
                 fontFamily: tokens.body,
                 fontSize: 15,
-                color: 'rgba(245,242,237,0.7)',
+                color: 'rgba(248,248,248,0.7)',
                 lineHeight: 1.6,
                 margin: 0,
                 marginTop: 12,
@@ -302,7 +302,7 @@ export default function ProductsPage() {
                     style={{
                       fontFamily: tokens.body,
                       fontSize: 13,
-                      color: 'rgba(28,24,16,0.5)',
+                      color: 'rgba(29,29,29,0.5)',
                       whiteSpace: 'nowrap',
                     }}
                   >
@@ -347,7 +347,7 @@ export default function ProductsPage() {
                           background: tokens.warmWhite,
                           border: `1px solid ${tokens.lineFaint}`,
                           borderRadius: 2,
-                          boxShadow: '0 8px 24px rgba(28,24,16,0.12)',
+                          boxShadow: '0 8px 24px rgba(29,29,29,0.12)',
                           overflow: 'hidden',
                           zIndex: 99,
                           minWidth: 190,
@@ -430,7 +430,7 @@ export default function ProductsPage() {
                       cursor: 'pointer',
                       fontFamily: tokens.body,
                       fontSize: 12,
-                      color: tokens.gold,
+                      color: tokens.onDark,
                       textDecoration: 'underline',
                       textUnderlineOffset: 3,
                     }}
@@ -495,7 +495,7 @@ export default function ProductsPage() {
                     style={{
                       fontFamily: tokens.body,
                       fontSize: 14,
-                      color: 'rgba(28,24,16,0.5)',
+                      color: 'rgba(29,29,29,0.5)',
                       marginTop: 10,
                     }}
                   >
@@ -513,8 +513,8 @@ export default function ProductsPage() {
                       letterSpacing: '0.12em',
                       textTransform: 'uppercase',
                       cursor: 'pointer',
-                      background: tokens.gold,
-                      color: tokens.ink,
+                      background: tokens.fillStrong,
+                      color: tokens.onFillStrong,
                       border: 'none',
                     }}
                   >
@@ -533,7 +533,7 @@ export default function ProductsPage() {
         <>
           <div
             onClick={() => setDrawerOpen(false)}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(28,24,16,0.45)', zIndex: 9500 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(29,29,29,0.45)', zIndex: 9500 }}
           />
           <div
             style={{
@@ -627,8 +627,8 @@ export default function ProductsPage() {
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
                   cursor: 'pointer',
-                  background: tokens.gold,
-                  color: tokens.ink,
+                  background: tokens.fillStrong,
+                  color: tokens.onFillStrong,
                   border: 'none',
                 }}
               >
