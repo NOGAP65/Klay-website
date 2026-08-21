@@ -32,7 +32,7 @@
 // priority, and duplicating the route means a visitor who never registers a
 // 12px word in the middle of a bar still has one unmissable way in.
 //
-// Both were gold. The button is now the royal-blue `accent` fill — the one place
+// Both were gold. The button is now the clay `accent` fill — the one place
 // in this bar carrying any chroma at all — and the word is distinguished by
 // weight rather than colour, see the note on barLink. That split is deliberate:
 // the button is the action and takes the colour, the word is a destination and

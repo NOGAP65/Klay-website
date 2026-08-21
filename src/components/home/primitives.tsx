@@ -6,12 +6,13 @@
 // sections doing that independently is how a page ends up with nine slightly
 // different buttons — so the CTA and the section header live here once.
 //
-// The CTA rule is narrow on purpose: ROYAL BLUE ground with a paper label, or
-// charcoal ground with a paper label. Nothing else fills. The one variant that
-// does neither is `ghost`, which sits over hero photography and has no fill.
+// The CTA rule is narrow on purpose: CLAY ground with a paper label, or charcoal
+// ground with a paper label. Nothing else fills. The one variant that does
+// neither is `ghost`, which sits over hero photography and has no fill.
 //
-// The blue is the only chroma anywhere in the interface, and this file is most
-// of where it is spent — see `accent` in theme.ts for why it is actions only.
+// The clay is the only chroma anywhere in the interface, and this file is most of
+// where it is spent — see `accent` in theme.ts for why it is actions only, and
+// for why it is #A64B2A rather than the #E2725B terracotta normally means.
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
@@ -52,7 +53,7 @@ export function useHover() {
 }
 
 /** `primary` was called `gold` until the palette lost its gold, and is now the
- * royal-blue fill. The name is the only thing that changed about the other two. */
+ * clay fill. The name is the only thing that changed about the other two. */
 export type CtaVariant = 'primary' | 'onDark' | 'ghost';
 
 /** THE PRIMARY CTA — one definition, and the height is EXPLICIT.
@@ -85,19 +86,19 @@ const ctaBase: React.CSSProperties = {
 
 function ctaFill(variant: CtaVariant, hover: boolean): React.CSSProperties {
   switch (variant) {
-    // ROYAL BLUE, paper label. The page's primary action, and the only place on
-    // the site that carries chroma at all. Deepens on hover rather than
-    // lightening — blue has room in both directions where ink had none.
+    // CLAY, paper label. The page's primary action, and the only place on the
+    // site that carries chroma at all. Deepens on hover rather than lightening —
+    // clay has room in both directions where ink had none.
     case 'primary':
       return {
         background: hover ? tokens.accentHover : tokens.accent,
         color: tokens.onAccent,
-        // The border matches the fill: a blue block with a grey hairline round it
+        // The border matches the fill: a clay block with a grey hairline round it
         // reads as two objects. It was `tokens.line` against the gold fill.
         borderColor: hover ? tokens.accentHover : tokens.accent,
       };
     // Charcoal ground, paper text — for light sections that want a quieter
-    // primary than the blue, or a second action beside one.
+    // primary than the clay, or a second action beside one.
     case 'onDark':
       return {
         background: hover ? tokens.ink : tokens.charcoal,
@@ -107,11 +108,13 @@ function ctaFill(variant: CtaVariant, hover: boolean): React.CSSProperties {
     // A PAPER-FILLED VARIANT WAS WRITTEN HERE AND THEN REMOVED, which is worth
     // recording because the reasoning was sound and the premise was not.
     //
-    // Blue measures 1.48:1 against charcoal and 1.88 against ink, so a blue
-    // button on a solid dark section would be a block you cannot locate — its
-    // label would still be perfectly legible on the blue, which is exactly the
-    // failure a text-contrast audit cannot see. FinalCta and the visualiser card
-    // looked like the cases that needed it.
+    // The accent measures 2.71:1 against charcoal and 3.46 against ink, so a
+    // clay button on a solid dark section would be hard to locate — its label
+    // would still be perfectly legible on the clay, which is exactly the failure
+    // a text-contrast audit cannot see. FinalCta and the visualiser card looked
+    // like the cases that needed it. (Under the royal blue this replaced the
+    // same two numbers were 1.48 and 1.88, so the hazard was worse then and the
+    // conclusion is unchanged.)
     //
     // Measured in the running page, neither is. FinalCta's charcoal is a
     // fallback BEHIND a photograph — it only shows while the image loads — and

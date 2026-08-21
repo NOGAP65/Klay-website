@@ -120,46 +120,54 @@ export const tokens = {
   fillStrongHover: '#3D3D3D',
 
   // ---------------------------------------------------------------------
-  // ROYAL BLUE — the only chroma in the interface, and it is spent on
-  // actions and nothing else.
+  // CLAY — the only chroma in the interface, and it is spent on actions and
+  // nothing else.
   //
   // The palette was taken fully neutral first, deliberately, and this is added
   // back on top of it rather than mixed into it. That ordering is the whole
-  // point: there are four blue values and they cover CTA fill, CTA hover, focus,
-  // and one pale ground. Everything else on the site stays grey.
+  // point: there are four clay values and they cover CTA fill, CTA hover, the
+  // label, and one pale ground. Everything else on the site stays grey.
   //
-  // WHY IT IS NOT `royalblue`. CSS royalblue is #4169E1 and it does not survive
-  // the audit: as a fill its paper label measures 4.56 — a hair over — and as
-  // text it measures 4.14 on `band`, which fails 4.5 outright. It cannot be both
-  // a fill and a text colour, and an accent that can only be one of those needs
-  // a second value to cover the other, which is how a two-colour accent
-  // (`gold` / `goldText`) happened last time.
+  // IT BELONGS TO THE MARK. The logo's k-leg is #A08058 at hue 33°, and it was
+  // the only chroma in the product before this. The accent sits at hue 16° —
+  // adjacent, redder, deeper — so the two read as one warm family rather than
+  // as a brand colour and an interface colour that happen to coexist. The
+  // royal blue this replaces sat at hue 226°, directly opposite the mark.
   //
-  // #2B4ACB is the vivid royal blue that clears both jobs from one value:
-  // 6.72:1 under a paper label as a fill, and 6.72 / 7.13 / 6.09 as text on
-  // paper, card and band. One token, no division of labour to get wrong.
+  // WHY IT IS NOT ACTUAL TERRACOTTA. Terracotta as normally specified is around
+  // #E2725B, and it fails everything: 2.91:1 under a paper label, 2.64 as text
+  // on `band`. It is a mid-light colour and there is no way to put readable text
+  // on it or make readable text out of it. Walking the same hue down until both
+  // jobs clear lands here — #A64B2A is the LIGHTEST, most saturated clay that
+  // does both, which is the shade to want. Anything shallower is fill-only:
+  // #B35638 clears the fill at 4.59 but fails as text on band at 4.17.
   //
-  // IT IS A LIGHT-GROUND COLOUR ONLY. On #303030 it measures 1.48 and on
-  // #1D1D1D 1.88 — a blue button on a dark section would be a block you cannot
-  // find, even though its label would still be legible on the blue itself.
-  // Dark-ground actions keep the paper/ink inversion they already had. Going
-  // light enough to work on charcoal means #7B94EE, which is no longer royal
-  // blue and would fail as text on paper.
+  // ONE VALUE, TWO JOBS: 5.40:1 under a paper label as a fill, and
+  // 5.40 / 5.74 / 4.90 as text on paper, card and band. The margin on band is
+  // real but thin — 0.4 over the floor — so if a future value needs more room
+  // it comes out of lightness, not out of saturation.
+  //
+  // IT IS A LIGHT-GROUND COLOUR ONLY, same as the blue was. On #303030 it
+  // measures 2.71 and on #1D1D1D 3.46, so a clay button on a solid dark section
+  // would be hard to locate even though its label would still read on the clay
+  // itself. Nothing on the site needs that today — a filled-block audit across
+  // eight routes finds no CTA on a solid dark ground — but the constraint is why
+  // this is not simply used everywhere.
   /** THE ACTION COLOUR. CTA fills, and legal as a text colour on all three
    * light grounds if a link ever needs it. Pairs with `onAccent`. */
-  accent: '#2B4ACB',
-  /** Hover on a blue CTA, and it DEEPENS where the black button lightens.
-   * Blue has room in both directions where ink had none, and deepening is what
-   * a coloured button is expected to do. 1.25:1 against `accent`, which is
-   * enough to read as a change, and its paper label goes to 8.42. */
-  accentHover: '#233FA8',
-  /** Label on `accent` or `accentHover` — 6.72 and 8.42. */
+  accent: '#A64B2A',
+  /** Hover on a clay CTA, and it DEEPENS where the black button lightens. Clay
+   * has room in both directions where ink had none, and deepening is what a
+   * coloured button is expected to do. 1.41:1 against `accent`, which reads
+   * clearly as a change, and its paper label goes to 6.49. */
+  accentHover: '#8F4526',
+  /** Label on `accent` or `accentHover` — 5.40 and 6.49. */
   onAccent: PAPER,
   /** THE PALE SHADE: a tinted ground for a focused field or a highlighted row.
-   * Ink on it measures 14.38, and it sits 1.10:1 off paper — the same
+   * Ink on it measures 14.53, and it sits 1.09:1 off paper — the same
    * separation `band` has from paper, so it reads as a deliberate tone rather
    * than a rendering artefact. */
-  accentWash: '#E8EDF9',
+  accentWash: '#F7ECE6',
 
   // --- the grey ramp for text on light grounds ---
   // Every value re-measured against all three light grounds (paper #F8F8F8,
