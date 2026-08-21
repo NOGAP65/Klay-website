@@ -1,6 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
-import { tokens } from '../theme';
+import { radius, tokens } from '../theme';
 import VisualiserControls from '../visualiser/VisualiserControls';
 import KlayConfigurator from '../visualiser/KlayConfigurator';
 import { useVisualiserStore, ProductCategory } from '../visualiser/useVisualiserStore';
@@ -102,7 +102,7 @@ export default function VisualiserPage() {
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
               border: 'none',
-              borderRadius: 2,
+              borderRadius: radius.md,
               cursor: 'pointer',
               textAlign: 'center',
               textDecoration: 'none',

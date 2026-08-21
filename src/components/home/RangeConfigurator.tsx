@@ -23,7 +23,7 @@
 
 
 import { useNavigate } from 'react-router-dom';
-import { tokens, motion, space, type as typeScale } from '../../theme';
+import { radius, tokens, motion, space, type as typeScale } from '../../theme';
 import type { CatalogueItem } from '../../data/catalogue';
 import {
   configuredLine,
@@ -90,7 +90,7 @@ function Chip({
         height: 32,
         boxSizing: 'border-box',
         padding: `0 ${space.md}px`,
-        borderRadius: 2,
+        borderRadius: radius.md,
         cursor: 'pointer',
         whiteSpace: 'nowrap',
         transition: motion.button,
@@ -142,7 +142,7 @@ function Swatch({
         width: 20,
         height: 20,
         padding: 0,
-        borderRadius: 2,
+        borderRadius: radius.sm,
         cursor: 'pointer',
         background: choice.hex,
         border: `1px solid ${tokens.line}`,
@@ -341,12 +341,6 @@ export function RangeConfigurator({
             alignItems: 'center',
             justifyContent: 'center',
             background: hover ? tokens.accentHover : tokens.accent,
-            // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84
-            // once the hover lightens it, so the fill alone cannot carry the
-            // block boundary. An inset ring in the deeper bronze holds it at
-            // 6.24 in both states, and as a shadow rather than a border it costs
-            // no layout on a fixed-height button.
-            boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
             color: tokens.onAccent,
             ...typeScale.label,
             lineHeight: 1,
@@ -356,7 +350,7 @@ export function RangeConfigurator({
             // full width, same gold, and — because the panel is now exactly the
             // card's height and sits flush against it — the same bottom edge.
             // The two meet and read as one bar across the whole open card.
-            borderRadius: fill ? 0 : 2,
+            borderRadius: fill ? 0 : radius.md,
             cursor: 'pointer',
             transition: motion.button,
           }}

@@ -30,7 +30,7 @@ import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { ProductCard } from '../components/ProductCard';
 import { useKlayStore } from '../store';
-import { tokens } from '../theme';
+import { radius, tokens } from '../theme';
 import { useIsMobile, useMediaQuery } from '../hooks/useIsMobile';
 import { FilterRail } from '../components/FilterRail';
 import {
@@ -285,7 +285,7 @@ export default function ProductsPage() {
                         alignItems: 'center',
                         gap: 8,
                         padding: '10px 16px',
-                        borderRadius: 2,
+                        borderRadius: radius.md,
                         fontFamily: tokens.body,
                         fontSize: 13,
                         fontWeight: 500,
@@ -318,7 +318,7 @@ export default function ProductsPage() {
                       alignItems: 'center',
                       gap: 8,
                       padding: '10px 16px',
-                      borderRadius: 2,
+                      borderRadius: radius.md,
                       fontFamily: tokens.body,
                       fontSize: 13,
                       cursor: 'pointer',
@@ -346,7 +346,7 @@ export default function ProductsPage() {
                           marginTop: 4,
                           background: tokens.warmWhite,
                           border: `1px solid ${tokens.lineFaint}`,
-                          borderRadius: 2,
+                          borderRadius: radius.md,
                           boxShadow: '0 8px 24px rgba(29,29,29,0.12)',
                           overflow: 'hidden',
                           zIndex: 99,
@@ -407,7 +407,7 @@ export default function ProductsPage() {
                         alignItems: 'center',
                         gap: 8,
                         padding: '7px 12px',
-                        borderRadius: 2,
+                        borderRadius: radius.md,
                         fontFamily: tokens.body,
                         fontSize: 12,
                         cursor: 'pointer',
@@ -506,7 +506,7 @@ export default function ProductsPage() {
                     style={{
                       marginTop: 22,
                       padding: '13px 26px',
-                      borderRadius: 2,
+                      borderRadius: radius.md,
                       fontFamily: tokens.body,
                       fontSize: 12,
                       fontWeight: 500,
@@ -602,7 +602,7 @@ export default function ProductsPage() {
                 style={{
                   flex: 1,
                   padding: '14px',
-                  borderRadius: 2,
+                  borderRadius: radius.md,
                   fontFamily: tokens.body,
                   fontSize: 12,
                   letterSpacing: '0.1em',
@@ -620,7 +620,7 @@ export default function ProductsPage() {
                 style={{
                   flex: 2,
                   padding: '14px',
-                  borderRadius: 2,
+                  borderRadius: radius.md,
                   fontFamily: tokens.body,
                   fontSize: 12,
                   fontWeight: 500,

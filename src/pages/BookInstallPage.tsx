@@ -5,7 +5,7 @@ import { Footer } from '../components/Footer';
 import { FormField, DANGER } from '../components/FormField';
 import { Honeypot } from '../components/Honeypot';
 import { Turnstile, useTurnstileEnabled } from '../components/Turnstile';
-import { tokens, eyebrow, headline, motion, layout } from '../theme';
+import { radius, tokens, eyebrow, headline, motion, layout } from '../theme';
 import { createCheckoutSession, requestQuote, type BookingPayload, type FieldErrors } from '../lib/api';
 import {
   MAX_QUANTITY,
@@ -485,11 +485,6 @@ export default function BookInstallPage() {
                   marginTop: 28,
                   padding: '17px 16px',
                   background: busy ? tokens.inkFaint : tokens.accent,
-                  // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
-                  // hover lightens it, so the fill alone cannot carry the block boundary. An
-                  // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
-                  // a shadow, not a border, so it costs no layout on a fixed-height button.
-                  boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
                   color: tokens.onAccent,
                   fontFamily: tokens.body,
                   fontSize: 11,
@@ -497,7 +492,7 @@ export default function BookInstallPage() {
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
                   border: 'none',
-                  borderRadius: 2,
+                  borderRadius: radius.md,
                   cursor: busy ? 'progress' : 'pointer',
                   transition: motion.button,
                 }}
@@ -521,7 +516,7 @@ export default function BookInstallPage() {
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
                   border: `1px solid ${tokens.lineStrong}`,
-                  borderRadius: 2,
+                  borderRadius: radius.md,
                   cursor: busy ? 'progress' : 'pointer',
                   transition: motion.button,
                 }}

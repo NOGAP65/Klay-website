@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { tokens, space, type as typeScale } from '../theme';
+import { radius, tokens, space, type as typeScale } from '../theme';
 import { useVisualiserStore, BlindType } from './useVisualiserStore';
 import { usePhotoUpload } from './usePhotoUpload';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
@@ -9,7 +9,6 @@ import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
 // One radius for every surface in the visualiser. The three files used to
 // disagree (0 here, 12px on the homepage wrapper, 4px on the thumbnails),
 // which is what made the panel read as assembled rather than designed.
-const RADIUS = 2;
 
 /** Caps how tall the media box can get. Width is capped instead of height so
  * the photo's aspect ratio is never violated — see the root style. */
@@ -31,7 +30,7 @@ const buttonBase: React.CSSProperties = {
   // box rather than the CTA's 52.
   height: 32,
   padding: `0 ${space.md}px`,
-  borderRadius: RADIUS,
+  borderRadius: radius.md,
   cursor: 'pointer',
   display: 'inline-flex',
   alignItems: 'center',
@@ -136,7 +135,7 @@ function RollSlider({ value, onChange }: { value: number; onChange: (v: number) 
         alignItems: 'center',
         gap: space.xs,
         padding: `${space.sm}px`,
-        borderRadius: RADIUS,
+        borderRadius: radius.md,
         background: 'linear-gradient(180deg, rgba(48,48,48,0.92) 0%, rgba(29,29,29,0.92) 100%)',
         border: `1px solid ${tokens.onDarkLine}`,
         boxShadow: RAISED_SHADOW,
@@ -178,7 +177,7 @@ function RollSlider({ value, onChange }: { value: number; onChange: (v: number) 
           position: 'relative',
           width: 12,
           height: 148,
-          borderRadius: 2,
+          borderRadius: radius.md,
           cursor: 'pointer',
           // Groove: dark inside with a lit lower lip, so it reads as cut in.
           background: 'rgba(0,0,0,0.5)',
@@ -194,7 +193,7 @@ function RollSlider({ value, onChange }: { value: number; onChange: (v: number) 
             left: 0,
             right: 0,
             height: `${pct}%`,
-            borderRadius: 2,
+            borderRadius: radius.md,
             background: `linear-gradient(180deg, ${tokens.ink} 0%, ${tokens.fillStrong} 100%)`,
             boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.35)',
             pointerEvents: 'none',
@@ -209,7 +208,7 @@ function RollSlider({ value, onChange }: { value: number; onChange: (v: number) 
             transform: 'translate(-50%, -50%)',
             width: 24,
             height: 15,
-            borderRadius: 2,
+            borderRadius: radius.md,
             background: `linear-gradient(180deg, ${tokens.fillStrongHover} 0%, ${tokens.fillStrong} 55%, ${tokens.ink} 100%)`,
             border: `1px solid ${tokens.ink}`,
             boxShadow: dragging ? PRESSED_SHADOW : RAISED_SHADOW,
@@ -549,7 +548,7 @@ export default function KlayConfigurator({
         flexDirection: 'column',
         gap: space.xs,
         padding: `${space.sm}px`,
-        borderRadius: RADIUS,
+        borderRadius: radius.md,
         background: 'linear-gradient(180deg, rgba(48,48,48,0.92) 0%, rgba(29,29,29,0.92) 100%)',
         border: `1px solid ${tokens.onDarkLine}`,
         boxShadow: RAISED_SHADOW,
@@ -590,7 +589,7 @@ export default function KlayConfigurator({
         display: 'flex',
         flexDirection: 'column',
         background: tokens.charcoal,
-        borderRadius: RADIUS,
+        borderRadius: radius.md,
         overflow: 'hidden',
         boxShadow: '0 16px 40px rgba(29,29,29,0.22)',
       }}
@@ -635,7 +634,7 @@ export default function KlayConfigurator({
                     width: 116,
                     height: 78,
                     objectFit: 'cover',
-                    borderRadius: RADIUS,
+                    borderRadius: radius.md,
                     border: `1px solid ${tokens.onDarkLine}`,
                     cursor: 'pointer',
                   }}

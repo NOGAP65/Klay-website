@@ -23,7 +23,7 @@
 // ticked, and clicking it would empty the grid.
 // ---------------------------------------------------------------------------
 
-import { tokens } from '../theme';
+import { radius, tokens } from '../theme';
 import { GROUP_FILTERS, LIGHT_VALUES, countFor, type Facets } from '../data/catalogue';
 
 const GROUP_LABEL = {
@@ -47,7 +47,7 @@ function Box({ state }: { state: 'off' | 'on' | 'partial' }) {
         width: 15,
         height: 15,
         flexShrink: 0,
-        borderRadius: 2,
+        borderRadius: radius.sm,
         border: `1px solid ${state === 'off' ? 'rgba(29,29,29,0.25)' : tokens.fillStrong}`,
         background: state === 'off' ? 'transparent' : tokens.fillStrong,
         display: 'flex',

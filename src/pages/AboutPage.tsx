@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
-import { tokens, eyebrow, headline, motion, supporting } from '../theme';
+import { radius, tokens, eyebrow, headline, motion, supporting } from '../theme';
 import { COLOUR_COUNT, PRODUCT_COUNT } from '../data/products';
 
 // DARK ('#0f0d09', a near-black outside the palette) and PARCHMENT (a second
@@ -157,13 +157,8 @@ export default function AboutPage() {
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
                 padding: '18px 40px',
-                borderRadius: 2,
+                borderRadius: radius.md,
                 background: ctaHover ? tokens.accentHover : tokens.accent,
-                // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
-                // hover lightens it, so the fill alone cannot carry the block boundary. An
-                // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
-                // a shadow, not a border, so it costs no layout on a fixed-height button.
-                boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
                 color: tokens.onAccent,
                 whiteSpace: 'nowrap',
                 transition: motion.button,

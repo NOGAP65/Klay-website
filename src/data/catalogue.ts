@@ -105,6 +105,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Soft folds that stack flat at the head of the window.',
     to: blindLink('roman-blinds', 'Roman Blinds'),
     glyph: 'roman-blinds',
+    image: '/images/products/roman-blinds.webp',
     // THE FABRIC BLINDS SHARE THE RYNAMIC CARD, and this is an editorial claim
     // in the same class as LIGHT_OVERRIDES above — worth a commercial check.
     //
@@ -129,6 +130,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Cellular pleats that trap air. The insulating blind.',
     to: enquire('Honeycomb Blinds'),
     glyph: 'honeycomb-blinds',
+    image: '/images/products/honeycomb-blinds.webp',
     // See the note on Roman Blinds — the fabric blinds share the Rynamic card.
     colours: RYNAMIC_COLOURS,
     light: ['Blockout', 'Light filter'],
@@ -149,6 +151,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Louvred joinery, fitted to the opening and built to last.',
     to: enquire('Plantation Shutters'),
     glyph: 'shutters',
+    image: '/images/products/plantation-shutters.webp',
     light: ['Blockout', 'Light filter'],
   },
   {
@@ -158,6 +161,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Louvres that draw aside. Made for sliding doors.',
     to: blindLink('vertical-blinds', 'Vertical Blinds'),
     glyph: 'vertical-blinds',
+    image: '/images/products/vertical-blinds.webp',
     // See the note on Roman Blinds — the fabric blinds share the Rynamic card.
     colours: RYNAMIC_COLOURS,
     light: ['Blockout', 'Light filter', 'Sunscreen'],
@@ -186,6 +190,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Shade on demand, with no posts in the way.',
     to: enquire('Folding Arm Awnings'),
     glyph: 'awning-folding',
+    image: '/images/products/folding-arm-awnings.webp',
     light: ['Sunscreen'],
   },
   {
@@ -195,6 +200,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Tracked edges. No gaps, no flap, no wind noise.',
     to: enquire('Zip Guide Systems'),
     glyph: 'screens',
+    image: '/images/products/zip-guide-systems.webp',
     light: ['Sunscreen', 'Blockout'],
   },
   {
@@ -204,6 +210,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Insulation, security and total darkness in one slat.',
     to: enquire('Roller Shutters'),
     glyph: 'roller-shutters',
+    image: '/images/products/roller-shutters.webp',
     light: ['Blockout'],
   },
   {
@@ -213,6 +220,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Mesh that folds away to nothing when you are not using it.',
     to: enquire('Pleated Flyscreens'),
     glyph: 'pleated-flyscreens',
+    image: '/images/products/pleated-flyscreens.webp',
   },
 
   // --- OTHER ---------------------------------------------------------------
@@ -246,6 +254,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Toughened glass, no frame. The bathroom disappears.',
     to: enquire('Frameless Shower Screens'),
     glyph: 'shower-screens',
+    image: '/images/products/frameless-shower-screens.webp',
   },
 ]
 

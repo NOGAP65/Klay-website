@@ -6,19 +6,19 @@
 // sections doing that independently is how a page ends up with nine slightly
 // different buttons — so the CTA and the section header live here once.
 //
-// The CTA rule is narrow on purpose: BRONZE ground with an INK label, or charcoal
-// ground with a paper label. Nothing else fills. The one variant that does
-// neither is `ghost`, which sits over hero photography and has no fill.
+// The CTA rule is narrow on purpose: BRONZE ground with a BOLD WHITE label, or
+// charcoal ground with a paper label. Nothing else fills. The one variant that
+// does neither is `ghost`, which sits over hero photography and has no fill.
 //
-// The bronze is the logo's own colour — #A08058, the leg of the k — and the only
-// chroma anywhere in the interface. This file is most of where it is spent. See
-// `accent` in theme.ts for why the label is ink rather than paper, which is not a
-// preference but a consequence of the bronze being a mid-tone.
+// The bronze comes from the logo — the leg of the k is #A08058 — walked two stops
+// deeper so a white label clears 4.5. It is the only chroma anywhere in the
+// interface and this file is most of where it is spent. See `accent` in theme.ts
+// for why the mark's literal value could not be kept.
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { tokens, eyebrow, headline, motion, space, supporting, type as typeScale } from '../../theme';
+import { tokens, eyebrow, headline, motion, radius, space, supporting, type as typeScale } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { ProductGlyph } from '../ProductGlyph';
 
@@ -70,10 +70,17 @@ const ctaBase: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   ...typeScale.label,
+  // BOLDER THAN THE LABEL SCALE, which is 500. A button label is the one piece
+  // of type on the page that has to hold its own inside a filled block rather
+  // than on a ground, and at 12px caps with 0.14em of tracking, 500 read as
+  // regular text that happened to be on a colour.
+  fontWeight: 700,
   textDecoration: 'none',
   whiteSpace: 'nowrap',
   cursor: 'pointer',
-  borderRadius: 2,
+  // radius.md, not the 2 this was. See the note on `radius` in theme.ts — 2 is a
+  // bevel rather than a curve and read as square at this size.
+  borderRadius: radius.md,
   height: 52,
   padding: `0 ${space.lg}px`,
   border: '1px solid transparent',
@@ -87,19 +94,18 @@ const ctaBase: React.CSSProperties = {
 
 function ctaFill(variant: CtaVariant, hover: boolean): React.CSSProperties {
   switch (variant) {
-    // THE LOGO'S BRONZE, ink label. The page's primary action, and the only place
-    // on the site that carries chroma at all. Lightens on hover, because with an
-    // ink label that is the only safe direction — see `accentHover`.
+    // BRONZE, WHITE LABEL, BOLD. The page's primary action, and the only place on
+    // the site that carries chroma at all. Deepens on hover.
     case 'primary':
       return {
         background: hover ? tokens.accentHover : tokens.accent,
         color: tokens.onAccent,
-        // THE EDGE IS THE DEEPER BRONZE, not the fill. Matching the border to the
-        // fill was right while the fill was dark enough to find on its own; the
-        // bronze is a mid-tone and its hover lightens, which took the block to
-        // 2.84:1 against paper. `accentEdge` holds the boundary at 6.24 in both
-        // states, so the button stops depending on its fill to be findable.
-        borderColor: tokens.accentEdge,
+        // The border matches the fill again. It was `accentEdge` for one pass, to
+        // hold the block's boundary while the fill was light enough to lose it —
+        // deepening the fill for the white label made the fill carry its own
+        // boundary (4.58 at rest, 5.60 on hover) and the edge became a dark line
+        // around a dark block for no reason.
+        borderColor: hover ? tokens.accentHover : tokens.accent,
       };
     // Charcoal ground, paper text — for light sections that want a quieter
     // primary than the bronze, or a second action beside one.
@@ -438,7 +444,7 @@ function TileSwatches({ colours }: { colours: { name: string; hex: string }[] })
           style={{
             width: 20,
             height: 20,
-            borderRadius: 2,
+            borderRadius: radius.sm,
             background: c.hex,
             border: `1px solid ${tokens.onDarkEdge}`,
           }}
@@ -551,8 +557,21 @@ export function PhotoTile({
         overflow: 'hidden',
         minHeight,
         textDecoration: 'none',
-        // No radius: these grids are edge to edge, and a rounded corner would put
-        // slivers of section background into the joins where the tiles meet.
+        // ROUNDED ON ALL FOUR, and the note this replaces argued the opposite:
+        // "no radius, these grids are edge to edge and a rounded corner would put
+        // slivers of section background into the joins where the tiles meet."
+        //
+        // That was true when it was written and stopped being true when TILE_GAP
+        // went from 0 to 4. The tiles no longer meet — there is already a 4px
+        // channel of the section's own ground between every pair — so a corner
+        // showing that same ground is consistent with the gap rather than a leak
+        // through a seam. `overflow: hidden` above is what clips the photograph
+        // to it, which is why one line here rounds the image too.
+        //
+        // All four rather than top-only: these tiles carry their label block over
+        // the BOTTOM of the photograph, so a square bottom edge with a rounded top
+        // would put the sharp corners exactly where the type is.
+        borderRadius: radius.lg,
         //
         // A photoless tile gets a warm diagonal rather than the flat charcoal it
         // had. Flat, it read as a box that had failed to load a picture; lit from
@@ -741,17 +760,12 @@ export function PhotoTile({
               alignItems: 'center',
               height: 32,
               padding: `0 ${space.md}px`,
-              borderRadius: 2,
+              borderRadius: radius.md,
               boxSizing: 'border-box',
               ...typeScale.label,
               lineHeight: 1,
               color: tokens.onAccent,
               background: hover ? tokens.accentHover : tokens.accent,
-              // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
-              // hover lightens it, so the fill alone cannot carry the block boundary. An
-              // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
-              // a shadow, not a border, so it costs no layout on a fixed-height button.
-              boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
               whiteSpace: 'nowrap',
               // Pops forward on hover. transformOrigin is the bottom-right corner
               // it is pinned to, so it grows inward rather than pushing itself

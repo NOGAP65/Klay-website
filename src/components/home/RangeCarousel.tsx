@@ -44,7 +44,7 @@
 // ---------------------------------------------------------------------------
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { tokens, motion, prefersReducedMotion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
+import { radius, tokens, motion, prefersReducedMotion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
 import { useIsMobile, useMediaQuery } from '../../hooks/useIsMobile';
 // The row reads data/catalogue.ts — the same fourteen products the shop lists,
 // in the same order, rendered by the same tile. It used to read a data/ranges.ts
@@ -224,7 +224,7 @@ function Arrow({
         // and one of seven radii.
         width: 52,
         height: 52,
-        borderRadius: 2,
+        borderRadius: radius.md,
         // A hairline instead of the drop shadow it carried. §5.5 gives the
         // homepage exactly one elevated object — the visualiser card — so a
         // second shadow here would spend the hierarchy that buys. The border
@@ -385,7 +385,7 @@ function RangeCard({
             position: 'absolute',
             inset: 0,
             border: `1px solid ${tokens.line}`,
-            borderRadius: 2,
+            borderRadius: radius.md,
             pointerEvents: 'none',
             zIndex: 2,
           }}
@@ -435,7 +435,7 @@ function RangeCard({
         style={{
           position: 'relative',
           overflow: 'hidden',
-          borderRadius: 2,
+          borderRadius: radius.lg,
           // 4:5 — the site's one portrait ratio, shared with the install strip
           // and the About panel.
           aspectRatio: '4 / 5',
@@ -542,15 +542,10 @@ function RangeCard({
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: 2,
+          borderRadius: radius.md,
           border: 'none',
           cursor: 'pointer',
           background: open || hover ? tokens.accentHover : tokens.accent,
-          // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
-          // hover lightens it, so the fill alone cannot carry the block boundary. An
-          // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
-          // a shadow, not a border, so it costs no layout on a fixed-height button.
-          boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
           color: tokens.onAccent,
           ...typeScale.label,
           lineHeight: 1,

@@ -137,48 +137,50 @@ export const tokens = {
   // mark, exactly.
   //
   // ---------------------------------------------------------------------
-  // THE LABEL IS INK, NOT PAPER, AND THAT IS FORCED.
+  // A WHITE LABEL IS WHAT SETS THIS VALUE, and it is why the fill is NOT the
+  // logo's #A08058 exactly.
   //
-  // The bronze is a MID-TONE. Paper on it measures 3.45 and card on it 3.67 —
-  // both fail 4.5 — while ink on it measures 4.59 and passes. So the label had to
-  // flip when the accent became the logo's value, and every CTA on the site now
-  // reads as a bronze block with near-black type on it.
+  // The mark's own bronze is a mid-tone and cannot carry white: #FFFFFF on it
+  // measures 3.67 against a 4.5 requirement. It carried an INK label at 4.59 for
+  // exactly that reason. The brief is a white label, and there is no way to have
+  // both that and the mark's literal value — any colour light enough to read as
+  // gold or bronze is too light for white type. That is the same wall the retired
+  // brand gold hit (#C8973A, white on it 2.49, which is why it always carried
+  // ink).
   //
-  // That is precisely the pairing the retired brand gold used (#C8973A with ink
-  // on it, 6.38) and it is not a coincidence: any colour light enough to read as
-  // gold or bronze is too light to carry white text. Worth knowing the margin
-  // here is thinner than the old gold's — 4.59 against 6.38 — because the logo's
-  // bronze is duller and darker than #C8973A was.
+  // So the fill walks down the mark's own hue until white clears. #8A6C46 is hue
+  // 34° against the mark's 33° — the same bronze, two stops deeper — and white on
+  // it measures 4.87, with real headroom rather than a hair. The lightest value
+  // that clears at all is #8E7049 at 4.60, and sitting that close to the floor
+  // for the label on every CTA on the site is not worth the 0.3 of extra
+  // lightness.
   //
-  // IT CANNOT BE TEXT. On the three light grounds it measures 3.45 / 3.67 / 3.13
-  // — fine for a UI border, where the bar is 3:1, and a failure for anything that
-  // reads as words. This is exactly what forced `goldText` into existence
-  // alongside `gold` last time, and the reason no second token is needed now is
-  // narrow and worth stating: nothing on the site uses the accent as a text
-  // colour. If something ever needs to, it takes a deeper sibling around
-  // #725838 (6.24 / 6.63 / 5.66) rather than this.
-  /** THE ACTION COLOUR — the logo's bronze, sampled from the k. CTA fills only;
-   * see the note above on why it is not a text colour. Pairs with `onAccent`,
-   * which is ink. */
-  accent: '#A08058',
-  /** Hover on a bronze CTA, and it LIGHTENS. With an ink label the safe
-   * direction is up: going darker breaks the label instead (#8E7049 drops it to
-   * 3.66). 1.22:1 against `accent`, and the ink label improves to 5.58. */
-  accentHover: '#B08F63',
-  /** Label on `accent` or `accentHover` — 4.59 and 5.58. INK, not paper; see
-   * above. */
-  onAccent: INK,
-  /** THE EDGE OF A BRONZE BUTTON, and it exists to solve the hover state.
+  // IT STILL CANNOT BE TEXT: 4.58 / 4.87 / 4.16 as text on paper, card and band,
+  // so it fails on band. A deeper sibling near #725838 (6.24 / 6.63 / 5.66) is
+  // what a bronze word would need, and nothing on the site needs one.
+  /** THE ACTION COLOUR — the mark's bronze, two stops deeper so a white label
+   * clears. CTA fills only; see above on why it is not a text colour. */
+  accent: '#8A6C46',
+  /** Hover on a bronze CTA, and it DEEPENS now. With an ink label the only safe
+   * direction was up; with a white one it is down, and down is what a coloured
+   * button is expected to do anyway. 1.22:1 against `accent`, and the white label
+   * improves to 5.95. */
+  accentHover: '#7A5F3C',
+  /** Label on `accent` or `accentHover` — 4.87 and 5.95. Pure white, as asked,
+   * and note the palette bans #000000 but has never banned #FFFFFF: `card` is
+   * already that value. */
+  onAccent: '#FFFFFF',
+  /** FOCUS RINGS, and no longer button edges.
    *
-   * A filled control needs 3:1 against its ground to be findable. The bronze
-   * manages that at rest (3.45 on paper, 3.13 on band) but the hover LIGHTENS
-   * it, which drops the block to 2.84 against paper — the button gets harder to
-   * see at the exact moment it is being interacted with.
+   * It was introduced to rescue the button boundary: the old lighter fill
+   * measured 3.45 against paper and its hover LIGHTENED to 2.84, so the block
+   * needed an edge that did not depend on the fill. Deepening the fill for the
+   * white label solved that on its own — 4.58 at rest and 5.60 on hover, both
+   * comfortably past 3:1 — and the fifteen inset rings that existed for it are
+   * gone with the reason for them.
    *
-   * Drawing the border in the deeper sibling instead of in the fill fixes it for
-   * both states at once: 6.24 / 6.63 / 5.66 on the three light grounds, so the
-   * block's boundary is carried by the edge and no longer depends on how light
-   * the fill happens to be. Also the right value for a focus ring. */
+   * Kept because a focus ring is the one border on the site that has to be
+   * unmistakable, and 6.24 / 6.63 / 5.66 is the right weight for it. */
   accentEdge: '#725838',
   /** THE PALE SHADE: a tinted ground for a focused field or a highlighted row.
    * Ink on it measures 14.73, and it sits 1.08:1 off paper — the same separation
@@ -488,6 +490,34 @@ export const layout = {
   /** Every full-bleed section's content inset. Mobile was 24, which is not on
    * the scale; 20 is. */
   inlinePad: (isMobile: boolean) => (isMobile ? space.md : 80),
+};
+
+// ---------------------------------------------------------------------------
+// CORNER RADIUS. Three values, and there are no others.
+//
+// The site rendered TWENTY-ONE distinct radii: 2 (thirty-six times), 6
+// (twenty-three), 4, 8, 12, 14, 16, 20, 999, '2px', '3px', '50%', and one-offs
+// including '15% 15% 45% 45%' and '0 0 30% 30%'. Nothing on the page read as
+// belonging to the same system because nothing shared an edge treatment.
+//
+// SOFT, NOT PILL. The brief is rounded edges and explicitly not a lozenge, so
+// the ceiling here is 12 and `999`/`50%` are off the scale for anything
+// rectangular. A circle is still correct for things that ARE circles — the cart
+// badge, a pagination dot — and those keep '50%' locally rather than pretending
+// to be on this ladder.
+// ---------------------------------------------------------------------------
+export const radius = {
+  /** Swatches, chips, checkboxes, badges — anything under about 40px. A 6px
+   * radius on a 20px swatch eats a quarter of its edge. */
+  sm: 3,
+  /** BUTTONS, inputs, pills, tabs. Was 2, which at this scale is a bevel rather
+   * than a curve and read as square. */
+  md: 6,
+  /** CARDS, panels, images, modals. All four corners: top-only was the other
+   * option and it looks deliberate only while a card's image is flush to its top
+   * edge, which is not true of the range cards or the configurator panel. One
+   * value that always works beats two that need a rule. */
+  lg: 10,
 };
 
 /** One container, centred. */

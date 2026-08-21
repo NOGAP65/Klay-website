@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { tokens, space, type as typeScale } from '../theme';
+import { radius, tokens, space, type as typeScale } from '../theme';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
@@ -14,7 +14,6 @@ interface VisualiserControlsProps {
   onDark?: boolean;
 }
 
-const RADIUS = 2;
 
 // ---------------------------------------------------------------------------
 // The two grounds this panel can sit on.
@@ -133,7 +132,7 @@ function Pill({
         height: sub ? space.xl : 32,
         padding: `0 ${space.md}px`,
         boxSizing: 'border-box',
-        borderRadius: RADIUS,
+        borderRadius: radius.md,
         ...typeScale.label,
         letterSpacing: 'normal',
         textTransform: 'none',
@@ -187,7 +186,7 @@ function Swatch({
       style={{
         width: size,
         height: size,
-        borderRadius: 2,
+        borderRadius: radius.sm,
         cursor: 'pointer',
         padding: 0,
         background: hex,
@@ -405,7 +404,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
           style={{
             background: sk.boxFill,
             border: `1px solid ${sk.hairline}`,
-            borderRadius: RADIUS,
+            borderRadius: radius.md,
             padding: `${space.md}px`,
           }}
         >
@@ -533,7 +532,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
         style={{
           background: sk.boxFill,
           border: `1px solid ${sk.hairline}`,
-          borderRadius: RADIUS,
+          borderRadius: radius.md,
           padding: `${space.md}px`,
         }}
       >

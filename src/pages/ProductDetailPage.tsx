@@ -273,11 +273,6 @@ export default function ProductDetailPage() {
                   width: '100%',
                   padding: '18px 24px',
                   background: addedToCart ? tokens.charcoal : (cartHover ? tokens.accentHover : tokens.accent),
-                  // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
-                  // hover lightens it, so the fill alone cannot carry the block boundary. An
-                  // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
-                  // a shadow, not a border, so it costs no layout on a fixed-height button.
-                  boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
                   color: addedToCart ? tokens.warmWhite : tokens.ink,
                   fontFamily: tokens.body,
                   fontSize: 14,
@@ -466,11 +461,6 @@ export default function ProductDetailPage() {
               onMouseLeave={() => setBarCartHover(false)}
               style={{
                 background: addedToCart ? tokens.charcoal : (barCartHover ? tokens.accentHover : tokens.accent),
-                // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
-                // hover lightens it, so the fill alone cannot carry the block boundary. An
-                // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
-                // a shadow, not a border, so it costs no layout on a fixed-height button.
-                boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
                 color: addedToCart ? tokens.warmWhite : tokens.ink,
                 fontFamily: tokens.body,
                 fontSize: 11,

@@ -19,7 +19,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { tokens, layout, motion, space, type as typeScale, shadow } from '../../theme';
+import { radius, tokens, layout, motion, space, type as typeScale, shadow } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCartStore } from '../../store/cartStore';
 import { productByBlindType } from '../../data/products';
@@ -39,10 +39,6 @@ const MAX_WINDOWS = 12;
  * describe the order anyway, since it has no mount, no wave-fold heading and a
  * windowSize that stops at large where curtains go to XL. */
 const CURTAIN_ENQUIRY = '/contact';
-
-/** Matches the RADIUS the visualiser's own surfaces use, so the card and the
- * canvas box inside it agree rather than being 2px and 12px apart. */
-const CARD_RADIUS = 2;
 
 /** Blinds / Curtains, at the top of the control panel.
  *
@@ -75,7 +71,7 @@ function CategoryTabs() {
             style={{
               flex: 1,
               padding: `${space.sm}px`,
-              borderRadius: 2,
+              borderRadius: radius.md,
               fontFamily: tokens.body,
               fontSize: 10,
               fontWeight: 500,
@@ -122,7 +118,7 @@ function StepButton({
         // 32 x 32, on the scale and matching the pill height beside it.
         width: 32,
         height: 32,
-        borderRadius: 2,
+        borderRadius: radius.md,
         // On the black card, so the hairline and the glyph both invert. The
         // active fill is the ink pill the tabs above use, and its label inverts
         // with it -- it was ink on gold, and became ink on ink.
@@ -339,7 +335,7 @@ export function VisualiserShowcase() {
             // a cream card off a parchment ground one step away from it. The
             // black card separates completely on its own, and the hairline would
             // only muddy the edge that is now doing the work.
-            borderRadius: CARD_RADIUS,
+            borderRadius: radius.lg,
             padding: isMobile ? space.md : space.lg,
             // THE ONE ELEVATED OBJECT ON THE PAGE. Four shadow tokens were
             // declared and nothing consumed any of them, so nothing on the

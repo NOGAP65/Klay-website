@@ -47,7 +47,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useKlayStore } from '../store';
 import { useCartStore } from '../store/cartStore';
-import { tokens, motion, space, type as typeScale } from '../theme';
+import { radius, tokens, motion, space, type as typeScale } from '../theme';
 import { useIsMobile, useMediaQuery } from '../hooks/useIsMobile';
 
 /** WHERE THE BAR BECOMES A DRAWER.
@@ -318,7 +318,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 // the button are a pair of controls. See NAV_CONTROL.
                 width: NAV_CONTROL,
                 height: NAV_CONTROL,
-                borderRadius: 2,
+                borderRadius: radius.md,
                 border: `1px solid ${cartHover ? tokens.line : onDarkGround ? tokens.onDarkEdge : tokens.line}`,
                 // The hover wash follows the ground. A paper wash at 0.12 was
                 // the right move on a charcoal bar and is invisible on a paper
@@ -349,11 +349,6 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                   height: 20,
                   borderRadius: '50%',
                   background: tokens.accent,
-                  // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
-                  // hover lightens it, so the fill alone cannot carry the block boundary. An
-                  // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
-                  // a shadow, not a border, so it costs no layout on a fixed-height button.
-                  boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
                   color: tokens.onAccent,
                   fontFamily: tokens.body,
                   ...typeScale.micro,
@@ -384,13 +379,8 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 justifyContent: 'center',
                 height: NAV_CONTROL,
                 padding: `0 ${space.lg}px`,
-                borderRadius: 2,
+                borderRadius: radius.md,
                 background: ctaHover ? tokens.accentHover : tokens.accent,
-                // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
-                // hover lightens it, so the fill alone cannot carry the block boundary. An
-                // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
-                // a shadow, not a border, so it costs no layout on a fixed-height button.
-                boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
                 color: tokens.onAccent,
                 ...typeScale.label,
                 lineHeight: 1,
@@ -413,7 +403,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             width: NAV_CONTROL,
             height: NAV_CONTROL,
             border: `1px solid ${tokens.line}`,
-            borderRadius: 2,
+            borderRadius: radius.md,
             background: 'transparent',
             // linkColor, not onDark. It was onDark, which is paper — invisible on
             // the paper bar the moment the ground inverted. The contrast audit
@@ -487,12 +477,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             style={{
               marginTop: 6,
               background: tokens.accent,
-              // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
-              // hover lightens it, so the fill alone cannot carry the block boundary. An
-              // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
-              // a shadow, not a border, so it costs no layout on a fixed-height button.
-              boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
-              borderRadius: 2,
+              borderRadius: radius.md,
               color: tokens.onAccent,
               textDecoration: 'none',
               fontFamily: tokens.body,
