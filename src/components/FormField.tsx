@@ -62,14 +62,21 @@ export function FormField({
   const id = useId();
   const errorId = `${id}-error`;
 
-  // Error outranks focus — a red border that turns gold when you click into it
+  // Error outranks focus — a red border that turns blue when you click into it
   // would hide the problem at the exact moment you are trying to fix it.
-  const borderColour = error ? DANGER : focused ? tokens.fillStrong : tokens.line;
+  const borderColour = error ? DANGER : focused ? tokens.accent : tokens.line;
 
   const style: React.CSSProperties = {
     width: '100%',
     padding: '15px 16px',
-    background: tokens.cream,
+    // THE PALE SHADE, and this is the one place it earns its keep: the focused
+    // field tints as well as taking a blue edge, so which box has the caret is
+    // legible from across the form rather than from a 1px line. Ink on
+    // accentWash measures 14.38, so the value being typed loses nothing.
+    //
+    // Not applied on error: a tinted blue field with a red border is two states
+    // arguing, and the error is the one that matters.
+    background: focused && !error ? tokens.accentWash : tokens.cream,
     border: `1px solid ${borderColour}`,
     fontFamily: tokens.body,
     fontSize: 14,

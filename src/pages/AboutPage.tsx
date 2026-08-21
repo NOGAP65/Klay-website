@@ -158,8 +158,8 @@ export default function AboutPage() {
                 textTransform: 'uppercase',
                 padding: '18px 40px',
                 borderRadius: 2,
-                background: ctaHover ? tokens.fillStrongHover : tokens.fillStrong,
-                color: tokens.onFillStrong,
+                background: ctaHover ? tokens.accentHover : tokens.accent,
+                color: tokens.onAccent,
                 whiteSpace: 'nowrap',
                 transition: motion.button,
               }}

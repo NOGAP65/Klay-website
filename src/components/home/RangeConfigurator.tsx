@@ -94,6 +94,12 @@ function Chip({
         cursor: 'pointer',
         whiteSpace: 'nowrap',
         transition: motion.button,
+        // INK, NOT THE ACCENT. Blue is for actions, and a selected option is not
+        // an action — it is a record of one. Keeping selection neutral is also the
+        // only way it can be consistent: the visualiser's tabs and pills are
+        // selection too and they sit on a near-black card, where blue measures
+        // 1.48:1 and cannot be used at all. A selection language that changed
+        // colour depending on the ground under it is worse than a neutral one.
         background: selected ? tokens.fillStrong : 'transparent',
         // A SELECTED PILL IS A FILLED PILL, so its label inverts. The selected
         // fill was gold with ink on it; when the fill went black the label had to
@@ -334,8 +340,8 @@ export function RangeConfigurator({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: hover ? tokens.fillStrongHover : tokens.fillStrong,
-            color: tokens.onFillStrong,
+            background: hover ? tokens.accentHover : tokens.accent,
+            color: tokens.onAccent,
             ...typeScale.label,
             lineHeight: 1,
             border: 'none',

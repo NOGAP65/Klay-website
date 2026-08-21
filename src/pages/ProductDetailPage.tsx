@@ -272,7 +272,7 @@ export default function ProductDetailPage() {
                 style={{
                   width: '100%',
                   padding: '18px 24px',
-                  background: addedToCart ? tokens.charcoal : (cartHover ? tokens.fillStrongHover : tokens.fillStrong),
+                  background: addedToCart ? tokens.charcoal : (cartHover ? tokens.accentHover : tokens.accent),
                   color: addedToCart ? tokens.warmWhite : tokens.ink,
                   fontFamily: tokens.body,
                   fontSize: 14,
@@ -460,7 +460,7 @@ export default function ProductDetailPage() {
               onMouseEnter={() => setBarCartHover(true)}
               onMouseLeave={() => setBarCartHover(false)}
               style={{
-                background: addedToCart ? tokens.charcoal : (barCartHover ? tokens.fillStrongHover : tokens.fillStrong),
+                background: addedToCart ? tokens.charcoal : (barCartHover ? tokens.accentHover : tokens.accent),
                 color: addedToCart ? tokens.warmWhite : tokens.ink,
                 fontFamily: tokens.body,
                 fontSize: 11,

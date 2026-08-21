@@ -4,11 +4,14 @@
 // Inline styles are the house rule, which means every hover state has to be
 // tracked in React state and every button re-declares its own fill. Twelve
 // sections doing that independently is how a page ends up with nine slightly
-// different gold buttons — so the CTA and the section header live here once.
+// different buttons — so the CTA and the section header live here once.
 //
-// The CTA rule is narrow on purpose: gold ground with ink text, or charcoal
-// ground with gold text. Nothing else fills. The one variant that does neither
-// is `ghost`, which sits over hero photography and has no fill at all.
+// The CTA rule is narrow on purpose: ROYAL BLUE ground with a paper label, or
+// charcoal ground with a paper label. Nothing else fills. The one variant that
+// does neither is `ghost`, which sits over hero photography and has no fill.
+//
+// The blue is the only chroma anywhere in the interface, and this file is most
+// of where it is spent — see `accent` in theme.ts for why it is actions only.
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
@@ -48,7 +51,9 @@ export function useHover() {
   };
 }
 
-export type CtaVariant = 'gold' | 'onDark' | 'ghost';
+/** `primary` was called `gold` until the palette lost its gold, and is now the
+ * royal-blue fill. The name is the only thing that changed about the other two. */
+export type CtaVariant = 'primary' | 'onDark' | 'ghost';
 
 /** THE PRIMARY CTA — one definition, and the height is EXPLICIT.
  *
@@ -80,21 +85,42 @@ const ctaBase: React.CSSProperties = {
 
 function ctaFill(variant: CtaVariant, hover: boolean): React.CSSProperties {
   switch (variant) {
-    // Gold ground, ink text. The page's primary action.
-    case 'gold':
+    // ROYAL BLUE, paper label. The page's primary action, and the only place on
+    // the site that carries chroma at all. Deepens on hover rather than
+    // lightening — blue has room in both directions where ink had none.
+    case 'primary':
       return {
-        background: hover ? tokens.fillStrongHover : tokens.fillStrong,
-        color: tokens.onFillStrong,
-        borderColor: hover ? tokens.fillStrongHover : tokens.line,
+        background: hover ? tokens.accentHover : tokens.accent,
+        color: tokens.onAccent,
+        // The border matches the fill: a blue block with a grey hairline round it
+        // reads as two objects. It was `tokens.line` against the gold fill.
+        borderColor: hover ? tokens.accentHover : tokens.accent,
       };
-    // Charcoal ground, gold text — the inverse, for use on light sections
-    // where a gold fill would be the third gold thing in view.
+    // Charcoal ground, paper text — for light sections that want a quieter
+    // primary than the blue, or a second action beside one.
     case 'onDark':
       return {
         background: hover ? tokens.ink : tokens.charcoal,
         color: tokens.onDark,
         borderColor: hover ? tokens.ink : tokens.charcoal,
       };
+    // A PAPER-FILLED VARIANT WAS WRITTEN HERE AND THEN REMOVED, which is worth
+    // recording because the reasoning was sound and the premise was not.
+    //
+    // Blue measures 1.48:1 against charcoal and 1.88 against ink, so a blue
+    // button on a solid dark section would be a block you cannot locate — its
+    // label would still be perfectly legible on the blue, which is exactly the
+    // failure a text-contrast audit cannot see. FinalCta and the visualiser card
+    // looked like the cases that needed it.
+    //
+    // Measured in the running page, neither is. FinalCta's charcoal is a
+    // fallback BEHIND a photograph — it only shows while the image loads — and
+    // the visualiser's Buy Now sits on `band`, not on the black card above it. A
+    // filled-block audit across all eight routes finds no CTA on a solid dark
+    // ground at all, so the variant had no consumer and is gone rather than kept
+    // for a case that does not exist. The constraint itself is documented on
+    // `accent` in theme.ts, where the next person will actually look.
+    //
     // No fill. Only over photography, where it reads as the quieter of two.
     case 'ghost':
       return {
@@ -107,7 +133,7 @@ function ctaFill(variant: CtaVariant, hover: boolean): React.CSSProperties {
 
 export function CtaLink({
   to,
-  variant = 'gold',
+  variant = 'primary',
   children,
   style,
 }: {
@@ -126,7 +152,7 @@ export function CtaLink({
 
 export function CtaButton({
   onClick,
-  variant = 'gold',
+  variant = 'primary',
   children,
   style,
 }: {
@@ -712,8 +738,8 @@ export function PhotoTile({
               boxSizing: 'border-box',
               ...typeScale.label,
               lineHeight: 1,
-              color: tokens.onFillStrong,
-              background: hover ? tokens.fillStrongHover : tokens.fillStrong,
+              color: tokens.onAccent,
+              background: hover ? tokens.accentHover : tokens.accent,
               whiteSpace: 'nowrap',
               // Pops forward on hover. transformOrigin is the bottom-right corner
               // it is pinned to, so it grows inward rather than pushing itself

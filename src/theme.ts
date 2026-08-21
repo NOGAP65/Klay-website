@@ -111,8 +111,55 @@ export const tokens = {
    * two are barely a step apart anyway — so the only available direction is up.
    * #3D3D3D reads as a lift rather than a fade because the label on it stays
    * `onFillStrong` at 10.23:1, so the button gets visibly lighter while its text
-   * stays fully solid. */
+   * stays fully solid.
+   *
+   * STILL USED, but no longer by the CTAs — see `accent`. What keeps a black
+   * fill is everything that is not an action: the trust ticker's whole ground,
+   * the rules in RecommendationBanner and the booking pages, the filter
+   * checkboxes, and every selected pill and tab. */
   fillStrongHover: '#3D3D3D',
+
+  // ---------------------------------------------------------------------
+  // ROYAL BLUE — the only chroma in the interface, and it is spent on
+  // actions and nothing else.
+  //
+  // The palette was taken fully neutral first, deliberately, and this is added
+  // back on top of it rather than mixed into it. That ordering is the whole
+  // point: there are four blue values and they cover CTA fill, CTA hover, focus,
+  // and one pale ground. Everything else on the site stays grey.
+  //
+  // WHY IT IS NOT `royalblue`. CSS royalblue is #4169E1 and it does not survive
+  // the audit: as a fill its paper label measures 4.56 — a hair over — and as
+  // text it measures 4.14 on `band`, which fails 4.5 outright. It cannot be both
+  // a fill and a text colour, and an accent that can only be one of those needs
+  // a second value to cover the other, which is how a two-colour accent
+  // (`gold` / `goldText`) happened last time.
+  //
+  // #2B4ACB is the vivid royal blue that clears both jobs from one value:
+  // 6.72:1 under a paper label as a fill, and 6.72 / 7.13 / 6.09 as text on
+  // paper, card and band. One token, no division of labour to get wrong.
+  //
+  // IT IS A LIGHT-GROUND COLOUR ONLY. On #303030 it measures 1.48 and on
+  // #1D1D1D 1.88 — a blue button on a dark section would be a block you cannot
+  // find, even though its label would still be legible on the blue itself.
+  // Dark-ground actions keep the paper/ink inversion they already had. Going
+  // light enough to work on charcoal means #7B94EE, which is no longer royal
+  // blue and would fail as text on paper.
+  /** THE ACTION COLOUR. CTA fills, and legal as a text colour on all three
+   * light grounds if a link ever needs it. Pairs with `onAccent`. */
+  accent: '#2B4ACB',
+  /** Hover on a blue CTA, and it DEEPENS where the black button lightens.
+   * Blue has room in both directions where ink had none, and deepening is what
+   * a coloured button is expected to do. 1.25:1 against `accent`, which is
+   * enough to read as a change, and its paper label goes to 8.42. */
+  accentHover: '#233FA8',
+  /** Label on `accent` or `accentHover` — 6.72 and 8.42. */
+  onAccent: PAPER,
+  /** THE PALE SHADE: a tinted ground for a focused field or a highlighted row.
+   * Ink on it measures 14.38, and it sits 1.10:1 off paper — the same
+   * separation `band` has from paper, so it reads as a deliberate tone rather
+   * than a rendering artefact. */
+  accentWash: '#E8EDF9',
 
   // --- the grey ramp for text on light grounds ---
   // Every value re-measured against all three light grounds (paper #F8F8F8,

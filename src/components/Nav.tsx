@@ -32,9 +32,11 @@
 // priority, and duplicating the route means a visitor who never registers a
 // 12px word in the middle of a bar still has one unmissable way in.
 //
-// Both were gold. The button is now the black `fillStrong` fill every reference
-// brand uses, and the word is distinguished by weight rather than colour — see
-// the note on barLink.
+// Both were gold. The button is now the royal-blue `accent` fill — the one place
+// in this bar carrying any chroma at all — and the word is distinguished by
+// weight rather than colour, see the note on barLink. That split is deliberate:
+// the button is the action and takes the colour, the word is a destination and
+// does not.
 //
 // Booking a measure is still reachable — it is the CTA on the homepage, on the
 // category pages and in the footer.
@@ -345,8 +347,8 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                   width: 20,
                   height: 20,
                   borderRadius: '50%',
-                  background: tokens.fillStrong,
-                  color: tokens.onFillStrong,
+                  background: tokens.accent,
+                  color: tokens.onAccent,
                   fontFamily: tokens.body,
                   ...typeScale.micro,
                   letterSpacing: 'normal',
@@ -377,8 +379,8 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 height: NAV_CONTROL,
                 padding: `0 ${space.lg}px`,
                 borderRadius: 2,
-                background: ctaHover ? tokens.fillStrongHover : tokens.fillStrong,
-                color: tokens.onFillStrong,
+                background: ctaHover ? tokens.accentHover : tokens.accent,
+                color: tokens.onAccent,
                 ...typeScale.label,
                 lineHeight: 1,
                 textDecoration: 'none',
@@ -473,9 +475,9 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             onClick={() => setMenuOpen(false)}
             style={{
               marginTop: 6,
-              background: tokens.fillStrong,
+              background: tokens.accent,
               borderRadius: 2,
-              color: tokens.onFillStrong,
+              color: tokens.onAccent,
               textDecoration: 'none',
               fontFamily: tokens.body,
               fontSize: 13,
