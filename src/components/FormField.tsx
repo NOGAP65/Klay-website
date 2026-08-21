@@ -62,19 +62,24 @@ export function FormField({
   const id = useId();
   const errorId = `${id}-error`;
 
-  // Error outranks focus — a red border that turns clay when you click into it
+  // Error outranks focus — a red border that turns bronze when you click into it
   // would hide the problem at the exact moment you are trying to fix it.
-  const borderColour = error ? DANGER : focused ? tokens.accent : tokens.line;
+  //
+  // `accentEdge`, not `accent`: the bronze itself measures 3.45 against paper,
+  // which clears 1.4.11's 3:1 for a border but only barely, and a focus ring is
+  // the one border on the site that has to be unmistakable. The deeper sibling
+  // measures 6.24.
+  const borderColour = error ? DANGER : focused ? tokens.accentEdge : tokens.line;
 
   const style: React.CSSProperties = {
     width: '100%',
     padding: '15px 16px',
     // THE PALE SHADE, and this is the one place it earns its keep: the focused
-    // field tints as well as taking a clay edge, so which box has the caret is
+    // field tints as well as taking a bronze edge, so which box has the caret is
     // legible from across the form rather than from a 1px line. Ink on
-    // accentWash measures 14.38, so the value being typed loses nothing.
+    // accentWash measures 14.73, so the value being typed loses nothing.
     //
-    // Not applied on error: a clay-tinted field with a red border is two states
+    // Not applied on error: a bronze-tinted field with a red border is two states
     // arguing, and the error is the one that matters.
     background: focused && !error ? tokens.accentWash : tokens.cream,
     border: `1px solid ${borderColour}`,

@@ -120,54 +120,71 @@ export const tokens = {
   fillStrongHover: '#3D3D3D',
 
   // ---------------------------------------------------------------------
-  // CLAY — the only chroma in the interface, and it is spent on actions and
-  // nothing else.
+  // BRONZE — the logo's own colour, and the only chroma in the interface. It is
+  // spent on actions and nothing else.
   //
   // The palette was taken fully neutral first, deliberately, and this is added
-  // back on top of it rather than mixed into it. That ordering is the whole
-  // point: there are four clay values and they cover CTA fill, CTA hover, the
-  // label, and one pale ground. Everything else on the site stays grey.
+  // back on top of it rather than mixed into it. Five bronze values: the fill,
+  // its hover, the label on it, the edge that makes it findable, and one pale
+  // ground. Everything else on the site stays grey.
   //
-  // IT BELONGS TO THE MARK. The logo's k-leg is #A08058 at hue 33°, and it was
-  // the only chroma in the product before this. The accent sits at hue 16° —
-  // adjacent, redder, deeper — so the two read as one warm family rather than
-  // as a brand colour and an interface colour that happen to coexist. The
-  // royal blue this replaces sat at hue 226°, directly opposite the mark.
+  // IT IS SAMPLED FROM THE ARTWORK, not chosen to go with it. #A08058 is the
+  // leg of the k in public/images/logo_full.png, measured off the PNG. The mark
+  // was already the only chroma in the product; the interface now uses that same
+  // value rather than a colour picked to sit near it. Two attempts preceded this
+  // and both were approximations of it — a royal blue at hue 226°, opposite the
+  // mark, and a clay at hue 16°, adjacent to it. This is hue 33°, which is the
+  // mark, exactly.
   //
-  // WHY IT IS NOT ACTUAL TERRACOTTA. Terracotta as normally specified is around
-  // #E2725B, and it fails everything: 2.91:1 under a paper label, 2.64 as text
-  // on `band`. It is a mid-light colour and there is no way to put readable text
-  // on it or make readable text out of it. Walking the same hue down until both
-  // jobs clear lands here — #A64B2A is the LIGHTEST, most saturated clay that
-  // does both, which is the shade to want. Anything shallower is fill-only:
-  // #B35638 clears the fill at 4.59 but fails as text on band at 4.17.
+  // ---------------------------------------------------------------------
+  // THE LABEL IS INK, NOT PAPER, AND THAT IS FORCED.
   //
-  // ONE VALUE, TWO JOBS: 5.40:1 under a paper label as a fill, and
-  // 5.40 / 5.74 / 4.90 as text on paper, card and band. The margin on band is
-  // real but thin — 0.4 over the floor — so if a future value needs more room
-  // it comes out of lightness, not out of saturation.
+  // The bronze is a MID-TONE. Paper on it measures 3.45 and card on it 3.67 —
+  // both fail 4.5 — while ink on it measures 4.59 and passes. So the label had to
+  // flip when the accent became the logo's value, and every CTA on the site now
+  // reads as a bronze block with near-black type on it.
   //
-  // IT IS A LIGHT-GROUND COLOUR ONLY, same as the blue was. On #303030 it
-  // measures 2.71 and on #1D1D1D 3.46, so a clay button on a solid dark section
-  // would be hard to locate even though its label would still read on the clay
-  // itself. Nothing on the site needs that today — a filled-block audit across
-  // eight routes finds no CTA on a solid dark ground — but the constraint is why
-  // this is not simply used everywhere.
-  /** THE ACTION COLOUR. CTA fills, and legal as a text colour on all three
-   * light grounds if a link ever needs it. Pairs with `onAccent`. */
-  accent: '#A64B2A',
-  /** Hover on a clay CTA, and it DEEPENS where the black button lightens. Clay
-   * has room in both directions where ink had none, and deepening is what a
-   * coloured button is expected to do. 1.41:1 against `accent`, which reads
-   * clearly as a change, and its paper label goes to 6.49. */
-  accentHover: '#8F4526',
-  /** Label on `accent` or `accentHover` — 5.40 and 6.49. */
-  onAccent: PAPER,
+  // That is precisely the pairing the retired brand gold used (#C8973A with ink
+  // on it, 6.38) and it is not a coincidence: any colour light enough to read as
+  // gold or bronze is too light to carry white text. Worth knowing the margin
+  // here is thinner than the old gold's — 4.59 against 6.38 — because the logo's
+  // bronze is duller and darker than #C8973A was.
+  //
+  // IT CANNOT BE TEXT. On the three light grounds it measures 3.45 / 3.67 / 3.13
+  // — fine for a UI border, where the bar is 3:1, and a failure for anything that
+  // reads as words. This is exactly what forced `goldText` into existence
+  // alongside `gold` last time, and the reason no second token is needed now is
+  // narrow and worth stating: nothing on the site uses the accent as a text
+  // colour. If something ever needs to, it takes a deeper sibling around
+  // #725838 (6.24 / 6.63 / 5.66) rather than this.
+  /** THE ACTION COLOUR — the logo's bronze, sampled from the k. CTA fills only;
+   * see the note above on why it is not a text colour. Pairs with `onAccent`,
+   * which is ink. */
+  accent: '#A08058',
+  /** Hover on a bronze CTA, and it LIGHTENS. With an ink label the safe
+   * direction is up: going darker breaks the label instead (#8E7049 drops it to
+   * 3.66). 1.22:1 against `accent`, and the ink label improves to 5.58. */
+  accentHover: '#B08F63',
+  /** Label on `accent` or `accentHover` — 4.59 and 5.58. INK, not paper; see
+   * above. */
+  onAccent: INK,
+  /** THE EDGE OF A BRONZE BUTTON, and it exists to solve the hover state.
+   *
+   * A filled control needs 3:1 against its ground to be findable. The bronze
+   * manages that at rest (3.45 on paper, 3.13 on band) but the hover LIGHTENS
+   * it, which drops the block to 2.84 against paper — the button gets harder to
+   * see at the exact moment it is being interacted with.
+   *
+   * Drawing the border in the deeper sibling instead of in the fill fixes it for
+   * both states at once: 6.24 / 6.63 / 5.66 on the three light grounds, so the
+   * block's boundary is carried by the edge and no longer depends on how light
+   * the fill happens to be. Also the right value for a focus ring. */
+  accentEdge: '#725838',
   /** THE PALE SHADE: a tinted ground for a focused field or a highlighted row.
-   * Ink on it measures 14.53, and it sits 1.09:1 off paper — the same
-   * separation `band` has from paper, so it reads as a deliberate tone rather
-   * than a rendering artefact. */
-  accentWash: '#F7ECE6',
+   * Ink on it measures 14.73, and it sits 1.08:1 off paper — the same separation
+   * `band` has from paper, so it reads as a deliberate tone rather than a
+   * rendering artefact. */
+  accentWash: '#F5EFE4',
 
   // --- the grey ramp for text on light grounds ---
   // Every value re-measured against all three light grounds (paper #F8F8F8,

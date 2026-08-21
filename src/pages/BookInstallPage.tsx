@@ -485,6 +485,11 @@ export default function BookInstallPage() {
                   marginTop: 28,
                   padding: '17px 16px',
                   background: busy ? tokens.inkFaint : tokens.accent,
+                  // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
+                  // hover lightens it, so the fill alone cannot carry the block boundary. An
+                  // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
+                  // a shadow, not a border, so it costs no layout on a fixed-height button.
+                  boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
                   color: tokens.onAccent,
                   fontFamily: tokens.body,
                   fontSize: 11,

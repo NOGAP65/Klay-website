@@ -94,11 +94,11 @@ function Chip({
         cursor: 'pointer',
         whiteSpace: 'nowrap',
         transition: motion.button,
-        // INK, NOT THE ACCENT. Clay is for actions, and a selected option is not
+        // INK, NOT THE ACCENT. Bronze is for actions, and a selected option is not
         // an action — it is a record of one. Keeping selection neutral is also the
         // only way it can be consistent: the visualiser's tabs and pills are
-        // selection too and they sit on a near-black card, where clay measures
-        // 2.71:1 and cannot be used at all. A selection language that changed
+        // selection too and they sit on a near-black card, where the bronze fill
+        // and an ink label would both be wrong. A selection language that changed
         // colour depending on the ground under it is worse than a neutral one.
         background: selected ? tokens.fillStrong : 'transparent',
         // A SELECTED PILL IS A FILLED PILL, so its label inverts. The selected
@@ -341,6 +341,12 @@ export function RangeConfigurator({
             alignItems: 'center',
             justifyContent: 'center',
             background: hover ? tokens.accentHover : tokens.accent,
+            // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84
+            // once the hover lightens it, so the fill alone cannot carry the
+            // block boundary. An inset ring in the deeper bronze holds it at
+            // 6.24 in both states, and as a shadow rather than a border it costs
+            // no layout on a fixed-height button.
+            boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
             color: tokens.onAccent,
             ...typeScale.label,
             lineHeight: 1,

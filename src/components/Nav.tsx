@@ -32,7 +32,8 @@
 // priority, and duplicating the route means a visitor who never registers a
 // 12px word in the middle of a bar still has one unmissable way in.
 //
-// Both were gold. The button is now the clay `accent` fill — the one place
+// Both were gold. The button is now the bronze `accent` fill — which is the
+// logo's own colour, so the gold has in a sense come back, as the one place
 // in this bar carrying any chroma at all — and the word is distinguished by
 // weight rather than colour, see the note on barLink. That split is deliberate:
 // the button is the action and takes the colour, the word is a destination and
@@ -348,6 +349,11 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                   height: 20,
                   borderRadius: '50%',
                   background: tokens.accent,
+                  // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
+                  // hover lightens it, so the fill alone cannot carry the block boundary. An
+                  // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
+                  // a shadow, not a border, so it costs no layout on a fixed-height button.
+                  boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
                   color: tokens.onAccent,
                   fontFamily: tokens.body,
                   ...typeScale.micro,
@@ -380,6 +386,11 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 padding: `0 ${space.lg}px`,
                 borderRadius: 2,
                 background: ctaHover ? tokens.accentHover : tokens.accent,
+                // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
+                // hover lightens it, so the fill alone cannot carry the block boundary. An
+                // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
+                // a shadow, not a border, so it costs no layout on a fixed-height button.
+                boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
                 color: tokens.onAccent,
                 ...typeScale.label,
                 lineHeight: 1,
@@ -476,6 +487,11 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             style={{
               marginTop: 6,
               background: tokens.accent,
+              // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
+              // hover lightens it, so the fill alone cannot carry the block boundary. An
+              // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
+              // a shadow, not a border, so it costs no layout on a fixed-height button.
+              boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
               borderRadius: 2,
               color: tokens.onAccent,
               textDecoration: 'none',

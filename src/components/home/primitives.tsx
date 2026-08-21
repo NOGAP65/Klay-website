@@ -6,13 +6,14 @@
 // sections doing that independently is how a page ends up with nine slightly
 // different buttons — so the CTA and the section header live here once.
 //
-// The CTA rule is narrow on purpose: CLAY ground with a paper label, or charcoal
+// The CTA rule is narrow on purpose: BRONZE ground with an INK label, or charcoal
 // ground with a paper label. Nothing else fills. The one variant that does
 // neither is `ghost`, which sits over hero photography and has no fill.
 //
-// The clay is the only chroma anywhere in the interface, and this file is most of
-// where it is spent — see `accent` in theme.ts for why it is actions only, and
-// for why it is #A64B2A rather than the #E2725B terracotta normally means.
+// The bronze is the logo's own colour — #A08058, the leg of the k — and the only
+// chroma anywhere in the interface. This file is most of where it is spent. See
+// `accent` in theme.ts for why the label is ink rather than paper, which is not a
+// preference but a consequence of the bronze being a mid-tone.
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
@@ -53,7 +54,7 @@ export function useHover() {
 }
 
 /** `primary` was called `gold` until the palette lost its gold, and is now the
- * clay fill. The name is the only thing that changed about the other two. */
+ * bronze fill. The name is the only thing that changed about the other two. */
 export type CtaVariant = 'primary' | 'onDark' | 'ghost';
 
 /** THE PRIMARY CTA — one definition, and the height is EXPLICIT.
@@ -86,19 +87,22 @@ const ctaBase: React.CSSProperties = {
 
 function ctaFill(variant: CtaVariant, hover: boolean): React.CSSProperties {
   switch (variant) {
-    // CLAY, paper label. The page's primary action, and the only place on the
-    // site that carries chroma at all. Deepens on hover rather than lightening —
-    // clay has room in both directions where ink had none.
+    // THE LOGO'S BRONZE, ink label. The page's primary action, and the only place
+    // on the site that carries chroma at all. Lightens on hover, because with an
+    // ink label that is the only safe direction — see `accentHover`.
     case 'primary':
       return {
         background: hover ? tokens.accentHover : tokens.accent,
         color: tokens.onAccent,
-        // The border matches the fill: a clay block with a grey hairline round it
-        // reads as two objects. It was `tokens.line` against the gold fill.
-        borderColor: hover ? tokens.accentHover : tokens.accent,
+        // THE EDGE IS THE DEEPER BRONZE, not the fill. Matching the border to the
+        // fill was right while the fill was dark enough to find on its own; the
+        // bronze is a mid-tone and its hover lightens, which took the block to
+        // 2.84:1 against paper. `accentEdge` holds the boundary at 6.24 in both
+        // states, so the button stops depending on its fill to be findable.
+        borderColor: tokens.accentEdge,
       };
     // Charcoal ground, paper text — for light sections that want a quieter
-    // primary than the clay, or a second action beside one.
+    // primary than the bronze, or a second action beside one.
     case 'onDark':
       return {
         background: hover ? tokens.ink : tokens.charcoal,
@@ -109,8 +113,8 @@ function ctaFill(variant: CtaVariant, hover: boolean): React.CSSProperties {
     // recording because the reasoning was sound and the premise was not.
     //
     // The accent measures 2.71:1 against charcoal and 3.46 against ink, so a
-    // clay button on a solid dark section would be hard to locate — its label
-    // would still be perfectly legible on the clay, which is exactly the failure
+    // bronze button on a solid dark section would be hard to locate — its label
+    // would still be perfectly legible on the bronze, which is the failure
     // a text-contrast audit cannot see. FinalCta and the visualiser card looked
     // like the cases that needed it. (Under the royal blue this replaced the
     // same two numbers were 1.48 and 1.88, so the hazard was worse then and the
@@ -743,6 +747,11 @@ export function PhotoTile({
               lineHeight: 1,
               color: tokens.onAccent,
               background: hover ? tokens.accentHover : tokens.accent,
+              // The bronze is a mid-tone: 3.45:1 against paper at rest and 2.84 once the
+              // hover lightens it, so the fill alone cannot carry the block boundary. An
+              // inset ring in the deeper bronze holds it at 6.24 in both states. Drawn as
+              // a shadow, not a border, so it costs no layout on a fixed-height button.
+              boxShadow: `inset 0 0 0 1px ${tokens.accentEdge}`,
               whiteSpace: 'nowrap',
               // Pops forward on hover. transformOrigin is the bottom-right corner
               // it is pinned to, so it grows inward rather than pushing itself
