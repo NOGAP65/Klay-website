@@ -65,6 +65,29 @@ const NAV_COLLAPSE = '(max-width: 860px)';
  * pair. The links keep their own, wider gap from the cluster. */
 const CONTROL_GAP = 20;
 
+/** THE HEIGHT OF THE CART, THE CTA AND THE HAMBURGER — one number, because they
+ * are the same object at three jobs and they were 52 / 52 / 40.
+ *
+ * 42, down from 52, and this is what actually made the bar sleeker. The bar
+ * measured 85px and the logo was only 40 of it: the controls were setting the
+ * height and the logo was sitting in 12px of headroom on each side. Shrinking
+ * the logo would have done nothing to the bar, and growing it was free.
+ *
+ * Monday's nav row measures 60px and Kookaï's 96. At 42 with NAV_PAD either side
+ * the bar lands at 68 with a bigger mark in it than it had at 85. */
+const NAV_CONTROL = 42;
+
+/** Vertical padding, by state. Was 16 / 14 / 12, and the whole reason the bar
+ * read heavy: 32px of air around controls that did not need it. */
+const NAV_PAD = { rest: 11, mobile: 10, compressed: 8 };
+
+/** THE LOGO, and it is the one thing here that got BIGGER — 46 against the old
+ * 40, with the bar 17px shorter. The mark is a wordmark with INTERIORS
+ * letterspaced beneath it, so it needs real height before the second line is
+ * legible at all; 40 was the ceiling only because the controls had already
+ * spent the bar's height. */
+const NAV_LOGO = { rest: 46, mobile: 38 };
+
 interface NavLink {
   label: string;
   to: string;
@@ -193,7 +216,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: compressed ? '12px 5vw' : isMobile ? '14px 5vw' : '16px 5vw',
+        padding: `${compressed ? NAV_PAD.compressed : isMobile ? NAV_PAD.mobile : NAV_PAD.rest}px 5vw`,
         // PAPER, not charcoal. Same value as the page ground, which is how the
         // references do it — Monday runs a black marquee straight into a nav the
         // colour of the page, and the hairline below is the only thing dividing
@@ -243,7 +266,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
         <img
           src={onDarkGround ? '/images/klay-logo-light.png' : '/images/klay-logo.png'}
           alt="Klay Interiors"
-          style={{ height: isMobile ? 34 : 40, width: 'auto', display: 'block' }}
+          style={{ height: isMobile ? NAV_LOGO.mobile : NAV_LOGO.rest, width: 'auto', display: 'block' }}
         />
       </Link>
 
@@ -288,10 +311,10 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                // 52, matching the CTA beside it — the cart and the button are a
-                // pair of controls and were 44 against 52.
-                width: 52,
-                height: 52,
+                // Square, and the same height as the CTA beside it — the cart and
+                // the button are a pair of controls. See NAV_CONTROL.
+                width: NAV_CONTROL,
+                height: NAV_CONTROL,
                 borderRadius: 2,
                 border: `1px solid ${cartHover ? tokens.line : onDarkGround ? tokens.onDarkEdge : tokens.line}`,
                 // The hover wash follows the ground. A paper wash at 0.12 was
@@ -351,7 +374,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: 52,
+                height: NAV_CONTROL,
                 padding: `0 ${space.lg}px`,
                 borderRadius: 2,
                 background: ctaHover ? tokens.fillStrongHover : tokens.fillStrong,
@@ -374,12 +397,16 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           onClick={() => setMenuOpen((v) => !v)}
           style={{
-            width: 40,
-            height: 40,
+            width: NAV_CONTROL,
+            height: NAV_CONTROL,
             border: `1px solid ${tokens.line}`,
             borderRadius: 2,
             background: 'transparent',
-            color: tokens.onDark,
+            // linkColor, not onDark. It was onDark, which is paper — invisible on
+            // the paper bar the moment the ground inverted. The contrast audit
+            // did not catch it because the glyph is a single character and the
+            // walk only judges nodes carrying two or more.
+            color: linkColor,
             ...typeScale.card,
             fontSize: 20,
             display: 'flex',
