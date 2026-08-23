@@ -62,20 +62,31 @@
 // SO THE CARD SUPPLIES THE CONTAINMENT THE PHOTOGRAPH DOES NOT, in four moves,
 // and they are meant to be read as one:
 //
-//   1. THE WHOLE CARD IS ONE OBJECT. Picture, group line, name and the gold
-//      action all sit inside a single bounded box — white on the section's
-//      near-white, a hairline round it, one radius. Before this the photograph
-//      was a floating rectangle and the type and button were loose on the page
-//      ground beneath it, which is three objects the eye has to assemble. The
-//      1.06:1 between the card and the ground is deliberate and it is the one
-//      thing borrowed straight from MONDAY: the card barely separates from the
-//      page, so the boundary is felt rather than drawn, and the photograph is
-//      still the only strong thing in the frame.
+//   1. THE WHOLE CARD IS ONE OBJECT, AND IT IS A DARK MOUNT. Picture, group
+//      line, name and the gold action all sit inside one charcoal box on the
+//      section's near-white ground, with the photograph inset far enough that
+//      the charcoal reads as a mount rather than an edge. Before this the
+//      photograph was a floating rectangle and the type and button were loose on
+//      the page ground beneath it — three objects the eye had to assemble.
+//
+//      IT WAS A WHITE CARD FIRST, at 1.06:1 against the ground, which is the one
+//      thing borrowed straight from MONDAY: a boundary felt rather than drawn.
+//      That is right for a cut-out on a flat field and wrong here. At 1.06:1 the
+//      card did not separate from the page AT ALL until you hovered it, so the
+//      whole section only came alive under a pointer — and most visitors never
+//      give it one. Charcoal on near-white is 11:1. The cards are now the
+//      highest-contrast objects on the page at rest, doing statically what the
+//      hover was doing on demand.
+//
+//      THE MOUNT IS ALSO WHY IT IS NOT THE SECTION THAT WENT DARK. The obvious
+//      move is a charcoal band behind the row, and it cannot be had: the hero
+//      above is dark and How It Works below is charcoal, so a dark range makes
+//      three dark bands stacked and the page loses its rhythm. Inverting the
+//      CARD instead buys the same contrast and costs the page nothing.
 //
 //   2. IT SITS UP OFF THE PAGE, and further on hover. A resting shadow and a
-//      lift-plus-rise under the pointer, which is what makes the row feel live
-//      rather than printed. See the note on the lift for the elevation budget
-//      this spends.
+//      lift-plus-rise under the pointer. The rise is now the smaller half of the
+//      effect rather than the whole of it — see move 1.
 //
 //   3. THE PHOTOGRAPH IS LIT. A vignette inside the frame — transparent at the
 //      centre, a fifth of ink at the corners — plus a small contrast and
@@ -90,7 +101,16 @@
 //      and desaturate; open one and they stay down for as long as it is open.
 //      Four scenes competing at equal strength is the actual reason attention
 //      does not settle anywhere, and this is the only move that fixes that
-//      rather than fixing each card in isolation.
+//      rather than fixing each card in isolation. It is the one device here that
+//      needs a pointer, so it is deliberately the last of the four rather than
+//      the load-bearing one.
+//
+// AND THE SECTION IS GIVEN AIR. Its top padding is the extra-large step the page
+// reserves for the visualiser and the closing CTA, rather than the standard one
+// every ordinary band gets. Isolation is how this page already says "this one
+// matters", and it is the cheapest static attention there is — four dark objects
+// need light space around them or they read as a bar rather than as four framed
+// pictures.
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
@@ -101,7 +121,7 @@ import { useIsMobile, useMediaQuery } from '../../hooks/useIsMobile';
 // rendered by the same tile. Four of them, named below; nothing about the range
 // is written down in this file.
 import { CATALOGUE, type CatalogueItem } from '../../data/catalogue';
-import { CtaLink, TILE_GAP } from './primitives';
+import { CtaLink } from './primitives';
 import { ProductGlyph } from '../ProductGlyph';
 import { RangeConfigurator } from './RangeConfigurator';
 import { defaultSelection, fieldsFor, type Selection } from '../../data/configOptions';
@@ -174,7 +194,7 @@ const cols = (fourUp: boolean) => (fourUp ? 4 : 1.8);
 
 /** One share, as a CSS length for the slots. */
 const cardBasis = (fourUp: boolean) =>
-  `calc((100% - ${(Math.ceil(cols(fourUp)) - 1) * TILE_GAP}px) / ${cols(fourUp)})`;
+  `calc((100% - ${(Math.ceil(cols(fourUp)) - 1) * ROW_GAP}px) / ${cols(fourUp)})`;
 
 /** How many shares the open slot takes. One below the four-up breakpoint, which
  * is the stacked case: the slot goes to the whole row and the panel sits under
@@ -186,7 +206,7 @@ const openShares = (fourUp: boolean, wideRow: boolean) => (!fourUp ? 1 : wideRow
 const cardBasisOpen = (fourUp: boolean, wideRow: boolean) => {
   if (!fourUp) return '100%';
   const n = openShares(fourUp, wideRow);
-  return `calc(((100% - ${(cols(fourUp) - 1) * TILE_GAP}px) / ${cols(fourUp)}) * ${n} + ${(n - 1) * TILE_GAP}px)`;
+  return `calc(((100% - ${(cols(fourUp) - 1) * ROW_GAP}px) / ${cols(fourUp)}) * ${n} + ${(n - 1) * ROW_GAP}px)`;
 };
 
 /** THE SAME SHARE IN PIXELS, from the row's own width — the identical
@@ -199,7 +219,7 @@ const cardBasisOpen = (fourUp: boolean, wideRow: boolean) => {
  * between one share and two. Computing it from the row's clientWidth has no such
  * window, because opening a card does not change how wide the row is. */
 const sharePx = (rowWidth: number, fourUp: boolean) =>
-  (rowWidth - (Math.ceil(cols(fourUp)) - 1) * TILE_GAP) / cols(fourUp);
+  (rowWidth - (Math.ceil(cols(fourUp)) - 1) * ROW_GAP) / cols(fourUp);
 
 /** How long a card takes to widen. Shared by the slot transition, the panel's
  * entrance and the scroll nudge that follows both, so the three cannot drift out
@@ -218,21 +238,40 @@ const COLLAPSE_MS = 220;
  * card never moves the section below. */
 const PANEL_H = 560;
 
-/** How far the gold frame stands off the selected card.
+/** THE STRIP BETWEEN TWO CARDS, and it is this section's own number rather than
+ * the shared TILE_GAP the install strip and the full-range grid use.
  *
- * The frame cannot grow outwards: its outer edge already sits on the slot's own
- * bounds, and the slots carry `contain: paint`, which clips every descendant to
- * the slot's padding box. So the frame keeps its size and the card insets inside
- * it — which puts a band of the section's own ground between the gold line and
- * the photograph, and that is what makes it read as a frame around the card
- * rather than a stroke on the card's edge.
+ * TILE_GAP is 4, and 4 was right for as long as these cards were white: the strip
+ * was the page showing through between two near-white boxes, which is to say it
+ * was invisible, and a hairline was all it needed to be. Against charcoal cards a
+ * 4px strip does not read as space between four objects — it reads as four splits
+ * in ONE dark band running the width of the page, which is the failure mode a dark
+ * treatment has and the reason most people never try it.
  *
- * 4, the smallest step on the scale, and also exactly the strip between two
- * cards, so the air inside the frame matches the air between frames — and it is
- * the inset that makes the outer radius and the photograph's radius agree: 4 of
- * padding around a 6 radius reads as a 10 radius on the outside, which is what
- * the card carries. */
-const FRAME = space.xxs;
+ * 12 is where they separate. The warm white between them becomes a real interval,
+ * so the row reads as four framed pictures hung in a line rather than as a bar
+ * with lines scored across it. It costs 24px of photograph across the row, which
+ * is nothing next to what it buys. */
+const ROW_GAP = space.sm;
+
+/** HOW WIDE THE DARK MOUNT IS — the band of card colour between the card's edge
+ * and the photograph inside it.
+ *
+ * 12, and the number is doing real work. At 4 the charcoal is a hairline and the
+ * card reads as a photograph that has been outlined; at 12 it reads as a
+ * photograph that has been MOUNTED, which is the whole point of going dark — a
+ * print in a frame rather than a picture with a border. Much past 12 and the
+ * mount starts to be the subject.
+ *
+ * IT REPLACED A 4px STANDOFF, which is what this inset was when the selected
+ * card's gold frame was an absolutely-positioned overlay: 4 was the smallest step
+ * on the scale and exactly the strip between two cards, so the air inside the
+ * frame matched the air between frames. Neat, and invisible once the card went
+ * charcoal — at that width the dark is an outline rather than a surface.
+ *
+ * It comes out of the pinned card width, so it changes the photograph rather
+ * than the card: the slot is unchanged and the row does not move. */
+const MOUNT = space.sm;
 
 /** THE CARD'S OWN EDGE. One pixel, and it is always there — only its colour
  * changes, from a decorative hairline at rest to the accent on the open card.
@@ -276,13 +315,15 @@ const VIGNETTE =
  * and saturation together, because either alone is too polite to notice.
  *
  * THESE ARE THE TWO NUMBERS TO TURN if the spotlight is too strong or not strong
- * enough — nothing else in the section needs touching. They were 0.55 and 0.7,
- * which read well on the photographs and badly on the gold buttons: a Shop Now at
- * 55% on a stepped-back card looks disabled rather than recessive, and a visitor
- * who reads three of the four buttons as dead has been told something false. At
- * 0.62 the buttons stay plainly live and the hovered card still clearly wins. */
-const DIM_OPACITY = 0.62;
-const DIM_SATURATION = 0.75;
+ * enough — nothing else in the section needs touching.
+ *
+ * 0.72 rather than the 0.62 it ran at over white cards, and the reason is the
+ * mount. Fading a WHITE card toward a near-white page costs it almost nothing;
+ * fading a CHARCOAL card toward the same page washes it grey fast, and three grey
+ * cards look broken rather than deferential. The dark mount does more of this
+ * work than the opacity now, so the opacity has less to do. */
+const DIM_OPACITY = 0.72;
+const DIM_SATURATION = 0.8;
 
 // ---------------------------------------------------------------------------
 // THE CARD — a clean photograph, then the name underneath it, then the one gold
@@ -348,7 +389,7 @@ function RangeCard({
   // none of this is reached. It stays because the four are chosen by id above: if
   // one is swapped for a product with no photograph, the tile takes the chosen
   // fabric colour as its ground and draws the mechanism on it, rather than being
-  // a charcoal hole in the page. THIS IS ALSO WHY THE PANEL GOES BESIDE THE CARD
+  // a hole in the mount. THIS IS ALSO WHY THE PANEL GOES BESIDE THE CARD
   // AND NOT UNDER IT — the card stays in view while you configure, so choosing a
   // colour visibly repaints the tile next to the swatch you just clicked. Above
   // 0.45 luminance the drawing flips to ink, because a warm-white mechanism on a
@@ -364,22 +405,22 @@ function RangeCard({
         alignItems: 'stretch',
         height: '100%',
         position: 'relative',
-        // THE STANDOFF. The border is on this box and the contents sit in from
-        // it, so the edge never touches the photograph or the gold buttons — and
-        // the band of card colour between them is what reads as a mount.
-        padding: FRAME,
+        // THE MOUNT. The band of charcoal between this box's edge and the
+        // photograph inside it — see MOUNT for why it is 12 and not 4.
+        padding: MOUNT,
         boxSizing: 'border-box',
 
         // --- THE CARD ITSELF. See move 1 in the note at the top of this file.
-        // White on the section's near-white — 1.06:1, so the box is felt rather
-        // than seen, and the photograph stays the only strong thing in it.
-        background: tokens.cream,
-        // Decorative at rest, one step up under the pointer, the accent when the
-        // configurator is open. The open card wears the same gold as the action
-        // that opened it, which is what ties the pair together without a second
-        // element to animate.
+        // Charcoal on the section's near-white: 11:1, which makes these the
+        // highest-contrast objects on the page while it is sitting still.
+        background: tokens.charcoal,
+        // A dark card on a light page barely needs an edge — the tone change IS
+        // the boundary — so at rest this is a hairline that only stops the
+        // charcoal meeting the paper flat. It goes to the accent on the open card,
+        // which is the same gold as the action that opened it, and that is what
+        // ties the pair together without a second element to animate.
         border: `${BORDER}px solid ${
-          framed ? tokens.accent : hover ? tokens.lineStrong : tokens.lineFaint
+          framed ? tokens.accent : hover ? tokens.onDarkEdge : tokens.onDarkLine
         }`,
         borderRadius: radius.lg,
 
@@ -450,11 +491,10 @@ function RangeCard({
             style={{
               position: 'relative',
               overflow: 'hidden',
-              // ONE STEP INSIDE THE CARD'S RADIUS. Concentric corners: 6 here
-              // plus the 4px inset reads as the 10 on the card, so the picture
-              // looks mounted in the card rather than pasted over it. It carried
-              // the card's own radius before, when it WAS the card.
-              borderRadius: radius.md,
+              // ONE STEP INSIDE THE CARD'S RADIUS, so the picture looks mounted
+              // in the card rather than pasted over it. It carried the card's own
+              // radius before, when it WAS the card.
+              borderRadius: radius.sm,
               // 4:5 — the site's one portrait ratio, shared with the install
               // strip and the About panel.
               aspectRatio: '4 / 5',
@@ -545,7 +585,9 @@ function RangeCard({
               fontWeight: 500,
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              color: tokens.inkSoft,
+              // On the mount now rather than on the page, so it takes the dark
+              // ground's muted step — 0.6 of paper over charcoal measures 6.09:1.
+              color: tokens.onDarkMuted,
               marginTop: space.md,
             }}
           >
@@ -568,7 +610,10 @@ function RangeCard({
               // costs one line of empty space under the names that fit on one,
               // which is invisible — it is the same warm white as the card.
               minHeight: `${2 * 1.1 * (isMobile ? 20 : 26)}px`,
-              color: tokens.ink,
+              // Paper on charcoal, 12.43:1. The name is the loudest type on the
+              // card and on a dark mount it can afford to be — this is where the
+              // display face finally gets a ground worth setting it on.
+              color: tokens.onDark,
               marginTop: space.xs,
               transition: 'color 0.25s ease',
             }}
@@ -620,7 +665,7 @@ function RangeCard({
             // the two cannot add up to more than the slot at any width.
             flex: stacked ? '1 1 auto' : '1 1 0',
             minWidth: 0,
-            marginTop: stacked ? TILE_GAP : 0,
+            marginTop: stacked ? ROW_GAP : 0,
             // EXACTLY THE CARD'S HEIGHT, and this is what enforces it. The panel
             // holds its content in an absolutely-positioned child, so the panel
             // itself has NO intrinsic height — which means the row's height is
@@ -726,11 +771,12 @@ export function RangeRow() {
     const row = scrollerRef.current;
     if (!row) return;
 
-    // Less the frame's standoff AND the card's border on both sides: the card
-    // column sits inside the wrapper's content box, which is the slot less two
-    // borders and two paddings.
+    // Less the MOUNT and the card's border on both sides: the card column sits
+    // inside the wrapper's content box, which is the slot less two borders and two
+    // mounts. It read 2 * FRAME while the inset WAS the frame; with the mount at 12
+    // that under-subtracted by 16 and the pinned card overflowed its own card.
     const measure = () =>
-      setCardPx(sharePx(row.clientWidth, fourUp) - 2 * FRAME - 2 * BORDER);
+      setCardPx(sharePx(row.clientWidth, fourUp) - 2 * MOUNT - 2 * BORDER);
     measure();
     // The row's width is the only input, so the row is what has to be watched —
     // not the window, which also fires on height changes that cannot affect it.
@@ -825,7 +871,7 @@ export function RangeRow() {
       // two shares at one breakpoint and three at another, so doubling a sibling
       // under-nudged by a whole share below 1250.
       const n = openShares(fourUp, wideRow);
-      const target = sharePx(row.clientWidth, fourUp) * n + (n - 1) * TILE_GAP;
+      const target = sharePx(row.clientWidth, fourUp) * n + (n - 1) * ROW_GAP;
       const over = slot.offsetLeft + target - (row.scrollLeft + row.clientWidth);
       if (over > 0) row.scrollTo({ left: row.scrollLeft + over, behavior: 'smooth' });
     }, EXPAND_MS);
@@ -857,8 +903,9 @@ export function RangeRow() {
   };
 
   return (
-    // Warm white, and the 4px strip between the cards is this colour showing
-    // through. See TILE_GAP.
+    // Warm white, and the strip between the cards is this colour showing through —
+    // which is most of what makes four charcoal mounts read as four objects. See
+    // ROW_GAP.
     <section style={{ background: tokens.warmWhite }}>
       {/* THE HEADER IS RANGED LEFT WITH THE ACTION OPPOSITE, which is the other
           half of what MONDAY's range section does: heading hard left at display
@@ -867,8 +914,13 @@ export function RangeRow() {
           something opposite it reads as a section heading with a decision
           attached.
 
-          Compact, because this is the first section under the hero and every
-          pixel the band takes is a pixel of product pushed below the fold. */}
+          AND IT IS GIVEN THE FOCAL STEP OF AIR, not the standard one — the same
+          extra-large padding the visualiser and the closing CTA get. It was the
+          ordinary section step, on the argument that this is the first band under
+          the hero so every pixel it takes pushes product below the fold. That was
+          right when the cards were white and needed no room; four charcoal blocks
+          crowded up against the hero read as a bar across the page rather than as
+          four framed pictures, and the air is what makes them objects. */}
       <div
         style={{
           ...inner,
@@ -879,7 +931,7 @@ export function RangeRow() {
           gap: space.lg,
           padding: isMobile
             ? `${space.xl}px ${layout.inlinePad(isMobile)}px ${space.lg}px`
-            : `${space.xxl}px ${layout.inlinePad(isMobile)}px ${space.lg}px`,
+            : `${space.xxxl}px ${layout.inlinePad(isMobile)}px ${space.lg}px`,
         }}
       >
         <div>
@@ -909,11 +961,12 @@ export function RangeRow() {
         style={{
           ...inner,
           position: 'relative',
-          // Closes the section. Deliberately thin: this is a margin finishing a
-          // section rather than a gap between two, so it is closer in weight to
-          // the 4px strips framing the cards than to the padding a real section
-          // carries.
-          paddingBottom: space.md,
+          // Closes the section, and it is the other half of the air above. It was
+          // 20 — a margin finishing a section rather than a gap between two —
+          // which left the last card sitting almost on the charcoal band below.
+          // Two charcoal surfaces 20px apart read as one interrupted surface, so
+          // the dark cards need real light space under them as well as over.
+          paddingBottom: isMobile ? space.lg : space.xl,
         }}
       >
         <div
@@ -921,7 +974,7 @@ export function RangeRow() {
           className="klay-hscroll"
           style={{
             display: 'flex',
-            gap: TILE_GAP,
+            gap: ROW_GAP,
             // AT REST THIS DOES NOT SCROLL. Four cards at one share each is
             // exactly the row, so there is no overflow and no scrollbar until a
             // card is opened and its slot takes two shares. Below the four-up
