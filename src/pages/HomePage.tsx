@@ -16,9 +16,9 @@
 //    6  What if I don't know?            recommendation banner
 //    7  What will it look like?          visualiser
 //    8  Who actually does the work?      about panel
-//    9  Does it really look like that?   install strip
+//    9  Right — how do I start?          final CTA
 //   10  Does anyone else trust them?     reviews
-//   11  Right — how do I start?          final CTA
+//   11  Does it really look like that?   install strip
 //
 // THE BIG CHANGE: PRODUCTS FOLLOW CATEGORIES DIRECTLY. How It Works used to sit
 // between them, and that is where the page fell over. The customer picks a
@@ -35,17 +35,17 @@
 // free measure and the installation, the hero's sub-line says "measured and
 // installed by experts", and the hero's second button goes straight to it.
 //
-// THE GROUNDS. No two adjacent sections share one, top to bottom: charcoal ticker,
-// dark hero, warm white, parchment, charcoal, ink, warm white, parchment, charcoal,
-// warm white, charcoal, warm white, charcoal, warm white. The visualiser is the
-// only ink on the page — the deepest ground under the brightest panel, which is
-// what makes the one section that does real work look like the centrepiece rather
-// than another band. The charcoal banner immediately above it is the page starting
-// to darken into that, not a bar dropped between two light sections.
+// THE GROUNDS. No two adjacent sections share one, and that rule is why moving
+// the install strip below the reviews also changed its colour: it was warm white,
+// Testimonials is warm white, and stacked they would have read as one very long
+// white run with no seam between the reviews and the strip. It is parchment down
+// here, which also puts a mid tone between the reviews and the ink footer.
 //
-// The reorder left the grounds working without touching a single section's colour:
-// How It Works keeps its charcoal, and in its new slot it lands between the
-// parchment of the second range panel and the warm white of the install strip.
+// The visualiser is the only ink on the page — the deepest ground under the
+// brightest panel, which is what makes the one section that does real work look
+// like the centrepiece rather than another band. The charcoal banner immediately
+// above it is the page starting to darken into that, not a bar dropped between
+// two light sections. Everything else kept the ground it already had.
 //
 // Section components live in components/home. Nav and Footer are shared with
 // every other page and stay in components/.
@@ -125,22 +125,13 @@ export default function HomePage() {
         {/* 7 — The centrepiece: configure it, see it on your own window, buy it. */}
         <VisualiserShowcase />
 
-        {/* 8 + 9 — THE EVIDENCE, and these two are a pair.
-            "Here are real jobs" followed immediately by "here is who did them"
-            is one argument told in two registers — photographs, then the
-            sentences behind them. Split apart they were two isolated trust
-            sections; together the install strip functions as the about panel's
-            evidence and the panel functions as the strip's caption. */}
-        <SocialProof />
-
-        {/* Who turns up at the house — the only section about Klay rather than
-            about a product. It used to sit between the visualiser and the
-            install strip, interrupting the run of evidence with a page of
-            prose. Nobody arrives wanting to read about a window furnishings
-            business; they read it once they have decided they might buy. */}
+        {/* 8 — Who turns up at the house — the only section about Klay rather than
+            about a product. Nobody arrives wanting to read about a window
+            furnishings business; they read it once they have decided they
+            might buy. */}
         <AboutPanel />
 
-        {/* 10 — One last ask.
+        {/* 9 — One last ask.
             IT CANNOT SIT DIRECTLY UNDER THE VISUALISER, which is where it was.
             Its button is Start Designing and it does not navigate — it scrolls
             to #visualiser. Immediately below that section the CTA bounces you a
@@ -149,7 +140,7 @@ export default function HomePage() {
             it is a real journey back to the top of the page's centrepiece. */}
         <FinalCta />
 
-        {/* 11 — Reviews, moving, and last.
+        {/* 10 — Reviews, moving.
             After the ask rather than before it, which is the unusual way round.
             The reasoning: the nav carries Book a Measure on every screen, so the
             ask is never actually more than a glance away, and what somebody
@@ -158,6 +149,17 @@ export default function HomePage() {
             somebody else's voice instead of Klay's, which is a better last
             impression than a second CTA. */}
         <Testimonials />
+
+        {/* 11 — In your home, and the page's true last panel.
+            The install strip used to sit directly above the about panel, where
+            the two of them read as one argument: photographs, then the
+            sentences behind them. Down here it does a different job. Every tile
+            links to the product in the photograph, so the last thing on the
+            page is not a claim but five ways back into the range — and it lands
+            on somebody who has just finished reading the reviews, which is when
+            they are most likely to take one. Parchment rather than the warm
+            white it had upstairs — see THE GROUNDS above. */}
+        <SocialProof />
 
         {/* 12 — Footer. */}
         <Footer />

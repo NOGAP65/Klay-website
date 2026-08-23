@@ -12,6 +12,15 @@
 // has to be photographs of real jobs or it is working against the trust it is
 // there to build. Five real install photos replace these.
 //
+// LAST SECTION ON THE PAGE, below the reviews. It used to sit directly above the
+// about panel, where the two read as one argument — photographs, then the
+// sentences behind them. Down here it does a different job: every tile links to
+// the product in the photograph, so the page's last panel is not a claim but
+// five ways back into the range, offered to somebody who has just finished
+// reading the reviews. Parchment rather than warm white, because Testimonials
+// above it is warm white and the homepage does not let two adjacent sections
+// share a ground.
+//
 // Desktop is five equal columns, edge to edge. Mobile scrolls horizontally
 // rather than folding into a 3x2 grid — five images do not divide into six cells
 // without leaving a hole, and a scrolling strip keeps all five and stays a strip.
@@ -50,7 +59,7 @@ function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: bool
         aspectRatio: '4 / 5',
         // Fixed width on mobile so the row scrolls; a grid track on desktop.
         flex: isMobile ? '0 0 62vw' : undefined,
-        background: tokens.parchment,
+        background: tokens.warmWhite,
         textDecoration: 'none',
       }}
     >
@@ -103,7 +112,7 @@ export function SocialProof() {
   const { hover, bind } = useHover();
 
   return (
-    <section style={{ background: tokens.warmWhite }}>
+    <section style={{ background: tokens.parchment }}>
       {/* The page's shared band, same as the categories, the range and the
           visualiser. It supplies the section's top padding, so the section itself
           carries none. */}
@@ -150,8 +159,8 @@ export function SocialProof() {
           rel="noreferrer noopener"
           style={{
             ...typeScale.body,
-            // goldText: @klayinteriors sits on warm white, where brand gold
-            // measures 2.37.
+            // Ink, not gold: brand gold measures 2.37 against this section's
+            // ground, and the handle is the section's only link out.
             color: tokens.ink,
             textDecoration: 'none',
             borderBottom: `1px solid ${hover ? tokens.ink : 'transparent'}`,
