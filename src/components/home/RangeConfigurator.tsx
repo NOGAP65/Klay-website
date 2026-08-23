@@ -244,7 +244,14 @@ export function RangeConfigurator({
         // card instead: three fields, a price and a button. The roller, which
         // asks five, scrolls the last one into view inside its own panel rather
         // than making all fourteen cards tall enough for the worst case.
-        ...(fill ? { flex: '1 1 auto' } : { height: CONFIG_H, flex: '0 0 auto' }),
+        // CONTENT-SIZED IN FILL MODE. It used to fill a panel that had been
+        // pinned to the photograph's height, so every card in the row could
+        // stay level — which meant a wardrobe asking one question carried a
+        // roller's worth of slack and the roller scrolled inside its own panel.
+        // It now opens as a drawer under one card in a grid whose rows size
+        // themselves, so nothing needs to stay level and this is as tall as its
+        // questions and no taller. See THE DRAWER in RangeGrid.
+        ...(fill ? { flex: '0 0 auto' } : { height: CONFIG_H, flex: '0 0 auto' }),
         minHeight: 0,
         boxSizing: 'border-box',
         background: tokens.cream,
@@ -271,7 +278,10 @@ export function RangeConfigurator({
         style={{
           flex: '1 1 auto',
           minHeight: 0,
-          overflowY: 'auto',
+          // NOTHING SCROLLS IN FILL MODE. The guard exists for the fixed-height
+          // variant, where a seventeen-colour card cannot fit; the drawer has no
+          // height to run out of.
+          overflowY: fill ? 'visible' : 'auto',
           display: 'flex',
           flexDirection: 'column',
           gap: space.sm,

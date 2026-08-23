@@ -117,7 +117,7 @@ export const CATALOGUE: CatalogueItem[] = [
     // It also makes the range row work. The card's lead control is a colour
     // swatch where a colour card exists, and repainting the tile's ground with
     // the chosen colour is the one way a photoless product can SHOW a selection
-    // rather than just record it — see the note on SwatchRow in RangeCarousel.
+    // rather than just record it — see the note on the glyph fallback in RangeGrid.
     // With colours on rollers and curtains alone, both of which have
     // photographs, that never fired once.
     colours: RYNAMIC_COLOURS,

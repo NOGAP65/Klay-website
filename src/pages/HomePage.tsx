@@ -59,7 +59,7 @@ import { Footer } from '../components/Footer';
 import { TrustTicker, BAR_HEIGHT } from '../components/home/TrustTicker';
 import { Hero } from '../components/home/Hero';
 import { StepsBar } from '../components/home/StepsBar';
-import { RangeCarousel } from '../components/home/RangeCarousel';
+import { RangeGrid } from '../components/home/RangeGrid';
 import { RecommendationBanner } from '../components/home/RecommendationBanner';
 import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
 import { AboutPanel } from '../components/home/AboutPanel';
@@ -112,11 +112,12 @@ export default function HomePage() {
             /how-it-works, which the bar links to. */}
         <StepsBar />
 
-        {/* 5 — The whole range in one row: six tiles, arrows, and it advances on
-            its own. This is the category grid and the SKU grid merged — they were
-            asking the same question twice, and neither was asking it the way a
-            customer thinks. See the note at the top of RangeCarousel. */}
-        <RangeCarousel />
+        {/* 5 — Six products, three across and two down, nothing behind an arrow.
+            Not the catalogue: one card per thing the business does, so the
+            breadth arrives in one glance and the other eight live on /products.
+            This replaced a fourteen-card carousel whose visible four were all
+            indoor blinds. See the note at the top of RangeGrid. */}
+        <RangeGrid />
 
         {/* 6 — The catch, for anyone who read the range and still doesn't know
             which one is theirs. */}
