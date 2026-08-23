@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// 4. Our Range — SIX PRODUCTS, ALL VISIBLE, NO CAROUSEL.
+// 4. Our Range — FOUR HERO PRODUCTS IN ONE ROW.
 //
 // WHAT THIS REPLACED, AND WHY. This section was a horizontal scroller holding
 // all fourteen catalogue items, four visible at a time, advancing itself every
@@ -17,13 +17,26 @@
 // height, two files of geometry — and delivered the informational value of four
 // cards, which were the four that made the range look narrowest.
 //
-// SHOW THE SHAPE OF THE RANGE, NOT THE CATALOGUE. Six cards, one per thing the
-// business actually does: a blind, a soft furnishing, a shutter, joinery, an
-// outdoor system, and a shower screen. Six divides into 3x2 on desktop and 2-up
-// on mobile, so nothing is behind an arrow, nothing is behind a five-second
-// wait, and the breadth arrives without the visitor interacting at all. The
-// other eight live on /products, which is a filtered shop built for exactly
-// that, and Shop All is how you get there.
+// FOUR HERO PRODUCTS, AND ONE PER PART OF THE BUSINESS: a roller blind, a
+// curtain, a wardrobe, a folding arm awning. Indoor hard furnishing, indoor soft
+// furnishing, joinery, outdoor. Four is the number that fits one row at the
+// width the references use — MONDAY, Sixpenny and HAY are all four-up between
+// 310 and 335 — so there are no arrows, no autoplay and nothing off-screen, and
+// the row is a row rather than a window onto a longer one.
+//
+// THIS SECTION SELLS FOUR THINGS. It is not the catalogue and it is not trying
+// to be. The other ten products have their own section further down the page —
+// see FullRange, which lists them as a compact strip of small tiles with no
+// buttons on them. Splitting the two apart is what lets each do one job: this
+// row is four products with the configurator on them, that strip is a directory.
+// One section trying to be both is what produced every previous version of this.
+//
+// A SIX-UP GRID CAME BEFORE THIS and did not survive. It showed the whole shape
+// of the range in one glance, which was the right instinct, but at three columns
+// of a 1440 viewport the cards came out 416px wide and the section came out
+// 1,649px tall — the largest on the page, and a third bigger than any card the
+// references use. Four in a row is 317px cards and about half the height, and
+// the breadth it gives up is what the strip below recovers.
 //
 // THIS IS THE KOOKAI MOVE AT KLAY'S GRAIN, and the reason it is not the MONDAY
 // move is catalogue size. MONDAY has about six SKUs in total, so its range row
@@ -38,8 +51,10 @@
 // three or four tiles and read as narrow, and the note on the old carousel
 // concluded that a grid "always drops products". It was the wrong diagnosis.
 // Those versions read as narrow because every tile was a blind, not because
-// there were few tiles. Six chosen to SPAN the range reads wider than fourteen
-// ordered by group, because the visible frame is what the customer counts.
+// there were few tiles. Four chosen to SPAN the business reads wider than
+// fourteen ordered by group, because the visible frame is what the customer
+// counts — and this time the rest of the range is named on the same page rather
+// than left behind an arrow.
 //
 // THE CARD IS UNCHANGED — photograph, small-caps group, big name, one gold
 // action, and the configurator on the card. It is still MONDAY's stack in
@@ -53,7 +68,7 @@ import { Link } from 'react-router-dom';
 import { radius, tokens, motion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
 import { useIsMobile, useMediaQuery } from '../../hooks/useIsMobile';
 // The cards read data/catalogue.ts — the same fourteen products the shop lists,
-// rendered by the same tile. Six of them, named below; nothing about the range
+// rendered by the same tile. Four of them, named below; nothing about the range
 // is written down in this file.
 import { CATALOGUE, type CatalogueItem } from '../../data/catalogue';
 import { CtaLink, TILE_GAP, useHover } from './primitives';
@@ -61,27 +76,29 @@ import { ProductGlyph } from '../ProductGlyph';
 import { RangeConfigurator } from './RangeConfigurator';
 import { defaultSelection, fieldsFor, type Selection } from '../../data/configOptions';
 
-/** THE SIX, AND THE ONE THING THAT DECIDES THEM: no two may be the same kind of
- * object. One roller blind stands for every blind, one curtain for every soft
- * furnishing, and the remaining four are the parts of the business a row of
- * blinds cannot say out loud — shutters, joinery, outdoor, and the one product
- * nobody expects a window-furnishings company to make.
+/** THE FOUR, AND THE ONE RULE THAT DECIDES THEM: no two may be the same kind of
+ * object. A roller blind stands for every blind, a curtain for every soft
+ * furnishing, and the last two are the parts of the business a row of blinds
+ * cannot say out loud — joinery, and outdoor.
+ *
+ * Plantation Shutters is the one that lost its place going from six to four, and
+ * it is the right one to lose: it is a second indoor hard furnishing, so it is
+ * the only card here whose job another card was already doing. It leads the
+ * strip below instead.
  *
  * IDs rather than a hand-written list of names, so this cannot drift out of step
  * with the catalogue: change a product's name or its photograph in one place and
  * this section follows. An id that stops existing drops out rather than throwing.
  *
- * Venetian Blinds is deliberately absent even though it was in the old visible
- * four. It is the one catalogue item with no photograph, and a line drawing on
- * charcoal is not what the first section under the hero should be spending a
- * sixth of its space on. It is on /products with the rest. */
-const HERO_IDS = [
+ * EXPORTED, because FullRange lists everything that is NOT in here — the two
+ * sections partition the catalogue between them rather than each carrying its own
+ * copy of the split, so a product promoted to the row leaves the strip on the
+ * same edit. */
+export const HERO_IDS = [
   'roller-blinds',
   'curtains',
-  'plantation-shutters',
   'wardrobes',
   'folding-arm-awnings',
-  'frameless-shower-screens',
 ];
 
 const RANGE: CatalogueItem[] = HERO_IDS.map(id => CATALOGUE.find(i => i.id === id)).filter(
@@ -89,7 +106,7 @@ const RANGE: CatalogueItem[] = HERO_IDS.map(id => CATALOGUE.find(i => i.id === i
 );
 
 /** Relative luminance, for deciding whether the mechanism drawing goes on in
- * warm white or in ink. Only reached if one of the six loses its photograph —
+ * warm white or in ink. Only reached if one of the four loses its photograph —
  * see the note on the glyph fallback. */
 const luminance = (hex: string) => {
   const n = hex.replace('#', '');
@@ -117,18 +134,17 @@ const EXPAND_MS = 450;
  * every section below it would move. */
 const FRAME = space.xxs;
 
-/** THREE ACROSS ONLY ABOVE THIS. Below it the grid drops to two, and the number
- * comes from the name rather than from a device: three-up at a 900px viewport
- * measured a 236px tile, and "Frameless Shower Screens" at the 26px card scale
- * wraps to two lines in that width — the type becomes the tallest thing on the
- * card and the photograph stops being the subject. Two-up at the same viewport
- * gives a 368px tile, where every one of the six sets on one line.
+/** FOUR ACROSS ONLY ABOVE THIS. Below it the row drops to two, and the number
+ * comes from the card rather than from a device: four-up at a 900px viewport
+ * would measure a 182px tile, which is half the smallest card any reference
+ * uses. Two-up at the same viewport gives 368px, which is inside the reference
+ * band, so the row becomes two rows of two rather than four cramped columns.
  *
  * It is deliberately NOT the site's 768px mobile breakpoint. That one decides
  * whether the header stacks and whether the name drops to 20px; this one decides
- * how many columns the six sit in, and the two questions have different answers
+ * how many columns the four sit in, and the two questions have different answers
  * between 769 and 999. */
-const THREE_UP = '(min-width: 1000px)';
+const FOUR_UP = '(min-width: 1000px)';
 
 // ---------------------------------------------------------------------------
 // THE CARD.
@@ -185,7 +201,7 @@ function RangeCard({
   item: CatalogueItem;
   /** Whether this card's drawer is mounted. One at a time across the whole
    * section — the point of the drawer is that the visitor reads one set of
-   * options rather than six. */
+   * options rather than four. */
   open: boolean;
   /** Whether the drawer is at full height. Lags `open` by one frame on the way
    * in and leads it by EXPAND_MS on the way out. */
@@ -202,8 +218,8 @@ function RangeCard({
   const fields = fieldsFor(item);
   const leadField = fields.find(f => f.kind === 'swatches') ?? fields.find(f => f.id === 'variant');
   const chosen = leadField?.choices.find(c => c.id === sel[leadField.id]);
-  // THE GLYPH FALLBACK, and all six of the current selection have photographs so
-  // none of this is reached. It stays because the six are chosen by id above: if
+  // THE GLYPH FALLBACK, and all four of the current selection have photographs so
+  // none of this is reached. It stays because the four are chosen by id above: if
   // one is swapped for a product with no photograph, the tile takes the chosen
   // fabric colour as its ground and draws the mechanism on it, rather than being
   // a charcoal hole in the page. Above 0.45 luminance the drawing flips to ink,
@@ -318,9 +334,9 @@ function RangeCard({
 
         {/* Small caps group, big name — MONDAY's stack in Klay's faces.
             THE GROUP LINE EARNS ITS PLACE NOW, and it did not before. Four cards
-            all reading INDOOR is four repetitions of one word; across these six
-            it runs INDOOR, INDOOR, INDOOR, OTHER, OUTDOOR, OTHER, which is the
-            section's whole argument stated in six words. */}
+            all reading INDOOR is four repetitions of one word; across these four
+            it runs INDOOR, INDOOR, OTHER, OUTDOOR, which is the section's whole
+            argument stated in four words. */}
         <div
           style={{
             fontFamily: tokens.body,
@@ -348,8 +364,8 @@ function RangeCard({
             // and they have to be ONE line across each row; with the cards
             // sizing to their own content, a single name that wraps drops its
             // button below its neighbours' and the row reads as broken. Two
-            // lines is the worst case across the six at every width where the
-            // grid is two or three columns. It costs one line of empty space
+            // lines is the worst case across the four at every width where the
+            // row is two or four columns. It costs one line of empty space
             // under the five names that fit on one, which is cheaper than the
             // stagger and is invisible — it is the same warm white as the card.
             minHeight: `${2 * 1.1 * (isMobile ? 20 : 26)}px`,
@@ -431,9 +447,9 @@ function RangeCard({
   );
 }
 
-export function RangeGrid() {
+export function RangeRow() {
   const isMobile = useIsMobile();
-  const threeUp = useMediaQuery(THREE_UP);
+  const fourUp = useMediaQuery(FOUR_UP);
 
   /** Which card's drawer is mounted, and whether it is at full height.
    *
@@ -546,10 +562,11 @@ export function RangeGrid() {
         {!isMobile && <CtaLink to="/products">Shop All</CtaLink>}
       </div>
 
-      {/* THREE ACROSS, TWO DOWN — and two across below 1000px, where a third
-          column costs the name more than the extra card is worth. See THREE_UP.
-          Six is the number that comes out even either way, which is the other
-          half of why it is six.
+      {/* FOUR ACROSS, ONE ROW — and two across below 1000px, where four columns
+          would cost the card more than the fourth column is worth. See FOUR_UP.
+          Four is the number that comes out even either way, which is half of why
+          it is four; the other half is that it fits one row at the width the
+          references use.
 
           `align-items: start` is load-bearing: without it the two cards beside
           an open one stretch to the height of its drawer, and a 4:5 tile handed
@@ -560,7 +577,7 @@ export function RangeGrid() {
         style={{
           ...inner,
           display: 'grid',
-          gridTemplateColumns: `repeat(${threeUp ? 3 : 2}, 1fr)`,
+          gridTemplateColumns: `repeat(${fourUp ? 4 : 2}, 1fr)`,
           gap: TILE_GAP,
           alignItems: 'start',
         }}
@@ -577,7 +594,7 @@ export function RangeGrid() {
         ))}
       </div>
 
-      {/* Mobile's Shop All, under the six rather than over them. Ranged left
+      {/* Mobile's Shop All, under the four rather than over them. Ranged left
           with the cards, not centred — it is the same object that sits at the
           end of the header row on desktop, so it keeps the same alignment.
 

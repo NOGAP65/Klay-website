@@ -12,13 +12,25 @@
 //    1  Is this legitimate?              trust ticker
 //    3  What is this?                    hero
 //    4  Where do I start?                steps bar
-//    5  What can I buy, what's it cost?  range carousel
+//    5  What can I buy, what's it cost?  four hero products
 //    6  What if I don't know?            recommendation banner
 //    7  What will it look like?          visualiser
-//    8  Who actually does the work?      about panel
-//    9  Right — how do I start?          final CTA
-//   10  Does anyone else trust them?     reviews
-//   11  Does it really look like that?   install strip
+//    8  What else do you make?           the full range
+//    9  Who actually does the work?      about panel
+//   10  Right — how do I start?          final CTA
+//   11  Does anyone else trust them?     reviews
+//   12  Does it really look like that?   install strip
+//
+// THE RANGE, IN TWO SECTIONS, and this is the thing to understand before
+// touching either. Section 5 SELLS: four hero products at reference scale with
+// the configurator on them, one per part of the business. Section 8 LISTS: the
+// other ten as small tiles with no buttons, answering "what else do you make?"
+// and nothing else. Every previous version of the range put both jobs in one
+// section and lost one of them — a fourteen-card scroller whose visible four
+// were all indoor blinds, then a six-up grid that showed the shape of the range
+// and ran to 1,649px doing it. Separated, each is short.
+//
+// They are deliberately NOT adjacent. See the note at section 8.
 //
 // THE BIG CHANGE: PRODUCTS FOLLOW CATEGORIES DIRECTLY. How It Works used to sit
 // between them, and that is where the page fell over. The customer picks a
@@ -41,6 +53,12 @@
 // white run with no seam between the reviews and the strip. It is parchment down
 // here, which also puts a mid tone between the reviews and the ink footer.
 //
+// The full-range strip at 8 is warm white, and that is load-bearing too: the
+// visualiser and the about panel were both parchment and adjacent, which was
+// the one place on the page the rule was already broken. Putting a warm white
+// section between them fixes it as a side effect of putting it where it
+// belongs.
+//
 // The visualiser is the only ink on the page — the deepest ground under the
 // brightest panel, which is what makes the one section that does real work look
 // like the centrepiece rather than another band. The charcoal banner immediately
@@ -59,9 +77,10 @@ import { Footer } from '../components/Footer';
 import { TrustTicker, BAR_HEIGHT } from '../components/home/TrustTicker';
 import { Hero } from '../components/home/Hero';
 import { StepsBar } from '../components/home/StepsBar';
-import { RangeGrid } from '../components/home/RangeGrid';
+import { RangeRow } from '../components/home/RangeRow';
 import { RecommendationBanner } from '../components/home/RecommendationBanner';
 import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
+import { FullRange } from '../components/home/FullRange';
 import { AboutPanel } from '../components/home/AboutPanel';
 import { SocialProof } from '../components/home/SocialProof';
 import { Testimonials } from '../components/home/Testimonials';
@@ -112,12 +131,13 @@ export default function HomePage() {
             /how-it-works, which the bar links to. */}
         <StepsBar />
 
-        {/* 5 — Six products, three across and two down, nothing behind an arrow.
-            Not the catalogue: one card per thing the business does, so the
-            breadth arrives in one glance and the other eight live on /products.
-            This replaced a fourteen-card carousel whose visible four were all
-            indoor blinds. See the note at the top of RangeGrid. */}
-        <RangeGrid />
+        {/* 5 — FOUR HERO PRODUCTS, one row, nothing behind an arrow. A roller
+            blind, a curtain, a wardrobe and an awning: one per part of the
+            business, each with the configurator on it. This is a selling
+            surface and it is short on purpose — the other ten products are
+            named in their own section at 8. See the note at the top of
+            RangeRow, and THE RANGE, IN TWO SECTIONS below. */}
+        <RangeRow />
 
         {/* 6 — The catch, for anyone who read the range and still doesn't know
             which one is theirs. */}
@@ -126,13 +146,31 @@ export default function HomePage() {
         {/* 7 — The centrepiece: configure it, see it on your own window, buy it. */}
         <VisualiserShowcase />
 
-        {/* 8 — Who turns up at the house — the only section about Klay rather than
+        {/* 8 — THE OTHER TEN PRODUCTS, as a directory rather than a pitch: small
+            landscape tiles, names, no buttons, one text link to the shop.
+
+            IT SITS HERE RATHER THAN UNDER THE ROW AT 5, and that is the whole
+            decision. Directly beneath it, ten more product tiles read as the
+            same section continuing and the four heroes stop being heroes —
+            which is the failure mode the old category-grid-then-SKU-grid pair
+            had, two photo grids back to back asking one question twice. Down
+            here it answers a question the visitor has actually formed by now:
+            they have met four products and played with the visualiser, and
+            "what else do you make?" is the next thing they think. It also
+            hands the About panel below a better cue — the full range, then the
+            people who make all of it.
+
+            It breaks up two parchment sections that were adjacent, as well.
+            See THE GROUNDS. */}
+        <FullRange />
+
+        {/* 9 — Who turns up at the house — the only section about Klay rather than
             about a product. Nobody arrives wanting to read about a window
             furnishings business; they read it once they have decided they
             might buy. */}
         <AboutPanel />
 
-        {/* 9 — One last ask.
+        {/* 10 — One last ask.
             IT CANNOT SIT DIRECTLY UNDER THE VISUALISER, which is where it was.
             Its button is Start Designing and it does not navigate — it scrolls
             to #visualiser. Immediately below that section the CTA bounces you a
@@ -141,7 +179,7 @@ export default function HomePage() {
             it is a real journey back to the top of the page's centrepiece. */}
         <FinalCta />
 
-        {/* 10 — Reviews, moving.
+        {/* 11 — Reviews, moving.
             After the ask rather than before it, which is the unusual way round.
             The reasoning: the nav carries Book a Measure on every screen, so the
             ask is never actually more than a glance away, and what somebody
@@ -151,7 +189,7 @@ export default function HomePage() {
             impression than a second CTA. */}
         <Testimonials />
 
-        {/* 11 — In your home, and the page's true last panel.
+        {/* 12 — In your home, and the page's true last panel.
             The install strip used to sit directly above the about panel, where
             the two of them read as one argument: photographs, then the
             sentences behind them. Down here it does a different job. Every tile
@@ -162,7 +200,7 @@ export default function HomePage() {
             white it had upstairs — see THE GROUNDS above. */}
         <SocialProof />
 
-        {/* 12 — Footer. */}
+        {/* 13 — Footer. */}
         <Footer />
       </main>
     </>
