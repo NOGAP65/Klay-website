@@ -82,6 +82,16 @@
         display: none;
       }
 
+      /* CONTAINMENT ON THE RANGE SLOTS. Their flex-basis animates when a card
+         opens, and without a containment boundary the browser has to consider
+         the whole row's subtree on every frame of that transition — measured at
+         432 style recalculations for one card opening. `layout paint` tells it
+         nothing inside a slot affects anything outside it, so the per-frame work
+         is scoped to the one card that is actually changing. */
+      .klay-slot {
+        contain: layout paint;
+      }
+
       /* The opposite case: the field column inside a range card's configurator.
          Every card in that row is the same height, so the one product with a
          seventeen-colour card has to scroll inside its own panel — and there

@@ -244,14 +244,16 @@ export function RangeConfigurator({
         // card instead: three fields, a price and a button. The roller, which
         // asks five, scrolls the last one into view inside its own panel rather
         // than making all fourteen cards tall enough for the worst case.
-        // CONTENT-SIZED IN FILL MODE. It used to fill a panel that had been
-        // pinned to the photograph's height, so every card in the row could
-        // stay level — which meant a wardrobe asking one question carried a
-        // roller's worth of slack and the roller scrolled inside its own panel.
-        // It now opens as a drawer under one card in a grid whose rows size
-        // themselves, so nothing needs to stay level and this is as tall as its
-        // questions and no taller. See THE DRAWER in RangeGrid.
-        ...(fill ? { flex: '0 0 auto' } : { height: CONFIG_H, flex: '0 0 auto' }),
+        // A CAP, NOT A MATCH. It used to be handed the photograph's own height —
+        // 470 — which is what made the card 940. The non-fill variant is sized to
+        // the median card instead: three fields, a price and a button.
+        //
+        // FILL MODE STRETCHES, because the panel it sits in is exactly the height
+        // of the card beside it — see the note on the panel in RangeRow. It was
+        // briefly content-sized, for a version where the panel opened as a drawer
+        // underneath the card and had no height to match; the panel is back beside
+        // the card and so is this.
+        ...(fill ? { flex: '1 1 auto' } : { height: CONFIG_H, flex: '0 0 auto' }),
         minHeight: 0,
         boxSizing: 'border-box',
         background: tokens.cream,
@@ -278,10 +280,11 @@ export function RangeConfigurator({
         style={{
           flex: '1 1 auto',
           minHeight: 0,
-          // NOTHING SCROLLS IN FILL MODE. The guard exists for the fixed-height
-          // variant, where a seventeen-colour card cannot fit; the drawer has no
-          // height to run out of.
-          overflowY: fill ? 'visible' : 'auto',
+          // The scroll guard is back on in both modes. The panel is the card's
+          // height again, so the one product with a seventeen-colour row and five
+          // fields can exceed it — and there the scrollbar is the only thing
+          // saying there is more to choose from.
+          overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
           gap: space.sm,
