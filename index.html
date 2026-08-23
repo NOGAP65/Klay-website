@@ -85,11 +85,18 @@
       /* CONTAINMENT ON THE RANGE SLOTS. Their flex-basis animates when a card
          opens, and without a containment boundary the browser has to consider
          the whole row's subtree on every frame of that transition — measured at
-         432 style recalculations for one card opening. `layout paint` tells it
-         nothing inside a slot affects anything outside it, so the per-frame work
-         is scoped to the one card that is actually changing. */
+         432 style recalculations for one card opening. `layout` tells it nothing
+         inside a slot affects the layout of anything outside it, so the per-frame
+         work is scoped to the one card that is actually changing.
+
+         LAYOUT ONLY, NOT `layout paint`. Paint containment clips every descendant
+         to the slot's own box, which is fine for a card that sits flat inside it
+         and fatal for one that lifts: the range cards carry a resting shadow and
+         a larger one on hover, and both were being cut off at the slot edge —
+         about 4px of a 20px blur survived. Layout containment is where the
+         per-frame saving comes from anyway; the clipping was never the point. */
       .klay-slot {
-        contain: layout paint;
+        contain: layout;
       }
 
       /* The opposite case: the field column inside a range card's configurator.
