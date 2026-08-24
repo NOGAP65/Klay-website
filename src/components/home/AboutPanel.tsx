@@ -40,21 +40,36 @@ export function AboutPanel() {
   const isMobile = useIsMobile();
 
   const image = (
-    // CAPPED AT 4:5 RATHER THAN STRETCHED TO THE COPY'S HEIGHT.
+    // THE 4:5 CAP IS GONE ON DESKTOP, AND IT WAS THE WHOLE SECTION'S HEIGHT.
     //
-    // It rendered at 720 × 787 — a 0.91 ratio, arbitrary because the column was
-    // matching whatever height the prose beside it happened to make. Cropped
-    // from a 1.78 source that is a 49% horizontal crop: half the room was gone,
-    // and the amount that was gone changed with the copy.
+    // A 4:5 portrait crop in a half-width column is 945px tall at a 1512
+    // viewport — taller than the laptop viewport it is on, and 195px taller than
+    // the copy beside it, which needs 750. The section was as tall as its
+    // photograph and the photograph was as tall as the ratio demanded.
     //
-    // 4:5 is the install strip's ratio, so the site has one portrait crop
-    // instead of two. `alignSelf: start` is what stops the grid stretching it.
+    // A FIXED RATIO HERE GUARANTEES DEAD SPACE AT EVERY WIDTH BUT ONE. The
+    // column is half the viewport, so the image's height tracks the viewport
+    // while the copy's height tracks its own line count — they agree at one
+    // width and disagree everywhere else. Measured: 945 image against 750 copy at
+    // 1512, but 512 against 790 at 1024, which is 278px of bare parchment under
+    // the photograph. Any ratio I picked would only move which width looks wrong.
+    //
+    // So the image takes the row's height instead (grid's default stretch, which
+    // is what `alignSelf: start` was overriding) and the section is exactly as
+    // tall as its copy. The crop varies with the viewport, which is what the
+    // previous note here objected to — but the source is 1.78 and this is a
+    // 50/50 editorial panel, so a varying crop is the normal cost, and it buys a
+    // section that is never taller than it needs to be.
+    //
+    // MOBILE KEEPS A RATIO, because stacked there is no row height to stretch to.
+    // 3:2 landscape rather than 4:5 portrait: 260px tall instead of 488 at a
+    // 390 viewport, and a wide crop of a wide source rather than half the room
+    // thrown away.
     <div
       style={{
         overflow: 'hidden',
-        aspectRatio: '4 / 5',
-        alignSelf: 'start',
         width: '100%',
+        ...(isMobile ? { aspectRatio: '3 / 2' } : { alignSelf: 'stretch', minHeight: 0 }),
       }}
     >
       <img
@@ -77,21 +92,56 @@ export function AboutPanel() {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        // SYMMETRIC NOW: 84 / 80 / 84 / 80. The inner edge used to get 72
-        // against the outer 80, on the reasoning that the copy should sit closer
-        // to its photograph than to the page edge. It was the only horizontally
+        // SYMMETRIC: 52 / 80 / 52 / 80. The inner edge used to get 72 against the
+        // outer 80, on the reasoning that the copy should sit closer to its
+        // photograph than to the page edge. It was the only horizontally
         // asymmetric padding on the page, and an 8px difference is far too small
         // to read as intent — once every other inset is on a scale it reads as a
         // mistake instead.
+        //
+        // VERTICAL IS `xl` (52), NOT `xxl` (84). xxl is the standard SECTION pad,
+        // and it is right where a band's air is the only thing separating a
+        // heading from the section above it. This panel is not that shape: it is
+        // a two-column row whose other half is a full-bleed photograph running to
+        // all four edges, so the copy already has 80px of horizontal inset and a
+        // hard edge doing the framing. 84 top and bottom on top of that was air
+        // paid for twice.
         padding: isMobile
           ? `${space.xl}px ${space.md}px`
-          : `${space.xxl}px ${layout.inlinePad(isMobile)}px`,
+          : `${space.xl}px ${layout.inlinePad(isMobile)}px`,
       }}
     >
-      <div style={{ maxWidth: 480 }}>
+      {/* 560, NOT 480. Measured, "Measured, made and hung" needs 621px at the
+          64px section size, so a 480 cap forced the first line of a two-line
+          headline to wrap and the h2 rendered as THREE lines — 192px where the
+          explicit <br> was written for 128. 560 does not fully fix that at every
+          width (621 still does not fit a 1280 column), but it takes both body
+          paragraphs from four lines to three, which is the larger saving. The
+          headline's own wrap is left alone rather than solved by shrinking type
+          off `headline.section` — that scale is every section heading on the
+          site and this panel does not get a private one. */}
+      <div style={{ maxWidth: 560 }}>
         <p style={{ ...eyebrow, marginBottom: space.md }}>Who makes them</p>
+        {/* THREE LINES, ALL THREE SET BY HAND, because two is not available and
+            the automatic wrap of three is ugly.
+
+            Measured at the 64px section size: "Measured, made and hung" is 621px
+            and the column offers 596 at its widest, so the two-line reading the
+            single <br> was written for cannot happen at any viewport. Left to
+            wrap it broke as "Measured, made and" (488) / "hung" (120) — a
+            one-word orphan.
+
+            Breaking after "Measured," instead gives 242 / 390 / 406: ascending,
+            no orphan, and the italic clause is the longest line so it anchors the
+            block. Checked at 1512, 1280, 1024 and 390 — the display size steps
+            down with the clamp and all three lines still fit at every one, so
+            these breaks hold rather than being tuned to one width.
+
+            It also reads as the sequence it is: measured, made, hung. */}
         <h2 style={{ ...headline.section, color: tokens.ink }}>
-          Measured, made and hung
+          Measured,
+          <br />
+          made and hung
           <br />
           <span style={{ fontStyle: 'italic' }}>by the same people.</span>
         </h2>
@@ -112,7 +162,11 @@ export function AboutPanel() {
             </p>
           ))}
         </div>
-        <div style={{ marginTop: space.xl }}>
+        {/* `lg` (32), not `xl` (52). The between-group step is right where the
+            groups are siblings; here the CTA is the end of this one block of
+            copy, and the block already closes with 52px of section padding under
+            it. */}
+        <div style={{ marginTop: space.lg }}>
           <CtaLink to="/about">About Klay →</CtaLink>
         </div>
       </div>
