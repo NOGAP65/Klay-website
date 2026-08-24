@@ -122,19 +122,18 @@ export function AboutPanel() {
   return (
     <section
       style={{
-        // WARM WHITE, AND IT WAS PARCHMENT UNTIL THE FULL-RANGE STRIP WENT.
+        // PARCHMENT — AND THIS IS THE THIRD VALUE IN THREE COMMITS, which is
+        // worth stating plainly rather than looking like churn.
         //
-        // That strip was warm white and it sat directly above this panel, which
-        // is what kept this parchment legal: visualiser (parchment) → strip
-        // (warm white) → this (parchment). With the strip gone the visualiser
-        // lands straight on this section, and two parchment grounds in a row is
-        // the one rule the page keeps everywhere — see THE GROUNDS in HomePage.
+        // It was parchment, with the warm white full-range strip above it. That
+        // strip was deleted, the parchment visualiser landed directly on top of
+        // this, and it went warm white to keep the two apart. The install strip
+        // now sits in that slot instead, warm white, so this goes back to
+        // parchment — which also separates it from the warm white reviews below.
         //
-        // Warm white here rather than repainting the visualiser: that section is
-        // the centrepiece and its parchment is argued for in its own file, and
-        // the ground below this one is the final CTA's charcoal, so warm white
-        // separates cleanly on both sides.
-        background: tokens.warmWhite,
+        // The value is not the point; the neighbours are. See THE GROUNDS in
+        // HomePage before changing either.
+        background: tokens.parchment,
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
       }}

@@ -1,11 +1,5 @@
 // ---------------------------------------------------------------------------
-// The homepage. Twelve sections, one job each.
-//
-// It got longer again, and deliberately. The short version was one clean spine —
-// promise, categories, process, tool, ranges, proof, ask — and it read well, but
-// it had removed the three things that actually sell: a grid with prices on it,
-// a catch for the customer who doesn't know what they want, and any reason to be
-// here other than to buy. Those are back as sections 6, 7 and 10.
+// The homepage. Eleven sections, one job each.
 //
 // EVERY SECTION ANSWERS ONE QUESTION, in the order a customer asks it:
 //
@@ -15,10 +9,24 @@
 //    5  What can I buy, what's it cost?  four bestsellers
 //    6  What if I don't know?            recommendation banner
 //    7  What will it look like?          visualiser
-//    8  Who actually does the work?      about panel
-//    9  Right — how do I start?          final CTA
+//    8  Does it really look like that?   install strip
+//    9  Who actually does the work?      about panel
 //   10  Does anyone else trust them?     reviews
-//   11  Does it really look like that?   install strip
+//
+// THE TAIL IS A CLAIM AND THEN ITS RECEIPTS. 7 renders your own window, 8 is
+// photographs of the same thing in real houses, 9 is who turned up to do it, 10
+// is those people saying it went fine. The install strip used to be at the very
+// bottom and the about panel directly under the visualiser, which answered "does
+// it really look like that?" four sections after the render raised it.
+//
+// THERE IS NO FINAL CTA ANY MORE. A charcoal "Ready to complete your home?" band
+// sat between the about panel and the reviews; its button scrolled back up to
+// #visualiser, which from that far down is a trip to somewhere the visitor has
+// already been. The ask is never more than a glance away regardless — Book a
+// Measure is in the nav on every screen, the hero has Design Yours, and the range
+// cards carry their own Visualise badges. The page ends on other people's voices,
+// which is what the note on the reviews section always argued was better than a
+// second button.
 //
 // THE RANGE IS ONE SECTION NOW, and this is the thing to understand before
 // touching it. Section 5 SELLS: four bestsellers at reference scale with the
@@ -52,23 +60,28 @@
 // free measure and the installation, the hero's sub-line says "measured and
 // installed by experts", and the hero's second button goes straight to it.
 //
-// THE GROUNDS. No two adjacent sections share one, and that rule is why moving
-// the install strip below the reviews also changed its colour: it was warm white,
-// Testimonials is warm white, and stacked they would have read as one very long
-// white run with no seam between the reviews and the strip. It is parchment down
-// here, which also puts a mid tone between the reviews and the ink footer.
+// THE GROUNDS. No two adjacent sections share one, and reordering the tail
+// re-cut every colour in it. Down the page it now alternates:
 //
-// The full-range strip used to do a second job here: it was warm white and it
-// sat between the visualiser and the about panel, which are both parchment. With
-// it gone that join would have been two parchment grounds in a row, so the about
-// panel is warm white now — see the note on its own section. Removing a section
-// moves a colour decision onto its neighbour; it is never only a deletion.
+//    7  visualiser     parchment
+//    8  install strip  warm white   (was parchment, as the last panel)
+//    9  about panel    parchment    (was warm white — and parchment before that)
+//   10  reviews        warm white
+//   11  footer         ink
+//
+// EVERY ONE OF THOSE THREE MOVED BECAUSE ITS NEIGHBOUR DID, not because anything
+// looked wrong on its own. That is the thing to know before reordering this page
+// again: a section's ground is a statement about what sits next to it, so moving
+// two sections is never just two edits. The about panel has now been repainted
+// twice in two commits for exactly this reason — parchment, then warm white when
+// the full-range strip was deleted from above it, then parchment again now that
+// the install strip has taken that slot.
 //
 // The visualiser is the only ink on the page — the deepest ground under the
 // brightest panel, which is what makes the one section that does real work look
 // like the centrepiece rather than another band. The charcoal banner immediately
 // above it is the page starting to darken into that, not a bar dropped between
-// two light sections. Everything else kept the ground it already had.
+// two light sections.
 //
 // Section components live in components/home. Nav and Footer are shared with
 // every other page and stay in components/.
@@ -88,7 +101,6 @@ import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
 import { AboutPanel } from '../components/home/AboutPanel';
 import { SocialProof } from '../components/home/SocialProof';
 import { Testimonials } from '../components/home/Testimonials';
-import { FinalCta } from '../components/home/FinalCta';
 
 export default function HomePage() {
   const setScrollY = useKlayStore((s) => s.setScrollY);
@@ -150,55 +162,41 @@ export default function HomePage() {
         {/* 7 — The centrepiece: configure it, see it on your own window, buy it. */}
         <VisualiserShowcase />
 
-        {/* THE OTHER TEN PRODUCTS NO LONGER HAVE A SECTION HERE. FullRange —
-            small landscape tiles, names, no buttons — used to sit between the
-            visualiser and the About panel, answering "what else do you make?".
-            It is gone from the page, and the answer now lives in one place: the
-            "Shop the full range" action on Bestsellers, which is worded to say
-            it leads somewhere bigger. Ten tiles that only linked out were doing
-            the job of one link at the cost of a section.
+        {/* 8 — In your home. DIRECTLY UNDER THE VISUALISER, and that adjacency is
+            the point: the visualiser shows you a render of your own window, and
+            the very next thing on the page is photographs of the real thing in
+            real houses. Render, then proof it looks like that — the render is a
+            claim, and this is the receipt for it.
 
-            The section it used to separate is worth knowing about: this removes
-            a break between two parchment grounds, so check THE GROUNDS if the
-            join below starts reading as one long band. */}
-
-        {/* 8 — Who turns up at the house — the only section about Klay rather than
-            about a product. Nobody arrives wanting to read about a window
-            furnishings business; they read it once they have decided they
-            might buy. */}
-        <AboutPanel />
-
-        {/* 9 — One last ask.
-            IT CANNOT SIT DIRECTLY UNDER THE VISUALISER, which is where it was.
-            Its button is Start Designing and it does not navigate — it scrolls
-            to #visualiser. Immediately below that section the CTA bounces you a
-            few hundred pixels back up to the thing you just scrolled past,
-            which reads as a broken button rather than an invitation. Down here
-            it is a real journey back to the top of the page's centrepiece. */}
-        <FinalCta />
-
-        {/* 10 — Reviews, moving.
-            After the ask rather than before it, which is the unusual way round.
-            The reasoning: the nav carries Book a Measure on every screen, so the
-            ask is never actually more than a glance away, and what somebody
-            wants at the very bottom of a long page is not another button but
-            other people saying it went fine. It also means the page ends on
-            somebody else's voice instead of Klay's, which is a better last
-            impression than a second CTA. */}
-        <Testimonials />
-
-        {/* 11 — In your home, and the page's true last panel.
-            The install strip used to sit directly above the about panel, where
-            the two of them read as one argument: photographs, then the
-            sentences behind them. Down here it does a different job. Every tile
-            links to the product in the photograph, so the last thing on the
-            page is not a claim but five ways back into the range — and it lands
-            on somebody who has just finished reading the reviews, which is when
-            they are most likely to take one. Parchment rather than the warm
-            white it had upstairs — see THE GROUNDS above. */}
+            It was the page's last panel before, on the reasoning that ending on
+            five ways back into the range beat ending on a claim. That still
+            reads, but it was answering "does it really look like that?" four
+            sections after the question was asked. */}
         <SocialProof />
 
-        {/* 12 — Footer. */}
+        {/* 9 — Who turns up at the house — the only section about Klay rather than
+            about a product. Nobody arrives wanting to read about a window
+            furnishings business; they read it once they have decided they
+            might buy, which is after the tool and the photographs above. */}
+        <AboutPanel />
+
+        {/* THE FINAL CTA IS GONE — it sat here, charcoal, "Ready to complete your
+            home?" over a Start Designing button.
+
+            Its button did not navigate; it scrolled back up to #visualiser. From
+            this far down the page that is a journey to somewhere the visitor has
+            already been, and the ask is never more than a glance away regardless
+            — the nav carries Book a Measure on every screen, the hero has Design
+            Yours, and the range cards now have their own Visualise badges. The
+            page ends on other people's voices instead, which is what the note on
+            the reviews section already argued for. */}
+
+        {/* 10 — Reviews, and the page's last panel before the footer.
+            What somebody wants at the very bottom of a long page is not another
+            button but other people saying it went fine. */}
+        <Testimonials />
+
+        {/* 11 — Footer. */}
         <Footer />
       </main>
     </>

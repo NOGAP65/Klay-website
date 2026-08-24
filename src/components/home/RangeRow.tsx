@@ -170,11 +170,10 @@ function ViewfinderIcon() {
  * IT DOES NOT NAVIGATE, and that is the point. It used to link to /visualiser —
  * leaving the homepage to use a tool the homepage already has three sections
  * further down, throwing away the visitor's scroll position to show them the same
- * instrument on a page of its own. Now it does what the hero's "Design Yours" and
- * the final CTA's "Start Designing" do (see scrollToId in primitives), with the
- * product selected on the way.
+ * instrument on a page of its own. Now it does what the hero's "Design Yours"
+ * does (see scrollToId in primitives), with the product selected on the way.
  *
- * A <button>, not a <Link>, for the same reason those two are: there is no
+ * A <button>, not a <Link>, for the same reason that one is: there is no
  * destination. It also settles the nested-anchor problem rather than working
  * around it — the picture and name are wrapped in a <Link to={item.to}>, and an
  * <a> inside an <a> is invalid and swallows its own clicks. It still sits OUTSIDE

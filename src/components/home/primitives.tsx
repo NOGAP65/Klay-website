@@ -121,13 +121,13 @@ function ctaFill(variant: CtaVariant, hover: boolean): React.CSSProperties {
     // The accent measures 2.71:1 against charcoal and 3.46 against ink, so a
     // bronze button on a solid dark section would be hard to locate — its label
     // would still be perfectly legible on the bronze, which is the failure
-    // a text-contrast audit cannot see. FinalCta and the visualiser card looked
-    // like the cases that needed it. (Under the royal blue this replaced the
-    // same two numbers were 1.48 and 1.88, so the hazard was worse then and the
-    // conclusion is unchanged.)
+    // a text-contrast audit cannot see. The since-deleted final CTA band and the
+    // visualiser card looked like the cases that needed it. (Under the royal
+    // blue this replaced the same two numbers were 1.48 and 1.88, so the hazard
+    // was worse then and the conclusion is unchanged.)
     //
-    // Measured in the running page, neither is. FinalCta's charcoal is a
-    // fallback BEHIND a photograph — it only shows while the image loads — and
+    // Measured in the running page, neither was. That band's charcoal was a
+    // fallback BEHIND a photograph — it only showed while the image loaded — and
     // the visualiser's Buy Now sits on `band`, not on the black card above it. A
     // filled-block audit across all eight routes finds no CTA on a solid dark
     // ground at all, so the variant had no consumer and is gone rather than kept

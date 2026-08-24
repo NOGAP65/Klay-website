@@ -12,14 +12,21 @@
 // has to be photographs of real jobs or it is working against the trust it is
 // there to build. Five real install photos replace these.
 //
-// LAST SECTION ON THE PAGE, below the reviews. It used to sit directly above the
-// about panel, where the two read as one argument — photographs, then the
-// sentences behind them. Down here it does a different job: every tile links to
-// the product in the photograph, so the page's last panel is not a claim but
-// five ways back into the range, offered to somebody who has just finished
-// reading the reviews. Parchment rather than warm white, because Testimonials
-// above it is warm white and the homepage does not let two adjacent sections
-// share a ground.
+// DIRECTLY UNDER THE VISUALISER, and that adjacency is the whole reason this
+// section sits where it does. The visualiser renders a blind onto a photograph of
+// your own window; this is photographs of the same thing in houses that actually
+// have it. The render is a claim and these are the receipts, so they belong next
+// to each other — a customer who has just watched a canvas draw a curtain is
+// exactly the person asking "does it really look like that?"
+//
+// It has been in two other places, and both were defensible: directly above the
+// about panel, where the two read as one argument (photographs, then the
+// sentences behind them), and last on the page, where every tile linking to its
+// product made the final panel five ways back into the range rather than a claim.
+// What beat both is answering the question in the section where it gets asked.
+//
+// Every tile still links to the product in its photograph, which is worth as much
+// here as it was at the bottom.
 //
 // Desktop is five equal columns, edge to edge. Mobile scrolls horizontally
 // rather than folding into a 3x2 grid — five images do not divide into six cells
@@ -112,7 +119,14 @@ export function SocialProof() {
   const { hover, bind } = useHover();
 
   return (
-    <section style={{ background: tokens.parchment }}>
+    // WARM WHITE, AND IT WAS PARCHMENT WHILE THIS WAS THE PAGE'S LAST PANEL.
+    // It sits directly under the visualiser now, which is parchment, so keeping
+    // it would have run the two together with no seam at the join this section
+    // exists to make — the render above and the photographs of the real thing
+    // below have to read as two separate statements. Warm white also leaves the
+    // about panel below free to go back to parchment. See THE GROUNDS in
+    // HomePage: this is a statement about the neighbours, not about the section.
+    <section style={{ background: tokens.warmWhite }}>
       {/* The page's shared band, same as the categories, the range and the
           visualiser. It supplies the section's top padding, so the section itself
           carries none. */}
