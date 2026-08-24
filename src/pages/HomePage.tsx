@@ -63,25 +63,34 @@
 // THE GROUNDS. No two adjacent sections share one, and reordering the tail
 // re-cut every colour in it. Down the page it now alternates:
 //
-//    7  visualiser     parchment
-//    8  install strip  warm white   (was parchment, as the last panel)
-//    9  about panel    parchment    (was warm white — and parchment before that)
+//    7  visualiser     parchment    (its CARD is ink — see below)
+//    8  install strip  charcoal     (a gallery wall; was warm white, was parchment)
+//    9  about panel    parchment
 //   10  reviews        warm white
 //   11  footer         ink
 //
-// EVERY ONE OF THOSE THREE MOVED BECAUSE ITS NEIGHBOUR DID, not because anything
-// looked wrong on its own. That is the thing to know before reordering this page
-// again: a section's ground is a statement about what sits next to it, so moving
-// two sections is never just two edits. The about panel has now been repainted
-// twice in two commits for exactly this reason — parchment, then warm white when
-// the full-range strip was deleted from above it, then parchment again now that
-// the install strip has taken that slot.
+// MOST OF THOSE MOVED BECAUSE A NEIGHBOUR DID, not because anything looked wrong
+// on its own. That is the thing to know before reordering this page again: a
+// section's ground is a statement about what sits next to it, so moving two
+// sections is never just two edits. The about panel was repainted twice in two
+// commits for exactly this reason — parchment, warm white when the full-range
+// strip was deleted from above it, parchment again once the install strip took
+// that slot.
 //
-// The visualiser is the only ink on the page — the deepest ground under the
-// brightest panel, which is what makes the one section that does real work look
-// like the centrepiece rather than another band. The charcoal banner immediately
-// above it is the page starting to darken into that, not a bar dropped between
-// two light sections.
+// THE INSTALL STRIP IS THE EXCEPTION and the only ground on the page chosen for
+// what the section IS rather than for what it sits between: it is five
+// photographs and nothing else, and a dark ground lights them the way a gallery
+// wall does. It still satisfies the adjacency rule (parchment either side).
+//
+// INK IS THE VISUALISER'S CARD AND THE FOOTER, and nothing else. The card is the
+// page's one deepest object — the deepest ground under the brightest panel, which
+// is what makes the section that does real work read as the centrepiece rather
+// than another band. That is why the install strip below it is charcoal and not
+// ink: a full-bleed ink band 84px under an ink card would make the biggest,
+// darkest thing on the page a photo strip instead of the instrument.
+//
+// Charcoal is therefore the page's ordinary band dark, and it now runs three
+// times — the steps bar, the recommendation banner, the install strip.
 //
 // Section components live in components/home. Nav and Footer are shared with
 // every other page and stay in components/.

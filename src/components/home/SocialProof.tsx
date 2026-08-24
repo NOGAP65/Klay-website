@@ -66,7 +66,11 @@ function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: bool
         aspectRatio: '4 / 5',
         // Fixed width on mobile so the row scrolls; a grid track on desktop.
         flex: isMobile ? '0 0 62vw' : undefined,
-        background: tokens.warmWhite,
+        // What shows while the photograph loads, so it has to be the section's
+        // own dark rather than warm white — five bright rectangles flashing on a
+        // charcoal ground and then filling in is a worse first paint than five
+        // dark ones, and on a slow connection it is the whole section.
+        background: tokens.ink,
         textDecoration: 'none',
       }}
     >
@@ -119,18 +123,36 @@ export function SocialProof() {
   const { hover, bind } = useHover();
 
   return (
-    // WARM WHITE, AND IT WAS PARCHMENT WHILE THIS WAS THE PAGE'S LAST PANEL.
-    // It sits directly under the visualiser now, which is parchment, so keeping
-    // it would have run the two together with no seam at the join this section
-    // exists to make — the render above and the photographs of the real thing
-    // below have to read as two separate statements. Warm white also leaves the
-    // about panel below free to go back to parchment. See THE GROUNDS in
-    // HomePage: this is a statement about the neighbours, not about the section.
-    <section style={{ background: tokens.warmWhite }}>
+    // CHARCOAL. A GALLERY WALL, AND THE ONE SECTION ON THE PAGE THAT EARNS ONE.
+    //
+    // This section is five photographs and almost nothing else — the band above
+    // them and a handle below. On a light ground the ground itself is the biggest
+    // thing in the frame and the photographs are five bright rectangles sitting
+    // in it; on a dark one they are lit objects and the ground disappears, which
+    // is why every gallery and every print portfolio does this. TILE_GAP is 4px,
+    // so the dark also draws the hairlines BETWEEN the five, and the strip reads
+    // as one panel of images rather than five separate tiles.
+    //
+    // CHARCOAL, NOT INK, and that is the whole of the decision. Ink is the
+    // visualiser card, which is the page's one deepest object and the section
+    // immediately above this one. A full-bleed ink band 84px under an ink card
+    // would take that distinction away from the card — the biggest darkest thing
+    // on the page would be a photo strip rather than the instrument the page is
+    // built around. Charcoal is the site's ordinary band dark (the nav, the steps
+    // bar, the recommendation banner) and it leaves ink to the card and the
+    // footer.
+    //
+    // It has been warm white and parchment in the last two commits, both for
+    // adjacency reasons rather than for its own sake. Dark satisfies the same
+    // adjacency rule — parchment above, parchment below — and is the first value
+    // this section has had that is about what the section IS. See THE GROUNDS in
+    // HomePage.
+    <section style={{ background: tokens.charcoal }}>
       {/* The page's shared band, same as the categories, the range and the
           visualiser. It supplies the section's top padding, so the section itself
           carries none. */}
       <SectionBand
+        onDark
         label="Social proof"
         title="In your home"
         sub="Real Klay installations. Real Melbourne homes."
@@ -173,11 +195,19 @@ export function SocialProof() {
           rel="noreferrer noopener"
           style={{
             ...typeScale.body,
-            // Ink, not gold: brand gold measures 2.37 against this section's
-            // ground, and the handle is the section's only link out.
-            color: tokens.ink,
+            // WARM WHITE, AND IT WAS `ink`. On the light ground this section used
+            // to have, ink was correct and the comment here argued against gold
+            // on contrast grounds. On charcoal the same value is near-black on
+            // near-black: the section's only link out, invisible.
+            //
+            // This is the fourth time this exact default has bitten in this run —
+            // the selected pill, the group headings, the quote link, this. The
+            // pattern is always a colour that was right for a ground the element
+            // no longer sits on, which is why the visualiser panel resolves its
+            // colours through a skin() rather than reaching for tokens directly.
+            color: tokens.warmWhite,
             textDecoration: 'none',
-            borderBottom: `1px solid ${hover ? tokens.ink : 'transparent'}`,
+            borderBottom: `1px solid ${hover ? tokens.warmWhite : 'transparent'}`,
             paddingBottom: space.xxs,
             transition: 'border-color 0.2s ease',
           }}
