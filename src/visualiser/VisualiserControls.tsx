@@ -385,12 +385,20 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
 
   // Locks the blind type from either the `lockedRange` prop or a `?range=`
   // URL param (e.g. arriving from a product page) — runs once on mount only.
+  //
+  // `?category=curtain` is the same idea one level up, and the Visualise badges
+  // on the range cards need it: the store opens on blinds, so a curtain card
+  // linking to a bare /visualiser would land the visitor on a roller blind.
+  // Only 'curtain' is honoured — 'blind' is already the default, and anything
+  // else is a malformed link that should leave the panel alone rather than
+  // switch it to a category that does not exist.
   useEffect(() => {
     const range = lockedRangeProp ?? searchParams.get('range');
     if (range) {
       store.setLockedRange(range);
       store.setBlindType(range as BlindType);
     }
+    if (searchParams.get('category') === 'curtain') store.setProductCategory('curtain');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -1,36 +1,41 @@
 // ---------------------------------------------------------------------------
-// The homepage. Fourteen sections, one job each.
+// The homepage. Twelve sections, one job each.
 //
 // It got longer again, and deliberately. The short version was one clean spine —
 // promise, categories, process, tool, ranges, proof, ask — and it read well, but
 // it had removed the three things that actually sell: a grid with prices on it,
 // a catch for the customer who doesn't know what they want, and any reason to be
-// here other than to buy. Those are back as sections 6, 7 and 11.
+// here other than to buy. Those are back as sections 6, 7 and 10.
 //
 // EVERY SECTION ANSWERS ONE QUESTION, in the order a customer asks it:
 //
 //    1  Is this legitimate?              trust ticker
 //    3  What is this?                    hero
 //    4  Where do I start?                steps bar
-//    5  What can I buy, what's it cost?  four hero products
+//    5  What can I buy, what's it cost?  four bestsellers
 //    6  What if I don't know?            recommendation banner
 //    7  What will it look like?          visualiser
-//    8  What else do you make?           the full range
-//    9  Who actually does the work?      about panel
-//   10  Right — how do I start?          final CTA
-//   11  Does anyone else trust them?     reviews
-//   12  Does it really look like that?   install strip
+//    8  Who actually does the work?      about panel
+//    9  Right — how do I start?          final CTA
+//   10  Does anyone else trust them?     reviews
+//   11  Does it really look like that?   install strip
 //
-// THE RANGE, IN TWO SECTIONS, and this is the thing to understand before
-// touching either. Section 5 SELLS: four hero products at reference scale with
-// the configurator on them, one per part of the business. Section 8 LISTS: the
-// other ten as small tiles with no buttons, answering "what else do you make?"
-// and nothing else. Every previous version of the range put both jobs in one
-// section and lost one of them — a fourteen-card scroller whose visible four
-// were all indoor blinds, then a six-up grid that showed the shape of the range
-// and ran to 1,649px doing it. Separated, each is short.
+// THE RANGE IS ONE SECTION NOW, and this is the thing to understand before
+// touching it. Section 5 SELLS: four bestsellers at reference scale with the
+// configurator on them, one per part of the business. "What else do you make?"
+// used to be its own section — FullRange, the other ten as small tiles with no
+// buttons — and it is gone; the answer is the "Shop the full range" action on
+// section 5, worded to say it leads somewhere bigger than what is on screen.
 //
-// They are deliberately NOT adjacent. See the note at section 8.
+// The history is worth keeping, because it is a loop this page has been round
+// twice. Every version BEFORE the split put selling and listing in one section
+// and lost one of them — a fourteen-card scroller whose visible four were all
+// indoor blinds, then a six-up grid that showed the shape of the range and ran
+// to 1,649px doing it. The split fixed that by giving each job its own section.
+// Removing the listing side is NOT a return to those: nothing was merged back
+// into section 5, the listing moved off the homepage to the shop, which is the
+// page built for it. If ten tiles ever come back here, they need a reason
+// beyond "the range is bigger than four" — that is what the link says.
 //
 // THE BIG CHANGE: PRODUCTS FOLLOW CATEGORIES DIRECTLY. How It Works used to sit
 // between them, and that is where the page fell over. The customer picks a
@@ -41,7 +46,7 @@
 // to know who measures it asks that question when they are close to buying, not
 // while they are still browsing.
 //
-// So How It Works moved down to sit after the two range panels, where it stops
+// So How It Works moved down to sit after the range, where it stops
 // being an interruption and becomes the answer to the objection those panels
 // raise. It is not load-bearing that high anyway: the trust ticker leads with the
 // free measure and the installation, the hero's sub-line says "measured and
@@ -53,11 +58,11 @@
 // white run with no seam between the reviews and the strip. It is parchment down
 // here, which also puts a mid tone between the reviews and the ink footer.
 //
-// The full-range strip at 8 is warm white, and that is load-bearing too: the
-// visualiser and the about panel were both parchment and adjacent, which was
-// the one place on the page the rule was already broken. Putting a warm white
-// section between them fixes it as a side effect of putting it where it
-// belongs.
+// The full-range strip used to do a second job here: it was warm white and it
+// sat between the visualiser and the about panel, which are both parchment. With
+// it gone that join would have been two parchment grounds in a row, so the about
+// panel is warm white now — see the note on its own section. Removing a section
+// moves a colour decision onto its neighbour; it is never only a deletion.
 //
 // The visualiser is the only ink on the page — the deepest ground under the
 // brightest panel, which is what makes the one section that does real work look
@@ -80,7 +85,6 @@ import { StepsBar } from '../components/home/StepsBar';
 import { RangeRow } from '../components/home/RangeRow';
 import { RecommendationBanner } from '../components/home/RecommendationBanner';
 import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
-import { FullRange } from '../components/home/FullRange';
 import { AboutPanel } from '../components/home/AboutPanel';
 import { SocialProof } from '../components/home/SocialProof';
 import { Testimonials } from '../components/home/Testimonials';
@@ -134,9 +138,9 @@ export default function HomePage() {
         {/* 5 — FOUR HERO PRODUCTS, one row, nothing behind an arrow. A roller
             blind, a curtain, a wardrobe and an awning: one per part of the
             business, each with the configurator on it. This is a selling
-            surface and it is short on purpose — the other ten products are
-            named in their own section at 8. See the note at the top of
-            RangeRow, and THE RANGE, IN TWO SECTIONS below. */}
+            surface and it is short on purpose — the rest of the range is a
+            click away behind "Shop the full range". See the note at the top of
+            RangeRow, and THE RANGE IS ONE SECTION NOW above. */}
         <RangeRow />
 
         {/* 6 — The catch, for anyone who read the range and still doesn't know
@@ -146,31 +150,25 @@ export default function HomePage() {
         {/* 7 — The centrepiece: configure it, see it on your own window, buy it. */}
         <VisualiserShowcase />
 
-        {/* 8 — THE OTHER TEN PRODUCTS, as a directory rather than a pitch: small
-            landscape tiles, names, no buttons, one text link to the shop.
+        {/* THE OTHER TEN PRODUCTS NO LONGER HAVE A SECTION HERE. FullRange —
+            small landscape tiles, names, no buttons — used to sit between the
+            visualiser and the About panel, answering "what else do you make?".
+            It is gone from the page, and the answer now lives in one place: the
+            "Shop the full range" action on Bestsellers, which is worded to say
+            it leads somewhere bigger. Ten tiles that only linked out were doing
+            the job of one link at the cost of a section.
 
-            IT SITS HERE RATHER THAN UNDER THE ROW AT 5, and that is the whole
-            decision. Directly beneath it, ten more product tiles read as the
-            same section continuing and the four heroes stop being heroes —
-            which is the failure mode the old category-grid-then-SKU-grid pair
-            had, two photo grids back to back asking one question twice. Down
-            here it answers a question the visitor has actually formed by now:
-            they have met four products and played with the visualiser, and
-            "what else do you make?" is the next thing they think. It also
-            hands the About panel below a better cue — the full range, then the
-            people who make all of it.
+            The section it used to separate is worth knowing about: this removes
+            a break between two parchment grounds, so check THE GROUNDS if the
+            join below starts reading as one long band. */}
 
-            It breaks up two parchment sections that were adjacent, as well.
-            See THE GROUNDS. */}
-        <FullRange />
-
-        {/* 9 — Who turns up at the house — the only section about Klay rather than
+        {/* 8 — Who turns up at the house — the only section about Klay rather than
             about a product. Nobody arrives wanting to read about a window
             furnishings business; they read it once they have decided they
             might buy. */}
         <AboutPanel />
 
-        {/* 10 — One last ask.
+        {/* 9 — One last ask.
             IT CANNOT SIT DIRECTLY UNDER THE VISUALISER, which is where it was.
             Its button is Start Designing and it does not navigate — it scrolls
             to #visualiser. Immediately below that section the CTA bounces you a
@@ -179,7 +177,7 @@ export default function HomePage() {
             it is a real journey back to the top of the page's centrepiece. */}
         <FinalCta />
 
-        {/* 11 — Reviews, moving.
+        {/* 10 — Reviews, moving.
             After the ask rather than before it, which is the unusual way round.
             The reasoning: the nav carries Book a Measure on every screen, so the
             ask is never actually more than a glance away, and what somebody
@@ -189,7 +187,7 @@ export default function HomePage() {
             impression than a second CTA. */}
         <Testimonials />
 
-        {/* 12 — In your home, and the page's true last panel.
+        {/* 11 — In your home, and the page's true last panel.
             The install strip used to sit directly above the about panel, where
             the two of them read as one argument: photographs, then the
             sentences behind them. Down here it does a different job. Every tile
@@ -200,7 +198,7 @@ export default function HomePage() {
             white it had upstairs — see THE GROUNDS above. */}
         <SocialProof />
 
-        {/* 13 — Footer. */}
+        {/* 12 — Footer. */}
         <Footer />
       </main>
     </>

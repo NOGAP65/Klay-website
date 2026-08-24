@@ -9,11 +9,17 @@
 // off-screen and needs no arrows: there is nowhere for an arrow to go.
 //
 // THIS SECTION SELLS FOUR THINGS. It is not the catalogue and it is not trying
-// to be. The other ten products have their own section further down the page —
-// see FullRange, which lists them as a compact strip of small tiles with no
-// buttons on them. Splitting the two apart is what lets each do one job: this
-// row is four products with the configurator on them, that strip is a directory.
-// One section trying to be both is what produced every previous version of this.
+// to be. The other ten used to be listed further down the homepage as a strip of
+// small tiles with no buttons (FullRange, now deleted); the answer to "what else
+// do you make?" is the "Shop the full range" action in this section's header,
+// which is worded to say it leads somewhere bigger rather than just "Shop All".
+// One section trying to both sell and list is what produced every previous
+// version of this — see the note at the top of HomePage before merging them back.
+//
+// TWO OF THE FOUR CARRY A VISUALISE BADGE on the photograph, and which two is
+// read off `visualise` in data/catalogue.ts rather than decided here: the
+// visualiser draws rollers and curtains, so a wardrobe and an awning have
+// nowhere to send anyone.
 //
 // THE PANEL OPENS SIDEWAYS. Clicking Shop Now widens the card's slot from one
 // share to two and the configurator arrives in the space that made, BESIDE the
@@ -101,7 +107,7 @@ import { useIsMobile, useMediaQuery } from '../../hooks/useIsMobile';
 // rendered by the same tile. Four of them, named below; nothing about the range
 // is written down in this file.
 import { CATALOGUE, type CatalogueItem } from '../../data/catalogue';
-import { CtaLink, TILE_GAP } from './primitives';
+import { CtaLink, TILE_GAP, useHover } from './primitives';
 import { ProductGlyph } from '../ProductGlyph';
 import { RangeConfigurator } from './RangeConfigurator';
 import { defaultSelection, fieldsFor, type Selection } from '../../data/configOptions';
@@ -113,18 +119,18 @@ import { defaultSelection, fieldsFor, type Selection } from '../../data/configOp
  *
  * Plantation Shutters is the one that lost its place going from six to four, and
  * it is the right one to lose: it is a second indoor hard furnishing, so it is
- * the only card here whose job another card was already doing. It leads the
- * strip below instead.
+ * the only card here whose job another card was already doing. It leads the shop
+ * instead.
  *
  * IDs rather than a hand-written list of names, so this cannot drift out of step
  * with the catalogue: change a product's name or its photograph in one place and
  * this section follows. An id that stops existing drops out rather than throwing.
  *
- * EXPORTED, because FullRange lists everything that is NOT in here — the two
- * sections partition the catalogue between them rather than each carrying its own
- * copy of the split, so a product promoted to the row leaves the strip on the
- * same edit. */
-export const HERO_IDS = [
+ * LOCAL AGAIN. It was exported for FullRange, which listed everything NOT in here
+ * so that the two sections partitioned the catalogue between them. That section
+ * is gone and nothing else reads this, so it goes back to being this file's
+ * business. */
+const HERO_IDS = [
   'roller-blinds',
   'curtains',
   'wardrobes',
@@ -134,6 +140,79 @@ export const HERO_IDS = [
 const RANGE: CatalogueItem[] = HERO_IDS.map(id => CATALOGUE.find(i => i.id === id)).filter(
   (i): i is CatalogueItem => Boolean(i),
 );
+
+/** A viewfinder, 14px, drawn here rather than imported.
+ *
+ * lucide-react is in package.json and nothing in src imports it; the site draws
+ * its own marks (ProductGlyph, Nav, FilterRail), and four corner brackets are
+ * fewer bytes than the first icon off a library. Corners plus a centre dot,
+ * because the badge means "see it framed on your own window" — an eye would say
+ * "look at this picture", which is the opposite of the offer. */
+function ViewfinderIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" style={{ display: 'block' }}>
+      <g stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+        <path d="M2 5V3.6A1.6 1.6 0 0 1 3.6 2H5" />
+        <path d="M9 2h1.4A1.6 1.6 0 0 1 12 3.6V5" />
+        <path d="M12 9v1.4a1.6 1.6 0 0 1-1.6 1.6H9" />
+        <path d="M5 12H3.6A1.6 1.6 0 0 1 2 10.4V9" />
+      </g>
+      <circle cx="7" cy="7" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** "Visualise" on the photograph, going straight to the visualiser with this
+ * product already selected.
+ *
+ * IT IS A SIBLING OF THE CARD'S LINK, NOT A CHILD OF IT. The picture and name
+ * are wrapped in a <Link to={item.to}>, and an <a> inside an <a> is invalid and
+ * swallows its own clicks — the same reason the Shop Now button below sits
+ * outside it. So the card's column is the positioning context and this is
+ * absolutely placed over the top of the picture.
+ *
+ * Always visible rather than revealed on hover: it exists to tell people the
+ * visualiser is there at all, and a control that only appears once you are
+ * already pointing at the card cannot do that. On a phone there is no hover to
+ * reveal it with either.
+ *
+ * It carries its own solid pill, so this is not type dropped on a photograph —
+ * the rule that forbids is about unbacked type and scrims over the whole frame,
+ * neither of which a 24px-tall lozenge in the corner is. */
+function VisualiseBadge({ to, name }: { to: string; name: string }) {
+  const { hover, bind } = useHover();
+  return (
+    <Link
+      to={to}
+      {...bind}
+      aria-label={`Visualise ${name} in your own room`}
+      style={{
+        position: 'absolute',
+        top: space.sm,
+        right: space.sm,
+        zIndex: 2,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        height: 26,
+        padding: `0 ${space.xs}px`,
+        borderRadius: radius.md,
+        textDecoration: 'none',
+        // Paper pill, ink label — the same "selected" relationship the
+        // visualiser's own controls use on a dark ground, which is what a
+        // photograph is. It goes fully opaque and inverts under the pointer, so
+        // the badge answers the mouse before the click does.
+        background: hover ? tokens.ink : 'rgba(248,248,248,0.92)',
+        color: hover ? tokens.warmWhite : tokens.ink,
+        ...typeScale.micro,
+        transition: motion.button,
+      }}
+    >
+      <ViewfinderIcon />
+      Visualise
+    </Link>
+  );
+}
 
 /** Relative luminance, for deciding whether the mechanism drawing goes on in
  * warm white or in ink. Only reached if one of the four loses its photograph —
@@ -433,6 +512,9 @@ function RangeCard({
           minWidth: 0,
           display: 'flex',
           flexDirection: 'column',
+          // The positioning context for the Visualise badge, which has to sit
+          // over the picture from OUTSIDE the link wrapping it.
+          position: 'relative',
         }}
       >
         {/* Only the picture and the name are inside the link. The button below
@@ -579,6 +661,11 @@ function RangeCard({
             {item.name}
           </h3>
         </Link>
+
+        {/* Only on the products the visualiser can draw — see `visualise` in
+            data/catalogue.ts. Two of these four cards carry it; a wardrobe and
+            an awning do not, because the renderer has neither. */}
+        {item.visualise && <VisualiseBadge to={item.visualise} name={item.name} />}
 
         {/* THE ONE ACTION. Gold, full width, and it does not navigate — it opens
             the configuration panel beside this card. */}
@@ -902,7 +989,7 @@ export function RangeRow() {
             full-width gold button asking the visitor to leave for the shop
             before they had been shown a single product. It moves below the
             cards, where it means "and there is more", which is what it is for. */}
-        {!isMobile && <CtaLink to="/products">Shop All</CtaLink>}
+        {!isMobile && <CtaLink to="/products">Shop the full range</CtaLink>}
       </div>
 
       {/* THE SAME CONTAINER AS THE HEADER ABOVE IT, and the padding is on THIS
@@ -1010,7 +1097,7 @@ export function RangeRow() {
             end of the header row on desktop, so it keeps the same alignment. */}
         {isMobile && (
           <div style={{ paddingTop: space.lg }}>
-            <CtaLink to="/products">Shop All</CtaLink>
+            <CtaLink to="/products">Shop the full range</CtaLink>
           </div>
         )}
       </div>

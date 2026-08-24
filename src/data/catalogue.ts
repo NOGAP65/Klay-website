@@ -65,6 +65,16 @@ export interface CatalogueItem {
    * judgment rather than a fact read out of a spec sheet, and this is the one
    * place to correct them. */
   light?: string[]
+  /** Where this product's "Visualise" badge goes — set ONLY on the products the
+   * visualiser can actually draw.
+   *
+   * That is roller blinds and curtains, and it is a limit of the renderer rather
+   * than an editorial choice: Canvas2DBlindRenderer draws a roller and
+   * Canvas2DCurtainRenderer draws a wave-fold curtain, and there is no wardrobe
+   * and no awning in either of them. Absent means no badge, because a badge that
+   * opened the visualiser on a roller blind from a wardrobe card would be a
+   * promise the next screen breaks. */
+  visualise?: string
 }
 
 /** The enquiry destination, carrying the product name so the contact form opens
@@ -97,6 +107,9 @@ export const CATALOGUE: CatalogueItem[] = [
     glyph: 'roller-blinds',
     colours: RYNAMIC_COLOURS,
     light: ['Blockout', 'Light filter', 'Sunscreen'],
+    // `range` locks the visualiser to this type on arrival — see the mount
+    // effect in VisualiserControls.
+    visualise: '/visualiser?range=blockout',
   },
   {
     id: 'roman-blinds',
@@ -180,6 +193,10 @@ export const CATALOGUE: CatalogueItem[] = [
     glyph: 'curtains',
     colours: CURTAIN_COLOURS,
     light: ['Blockout', 'Light filter', 'Sheer'],
+    // `category`, not `range`: the visualiser opens on blinds, and without this
+    // a curtain badge would land the visitor on a roller blind. See the same
+    // mount effect.
+    visualise: '/visualiser?category=curtain',
   },
 
   // --- OUTDOOR -------------------------------------------------------------

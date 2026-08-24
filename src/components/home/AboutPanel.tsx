@@ -122,11 +122,19 @@ export function AboutPanel() {
   return (
     <section
       style={{
-        // Parchment, which is what the blinds panel carried when it was the
-        // second of two. It still lands between the visualiser's cream and the
-        // social proof below, so the page's no-two-adjacent-grounds rule holds
-        // with the other panel gone.
-        background: tokens.parchment,
+        // WARM WHITE, AND IT WAS PARCHMENT UNTIL THE FULL-RANGE STRIP WENT.
+        //
+        // That strip was warm white and it sat directly above this panel, which
+        // is what kept this parchment legal: visualiser (parchment) → strip
+        // (warm white) → this (parchment). With the strip gone the visualiser
+        // lands straight on this section, and two parchment grounds in a row is
+        // the one rule the page keeps everywhere — see THE GROUNDS in HomePage.
+        //
+        // Warm white here rather than repainting the visualiser: that section is
+        // the centrepiece and its parchment is argued for in its own file, and
+        // the ground below this one is the final CTA's charcoal, so warm white
+        // separates cleanly on both sides.
+        background: tokens.warmWhite,
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
       }}
