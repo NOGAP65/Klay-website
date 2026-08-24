@@ -386,9 +386,17 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
   // Locks the blind type from either the `lockedRange` prop or a `?range=`
   // URL param (e.g. arriving from a product page) — runs once on mount only.
   //
-  // `?category=curtain` is the same idea one level up, and the Visualise badges
-  // on the range cards need it: the store opens on blinds, so a curtain card
-  // linking to a bare /visualiser would land the visitor on a roller blind.
+  // `?category=curtain` is the same idea one level up, and it is what makes the
+  // standalone /visualiser page reachable on curtains at all: the store opens on
+  // blinds, so without it every link into this page lands on a roller blind and
+  // the only way to curtains is clicking the tab.
+  //
+  // NOTHING IN THE APP LINKS WITH IT TODAY. It was added for the range cards'
+  // Visualise badges, which then stopped needing it — they scroll to the
+  // homepage's embedded visualiser and set the store directly rather than
+  // navigating here. It is kept because it completes `?range=` above rather than
+  // because something calls it; delete both together if URL-driven config goes.
+  //
   // Only 'curtain' is honoured — 'blind' is already the default, and anything
   // else is a malformed link that should leave the panel alone rather than
   // switch it to a category that does not exist.

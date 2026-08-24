@@ -19,7 +19,8 @@
 // TWO OF THE FOUR CARRY A VISUALISE BADGE on the photograph, and which two is
 // read off `visualise` in data/catalogue.ts rather than decided here: the
 // visualiser draws rollers and curtains, so a wardrobe and an awning have
-// nowhere to send anyone.
+// nothing to show. The badge does not leave the page — it selects the product in
+// the homepage's own visualiser and scrolls to it, which is three sections down.
 //
 // THE PANEL OPENS SIDEWAYS. Clicking Shop Now widens the card's slot from one
 // share to two and the configurator arrives in the space that made, BESIDE the
@@ -107,7 +108,8 @@ import { useIsMobile, useMediaQuery } from '../../hooks/useIsMobile';
 // rendered by the same tile. Four of them, named below; nothing about the range
 // is written down in this file.
 import { CATALOGUE, type CatalogueItem } from '../../data/catalogue';
-import { CtaLink, TILE_GAP, useHover } from './primitives';
+import { CtaLink, TILE_GAP, scrollToId, useHover } from './primitives';
+import { useVisualiserStore } from '../../visualiser/useVisualiserStore';
 import { ProductGlyph } from '../ProductGlyph';
 import { RangeConfigurator } from './RangeConfigurator';
 import { defaultSelection, fieldsFor, type Selection } from '../../data/configOptions';
@@ -162,14 +164,22 @@ function ViewfinderIcon() {
   );
 }
 
-/** "Visualise" on the photograph, going straight to the visualiser with this
- * product already selected.
+/** "Visualise" on the photograph. It selects this product in the homepage's own
+ * visualiser and scrolls down to it.
  *
- * IT IS A SIBLING OF THE CARD'S LINK, NOT A CHILD OF IT. The picture and name
- * are wrapped in a <Link to={item.to}>, and an <a> inside an <a> is invalid and
- * swallows its own clicks — the same reason the Shop Now button below sits
- * outside it. So the card's column is the positioning context and this is
- * absolutely placed over the top of the picture.
+ * IT DOES NOT NAVIGATE, and that is the point. It used to link to /visualiser —
+ * leaving the homepage to use a tool the homepage already has three sections
+ * further down, throwing away the visitor's scroll position to show them the same
+ * instrument on a page of its own. Now it does what the hero's "Design Yours" and
+ * the final CTA's "Start Designing" do (see scrollToId in primitives), with the
+ * product selected on the way.
+ *
+ * A <button>, not a <Link>, for the same reason those two are: there is no
+ * destination. It also settles the nested-anchor problem rather than working
+ * around it — the picture and name are wrapped in a <Link to={item.to}>, and an
+ * <a> inside an <a> is invalid and swallows its own clicks. It still sits OUTSIDE
+ * that link, because a <button> inside an <a> is no better; the card's column is
+ * the positioning context and this is placed over the picture from there.
  *
  * Always visible rather than revealed on hover: it exists to tell people the
  * visualiser is there at all, and a control that only appears once you are
@@ -177,14 +187,34 @@ function ViewfinderIcon() {
  * reveal it with either.
  *
  * It carries its own solid pill, so this is not type dropped on a photograph —
- * the rule that forbids is about unbacked type and scrims over the whole frame,
- * neither of which a 24px-tall lozenge in the corner is. */
-function VisualiseBadge({ to, name }: { to: string; name: string }) {
+ * the rule that forbids that is about unbacked type and scrims over the whole
+ * frame, neither of which a 26px-tall lozenge in the corner is. */
+function VisualiseBadge({
+  target,
+  name,
+}: {
+  target: NonNullable<CatalogueItem['visualise']>;
+  name: string;
+}) {
   const { hover, bind } = useHover();
+  const { setProductCategory, setBlindType, setActiveWindow } = useVisualiserStore();
+
+  const onClick = () => {
+    // WINDOW 1 FIRST. The panel's setters write to whichever window is active,
+    // and a visitor who has already been down there and customised window 3
+    // would otherwise have this badge quietly reconfigure that one. Arriving
+    // from a product card means "show me this", which is window 1 — and window 1
+    // leads, so the windows still following it come along.
+    setActiveWindow(0);
+    setProductCategory(target.category);
+    if (target.blindType) setBlindType(target.blindType);
+    scrollToId('visualiser')();
+  };
+
   return (
-    <Link
-      to={to}
+    <button
       {...bind}
+      onClick={onClick}
       aria-label={`Visualise ${name} in your own room`}
       style={{
         position: 'absolute',
@@ -197,7 +227,8 @@ function VisualiseBadge({ to, name }: { to: string; name: string }) {
         height: 26,
         padding: `0 ${space.xs}px`,
         borderRadius: radius.md,
-        textDecoration: 'none',
+        border: 'none',
+        cursor: 'pointer',
         // Paper pill, ink label — the same "selected" relationship the
         // visualiser's own controls use on a dark ground, which is what a
         // photograph is. It goes fully opaque and inverts under the pointer, so
@@ -210,7 +241,7 @@ function VisualiseBadge({ to, name }: { to: string; name: string }) {
     >
       <ViewfinderIcon />
       Visualise
-    </Link>
+    </button>
   );
 }
 
@@ -665,7 +696,7 @@ function RangeCard({
         {/* Only on the products the visualiser can draw — see `visualise` in
             data/catalogue.ts. Two of these four cards carry it; a wardrobe and
             an awning do not, because the renderer has neither. */}
-        {item.visualise && <VisualiseBadge to={item.visualise} name={item.name} />}
+        {item.visualise && <VisualiseBadge target={item.visualise} name={item.name} />}
 
         {/* THE ONE ACTION. Gold, full width, and it does not navigate — it opens
             the configuration panel beside this card. */}

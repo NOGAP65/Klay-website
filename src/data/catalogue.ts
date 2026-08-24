@@ -27,6 +27,7 @@
 
 import { PRODUCTS, RYNAMIC_COLOURS, CURTAIN_COLOURS } from './products'
 import { blindTypeBySlug } from './blindTypes'
+import type { BlindType } from '../lib/pricing'
 
 export type Group = 'Indoor' | 'Outdoor' | 'Other'
 
@@ -65,16 +66,26 @@ export interface CatalogueItem {
    * judgment rather than a fact read out of a spec sheet, and this is the one
    * place to correct them. */
   light?: string[]
-  /** Where this product's "Visualise" badge goes — set ONLY on the products the
-   * visualiser can actually draw.
+  /** What this product's "Visualise" badge should select in the visualiser — set
+   * ONLY on the products the visualiser can actually draw.
    *
    * That is roller blinds and curtains, and it is a limit of the renderer rather
    * than an editorial choice: Canvas2DBlindRenderer draws a roller and
    * Canvas2DCurtainRenderer draws a wave-fold curtain, and there is no wardrobe
    * and no awning in either of them. Absent means no badge, because a badge that
    * opened the visualiser on a roller blind from a wardrobe card would be a
-   * promise the next screen breaks. */
-  visualise?: string
+   * promise the next screen breaks.
+   *
+   * A SELECTION, NOT A URL. It used to be a `/visualiser?...` link, and the badge
+   * left the homepage to use a tool the homepage already has further down it.
+   * Describing the selection instead lets the badge scroll to the embedded
+   * visualiser and set it, and would still be what a link needed if one ever
+   * wanted building from it. */
+  visualise?: {
+    category: 'blind' | 'curtain'
+    /** Blinds only — which of the four the panel should open on. */
+    blindType?: BlindType
+  }
 }
 
 /** The enquiry destination, carrying the product name so the contact form opens
@@ -107,9 +118,8 @@ export const CATALOGUE: CatalogueItem[] = [
     glyph: 'roller-blinds',
     colours: RYNAMIC_COLOURS,
     light: ['Blockout', 'Light filter', 'Sunscreen'],
-    // `range` locks the visualiser to this type on arrival — see the mount
-    // effect in VisualiserControls.
-    visualise: '/visualiser?range=blockout',
+    // Blockout of the four, because it is the one a roller blind is bought for.
+    visualise: { category: 'blind', blindType: 'blockout' },
   },
   {
     id: 'roman-blinds',
@@ -193,10 +203,9 @@ export const CATALOGUE: CatalogueItem[] = [
     glyph: 'curtains',
     colours: CURTAIN_COLOURS,
     light: ['Blockout', 'Light filter', 'Sheer'],
-    // `category`, not `range`: the visualiser opens on blinds, and without this
-    // a curtain badge would land the visitor on a roller blind. See the same
-    // mount effect.
-    visualise: '/visualiser?category=curtain',
+    // No blindType — the category is the whole selection for a curtain, and the
+    // panel's curtain branch has its own type field (sheer/blockout).
+    visualise: { category: 'curtain' },
   },
 
   // --- OUTDOOR -------------------------------------------------------------
