@@ -23,7 +23,14 @@
 // FIRST, because it is the question that decides how many times every question
 // under it gets asked — it used to sit at the very bottom, under the price box,
 // which put the quantity after the number it multiplies. The price comes LAST,
-// under everything that feeds it, and the buttons follow it.
+// under everything that feeds it, and the button is attached to it.
+//
+// THE WHOLE SECTION IS THE CARD. The action used to sit on its own row below the
+// card, centred on both columns; it is inside the control column now, directly
+// under the price it is charging. That row cost a button, a quote link and a 32px
+// margin of page while the price box sat in the card's bottom-left corner with
+// nothing beneath it — the two halves of one decision as far apart as the layout
+// could put them.
 // ---------------------------------------------------------------------------
 
 import { useNavigate } from 'react-router-dom';
@@ -562,18 +569,97 @@ export function VisualiserShowcase() {
                 window control that feeds it. */}
             <VisualiserControls compact onDark showCurtainControls showPrice={false} />
 
-            {/* PRICE LAST. Everything above it is a decision; this is what they
-                add up to, and the buttons under the card follow it. */}
-            <PriceBox
-              onDark
-              amount={jobTotal}
-              note={
-                count === 1
-                  ? '+ installation across Australia'
-                  : `${count} windows + installation across Australia`
-              }
-              style={{ marginTop: isMobile ? undefined : 'auto' }}
-            />
+            {/* THE CLOSE: what it costs, then the button that buys it, as one
+                block at the foot of the column.
+
+                The action used to sit BELOW THE CARD, centred on the whole
+                instrument, on the reasoning that it belonged to both columns
+                rather than either. What that actually bought was a third row of
+                page — button, quote link and a 32px margin — under a card that
+                already had a price box sitting in its bottom-left corner with
+                nothing beneath it. The two halves of one decision were as far
+                apart as the layout could put them.
+
+                Price and action are the same thought, so they are now the same
+                block, and the whole thing takes the marginTop:auto the price box
+                had on its own. */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: space.md,
+                marginTop: isMobile ? undefined : 'auto',
+              }}
+            >
+              <PriceBox
+                onDark
+                amount={jobTotal}
+                note={
+                  count === 1
+                    ? '+ installation across Australia'
+                    : `${count} windows + installation across Australia`
+                }
+              />
+
+              {/* The action splits by category, because only one of the two can
+                  be bought. A curtain gets an enquiry — see CURTAIN_ENQUIRY — and
+                  no second link under it, since a quote link below a quote button
+                  is the same destination twice.
+
+                  Blinds are unchanged: Buy Now, the same words as every tile on
+                  the page, with the price on the label because this is the only
+                  one of them that knows what the thing costs — a bare "Buy Now"
+                  under a configured render would hide the number the customer
+                  just built.
+
+                  FULL WIDTH, not minWidth 280. In a 30% column 280px is wider
+                  than the space at some breakpoints, and `whiteSpace: nowrap` on
+                  ctaBase means it would not have wrapped — it would have pushed
+                  the column open and thrown the card's two-column split out.
+                  100% lets the label set the constraint instead: at the narrowest
+                  desktop column it is the button that is measured, not the
+                  layout. */}
+              {isCurtain ? (
+                <CtaLink to={CURTAIN_ENQUIRY} style={{ width: '100%' }}>
+                  Enquire — from {formatAUD(jobTotal)}
+                </CtaLink>
+              ) : (
+                <>
+                  <CtaButton onClick={handleBuyNow} style={{ width: '100%' }}>
+                    Buy Now — {formatAUD(jobTotal)}
+                  </CtaButton>
+                  {/* onDark, AND IT IS NOT OPTIONAL NOW. This link was on the
+                      parchment under the card and took the light treatment; on
+                      the ink card the same default resolves to near-black text on
+                      a near-black ground. Centred under the button rather than
+                      beside it — there is no room for a row in this column.
+
+                      /book quotes ONE configuration, so a job whose windows
+                      differ travels as the window on screen times the window
+                      count. That is the honest limit of a shareable URL of four
+                      short params, and it is a measure appointment at the other
+                      end — the installer prices what they measure. The common
+                      case is unaffected: growing the job clones window 1, so the
+                      windows match unless one was deliberately changed. */}
+                  <div style={{ textAlign: 'center' }}>
+                    <TextLink
+                      onDark
+                      accent
+                      to={bookingLink({
+                        blindType,
+                        windowSize,
+                        operation,
+                        quantity: count,
+                        fabricColour,
+                        hardwareColour,
+                      })}
+                    >
+                      or get a free quote →
+                    </TextLink>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Centred vertically, because the two columns are no longer the same
@@ -603,61 +689,8 @@ export function VisualiserShowcase() {
           </div>
         </div>
 
-        {/* The conversion line, below the card and centred on it: the button
-            belongs to the whole instrument, not to either column. Button and
-            quote link sit on one row, the link beside the button rather than
-            under it, so the section closes on a single line. */}
-        <div
-          style={{
-            marginTop: space.lg,
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: space.md,
-          }}
-        >
-          {/* The action splits by category, because only one of the two can be
-              bought. A curtain gets an enquiry — see CURTAIN_ENQUIRY — and no
-              second link beside it, since a quote link next to a quote button is
-              the same destination twice.
-
-              Blinds are unchanged: Buy Now, the same words as every tile on the
-              page, with the price on the label because this is the only one of
-              them that knows what the thing costs — a bare "Buy Now" under a
-              configured render would hide the number the customer just built. */}
-          {isCurtain ? (
-            <CtaLink to={CURTAIN_ENQUIRY} style={{ minWidth: 280 }}>
-              Enquire — from {formatAUD(jobTotal)}
-            </CtaLink>
-          ) : (
-            <>
-              <CtaButton onClick={handleBuyNow} style={{ minWidth: 280 }}>
-                Buy Now — {formatAUD(jobTotal)}
-              </CtaButton>
-              {/* /book quotes ONE configuration, so a job whose windows differ
-                  travels as the window on screen times the window count. That is
-                  the honest limit of a shareable URL of four short params, and it
-                  is a measure appointment at the other end — the installer prices
-                  what they measure. The common case is unaffected: growing the
-                  job clones the last window, so the windows match unless the
-                  customer deliberately changed one. */}
-              <TextLink
-                accent
-                to={bookingLink({
-                  blindType,
-                  windowSize,
-                  operation,
-                  quantity: count,
-                  fabricColour,
-                  hardwareColour,
-                })}
-              >
-                or get a free quote →
-              </TextLink>
-            </>
-          )}
-          </div>
+        {/* NOTHING BELOW THE CARD. The card is the whole section now — see the
+            note on the price-and-action block inside the control column. */}
         </div>
       </div>
     </section>
