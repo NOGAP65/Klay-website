@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // The full range — the other ten products, as a directory rather than a pitch.
 //
-// WHY IT IS A SEPARATE SECTION. Our Range sells four things: a roller blind, a
+// WHY IT IS A SEPARATE SECTION. Bestsellers sells four things: a roller blind, a
 // curtain, a wardrobe and an awning, at reference scale, each with the
 // configurator on it. That is a selling surface and it works because it is
 // short. But Klay makes fourteen products, and a homepage that names four of

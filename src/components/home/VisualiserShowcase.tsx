@@ -37,6 +37,7 @@ import KlayConfigurator from '../../visualiser/KlayConfigurator';
 import VisualiserControls, { Field, GroupHeading, PriceBox } from '../../visualiser/VisualiserControls';
 import {
   MAX_WINDOWS,
+  type JobWindow,
   priceWindow,
   useVisualiserStore,
   type ProductCategory,
@@ -218,32 +219,41 @@ function WindowCount({ value, onChange }: { value: number; onChange: (n: number)
  * before the third tab; the Field label above says what the numbers are, and
  * the caption names the one that is selected in full. */
 function WindowPicker({
-  count,
+  windows,
   active,
   matched,
   onSelect,
   onMatchAll,
 }: {
-  count: number;
+  windows: JobWindow[];
   active: number;
   matched: boolean;
   onSelect: (index: number) => void;
   onMatchAll: () => void;
 }) {
+  const count = windows.length;
   return (
     <Field onDark label="Customising" caption={`Window ${active + 1} of ${count}`}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xxs }}>
-        {Array.from({ length: count }, (_, i) => {
+        {windows.map((w, i) => {
           const isActive = i === active;
+          // Window 1 leads, so its own flag is meaningless — it is never dotted,
+          // and it is not announced as following itself.
+          const onItsOwn = i > 0 && w.customised;
+          const follows = i > 0 && !w.customised;
           return (
             <button
               key={i}
               aria-pressed={isActive}
-              aria-label={`Customise window ${i + 1}`}
+              aria-label={
+                `Customise window ${i + 1}` +
+                (onItsOwn ? ' (customised)' : follows ? ' (following window 1)' : '')
+              }
               onClick={() => onSelect(i)}
               style={{
                 // 32 square, the pill height and the stepper's — this row sits
                 // between the two and cannot be a third size.
+                position: 'relative',
                 width: 32,
                 height: 32,
                 borderRadius: radius.md,
@@ -259,10 +269,48 @@ function WindowPicker({
               }}
             >
               {i + 1}
+              {/* A window that has left window 1 gets a dot. Without it the tabs
+                  are identical and there is nothing on screen to say which
+                  windows a change to window 1 is about to move — which is the
+                  one thing about this control that could surprise someone. */}
+              {onItsOwn && (
+                <span
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    width: 4,
+                    height: 4,
+                    borderRadius: '50%',
+                    background: isActive ? SELECTED.color : tokens.onDarkMuted,
+                  }}
+                />
+              )}
             </button>
           );
         })}
       </div>
+
+      {/* Says what the dots mean, and only while something on screen has one.
+          Sentence case, not micro: typeScale.micro is uppercase and letter-
+          spaced — the same treatment as GroupHeading — so as a hint it read as a
+          fourth section heading sitting inside the third one. */}
+      {!matched && (
+        <div
+          style={{
+            ...typeScale.label,
+            letterSpacing: 'normal',
+            textTransform: 'none',
+            fontWeight: 400,
+            color: tokens.onDarkMuted,
+            marginTop: space.sm,
+          }}
+        >
+          Dotted windows keep their own settings
+        </div>
+      )}
+
       {/* Only offered once the windows actually differ, because on a job that
           already matches it is a button that does nothing. It is the way back
           from a per-window job to a uniform one: twelve windows on one fabric
@@ -271,7 +319,7 @@ function WindowPicker({
         <button
           onClick={onMatchAll}
           style={{
-            marginTop: space.sm,
+            marginTop: space.xs,
             padding: 0,
             background: 'none',
             border: 'none',
@@ -497,7 +545,7 @@ export function VisualiserShowcase() {
                 <WindowCount value={count} onChange={setWindowCount} />
                 {count > 1 && (
                   <WindowPicker
-                    count={count}
+                    windows={windows}
                     active={activeWindow}
                     matched={windowsMatch()}
                     onSelect={setActiveWindow}

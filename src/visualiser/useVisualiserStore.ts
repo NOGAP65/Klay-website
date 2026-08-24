@@ -70,6 +70,22 @@ export const MAX_WINDOWS = 12;
 // the site down different paths — curtains are enquiry-only everywhere, see
 // CURTAIN_ENQUIRY in VisualiserShowcase — so a job mixing them could not be
 // priced or bought as one thing.
+//
+// WINDOW 1 LEADS; THE REST FOLLOW UNTIL TOUCHED.
+//
+// Cloning the last window when the job grew was not enough, because it only
+// looked at the moment of growing. Set the count to three FIRST — which is the
+// natural order, it is the first question the panel asks — and windows 2 and 3
+// were stamped out of the factory default and then stranded there: every choice
+// made afterwards went to window 1 alone, so a job configured in Charcoal
+// sunscreen quietly carried two White blockout blinds to the cart.
+//
+// So following is continuous, not a one-off copy. A window is either FOLLOWING
+// window 1 — it takes every change made to window 1, whenever it is made — or
+// CUSTOMISED, meaning the customer changed that window itself and it now keeps
+// its own configuration. `customised` on each window is which of the two it is,
+// and it flips the moment a change lands on that window and actually differs
+// from what was there.
 // ---------------------------------------------------------------------------
 
 /** Everything one window can differ from another in. */
@@ -99,6 +115,34 @@ const DEFAULT_WINDOW: WindowConfig = {
 
 const WINDOW_FIELDS = Object.keys(DEFAULT_WINDOW) as (keyof WindowConfig)[];
 
+/** A window as the job holds it: its configuration, plus whether it is still
+ * following window 1. */
+export interface JobWindow extends WindowConfig {
+  /** True once a change has landed on this window itself. Window 1's own flag is
+   * never read — it is the one that leads. */
+  customised: boolean;
+}
+
+/** The configuration half of a job window, which is what the flat store fields
+ * mirror. Spelled out field by field rather than destructured, so that adding a
+ * field to WindowConfig fails to compile here instead of silently going
+ * unmirrored — and so `customised` cannot ride along into the flat state, where
+ * it would become a top-level store field that means nothing. */
+const configOf = (w: JobWindow): WindowConfig => ({
+  blindType: w.blindType,
+  fabricColour: w.fabricColour,
+  hardwareColour: w.hardwareColour,
+  windowSize: w.windowSize,
+  operation: w.operation,
+  curtainType: w.curtainType,
+  curtainOperation: w.curtainOperation,
+  curtainMount: w.curtainMount,
+  curtainSize: w.curtainSize,
+});
+
+/** A fresh window that follows window 1. */
+const following = (config: WindowConfig): JobWindow => ({ ...config, customised: false });
+
 /** What one window costs, on whichever axis its category prices on. Every price
  * the visualiser shows — the panel's box, the job total, each cart line — comes
  * through here, so the button and the box above it cannot quote two numbers. */
@@ -109,16 +153,39 @@ export function priceWindow(w: WindowConfig, category: ProductCategory): number 
   return pricePerBlind(w);
 }
 
-/** Writes a change onto the flat fields AND into the active window, which is
- * what keeps the two in step. Every per-window setter goes through it: one that
- * wrote only the flat field would appear to work and then lose the choice the
- * moment another window was selected. */
+/** Writes a change onto the flat fields AND into the windows it belongs to.
+ *
+ * Every per-window setter goes through here — one that wrote only the flat field
+ * would appear to work and then lose the choice the moment another window was
+ * selected. Three things happen, and the order of the checks matters:
+ *
+ *  1. A change that changes nothing is dropped. Clicking Blockout on a window
+ *     already set to Blockout must not mark it customised: "customised" has to
+ *     mean deliberately different, or merely clicking through the options to see
+ *     what they are would cut a window loose from window 1.
+ *  2. Editing WINDOW 1 carries every following window with it. This is the fix
+ *     for windows stranded on defaults: window 1 leads continuously, not only at
+ *     the moment the job grew.
+ *  3. Editing any OTHER window writes to that window alone and marks it
+ *     customised, so it keeps its own configuration from then on.
+ */
 const writeThrough =
   (patch: Partial<WindowConfig>) =>
-  (s: { windows: WindowConfig[]; activeWindow: number }) => ({
-    ...patch,
-    windows: s.windows.map((w, i) => (i === s.activeWindow ? { ...w, ...patch } : w)),
-  });
+  (s: { windows: JobWindow[]; activeWindow: number }) => {
+    const active = s.windows[s.activeWindow];
+    const keys = Object.keys(patch) as (keyof WindowConfig)[];
+    if (keys.every(k => active[k] === patch[k])) return {};
+
+    const editingLead = s.activeWindow === 0;
+    return {
+      ...patch,
+      windows: s.windows.map((w, i) => {
+        if (i === s.activeWindow) return { ...w, ...patch, customised: w.customised || !editingLead };
+        if (editingLead && !w.customised) return { ...w, ...patch };
+        return w;
+      }),
+    };
+  };
 
 interface VisualiserStore {
   // Product selection
@@ -131,8 +198,9 @@ interface VisualiserStore {
   lockedRange: string | null;   // if set from product page, blind type picker is hidden and locked
   defaultWindowActive: boolean; // true until the user uploads/selects their own photo — locks the trace to the preset default-window pins
 
-  // The job. windows[activeWindow] is mirrored by the flat fields above.
-  windows: WindowConfig[];
+  // The job. windows[activeWindow]'s configuration is mirrored by the flat
+  // fields above; window 1 leads the ones still following it.
+  windows: JobWindow[];
   activeWindow: number;
 
   // Curtain-specific
@@ -173,11 +241,13 @@ interface VisualiserStore {
   setOperation: (op: 'manual' | 'motorised') => void;
   setLockedRange: (range: string | null) => void;
   setDefaultWindowActive: (active: boolean) => void;
-  /** Grows or shrinks the job. Clamped to 1..MAX_WINDOWS. */
+  /** Grows or shrinks the job. Clamped to 1..MAX_WINDOWS. New windows follow
+   * window 1. */
   setWindowCount: (n: number) => void;
   /** Selects the window the panel edits and the canvas renders. */
   setActiveWindow: (index: number) => void;
-  /** Copies the window on screen over every other window in the job. */
+  /** Copies the window on screen over every other window, and puts them all
+   * back to following window 1. */
   applyActiveToAll: () => void;
   setCurtainType: (type: CurtainType) => void;
   setCurtainOperation: (op: CurtainOperation) => void;
@@ -203,7 +273,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   lockedRange: null,
   defaultWindowActive: true,
   curtainOpenness: 0,
-  windows: [{ ...DEFAULT_WINDOW }],
+  windows: [following(DEFAULT_WINDOW)],
   activeWindow: 0,
   photoUrl: null,
   rollPosition: 0.5,
@@ -284,30 +354,37 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
     const count = Math.max(1, Math.min(MAX_WINDOWS, Math.floor(n) || 1));
     if (count === s.windows.length) return {};
     const windows = count > s.windows.length
-      // Growing clones the LAST window rather than the factory default: adding a
-      // window to a job means "another one like that", and starting it on White
-      // Blockout would silently undo the choices just made.
+      // New windows are born FOLLOWING WINDOW 1, on window 1's configuration —
+      // not the last window's, and emphatically not the factory default. They
+      // then keep taking window 1's changes, which is what stops a job sized
+      // before it is configured from carrying White blockout blinds nobody
+      // chose. See the note at the top of the file.
       ? [
           ...s.windows,
-          ...Array.from({ length: count - s.windows.length }, () => ({ ...s.windows[s.windows.length - 1] })),
+          ...Array.from({ length: count - s.windows.length }, () => following(configOf(s.windows[0]))),
         ]
       : s.windows.slice(0, count);
     // Shrinking can strand the active index past the end, which would leave the
     // panel editing a window nothing prices and the canvas rendering it.
     const activeWindow = Math.min(s.activeWindow, windows.length - 1);
-    return { windows, activeWindow, ...windows[activeWindow] };
+    return { windows, activeWindow, ...configOf(windows[activeWindow]) };
   }),
 
   setActiveWindow: (index) => set(s => {
     const activeWindow = Math.max(0, Math.min(s.windows.length - 1, Math.floor(index) || 0));
     // The spread is what makes the switch visible: the flat fields become this
     // window's configuration, so the canvas and every field follow it.
-    return { activeWindow, ...s.windows[activeWindow] };
+    return { activeWindow, ...configOf(s.windows[activeWindow]) };
   }),
 
-  applyActiveToAll: () => set(s => ({
-    windows: s.windows.map(() => ({ ...s.windows[s.activeWindow] })),
-  })),
+  // Every window takes the active one's configuration and goes back to
+  // following window 1 — which, since they now all match, is where window 1's
+  // configuration leads anyway. This is the way back from a per-window job to a
+  // uniform one.
+  applyActiveToAll: () => set(s => {
+    const config = configOf(s.windows[s.activeWindow]);
+    return { windows: s.windows.map(() => following(config)), ...config };
+  }),
   setCurtainOpenness: (openness) => set({ curtainOpenness: openness }),
   setPhotoUrl: (url) => set({ photoUrl: url }),
   setRollPosition: (pos) => set({ rollPosition: pos }),

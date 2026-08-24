@@ -4,7 +4,7 @@
 // It used to be its own design: a photograph with a block of type underneath it
 // and a gold bar at the bottom. That was built against Kookai and Allbirds and
 // it was a decent card, but it meant the site had TWO card designs — one on the
-// homepage's Our Range row and a different one in the shop — and a visitor
+// homepage's Bestsellers row and a different one in the shop — and a visitor
 // moving between them met the same six ranges wearing different clothes.
 //
 // So this delegates to PhotoTile. Everything sits on the photograph: the name

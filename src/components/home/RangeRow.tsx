@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// 4. Our Range — FOUR HERO PRODUCTS IN ONE ROW, AND THE PANEL OPENS BESIDE THEM.
+// 4. Bestsellers — FOUR HERO PRODUCTS IN ONE ROW, AND THE PANEL OPENS BESIDE THEM.
 //
 // FOUR HERO PRODUCTS, AND ONE PER PART OF THE BUSINESS: a roller blind, a
 // curtain, a wardrobe, a folding arm awning. Indoor hard furnishing, indoor soft
@@ -845,7 +845,7 @@ export function RangeRow() {
 
 
   /** ONE CONTAINER FOR THE HEADER AND THE ROW, so the first card's left edge
-   * lands on the same vertical line as "Our Range" by construction rather than by
+   * lands on the same vertical line as "Bestsellers" by construction rather than by
    * two paddings that happen to agree. An earlier version had the heading 80px in
    * and the row at 0, which is two different left margins in one section. */
   const inner: React.CSSProperties = {
@@ -883,8 +883,16 @@ export function RangeRow() {
         }}
       >
         <div>
-          <p style={{ ...eyebrow, marginBottom: space.md }}>The collection</p>
-          <h2 style={{ ...headline.section, color: tokens.ink }}>Our Range</h2>
+          {/* THIS WAS "The collection" / "Our Range" AND THAT WAS THE PROBLEM.
+              The section is four products and the catalogue is fourteen, so a
+              heading claiming to be THE RANGE was competing with the section
+              that actually is it: "Our Range" over four cards, then "The full
+              range" over ten more, in that order down the page. Naming these as
+              the ones that sell most answers why these four and not the others,
+              and leaves the full range unambiguously the place you go to see
+              everything. */}
+          <p style={{ ...eyebrow, marginBottom: space.md }}>Most asked for</p>
+          <h2 style={{ ...headline.section, color: tokens.ink }}>Bestsellers</h2>
           <p style={{ ...supporting.onLight, marginTop: space.md, maxWidth: 460 }}>
             Made to measure. Installed by experts.
           </p>

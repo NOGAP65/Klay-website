@@ -10,7 +10,7 @@
 // Three things went, and three of the four were duplication rather than content:
 //
 //   HeroRangeRail — the 24% right panel, seven elements plus rotating imagery.
-//     Its job was showing the range; Our Range does that immediately below.
+//     Its job was showing the range; Bestsellers does that immediately below.
 //   The lead paragraph — authorised removal. It leaves an orientation gap: the
 //     sentence that said what Klay sells is no longer above the fold, and the
 //     eyebrow and headline carry brand rather than category. The steps bar 58px
@@ -82,7 +82,7 @@ export function Hero() {
         // the bar below it, each read from its own definition.
         //
         // It used to subtract 312: ticker 38, steps bar 54, and 220 reserved so
-        // the Our Range band would peek above the fold. Two things were wrong
+        // the Bestsellers band would peek above the fold. Two things were wrong
         // with that. The 54 was already stale — the bar measured 53.59, and the
         // design-system pass moved it again — and a literal goes wrong silently,
         // leaving the hero a few pixels over the fold with nothing to flag it.
