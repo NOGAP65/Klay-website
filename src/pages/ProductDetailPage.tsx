@@ -187,13 +187,61 @@ export default function ProductDetailPage() {
 
   const addItem = useCartStore(s => s.addItem);
 
-  const product = productBySlug(slug);
-  const legacy = product ? undefined : productByBlindType(slug);
+  // ---------------------------------------------------------------------------
+  // THE FABRIC TYPE IS A CHOICE ON THIS PAGE NOW, AND THE PAGE FOLLOWS IT.
+  //
+  // The four rollers are one product in four fabrics — Dusk is the blockout,
+  // Veil the sunscreen, Duo the dual, Haze the light filter — and the type row
+  // used to be LOCKED here (`lockedRange`), so choosing between them meant going
+  // back out to a listing page and coming in again. The shop now links straight
+  // to this page, so that round trip had nowhere to happen.
+  //
+  // WHY THE IDENTITY COULD NOT SIMPLY BE UNLOCKED. `price` was already live off
+  // the store while the cart line took `name`, `type` and `blindType` statically
+  // from the URL slug. Unlocking the row on its own would have let the panel say
+  // sunscreen, the price follow sunscreen, and the cart still receive "Dusk /
+  // blockout" — the one class of bug that must not exist on a page with an Add to
+  // Cart. So identity is derived from the store instead, and every consumer on
+  // the page — name, tagline, specs, FAQs, features, both cart lines — reads that
+  // one value.
+  //
+  // AND THE URL FOLLOWS TOO, replace-style, so /products/dusk becomes
+  // /products/veil when the visitor picks sunscreen. Without it the address bar
+  // would name a product the page is no longer showing, and a shared or
+  // refreshed link would quietly reopen on the wrong fabric.
+  //
+  // `synced` is what stops a flash of the wrong product. The visualiser store is
+  // module-global and outlives this page, so on arrival it still holds whatever
+  // type the last screen left — land on /products/dusk from a Duo configuration
+  // and a store-derived identity would render "Duo" for one frame and then
+  // correct itself. Until the store has been set from the slug, the slug wins.
+  const slugProduct = productBySlug(slug);
+  const legacy = slugProduct ? undefined : productByBlindType(slug);
+  const [synced, setSynced] = useState(false);
 
   useEffect(() => {
-    if (product) return;
+    if (slugProduct) return;
     navigate(legacy ? `/products/${legacy.slug}` : '/products', { replace: true });
-  }, [product, legacy, navigate]);
+  }, [slugProduct, legacy, navigate]);
+
+  // Slug -> store. Runs on arrival and on every slug change, including the ones
+  // this page makes itself below; re-writing the same value is a no-op.
+  useEffect(() => {
+    if (!slugProduct) return;
+    store.setBlindType(slugProduct.blindType);
+    setSynced(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slugProduct?.slug]);
+
+  const product = (synced ? productByBlindType(store.blindType) : slugProduct) ?? slugProduct;
+
+  // Store -> slug. Only once synced, so the initial stale store cannot navigate
+  // the visitor away from the page they asked for.
+  useEffect(() => {
+    if (!synced || !product || product.slug === slug) return;
+    navigate(`/products/${product.slug}`, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [synced, product?.slug, slug]);
 
   useEffect(() => {
     let ticking = false;
@@ -224,7 +272,11 @@ export default function ProductDetailPage() {
         <section style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', width: '100%', background: tokens.warmWhite, overflow: 'visible', padding: isMobile ? '24px' : '60px 60px', gap: 32 }}>
           {/* Visualiser - same as homepage */}
           <div style={{ flex: '1 1 55%', background: tokens.warmWhite, position: 'relative' }}>
-            <KlayConfigurator defaultBlindType={product.blindType} />
+            {/* No defaultBlindType. That prop sets the type AND calls
+                setLockedRange, which is what hid the Type row; this page syncs the
+                store from the slug itself now (see the note above) and wants the
+                row visible. */}
+            <KlayConfigurator />
           </div>
 
           {/* Controls panel */}
@@ -247,8 +299,9 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* VisualiserControls */}
-            <VisualiserControls lockedRange={product.blindType} compact />
+            {/* Unlocked, so Blockout / Sunscreen / Light Filter / Dual are all
+                choosable here and the page becomes whichever one is picked. */}
+            <VisualiserControls compact />
 
             {/* Two large CTAs right after price */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

@@ -104,37 +104,25 @@ const ROLLER_FROM = Math.min(...PRODUCTS.map(p => p.priceFrom))
 const blindLink = (slug: string, name: string) =>
   blindTypeBySlug(slug) ? `/blinds/${slug}` : enquire(name)
 
-/** Straight into the visualiser, with this product already selected.
+/** Straight to a product's own page — the one screen that carries the visualiser,
+ * the configuration and Add to Cart together.
  *
- * WHY THE PRODUCTS THE VISUALISER CAN DRAW SKIP THEIR LISTING PAGE. Clicking
- * Roller Blinds in the shop used to land on /blinds/roller-blinds, and that page
- * asks EXACTLY the question the visualiser asks: its filter pills are Blockout /
- * Sunscreen / Light Filter / Dual over the four roller SKUs, and those four map
- * one-to-one onto the visualiser's four Type pills (Dusk = blockout, Veil =
- * sunscreen, Duo = dual, Haze = lightfilter — see productByBlindType). So it was
- * a page that asked which fabric, forwarded you to a product page, and then let
- * you configure — three screens to reach a choice the visualiser offers on one,
- * with a render and a price attached to it.
+ * WHY ROLLERS SKIP THEIR LISTING PAGE. Clicking Roller Blinds in the shop used to
+ * land on /blinds/roller-blinds, which asks which of four fabrics and then
+ * forwards to exactly this page. But the four rollers are one product in four
+ * fabrics — Dusk is the blockout, Veil the sunscreen, Duo the dual, Haze the
+ * light filter — and the product page now offers that choice itself, becoming
+ * whichever one is picked. So the listing page was asking a question its own
+ * destination could answer, one click earlier and with nothing to show for it.
  *
- * THE HOMEPAGE SECTION, NOT /visualiser. The standalone page is gated to an
- * allowlist of hostnames, so a bare link to it dead-ends on any deploy preview —
- * which is why the nav's own Visualise item points at '/#visualiser' and this
- * follows it. The embedded one is also simply the better destination: it is the
- * only one that carries the window count, the per-window configuration, the job
- * total and Buy Now.
+ * Dusk because it is the blockout: the cheapest of the four, the one ROLLER_FROM
+ * already quotes above, and the visualiser's own default type — so the page opens
+ * on the fabric the from-price refers to.
  *
- * NOTE `type=`, NOT `range=`. `range` LOCKS the blind type and hides the Type
- * picker — correct when arriving from a single product's page, and exactly wrong
- * here, where being able to switch between blockout and light filter is the whole
- * point of sending them.
+ * The page is still reachable at /blinds/roller-blinds, from /blinds and from its
+ * own type tabs. It is out of the way of buying, not deleted.
  */
-const visualiserLink = (v: { category: 'blind' | 'curtain'; blindType?: BlindType }) => {
-  const params = new URLSearchParams()
-  if (v.category === 'curtain') params.set('category', 'curtain')
-  if (v.blindType) params.set('type', v.blindType)
-  const q = params.toString()
-  return `/${q ? `?${q}` : ''}#visualiser`
-}
+const productLink = (slug: string) => `/products/${slug}`
 
 export const CATALOGUE: CatalogueItem[] = [
   // --- INDOOR --------------------------------------------------------------
@@ -143,10 +131,9 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Roller Blinds',
     group: 'Indoor',
     tagline: 'Clean lines. Blockout, sunscreen, light filter and dual.',
-    // Straight to the visualiser — see visualiserLink. /blinds/roller-blinds is
-    // still a real page, reachable from /blinds and from its own type tabs; it is
-    // no longer in the way of buying one.
-    to: visualiserLink({ category: 'blind', blindType: 'blockout' }),
+    // Straight to the product page, which configures and adds to cart — see
+    // productLink.
+    to: productLink('dusk'),
     priceFrom: ROLLER_FROM,
     image: '/images/lifestyle/room-kitchen.png',
     imagePosition: 'center 34%',
@@ -229,11 +216,13 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Curtains',
     group: 'Indoor',
     tagline: 'Sheer, blockout and lined. S-fold, pinch pleat or wave.',
-    // Was the contact form, which asked somebody to describe in prose the thing
-    // the visualiser can draw for them. Curtains are still enquiry-only at
-    // checkout — the panel's own action is Enquire, not Buy Now — so nothing is
-    // promised here that the next screen cannot keep.
-    to: visualiserLink({ category: 'curtain' }),
+    // The enquiry form, unchanged. Curtains get no product page and no Add to
+    // Cart anywhere on the site — they are not in PRODUCTS, every curtain
+    // subcategory is available:false, and CartItem could not describe one anyway
+    // (no mount, no wave-fold heading, and a windowSize that stops at large where
+    // curtains go to XL). There is no configure-and-buy screen to send them to,
+    // so this stays the enquiry it has always been.
+    to: enquire('Curtains'),
     // The bedroom frame carrying sheers AND heavy drapes in one shot, which is
     // the right picture for a tile standing for the whole curtain range rather
     // than one fabric.
