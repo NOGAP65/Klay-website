@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { radius, tokens, space, type as typeScale } from '../theme';
+import { formatAUD } from '../lib/pricing';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
@@ -12,6 +13,13 @@ interface VisualiserControlsProps {
    * homepage showcase — VisualiserPage, ProductDetailPage and VisualiserSection
    * all put this on cream and must keep the light treatment. */
   onDark?: boolean;
+  /** Set false to leave the price box out, when the host renders its own.
+   *
+   * The homepage showcase does: it prices a whole job of windows rather than the
+   * one configuration this panel edits, and it has to put that figure LAST, below
+   * its own window controls. Everywhere else the price belongs to this panel and
+   * the default stands. */
+  showPrice?: boolean;
 }
 
 
@@ -32,6 +40,18 @@ interface VisualiserControlsProps {
 
 function skin(onDark: boolean) {
   return {
+    /** Group headings, and the micro label inside the price box.
+     *
+     * These were `tokens.onDark` on BOTH grounds, which is PAPER — white
+     * uppercase text on a cream card. On the three light hosts (VisualiserPage,
+     * ProductDetailPage, VisualiserSection) that rendered "YOUR BLIND",
+     * "DETAILS" and "ESTIMATED PRICE" as invisible text over a visible hairline,
+     * so each tier arrived as a bare rule with an unexplained gap above it.
+     * Caught on the running /visualiser page, not in review — white on cream is
+     * exactly the kind of miss the skin exists to prevent, and this one dated
+     * from the palette losing its gold: the headings used to BE gold, which held
+     * on both grounds, and nothing replaced it for the light one. */
+    heading: onDark ? tokens.onDark : tokens.ink,
     /** Field labels — the loudest text in the panel. */
     label: onDark ? tokens.warmWhite : tokens.ink,
     /** The value beside a label, and the line under the price. */
@@ -46,6 +66,24 @@ function skin(onDark: boolean) {
      * panel of its own colour — a cream box on a black card would read as a
      * hole punched in it. */
     boxFill: onDark ? 'rgba(248,248,248,0.06)' : tokens.cream,
+
+    // --- THE SELECTED THING ------------------------------------------------
+    //
+    // The lozenge, and it HAS to invert with the ground. `fillStrong` is INK
+    // and the homepage card's ground is also INK, so a selected pill on it was
+    // a #1D1D1D lozenge on #1D1D1D — no shape at all, just its white label
+    // floating where a filled pill should be. Measured on the running page:
+    // Blockout, Medium, Manual and the BLINDS tab all read as bare text while
+    // every UNSELECTED option beside them carried a visible outline, which is
+    // the selection state inverted.
+    //
+    // What has to hold on both grounds is that the selected option is the one
+    // wearing a solid lozenge with the ground's own colour as its text. That is
+    // ink-on-cream here and paper-on-ink there — the same relationship, not the
+    // same two hex values.
+    fillActive: onDark ? tokens.warmWhite : tokens.fillStrong,
+    onFillActive: onDark ? tokens.ink : tokens.onFillStrong,
+    edgeActive: onDark ? tokens.warmWhite : tokens.line,
   };
 }
 
@@ -139,17 +177,14 @@ function Pill({
         lineHeight: 1.25,
         textAlign: 'center',
         cursor: 'pointer',
-        border: `1px solid ${active ? tokens.line : sk.edge}`,
-        // The active pill is ink-filled with paper on it on BOTH grounds. It is
-        // the one thing in the panel that should not change with the ground —
-        // the selection has to read the same wherever this is embedded.
-        //
-        // It was gold-filled with ink on it, and that is exactly why the label
-        // had to move: when the fill became ink the label stayed ink, and the
-        // audit found the selected pill rendering as a solid black lozenge with
-        // no word in it at 1:1.
-        background: active ? tokens.fillStrong : 'transparent',
-        color: active ? tokens.onFillStrong : sk.quiet,
+        border: `1px solid ${active ? sk.edgeActive : sk.edge}`,
+        // The active pill is a solid lozenge carrying the ground's own colour as
+        // its text — ink-on-cream on a light panel, paper-on-ink on the black
+        // card. See `fillActive` in skin() for why this is a relationship rather
+        // than one fixed pair of hexes: pinning it to ink on both grounds is
+        // what made the selected pill disappear into the homepage card.
+        background: active ? sk.fillActive : 'transparent',
+        color: active ? sk.onFillActive : sk.quiet,
         transition: 'background 0.2s ease, border-color 0.2s ease, color 0.2s ease',
       }}
     >
@@ -195,8 +230,13 @@ function Swatch({
         // into a cream ground. On black the problem inverts — the pale swatches
         // separate on their own and it is the dark end of the card that needs
         // help — so the inset goes light rather than ink.
+        // The ring inverts with the ground for the same reason the pill's fill
+        // does: an ink ring drawn on the ink card was 2px of the card's own
+        // colour, so the chosen colour looked no different from the thirteen
+        // beside it. It sits OUTSIDE the swatch, so it has to contrast with the
+        // ground rather than with the fabric.
         boxShadow: active
-          ? `0 0 0 2px ${tokens.fillStrong}`
+          ? `0 0 0 2px ${sk.fillActive}`
           : `inset 0 0 0 1px ${onDark ? 'rgba(248,248,248,0.14)' : tokens.lineFaint}`,
         transition: 'box-shadow 0.2s ease',
       }}
@@ -205,16 +245,21 @@ function Swatch({
 }
 
 /** Gold, uppercase — used twice, for the two tiers only. The gold is unchanged
- * on a dark ground; only the rule under it has to move. */
-function GroupHeading({ children, onDark = false }: { children: React.ReactNode; onDark?: boolean }) {
+ * on a dark ground; only the rule under it has to move.
+ *
+ * Exported so a host adding a group of its own gets THIS heading rather than an
+ * imitation of it. The homepage showcase had hand-copied the Field label markup
+ * for its window stepper, and a copy is a thing that stops matching. */
+export function GroupHeading({ children, onDark = false }: { children: React.ReactNode; onDark?: boolean }) {
+  const sk = skin(onDark);
   return (
     <div
       style={{
         ...typeScale.micro,
-        color: tokens.onDark,
+        color: sk.heading,
         paddingBottom: space.sm,
         marginBottom: space.md,
-        borderBottom: `1px solid ${skin(onDark).hairline}`,
+        borderBottom: `1px solid ${sk.hairline}`,
       }}
     >
       {children}
@@ -224,7 +269,7 @@ function GroupHeading({ children, onDark = false }: { children: React.ReactNode;
 
 /** Ink, sentence case — one per control. Deliberately quieter than the tier
  * heading above it, so the eye reads groups first and fields second. */
-function Field({
+export function Field({
   label,
   caption,
   children,
@@ -261,12 +306,82 @@ function Field({
   );
 }
 
-export default function VisualiserControls({ lockedRange: lockedRangeProp, compact = false, showCurtainControls = false, onDark = false }: VisualiserControlsProps) {
+/** The conversion anchor, boxed so the figure is not just more text in the
+ * column.
+ *
+ * It was written out twice in this file, once per category branch, differing
+ * only in which getter supplied the number — and the two copies had to be kept
+ * in step by hand. It is exported for the same reason GroupHeading is: the
+ * homepage showcase renders one below its own window controls, and an imitation
+ * of this box on a black card would be the copy that stops matching.
+ *
+ * `note` carries the line under the price, because the showcase's job total has
+ * something more to say than a single window's does. */
+export function PriceBox({
+  amount,
+  note = '+ installation across Australia',
+  onDark = false,
+  style,
+}: {
+  amount: number;
+  note?: string;
+  onDark?: boolean;
+  style?: React.CSSProperties;
+}) {
+  const sk = skin(onDark);
+  return (
+    <div
+      style={{
+        background: sk.boxFill,
+        border: `1px solid ${sk.hairline}`,
+        borderRadius: radius.md,
+        padding: `${space.md}px`,
+        ...style,
+      }}
+    >
+      <div style={{ fontFamily: tokens.body, ...typeScale.micro, color: sk.heading }}>
+        Estimated price
+      </div>
+      <div
+        style={{
+          fontFamily: tokens.display,
+          ...typeScale.numeric,
+          fontWeight: 300,
+          lineHeight: 1.1,
+          color: sk.label,
+          marginTop: space.xxs,
+        }}
+      >
+        {/* formatAUD, not a bare `$${n}` — a four-figure job total printed as
+            $1240 is the one number on the page without a thousands separator. */}
+        {formatAUD(amount)}
+      </div>
+      <div style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', fontWeight: 400, color: sk.caption, marginTop: space.xxs }}>
+        {note}
+      </div>
+    </div>
+  );
+}
+
+export default function VisualiserControls({ lockedRange: lockedRangeProp, compact = false, showCurtainControls = false, onDark = false, showPrice = true }: VisualiserControlsProps) {
   const [searchParams] = useSearchParams();
   const store = useVisualiserStore();
   // `sk`, not `s`: the options loops below all bind `s` as their map
   // variable, and a skin called `s` would be shadowed inside every one.
   const sk = skin(onDark);
+
+  // BETWEEN GROUPS, versus WITHIN A GROUP.
+  //
+  // theme's scale is explicit about this: md (20) is the gap within a group, xl
+  // (52) the gap between groups. This panel spent md on both whenever compact
+  // was set — so the two tiers, the fields inside them and the price box all sat
+  // exactly 20px apart, six evenly spaced blocks with no reading order in the
+  // spacing at all. Fields keep md; groups now get a real step up.
+  //
+  // Compact takes lg (32) rather than the full xl because this variant has to
+  // stay as short as the canvas beside it; the step is still 1.6x its fields,
+  // which is all a hierarchy needs.
+  const groupGap = compact ? space.lg : space.xl;
 
   // Locks the blind type from either the `lockedRange` prop or a `?range=`
   // URL param (e.g. arriving from a product page) — runs once on mount only.
@@ -293,7 +408,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
   // Curtain controls
   if (isCurtain) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? space.md : space.lg }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: groupGap }}>
         <section>
           <GroupHeading onDark={onDark}>Your curtain</GroupHeading>
           <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
@@ -400,46 +515,14 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
           </div>
         </section>
 
-        <div
-          style={{
-            background: sk.boxFill,
-            border: `1px solid ${sk.hairline}`,
-            borderRadius: radius.md,
-            padding: `${space.md}px`,
-          }}
-        >
-          <div
-            style={{
-              fontFamily: tokens.body,
-              ...typeScale.micro,
-              color: tokens.onDark,
-            }}
-          >
-            Estimated price
-          </div>
-          <div
-            style={{
-              fontFamily: tokens.display,
-              ...typeScale.numeric,
-              fontWeight: 300,
-              lineHeight: 1.1,
-              color: sk.label,
-              marginTop: space.xxs,
-            }}
-          >
-            ${store.getCurtainPrice()}
-          </div>
-          <div style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', fontWeight: 400, color: sk.caption, marginTop: space.xxs }}>
-            + installation across Australia
-          </div>
-        </div>
+        {showPrice && <PriceBox onDark={onDark} amount={store.getCurtainPrice()} />}
       </div>
     );
   }
 
   // Blind controls (default)
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? space.md : space.lg }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: groupGap }}>
       {/* --- TIER 1: the decisions that change what you see ---------------- */}
       <section>
         <GroupHeading onDark={onDark}>Your blind</GroupHeading>
@@ -527,40 +610,8 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
         </div>
       </section>
 
-      {/* --- PRICE: boxed, so the conversion anchor isn't just more text --- */}
-      <div
-        style={{
-          background: sk.boxFill,
-          border: `1px solid ${sk.hairline}`,
-          borderRadius: radius.md,
-          padding: `${space.md}px`,
-        }}
-      >
-        <div
-          style={{
-            fontFamily: tokens.body,
-            ...typeScale.micro,
-            color: tokens.onDark,
-          }}
-        >
-          Estimated price
-        </div>
-        <div
-          style={{
-            fontFamily: tokens.display,
-            ...typeScale.numeric,
-            fontWeight: 300,
-            lineHeight: 1.1,
-            color: sk.label,
-            marginTop: space.xxs,
-          }}
-        >
-          ${store.getCurrentPrice()}
-        </div>
-        <div style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', fontWeight: 400, color: sk.caption, marginTop: space.xxs }}>
-          + installation across Australia
-        </div>
-      </div>
+      {/* --- PRICE: last, and only when the host isn't placing its own ------ */}
+      {showPrice && <PriceBox onDark={onDark} amount={store.getCurrentPrice()} />}
     </div>
   );
 }

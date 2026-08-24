@@ -9,27 +9,39 @@
 // those files have no business knowing about — how many windows the customer
 // is buying, and the path from a configuration to a cart line.
 //
-// ON QUANTITY. `windows` is local state, not store state. The store models one
-// configuration, and every consumer of it (the canvas, the price box, the
-// booking link) is correct to read it that way; a quantity belongs to the
-// order, not the design. It reaches the cart by calling addItem once per
-// window — the cart keys lines by configuration and increments, so N identical
-// windows land as one line of quantity N.
+// ON QUANTITY — AND WHY IT IS NO LONGER JUST A QUANTITY.
+//
+// `windows` was local state here, one number, on the reasoning that a quantity
+// belongs to the order rather than the design. That holds right up until the
+// customer has two windows and wants them different, which is the ordinary case
+// — a blockout in the bedroom and a sunscreen in the lounge is one job, not two
+// visits. So the job now lives in the store as an array of WindowConfig, and
+// this file's part is the UI over it: how many windows, which one you are
+// editing, and the path from the finished job to a cart line.
+//
+// The order of the panel is deliberate and it changed. Number of windows comes
+// FIRST, because it is the question that decides how many times every question
+// under it gets asked — it used to sit at the very bottom, under the price box,
+// which put the quantity after the number it multiplies. The price comes LAST,
+// under everything that feeds it, and the buttons follow it.
 // ---------------------------------------------------------------------------
 
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { radius, tokens, layout, motion, space, type as typeScale, shadow } from '../../theme';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCartStore } from '../../store/cartStore';
 import { productByBlindType } from '../../data/products';
 import { bookingLink } from '../../lib/bookingLink';
+import { formatAUD } from '../../lib/pricing';
 import KlayConfigurator from '../../visualiser/KlayConfigurator';
-import VisualiserControls from '../../visualiser/VisualiserControls';
-import { useVisualiserStore, type ProductCategory } from '../../visualiser/useVisualiserStore';
+import VisualiserControls, { Field, GroupHeading, PriceBox } from '../../visualiser/VisualiserControls';
+import {
+  MAX_WINDOWS,
+  priceWindow,
+  useVisualiserStore,
+  type ProductCategory,
+} from '../../visualiser/useVisualiserStore';
 import { CtaButton, CtaLink, SectionBand, TextLink, useHover } from './primitives';
-
-const MAX_WINDOWS = 12;
 
 /** Where a curtain enquiry goes. Curtains are configurable here and in the
  * visualiser page, but they are not buyable anywhere on the site: every curtain
@@ -40,14 +52,28 @@ const MAX_WINDOWS = 12;
  * windowSize that stops at large where curtains go to XL. */
 const CURTAIN_ENQUIRY = '/contact';
 
+/** The selected lozenge on THIS card. Every control in this file sits on the ink
+ * card and nowhere else, so unlike VisualiserControls' skin() there is no light
+ * variant to carry — but the values have to be the same ones that panel resolves
+ * to on dark, or the tabs and the pills six pixels below them would disagree
+ * about what "selected" looks like.
+ *
+ * Paper fill, ink label. It was `fillStrong` on `onFillStrong`, which is ink on
+ * paper — an ink lozenge on the ink card, i.e. no lozenge. */
+const SELECTED = {
+  background: tokens.warmWhite,
+  color: tokens.ink,
+  border: tokens.warmWhite,
+} as const;
+
 /** Blinds / Curtains, at the top of the control panel.
  *
  * VisualiserPage has its own version of this and keeps it: that one is written
  * for a cream sidebar and fills the active tab with ink, which on this card
  * would be an invisible tab on an identical ground. This one uses the panel's
- * own selection language instead — gold fill with ink on it for the active tab,
- * hairline and muted text for the other — so it reads as the first field of the
- * form rather than as a widget above it.
+ * own selection language instead — SELECTED for the active tab, hairline and
+ * muted text for the other — so it reads as the first field of the form rather
+ * than as a widget above it.
  *
  * It has to exist for curtains to be reachable at all. VisualiserControls only
  * renders its curtain branch when the store's category is already 'curtain', and
@@ -78,9 +104,9 @@ function CategoryTabs() {
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
               cursor: 'pointer',
-              border: `1px solid ${active ? tokens.line : tokens.onDarkEdge}`,
-              background: active ? tokens.fillStrong : 'transparent',
-              color: active ? tokens.onFillStrong : tokens.onDarkMuted,
+              border: `1px solid ${active ? SELECTED.border : tokens.onDarkEdge}`,
+              background: active ? SELECTED.background : 'transparent',
+              color: active ? SELECTED.color : tokens.onDarkMuted,
               transition: motion.button,
             }}
           >
@@ -93,8 +119,8 @@ function CategoryTabs() {
 }
 
 /** Square stepper button. Same selection language as the configurator's own
- * pills — hairline at rest, gold on hover — so the row reads as part of the
- * control panel above it rather than as something bolted on. */
+ * pills — hairline at rest, the SELECTED lozenge on hover — so the row reads as
+ * part of the control panel above it rather than as something bolted on. */
 function StepButton({
   label,
   ariaLabel,
@@ -119,12 +145,12 @@ function StepButton({
         width: 32,
         height: 32,
         borderRadius: radius.md,
-        // On the black card, so the hairline and the glyph both invert. The
-        // active fill is the ink pill the tabs above use, and its label inverts
-        // with it -- it was ink on gold, and became ink on ink.
-        border: `1px solid ${active ? tokens.line : tokens.onDarkEdge}`,
-        background: active ? tokens.fillStrong : 'transparent',
-        color: active ? tokens.onFillStrong : tokens.onDarkMuted,
+        // On the black card, so the hairline and the glyph both invert, and the
+        // hover fill is the same lozenge every selected control in the panel
+        // wears.
+        border: `1px solid ${active ? SELECTED.border : tokens.onDarkEdge}`,
+        background: active ? SELECTED.background : 'transparent',
+        color: active ? SELECTED.color : tokens.onDarkMuted,
         fontFamily: tokens.body,
         fontSize: 15,
         lineHeight: 1,
@@ -138,28 +164,16 @@ function StepButton({
   );
 }
 
+/** The real Field from VisualiserControls now, not a hand-copy of its label
+ * markup — the copy that used to be here had already drifted from the original's
+ * caption weight. */
 function WindowCount({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          gap: space.sm,
-          marginBottom: space.xs,
-        }}
-      >
-        {/* Matched to VisualiserControls' own Field labels — this row sits
-            directly under them and has to read as one more field, not as a
-            different component that happens to be nearby. */}
-        <span style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', color: tokens.warmWhite }}>
-          Number of windows
-        </span>
-        <span style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', fontWeight: 400, color: tokens.onDarkMuted }}>
-          {value === 1 ? '1 window' : `${value} windows`}
-        </span>
-      </div>
+    // No caption. Field's caption states the chosen value beside the label,
+    // which for a stepper is the number already sitting between its two
+    // buttons — "Number of windows … 1 window" over a control reading "1" is
+    // the same fact three times.
+    <Field onDark label="Number of windows">
       <div style={{ display: 'flex', alignItems: 'center', gap: space.sm }}>
         <StepButton
           label="−"
@@ -189,50 +203,149 @@ function WindowCount({ value, onChange }: { value: number; onChange: (n: number)
           onClick={() => onChange(Math.min(MAX_WINDOWS, value + 1))}
         />
       </div>
-    </div>
+    </Field>
+  );
+}
+
+/** Which window the panel is editing and the canvas is showing.
+ *
+ * This is the affordance the section was missing: the configurator could only
+ * ever describe ONE window, so a job of three was three copies of whatever the
+ * customer happened to leave on screen. It only appears above one window —
+ * a single tab reading "1" is a control that cannot do anything.
+ *
+ * Numbers, not "Window 1", because at 30% of the card the labels would wrap
+ * before the third tab; the Field label above says what the numbers are, and
+ * the caption names the one that is selected in full. */
+function WindowPicker({
+  count,
+  active,
+  matched,
+  onSelect,
+  onMatchAll,
+}: {
+  count: number;
+  active: number;
+  matched: boolean;
+  onSelect: (index: number) => void;
+  onMatchAll: () => void;
+}) {
+  return (
+    <Field onDark label="Customising" caption={`Window ${active + 1} of ${count}`}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xxs }}>
+        {Array.from({ length: count }, (_, i) => {
+          const isActive = i === active;
+          return (
+            <button
+              key={i}
+              aria-pressed={isActive}
+              aria-label={`Customise window ${i + 1}`}
+              onClick={() => onSelect(i)}
+              style={{
+                // 32 square, the pill height and the stepper's — this row sits
+                // between the two and cannot be a third size.
+                width: 32,
+                height: 32,
+                borderRadius: radius.md,
+                border: `1px solid ${isActive ? SELECTED.border : tokens.onDarkEdge}`,
+                background: isActive ? SELECTED.background : 'transparent',
+                color: isActive ? SELECTED.color : tokens.onDarkMuted,
+                ...typeScale.label,
+                letterSpacing: 'normal',
+                textTransform: 'none',
+                lineHeight: 1,
+                cursor: 'pointer',
+                transition: motion.button,
+              }}
+            >
+              {i + 1}
+            </button>
+          );
+        })}
+      </div>
+      {/* Only offered once the windows actually differ, because on a job that
+          already matches it is a button that does nothing. It is the way back
+          from a per-window job to a uniform one: twelve windows on one fabric
+          would otherwise be the same six choices made twelve times. */}
+      {!matched && (
+        <button
+          onClick={onMatchAll}
+          style={{
+            marginTop: space.sm,
+            padding: 0,
+            background: 'none',
+            border: 'none',
+            ...typeScale.label,
+            letterSpacing: 'normal',
+            textTransform: 'none',
+            fontWeight: 400,
+            color: tokens.onDarkMuted,
+            textDecoration: 'underline',
+            textUnderlineOffset: 3,
+            cursor: 'pointer',
+          }}
+        >
+          Match every window to this one
+        </button>
+      )}
+    </Field>
   );
 }
 
 export function VisualiserShowcase() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const [windows, setWindows] = useState(1);
 
   const addItem = useCartStore(s => s.addItem);
   const {
+    // The flat fields are the ACTIVE window — see the store's own note. They are
+    // what the booking link travels on.
     blindType,
     fabricColour,
     hardwareColour,
     windowSize,
     operation,
     productCategory,
-    getCurrentPrice,
-    getCurtainPrice,
+    windows,
+    activeWindow,
+    setWindowCount,
+    setActiveWindow,
+    applyActiveToAll,
+    windowsMatch,
+    getJobTotal,
   } = useVisualiserStore();
 
   const isCurtain = productCategory === 'curtain';
-  // The two categories price on different axes — a curtain off CURTAIN_BASE_PRICES
-  // and its own motor add, a blind off pricePerBlind. Reading the blind figure
-  // while the panel is showing curtain controls is how the button and the price
-  // box immediately above it end up quoting two different numbers.
-  const unitPrice = isCurtain ? getCurtainPrice() : getCurrentPrice();
+  const count = windows.length;
+  // The whole job, each window on its own configuration and its own category's
+  // pricing axis. It was unitPrice * windows, which is only the same number
+  // while every window matches — and they no longer have to.
+  const jobTotal = getJobTotal();
 
   const handleBuyNow = () => {
-    // The catalogue entry for the configured blind type — the cart line needs a
-    // product name and a display type, and this is where the visualiser's
-    // vocabulary maps back onto the four things Klay actually sells.
-    const product = productByBlindType(blindType);
-    const line = {
-      name: product?.name ?? 'Custom Blind',
-      type: product?.type ?? 'Roller Blind',
-      blindType,
-      fabricColour,
-      hardwareColour,
-      windowSize,
-      operation,
-      price: unitPrice,
-    };
-    for (let i = 0; i < windows; i += 1) addItem(line);
+    // One cart line per window, each described and priced from ITS OWN config.
+    // The cart keys lines by configuration and increments, so three matching
+    // windows still land as one line of quantity 3 while a differently
+    // configured fourth gets a line of its own.
+    //
+    // 'blind' is not a guess: this button only renders for blinds, because a
+    // curtain is enquiry-only — see CURTAIN_ENQUIRY.
+    windows.forEach(w => {
+      // The catalogue entry for the configured blind type — the cart line needs a
+      // product name and a display type, and this is where the visualiser's
+      // vocabulary maps back onto the four things Klay actually sells.
+      const product = productByBlindType(w.blindType);
+      addItem({
+        name: product?.name ?? 'Custom Blind',
+        type: product?.type ?? 'Roller Blind',
+        blindType: w.blindType,
+        fabricColour: w.fabricColour,
+        hardwareColour: w.hardwareColour,
+        windowSize: w.windowSize,
+        operation: w.operation,
+        price: priceWindow(w, 'blind'),
+      });
+    });
     // Straight to the cart, because the button says Buy Now. When it read "Add to
     // Cart" the right behaviour was the opposite — confirm in place and leave the
     // customer on a configuration they might still want to adjust — but a Buy Now
@@ -354,27 +467,86 @@ export function VisualiserShowcase() {
               order: isMobile ? 2 : 1,
               display: 'flex',
               flexDirection: 'column',
-              // space-between, not centre. Centred, the height the controls did
-              // not need was split into a dead band above the panel and another
-              // below it — about 31px each once the tabs were added, and a good
-              // deal more before that. Spread instead, the tabs sit on the
-              // canvas's top edge and the window stepper on its bottom, so the
-              // configuration is as tall as the thing it configures and the
-              // slack becomes breathing room between groups rather than two
-              // margins doing nothing.
-              justifyContent: isMobile ? 'flex-start' : 'space-between',
-              gap: space.md,
+              // flex-start with ONE pocket of slack, not space-between.
+              //
+              // space-between divided every pixel the panel did not need into
+              // equal gaps between its blocks — so the rhythm of the column
+              // depended on the height of the canvas beside it, and the gap
+              // between the tabs and the first group was whatever was left over
+              // rather than a number anyone chose. Two different browser widths
+              // gave two different panels.
+              //
+              // Now every gap is space.lg, matching the between-group step the
+              // controls use in compact mode, and all the slack is collected in
+              // the one place it reads as deliberate: above the price box, which
+              // takes marginTop auto below and sits on the canvas's bottom edge.
+              justifyContent: 'flex-start',
+              gap: space.lg,
             }}
           >
             <CategoryTabs />
+
+            {/* THE JOB, FIRST. How many windows decides how many times every
+                question below it gets asked, so it cannot come after them — and
+                it certainly cannot come after the price, which is where it was.
+                The picker under it is what makes the windows individually
+                configurable at all. */}
+            <section>
+              <GroupHeading onDark>Your windows</GroupHeading>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
+                <WindowCount value={count} onChange={setWindowCount} />
+                {count > 1 && (
+                  <WindowPicker
+                    count={count}
+                    active={activeWindow}
+                    matched={windowsMatch()}
+                    onSelect={setActiveWindow}
+                    onMatchAll={applyActiveToAll}
+                  />
+                )}
+              </div>
+            </section>
+
             {/* showCurtainControls is what lets the panel switch branches at all
                 — without it the tabs would move the store and the renderer but
-                leave blind fields on screen. */}
-            <VisualiserControls compact onDark showCurtainControls />
-            <WindowCount value={windows} onChange={setWindows} />
+                leave blind fields on screen.
+                showPrice=false because the job total belongs below, under every
+                window control that feeds it. */}
+            <VisualiserControls compact onDark showCurtainControls showPrice={false} />
+
+            {/* PRICE LAST. Everything above it is a decision; this is what they
+                add up to, and the buttons under the card follow it. */}
+            <PriceBox
+              onDark
+              amount={jobTotal}
+              note={
+                count === 1
+                  ? '+ installation across Australia'
+                  : `${count} windows + installation across Australia`
+              }
+              style={{ marginTop: isMobile ? undefined : 'auto' }}
+            />
           </div>
 
-          <div style={{ flex: '1 1 auto', width: '100%', minWidth: 0, order: isMobile ? 1 : 2 }}>
+          {/* Centred vertically, because the two columns are no longer the same
+              height and cannot be made so. The canvas is WIDTH-limited — it caps
+              at the photo's aspect ratio against this column, 717px at a 1512
+              viewport, well under the 84vh it is allowed — while the control
+              column is as tall as its fields, now around 890. Left at the top of
+              a stretched column the render sat above ~170px of empty card, which
+              read as the card having been built for a taller picture. Centred,
+              the same slack becomes even margin above and below it. */}
+          <div
+            style={{
+              flex: '1 1 auto',
+              width: '100%',
+              minWidth: 0,
+              order: isMobile ? 1 : 2,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
             {/* KlayConfigurator caps its own width at mediaMaxVh x the photo's
                 aspect ratio. Its 72vh default was tuned for a full-height page
                 and leaves the render floating inside the column here; 84 fills
@@ -408,20 +580,27 @@ export function VisualiserShowcase() {
               configured render would hide the number the customer just built. */}
           {isCurtain ? (
             <CtaLink to={CURTAIN_ENQUIRY} style={{ minWidth: 280 }}>
-              Enquire — from ${unitPrice}
+              Enquire — from {formatAUD(jobTotal)}
             </CtaLink>
           ) : (
             <>
               <CtaButton onClick={handleBuyNow} style={{ minWidth: 280 }}>
-                Buy Now — ${unitPrice * windows}
+                Buy Now — {formatAUD(jobTotal)}
               </CtaButton>
+              {/* /book quotes ONE configuration, so a job whose windows differ
+                  travels as the window on screen times the window count. That is
+                  the honest limit of a shareable URL of four short params, and it
+                  is a measure appointment at the other end — the installer prices
+                  what they measure. The common case is unaffected: growing the
+                  job clones the last window, so the windows match unless the
+                  customer deliberately changed one. */}
               <TextLink
                 accent
                 to={bookingLink({
                   blindType,
                   windowSize,
                   operation,
-                  quantity: windows,
+                  quantity: count,
                   fabricColour,
                   hardwareColour,
                 })}
