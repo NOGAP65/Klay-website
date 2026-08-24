@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { radius, tokens, space, type as typeScale } from '../theme';
-import { formatAUD } from '../lib/pricing';
+import { formatAUD, isBlindType } from '../lib/pricing';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
@@ -383,32 +383,69 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
   // which is all a hierarchy needs.
   const groupGap = compact ? space.lg : space.xl;
 
+  // Read as values, not off the searchParams object: URLSearchParams is a fresh
+  // instance on every navigation, so depending on it would re-run the preselect
+  // effect on unrelated param changes.
+  const typeParam = searchParams.get('type');
+  const categoryParam = searchParams.get('category');
+
   // Locks the blind type from either the `lockedRange` prop or a `?range=`
   // URL param (e.g. arriving from a product page) — runs once on mount only.
   //
-  // `?category=curtain` is the same idea one level up, and it is what makes the
-  // standalone /visualiser page reachable on curtains at all: the store opens on
-  // blinds, so without it every link into this page lands on a roller blind and
-  // the only way to curtains is clicking the tab.
-  //
-  // NOTHING IN THE APP LINKS WITH IT TODAY. It was added for the range cards'
-  // Visualise badges, which then stopped needing it — they scroll to the
-  // homepage's embedded visualiser and set the store directly rather than
-  // navigating here. It is kept because it completes `?range=` above rather than
-  // because something calls it; delete both together if URL-driven config goes.
-  //
+  // `?category=curtain` is the same idea one level up: the store opens on blinds,
+  // so without it a link meant for curtains lands the visitor on a roller blind.
   // Only 'curtain' is honoured — 'blind' is already the default, and anything
-  // else is a malformed link that should leave the panel alone rather than
-  // switch it to a category that does not exist.
+  // else is a malformed link that should leave the panel alone rather than switch
+  // it to a category that does not exist.
+  //
+  // `?type=` IS `?range=` WITHOUT THE LOCK, and the difference is the whole
+  // reason it exists. Both preselect a blind type; `range` additionally calls
+  // setLockedRange, which HIDES the Type row — right when the visitor arrived
+  // from one product's own page and there is nothing to choose, and exactly wrong
+  // when they arrived from the shop's Roller Blinds card, where picking between
+  // blockout and light filter is the reason they were sent here. See
+  // visualiserLink in data/catalogue.ts.
+  //
+  // Validated, not cast. `range` has always trusted the URL and fed it straight
+  // to setBlindType, so ?range=nonsense sets blindType to a string no renderer
+  // and no price table has an entry for. isBlindType is the guard lib/pricing
+  // already exports for untrusted input; a bad value now leaves the default
+  // standing instead of poisoning the configuration.
+  // The lock is a one-time, arrival-only concern: it comes from a prop or from a
+  // URL the visitor landed on, and nothing should re-lock a panel mid-session.
   useEffect(() => {
-    const range = lockedRangeProp ?? searchParams.get('range');
-    if (range) {
-      store.setLockedRange(range);
-      store.setBlindType(range as BlindType);
+    const locked = lockedRangeProp ?? searchParams.get('range');
+    if (locked) {
+      store.setLockedRange(locked);
+      if (isBlindType(locked)) store.setBlindType(locked);
     }
-    if (searchParams.get('category') === 'curtain') store.setProductCategory('curtain');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // THE PRESELECT RUNS ON EVERY CHANGE OF THE PARAMS, NOT ONLY ON MOUNT, and
+  // that is required rather than tidy. On the homepage this panel is already
+  // mounted, so a link from the range row to '/?category=curtain#visualiser' is a
+  // same-page navigation — the hash scrolls, the params change, and a mount-only
+  // effect would never fire. The visitor would be carried to the visualiser
+  // showing blinds after clicking a curtain.
+  //
+  // Keyed on the param VALUES, so it re-applies when the URL asks for something
+  // different and stays quiet while the visitor works the panel — clicking the
+  // Blinds tab changes the store, not the URL, so nothing here fires and nothing
+  // snaps back.
+  //
+  // `type` SETS THE CATEGORY TOO. A blind type implies blinds, and without it,
+  // going from the curtain link to the roller link would set blindType while
+  // leaving the category on 'curtain' — the panel would show curtain controls for
+  // a roller blind.
+  useEffect(() => {
+    if (typeParam && isBlindType(typeParam)) {
+      store.setProductCategory('blind');
+      store.setBlindType(typeParam);
+    }
+    if (categoryParam === 'curtain') store.setProductCategory('curtain');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeParam, categoryParam]);
 
   const selectedHardware = HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour);
   const isCurtain = showCurtainControls && store.productCategory === 'curtain';

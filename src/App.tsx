@@ -28,7 +28,13 @@ import NotFoundPage from './pages/NotFoundPage';
  * Smooth, because arriving mid-page with no travel reads as a broken link —
  * the movement is what tells you the section was already part of this page. */
 function ScrollToHash() {
-  const { pathname, hash } = useLocation();
+  // `search` IS A DEPENDENCY, and it has to be. The range row's cards link to
+  // '/?type=blockout#visualiser' and '/?category=curtain#visualiser' — same path,
+  // same hash, different query. Keyed on pathname and hash alone, clicking the
+  // second card after the first was a no-op here: React Router saw no change in
+  // either, so the configuration switched underneath a visitor who was never
+  // carried to the section showing it.
+  const { pathname, hash, search } = useLocation();
 
   useEffect(() => {
     if (!hash) return;
@@ -43,7 +49,7 @@ function ScrollToHash() {
       window.clearTimeout(timer);
       cancelAnimationFrame(raf);
     };
-  }, [pathname, hash]);
+  }, [pathname, hash, search]);
 
   return null;
 }
