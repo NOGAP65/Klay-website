@@ -1,92 +1,107 @@
 // ---------------------------------------------------------------------------
-// 4. Our Range — FOUR HERO PRODUCTS, AND THE PICTURES ARE THE ONLY LOUD THING.
+// 4. Our Range — FOUR HERO PRODUCTS IN ONE ROW, AND THE PANEL OPENS BESIDE THEM.
 //
-// FOUR HERO PRODUCTS, ONE PER PART OF THE BUSINESS: a roller blind, a curtain, a
-// wardrobe, a folding arm awning. Indoor hard furnishing, indoor soft furnishing,
-// joinery, outdoor. Four fits one row at the width the references use — MONDAY,
-// Sixpenny and HAY are all four-up between 310 and 335 — so at rest the row holds
-// exactly four cards, has nothing off-screen and needs no arrows.
+// FOUR HERO PRODUCTS, AND ONE PER PART OF THE BUSINESS: a roller blind, a
+// curtain, a wardrobe, a folding arm awning. Indoor hard furnishing, indoor soft
+// furnishing, joinery, outdoor. Four is the number that fits one row at the
+// width the references use — MONDAY, Sixpenny and HAY are all four-up between
+// 310 and 335 — so at rest the row holds exactly four cards, has nothing
+// off-screen and needs no arrows: there is nowhere for an arrow to go.
 //
-// The other ten products have their own section further down the page. See
-// FullRange: this row SELLS four things, that strip LISTS the rest.
+// THIS SECTION SELLS FOUR THINGS. It is not the catalogue and it is not trying
+// to be. The other ten products have their own section further down the page —
+// see FullRange, which lists them as a compact strip of small tiles with no
+// buttons on them. Splitting the two apart is what lets each do one job: this
+// row is four products with the configurator on them, that strip is a directory.
+// One section trying to be both is what produced every previous version of this.
 //
-// ---------------------------------------------------------------------------
-// WHAT WENT WRONG TWICE BEFORE, because it explains every decision below.
+// THE PANEL OPENS SIDEWAYS. Clicking Shop Now widens the card's slot from one
+// share to two and the configurator arrives in the space that made, BESIDE the
+// photograph. That is not a preference, it is the whole point of the pattern:
+// the fabric swatch and the picture it repaints have to be on screen together,
+// or choosing Forest Green changes some chips and nothing else. Sideways also
+// leaves the photograph at full size while you configure, where a panel dropped
+// underneath pushes it up and out of the way at exactly the moment it matters.
 //
-// The brief was MONDAY Haircare: their products sit almost inside the page and
-// the attention goes entirely to the product. Two attempts were made to buy that
-// by TREATING THE CARD — first a bounded white card with a hairline, a resting
-// shadow, a hover lift and a row spotlight; then the same card in charcoal, as a
-// dark mount, to make it pull without a pointer. The second looked bad and the
-// first only worked under a pointer.
+//   A DRAWER UNDER THE CARD WAS TRIED AND IS GONE. It was cheaper — a grid with
+//   no scroller — and it read fine on its own, but it put the picture above the
+//   controls instead of next to them, and on the roller it put nine inches of
+//   page between the swatch you click and the tile it changes.
 //
-// Both failed the same way: they added furniture around the problem instead of
-// fixing it. The dark mount was the clearest case — it made the photograph
-// SMALLER, 309px to 285, and put a heavy competing surface round it, when the
-// entire goal was more product and less of everything else.
+// WHAT SIDEWAYS COSTS, AND WHY IT IS WORTH IT: the row has to be scrollable,
+// because two shares plus three more cards is more than the container. At rest
+// it does not scroll — four shares is exactly the row — so the scrollbar and the
+// overflow only exist while a card is open, and the row nudges itself along to
+// bring the panel fully into view. Every previous version of this section put a
+// scroller here to hold FOURTEEN cards, which is what made four of them the
+// visible frame of the whole range. Four cards in a scroller that only scrolls
+// while you are configuring one of them is a different object.
 //
-// THE ACTUAL PROBLEM WAS THE PICTURES, and it is worth stating plainly because it
-// is invisible until you open the source files. These were not product
-// photographs. They were room photographs in which the product was a minority of
-// the frame:
+// BELOW 1000px IT STACKS, and it has to: at 1.8 cards across there is no second
+// share to give the panel, so the slot goes to the full width of the row and the
+// panel sits under the photograph in the same slot. A phone has one column and
+// no argument about it.
 //
-//   room-kitchen.png is a wide kitchen. The roller blinds are a band across the
-//     top, about 30% of the image; the rest is a marble island, cabinetry, stools.
+// THE CARD is MONDAY's stack in Klay's faces — the name under the picture rather
+// than on it, so it gets to be big.
 //
-//   folding-arm-awnings.webp is a patio. The awning is the top 40%. The bottom
-//     60% is a dining table and eight chairs — so cropped on centre, that card
-//     was mostly FURNITURE, which is why it read as outdoor dining.
+// WHY IT CANNOT ALSO BE MONDAY'S TREATMENT. MONDAY's cards carry no border, no
+// elevation and no framing of any kind, and they do not need any: every one of
+// their photographs is a single bottle cut out on a flat pastel field. The
+// silhouette does the work a border would do, and the negative space around it
+// is what makes the eye land on the product. Their card boundary is implicit
+// because their PHOTOGRAPH has one.
 //
-//   indoor.jpg is a bedroom whose left 60% is pure sheer and drape, full height,
-//     and it was cropped at `62% center` — which lands on the BED.
+// Klay's photographs are full-bleed interior scenes — a kitchen, a bed, a
+// wardrobe, a patio. Edge-to-edge content, no silhouette, no negative space,
+// and four of them side by side in a row read as four windows onto four rooms
+// rather than four products on a shelf. Copying MONDAY's restraint onto this
+// imagery is what left the row feeling flat: the treatment that focuses a
+// cut-out does nothing for a scene.
 //
-// MONDAY's focus does not come from their card treatment. It comes from the
-// bottle filling the frame with nothing else in it. No border, mount, shadow,
-// vignette or spotlight can make a room shot read as a product shot.
+// SO THE CARD SUPPLIES THE CONTAINMENT THE PHOTOGRAPH DOES NOT, in four moves,
+// and they are meant to be read as one:
 //
-// ---------------------------------------------------------------------------
-// SO: CROP IN, AND TAKE THE FURNITURE AWAY.
+//   1. THE WHOLE CARD IS ONE OBJECT. Picture, group line, name and the gold
+//      action all sit inside a single bounded box — white on the section's
+//      near-white, a hairline round it, one radius. Before this the photograph
+//      was a floating rectangle and the type and button were loose on the page
+//      ground beneath it, which is three objects the eye has to assemble. The
+//      1.06:1 between the card and the ground is deliberate and it is the one
+//      thing borrowed straight from MONDAY: the card barely separates from the
+//      page, so the boundary is felt rather than drawn, and the photograph is
+//      still the only strong thing in the frame.
 //
-//   THE CROPS ARE TIGHT AND THEY ARE LOCAL. Every hero is framed onto its own
-//     product — see HERO_CROP, which is the most important thing in this file.
+//   2. IT SITS UP OFF THE PAGE, and further on hover. A resting shadow and a
+//      lift-plus-rise under the pointer, which is what makes the row feel live
+//      rather than printed. See the note on the lift for the elevation budget
+//      this spends.
 //
-//   THERE IS NO CARD. No box, no background, no border, no radius on anything but
-//     the picture, no shadow. The photograph sits on the section's own ground with
-//     the group line and the name under it, which is MONDAY's card exactly and is
-//     also what the install strip lower down the page already does.
+//   3. THE PHOTOGRAPH IS LIT. A vignette inside the frame — transparent at the
+//      centre, a fifth of ink at the corners — plus a small contrast and
+//      saturation lift that goes further under the pointer. This is the move
+//      that actually replaces MONDAY's clean field: a scene has no falloff of
+//      its own, so one is added, and the eye lands mid-frame instead of
+//      wandering the room. It is a LIGHTING device, not a scrim — nothing is
+//      set over these photographs, and the site's rule against scrims is about
+//      type over pictures, which this is not.
 //
-//   THERE IS NO GOLD BUTTON. Four saturated gold bars were the most chromatic
-//     thing in the section by a distance — louder than any of the photographs,
-//     and repeated four times, so gold had no focal power left either. MONDAY's
-//     cards carry no button at all. The whole card is the control now, and the
-//     only thing under the name is a small caps text label with a rule under it.
-//     Gold appears ONCE in the section, on Shop All, and again inside an open
-//     configurator where it is a real commitment.
-//
-//   THE PICTURES GET THE SPACE THE FURNITURE GAVE BACK. Removing a 52px button
-//     and a 12px mount from every card returns 64px of vertical and 24px of
-//     horizontal to the photographs at no cost to the section's height.
-//
-// WHAT SURVIVED FROM THE PREVIOUS ROUNDS, because it was never the problem: the
-// sideways expansion, the vignette (lighter now — a tight crop needs less help
-// than a wide one), the shared photographic grade, and the row spotlight. The
-// spotlight is the one device here that needs a pointer, so it is a bonus rather
-// than the mechanism.
-//
-// ONE THING THIS COSTS, stated so it is a decision rather than an oversight: the
-// card no longer links to the product page. It cannot — one click target does one
-// thing, and on a selling surface built around an on-card configurator that thing
-// is "open the configurator". /products and the nav are how you reach a product
-// page.
+//   4. THE ROW SPOTLIGHTS. Hover one card and the other three drop in opacity
+//      and desaturate; open one and they stay down for as long as it is open.
+//      Four scenes competing at equal strength is the actual reason attention
+//      does not settle anywhere, and this is the only move that fixes that
+//      rather than fixing each card in isolation.
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
-import { radius, tokens, motion, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
+import { Link } from 'react-router-dom';
+import { radius, tokens, motion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
 import { useIsMobile, useMediaQuery } from '../../hooks/useIsMobile';
-// The cards read data/catalogue.ts — the same fourteen products the shop lists.
-// Four of them, named below; nothing about the range is written down here.
+// The cards read data/catalogue.ts — the same fourteen products the shop lists,
+// rendered by the same tile. Four of them, named below; nothing about the range
+// is written down in this file.
 import { CATALOGUE, type CatalogueItem } from '../../data/catalogue';
-import { CtaLink } from './primitives';
+import { CtaLink, TILE_GAP } from './primitives';
 import { ProductGlyph } from '../ProductGlyph';
 import { RangeConfigurator } from './RangeConfigurator';
 import { defaultSelection, fieldsFor, type Selection } from '../../data/configOptions';
@@ -96,11 +111,19 @@ import { defaultSelection, fieldsFor, type Selection } from '../../data/configOp
  * furnishing, and the last two are the parts of the business a row of blinds
  * cannot say out loud — joinery, and outdoor.
  *
- * IDs rather than names, so this cannot drift out of step with the catalogue.
+ * Plantation Shutters is the one that lost its place going from six to four, and
+ * it is the right one to lose: it is a second indoor hard furnishing, so it is
+ * the only card here whose job another card was already doing. It leads the
+ * strip below instead.
+ *
+ * IDs rather than a hand-written list of names, so this cannot drift out of step
+ * with the catalogue: change a product's name or its photograph in one place and
+ * this section follows. An id that stops existing drops out rather than throwing.
  *
  * EXPORTED, because FullRange lists everything that is NOT in here — the two
- * sections partition the catalogue between them, so a product promoted to this
- * row leaves the strip below on the same edit. */
+ * sections partition the catalogue between them rather than each carrying its own
+ * copy of the split, so a product promoted to the row leaves the strip on the
+ * same edit. */
 export const HERO_IDS = [
   'roller-blinds',
   'curtains',
@@ -112,77 +135,9 @@ const RANGE: CatalogueItem[] = HERO_IDS.map(id => CATALOGUE.find(i => i.id === i
   (i): i is CatalogueItem => Boolean(i),
 );
 
-/** THE CROPS, AND THIS IS THE MOST IMPORTANT THING IN THE FILE.
- *
- * Every hero render is a wide room scene in which the product Klay actually sells
- * occupies a fraction of the frame. Framed onto the product, the same file becomes
- * a product photograph; framed on its centre, it stays a picture of a room that
- * happens to contain one. Nothing else in this section matters as much.
- *
- * IT TAKES BOTH A POSITION AND A ZOOM, and the order they apply in is the whole
- * trick. Every source here is 16:9 and the tile is 4:5, so `object-fit: cover`
- * scales the image to match the container HEIGHT and the width overflows by about
- * 122%. Two consequences, and the second one cost a round:
- *
- *   The X half of object-position chooses which vertical slice of the source you
- *     see. 0% is the left edge of the photograph, 100% the right.
- *
- *   The Y half does nothing whatsoever. There is no vertical overflow to position
- *     within, so the full height of the source is on screen no matter what it says.
- *     The roller blinds sit in the top third of their frame and NO object-position
- *     could ever have framed them.
- *
- * So the zoom does the vertical work. transform-origin names the point that stays
- * still while the rest grows away from it, and at scale Z the visible region
- * shrinks to 1/Z around that point.
- *
- * WHICH MEANS THE ORIGIN IS IN THE TILE, NOT IN THE PHOTOGRAPH. That is the part
- * that was wrong first time: `curtains` was given an origin of 19% to reach the
- * sheers down the left of the bedroom, and 19% of the TILE is still the middle of
- * the source, because cover had already thrown the left third away before the
- * transform ran. The card kept showing the bed. Position picks the slice, then the
- * zoom frames inside it.
- *
- * WHY THE VALUES LIVE HERE AND NOT IN THE CATALOGUE. catalogue.ts carries an
- * `imagePosition` per product and it is right for what it does — it serves the
- * shop grid, the full-range strip and the listing pages, which all want the WHOLE
- * product in a landscape tile. These are hero crops for one row at one ratio.
- * Pushing them into the catalogue would break the four other surfaces that read
- * the same field.
- *
- * Each of these was set by looking at the rendered card, not by arithmetic. */
-const HERO_CROP: Record<string, { pos: string; zoom: number; origin: string }> = {
-  // THE WINDOW BAND. Blinds run across the top 45% of a wide kitchen and below
-  // them is a marble island that has nothing to do with what is being sold. The
-  // position takes the middle-right of the frame, where two blinds are drawn to
-  // the same height; the zoom lifts off the island and lands on the fabric, with
-  // just enough window under it to say what the fabric is doing.
-  // 15 rather than 19, which had the mixer tap and a soap bottle along the bottom
-  // edge — kitchen props in what is supposed to be a photograph of a blind.
-  'roller-blinds': { pos: '58% center', zoom: 1.9, origin: '50% 15%' },
-  // THE SHEERS DOWN THE LEFT WALL, which are the best product photograph in the
-  // whole set: sheer and drape, ceiling to floor, backlit. Position 4% because
-  // they are at the very left edge of the source — the bed is the right half and
-  // this is the crop that finally excludes it. Only a light zoom after that; the
-  // slice is already all curtain.
-  curtains: { pos: '4% center', zoom: 1.12, origin: '50% 45%' },
-  // THE JOINERY ALREADY FILLS ITS FRAME, so this is the one that barely needs
-  // touching — a small push in to lose the doorway at the right and land on the lit
-  // shelving and the folded stacks, which is what makes it read as built rather
-  // than bought.
-  wardrobes: { pos: '46% center', zoom: 1.18, origin: '50% 44%' },
-  // THE AWNING ITSELF — the top 40% of the frame. Centred and unzoomed this card
-  // was a dining table and eight chairs with a dark band above them. The zoom puts
-  // the arm and the fabric across the frame and leaves the glazing beneath as
-  // context rather than as the subject.
-  // 20 rather than 17: at 17 a triangle of blue sky sat in the top right corner,
-  // which is the one cool note in a row of four warm photographs and it read as a
-  // mistake rather than as weather.
-  'folding-arm-awnings': { pos: '46% center', zoom: 1.7, origin: '50% 20%' },
-};
-
-/** Relative luminance, for deciding whether the mechanism drawing goes on in warm
- * white or in ink. Only reached if one of the four loses its photograph. */
+/** Relative luminance, for deciding whether the mechanism drawing goes on in
+ * warm white or in ink. Only reached if one of the four loses its photograph —
+ * see the note on the glyph fallback. */
 const luminance = (hex: string) => {
   const n = hex.replace('#', '');
   const [r, g, b] = [0, 2, 4].map(i => parseInt(n.slice(i, i + 2), 16) / 255);
@@ -191,31 +146,26 @@ const luminance = (hex: string) => {
 };
 
 /** FOUR ACROSS ONLY ABOVE THIS. Below it the row shows 1.8 and the panel stacks
- * instead of sitting beside — four-up at a 900px viewport would measure a 182px
- * tile, half the smallest card any reference uses, and two shares of it would
- * leave the panel narrower than one row of chips.
+ * instead of sitting beside — see the note at the top. The number comes from the
+ * card: four-up at a 900px viewport would measure a 182px tile, which is half
+ * the smallest card any reference uses, and two shares of it would leave the
+ * panel 182px, which is narrower than one row of chips.
  *
- * Deliberately NOT the site's 768px mobile breakpoint. That one decides whether
- * the header stacks and whether the name drops to 20px; this one decides the row's
- * whole geometry, and the two have different answers between 769 and 999. */
+ * It is deliberately NOT the site's 768px mobile breakpoint. That one decides
+ * whether the header stacks and whether the name drops to 20px; this one decides
+ * the row's whole geometry, and the two questions have different answers between
+ * 769 and 999. */
 const FOUR_UP = '(min-width: 1000px)';
 
-/** Above this the open slot takes TWO shares; below it, three. It is about how
- * wide the PANEL ends up, not the card: two shares of a 940px row leaves the panel
- * about 232px, at which point every chip row wraps and the panel grows past the
- * card's height. Three gives it around 464. */
-const WIDE_ROW = '(min-width: 1250px)';
-
-/** THE STRIP BETWEEN TWO CARDS, and it is this section's own number rather than
- * the shared TILE_GAP the install strip and the full-range grid use.
+/** Above this the open slot takes TWO shares; below it, three.
  *
- * TILE_GAP is 4, which is a seam rather than a gap — right for the install strip,
- * where five photographs are MEANT to read as one continuous band. This row wants
- * the opposite: four separate products, four separate pictures. With no card box
- * around them the strip is the only thing keeping them apart, so it has to be a
- * real interval. MONDAY's row at 1340 runs four cards of about 315 with roughly 25
- * between them. */
-const ROW_GAP = space.md;
+ * It is about how wide the PANEL ends up, not about the card. Two shares of a
+ * 940px row leaves the panel about 232px, at which point every chip row wraps
+ * and the panel grows past the card's own height — measured at 719px against a
+ * 443px card, which stretched the row and threw the section below it down by
+ * 276px. Three shares gives the panel around 464 and the chips fit the rows they
+ * were designed for. */
+const WIDE_ROW = '(min-width: 1250px)';
 
 /** Cards across the row. A fraction below the four-up breakpoint, because the
  * sliver of the next card is the only thing that says the row scrolls, and on a
@@ -224,36 +174,37 @@ const cols = (fourUp: boolean) => (fourUp ? 4 : 1.8);
 
 /** One share, as a CSS length for the slots. */
 const cardBasis = (fourUp: boolean) =>
-  `calc((100% - ${(Math.ceil(cols(fourUp)) - 1) * ROW_GAP}px) / ${cols(fourUp)})`;
+  `calc((100% - ${(Math.ceil(cols(fourUp)) - 1) * TILE_GAP}px) / ${cols(fourUp)})`;
 
-/** How many shares the open slot takes. One below the four-up breakpoint, which is
- * the stacked case: the slot goes to the whole row and the panel sits under the
- * photograph rather than beside it. */
+/** How many shares the open slot takes. One below the four-up breakpoint, which
+ * is the stacked case: the slot goes to the whole row and the panel sits under
+ * the photograph rather than beside it. */
 const openShares = (fourUp: boolean, wideRow: boolean) => (!fourUp ? 1 : wideRow ? 2 : 3);
 
-/** The open slot's width. Every card after it slides along by the difference. */
+/** The open slot's width. See openShares, and WIDE_ROW for why it is not always
+ * two. Every card after it slides along by the difference. */
 const cardBasisOpen = (fourUp: boolean, wideRow: boolean) => {
   if (!fourUp) return '100%';
   const n = openShares(fourUp, wideRow);
-  return `calc(((100% - ${(cols(fourUp) - 1) * ROW_GAP}px) / ${cols(fourUp)}) * ${n} + ${(n - 1) * ROW_GAP}px)`;
+  return `calc(((100% - ${(cols(fourUp) - 1) * TILE_GAP}px) / ${cols(fourUp)}) * ${n} + ${(n - 1) * TILE_GAP}px)`;
 };
 
-/** THE SAME SHARE IN PIXELS, from the row's own width — the identical arithmetic,
- * so the two cannot disagree.
+/** THE SAME SHARE IN PIXELS, from the row's own width — the identical
+ * arithmetic, so the two cannot disagree.
  *
- * This exists because the card has to be pinned to a pixel width, and every way of
- * MEASURING that width off the live DOM has a race in it: a slot's offsetWidth is
- * mid-transition for 450ms after either a card opening or closing, and reading it
- * then gives a number between one share and two. Computing it from the row's
- * clientWidth has no such window, because opening a card does not change how wide
- * the row is. */
+ * This exists because the card has to be pinned to a pixel width (see the note
+ * where it is applied), and every way of MEASURING that width off the live DOM
+ * has a race in it: a slot's offsetWidth is mid-transition for 450ms after
+ * either a card opening or a card closing, and reading it then gives a number
+ * between one share and two. Computing it from the row's clientWidth has no such
+ * window, because opening a card does not change how wide the row is. */
 const sharePx = (rowWidth: number, fourUp: boolean) =>
-  (rowWidth - (Math.ceil(cols(fourUp)) - 1) * ROW_GAP) / cols(fourUp);
+  (rowWidth - (Math.ceil(cols(fourUp)) - 1) * TILE_GAP) / cols(fourUp);
 
 /** How long a card takes to widen. Shared by the slot transition, the panel's
- * entrance and the scroll nudge that follows both, so the three cannot drift out of
- * step — the nudge has to start AFTER the width has settled, or two layout
- * animations run at once. */
+ * entrance and the scroll nudge that follows both, so the three cannot drift out
+ * of step — the nudge in particular has to start AFTER the width has settled, or
+ * two layout animations run at once. */
 const EXPAND_MS = 450;
 
 /** How long the panel takes to leave before the card starts narrowing. Shorter
@@ -261,53 +212,93 @@ const EXPAND_MS = 450;
  * out of the way. */
 const COLLAPSE_MS = 220;
 
-/** The configuration panel's own height, measured in the running page. The row
- * reserves it so that opening a card never moves the section below. */
+/** The configuration panel's own height, measured in the running page: a header,
+ * up to four fields, the price line and the 52px button come to this at every
+ * viewport the panel is wide enough for. The row reserves it so that opening a
+ * card never moves the section below. */
 const PANEL_H = 560;
 
-/** THE VIGNETTE, and it is lighter than it was — a fifth of ink at the corners
- * became an eighth.
+/** How far the gold frame stands off the selected card.
  *
- * A wide room shot needs a lot of help to tell the eye where to look, and the
- * heavier wash was doing that job. A tight crop does not: the product already
- * fills the frame, so the vignette is back to what it should have been all along —
- * a slight darkening at the corners that keeps the picture from dissolving into a
- * near-white page, not a spotlight painted onto it.
+ * The frame cannot grow outwards: its outer edge already sits on the slot's own
+ * bounds, and the slots carry `contain: paint`, which clips every descendant to
+ * the slot's padding box. So the frame keeps its size and the card insets inside
+ * it — which puts a band of the section's own ground between the gold line and
+ * the photograph, and that is what makes it read as a frame around the card
+ * rather than a stroke on the card's edge.
  *
- * Ink at low alpha rather than black, because a pure-black wash greys a warm
- * render — the same reason the site's shadows are mixed from ink. */
+ * 4, the smallest step on the scale, and also exactly the strip between two
+ * cards, so the air inside the frame matches the air between frames — and it is
+ * the inset that makes the outer radius and the photograph's radius agree: 4 of
+ * padding around a 6 radius reads as a 10 radius on the outside, which is what
+ * the card carries. */
+const FRAME = space.xxs;
+
+/** THE CARD'S OWN EDGE. One pixel, and it is always there — only its colour
+ * changes, from a decorative hairline at rest to the accent on the open card.
+ *
+ * ALWAYS PRESENT IS THE WHOLE POINT. The version before this drew the selected
+ * card's frame as an absolutely-positioned overlay specifically because a real
+ * border appearing on open would add two pixels to the card and the 4:5 tile
+ * would turn them into two and a half of height, moving the row and every
+ * section under it. A border that never appears or disappears cannot do that,
+ * so the overlay is gone and this is a genuine border.
+ *
+ * It still has to come out of the pinned card width — see the measurement. */
+const BORDER = 1;
+
+/** How far the card rises under the pointer.
+ *
+ * THE ELEVATION BUDGET, and this does spend some of it. The homepage was given
+ * exactly one lifted object — the visualiser card — and the range cards
+ * deliberately carried a hairline instead. That was the right call when this
+ * section was fourteen cards in a scroller; it is the wrong one now that it is
+ * four hero products and the page's only selling surface above the visualiser.
+ * The lift is small, it is on hover rather than at rest, and the resting shadow
+ * stays well under the visualiser's, so the hierarchy is a step rather than a
+ * tie. */
+const LIFT = 3;
+
+/** THE VIGNETTE — the lighting, and the single most useful thing here.
+ *
+ * A radial wash, transparent across the middle of the frame and a fifth of ink
+ * at the corners, centred slightly above the middle because that is where the
+ * window is in every one of these renders. It gives a photograph of a whole room
+ * the falloff a studio shot of one object has for free, which is what stops the
+ * eye reading the skirting boards.
+ *
+ * Ink at low alpha rather than black: a pure-black wash greys a warm render, the
+ * same reason the shadows are mixed from ink. */
 const VIGNETTE =
-  'radial-gradient(120% 90% at 50% 45%, rgba(29,29,29,0) 52%, rgba(29,29,29,0.05) 78%, rgba(29,29,29,0.13) 100%)';
+  'radial-gradient(118% 88% at 50% 42%, rgba(29,29,29,0) 42%, rgba(29,29,29,0.08) 70%, rgba(29,29,29,0.20) 100%)';
 
 /** How far the non-focused cards drop while another is hovered or open. Opacity
  * and saturation together, because either alone is too polite to notice.
  *
- * These are the two numbers to turn if the spotlight is too strong or too weak.
- * 0.62 was tuned when the cards had gold buttons on them, where anything lower
- * made a Shop Now look disabled rather than recessive. With the buttons gone there
- * is nothing on a card that can be mistaken for a dead control, so it can go back
- * to being a real step. */
-const DIM_OPACITY = 0.5;
-const DIM_SATURATION = 0.65;
+ * THESE ARE THE TWO NUMBERS TO TURN if the spotlight is too strong or not strong
+ * enough — nothing else in the section needs touching. They were 0.55 and 0.7,
+ * which read well on the photographs and badly on the gold buttons: a Shop Now at
+ * 55% on a stepped-back card looks disabled rather than recessive, and a visitor
+ * who reads three of the four buttons as dead has been told something false. At
+ * 0.62 the buttons stay plainly live and the hovered card still clearly wins. */
+const DIM_OPACITY = 0.62;
+const DIM_SATURATION = 0.75;
 
 // ---------------------------------------------------------------------------
-// THE CARD — a tightly cropped photograph, the group, the name, and one line of
-// text that says it can be clicked. Nothing else.
+// THE CARD — a clean photograph, then the name underneath it, then the one gold
+// action; and when it is open, the configurator beside all of that.
 //
-// IT IS ONE BUTTON, all of it. There is no separate control to press: the whole
-// card toggles its configurator, which is what lets the gold bar go. A <button>
-// wrapping a picture and some type is valid and it is keyboard-reachable, which a
-// clickable <div> would not be.
-//
-// TWO COLUMNS WHEN OPEN, one when shut, AND NO GAP BETWEEN THEM. The panel is a
-// flex sibling of the card column, flush against it with square inner corners, so
-// the pair reads as one shape that has been extended sideways rather than as a
-// second object parked next to the first.
+// TWO COLUMNS WHEN OPEN, one when shut, AND NO GAP BETWEEN THEM. The panel used
+// to be separated from the card by the row's own 4px strip, which made it a
+// second object sitting next to the card rather than the card carrying on.
+// Flush, with the panel's left corners square and its border gone, the pair
+// reads as one shape that has been extended sideways.
 // ---------------------------------------------------------------------------
 function RangeCard({
   item,
   open,
   ready,
+  framed,
   onToggle,
   isMobile,
   hover,
@@ -316,23 +307,33 @@ function RangeCard({
   cardPx,
 }: {
   item: CatalogueItem;
-  /** Whether this card's configuration panel is showing. One at a time across the
-   * whole row. */
+  /** Whether this card's configuration panel is showing. One at a time across
+   * the whole row — the point of moving the controls off the card is that the
+   * visitor reads one set of options rather than four. */
   open: boolean;
-  /** True once the width animation has finished. The configurator waits for it. */
+  /** True once the width animation has finished. The configurator waits for it —
+   * see the note where the panel renders. */
   ready: boolean;
+  /** Whether to draw the gold frame. Not the same as `open`: it stays true for
+   * the width transition after the card closes, so the frame shrinks back with
+   * the card instead of vanishing at full width. */
+  framed: boolean;
   onToggle: () => void;
   isMobile: boolean;
-  /** Under the pointer. OWNED BY THE ROW rather than by this card, because the row
-   * needs to know which card it is in order to dim the other three. */
+  /** Under the pointer. OWNED BY THE ROW rather than by this card, because the
+   * row needs to know which card it is to dim the other three — one source of
+   * truth beats a local hover here and a second one there. It also means the
+   * whole card responds, not just the link: hovering the gold button or the strip
+   * of card beside the picture lights the picture, which is what a single object
+   * should do. */
   hover: boolean;
-  /** Another card has the attention — this one steps back. */
+  /** Another card has the attention — this one steps back. See DIM_OPACITY. */
   dimmed: boolean;
   /** Below the four-up breakpoint the panel goes UNDER the photograph instead of
    * beside it, because there is no second share to put it in. */
   stacked: boolean;
-  /** The card's width in pixels, computed from the row's own width. Null until the
-   * first measurement, when the card falls back to filling its slot. */
+  /** The card's width in pixels, computed from the row's own width. Null until
+   * the first measurement, when the card falls back to filling its slot. */
   cardPx: number | null;
 }) {
   const [sel, setSel] = useState<Selection>(() => defaultSelection(item));
@@ -344,20 +345,16 @@ function RangeCard({
   const leadField = fields.find(f => f.kind === 'swatches') ?? fields.find(f => f.id === 'variant');
   const chosen = leadField?.choices.find(c => c.id === sel[leadField.id]);
   // THE GLYPH FALLBACK, and all four of the current selection have photographs so
-  // none of this is reached. It stays because the four are chosen by id: if one is
-  // swapped for a product with no photograph, the tile takes the chosen fabric
-  // colour as its ground and draws the mechanism on it rather than being a hole in
-  // the page. IT IS ALSO WHY THE PANEL GOES BESIDE THE CARD AND NOT UNDER IT — the
-  // picture stays in view while you configure, so choosing a colour visibly
-  // repaints the tile next to the swatch you just clicked.
+  // none of this is reached. It stays because the four are chosen by id above: if
+  // one is swapped for a product with no photograph, the tile takes the chosen
+  // fabric colour as its ground and draws the mechanism on it, rather than being
+  // a charcoal hole in the page. THIS IS ALSO WHY THE PANEL GOES BESIDE THE CARD
+  // AND NOT UNDER IT — the card stays in view while you configure, so choosing a
+  // colour visibly repaints the tile next to the swatch you just clicked. Above
+  // 0.45 luminance the drawing flips to ink, because a warm-white mechanism on a
+  // cream fabric is invisible.
   const tileGround = !item.image && chosen?.hex ? chosen.hex : undefined;
   const glyphOnLight = tileGround ? luminance(tileGround) > 0.45 : false;
-
-  // No entry means the catalogue's own position, centred and unzoomed — the right
-  // default for a product that already fills its frame.
-  const crop =
-    HERO_CROP[item.id] ??
-    { pos: item.imagePosition ?? 'center', zoom: 1, origin: '50% 50%' };
 
   return (
     <div
@@ -367,24 +364,69 @@ function RangeCard({
         alignItems: 'stretch',
         height: '100%',
         position: 'relative',
-        // NO BACKGROUND, NO BORDER, NO PADDING, NO SHADOW. The card is the
-        // photograph and the type under it, sitting on the section's own ground.
-        // See the note at the top of the file for the two card treatments that
-        // came before this and why both were furniture.
-        //
-        // The spotlight is all that is left on this box.
+        // THE STANDOFF. The border is on this box and the contents sit in from
+        // it, so the edge never touches the photograph or the gold buttons — and
+        // the band of card colour between them is what reads as a mount.
+        padding: FRAME,
+        boxSizing: 'border-box',
+
+        // --- THE CARD ITSELF. See move 1 in the note at the top of this file.
+        // White on the section's near-white — 1.06:1, so the box is felt rather
+        // than seen, and the photograph stays the only strong thing in it.
+        background: tokens.cream,
+        // Decorative at rest, one step up under the pointer, the accent when the
+        // configurator is open. The open card wears the same gold as the action
+        // that opened it, which is what ties the pair together without a second
+        // element to animate.
+        border: `${BORDER}px solid ${
+          framed ? tokens.accent : hover ? tokens.lineStrong : tokens.lineFaint
+        }`,
+        borderRadius: radius.lg,
+
+        // --- ELEVATION. See move 2, and LIFT for the budget this spends.
+        boxShadow: hover ? shadow.lift : shadow.rest,
+        transform: hover ? `translateY(-${LIFT}px)` : 'translateY(0)',
+
+        // --- THE SPOTLIGHT, from this card's side of it. See move 4.
         opacity: dimmed ? DIM_OPACITY : 1,
         filter: dimmed ? `saturate(${DIM_SATURATION})` : 'none',
-        transition: 'opacity 0.4s ease, filter 0.4s ease',
+
+        // motion.card carries the transform and the shadow — the site's one
+        // duration for a card lifting. The other three are slower on purpose: a
+        // border darkening or three cards stepping back should not snap.
+        transition: `${motion.card}, border-color 0.3s ease, opacity 0.4s ease, filter 0.4s ease`,
       }}
     >
+      {/* THE OPEN CARD WEARS THE ACCENT ON ITS OWN EDGE, and it encloses the card
+          and the configurator together because this wrapper IS that combined
+          shape — the card column and the panel are its two children. So the edge
+          grows with the expansion rather than being a second thing that has to be
+          animated in step with it.
+
+          IT OUTLASTS THE CLOSE ON PURPOSE, by `framed` rather than by `open`.
+          `open` goes false the moment the id is cleared, which is the moment the
+          slot STARTS its 450ms narrowing — so the gold would drop back to a
+          hairline at full width while the card was still shrinking. Held for the
+          width transition, the close is the open in reverse. */}
+
       {/* THE CARD IS PINNED TO A PIXEL WIDTH, open or shut, and this is the one
           thing that stops it changing size. Every expression of it as a share of
-          the SLOT was wrong, because the slot is what animates: the basis flips on
-          the tick the state changes, while the slot is still one share wide, so the
-          card became half a share and grew back as the slot widened. Closing ran it
-          in reverse. The tile is 4:5, so its height followed, and every card and
-          every section below it moved with it. */}
+          the SLOT was wrong, because the slot is what animates:
+
+            Shut it was `100%` and open `50% - gap/2`, and both resolve to the same
+            number at rest — but the basis flips on the tick the state changes,
+            while the slot is still one share wide. So the card became half a
+            share and then grew back as the slot widened. Closing ran it in
+            reverse: the id cleared while the slot was still two shares, so the
+            card jumped to the full two and shrank. The tile is 4:5, so its height
+            followed, and every card and every section below it moved with it.
+            That is the glitch, and it was invisible at rest, which is why
+            measuring the endpoints did not find it.
+
+          A pixel width cannot be affected by the slot's transition at all.
+
+          LESS THE BORDER AS WELL AS THE PADDING, since the card box gained a real
+          edge — see the measurement, and BORDER. */}
       <div
         style={{
           flex: stacked ? '0 0 auto' : cardPx ? `0 0 ${cardPx}px` : '0 0 100%',
@@ -393,34 +435,33 @@ function RangeCard({
           flexDirection: 'column',
         }}
       >
-        {/* ONE CONTROL FOR THE WHOLE CARD. Reset to a block with no chrome of its
-            own — the button IS the card, so anything a browser would draw on it is
-            exactly the furniture this section just got rid of. */}
-        <button
-          onClick={onToggle}
-          style={{
-            display: 'block',
-            width: '100%',
-            padding: 0,
-            border: 'none',
-            background: 'none',
-            font: 'inherit',
-            color: 'inherit',
-            textAlign: 'left',
-            cursor: 'pointer',
-          }}
+        {/* Only the picture and the name are inside the link. The button below
+            and the panel beside carry real buttons, and a <button> nested inside
+            an <a> is invalid and swallows its own clicks. */}
+        <Link
+          to={item.to}
+          style={{ display: 'block', textDecoration: 'none', flex: '0 0 auto' }}
         >
+          {/* The tile carries its own ground, one step off the section's — the
+              mount the picture sits in. MONDAY does the same, and it is what
+              makes the row read as a set of objects rather than pictures
+              floating on a background. */}
           <div
             style={{
               position: 'relative',
               overflow: 'hidden',
-              // The one radius on the card, and the only thing left that says
-              // "object" rather than "picture pasted on a page".
+              // ONE STEP INSIDE THE CARD'S RADIUS. Concentric corners: 6 here
+              // plus the 4px inset reads as the 10 on the card, so the picture
+              // looks mounted in the card rather than pasted over it. It carried
+              // the card's own radius before, when it WAS the card.
               borderRadius: radius.md,
-              // 4:5 — the site's one portrait ratio, shared with the install strip
-              // and the About panel.
+              // 4:5 — the site's one portrait ratio, shared with the install
+              // strip and the About panel.
               aspectRatio: '4 / 5',
               background: tileGround ?? (item.image ? tokens.parchment : tokens.charcoal),
+              // NO SHADOW HERE ANY MORE. The card carries the elevation now, and
+              // a second shadow 4px inside the first drew a seam round the
+              // picture instead of lifting anything.
             }}
           >
             {item.image ? (
@@ -431,23 +472,18 @@ function RangeCard({
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  // WHICH SLICE OF THE SOURCE. See HERO_CROP — this is the half
-                  // that chooses horizontally, and the zoom below is the half that
-                  // chooses vertically.
-                  objectPosition: crop.pos,
+                  objectPosition: item.imagePosition ?? 'center',
                   display: 'block',
-                  // THE CROP. See HERO_CROP — the zoom is what frames the product,
-                  // and the 1.04 on hover is the old scale composed with it rather
-                  // than replacing it.
-                  transformOrigin: crop.origin,
-                  transform: `scale(${crop.zoom * (hover ? 1.04 : 1)})`,
-                  // A small lift in contrast and saturation, a little more under
-                  // the pointer. The same correction on all four is a shared grade
-                  // — the nearest thing to art direction that can be applied after
-                  // the fact, and what pulls four renders shot at different
-                  // temperatures into one set.
+                  transform: hover ? 'scale(1.04)' : 'scale(1)',
+                  // THE PICTURE LIGHTS UP RATHER THAN ONLY MOVING. A small lift
+                  // in contrast and saturation at rest, a little more under the
+                  // pointer — see move 3 in the note at the top. The renders come
+                  // in at slightly different temperatures and strengths, and this
+                  // is also what pulls the four of them into one set: the same
+                  // correction on all four is a shared grade, which is the nearest
+                  // thing to art direction that can be applied after the fact.
                   filter: hover
-                    ? 'saturate(1.1) contrast(1.05) brightness(1.01)'
+                    ? 'saturate(1.12) contrast(1.06) brightness(1.02)'
                     : 'saturate(1.04) contrast(1.03)',
                   transition: 'transform 0.7s ease, filter 0.5s ease',
                 }}
@@ -476,26 +512,32 @@ function RangeCard({
               </div>
             )}
 
-            {/* THE VIGNETTE, pointer-transparent so it takes nothing off the
-                control it sits inside. It lightens under the pointer rather than
-                deepening: the hovered card is the one being looked at, so its frame
-                opens up while the other three keep their falloff. */}
+            {/* THE VIGNETTE. See move 3 at the top of the file and the note on
+                VIGNETTE itself. Painted over the picture and under nothing, and
+                pointer-transparent so it takes no clicks off the link it sits in.
+
+                It lightens under the pointer rather than deepening: the hovered
+                card is the one being looked at, so the frame opens up while the
+                other three keep their falloff — the vignette and the spotlight
+                are the same gesture from two directions. */}
             <div
               aria-hidden="true"
               style={{
                 position: 'absolute',
                 inset: 0,
                 background: VIGNETTE,
-                opacity: hover ? 0.5 : 1,
+                opacity: hover ? 0.55 : 1,
                 pointerEvents: 'none',
                 transition: 'opacity 0.5s ease',
               }}
             />
           </div>
 
-          {/* Small caps group, big name — MONDAY's stack in Klay's faces. Across
-              these four the group line runs INDOOR, INDOOR, OTHER, OUTDOOR, which
-              is the section's whole argument in four words. */}
+          {/* Small caps group, big name — MONDAY's stack in Klay's faces.
+              THE GROUP LINE EARNS ITS PLACE NOW, and it did not before. Four
+              cards all reading INDOOR is four repetitions of one word; across
+              these four it runs INDOOR, INDOOR, OTHER, OUTDOOR, which is the
+              section's whole argument stated in four words. */}
           <div
             style={{
               fontFamily: tokens.body,
@@ -513,104 +555,117 @@ function RangeCard({
           <h3
             style={{
               ...typeScale.card,
-              // SMALLER ON MOBILE, where a card is a fraction of the width it has
-              // on a desktop. "Frameless Shower Screens" at the full card scale
-              // wraps to three lines there.
+              // SMALLER ON MOBILE, where a card is most of a 390px viewport but
+              // the panel below it is not. "Frameless Shower Screens" at the full
+              // card scale wraps to three lines in that width and the type
+              // becomes the tallest thing on the card.
               ...(isMobile ? { fontSize: 20 } : null),
-              // TWO LINES' WORTH, RESERVED, whether the name needs them or not. The
-              // action labels below are a horizontal line across the row and they
-              // have to stay one: with the cards sizing to their own content, a
-              // single name that wraps drops its label below its neighbours' and
-              // the row reads as broken. It costs one line of empty space under the
-              // names that fit on one, which is invisible on this ground.
+              // TWO LINES' WORTH, RESERVED, whether the name needs them or not.
+              // The gold buttons are the strongest horizontal line in the section
+              // and they have to be ONE line across the row; with the cards
+              // sizing to their own content, a single name that wraps drops its
+              // button below its neighbours' and the row reads as broken. It
+              // costs one line of empty space under the names that fit on one,
+              // which is invisible — it is the same warm white as the card.
               minHeight: `${2 * 1.1 * (isMobile ? 20 : 26)}px`,
               color: tokens.ink,
               marginTop: space.xs,
+              transition: 'color 0.25s ease',
             }}
           >
-            {/* THE NAME IS THE NAME. No price — the panel prices the actual
-                configuration, and a from-figure here would be a second, vaguer
-                number twenty pixels above a real one. */}
+            {/* THE NAME IS THE NAME. No price here — the panel prices the actual
+                configuration, and a from-figure on the card would be a second,
+                vaguer number twenty pixels above a real one. */}
             {item.name}
           </h3>
+        </Link>
 
-          {/* THE ACTION, AND IT IS TYPE RATHER THAN A BUTTON. This is the 52px gold
-              bar's replacement, and the swap is most of what this round is: four
-              saturated gold bars were louder than any of the photographs and
-              repeated four times, so they took the attention the pictures were
-              supposed to get AND spent gold's focal power in the same move. Micro
-              caps with a rule under them says "this can be clicked" at a fraction
-              of the volume.
-
-              A <span>, not a nested button — the whole card is already the control,
-              and a button inside a button is invalid. */}
-          <span
-            style={{
-              ...typeScale.micro,
-              display: 'inline-block',
-              // CLOSE UNDER THE NAME, not a group away from it. The name block
-              // reserves two lines and three of these four names take one, so
-              // there is already a blank line above this label — at the group
-              // step as well it read as an orphan floating near the bottom of
-              // nothing. Tight to the name, the pair reads as one block.
-              marginTop: space.xs,
-              paddingBottom: space.xxs,
-              color: hover ? tokens.ink : tokens.inkSoft,
-              borderBottom: `1px solid ${hover ? tokens.ink : tokens.lineStrong}`,
-              transition: motion.link,
-            }}
-          >
-            {open ? 'Close' : 'Shop now'}
-          </span>
+        {/* THE ONE ACTION. Gold, full width, and it does not navigate — it opens
+            the configuration panel beside this card. */}
+        <button
+          onClick={onToggle}
+          style={{
+            marginTop: space.md,
+            width: '100%',
+            height: 52,
+            boxSizing: 'border-box',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: radius.md,
+            border: 'none',
+            cursor: 'pointer',
+            background: open || hover ? tokens.accentHover : tokens.accent,
+            color: tokens.onAccent,
+            ...typeScale.label,
+            lineHeight: 1,
+            transition: motion.button,
+          }}
+        >
+          {open ? 'Close' : 'Shop Now'}
         </button>
       </div>
 
-      {/* THE PANEL — in the flow, in the space the row just made. A flex sibling
-          rather than an overlay, so it covers nothing and the neighbouring cards
-          genuinely move aside instead of being hidden behind it.
-
-          IT KEEPS ITS SURFACE while the card gave up its own. That is not
-          inconsistent: a photograph is content and wants no box, a form is a
-          control surface and needs one — the cream ground is what makes a
-          seventeen-swatch colour row read as one panel of choices. */}
+      {/* THE PANEL — in the flow, in the space the row just made. It is a flex
+          sibling rather than an overlay, so it covers nothing and the
+          neighbouring cards genuinely move aside instead of being hidden behind
+          it. */}
       {open && (
         <div
           style={{
             // WHATEVER IS LEFT, not a share of its own. Giving the card and the
-            // panel half each of a box that also had to hold the gap between them
-            // overflowed the slot by exactly one gap. The card is sized first, to
-            // precisely one share; the panel takes the remainder.
+            // panel half each of a box that also had to hold the gap between
+            // them overflowed the slot by exactly one gap. The card is sized
+            // first, to precisely one share; the panel takes the remainder, so
+            // the two cannot add up to more than the slot at any width.
             flex: stacked ? '1 1 auto' : '1 1 0',
             minWidth: 0,
-            marginTop: stacked ? ROW_GAP : 0,
+            marginTop: stacked ? TILE_GAP : 0,
             // EXACTLY THE CARD'S HEIGHT, and this is what enforces it. The panel
-            // holds its content in an absolutely-positioned child, so it has NO
-            // intrinsic height — the row's height is decided by the card alone and
-            // `align-items: stretch` hands that height back to the panel.
+            // holds its content in an absolutely-positioned child, so the panel
+            // itself has NO intrinsic height — which means the row's height is
+            // decided by the card alone, and `align-items: stretch` then hands
+            // that height back to the panel. Before this the panel was
+            // content-sized and the taller of the two on the products that ask
+            // most: the roller measured 559 against a 521 card at 1440.
             position: 'relative',
             background: tokens.cream,
-            borderRadius: stacked
-              ? `0 0 ${radius.md}px ${radius.md}px`
-              : `0 ${radius.md}px ${radius.md}px 0`,
+            // NO BORDER, AND SQUARE ON THE LEFT. A hairline all the way round
+            // drew the panel as its own box; the left edge in particular put a
+            // rule down the join it is supposed to be crossing. Radius on the
+            // outer two corners only, so the shape ends where the card ends.
+            borderRadius: stacked ? `0 0 ${radius.md}px ${radius.md}px` : `0 ${radius.md}px ${radius.md}px 0`,
             overflow: 'hidden',
-            // Fades in once the width has settled, and back out before it narrows.
-            // Opacity carries both, so a close that interrupts an open just runs
-            // from wherever it got to.
+            // The same shadow the tile carries, and it continues it rather than
+            // repeating it: the panel is flush and painted after, so it covers
+            // the tile's right-hand shadow and the pair casts one.
+            boxShadow: shadow.rest,
+            // Fades in once the width has settled, and back out before it
+            // narrows — the same move in reverse. Opacity carries both, so a
+            // close that interrupts an open just runs from wherever it got to.
             opacity: ready ? 1 : 0,
             transition: `opacity ${COLLAPSE_MS}ms ease`,
           }}
         >
           {/* MOUNTED ONLY ONCE THE EXPANSION IS DONE. Profiled, the click frame
-              cost 139ms at 4x throttle and it was not the animation — it persisted
-              with every animation disabled. It is React mounting the fields, the
-              chips and up to seventeen swatches on the same frame a layout
-              animation starts. Deferring it means the width animates against an
-              empty box.
+              cost 139ms at 4x throttle, and it was not the animation: it
+              persisted identically with every animation disabled via
+              prefers-reduced-motion. It is React mounting the fields, the chips
+              and up to seventeen swatches on the same frame a layout animation
+              starts. Deferring it means the width animates against an empty box.
 
               THE ABSOLUTE FILL is what lets the panel match the card rather than
-              the card's content stretching to match the panel. */}
+              the card's content stretching to match the panel — inset 0 against a
+              box whose height came from its sibling. */}
           {ready && (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+              {/* NO TITLE BAR, and its 41px is what makes the rest fit. It
+                  repeated the product name, which is set at card scale a few
+                  pixels to the left and still on screen — the panel is beside the
+                  card, not on top of it, so there was nothing to re-establish.
+                  Its close button went with it: the card's own gold button reads
+                  Close while the panel is open and sits immediately to the left,
+                  and Escape still works. */}
               <RangeConfigurator item={item} sel={sel} onChange={choose} fill />
             </div>
           )}
@@ -633,34 +688,49 @@ export function RangeRow() {
   /** Which card is under the pointer, and it lives HERE rather than in the card
    * because the spotlight is a property of the row: dimming the other three is
    * something only the row can decide. Null on a touch screen, where there is no
-   * hover and the effect simply does not apply. */
+   * hover and the whole effect simply does not apply — which is correct, not a
+   * gap. See move 4 in the note at the top of the file. */
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  /** The height the row holds whether a card is open or not, so opening one never
-   * moves the section below. Measured rather than guessed: the panel's content does
-   * not depend on the viewport once it is wide enough not to wrap, while the card,
-   * being a 4:5 tile, does shrink — so the panel is the taller of the two on a
-   * narrow desktop and it is the panel that has to be reserved for.
+  /** The height the row holds whether a card is open or not, so opening one
+   * never moves the section below.
+   *
+   * A CONSTANT, and measured rather than guessed. The panel is content-sized — a
+   * header, up to four fields, a price line and the button — and it comes out at
+   * 559px at both 1440 and 1100, because none of that content depends on the
+   * viewport once the panel is wide enough not to wrap. The card, being a 4:5
+   * tile, DOES shrink with the viewport. So the panel is the taller of the two on
+   * a narrow desktop and it is the panel that has to be reserved for.
    *
    * Only where the panel sits BESIDE the card. Stacked, the open slot is the
-   * photograph's height plus the panel's, and no reserve could cover that without
-   * leaving the same emptiness at rest. */
+   * photograph's height plus the panel's and no reserve could cover it without
+   * leaving that much empty room at rest. */
   const rowMinHeight = stacked ? undefined : PANEL_H;
 
-  /** THE CARD'S WIDTH IN PIXELS, so nothing about the slot's transition can reach
-   * it. COMPUTED FROM THE ROW'S WIDTH, not measured off a slot: reading a closed
-   * sibling's offsetWidth looked like the honest source — it is the same calc(),
-   * already resolved — and it broke every card but the first, because closing one
-   * re-runs this while that slot is still two shares wide and only beginning its
-   * 450ms shrink.
+  /** THE CARD'S WIDTH IN PIXELS, so nothing about the slot's transition can
+   * reach it. See the note where it is applied.
    *
-   * A FULL SHARE NOW, with nothing subtracted. It used to lose two paddings and two
-   * borders to the card box; there is no card box. */
+   * COMPUTED FROM THE ROW'S WIDTH, not measured off a slot, and that is the whole
+   * point. Reading a closed sibling's offsetWidth looked like the honest source —
+   * it is the same calc(), already resolved — and it broke every card but the
+   * first. Closing a card clears `openId`, which re-runs this effect IMMEDIATELY,
+   * while that slot is still two shares wide and only beginning its 450ms shrink.
+   * So it measured two shares, and every card opened after that took its whole
+   * slot.
+   *
+   * The row's own width has no such window. clientWidth rather than offsetWidth
+   * because the scrollbar is hidden and it is the content box that a flex child's
+   * percentage resolves against. */
   const [cardPx, setCardPx] = useState<number | null>(null);
   useEffect(() => {
     const row = scrollerRef.current;
     if (!row) return;
-    const measure = () => setCardPx(sharePx(row.clientWidth, fourUp));
+
+    // Less the frame's standoff AND the card's border on both sides: the card
+    // column sits inside the wrapper's content box, which is the slot less two
+    // borders and two paddings.
+    const measure = () =>
+      setCardPx(sharePx(row.clientWidth, fourUp) - 2 * FRAME - 2 * BORDER);
     measure();
     // The row's width is the only input, so the row is what has to be watched —
     // not the window, which also fires on height changes that cannot affect it.
@@ -669,14 +739,18 @@ export function RangeRow() {
     return () => ro.disconnect();
   }, [fourUp]);
 
-  /** THE CLOSE REVERSES THE OPEN, rather than the panel vanishing and the card then
-   * shrinking behind it. Opening runs widen, then fade in; closing has to run fade
-   * out, then narrow — so a click cannot simply clear `openId`, which would unmount
-   * the panel on the spot and leave the width animating against an empty box.
+  /** THE CLOSE REVERSES THE OPEN, rather than the panel vanishing and the card
+   * then shrinking behind it.
    *
-   * Switching straight from one card to another skips the wait: the outgoing panel
-   * has somewhere to go, so making the visitor watch it leave first would be a
-   * delay with nothing behind it. */
+   * Opening runs widen, then fade in. Closing has to run fade out, then narrow —
+   * so a click cannot simply clear `openId`, which would unmount the panel on the
+   * spot and leave the width animating against an empty box. `closing` holds the
+   * card open at full width while the panel fades, and only then is the id
+   * cleared.
+   *
+   * Switching straight from one card to another skips the wait: the outgoing
+   * panel has somewhere to go, so making the visitor watch it leave first would
+   * be a delay with nothing behind it. */
   const [closing, setClosing] = useState(false);
 
   const toggle = (id: string) => {
@@ -697,9 +771,23 @@ export function RangeRow() {
     return () => window.clearTimeout(t);
   }, [closing]);
 
-  /** True once the open card has finished widening. The configurator waits for it,
-   * so the width animates against an empty box and the form arrives into one that
-   * has stopped moving. */
+  /** WHICH CARD WEARS THE GOLD FRAME. It tracks `openId` on the way in and lags
+   * it by the width transition on the way out — clearing the id is what STARTS
+   * the 450ms narrowing, so a frame keyed on the id disappears at full width and
+   * leaves the card shrinking behind nothing. */
+  const [framedId, setFramedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (openId) {
+      setFramedId(openId);
+      return;
+    }
+    const t = window.setTimeout(() => setFramedId(null), EXPAND_MS);
+    return () => window.clearTimeout(t);
+  }, [openId]);
+
+  /** True once the open card has finished widening. The configurator waits for
+   * it, so the width animates against an empty box and the form arrives into one
+   * that has stopped moving. */
   const [ready, setReady] = useState(false);
   useEffect(() => {
     if (!openId) {
@@ -710,26 +798,34 @@ export function RangeRow() {
     return () => window.clearTimeout(t);
   }, [openId]);
 
-  /** BRING THE EXPANDED CARD FULLY INTO VIEW. Opening the rightmost card widens it
-   * past the row's right edge. The row nudges itself along by however much is
-   * overhanging, and by nothing at all when the card already fits.
+  /** BRING THE EXPANDED CARD FULLY INTO VIEW. Opening the rightmost card widens
+   * it past the row's right edge — measured on the old fourteen-card version, the
+   * panel simply fell off the end. The row nudges itself along by however much is
+   * overhanging, and by nothing at all when the card already fits, which at rest
+   * with four cards in a four-up row is most of them.
    *
    * AFTER the width transition, not during it. Both a smooth scroll and a
    * flex-basis transition force layout on every frame, and running them together
-   * was the jank: profiled at 4x CPU throttle the overlap produced frames of 91ms,
-   * 49ms and 242ms clustered in the first 300ms.
-   *
-   * The target is computed from the same share arithmetic the slot uses rather than
-   * by doubling a closed sibling — a sibling is one share, and the open slot is two
-   * at one breakpoint and three at another. */
+   * was the jank: profiled at 4x CPU throttle the overlap produced frames of
+   * 91ms, 49ms and 242ms clustered in the first 300ms. Sequenced, each is a cheap
+   * animation on its own — and it costs nothing in feel, because the card is
+   * already visibly expanding during those 450ms. */
   useEffect(() => {
     if (!openId) return;
     const timer = window.setTimeout(() => {
       const row = scrollerRef.current;
       const slot = row?.querySelector<HTMLElement>(`[data-slot="${openId}"]`);
       if (!row || !slot) return;
+      // MEASURE AGAINST THE TARGET WIDTH, not the current one — the flex-basis is
+      // mid-transition on the frame after the state change, so offsetWidth gives
+      // a card partway between one share and two and the nudge lands short.
+      //
+      // Computed from the same share arithmetic the slot itself uses rather than
+      // read off a closed sibling: a sibling is one share, and the open slot is
+      // two shares at one breakpoint and three at another, so doubling a sibling
+      // under-nudged by a whole share below 1250.
       const n = openShares(fourUp, wideRow);
-      const target = sharePx(row.clientWidth, fourUp) * n + (n - 1) * ROW_GAP;
+      const target = sharePx(row.clientWidth, fourUp) * n + (n - 1) * TILE_GAP;
       const over = slot.offsetLeft + target - (row.scrollLeft + row.clientWidth);
       if (over > 0) row.scrollTo({ left: row.scrollLeft + over, behavior: 'smooth' });
     }, EXPAND_MS);
@@ -737,7 +833,7 @@ export function RangeRow() {
   }, [openId, fourUp, wideRow]);
 
   // Escape closes the panel. A pop-out that can only be dismissed by finding its
-  // own control is one people feel trapped by.
+  // own X is a pop-out people feel trapped by.
   useEffect(() => {
     if (!openId) return;
     const onKey = (e: KeyboardEvent) => {
@@ -747,9 +843,11 @@ export function RangeRow() {
     return () => window.removeEventListener('keydown', onKey);
   }, [openId]);
 
-  /** ONE CONTAINER FOR THE HEADER AND THE ROW, so the first picture's left edge
+
+  /** ONE CONTAINER FOR THE HEADER AND THE ROW, so the first card's left edge
    * lands on the same vertical line as "Our Range" by construction rather than by
-   * two paddings that happen to agree. */
+   * two paddings that happen to agree. An earlier version had the heading 80px in
+   * and the row at 0, which is two different left margins in one section. */
   const inner: React.CSSProperties = {
     maxWidth: layout.gridMax,
     marginLeft: 'auto',
@@ -759,18 +857,18 @@ export function RangeRow() {
   };
 
   return (
-    // Warm white, and with the card boxes gone this is also the ground the
-    // photographs sit directly on and the colour of the strip between them.
+    // Warm white, and the 4px strip between the cards is this colour showing
+    // through. See TILE_GAP.
     <section style={{ background: tokens.warmWhite }}>
       {/* THE HEADER IS RANGED LEFT WITH THE ACTION OPPOSITE, which is the other
           half of what MONDAY's range section does: heading hard left at display
           scale, the supporting line under it, and one link alone on the right of
           the same band. Centred reads as a caption above a row; ranged left with
-          something opposite it reads as a section heading with a decision attached.
+          something opposite it reads as a section heading with a decision
+          attached.
 
-          SHOP ALL IS NOW THE ONLY GOLD IN THE SECTION at rest, which is the point
-          of taking it off the cards: one gold object in a section pulls, five do
-          not. */}
+          Compact, because this is the first section under the hero and every
+          pixel the band takes is a pixel of product pushed below the fold. */}
       <div
         style={{
           ...inner,
@@ -791,26 +889,30 @@ export function RangeRow() {
             Made to measure. Installed by experts.
           </p>
         </div>
-        {/* DESKTOP ONLY, HERE. On mobile the header is a column, so Shop All landed
-            directly under the supporting line and ABOVE the row — a full-width gold
-            button asking the visitor to leave for the shop before they had been
-            shown a single product. It moves below the cards. */}
+        {/* DESKTOP ONLY, HERE. On mobile the header is a column, so Shop All
+            landed directly under the supporting line and ABOVE the row — a
+            full-width gold button asking the visitor to leave for the shop
+            before they had been shown a single product. It moves below the
+            cards, where it means "and there is more", which is what it is for. */}
         {!isMobile && <CtaLink to="/products">Shop All</CtaLink>}
       </div>
 
-      {/* THE SAME CONTAINER AS THE HEADER, and the padding is on THIS box rather
-          than on the scroller inside it. Padding on a scroll container sits at the
-          start and end of the scrollable CONTENT, so it would slide away with the
-          row instead of holding the edges — and with scroll snapping on, the
-          browser also snaps the first card to the scrollport edge and scrolls past a
-          start padding, leaving the first card flush against the viewport while the
-          heading above it is correctly inset. */}
+      {/* THE SAME CONTAINER AS THE HEADER ABOVE IT, and the padding is on THIS
+          box rather than on the scroller inside it. That is not tidiness:
+          padding on a scroll container sits at the start and end of the
+          scrollable CONTENT, so it would slide away with the row instead of
+          holding the edges — and with scroll snapping on, the browser also
+          snaps the first card to the scrollport edge and silently scrolls past
+          a start padding, leaving the first card flush against the viewport
+          while the heading above it is correctly inset. */}
       <div
         style={{
           ...inner,
           position: 'relative',
-          // Closes the section. Thin on purpose: a margin finishing a section
-          // rather than a gap between two.
+          // Closes the section. Deliberately thin: this is a margin finishing a
+          // section rather than a gap between two, so it is closer in weight to
+          // the 4px strips framing the cards than to the padding a real section
+          // carries.
           paddingBottom: space.md,
         }}
       >
@@ -819,20 +921,21 @@ export function RangeRow() {
           className="klay-hscroll"
           style={{
             display: 'flex',
-            gap: ROW_GAP,
-            // AT REST THIS DOES NOT SCROLL. Four cards at one share each is exactly
-            // the row, so there is no overflow and no scrollbar until a card is
-            // opened and its slot takes two shares. Below the four-up breakpoint the
-            // row shows 1.8 cards and does scroll, which is what the sliver of the
-            // second card is there to say.
+            gap: TILE_GAP,
+            // AT REST THIS DOES NOT SCROLL. Four cards at one share each is
+            // exactly the row, so there is no overflow and no scrollbar until a
+            // card is opened and its slot takes two shares. Below the four-up
+            // breakpoint the row shows 1.8 cards and does scroll, which is what
+            // the sliver of the second card is there to say.
             overflowX: 'auto',
-            // THE SECTION RESERVES ITS OPEN HEIGHT, so the page below never moves
-            // when a card is opened. `alignItems: flex-start` stops the reserve
-            // stretching the closed cards to fill it.
+            // THE SECTION RESERVES ITS OPEN HEIGHT, so the page below never
+            // moves when a card is opened. `alignItems: flex-start` is what stops
+            // the reserve stretching the closed cards to fill it — they keep
+            // their own height and the spare sits underneath.
             minHeight: rowMinHeight,
             alignItems: 'flex-start',
-            // Snaps to card edges so the row never rests showing two half cards.
-            // Off while a card is open — see the slot.
+            // Snaps to card edges so the row never rests showing two half cards,
+            // however it was moved. Off while a card is open — see the slot.
             scrollSnapType: openId ? 'none' : 'x mandatory',
           }}
         >
@@ -841,25 +944,30 @@ export function RangeRow() {
             return (
               <div
                 key={item.id}
-                // THE ANIMATION IS THE LAYOUT. Opening a card widens its slot from
-                // one share to two, and because these are flex siblings in a row
-                // every card after it slides along by exactly that much — no card is
-                // covered and no space is wasted.
+                // THE ANIMATION IS THE LAYOUT. Opening a card widens its slot
+                // from one share to two, and because these are flex siblings in a
+                // row every card after it slides along by exactly that much — no
+                // card is covered and no space is wasted. Transitioning
+                // flex-basis is what makes the row move rather than jump.
                 data-slot={item.id}
                 // CONTAINMENT. The flex-basis transition changes this box every
-                // frame, and without a boundary the browser has to consider the
-                // whole row's subtree each time — measured at 432 style
-                // recalculations for a single card opening.
+                // frame, and without a containment boundary the browser has to
+                // consider the whole row's subtree each time. Measured at 432
+                // style recalculations for a single card opening before this.
                 className="klay-slot"
                 style={{
                   flex: `0 0 ${open ? cardBasisOpen(fourUp, wideRow) : cardBasis(fourUp)}`,
                   // SNAP OFF WHILE OPEN. Mandatory snapping and a programmatic
                   // scroll fight each other — the browser re-snaps to the nearest
-                  // card edge and undoes the nudge bringing the open card into view.
-                  // It comes back when the panel closes.
+                  // card edge and undoes the nudge that was bringing the open
+                  // card into view. It comes back the moment the panel closes.
                   scrollSnapAlign: open ? 'none' : 'start',
                   transition: `flex-basis ${EXPAND_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
                 }}
+                // ON THE SLOT, NOT THE CARD. The card lifts and translates on
+                // hover, and a pointer sitting in the 3px it vacates would leave
+                // and re-enter it forever — the handler has to be on a box that
+                // does not move.
                 onMouseEnter={() => setHoveredId(item.id)}
                 onMouseLeave={() => setHoveredId(null)}
               >
@@ -867,15 +975,18 @@ export function RangeRow() {
                   item={item}
                   open={open}
                   ready={open && ready && !closing}
+                  framed={framedId === item.id}
                   isMobile={isMobile}
                   // The open card keeps the pointer treatment for as long as it is
                   // open, whether or not the pointer is still on it: it is plainly
-                  // the card being worked on.
+                  // the card being worked on, and letting it drop back to a resting
+                  // hairline while its own configurator is showing reads as the
+                  // card having been abandoned.
                   hover={hoveredId === item.id || open}
-                  // AN OPEN CARD OUTRANKS A HOVERED ONE. While one is open the other
-                  // three stay back regardless of where the pointer is, because the
-                  // visitor is configuring something and a card brightening under a
-                  // stray pointer distracts from it.
+                  // AN OPEN CARD OUTRANKS A HOVERED ONE. While one is open the
+                  // other three stay back regardless of where the pointer is,
+                  // because the visitor is configuring something and a card
+                  // brightening under a stray pointer is a distraction from it.
                   dimmed={openId ? !open : Boolean(hoveredId) && hoveredId !== item.id}
                   stacked={stacked}
                   cardPx={cardPx}
@@ -886,9 +997,9 @@ export function RangeRow() {
           })}
         </div>
 
-        {/* Mobile's Shop All, under the four rather than over them. Ranged left with
-            the cards, not centred — it is the same object that sits at the end of
-            the header row on desktop, so it keeps the same alignment. */}
+        {/* Mobile's Shop All, under the four rather than over them. Ranged left
+            with the cards, not centred — it is the same object that sits at the
+            end of the header row on desktop, so it keeps the same alignment. */}
         {isMobile && (
           <div style={{ paddingTop: space.lg }}>
             <CtaLink to="/products">Shop All</CtaLink>
