@@ -12,6 +12,7 @@ import HowItWorksPage from './pages/HowItWorksPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import VisualiserPage from './pages/VisualiserPage';
+import VisualizerLabPage from './pages/VisualizerLabPage';
 import BookInstallPage from './pages/BookInstallPage';
 import BookingConfirmedPage from './pages/BookingConfirmedPage';
 import CartPage from './pages/CartPage';
@@ -88,6 +89,11 @@ export default function App() {
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/visualiser" element={<VisualiserPage />} />
+      {/* The sandbox. Deliberately unlinked — it is reachable by typing the URL
+          and nothing on the site points at it, because it is a near-duplicate of
+          the line above and a visitor who lands on it by accident gets a page
+          with a builder's bar across the foot. See VisualizerLabPage. */}
+      <Route path="/visualizer" element={<VisualizerLabPage />} />
       {/* Booking. /book takes the configuration as query params (type, size,
           op, qty, fabric, hw) so a refreshed or shared link still quotes for
           the right blind; /booking/confirmed is Stripe's return URL. */}
