@@ -55,7 +55,7 @@ export default function CartPage() {
                 Your cart is empty
               </p>
               <Link
-                to="/blinds"
+                to="/products"
                 style={{
                   display: 'inline-block',
                   padding: '14px 32px',

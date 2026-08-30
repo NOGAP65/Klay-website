@@ -41,7 +41,7 @@ import { SectionBand, TILE_GAP, useHover } from './primitives';
 const INSTAGRAM = 'https://www.instagram.com/klayinteriors';
 
 const SHOTS = [
-  { image: '/images/room-4.png', to: '/blinds/roller-blinds', objectPosition: 'center 40%' },
+  { image: '/images/room-4.png', to: '/products/dusk', objectPosition: 'center 40%' },
   { image: '/images/Soleil%20Sunscreen%20product%20image.png', to: '/products/veil', objectPosition: 'center' },
   { image: '/images/room-3.png', to: '/products?category=sheer-curtains', objectPosition: '62% 45%' },
   { image: '/images/lifestyle/room-kitchen.png', to: '/products/dusk', objectPosition: 'center 36%' },

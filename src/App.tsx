@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { CATEGORIES } from './data/categories';
-import { BLIND_TYPES } from './data/blindTypes';
+import {
+  LegacyBlindTypeRedirect,
+  LegacyCategoryRedirect,
+  LEGACY_CATEGORY_SLUGS,
+} from './routes/legacyRedirects';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import ProductDetailPage from './pages/ProductDetailPage';
-import CategoryPage from './pages/CategoryPage';
-import BlindsPage from './pages/BlindsPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
@@ -54,6 +55,24 @@ function ScrollToHash() {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// THE ROUTE TABLE. Six real pages and a booking pair.
+//
+// It used to carry three more tiers than it does: /indoor, /outdoor and
+// /wardrobes rendered a category page, /blinds and /blinds/<type> rendered a
+// listing page per blind type, and both existed only to hand the visitor down
+// to a product. They were the navigation doing a page's job — every one of them
+// asked you to narrow before it showed you anything, and none of them could
+// sell. /products does the whole range on one screen with the filters visible,
+// so the tiers above it had nothing left to say.
+//
+// What is left is: the homepage, the shop, a product, the visualiser, the two
+// company pages the nav points at, how-it-works, and the booking and cart flow.
+// Every one is either a destination in the nav or a step in buying.
+//
+// The dead URLs are redirects, not deletions — see routes/legacyRedirects.
+// ---------------------------------------------------------------------------
+
 export default function App() {
   return (
     <>
@@ -61,30 +80,9 @@ export default function App() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/products" element={<ProductsPage />} />
-      {/* The three top-level categories — Indoor, Outdoor, Wardrobes — each a
-          real page rendered by CategoryPage from data/categories.ts. The nav has
-          pointed at these slugs all along; until now two of the three landed on
-          the 404 page because only /blinds existed.
-
-          Generated from the data so adding a category cannot leave it unrouted,
-          and passed as a prop rather than read as a `/:category` param — a bare
-          param at the root would swallow /about, /contact and everything else
-          declared after it. */}
-      {CATEGORIES.map((c) => (
-        <Route key={c.slug} path={`/${c.slug}`} element={<CategoryPage slug={c.slug} />} />
-      ))}
-      {/* One listing page per blind type, generated from the taxonomy so a type
-          added to data/blindTypes.ts cannot end up unrouted. Bare /blinds keeps
-          showing rollers — that is what every existing link to it expects, and
-          the type strip on the page is how you reach the other four. */}
-      <Route path="/blinds" element={<BlindsPage />} />
-      {BLIND_TYPES.map((t) => (
-        <Route key={t.slug} path={`/blinds/${t.slug}`} element={<BlindsPage slug={t.slug} />} />
-      ))}
-      {/* One page per product, carrying the whole configurator. The old
-          category tier (/products/blockout) and per-SKU tier
-          (/products/blockout/dusk-white) are gone; ProductDetailPage
-          redirects the blind-type slugs to their product. */}
+      {/* One page per product, carrying the whole configurator. Every tier that
+          used to sit above it — the category pages, the blind-type listings, the
+          old per-SKU URLs — now redirects here or to the shop. */}
       <Route path="/products/:slug" element={<ProductDetailPage />} />
       <Route path="/how-it-works" element={<HowItWorksPage />} />
       <Route path="/about" element={<AboutPage />} />
@@ -96,6 +94,16 @@ export default function App() {
       <Route path="/book" element={<BookInstallPage />} />
       <Route path="/booking/confirmed" element={<BookingConfirmedPage />} />
       <Route path="/cart" element={<CartPage />} />
+
+      {/* --- retired URLs ------------------------------------------------- */}
+      {/* Declared after every real route so none of them can be shadowed, and
+          before the catch-all so they redirect rather than 404. */}
+      <Route path="/blinds" element={<LegacyCategoryRedirect />} />
+      <Route path="/blinds/:slug" element={<LegacyBlindTypeRedirect />} />
+      {LEGACY_CATEGORY_SLUGS.map((slug) => (
+        <Route key={slug} path={`/${slug}`} element={<LegacyCategoryRedirect slug={slug} />} />
+      ))}
+
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
     </>

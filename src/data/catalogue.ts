@@ -18,15 +18,14 @@
 // ONE CARD PER PRODUCT, at the grain the business names them. The previous
 // version listed the four roller SKUs (Dusk, Veil, Duo, Haze) individually
 // alongside product types, which mixed two grains in one grid. Roller Blinds is
-// one card now; its four fabrics live on /blinds/roller-blinds, one level down,
-// which is where a SKU belongs.
+// one card now, and its four fabrics are a choice on the product page itself —
+// which is where a fabric belongs, next to the price it changes.
 //
 // GROUPS ARE THE BUSINESS'S OWN — Indoor, Outdoor, Other. The shop's filter rail
 // is built from them directly rather than from an invented family layer.
 // ---------------------------------------------------------------------------
 
 import { PRODUCTS, RYNAMIC_COLOURS, CURTAIN_COLOURS } from './products'
-import { blindTypeBySlug } from './blindTypes'
 import type { BlindType } from '../lib/pricing'
 
 export type Group = 'Indoor' | 'Outdoor' | 'Other'
@@ -97,31 +96,21 @@ const enquire = (name: string) => `/contact?product=${encodeURIComponent(name)}`
  * catalogue does rather than being typed here. */
 const ROLLER_FROM = Math.min(...PRODUCTS.map(p => p.priceFrom))
 
-/** A blind type that has its own listing page links to it; everything else
- * resolves to the enquiry form. Reading the page's existence off blindTypes.ts
- * rather than hardcoding it means a type that gains a page starts linking to it
- * without this file changing. */
-const blindLink = (slug: string, name: string) =>
-  blindTypeBySlug(slug) ? `/blinds/${slug}` : enquire(name)
-
 /** Straight to a product's own page — the one screen that carries the visualiser,
  * the configuration and Add to Cart together.
  *
- * WHY ROLLERS SKIP THEIR LISTING PAGE. Clicking Roller Blinds in the shop used to
- * land on /blinds/roller-blinds, which asks which of four fabrics and then
- * forwards to exactly this page. But the four rollers are one product in four
- * fabrics — Dusk is the blockout, Veil the sunscreen, Duo the dual, Haze the
- * light filter — and the product page now offers that choice itself, becoming
- * whichever one is picked. So the listing page was asking a question its own
- * destination could answer, one click earlier and with nothing to show for it.
+ * WHY ROLLERS HAVE NO LISTING PAGE. Clicking Roller Blinds used to land on
+ * /blinds/roller-blinds, which asked which of four fabrics and then forwarded to
+ * exactly this page. But the four rollers are one product in four fabrics — Dusk
+ * is the blockout, Veil the sunscreen, Duo the dual, Haze the light filter — and
+ * the product page offers that choice itself, becoming whichever one is picked.
+ * So the listing page was asking a question its own destination could answer,
+ * one click earlier and with nothing to show for it. It is gone; the URL
+ * redirects here. See routes/legacyRedirects.
  *
  * Dusk because it is the blockout: the cheapest of the four, the one ROLLER_FROM
  * already quotes above, and the visualiser's own default type — so the page opens
- * on the fabric the from-price refers to.
- *
- * The page is still reachable at /blinds/roller-blinds, from /blinds and from its
- * own type tabs. It is out of the way of buying, not deleted.
- */
+ * on the fabric the from-price refers to. */
 const productLink = (slug: string) => `/products/${slug}`
 
 export const CATALOGUE: CatalogueItem[] = [
@@ -148,7 +137,7 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Roman Blinds',
     group: 'Indoor',
     tagline: 'Soft folds that stack flat at the head of the window.',
-    to: blindLink('roman-blinds', 'Roman Blinds'),
+    to: enquire('Roman Blinds'),
     glyph: 'roman-blinds',
     image: '/images/products/roman-blinds.webp',
     // THE FABRIC BLINDS SHARE THE RYNAMIC CARD, and this is an editorial claim
@@ -185,7 +174,7 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Venetian Blinds',
     group: 'Indoor',
     tagline: 'Horizontal slats that tilt. Aluminium, timber or faux.',
-    to: blindLink('venetian-blinds', 'Venetian Blinds'),
+    to: enquire('Venetian Blinds'),
     glyph: 'venetian-blinds',
     light: ['Blockout', 'Light filter'],
   },
@@ -204,7 +193,7 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Vertical Blinds',
     group: 'Indoor',
     tagline: 'Louvres that draw aside. Made for sliding doors.',
-    to: blindLink('vertical-blinds', 'Vertical Blinds'),
+    to: enquire('Vertical Blinds'),
     glyph: 'vertical-blinds',
     image: '/images/products/vertical-blinds.webp',
     // See the note on Roman Blinds — the fabric blinds share the Rynamic card.
