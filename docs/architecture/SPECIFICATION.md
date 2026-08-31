@@ -1,7 +1,8 @@
 # Klay Interiors — Architecture Specification
 
-**Version:** 1.0
-**Date:** 31 August 2026
+**Version:** 1.1
+**Date:** 31 August 2026 (v1.0), amended 31 August 2026 (v1.1)
+**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7)
 **Status:** Standing document. This is the constitution, not a work order.
 **Owner:** V
 **Applies to:** NOGAP65/Klay-website-new. Ella adopts it after Klay proves it.
@@ -47,10 +48,13 @@ therefore not an appendix — it is the part that makes the rest real.
 
 | Layer | Directory | May import from | Purpose |
 |---|---|---|---|
-| **App** | `src/app/` | features, design-system, shared, config | Composition only. Routing, providers, layouts. No business logic, no product knowledge. |
-| **Features** | `src/features/*/` | design-system, shared, config, and its own internals only | Everything the business does. Each feature self-contained. |
+| **App** | `src/app/` | features, design-system, shared, config, **core** | Composition only. Routing, providers, layouts. No business logic, no product knowledge. |
+| **Features** | `src/features/*/` | design-system, shared, config, **core**, and its own internals only | Everything the business does. Each feature self-contained. |
 | **Design system** | `src/design-system/` | nothing except itself | Tokens and visual primitives. Knows nothing about blinds, prices, or customers. |
 | **Shared** | `src/shared/` | config, other shared | Genuinely generic. If it mentions a domain noun it is not shared, it is a feature. |
+| **Core** | `shared-core/` | **nothing** | The contract between the browser and the server. Imported by both runtimes, depends on neither. See ADR-014. |
+
+**`shared-core` has zero dependencies in either direction** — not `src/`, not `netlify/`, not `shared/`. It is imported by two runtimes that share nothing else, so anything it imports would have to be valid in both, and would be added by someone thinking about only one. Enforced as an element type with an empty allow-list. See ADR-014.
 
 **The test for "is this shared?"** Could this be lifted into an unrelated project without
 modification? A date formatter, yes. A `formatBlindWidth` function, no.
@@ -133,8 +137,8 @@ shared-core/                  imported by BOTH src/ and netlify/
 └── pricing/                  the price table and rules over it
 
 netlify/
-├── functions/
-└── edge-functions/           latency-sensitive, and ALL pricing authority
+├── functions/                pricing authority lives here today — ADR-015
+└── edge-functions/           latency-sensitive work. Optional for pricing, not required.
 
 supabase/
 ├── migrations/               schema version-controlled here, not in the dashboard
@@ -263,17 +267,25 @@ and code disagree on a word, the business wins.
 | Defines a colour, size, or spacing | `design-system/tokens/` | Inline as a literal |
 | Coordinates two features | `src/app/` | Either feature |
 | Talks to Stripe | `netlify/` only | The browser |
-| Decides what a customer pays | `netlify/edge-functions/` | The browser |
+| Decides what a customer pays | `netlify/` — functions or edge functions | The browser |
 
 **The pricing rule, stated fully because it is the one that matters.** There is one price
 table. It lives in `shared-core/pricing/` and is imported by both `src/` (to display) and
 `netlify/` (to decide).
 
-The browser's number is display only and never trusted. The edge function recalculates from
-the same table and its answer is authoritative. If they disagree, the edge function wins and
-the discrepancy is logged.
+The browser's number is display only and never trusted. The server recalculates from the same
+table and its answer is authoritative.
 
-Duplicating the price table into the edge function "so it's server-side" is the wrong fix —
+**The runtime is not the point; the trust boundary is.** A serverless function satisfies this
+as completely as an edge function — the price is decided by code the customer cannot reach,
+from a table the customer cannot edit. `create-checkout-session` already does exactly that.
+Moving pricing to the edge is a latency optimisation, sized on its own evidence, and out of
+scope for the migration. See ADR-015.
+
+If a future change ever sends the client's figure for comparison, the server's answer wins and
+the discrepancy must be logged. Today nothing is sent, so no discrepancy can arise.
+
+Duplicating the price table into the server "so it's server-side" is the wrong fix —
 you then have two tables that will silently diverge, which is worse than the failure you were
 preventing. **Share the module; separate the authority.**
 

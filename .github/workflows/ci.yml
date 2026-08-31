@@ -65,20 +65,18 @@ jobs:
       - name: Custom lint rules — self-test
         run: npm run lint:rules
 
-      # ---- NON-BLOCKING, UNTIL PHASE 1.2 -------------------------------
-      # `npm run lint` currently crashes before linting a single file:
+      # Blocking as of Phase 1.2. It was `continue-on-error` while eslint
+      # crashed on the first file it touched — typescript-eslint 8.8.1 against
+      # eslint 9.39.5, whose `no-unused-expressions` schema had changed
+      # underneath it. Aligning to typescript-eslint 8.68.0 fixed that.
       #
-      #   TypeError: Error while loading rule
-      #   '@typescript-eslint/no-unused-expressions':
-      #   Cannot read properties of undefined (reading 'allowShortCircuit')
+      # This blocks on ERRORS ONLY, and there are currently none: every rule in
+      # eslint.config.js is `warn`, per SPECIFICATION.md §11. `eslint .`
+      # therefore exits 0 with 1,033 warnings.
       #
-      # eslint 9.39.5 is installed against typescript-eslint 8.x and the rule
-      # signature changed between them. Aligning those versions is task 1 of
-      # Phase 1.2. Making this step blocking before then would put CI red on
-      # every push for a reason unrelated to the commit, which is how a team
-      # learns to ignore CI.
-      #
-      # FLIP `continue-on-error` TO false AS THE LAST STEP OF PHASE 1.2.
+      # SO THIS STEP DOES NOT HOLD THE LINE ON ITS OWN. The baseline in
+      # docs/architecture/LINT_BASELINE.md does: a rule's count may go down and
+      # may not go up. Until Phase 6.1 flips zeroed rules to `error`, that
+      # contract is enforced by reading the diff, not by this job.
       - name: Lint
         run: npm run lint
-        continue-on-error: true
