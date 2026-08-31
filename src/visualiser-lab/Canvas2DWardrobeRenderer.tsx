@@ -34,7 +34,8 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef } from 'react';
-import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM, type WardrobeArtwork } from './wardrobes';
+import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM } from './wardrobes';
+import { loadAllContents, type ContentKind, type LoadedContent } from './wardrobeContents';
 import { projectorFromQuad, columnsFor, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
 import type { Point } from './homography';
 
@@ -84,11 +85,11 @@ export default function Canvas2DWardrobeRenderer({
         return;
       }
 
-      // The elevation the skin is projected from. It is only ever a material
-      // here — if it fails to load the carcass still draws, in flat board.
-      const art = await wardrobeArtwork(model, colourName, 'front').catch(() => null);
+      // The contents, if they have been supplied yet. Absent, the carcass draws
+      // its own modelled blocks instead — see buildCarcass.
+      const contents = await loadAllContents();
       if (cancelled) return;
-      drawBuiltIn(ctx, corners, model.id, model.widths[0], colourName, canvas.width, canvas.height, art);
+      drawBuiltIn(ctx, corners, model.id, model.widths[0], colourName, canvas.width, canvas.height, contents);
     };
 
     render().catch(() => {
@@ -133,16 +134,6 @@ interface Box {
  * room is still mostly white. */
 const INTERIOR_FALLOFF = 0.16;
 
-/** How far into the carcass the contents sit, as a fraction of its depth.
- *
- * A third back rather than against the rear panel. Clothes on a rail hang
- * forward of the back of the box and folded stacks sit toward the front of a
- * shelf, which is what puts them in front of the shelf below and behind the
- * frame in front — and a third is where the eye reads them as being. Flat
- * against the back would foreshorten them out of the opening on an angled
- * wall. */
-const CONTENT_DEPTH = 0.34;
-
 const FACE_TONE = {
   front: 1.0,
   top: 0.94,
@@ -170,13 +161,13 @@ function drawBuiltIn(
   colourName: string,
   imageW: number,
   imageH: number,
-  art: WardrobeArtwork | null,
+  contents: Map<ContentKind, LoadedContent>,
 ) {
   const projector = projectorFromQuad(corners, widthMm, WARDROBE_HEIGHT_MM, imageW, imageH);
   if (!projector) return;
 
   const base = hexToRgb(wardrobeColourHex(colourName));
-  const { boxes, compartments } = buildCarcass(layoutId, widthMm, !!art);
+  const { boxes, compartments } = buildCarcass(layoutId, widthMm, contents.size > 0);
 
   // Every face of every box, sorted back to front. A painter's sort is enough
   // here: the carcass is a set of boxes that do not interpenetrate, so no two
@@ -254,46 +245,6 @@ function drawBuiltIn(
     }
   }
 
-  // WHAT IS STANDING IN EACH COMPARTMENT, taken from the photograph and placed
-  // at the depth it actually occupies.
-  //
-  // This is the difference between a skin and a decal. On the front plane the
-  // photograph reads as a picture hung over the wardrobe; set back into the
-  // opening it reads as contents, because the frame, the dividers and the shelf
-  // front edges are all modelled and all draw OVER it — they sort in front,
-  // since they are nearer the room.
-  //
-  // Cropped by the compartment's own position in the elevation. The
-  // photographs are straight-on elevations of the same product, so a
-  // compartment at (x, y) in the model is at (x, y) in the picture — which only
-  // holds while the modelled layout agrees with the photographed one, and is
-  // why the compartment counts had to be right first.
-  if (art) {
-    for (const c of compartments) {
-      const z = -WARDROBE_DEPTH_MM * CONTENT_DEPTH;
-      const model: [number, number, number][] = [
-        [c.x0, c.y0, z],
-        [c.x1, c.y0, z],
-        [c.x1, c.y1, z],
-        [c.x0, c.y1, z],
-      ];
-      const pts = model.map(([X, Y, Z]) => projector.project(X, Y, Z));
-      const depthSum = model.reduce((acc, [X, Y, Z]) => acc + projector.depth(X, Y, Z), 0);
-      const tone = 1 - CONTENT_DEPTH * INTERIOR_FALLOFF;
-      faces.push({
-        pts,
-        depth: depthSum / 4,
-        near: pts[0],
-        far: pts[2],
-        toneNear: tone,
-        toneFar: tone,
-        rgb: base,
-        model,
-        skinnable: true,
-      });
-    }
-  }
-
   // Larger depth is further away, so those go down first.
   faces.sort((a, b) => b.depth - a.depth);
 
@@ -325,55 +276,31 @@ function drawBuiltIn(
       g.addColorStop(1, toRgb(face.rgb, face.toneFar));
       paint = g;
     }
-    if (art && face.skinnable) {
-      // NO BOARD UNDER A CONTENT QUAD. The carcass behind it is already drawn,
-      // and the cut-out's transparency is exactly what lets the back panel and
-      // the shelf under it show through around whatever is standing there.
-      // Painting board first would seal the compartment shut.
-      //
-      // The photograph, cropped to this compartment and projected onto it.
-      ctx.save();
-      ctx.clip();
-      drawSkinnedFace(
-        ctx, art.image, art.width, art.height,
-        face.model, projector, widthMm, WARDROBE_HEIGHT_MM,
-      );
-      ctx.restore();
-
-      // SHADING GOES OVER THE SKIN, not instead of it. The elevation was lit
-      // flat and square on; this surface is at a depth and an angle, and the
-      // gradient is what puts it there. Multiply, so the photograph's own
-      // detail survives being darkened rather than being replaced by a wash.
-      if (face.toneNear < 0.995 || face.toneFar < 0.995) {
-        ctx.save();
-        ctx.clip();
-        ctx.globalCompositeOperation = 'multiply';
-        const shadeRun = Math.hypot(face.far[0] - face.near[0], face.far[1] - face.near[1]);
-        const grey = (t: number) => `rgb(${clamp255(255 * t)},${clamp255(255 * t)},${clamp255(255 * t)})`;
-        if (shadeRun > 1 && Math.abs(face.toneNear - face.toneFar) > 0.004) {
-          const g = ctx.createLinearGradient(face.near[0], face.near[1], face.far[0], face.far[1]);
-          g.addColorStop(0, grey(face.toneNear));
-          g.addColorStop(1, grey(face.toneFar));
-          ctx.fillStyle = g;
-        } else {
-          ctx.fillStyle = grey(face.toneNear);
-        }
-        ctx.fill();
-        ctx.restore();
-      }
-    } else {
-      ctx.fillStyle = paint;
-      ctx.fill();
-      // A hairline over the fill closes the seams that anti-aliasing opens
-      // between two quads meeting edge to edge.
-      ctx.strokeStyle = nearFill;
-      ctx.lineWidth = 0.6;
-      ctx.stroke();
-    }
+    // THE CARCASS IS BOARD, always. Nothing photographic is projected onto it
+    // any more: an elevation mapped onto the front faces puts the picture's own
+    // shelves and clothes on the plane of the frame, flat and in front of the
+    // geometry, which is exactly what it looked like. The photographs now
+    // contribute only the objects standing inside — see drawContents.
+    ctx.fillStyle = paint;
+    ctx.fill();
+    // A hairline over the fill closes the seams that anti-aliasing opens
+    // between two quads meeting edge to edge.
+    ctx.strokeStyle = nearFill;
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
   }
+
+  // WHAT IS STANDING IN THE WARDROBE, drawn after the carcass so it sits inside
+  // the openings the carcass has already framed.
+  if (contents.size) {
+    drawContents(ctx, projector, compartments, contents);
+  }
+
+  // Balances the save() that set the opening's clip. It was missing, which left
+  // a clip and a saved state on the context after every draw.
+  ctx.restore();
+
   drawContactShadow(ctx, projector, widthMm);
-
-
 }
 
 /** The carcass as a list of boxes, in millimetres, with the opening's
@@ -389,6 +316,10 @@ function drawBuiltIn(
  * reach through. What goes IN it comes from the photograph. */
 interface Compartment {
   x0: number; y0: number; x1: number; y1: number;
+  /** What belongs in it. The layout knows this — a bay under a rail takes
+   * hanging clothes, a shelf opening takes a stack or a box — so the renderer
+   * does not have to guess from the geometry. */
+  role: 'shelf' | 'hang-long' | 'hang-short' | 'floor';
 }
 
 function buildCarcass(
@@ -501,6 +432,9 @@ function buildCarcass(
           x0: x, x1: x + cw,
           y0: y0 + (innerH / fill.count) * s,
           y1: y0 + (innerH / fill.count) * (s + 1),
+          // The lowest opening in a tower gets the shoes, which is where shoes
+          // actually go.
+          role: s === 0 ? 'floor' : 'shelf',
         });
       }
     } else if (fill.kind === 'hang') {
@@ -510,8 +444,8 @@ function buildCarcass(
       garments(x, cw, railY, innerH * 0.56);
       rail(x, cw, railY);
       // The bay under the rail, and the shelf over it.
-      compartments.push({ x0: x, x1: x + cw, y0, y1: shelfY });
-      compartments.push({ x0: x, x1: x + cw, y0: shelfY + BOARD_MM, y1: y0 + innerH });
+      compartments.push({ x0: x, x1: x + cw, y0: railY, y1: railY, role: 'hang-long' });
+      compartments.push({ x0: x, x1: x + cw, y0: shelfY + BOARD_MM, y1: y0 + innerH, role: 'shelf' });
     } else if (fill.kind === 'hang2') {
       const upper = y0 + innerH * 0.86;
       const mid = y0 + innerH * 0.46;
@@ -521,9 +455,12 @@ function buildCarcass(
       garments(x, cw, mid - RAIL_DROP_MM, innerH * 0.34);
       rail(x, cw, upper - RAIL_DROP_MM);
       rail(x, cw, mid - RAIL_DROP_MM);
-      compartments.push({ x0: x, x1: x + cw, y0, y1: mid });
-      compartments.push({ x0: x, x1: x + cw, y0: mid + BOARD_MM, y1: upper });
-      compartments.push({ x0: x, x1: x + cw, y0: upper + BOARD_MM, y1: y0 + innerH });
+      // Two rails, so two runs of short hanging, and the shelf above the top
+      // one. A hanging compartment is recorded at its RAIL — the clothes hang
+      // from it, so its own height is the asset's business, not the opening's.
+      compartments.push({ x0: x, x1: x + cw, y0: mid - RAIL_DROP_MM, y1: mid - RAIL_DROP_MM, role: 'hang-short' });
+      compartments.push({ x0: x, x1: x + cw, y0: upper - RAIL_DROP_MM, y1: upper - RAIL_DROP_MM, role: 'hang-short' });
+      compartments.push({ x0: x, x1: x + cw, y0: upper + BOARD_MM, y1: y0 + innerH, role: 'shelf' });
     } else {
       // A TOWER, not a rail over drawers. The bank fills the lower half and
       // open shelving stacks above it, which is what every one of these towers
@@ -561,6 +498,7 @@ function buildCarcass(
           x0: x, x1: x + cw,
           y0: y0 + bankH + (above / fill.shelves) * sh,
           y1: y0 + bankH + (above / fill.shelves) * (sh + 1),
+          role: 'shelf',
         });
       }
     }
@@ -585,6 +523,140 @@ function buildCarcass(
   for (const box of boxes) box.z -= WARDROBE_DEPTH_MM;
 
   return { boxes, compartments };
+}
+
+/** Places every content cut-out into the compartment it belongs to.
+ *
+ * HOW EACH ONE IS ANCHORED. A thing that hangs is placed by its TOP edge, at
+ * the rail, because that is the only edge whose position is known — how far it
+ * drops is the garment's business. A thing that stands is placed by its BOTTOM
+ * edge, on the surface under it, for the same reason in reverse. Getting this
+ * backwards is what makes a composite look like it is floating.
+ *
+ * WHAT REPEATS AND WHAT DOES NOT. A rail of shirts fills its bay, so the asset
+ * is tiled across the width as many times as fits. A folded stack sits once, in
+ * the middle of its shelf. Both are declared on the asset rather than decided
+ * here, so a new asset arrives already knowing how it behaves.
+ *
+ * SORTED BACK TO FRONT among themselves. Contents sit inside compartments the
+ * carcass has already drawn, so they only have to be ordered against each
+ * other. */
+function drawContents(
+  ctx: CanvasRenderingContext2D,
+  projector: Projector,
+  compartments: Compartment[],
+  contents: Map<ContentKind, LoadedContent>,
+) {
+  const forRole = (role: Compartment['role'], index: number): ContentKind => {
+    if (role === 'hang-long') return 'hanging-long';
+    if (role === 'hang-short') return 'hanging-short';
+    if (role === 'floor') return 'shoes';
+    // Shelves alternate between folded clothes and a storage box, which is how
+    // every one of the product photographs is styled. Keyed off the
+    // compartment's own index so a given shelf always shows the same thing
+    // rather than reshuffling on each redraw.
+    return index % 3 === 1 ? 'box' : 'stack';
+  };
+
+  type Placed = {
+    item: LoadedContent;
+    x0: number; y0: number; x1: number; y1: number; z: number; depth: number;
+  };
+  const placed: Placed[] = [];
+
+  compartments.forEach((c, i) => {
+    const item = contents.get(forRole(c.role, i));
+    if (!item) return;
+
+    const z = -WARDROBE_DEPTH_MM * item.asset.depth;
+    const openingW = c.x1 - c.x0;
+    if (openingW <= 0) return;
+
+    if (item.asset.repeats) {
+      // Fill the bay with whole repeats, sharing out the remainder so the run
+      // is centred rather than left-aligned with a gap at one end.
+      const n = Math.max(1, Math.round(openingW / item.asset.widthMm));
+      const w = openingW / n;
+      const h = item.heightMm * (w / item.asset.widthMm);
+      for (let k = 0; k < n; k++) {
+        const x0 = c.x0 + k * w;
+        placed.push({
+          item, x0, x1: x0 + w, y0: c.y0 - h, y1: c.y0, z,
+          depth: projector.depth(x0, c.y0, z),
+        });
+      }
+      return;
+    }
+
+    // Stands on the surface below it, centred, and never wider than the opening
+    // — a 320mm box in a 240mm shelf has to come down to fit.
+    const w = Math.min(item.asset.widthMm, openingW * 0.86);
+    const h = item.heightMm * (w / item.asset.widthMm);
+    const x0 = c.x0 + (openingW - w) / 2;
+    const y0 = c.y0 + BOARD_MM;
+    placed.push({
+      item, x0, x1: x0 + w, y0, y1: y0 + h, z,
+      depth: projector.depth(x0, y0, z),
+    });
+  });
+
+  placed.sort((p, q) => q.depth - p.depth);
+
+  for (const p of placed) {
+    drawContentQuad(ctx, p.item.image, [
+      [p.x0, p.y0, p.z],
+      [p.x1, p.y0, p.z],
+      [p.x1, p.y1, p.z],
+      [p.x0, p.y1, p.z],
+    ], projector);
+  }
+}
+
+/** One cut-out, warped onto its quad. Subdivided for the same reason as
+ * everything else here: Canvas 2D has only affine transforms, and an affine map
+ * keeps parallel lines parallel. */
+function drawContentQuad(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  model: [number, number, number][],
+  projector: Projector,
+) {
+  const imgW = image.naturalWidth;
+  const imgH = image.naturalHeight;
+  if (!imgW || !imgH) return;
+  const N = 5;
+  const at = (s: number, u: number): [number, number, number] => {
+    const [c0, c1, c2, c3] = model;
+    return [0, 1, 2].map(
+      k => (1 - s) * (1 - u) * c0[k] + s * (1 - u) * c1[k] + s * u * c2[k] + (1 - s) * u * c3[k],
+    ) as [number, number, number];
+  };
+  const P: [number, number][][] = [];
+  const UV: [number, number][][] = [];
+  for (let j = 0; j <= N; j++) {
+    const rp: [number, number][] = [];
+    const ru: [number, number][] = [];
+    for (let i = 0; i <= N; i++) {
+      const [X, Y, Z] = at(i / N, j / N);
+      rp.push(projector.project(X, Y, Z));
+      // The quad's own parameter space IS the image. The corners are listed
+      // bottom-left, bottom-right, top-right, top-left and the bitmap's rows
+      // run the other way, so u is flipped.
+      ru.push([(i / N) * imgW, (1 - j / N) * imgH]);
+    }
+    P.push(rp);
+    UV.push(ru);
+  }
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const v00 = { p: P[j][i], uv: UV[j][i] };
+      const v10 = { p: P[j][i + 1], uv: UV[j][i + 1] };
+      const v11 = { p: P[j + 1][i + 1], uv: UV[j + 1][i + 1] };
+      const v01 = { p: P[j + 1][i], uv: UV[j + 1][i] };
+      skinTriangle(ctx, image, v00, v10, v11);
+      skinTriangle(ctx, image, v00, v11, v01);
+    }
+  }
 }
 
 /** The darkening where the carcass meets the floor. Without it the unit reads
@@ -643,88 +715,16 @@ function hexToRgb(hex: string): [number, number, number] {
   ];
 }
 
-// --- The skin --------------------------------------------------------------
+// --- Warping a cut-out onto a quad ----------------------------------------
 //
-// THE STICKER IS A MATERIAL ON THE MODEL, not a picture in front of it.
+// Canvas 2D has only affine transforms, and an affine map keeps parallel lines
+// parallel — which is the one thing that must not happen when a surface is
+// receding. So a quad is chopped into a grid and each cell drawn with its own
+// affine approximation: over a cell a few pixels across the perspective is very
+// nearly linear, and the error falls off as the square of the cell size.
 //
-// Every one of these photographs is a straight-on elevation of the product, so
-// it can be treated as a decal projected along the wardrobe's own depth axis:
-// a surface at (x, y) in the carcass takes the pixels at (x, y) in the
-// photograph, whatever depth it sits at. That is planar projection mapping, and
-// it is the right tool precisely because the source IS an elevation — the same
-// property that made these files awkward to composite makes them ideal to
-// project.
-//
-// So the geometry keeps doing what only geometry can — the opening's
-// perspective, the reveal, the depth, the shelf edges catching light — and the
-// photograph supplies what only a photograph can: the real shirts, the real
-// shoes, the grain of the board, the shadow a folded jumper casts on the shelf
-// under it. Neither is enough alone.
-//
-// ONLY THE FACES POINTING AT THE ROOM ARE SKINNED. A side return or the top of
-// a shelf runs along the depth axis, so the projection has nothing to say about
-// it — every point on it maps to the same column of the photograph and would
-// smear into streaks. Those keep the board colour and their own shading, which
-// is what the photograph would have shown anyway: the elevation never saw them
-// either.
-
-/** Draws part of an image across a planar quad given in model millimetres,
- * through the projector, with the source region taken from the quad's own
- * position in the front elevation.
- *
- * Subdivided, because Canvas 2D has only affine transforms and an affine map
- * keeps parallel lines parallel — which is the one thing that must not happen
- * here. Eight divisions is past where the error is visible; each cell goes down
- * as two triangles, since three points are exactly what an affine transform is
- * determined by. */
-function drawSkinnedFace(
-  ctx: CanvasRenderingContext2D,
-  image: CanvasImageSource,
-  imgW: number,
-  imgH: number,
-  model: [number, number, number][],
-  projector: Projector,
-  widthMm: number,
-  heightMm: number,
-  divisions = 6,
-) {
-  const N = divisions;
-  // Bilinear across the quad — exact for a planar face, which every face of an
-  // axis-aligned box is.
-  const at = (s: number, t: number): [number, number, number] => {
-    const [c0, c1, c2, c3] = model;
-    return [0, 1, 2].map(
-      k => (1 - s) * (1 - t) * c0[k] + s * (1 - t) * c1[k] + s * t * c2[k] + (1 - s) * t * c3[k],
-    ) as [number, number, number];
-  };
-
-  const P: [number, number][][] = [];
-  const UV: [number, number][][] = [];
-  for (let j = 0; j <= N; j++) {
-    const rowP: [number, number][] = [];
-    const rowUV: [number, number][] = [];
-    for (let i = 0; i <= N; i++) {
-      const [X, Y, Z] = at(i / N, j / N);
-      rowP.push(projector.project(X, Y, Z));
-      // The elevation's own coordinates. Model Y runs up, the bitmap's runs
-      // down, so it is flipped on the way in.
-      rowUV.push([(X / widthMm) * imgW, (1 - Y / heightMm) * imgH]);
-    }
-    P.push(rowP);
-    UV.push(rowUV);
-  }
-
-  for (let j = 0; j < N; j++) {
-    for (let i = 0; i < N; i++) {
-      const a = { p: P[j][i], uv: UV[j][i] };
-      const b = { p: P[j][i + 1], uv: UV[j][i + 1] };
-      const c = { p: P[j + 1][i + 1], uv: UV[j + 1][i + 1] };
-      const d = { p: P[j + 1][i], uv: UV[j + 1][i] };
-      skinTriangle(ctx, image, a, b, c);
-      skinTriangle(ctx, image, a, c, d);
-    }
-  }
-}
+// Each cell goes down as two triangles, because three points are exactly what
+// an affine transform is determined by.
 
 interface SkinVertex {
   p: [number, number];
