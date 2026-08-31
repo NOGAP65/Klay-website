@@ -100,123 +100,560 @@ function Button({
   );
 }
 
-const controlLabelStyle: React.CSSProperties = {
-  ...typeScale.micro,
-  color: tokens.onDarkMuted,
-  userSelect: 'none',
-};
+// --- Manual: the pull controls ---------------------------------------------
+// Manual operation draws the hardware the product is actually operated by, and
+// dragging that hardware is how the covering moves — the control IS the thing
+// it controls, rather than a slider standing in for one.
+//
+// It replaced a groove-and-thumb slider in a floating charcoal housing. That
+// worked and read as a piece of UI parked over the photograph: the one object
+// in the frame that could not exist in the room.
+//
+// TWO PRODUCTS, TWO OBJECTS. A roller blind is worked by a loop of beaded ball
+// chain off the end of the tube. A curtain on a corded track is worked by a
+// smooth cord loop with a weight on the bottom — no beads, different colour,
+// different bottom fitting. Shipping the blind's chain on a curtain would be
+// showing the customer hardware they are not buying.
+//
+// THE LOOP RUNS, and this is the detail that sells both of them. Drag down and
+// the near strand travels down while the far strand travels UP, because a
+// continuous loop over a pulley can do nothing else. Both scroll at exactly the
+// drag distance, so the loop stays under your finger instead of sliding
+// against it.
+//
+// SEAMLESS BY MODULO, not by a long strip. Beads and cord ticks are drawn from
+// a phase offset wrapped into a single pitch, so a fixed number of shapes tiles
+// an endless run and the loop can be dragged forever without the geometry
+// growing.
+//
+// STILL A SLIDER TO A SCREEN READER. role, aria-valuenow and the arrow/Home/End
+// keys are carried over from the control this replaced — the visual metaphor
+// got richer and the keyboard contract did not change.
 
-// --- Roll slider -----------------------------------------------------------
-// Hand-built rather than an <input type="range">: styling a range thumb
-// needs ::-webkit-slider-thumb, which inline styles can't reach, and the
-// vertical variant previously relied on writingMode:'vertical-lr' (unreliable
-// in Safari). Pointer capture makes the drag survive leaving the track.
-// Top of the track is open, bottom is closed — the way the blind moves.
+/** Bead spacing. Real roller chain is a #10 ball chain at roughly 4.5mm pitch
+ * against a 2m drop; this is that ratio at the size the render displays. */
+const BEAD_PITCH = 7.2;
+const BEAD_R = 2.5;
+/** Fallback run length, used only before the media box has been measured. */
+const CHAIN_H_FALLBACK = 188;
+/** Distance between the two strands — the pulley's width. */
+const STRAND_GAP = 13;
+/** Drag distance, in pixels, that takes the covering from fully open to fully
+ * shut. Matched to the run length so a drag down the length of the visible
+ * hardware is very nearly the full travel: the gesture is the size of the
+ * object. */
+const CHAIN_TRAVEL = 190;
 
-function RollSlider({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const trackRef = useRef<HTMLDivElement>(null);
+const CHAIN_TOP = 16;
+const CHAIN_W = STRAND_GAP + BEAD_R * 4 + 8;
+
+/** Repeat spacing of the cord's fibre ticks. Wider than the bead pitch because
+ * a twisted cord reads at a coarser rhythm than a ball chain — and because the
+ * two must not look like the same object in a different colour. */
+const CORD_PITCH = 11;
+
+/** Shape centres for one strand, phase-shifted by `offset` and wrapped into a
+ * single pitch so a finite number of shapes tiles an endless run. */
+function runYs(offset: number, run: number, pitch: number, margin: number): number[] {
+  const phase = ((offset % pitch) + pitch) % pitch;
+  const out: number[] = [];
+  for (let y = CHAIN_TOP - pitch + phase; y < CHAIN_TOP + run; y += pitch) {
+    if (y >= CHAIN_TOP - margin && y <= CHAIN_TOP + run + margin) out.push(y);
+  }
+  return out;
+}
+
+/** Drag, keyboard and hover behaviour for a pull control. Shared so the chain
+ * and the cord cannot drift apart on feel — they are the same gesture on two
+ * different objects. */
+function usePullDrag(value: number, onChange: (v: number) => void) {
   const [dragging, setDragging] = useState(false);
+  const [hover, setHover] = useState(false);
+  // Where the drag began, and the position it began from. Deltas are measured
+  // against these rather than accumulated frame to frame, so a fast drag cannot
+  // drift away from the pointer.
+  const originRef = useRef({ y: 0, value: 0 });
 
-  const applyFromY = (clientY: number) => {
-    const el = trackRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    if (r.height <= 0) return;
-    onChange(Math.max(0, Math.min(1, (clientY - r.top) / r.height)));
+  const clamp = (v: number) => Math.max(0, Math.min(1, v));
+  const pct = clamp(value);
+
+  const handlers = {
+    onPointerDown: (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      originRef.current = { y: e.clientY, value: pct };
+      setDragging(true);
+    },
+    onPointerMove: (e: React.PointerEvent) => {
+      if (!dragging) return;
+      const dy = e.clientY - originRef.current.y;
+      onChange(clamp(originRef.current.value + dy / CHAIN_TRAVEL));
+    },
+    onPointerUp: (e: React.PointerEvent) => {
+      setDragging(false);
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    },
+    onPointerCancel: () => setDragging(false),
+    onPointerEnter: () => setHover(true),
+    onPointerLeave: () => setHover(false),
+    onKeyDown: (e: React.KeyboardEvent) => {
+      const step = e.shiftKey ? 0.1 : 0.02;
+      if (e.key === 'ArrowUp') { e.preventDefault(); onChange(clamp(value - step)); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); onChange(clamp(value + step)); }
+      else if (e.key === 'Home') { e.preventDefault(); onChange(0); }
+      else if (e.key === 'End') { e.preventDefault(); onChange(1); }
+    },
   };
 
-  const pct = Math.max(0, Math.min(1, value)) * 100;
+  return { dragging, hover, handlers, pct };
+}
+
+/** OPEN above, CLOSE below.
+ *
+ * The hardware alone does not say which way to pull. A chain is obviously
+ * draggable once you have grabbed it, but nothing on screen says that dragging
+ * DOWN is what closes the blind — the old slider said Open and Shut at its two
+ * ends and that was the one thing worth keeping from it.
+ *
+ * Set at the two ends of the travel rather than beside the object, so the words
+ * are the destinations: the label you are pulling toward is what you get. The
+ * arrows carry the direction on their own for anyone who reads the glyph before
+ * the word.
+ *
+ * Dark pills because these land on an unknown photograph — a pale wall, a
+ * window, a dark curtain — and type alone cannot be legible on all three. */
+const PULL_LABEL_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  padding: '3px 7px',
+  borderRadius: 4,
+  background: 'rgba(24,24,24,0.74)',
+  backdropFilter: 'blur(3px)',
+  color: 'rgba(255,255,255,0.94)',
+  fontFamily: tokens.body,
+  fontSize: 8,
+  fontWeight: 700,
+  letterSpacing: '0.16em',
+  lineHeight: 1,
+  whiteSpace: 'nowrap',
+  // The labels are signage on the object, not part of its hit area — grabbing
+  // the word should not start a drag that the word is not attached to.
+  pointerEvents: 'none',
+  userSelect: 'none',
+  transition: 'opacity 0.18s ease',
+};
+
+function PullLabels({ run, dimmed }: { run: number; dimmed: boolean }) {
+  return (
+    <>
+      <div style={{ ...PULL_LABEL_STYLE, top: -19, opacity: dimmed ? 0.35 : 1 }}>▲ OPEN</div>
+      <div style={{ ...PULL_LABEL_STYLE, top: CHAIN_TOP + run + 13, opacity: dimmed ? 0.35 : 1 }}>
+        ▼ CLOSE
+      </div>
+    </>
+  );
+}
+
+/** Wrapper carrying the interaction, the labels and the drop shadow. The two
+ * pull controls differ only in the artwork they hand it. */
+function PullControl({
+  value,
+  onChange,
+  run,
+  ariaLabel,
+  children,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  run: number;
+  ariaLabel: string;
+  children: (travel: number) => React.ReactNode;
+}) {
+  const { dragging, hover, handlers, pct } = usePullDrag(value, onChange);
+
+  return (
+    <div
+      role="slider"
+      aria-label={ariaLabel}
+      aria-orientation="vertical"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(pct * 100)}
+      aria-valuetext={`${Math.round(pct * 100)}% closed`}
+      tabIndex={0}
+      {...handlers}
+      style={{
+        position: 'relative',
+        // Generous hit area around hardware that is only ~20px of actual metal
+        // or cord: the visible object stays thin and delicate, the target stays
+        // usable.
+        padding: `0 ${space.sm}px`,
+        cursor: dragging ? 'grabbing' : 'grab',
+        touchAction: 'none',
+        lineHeight: 0,
+        // Thin, light hardware landing on whatever the photograph happens to
+        // be. The drop shadow is what guarantees it separates from a pale wall;
+        // it deepens on hover so the object acknowledges the pointer.
+        filter: dragging || hover
+          ? 'drop-shadow(0 3px 7px rgba(0,0,0,0.6))'
+          : 'drop-shadow(0 2px 4px rgba(0,0,0,0.45))',
+        transition: 'filter 0.18s ease',
+      }}
+    >
+      {children(pct * CHAIN_TRAVEL)}
+      {/* Faded while dragging: once the pull is under way the direction is no
+          longer in question, and the words would only be in the way of watching
+          the covering move. */}
+      <PullLabels run={run} dimmed={dragging} />
+    </div>
+  );
+}
+
+/** BLINDS — a loop of nickel ball chain off the end of the tube. */
+function BeadChain({
+  value,
+  onChange,
+  run = CHAIN_H_FALLBACK,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  /** Visible length of the run, in CSS pixels. Sized to the covering's drop by
+   * the caller so the hardware stays in proportion to the window. */
+  run?: number;
+}) {
+  const xLeft = CHAIN_W / 2 - STRAND_GAP / 2;
+  const xRight = CHAIN_W / 2 + STRAND_GAP / 2;
+
+  return (
+    <PullControl value={value} onChange={onChange} run={run} ariaLabel="Blind position — drag the chain">
+      {travel => (
+        <svg width={CHAIN_W} height={CHAIN_TOP + run + 16} style={{ display: 'block', overflow: 'visible' }}>
+          <defs>
+            {/* Across the bead, not down it: a ball catches its highlight on the
+                side facing the window, which is what makes it read as metal
+                rather than as a flat dot. */}
+            <linearGradient id="klay-bead" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#9C9C9C" />
+              <stop offset="30%" stopColor="#FBFBFB" />
+              <stop offset="64%" stopColor="#D2D2D2" />
+              <stop offset="100%" stopColor="#8A8A8A" />
+            </linearGradient>
+            <linearGradient id="klay-chain-mount" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#7E7E7E" />
+              <stop offset="100%" stopColor="#4A4A4A" />
+            </linearGradient>
+          </defs>
+
+          {/* The pulley housing the loop hangs from, at the end of the tube. */}
+          <rect
+            x={CHAIN_W / 2 - 7.5}
+            y={2}
+            width={15}
+            height={CHAIN_TOP - 2}
+            rx={3.5}
+            fill="url(#klay-chain-mount)"
+            stroke="rgba(0,0,0,0.3)"
+            strokeWidth={0.6}
+          />
+
+          {/* Cord behind the beads. Without it a fast drag can show daylight
+              between beads at the moment the phase wraps. */}
+          <line x1={xLeft} y1={CHAIN_TOP} x2={xLeft} y2={CHAIN_TOP + run} stroke="rgba(90,90,90,0.34)" strokeWidth={0.9} />
+          <line x1={xRight} y1={CHAIN_TOP} x2={xRight} y2={CHAIN_TOP + run} stroke="rgba(90,90,90,0.34)" strokeWidth={0.9} />
+
+          {runYs(travel, run, BEAD_PITCH, BEAD_R).map(y => (
+            <circle key={`l${y}`} cx={xLeft} cy={y} r={BEAD_R} fill="url(#klay-bead)" stroke="rgba(0,0,0,0.22)" strokeWidth={0.4} />
+          ))}
+          {runYs(-travel, run, BEAD_PITCH, BEAD_R).map(y => (
+            <circle key={`r${y}`} cx={xRight} cy={y} r={BEAD_R} fill="url(#klay-bead)" stroke="rgba(0,0,0,0.22)" strokeWidth={0.4} />
+          ))}
+
+          {/* The connector that closes the loop, and the reason the two strands
+              have to travel in opposite directions. */}
+          <rect
+            x={CHAIN_W / 2 - STRAND_GAP / 2 - 2.5}
+            y={CHAIN_TOP + run - 1}
+            width={STRAND_GAP + 5}
+            height={7}
+            rx={3.5}
+            fill="url(#klay-chain-mount)"
+            stroke="rgba(0,0,0,0.3)"
+            strokeWidth={0.6}
+          />
+        </svg>
+      )}
+    </PullControl>
+  );
+}
+
+/** CURTAINS — a corded track's cord loop, weighted at the bottom.
+ *
+ * Deliberately not the blind's chain. A curtain track runs a smooth braided
+ * cord, not a ball chain, and it is tensioned by a weight hanging on the loop
+ * rather than closed by a metal joiner. The differences are the whole point:
+ * ecru braid instead of nickel balls, a teardrop weight instead of a connector,
+ * a slimmer run.
+ *
+ * MOVEMENT WITHOUT BEADS was the problem to solve. A plain line gives no sign
+ * that it is running, so the cord carries the short diagonal ticks of its own
+ * fibre twist, scrolling on the same modulo trick the beads use. It reads as
+ * rope moving over a pulley. */
+function CurtainCord({
+  value,
+  onChange,
+  run = CHAIN_H_FALLBACK,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  run?: number;
+}) {
+  const xLeft = CHAIN_W / 2 - STRAND_GAP / 2 + 1.5;
+  const xRight = CHAIN_W / 2 + STRAND_GAP / 2 - 1.5;
+
+  /** One strand: the braid, then its twist ticks scrolling along it. */
+  const strand = (x: number, offset: number, key: string) => (
+    <g key={key}>
+      <line x1={x} y1={CHAIN_TOP} x2={x} y2={CHAIN_TOP + run} stroke="#8C7F6A" strokeWidth={2.6} strokeLinecap="round" />
+      <line x1={x} y1={CHAIN_TOP} x2={x} y2={CHAIN_TOP + run} stroke="#E4DAC6" strokeWidth={1.5} strokeLinecap="round" />
+      {runYs(offset, run, CORD_PITCH, 0).map(y => (
+        <line
+          key={`${key}${y}`}
+          x1={x - 1.3}
+          y1={y + 1.6}
+          x2={x + 1.3}
+          y2={y - 1.6}
+          stroke="rgba(120,108,88,0.55)"
+          strokeWidth={0.9}
+          strokeLinecap="round"
+        />
+      ))}
+    </g>
+  );
+
+  return (
+    <PullControl value={value} onChange={onChange} run={run} ariaLabel="Curtain position — drag the cord">
+      {travel => (
+        <svg width={CHAIN_W} height={CHAIN_TOP + run + 20} style={{ display: 'block', overflow: 'visible' }}>
+          <defs>
+            <linearGradient id="klay-cord-weight" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#8E8272" />
+              <stop offset="38%" stopColor="#E8DFCD" />
+              <stop offset="100%" stopColor="#7C7160" />
+            </linearGradient>
+            <linearGradient id="klay-cord-mount" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#8A8A8A" />
+              <stop offset="100%" stopColor="#565656" />
+            </linearGradient>
+          </defs>
+
+          {/* The pulley at the end of the track. Wider and flatter than the
+              blind's, because a track end cap is a different fitting. */}
+          <rect
+            x={CHAIN_W / 2 - 9}
+            y={4}
+            width={18}
+            height={CHAIN_TOP - 4}
+            rx={2.5}
+            fill="url(#klay-cord-mount)"
+            stroke="rgba(0,0,0,0.3)"
+            strokeWidth={0.6}
+          />
+
+          {strand(xLeft, travel, 'l')}
+          {strand(xRight, -travel, 'r')}
+
+          {/* The cord weight — a teardrop acorn that tensions the loop. This is
+              the silhouette that most separates a curtain cord from a blind
+              chain at a glance. */}
+          <path
+            d={`M ${CHAIN_W / 2} ${CHAIN_TOP + run - 2}
+                C ${CHAIN_W / 2 - 5.5} ${CHAIN_TOP + run + 3},
+                  ${CHAIN_W / 2 - 4.5} ${CHAIN_TOP + run + 15},
+                  ${CHAIN_W / 2} ${CHAIN_TOP + run + 17}
+                C ${CHAIN_W / 2 + 4.5} ${CHAIN_TOP + run + 15},
+                  ${CHAIN_W / 2 + 5.5} ${CHAIN_TOP + run + 3},
+                  ${CHAIN_W / 2} ${CHAIN_TOP + run - 2} Z`}
+            fill="url(#klay-cord-weight)"
+            stroke="rgba(0,0,0,0.3)"
+            strokeWidth={0.6}
+          />
+        </svg>
+      )}
+    </PullControl>
+  );
+}
+
+// --- Motorised: the handset ------------------------------------------------
+// Selecting Motorised puts a remote in the frame, because that is the thing a
+// motorised blind actually ships with and the thing the customer is being asked
+// to picture themselves holding. It replaced three stacked pill buttons in a
+// charcoal box, which described the feature accurately and sold none of it.
+//
+// IT POPS. The handset rises, scales up and fades in on mount, and because
+// sideControl swaps components when the operation changes, that happens every
+// time Motorised is picked rather than only on first paint. Driven by a state
+// flip on the first frame plus a transition, not a keyframe — the visualiser
+// has no stylesheet to put an @keyframes in, and this needs no global CSS.
+//
+// THE MIDDLE KEY IS NEW. The old panel could start a movement but never
+// interrupt one; a real handset's stop button is the one control it always has.
+// It halts the animation and the auto cycle wherever they are.
+
+const KEY_FACE = 'linear-gradient(180deg, #4C4C4C 0%, #333 55%, #262626 100%)';
+const KEY_FACE_ACCENT = 'linear-gradient(180deg, #9A7A50 0%, #8A6C46 60%, #6F5537 100%)';
+
+function RemoteKey({
+  label,
+  ariaLabel,
+  onClick,
+  accent = false,
+  wide = false,
+}: {
+  label: React.ReactNode;
+  ariaLabel: string;
+  onClick: () => void;
+  accent?: boolean;
+  wide?: boolean;
+}) {
+  const [pressed, setPressed] = useState(false);
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      aria-label={ariaLabel}
+      onClick={onClick}
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => { setHover(false); setPressed(false); }}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerCancel={() => setPressed(false)}
+      style={{
+        width: wide ? 52 : 34,
+        height: wide ? 20 : 34,
+        borderRadius: wide ? 10 : '50%',
+        border: '1px solid rgba(0,0,0,0.6)',
+        background: accent ? KEY_FACE_ACCENT : KEY_FACE,
+        color: accent ? '#FFF' : 'rgba(248,248,248,0.92)',
+        fontFamily: tokens.body,
+        fontSize: wide ? 8 : 12,
+        fontWeight: 700,
+        letterSpacing: wide ? '0.14em' : '0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        padding: 0,
+        // Keys are lit from above and sink when pressed — the same physical
+        // grammar as the configurator's Buttons, at the scale of a handset.
+        boxShadow: pressed
+          ? 'inset 0 2px 4px rgba(0,0,0,0.7)'
+          : hover
+            ? '0 1px 0 rgba(255,255,255,0.22) inset, 0 3px 6px rgba(0,0,0,0.5)'
+            : '0 1px 0 rgba(255,255,255,0.16) inset, 0 2px 4px rgba(0,0,0,0.45)',
+        transform: pressed ? 'translateY(1px)' : 'translateY(0)',
+        transition: 'box-shadow 0.12s ease, transform 0.12s ease, background 0.2s ease',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function MotorRemote({
+  onOpen,
+  onShut,
+  onStop,
+  onToggleAuto,
+  autoRunning,
+  transmitting,
+}: {
+  onOpen: () => void;
+  onShut: () => void;
+  onStop: () => void;
+  onToggleAuto: () => void;
+  autoRunning: boolean;
+  transmitting: boolean;
+}) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    // Next frame, so the browser paints the "before" state once and has
+    // something to transition FROM. Setting it synchronously would land the
+    // handset in its final position with no movement at all.
+    const r = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(r);
+  }, []);
 
   return (
     <div
       style={{
+        width: 78,
+        padding: '10px 9px 12px',
+        borderRadius: 16,
+        // Bezel and body: a light top edge, a dark base, and a hairline of
+        // white along the very top so the case has a moulded lip.
+        background: 'linear-gradient(165deg, #3A3A3A 0%, #262626 46%, #1B1B1B 100%)',
+        border: '1px solid rgba(0,0,0,0.7)',
+        boxShadow: [
+          '0 1px 0 rgba(255,255,255,0.18) inset',
+          '0 -2px 6px rgba(0,0,0,0.4) inset',
+          '0 18px 34px rgba(0,0,0,0.55)',
+          '0 4px 10px rgba(0,0,0,0.4)',
+        ].join(', '),
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: space.xs,
-        padding: `${space.sm}px`,
-        borderRadius: radius.md,
-        background: 'linear-gradient(180deg, rgba(48,48,48,0.92) 0%, rgba(29,29,29,0.92) 100%)',
-        border: `1px solid ${tokens.onDarkLine}`,
-        boxShadow: RAISED_SHADOW,
-        backdropFilter: 'blur(6px)',
+        gap: 8,
+        transformOrigin: 'center bottom',
+        transform: shown ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.92)',
+        opacity: shown ? 1 : 0,
+        // Overshoots slightly on the way in, which is what makes it read as
+        // popping rather than fading.
+        transition: 'transform 340ms cubic-bezier(0.22, 1.2, 0.36, 1), opacity 240ms ease',
       }}
     >
-      <span style={controlLabelStyle}>Open</span>
+      {/* Status LED. Lit while the motor is actually running, which is the only
+          honest moment for it — a permanently-on light is decoration. */}
       <div
-        ref={trackRef}
-        role="slider"
-        aria-label="Blind position"
-        aria-orientation="vertical"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(pct)}
-        tabIndex={0}
-        onPointerDown={e => {
-          e.preventDefault();
-          e.currentTarget.setPointerCapture(e.pointerId);
-          setDragging(true);
-          applyFromY(e.clientY);
-        }}
-        onPointerMove={e => { if (dragging) applyFromY(e.clientY); }}
-        onPointerUp={e => {
-          setDragging(false);
-          if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-            e.currentTarget.releasePointerCapture(e.pointerId);
-          }
-        }}
-        onPointerCancel={() => setDragging(false)}
-        onKeyDown={e => {
-          const step = e.shiftKey ? 0.1 : 0.02;
-          if (e.key === 'ArrowUp') { e.preventDefault(); onChange(Math.max(0, value - step)); }
-          else if (e.key === 'ArrowDown') { e.preventDefault(); onChange(Math.min(1, value + step)); }
-          else if (e.key === 'Home') { e.preventDefault(); onChange(0); }
-          else if (e.key === 'End') { e.preventDefault(); onChange(1); }
-        }}
         style={{
-          position: 'relative',
-          width: 12,
-          height: 148,
-          borderRadius: radius.md,
-          cursor: 'pointer',
-          // Groove: dark inside with a lit lower lip, so it reads as cut in.
-          background: 'rgba(0,0,0,0.5)',
-          boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.1)',
-          touchAction: 'none',
+          width: 5,
+          height: 5,
+          borderRadius: '50%',
+          background: transmitting ? '#C2703A' : 'rgba(255,255,255,0.14)',
+          boxShadow: transmitting ? '0 0 7px 2px rgba(194,112,58,0.85)' : 'none',
+          transition: 'background 0.18s ease, box-shadow 0.18s ease',
+        }}
+      />
+
+      <span
+        style={{
+          fontFamily: tokens.body,
+          fontSize: 7,
+          fontWeight: 700,
+          letterSpacing: '0.3em',
+          color: 'rgba(248,248,248,0.42)',
+          // The wordmark is letter-spaced, which leaves a trailing gap on the
+          // right and throws the centring out by half a space.
+          textIndent: '0.3em',
         }}
       >
-        {/* Travelled portion, filling from the top down */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: `${pct}%`,
-            borderRadius: radius.md,
-            background: `linear-gradient(180deg, ${tokens.ink} 0%, ${tokens.fillStrong} 100%)`,
-            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.35)',
-            pointerEvents: 'none',
-          }}
-        />
-        {/* Thumb */}
-        <div
-          style={{
-            position: 'absolute',
-            top: `${pct}%`,
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 24,
-            height: 15,
-            borderRadius: radius.md,
-            background: `linear-gradient(180deg, ${tokens.fillStrongHover} 0%, ${tokens.fillStrong} 55%, ${tokens.ink} 100%)`,
-            border: `1px solid ${tokens.ink}`,
-            boxShadow: dragging ? PRESSED_SHADOW : RAISED_SHADOW,
-            pointerEvents: 'none',
-          }}
-        />
-      </div>
-      <span style={controlLabelStyle}>Shut</span>
+        KLAY
+      </span>
+
+      <RemoteKey label="▲" ariaLabel="Open the blind" onClick={onOpen} />
+      <RemoteKey label="■" ariaLabel="Stop the blind" onClick={onStop} accent />
+      <RemoteKey label="▼" ariaLabel="Close the blind" onClick={onShut} />
+
+      <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.07)', margin: '1px 0' }} />
+
+      <RemoteKey
+        label={autoRunning ? 'STOP' : 'AUTO'}
+        ariaLabel={autoRunning ? 'Stop the demonstration' : 'Run the blind up and down'}
+        onClick={onToggleAuto}
+        wide
+        accent={autoRunning}
+      />
     </div>
   );
 }
@@ -366,6 +803,20 @@ export default function KlayConfigurator({
 
   const hasPhoto = !!(store.photoUrl && photoBitmap);
   const confirmedArea = store.tracedAreas.find(a => a.confirmed);
+
+  // The media box's rendered height, watched rather than read once: the box is
+  // sized off the viewport (MAX_MEDIA_VH) and the photo's own ratio, so it
+  // changes on every resize and on every photo swap. The chain is measured
+  // against it, and a stale height would hang a chain of the wrong length.
+  const mediaBoxRef = useRef<HTMLDivElement>(null);
+  const [mediaBoxH, setMediaBoxH] = useState(0);
+  useEffect(() => {
+    const el = mediaBoxRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setMediaBoxH(entry.contentRect.height));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   // Brief, near-instant window while the default photo's bitmap loads —
   // rendered as nothing (not the upload prompt) so there's no empty state.
   const isLoadingDefault = store.defaultWindowActive && !hasPhoto && !uploadError && !showUploadPrompt;
@@ -435,23 +886,43 @@ export default function KlayConfigurator({
     animFrameRef.current = requestAnimationFrame(step);
   };
 
+  // Lights the handset's LED, and only while the blind is genuinely moving —
+  // set when a movement starts, cleared when it lands or is interrupted. The
+  // stop key clears it directly, which is what makes stopping feel like it did
+  // something even though the blind simply stays where it is.
+  const [motorRunning, setMotorRunning] = useState(false);
+
+  /** One motor command: travel to `target`, holding the LED for the trip. */
+  const runMotor = (target: number) => {
+    setMotorRunning(true);
+    animateRollTo(target, 1200, () => setMotorRunning(false));
+  };
+
   const stopAuto = () => {
     autoRunningRef.current = false;
     setAutoRunning(false);
+    setMotorRunning(false);
     cancelRollAnimation();
   };
 
   const startAuto = () => {
     autoRunningRef.current = true;
     setAutoRunning(true);
+    // The LED follows each leg of the cycle rather than staying lit throughout,
+    // so it goes dark in the two 600ms pauses — which is exactly when a real
+    // blind is sitting still at the top or bottom of its travel.
     const cycle = () => {
       if (!autoRunningRef.current) return;
+      setMotorRunning(true);
       animateRollTo(0, 1500, () => {
         if (!autoRunningRef.current) return;
+        setMotorRunning(false);
         autoTimeoutRef.current = window.setTimeout(() => {
           if (!autoRunningRef.current) return;
+          setMotorRunning(true);
           animateRollTo(1, 1500, () => {
             if (!autoRunningRef.current) return;
+            setMotorRunning(false);
             autoTimeoutRef.current = window.setTimeout(cycle, 600);
           });
         }, 600);
@@ -460,10 +931,21 @@ export default function KlayConfigurator({
     cycle();
   };
 
+  // WHICH operation. Blinds and curtains keep separate operation fields, and
+  // this control read the blind's for both — so a curtain switched to Motorised
+  // still got the manual control, and a motorised blind switched to curtains
+  // kept a handset the curtain had not asked for. Harmless while the control
+  // was an abstract slider; not harmless now that manual and motorised draw
+  // visibly different hardware.
+  const activeOperation =
+    store.productCategory === 'curtain' ? store.curtainOperation : store.operation;
+
+  // Leaving motorised must stop a running demo, whichever product's operation
+  // field was the one that changed.
   useEffect(() => {
-    if (store.operation !== 'motorised') stopAuto();
+    if (activeOperation !== 'motorised') stopAuto();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.operation]);
+  }, [activeOperation]);
 
   useEffect(() => () => stopAuto(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -538,41 +1020,85 @@ export default function KlayConfigurator({
     )
   ) : null;
 
-  // Roll control, on the right edge of the render. Manual gets the slider;
-  // motorised gets the three motor actions in the same raised housing, so
-  // both modes read as one physical control rather than two layouts.
-  const sideControl = !showRenderState ? null : store.operation === 'motorised' ? (
+  // WHERE THE CHAIN HANGS, and it is not a styling detail — it is the whole
+  // difference between the chain reading as part of the room and reading as a
+  // widget. Pinned to the right edge of the PHOTOGRAPH it hangs in mid-air
+  // beside the window, attached to nothing, which is what the first version of
+  // this did. It has to hang off the tube, so it is positioned from the blind's
+  // own top-right corner.
+  //
+  // The corners are in photo-pixel space and the box is a percentage of the
+  // viewport, so the conversion goes through the photo's dimensions: a fraction
+  // of the bitmap is a fraction of the box, whatever size the box is today.
+  //
+  // LENGTH FOLLOWS THE DROP. A real chain is a bit over half the height of the
+  // blind it hangs on; clamped at both ends so a very small traced window still
+  // gets a chain you can grab, and a very tall one does not get a chain running
+  // off the bottom of the frame.
+  const chainAnchor = (() => {
+    if (!confirmedArea || !photoBitmap || !mediaBoxH) return null;
+    const topRight = confirmedArea.corners[1];
+    const bottomRight = confirmedArea.corners[2];
+    if (!topRight || !bottomRight) return null;
+    const dropPx = ((bottomRight[1] - topRight[1]) / photoBitmap.height) * mediaBoxH;
+    return {
+      leftPct: (topRight[0] / photoBitmap.width) * 100,
+      topPct: (topRight[1] / photoBitmap.height) * 100,
+      run: Math.max(70, Math.min(240, dropPx * 0.62)),
+    };
+  })();
+
+  // Each operation gets the object it is actually sold with: a chain for
+  // manual, a handset for motorised. Both are hardware in the room rather than
+  // UI over the top of it, which is the point — the visualiser sells what the
+  // window will look like, and the thing you touch is part of that.
+  //
+  // They mount differently because they ARE different things. The chain belongs
+  // to the blind and is placed against it. The handset is held, so it sits off
+  // to the side of the frame where a hand would be, unattached to anything.
+  const sideControl = !showRenderState ? null : activeOperation === 'motorised' ? (
+    <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', zIndex: 20 }}>
+      <MotorRemote
+        autoRunning={autoRunning}
+        transmitting={motorRunning}
+        onOpen={() => { stopAuto(); runMotor(0); }}
+        onShut={() => { stopAuto(); runMotor(1); }}
+        onStop={() => { stopAuto(); setMotorRunning(false); }}
+        onToggleAuto={() => (autoRunning ? stopAuto() : startAuto())}
+      />
+    </div>
+  ) : chainAnchor ? (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: space.xs,
-        padding: `${space.sm}px`,
-        borderRadius: radius.md,
-        background: 'linear-gradient(180deg, rgba(48,48,48,0.92) 0%, rgba(29,29,29,0.92) 100%)',
-        border: `1px solid ${tokens.onDarkLine}`,
-        boxShadow: RAISED_SHADOW,
-        backdropFilter: 'blur(6px)',
+        position: 'absolute',
+        left: `${chainAnchor.leftPct}%`,
+        top: `${chainAnchor.topPct}%`,
+        // BESIDE THE COVERING, NOT ON IT. Centred on the corner, half the run
+        // lies over the fabric, and hardware drawn on top of the product is
+        // hardware the customer reads as part of the product. Shifting by the
+        // padding alone puts the whole loop clear of the edge with only the
+        // pulley overlapping — which is where it genuinely is, bolted to the
+        // end of the tube. Up by the mount's height for the same reason: the
+        // bracket sits ON the tube rather than hanging below it.
+        transform: `translate(-${space.sm}px, -${CHAIN_TOP}px)`,
+        zIndex: 20,
       }}
     >
-      <span style={{ ...controlLabelStyle, textAlign: 'center' }}>Motor</span>
-      <Button onClick={() => { stopAuto(); animateRollTo(0, 1200); }} style={{ height: 32, padding: `0 ${space.sm}px` }}>
-        Open
-      </Button>
-      <Button onClick={() => { stopAuto(); animateRollTo(1, 1200); }} style={{ height: 32, padding: `0 ${space.sm}px` }}>
-        Shut
-      </Button>
-      <Button
-        variant={autoRunning ? 'primary' : 'accent'}
-        onClick={() => (autoRunning ? stopAuto() : startAuto())}
-        style={{ height: 32, padding: `0 ${space.sm}px` }}
-      >
-        {autoRunning ? 'Stop' : 'Auto'}
-      </Button>
+      {store.productCategory === 'curtain' ? (
+        <CurtainCord
+          value={store.rollPosition}
+          onChange={v => store.setRollPosition(v)}
+          run={chainAnchor.run}
+        />
+      ) : (
+        <BeadChain
+          value={store.rollPosition}
+          onChange={v => store.setRollPosition(v)}
+          run={chainAnchor.run}
+        />
+      )}
     </div>
-  ) : (
-    <RollSlider value={store.rollPosition} onChange={v => store.setRollPosition(v)} />
-  );
+  ) : null;
 
   // The box takes the photo's own shape instead of sitting in a fixed panel
   // and letterboxing the image inside it. Height is capped by capping WIDTH
@@ -594,7 +1120,7 @@ export default function KlayConfigurator({
         boxShadow: '0 16px 40px rgba(29,29,29,0.22)',
       }}
     >
-      <div style={{ position: 'relative', width: '100%', aspectRatio: String(photoRatio) }}>
+      <div ref={mediaBoxRef} style={{ position: 'relative', width: '100%', aspectRatio: String(photoRatio) }}>
       {isLoadingDefault ? null : showUploadState ? (
         /* STATE 1 — no photo yet, or the user asked to visualise their own room */
         <div
@@ -688,19 +1214,9 @@ export default function KlayConfigurator({
             />
           )}
 
-          {sideControl && (
-            <div
-              style={{
-                position: 'absolute',
-                right: 14,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 20,
-              }}
-            >
-              {sideControl}
-            </div>
-          )}
+          {/* Each control carries its own absolute placement — the chain from
+              the blind's corner, the handset from the frame's edge. */}
+          {sideControl}
         </div>
       )}
       </div>

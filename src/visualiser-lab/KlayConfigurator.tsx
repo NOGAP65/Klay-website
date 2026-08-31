@@ -100,26 +100,31 @@ function Button({
   );
 }
 
-// --- Manual: the bead chain ------------------------------------------------
-// A roller blind is operated by a continuous loop of beaded chain hanging off
-// the end of the tube. So that is what this draws, and dragging it is how the
-// blind moves — the control IS the thing it controls, rather than a slider
-// standing in for one.
+// --- Manual: the pull controls ---------------------------------------------
+// Manual operation draws the hardware the product is actually operated by, and
+// dragging that hardware is how the covering moves — the control IS the thing
+// it controls, rather than a slider standing in for one.
 //
 // It replaced a groove-and-thumb slider in a floating charcoal housing. That
 // worked and read as a piece of UI parked over the photograph: the one object
-// in the frame that could not exist in the room. A chain hanging from the top
-// right of the window is the object that is genuinely there.
+// in the frame that could not exist in the room.
 //
-// THE LOOP RUNS, and this is the detail that sells it. Drag down and the near
-// strand's beads travel down while the far strand's travel UP, because a
-// continuous loop over a pulley can do nothing else. Both strands scroll at
-// exactly the drag distance, so the chain stays under your finger instead of
-// sliding against it.
+// TWO PRODUCTS, TWO OBJECTS. A roller blind is worked by a loop of beaded ball
+// chain off the end of the tube. A curtain on a corded track is worked by a
+// smooth cord loop with a weight on the bottom — no beads, different colour,
+// different bottom fitting. Shipping the blind's chain on a curtain would be
+// showing the customer hardware they are not buying.
 //
-// SEAMLESS BY MODULO, not by a long strip. Beads are drawn from a phase offset
-// wrapped into a single pitch, so the same nine circles are reused forever and
-// the chain can be dragged indefinitely without the geometry growing.
+// THE LOOP RUNS, and this is the detail that sells both of them. Drag down and
+// the near strand travels down while the far strand travels UP, because a
+// continuous loop over a pulley can do nothing else. Both scroll at exactly the
+// drag distance, so the loop stays under your finger instead of sliding
+// against it.
+//
+// SEAMLESS BY MODULO, not by a long strip. Beads and cord ticks are drawn from
+// a phase offset wrapped into a single pitch, so a fixed number of shapes tiles
+// an endless run and the loop can be dragged forever without the geometry
+// growing.
 //
 // STILL A SLIDER TO A SCREEN READER. role, aria-valuenow and the arrow/Home/End
 // keys are carried over from the control this replaced — the visual metaphor
@@ -133,36 +138,35 @@ const BEAD_R = 2.5;
 const CHAIN_H_FALLBACK = 188;
 /** Distance between the two strands — the pulley's width. */
 const STRAND_GAP = 13;
-/** Drag distance, in pixels, that takes the blind from fully open to fully
- * shut. Matched to CHAIN_H so a drag down the length of the visible chain is
- * very nearly the full travel: the gesture is the size of the object. */
+/** Drag distance, in pixels, that takes the covering from fully open to fully
+ * shut. Matched to the run length so a drag down the length of the visible
+ * hardware is very nearly the full travel: the gesture is the size of the
+ * object. */
 const CHAIN_TRAVEL = 190;
 
 const CHAIN_TOP = 16;
 const CHAIN_W = STRAND_GAP + BEAD_R * 4 + 8;
 
-/** Bead centres for one strand, phase-shifted by `offset` and wrapped into a
- * single pitch so a finite number of circles tiles an endless chain. */
-function beadYs(offset: number, run: number): number[] {
-  const phase = ((offset % BEAD_PITCH) + BEAD_PITCH) % BEAD_PITCH;
+/** Repeat spacing of the cord's fibre ticks. Wider than the bead pitch because
+ * a twisted cord reads at a coarser rhythm than a ball chain — and because the
+ * two must not look like the same object in a different colour. */
+const CORD_PITCH = 11;
+
+/** Shape centres for one strand, phase-shifted by `offset` and wrapped into a
+ * single pitch so a finite number of shapes tiles an endless run. */
+function runYs(offset: number, run: number, pitch: number, margin: number): number[] {
+  const phase = ((offset % pitch) + pitch) % pitch;
   const out: number[] = [];
-  for (let y = CHAIN_TOP - BEAD_PITCH + phase; y < CHAIN_TOP + run; y += BEAD_PITCH) {
-    if (y >= CHAIN_TOP - BEAD_R && y <= CHAIN_TOP + run + BEAD_R) out.push(y);
+  for (let y = CHAIN_TOP - pitch + phase; y < CHAIN_TOP + run; y += pitch) {
+    if (y >= CHAIN_TOP - margin && y <= CHAIN_TOP + run + margin) out.push(y);
   }
   return out;
 }
 
-function BeadChain({
-  value,
-  onChange,
-  run = CHAIN_H_FALLBACK,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  /** Visible length of chain, in CSS pixels. Sized to the blind's drop by the
-   * caller so the chain stays in proportion to the window it hangs on. */
-  run?: number;
-}) {
+/** Drag, keyboard and hover behaviour for a pull control. Shared so the chain
+ * and the cord cannot drift apart on feel — they are the same gesture on two
+ * different objects. */
+function usePullDrag(value: number, onChange: (v: number) => void) {
   const [dragging, setDragging] = useState(false);
   const [hover, setHover] = useState(false);
   // Where the drag began, and the position it began from. Deltas are measured
@@ -173,123 +177,312 @@ function BeadChain({
   const clamp = (v: number) => Math.max(0, Math.min(1, v));
   const pct = clamp(value);
 
-  // Down the chain shuts the blind, up opens it — the same sense as the roll
-  // itself, where 0 is open at the top and 1 is shut at the bottom.
-  const travel = pct * CHAIN_TRAVEL;
-  const leftYs = beadYs(travel, run);
-  const rightYs = beadYs(-travel, run);
+  const handlers = {
+    onPointerDown: (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      originRef.current = { y: e.clientY, value: pct };
+      setDragging(true);
+    },
+    onPointerMove: (e: React.PointerEvent) => {
+      if (!dragging) return;
+      const dy = e.clientY - originRef.current.y;
+      onChange(clamp(originRef.current.value + dy / CHAIN_TRAVEL));
+    },
+    onPointerUp: (e: React.PointerEvent) => {
+      setDragging(false);
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    },
+    onPointerCancel: () => setDragging(false),
+    onPointerEnter: () => setHover(true),
+    onPointerLeave: () => setHover(false),
+    onKeyDown: (e: React.KeyboardEvent) => {
+      const step = e.shiftKey ? 0.1 : 0.02;
+      if (e.key === 'ArrowUp') { e.preventDefault(); onChange(clamp(value - step)); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); onChange(clamp(value + step)); }
+      else if (e.key === 'Home') { e.preventDefault(); onChange(0); }
+      else if (e.key === 'End') { e.preventDefault(); onChange(1); }
+    },
+  };
 
-  const xLeft = CHAIN_W / 2 - STRAND_GAP / 2;
-  const xRight = CHAIN_W / 2 + STRAND_GAP / 2;
+  return { dragging, hover, handlers, pct };
+}
+
+/** OPEN above, CLOSE below.
+ *
+ * The hardware alone does not say which way to pull. A chain is obviously
+ * draggable once you have grabbed it, but nothing on screen says that dragging
+ * DOWN is what closes the blind — the old slider said Open and Shut at its two
+ * ends and that was the one thing worth keeping from it.
+ *
+ * Set at the two ends of the travel rather than beside the object, so the words
+ * are the destinations: the label you are pulling toward is what you get. The
+ * arrows carry the direction on their own for anyone who reads the glyph before
+ * the word.
+ *
+ * Dark pills because these land on an unknown photograph — a pale wall, a
+ * window, a dark curtain — and type alone cannot be legible on all three. */
+const PULL_LABEL_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  padding: '3px 7px',
+  borderRadius: 4,
+  background: 'rgba(24,24,24,0.74)',
+  backdropFilter: 'blur(3px)',
+  color: 'rgba(255,255,255,0.94)',
+  fontFamily: tokens.body,
+  fontSize: 8,
+  fontWeight: 700,
+  letterSpacing: '0.16em',
+  lineHeight: 1,
+  whiteSpace: 'nowrap',
+  // The labels are signage on the object, not part of its hit area — grabbing
+  // the word should not start a drag that the word is not attached to.
+  pointerEvents: 'none',
+  userSelect: 'none',
+  transition: 'opacity 0.18s ease',
+};
+
+function PullLabels({ run, dimmed }: { run: number; dimmed: boolean }) {
+  return (
+    <>
+      <div style={{ ...PULL_LABEL_STYLE, top: -19, opacity: dimmed ? 0.35 : 1 }}>▲ OPEN</div>
+      <div style={{ ...PULL_LABEL_STYLE, top: CHAIN_TOP + run + 13, opacity: dimmed ? 0.35 : 1 }}>
+        ▼ CLOSE
+      </div>
+    </>
+  );
+}
+
+/** Wrapper carrying the interaction, the labels and the drop shadow. The two
+ * pull controls differ only in the artwork they hand it. */
+function PullControl({
+  value,
+  onChange,
+  run,
+  ariaLabel,
+  children,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  run: number;
+  ariaLabel: string;
+  children: (travel: number) => React.ReactNode;
+}) {
+  const { dragging, hover, handlers, pct } = usePullDrag(value, onChange);
 
   return (
     <div
       role="slider"
-      aria-label="Blind position — drag the chain"
+      aria-label={ariaLabel}
       aria-orientation="vertical"
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(pct * 100)}
       aria-valuetext={`${Math.round(pct * 100)}% closed`}
       tabIndex={0}
-      onPointerDown={e => {
-        e.preventDefault();
-        e.currentTarget.setPointerCapture(e.pointerId);
-        originRef.current = { y: e.clientY, value: pct };
-        setDragging(true);
-      }}
-      onPointerMove={e => {
-        if (!dragging) return;
-        const dy = e.clientY - originRef.current.y;
-        onChange(clamp(originRef.current.value + dy / CHAIN_TRAVEL));
-      }}
-      onPointerUp={e => {
-        setDragging(false);
-        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-          e.currentTarget.releasePointerCapture(e.pointerId);
-        }
-      }}
-      onPointerCancel={() => setDragging(false)}
-      onPointerEnter={() => setHover(true)}
-      onPointerLeave={() => setHover(false)}
-      onKeyDown={e => {
-        const step = e.shiftKey ? 0.1 : 0.02;
-        if (e.key === 'ArrowUp') { e.preventDefault(); onChange(clamp(value - step)); }
-        else if (e.key === 'ArrowDown') { e.preventDefault(); onChange(clamp(value + step)); }
-        else if (e.key === 'Home') { e.preventDefault(); onChange(0); }
-        else if (e.key === 'End') { e.preventDefault(); onChange(1); }
-      }}
+      {...handlers}
       style={{
-        // Generous hit area around a chain that is only ~24px of actual metal:
-        // the visible object stays thin and delicate, the target stays usable.
+        position: 'relative',
+        // Generous hit area around hardware that is only ~20px of actual metal
+        // or cord: the visible object stays thin and delicate, the target stays
+        // usable.
         padding: `0 ${space.sm}px`,
         cursor: dragging ? 'grabbing' : 'grab',
         touchAction: 'none',
         lineHeight: 0,
-        // The chain is thin, light metal and lands on whatever the photograph
-        // happens to be. The drop shadow is what guarantees it separates from a
-        // pale wall; it deepens on hover so the object acknowledges the pointer.
+        // Thin, light hardware landing on whatever the photograph happens to
+        // be. The drop shadow is what guarantees it separates from a pale wall;
+        // it deepens on hover so the object acknowledges the pointer.
         filter: dragging || hover
           ? 'drop-shadow(0 3px 7px rgba(0,0,0,0.6))'
           : 'drop-shadow(0 2px 4px rgba(0,0,0,0.45))',
         transition: 'filter 0.18s ease',
       }}
     >
-      <svg width={CHAIN_W} height={CHAIN_TOP + run + 16} style={{ display: 'block', overflow: 'visible' }}>
-        <defs>
-          {/* Across the bead, not down it: a ball catches its highlight on the
-              side facing the window, which is what makes it read as metal
-              rather than as a flat dot. */}
-          <linearGradient id="klay-bead" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#9C9C9C" />
-            <stop offset="30%" stopColor="#FBFBFB" />
-            <stop offset="64%" stopColor="#D2D2D2" />
-            <stop offset="100%" stopColor="#8A8A8A" />
-          </linearGradient>
-          <linearGradient id="klay-chain-mount" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#7E7E7E" />
-            <stop offset="100%" stopColor="#4A4A4A" />
-          </linearGradient>
-        </defs>
-
-        {/* The pulley housing the loop hangs from, at the end of the tube. */}
-        <rect
-          x={CHAIN_W / 2 - 7.5}
-          y={2}
-          width={15}
-          height={CHAIN_TOP - 2}
-          rx={3.5}
-          fill="url(#klay-chain-mount)"
-          stroke="rgba(0,0,0,0.3)"
-          strokeWidth={0.6}
-        />
-
-        {/* Cord behind the beads. Without it a fast drag can show daylight
-            between beads at the moment the phase wraps. */}
-        <line x1={xLeft} y1={CHAIN_TOP} x2={xLeft} y2={CHAIN_TOP + run} stroke="rgba(90,90,90,0.34)" strokeWidth={0.9} />
-        <line x1={xRight} y1={CHAIN_TOP} x2={xRight} y2={CHAIN_TOP + run} stroke="rgba(90,90,90,0.34)" strokeWidth={0.9} />
-
-        {leftYs.map(y => (
-          <circle key={`l${y}`} cx={xLeft} cy={y} r={BEAD_R} fill="url(#klay-bead)" stroke="rgba(0,0,0,0.22)" strokeWidth={0.4} />
-        ))}
-        {rightYs.map(y => (
-          <circle key={`r${y}`} cx={xRight} cy={y} r={BEAD_R} fill="url(#klay-bead)" stroke="rgba(0,0,0,0.22)" strokeWidth={0.4} />
-        ))}
-
-        {/* The connector that closes the loop, and the reason the two strands
-            have to travel in opposite directions. */}
-        <rect
-          x={CHAIN_W / 2 - STRAND_GAP / 2 - 2.5}
-          y={CHAIN_TOP + run - 1}
-          width={STRAND_GAP + 5}
-          height={7}
-          rx={3.5}
-          fill="url(#klay-chain-mount)"
-          stroke="rgba(0,0,0,0.3)"
-          strokeWidth={0.6}
-        />
-      </svg>
+      {children(pct * CHAIN_TRAVEL)}
+      {/* Faded while dragging: once the pull is under way the direction is no
+          longer in question, and the words would only be in the way of watching
+          the covering move. */}
+      <PullLabels run={run} dimmed={dragging} />
     </div>
+  );
+}
+
+/** BLINDS — a loop of nickel ball chain off the end of the tube. */
+function BeadChain({
+  value,
+  onChange,
+  run = CHAIN_H_FALLBACK,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  /** Visible length of the run, in CSS pixels. Sized to the covering's drop by
+   * the caller so the hardware stays in proportion to the window. */
+  run?: number;
+}) {
+  const xLeft = CHAIN_W / 2 - STRAND_GAP / 2;
+  const xRight = CHAIN_W / 2 + STRAND_GAP / 2;
+
+  return (
+    <PullControl value={value} onChange={onChange} run={run} ariaLabel="Blind position — drag the chain">
+      {travel => (
+        <svg width={CHAIN_W} height={CHAIN_TOP + run + 16} style={{ display: 'block', overflow: 'visible' }}>
+          <defs>
+            {/* Across the bead, not down it: a ball catches its highlight on the
+                side facing the window, which is what makes it read as metal
+                rather than as a flat dot. */}
+            <linearGradient id="klay-bead" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#9C9C9C" />
+              <stop offset="30%" stopColor="#FBFBFB" />
+              <stop offset="64%" stopColor="#D2D2D2" />
+              <stop offset="100%" stopColor="#8A8A8A" />
+            </linearGradient>
+            <linearGradient id="klay-chain-mount" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#7E7E7E" />
+              <stop offset="100%" stopColor="#4A4A4A" />
+            </linearGradient>
+          </defs>
+
+          {/* The pulley housing the loop hangs from, at the end of the tube. */}
+          <rect
+            x={CHAIN_W / 2 - 7.5}
+            y={2}
+            width={15}
+            height={CHAIN_TOP - 2}
+            rx={3.5}
+            fill="url(#klay-chain-mount)"
+            stroke="rgba(0,0,0,0.3)"
+            strokeWidth={0.6}
+          />
+
+          {/* Cord behind the beads. Without it a fast drag can show daylight
+              between beads at the moment the phase wraps. */}
+          <line x1={xLeft} y1={CHAIN_TOP} x2={xLeft} y2={CHAIN_TOP + run} stroke="rgba(90,90,90,0.34)" strokeWidth={0.9} />
+          <line x1={xRight} y1={CHAIN_TOP} x2={xRight} y2={CHAIN_TOP + run} stroke="rgba(90,90,90,0.34)" strokeWidth={0.9} />
+
+          {runYs(travel, run, BEAD_PITCH, BEAD_R).map(y => (
+            <circle key={`l${y}`} cx={xLeft} cy={y} r={BEAD_R} fill="url(#klay-bead)" stroke="rgba(0,0,0,0.22)" strokeWidth={0.4} />
+          ))}
+          {runYs(-travel, run, BEAD_PITCH, BEAD_R).map(y => (
+            <circle key={`r${y}`} cx={xRight} cy={y} r={BEAD_R} fill="url(#klay-bead)" stroke="rgba(0,0,0,0.22)" strokeWidth={0.4} />
+          ))}
+
+          {/* The connector that closes the loop, and the reason the two strands
+              have to travel in opposite directions. */}
+          <rect
+            x={CHAIN_W / 2 - STRAND_GAP / 2 - 2.5}
+            y={CHAIN_TOP + run - 1}
+            width={STRAND_GAP + 5}
+            height={7}
+            rx={3.5}
+            fill="url(#klay-chain-mount)"
+            stroke="rgba(0,0,0,0.3)"
+            strokeWidth={0.6}
+          />
+        </svg>
+      )}
+    </PullControl>
+  );
+}
+
+/** CURTAINS — a corded track's cord loop, weighted at the bottom.
+ *
+ * Deliberately not the blind's chain. A curtain track runs a smooth braided
+ * cord, not a ball chain, and it is tensioned by a weight hanging on the loop
+ * rather than closed by a metal joiner. The differences are the whole point:
+ * ecru braid instead of nickel balls, a teardrop weight instead of a connector,
+ * a slimmer run.
+ *
+ * MOVEMENT WITHOUT BEADS was the problem to solve. A plain line gives no sign
+ * that it is running, so the cord carries the short diagonal ticks of its own
+ * fibre twist, scrolling on the same modulo trick the beads use. It reads as
+ * rope moving over a pulley. */
+function CurtainCord({
+  value,
+  onChange,
+  run = CHAIN_H_FALLBACK,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  run?: number;
+}) {
+  const xLeft = CHAIN_W / 2 - STRAND_GAP / 2 + 1.5;
+  const xRight = CHAIN_W / 2 + STRAND_GAP / 2 - 1.5;
+
+  /** One strand: the braid, then its twist ticks scrolling along it. */
+  const strand = (x: number, offset: number, key: string) => (
+    <g key={key}>
+      <line x1={x} y1={CHAIN_TOP} x2={x} y2={CHAIN_TOP + run} stroke="#8C7F6A" strokeWidth={2.6} strokeLinecap="round" />
+      <line x1={x} y1={CHAIN_TOP} x2={x} y2={CHAIN_TOP + run} stroke="#E4DAC6" strokeWidth={1.5} strokeLinecap="round" />
+      {runYs(offset, run, CORD_PITCH, 0).map(y => (
+        <line
+          key={`${key}${y}`}
+          x1={x - 1.3}
+          y1={y + 1.6}
+          x2={x + 1.3}
+          y2={y - 1.6}
+          stroke="rgba(120,108,88,0.55)"
+          strokeWidth={0.9}
+          strokeLinecap="round"
+        />
+      ))}
+    </g>
+  );
+
+  return (
+    <PullControl value={value} onChange={onChange} run={run} ariaLabel="Curtain position — drag the cord">
+      {travel => (
+        <svg width={CHAIN_W} height={CHAIN_TOP + run + 20} style={{ display: 'block', overflow: 'visible' }}>
+          <defs>
+            <linearGradient id="klay-cord-weight" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#8E8272" />
+              <stop offset="38%" stopColor="#E8DFCD" />
+              <stop offset="100%" stopColor="#7C7160" />
+            </linearGradient>
+            <linearGradient id="klay-cord-mount" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#8A8A8A" />
+              <stop offset="100%" stopColor="#565656" />
+            </linearGradient>
+          </defs>
+
+          {/* The pulley at the end of the track. Wider and flatter than the
+              blind's, because a track end cap is a different fitting. */}
+          <rect
+            x={CHAIN_W / 2 - 9}
+            y={4}
+            width={18}
+            height={CHAIN_TOP - 4}
+            rx={2.5}
+            fill="url(#klay-cord-mount)"
+            stroke="rgba(0,0,0,0.3)"
+            strokeWidth={0.6}
+          />
+
+          {strand(xLeft, travel, 'l')}
+          {strand(xRight, -travel, 'r')}
+
+          {/* The cord weight — a teardrop acorn that tensions the loop. This is
+              the silhouette that most separates a curtain cord from a blind
+              chain at a glance. */}
+          <path
+            d={`M ${CHAIN_W / 2} ${CHAIN_TOP + run - 2}
+                C ${CHAIN_W / 2 - 5.5} ${CHAIN_TOP + run + 3},
+                  ${CHAIN_W / 2 - 4.5} ${CHAIN_TOP + run + 15},
+                  ${CHAIN_W / 2} ${CHAIN_TOP + run + 17}
+                C ${CHAIN_W / 2 + 4.5} ${CHAIN_TOP + run + 15},
+                  ${CHAIN_W / 2 + 5.5} ${CHAIN_TOP + run + 3},
+                  ${CHAIN_W / 2} ${CHAIN_TOP + run - 2} Z`}
+            fill="url(#klay-cord-weight)"
+            stroke="rgba(0,0,0,0.3)"
+            strokeWidth={0.6}
+          />
+        </svg>
+      )}
+    </PullControl>
   );
 }
 
@@ -880,18 +1073,30 @@ export default function KlayConfigurator({
         position: 'absolute',
         left: `${chainAnchor.leftPct}%`,
         top: `${chainAnchor.topPct}%`,
-        // Back up by half the chain's width so the strands straddle the edge of
-        // the tube rather than starting at it, and up by the mount's height so
-        // the bracket sits ON the tube instead of below it.
-        transform: `translate(-${CHAIN_W / 2}px, -${CHAIN_TOP}px)`,
+        // BESIDE THE COVERING, NOT ON IT. Centred on the corner, half the run
+        // lies over the fabric, and hardware drawn on top of the product is
+        // hardware the customer reads as part of the product. Shifting by the
+        // padding alone puts the whole loop clear of the edge with only the
+        // pulley overlapping — which is where it genuinely is, bolted to the
+        // end of the tube. Up by the mount's height for the same reason: the
+        // bracket sits ON the tube rather than hanging below it.
+        transform: `translate(-${space.sm}px, -${CHAIN_TOP}px)`,
         zIndex: 20,
       }}
     >
-      <BeadChain
-        value={store.rollPosition}
-        onChange={v => store.setRollPosition(v)}
-        run={chainAnchor.run}
-      />
+      {store.productCategory === 'curtain' ? (
+        <CurtainCord
+          value={store.rollPosition}
+          onChange={v => store.setRollPosition(v)}
+          run={chainAnchor.run}
+        />
+      ) : (
+        <BeadChain
+          value={store.rollPosition}
+          onChange={v => store.setRollPosition(v)}
+          run={chainAnchor.run}
+        />
+      )}
     </div>
   ) : null;
 
