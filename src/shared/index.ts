@@ -23,10 +23,18 @@
 //   FormField           went to @/ds as Field — it is a design primitive, and
 //                       the design system is not the same thing as `shared`.
 //
-// §2 also sets a ceiling: if shared/ passes roughly 15% of src/ by line count,
-// something has been misfiled. It is currently about 1%. The risk here is the
-// opposite of a junk drawer — a shared layer so thin it is not worth the folder.
-// That is the correct problem to have.
+// §2 sets a CEILING of roughly 15% of src/ by line count: past that, something
+// has been misfiled. This layer is at 0.94% (298 lines), and 2.23% excluding
+// the frozen visualiser.
+//
+// 15% IS A CEILING, NOT A TARGET. Do not add to this folder to justify it. A
+// shared layer that is too thin is not a problem — it is what a codebase looks
+// like when almost everything genuinely belongs to a feature, which is the
+// outcome §2 is aiming at. The junk drawer (§13) is the failure mode with a
+// name; "shared/ looks a bit empty" is not.
+//
+// The only test for entry is the one above: could this be lifted into an
+// unrelated project unmodified?
 // ---------------------------------------------------------------------------
 
 export { useMediaQuery } from './hooks/useMediaQuery';

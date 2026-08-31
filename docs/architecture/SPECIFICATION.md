@@ -1,8 +1,8 @@
 # Klay Interiors — Architecture Specification
 
-**Version:** 1.2
-**Date:** 31 August 2026 (v1.0), amended 31 August 2026 (v1.1, v1.2)
-**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9)
+**Version:** 1.3
+**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3)
+**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11)
 **Status:** Standing document. This is the constitution, not a work order.
 **Owner:** V
 **Applies to:** NOGAP65/Klay-website-new. Ella adopts it after Klay proves it.
@@ -452,6 +452,24 @@ reports no new duplication above threshold.
 typechecked this repository — `vite build` never invokes `tsc`, and `netlify/` is bundled
 separately at deploy. Wiring CI is a precondition of this specification meaning anything.
 
+**AUTOMATED RENAMES DO NOT TOUCH COMMENTS — ADR-018.** A scripted substitution operates on
+code only. Comments referencing a renamed identifier get a separate, reviewed pass.
+
+A comment mentioning an identifier is usually not making the same claim the code is. It
+describes history, or states what *other* code does. Phase 2.3's rename rewrote a note reading
+"the frozen visualiser still imports `space.xs`" into "…imports `space.tight`" — false, because
+the frozen zone was deliberately excluded from that rename. A stale comment is a small, visible
+problem; a comment rewritten into confident misinformation is a silent one.
+
+After any scripted rename, check what it did to prose:
+
+```
+git diff -U0 | grep -E '^+' | grep -E '^+s*(//|*|/*)' | grep '<new-identifier>'
+```
+
+Any output is a comment the rename touched. Review each. Where a comment is *about* the old
+name, leave the old name and add the new one rather than replacing it.
+
 **Introducing rules without stopping work:** every new rule starts as `warn` with a recorded
 baseline count. The count may go down; it may not go up. At zero it flips to `error`
 permanently. Turning everything to `error` on day one produces 400 failures and the rules get
@@ -478,7 +496,14 @@ switched off.
 ## 13. NAMED ANTI-PATTERNS
 
 **The Second Implementation.** Building a feature that already exists because you did not know
-it existed. Prevented by feature barrels and one session per working tree. Has happened twice.
+it existed. Prevented by feature barrels and one session per working tree.
+
+**The count is kept in `docs/architecture/DIVERGENCE_LOG.md`, and it is the strongest evidence
+for why §11 exists.** Six divergences found so far in ~31,000 lines — two complete checkouts,
+a forked visualiser, an email regex in three places, a postcode regex in two, three curtain
+implementations, and three hardware colour maps. Not one was carelessness: D-03's three
+regexes are identical because three competent people independently reached the same correct
+answer. The failure mode is not bad code, it is code that cannot see other code.
 
 **The Junk Drawer.** `utils.ts`, `helpers.ts`, or a `shared/` past 15% of the codebase.
 

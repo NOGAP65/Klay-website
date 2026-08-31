@@ -32,6 +32,29 @@ import { create } from 'zustand';
 // the nav behaves in Phase 3 exactly as it behaved in Phase 0.
 //
 // ---------------------------------------------------------------------------
+// ALWAYS SELECT. NEVER SUBSCRIBE TO THE WHOLE STORE.
+//
+// This note lives here rather than in the shim because the shim is scheduled
+// for deletion (PHASE_6_SCOPE.md item 4) and the reasoning has to outlive it.
+//
+//   useScrollStore((s) => s.setScrollY)      correct
+//   useScrollStore()                          re-renders on every scroll
+//
+// Zustand compares the SELECTOR'S OUTPUT. A component that selects only
+// `setScrollY` gets a stable function reference and does not re-render when
+// `scrollY` changes — which matters here more than it usually would, because
+// HomePage publishes scroll position on every animation frame.
+//
+// Three pages install that listener. Subscribing to the whole store in any of
+// them re-renders the page sixty times a second. Two of the three — HomePage
+// and ProductDetailPage — mount the visualiser, so the cost lands on a canvas.
+//
+// The Phase 3 shim (src/store.ts) forwards the caller's selector into this
+// store precisely for this reason: a shim that had subscribed broadly would
+// have been a performance regression disguised as a refactor, and it would
+// have been invisible in a typecheck, a build and a lint run.
+//
+// ---------------------------------------------------------------------------
 // `blindHeight` IS NOT HERE, AND THAT IS DELIBERATE.
 //
 // The old store carried a second key, `blindHeight`, written by nobody and read
