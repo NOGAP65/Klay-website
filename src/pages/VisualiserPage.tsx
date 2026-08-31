@@ -75,7 +75,7 @@ export default function VisualiserPage() {
       <Nav />
       {/* Nav is position:fixed (out of flow) — paddingTop reserves its height
           so it doesn't overlap the controls/canvas row below. */}
-      <div style={{ flex: 1, overflow: 'hidden', paddingTop: 80, display: 'flex', background: tokens.warmWhite }}>
+      <div style={{ flex: 1, overflow: 'hidden', paddingTop: 80, display: 'flex', background: tokens.paper }}>
         {/* Matches VisualiserSection's rhythm so the same panel doesn't read
             differently on the homepage and here. */}
         <div style={{ width: 348, flexShrink: 0, padding: 28, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column', gap: 28 }}>

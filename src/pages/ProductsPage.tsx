@@ -124,7 +124,7 @@ export default function ProductsPage() {
     <>
       <Nav />
 
-      <main style={{ background: tokens.warmWhite, minHeight: '100vh' }}>
+      <main style={{ background: tokens.paper, minHeight: '100vh' }}>
         {/* The banner — the same photographic band the blind listing pages open
             with, so the shop and the pages under it are recognisably one
             section of the site rather than two designs.
@@ -188,7 +188,7 @@ export default function ProductsPage() {
                 Home
               </Link>
               <span style={{ margin: '0 8px' }}>/</span>
-              <span style={{ color: tokens.warmWhite }}>Shop</span>
+              <span style={{ color: tokens.paper }}>Shop</span>
             </nav>
             <h1
               style={{
@@ -230,7 +230,7 @@ export default function ProductsPage() {
             reach is a filter people stop using. */}
         <section
           style={{
-            background: tokens.parchment,
+            background: tokens.band,
             padding: narrow ? '24px 24px 80px' : '40px 80px 120px',
           }}
         >
@@ -291,7 +291,7 @@ export default function ProductsPage() {
                         fontWeight: 500,
                         cursor: 'pointer',
                         background: activeCount ? tokens.charcoal : 'transparent',
-                        color: activeCount ? tokens.warmWhite : tokens.ink,
+                        color: activeCount ? tokens.paper : tokens.ink,
                         border: `1px solid ${activeCount ? tokens.charcoal : tokens.line}`,
                       }}
                     >
@@ -344,7 +344,7 @@ export default function ProductsPage() {
                           top: '100%',
                           right: 0,
                           marginTop: 4,
-                          background: tokens.warmWhite,
+                          background: tokens.paper,
                           border: `1px solid ${tokens.lineFaint}`,
                           borderRadius: radius.md,
                           boxShadow: '0 8px 24px rgba(29,29,29,0.12)',
@@ -368,7 +368,7 @@ export default function ProductsPage() {
                               fontFamily: tokens.body,
                               fontSize: 13,
                               cursor: 'pointer',
-                              background: sortBy === option.id ? tokens.parchment : 'transparent',
+                              background: sortBy === option.id ? tokens.band : 'transparent',
                               color: tokens.ink,
                               border: 'none',
                               borderBottom: `1px solid ${tokens.lineFaint}`,
@@ -411,7 +411,7 @@ export default function ProductsPage() {
                         fontFamily: tokens.body,
                         fontSize: 12,
                         cursor: 'pointer',
-                        background: tokens.warmWhite,
+                        background: tokens.paper,
                         color: tokens.ink,
                         border: `1px solid ${tokens.line}`,
                       }}
@@ -542,7 +542,7 @@ export default function ProductsPage() {
               left: 0,
               bottom: 0,
               width: 'min(340px, 88vw)',
-              background: tokens.warmWhite,
+              background: tokens.paper,
               zIndex: 9600,
               display: 'flex',
               flexDirection: 'column',

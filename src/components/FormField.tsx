@@ -81,7 +81,7 @@ export function FormField({
     //
     // Not applied on error: a bronze-tinted field with a red border is two states
     // arguing, and the error is the one that matters.
-    background: focused && !error ? tokens.accentWash : tokens.cream,
+    background: focused && !error ? tokens.accentWash : tokens.card,
     border: `1px solid ${borderColour}`,
     fontFamily: tokens.body,
     fontSize: 14,

@@ -114,7 +114,7 @@ export default function ContactPage() {
       {/* Warm white throughout. Contact is a service moment, not a sales one:
           someone here has already decided to talk to you, and a dark hero
           performs conviction at a person who no longer needs converting. */}
-      <section style={{ background: tokens.warmWhite, padding: '180px 80px 0' }}>
+      <section style={{ background: tokens.paper, padding: '180px 80px 0' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ ...eyebrow, marginBottom: 22 }}>Get In Touch</div>
           <h1 style={{ ...headline.hero, color: tokens.ink, maxWidth: 900 }}>
@@ -126,7 +126,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section style={{ background: tokens.warmWhite, padding: '80px 80px 140px' }}>
+      <section style={{ background: tokens.paper, padding: '80px 80px 140px' }}>
         <div style={{ display: 'flex', gap: 80, maxWidth: 1200, margin: '0 auto', flexWrap: 'wrap' }}>
           {/* Left — details */}
           <div style={{ flex: '1 1 300px' }}>

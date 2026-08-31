@@ -192,7 +192,7 @@ export function Hero() {
         <p
           style={{
             ...eyebrow,
-            color: tokens.warmWhite,
+            color: tokens.paper,
             marginBottom: space.md,
             textShadow: '0 1px 3px rgba(29,29,29,0.95), 0 2px 16px rgba(29,29,29,0.75)',
           }}
@@ -209,7 +209,7 @@ export function Hero() {
         <h1
           style={{
             ...headline.hero,
-            color: tokens.warmWhite,
+            color: tokens.paper,
             textShadow: '0 2px 6px rgba(29,29,29,0.85), 0 4px 32px rgba(29,29,29,0.7)',
           }}
         >

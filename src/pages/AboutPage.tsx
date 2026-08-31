@@ -51,7 +51,7 @@ export default function AboutPage() {
               ...headline.hero,
               fontStyle: 'italic',
               lineHeight: 1.12,
-              color: tokens.warmWhite,
+              color: tokens.paper,
             }}
           >
             We started Klay because buying blinds shouldn't be hard.
@@ -61,7 +61,7 @@ export default function AboutPage() {
 
       {/* Story — warm white. Personal and human, and the lightest ground on the
           page for the one section that is purely someone talking to you. */}
-      <section style={{ background: tokens.warmWhite, padding: '120px 80px' }}>
+      <section style={{ background: tokens.paper, padding: '120px 80px' }}>
         <div style={{ display: 'flex', gap: 80, maxWidth: 1200, margin: '0 auto', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 320px' }}>
             <h2 style={{ ...headline.section, color: tokens.ink }}>
@@ -90,7 +90,7 @@ export default function AboutPage() {
       {/* Values — parchment. Trust building, and warm rather than the near-black
           this used to be: a page about who you can rely on should not be the
           darkest thing on the site. */}
-      <section style={{ background: tokens.parchment, padding: '120px 80px' }}>
+      <section style={{ background: tokens.band, padding: '120px 80px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <h2 style={{ ...headline.section, color: tokens.ink, marginBottom: 64 }}>
             What we stand for.
@@ -114,7 +114,7 @@ export default function AboutPage() {
           there is no team content in the codebase and inventing bios for real
           people is not something a design pass should do, so this states the
           four figures that are verifiable from the catalogue instead. */}
-      <section style={{ background: tokens.warmWhite, padding: '120px 80px' }}>
+      <section style={{ background: tokens.paper, padding: '120px 80px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ ...eyebrow, marginBottom: 22 }}>By the numbers</div>
           <h2 style={{ ...headline.section, color: tokens.ink }}>

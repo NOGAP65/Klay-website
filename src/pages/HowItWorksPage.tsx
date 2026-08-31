@@ -44,7 +44,7 @@ const FAQS = [
  * surface, and it is what makes the blind above it legible. */
 function VisualiserMock() {
   return (
-    <div style={{ background: tokens.cream, border: `1px solid ${tokens.line}`, padding: 28, maxWidth: 420 }}>
+    <div style={{ background: tokens.card, border: `1px solid ${tokens.line}`, padding: 28, maxWidth: 420 }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         {['White', 'Black', 'Chrome'].map((h) => (
           <span
@@ -143,7 +143,7 @@ export default function HowItWorksPage() {
           page opening up. */}
       <section style={{ background: tokens.charcoal, padding: '200px 80px 120px' }}>
         <div style={{ ...eyebrow, color: tokens.onDarkMuted, marginBottom: 22 }}>The Klay Process</div>
-        <h1 style={{ ...headline.hero, color: tokens.warmWhite, maxWidth: 900 }}>
+        <h1 style={{ ...headline.hero, color: tokens.paper, maxWidth: 900 }}>
           Four steps to a perfectly dressed window.
         </h1>
         <p style={{ ...supporting.onDark, maxWidth: 520, marginTop: 24 }}>
@@ -157,7 +157,7 @@ export default function HowItWorksPage() {
           friction-removal part of the page — feel heavier than the promise. */}
 
       {/* Step 1 — parchment */}
-      <section style={stepSection(tokens.parchment)}>
+      <section style={stepSection(tokens.band)}>
         <div style={{ flex: '1 1 400px' }}>
           <div style={STEP_NUMBER}>01</div>
           <h2 style={{ ...headline.section, color: tokens.ink, margin: '8px 0 0' }}>Design online</h2>
@@ -174,7 +174,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Step 2 — warm white */}
-      <section style={stepSection(tokens.warmWhite)}>
+      <section style={stepSection(tokens.paper)}>
         <div style={{ flex: '1 1 360px' }}>
           <StepPhoto step={STEPS[1]} />
         </div>
@@ -191,7 +191,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Step 3 — parchment */}
-      <section style={stepSection(tokens.parchment)}>
+      <section style={stepSection(tokens.band)}>
         <div style={{ flex: '1 1 400px' }}>
           <div style={STEP_NUMBER}>03</div>
           <h2 style={{ ...headline.section, color: tokens.ink, margin: '8px 0 0' }}>Made precisely</h2>
@@ -208,7 +208,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Step 4 — warm white */}
-      <section style={stepSection(tokens.warmWhite)}>
+      <section style={stepSection(tokens.paper)}>
         <div style={{ flex: '1 1 400px' }}>
           <div style={STEP_NUMBER}>04</div>
           <h2 style={{ ...headline.section, color: tokens.ink, margin: '8px 0 0' }}>Installed perfectly</h2>
@@ -226,7 +226,7 @@ export default function HowItWorksPage() {
 
       {/* FAQ — parchment, keeping the alternation running and matching the
           softer register the product pages use for the same content. */}
-      <section style={{ background: tokens.parchment, padding: '120px 80px' }}>
+      <section style={{ background: tokens.band, padding: '120px 80px' }}>
         <h2 style={{ ...headline.section, color: tokens.ink, marginBottom: 56 }}>
           Common questions.
         </h2>
@@ -272,7 +272,7 @@ export default function HowItWorksPage() {
           the last FAQ, which left someone who had just read the entire process
           with nothing to act on at the exact moment their objections had been
           answered. */}
-      <section style={{ background: tokens.warmWhite, padding: '120px 80px', textAlign: 'center' }}>
+      <section style={{ background: tokens.paper, padding: '120px 80px', textAlign: 'center' }}>
         <h2 style={{ ...headline.section, color: tokens.ink, maxWidth: 720, margin: '0 auto' }}>
           Start with the part that costs nothing.
         </h2>

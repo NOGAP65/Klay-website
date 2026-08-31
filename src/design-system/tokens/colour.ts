@@ -92,13 +92,31 @@ export const tokens = {
   charcoal: DARK,
   ink: INK,
 
-  /** PAPER under its old name. Every consumer still writes `warmWhite`, and
-   * there is nothing warm about it any more — renaming 100-odd call sites is a
-   * separate mechanical pass from changing what the colour is. */
+  // -------------------------------------------------------------------------
+  // DEPRECATED ALIASES. Kept alive for the frozen visualiser only.
+  //
+  // The mechanical pass the note below anticipated happened in Phase 2.2c:
+  // `warmWhite` → `paper` (65 sites), `parchment` → `band` (11),
+  // `cream` → `card` (7). All three old names described a VALUE, and two of
+  // them described it wrongly — there is nothing warm about #F8F8F8 and
+  // `parchment` was #EAE5DC when it earned the name. The new names describe a
+  // ROLE, which is SPECIFICATION.md §9.
+  //
+  // TEN CALL SITES REMAIN, all inside src/visualiser/ and src/visualiser-lab/,
+  // which are frozen and must not be edited: `warmWhite` × 8, `cream` × 2.
+  // These three exports exist for those ten and nothing else.
+  //
+  // DELETE THEM AT P4-7, with the shim, once the visualiser unfreezes. The
+  // condition is `grep -rn "tokens\.\(warmWhite\|parchment\|cream\)" src/`
+  // returning nothing.
+  //
+  // Do not use them in new code.
+  // -------------------------------------------------------------------------
+  /** @deprecated Use `tokens.paper`. */
   warmWhite: PAPER,
-  /** BAND and CARD under their old names, same reasoning. `parchment` was
-   * #EAE5DC (spread 14) and `cream` #FAF7F2 (spread 8); both are neutral now. */
+  /** @deprecated Use `tokens.band`. */
   parchment: BAND,
+  /** @deprecated Use `tokens.card`. */
   cream: CARD,
 
   /** The one dark card background, and text on a light-on-dark button. */

@@ -145,7 +145,7 @@ export default function HomePage() {
           height until that has scrolled away. */}
       <Nav stickBelow={BAR_HEIGHT} />
 
-      <main style={{ background: tokens.warmWhite }}>
+      <main style={{ background: tokens.paper }}>
         {/* 3 — The promise, full bleed under the transparent nav. */}
         <Hero />
 

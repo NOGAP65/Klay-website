@@ -121,7 +121,7 @@ export default function BookingConfirmedPage() {
       <Nav onLight />
       <main
         style={{
-          background: tokens.warmWhite,
+          background: tokens.paper,
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',

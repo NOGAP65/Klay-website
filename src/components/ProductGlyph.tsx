@@ -389,7 +389,7 @@ function Paths({ type, ground }: { type: string; ground: string }) {
 export function ProductGlyph({
   type,
   size = 200,
-  color = tokens.warmWhite,
+  color = tokens.paper,
   opacity = 0.55,
   ground = tokens.charcoal,
 }: {

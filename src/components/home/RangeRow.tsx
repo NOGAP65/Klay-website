@@ -233,7 +233,7 @@ function VisualiseBadge({
         // photograph is. It goes fully opaque and inverts under the pointer, so
         // the badge answers the mouse before the click does.
         background: hover ? tokens.ink : 'rgba(248,248,248,0.92)',
-        color: hover ? tokens.warmWhite : tokens.ink,
+        color: hover ? tokens.paper : tokens.ink,
         ...typeScale.micro,
         transition: motion.button,
       }}
@@ -482,7 +482,7 @@ function RangeCard({
         // --- THE CARD ITSELF. See move 1 in the note at the top of this file.
         // White on the section's near-white — 1.06:1, so the box is felt rather
         // than seen, and the photograph stays the only strong thing in it.
-        background: tokens.cream,
+        background: tokens.card,
         // Decorative at rest, one step up under the pointer, the accent when the
         // configurator is open. The open card wears the same gold as the action
         // that opened it, which is what ties the pair together without a second
@@ -570,7 +570,7 @@ function RangeCard({
               // 4:5 — the site's one portrait ratio, shared with the install
               // strip and the About panel.
               aspectRatio: '4 / 5',
-              background: tileGround ?? (item.image ? tokens.parchment : tokens.charcoal),
+              background: tileGround ?? (item.image ? tokens.band : tokens.charcoal),
               // NO SHADOW HERE ANY MORE. The card carries the elevation now, and
               // a second shadow 4px inside the first drew a seam round the
               // picture instead of lifting anything.
@@ -617,7 +617,7 @@ function RangeCard({
                 <ProductGlyph
                   type={item.glyph ?? ''}
                   size={140}
-                  color={glyphOnLight ? tokens.ink : tokens.warmWhite}
+                  color={glyphOnLight ? tokens.ink : tokens.paper}
                   ground={tileGround ?? tokens.charcoal}
                   opacity={hover ? 0.75 : 0.6}
                 />
@@ -746,7 +746,7 @@ function RangeCard({
             // content-sized and the taller of the two on the products that ask
             // most: the roller measured 559 against a 521 card at 1440.
             position: 'relative',
-            background: tokens.cream,
+            background: tokens.card,
             // NO BORDER, AND SQUARE ON THE LEFT. A hairline all the way round
             // drew the panel as its own box; the left edge in particular put a
             // rule down the join it is supposed to be crossing. Radius on the
@@ -976,7 +976,7 @@ export function RangeRow() {
   return (
     // Warm white, and the 4px strip between the cards is this colour showing
     // through. See TILE_GAP.
-    <section style={{ background: tokens.warmWhite }}>
+    <section style={{ background: tokens.paper }}>
       {/* THE HEADER IS RANGED LEFT WITH THE ACTION OPPOSITE, which is the other
           half of what MONDAY's range section does: heading hard left at display
           scale, the supporting line under it, and one link alone on the right of

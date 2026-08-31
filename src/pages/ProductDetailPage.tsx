@@ -266,12 +266,12 @@ export default function ProductDetailPage() {
   return (
     <>
       <Nav onLight />
-      <div style={{ background: tokens.warmWhite, paddingTop: isMobile ? 60 : 72 }}>
+      <div style={{ background: tokens.paper, paddingTop: isMobile ? 60 : 72 }}>
 
         {/* Hero section */}
-        <section style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', width: '100%', background: tokens.warmWhite, overflow: 'visible', padding: isMobile ? '24px' : '60px 60px', gap: 32 }}>
+        <section style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', width: '100%', background: tokens.paper, overflow: 'visible', padding: isMobile ? '24px' : '60px 60px', gap: 32 }}>
           {/* Visualiser - same as homepage */}
-          <div style={{ flex: '1 1 55%', background: tokens.warmWhite, position: 'relative' }}>
+          <div style={{ flex: '1 1 55%', background: tokens.paper, position: 'relative' }}>
             {/* No defaultBlindType. That prop sets the type AND calls
                 setLockedRange, which is what hid the Type row; this page syncs the
                 store from the slug itself now (see the note above) and wants the
@@ -280,7 +280,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Controls panel */}
-          <div style={{ flex: '0 0 380px', background: tokens.warmWhite, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ flex: '0 0 380px', background: tokens.paper, display: 'flex', flexDirection: 'column', gap: 20 }}>
             {/* Product info at top */}
             <div>
               <GoldLabel>{product.type}</GoldLabel>
@@ -326,7 +326,7 @@ export default function ProductDetailPage() {
                   width: '100%',
                   padding: '18px 24px',
                   background: addedToCart ? tokens.charcoal : (cartHover ? tokens.accentHover : tokens.accent),
-                  color: addedToCart ? tokens.warmWhite : tokens.ink,
+                  color: addedToCart ? tokens.paper : tokens.ink,
                   fontFamily: tokens.body,
                   fontSize: 14,
                   fontWeight: 600,
@@ -375,13 +375,13 @@ export default function ProductDetailPage() {
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <p style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, color: tokens.onDark, textTransform: 'uppercase', letterSpacing: '0.25em', margin: 0 }}>Why Choose {product.name}</p>
-              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.warmWhite, margin: '12px 0 0' }}>Built for the way you live.</h2>
+              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.paper, margin: '12px 0 0' }}>Built for the way you live.</h2>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 24 : 32 }}>
               {features.map((f) => (
                 <div key={f.title} style={{ textAlign: 'center', padding: 24, background: 'rgba(248,248,248,0.05)', borderRadius: 8, border: '1px solid rgba(248,248,248,0.1)' }}>
                   <div style={{ color: tokens.onDark, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><FeatureIcon type={f.icon} /></div>
-                  <h3 style={{ fontFamily: tokens.display, fontSize: 20, fontWeight: 400, color: tokens.warmWhite, margin: 0 }}>{f.title}</h3>
+                  <h3 style={{ fontFamily: tokens.display, fontSize: 20, fontWeight: 400, color: tokens.paper, margin: 0 }}>{f.title}</h3>
                   <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(248,248,248,0.65)', margin: '8px 0 0', lineHeight: 1.5 }}>{f.desc}</p>
                 </div>
               ))}
@@ -390,13 +390,13 @@ export default function ProductDetailPage() {
         </section>
 
         {/* Specs section */}
-        <section style={{ background: tokens.parchment, padding: isMobile ? '64px 24px' : '80px 80px' }}>
+        <section style={{ background: tokens.band, padding: isMobile ? '64px 24px' : '80px 80px' }}>
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
               <GoldLabel>Specifications</GoldLabel>
               <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.ink, margin: '12px 0 0' }}>The details that matter.</h2>
             </div>
-            <div style={{ background: tokens.warmWhite, borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 24px rgba(29,29,29,0.06)' }}>
+            <div style={{ background: tokens.paper, borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 24px rgba(29,29,29,0.06)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <tbody>
                   {specRows.map((row, i) => (
@@ -433,7 +433,7 @@ export default function ProductDetailPage() {
         </section>
 
         {/* FAQ section */}
-        <section style={{ background: tokens.warmWhite, padding: isMobile ? '64px 24px' : '80px 80px' }}>
+        <section style={{ background: tokens.paper, padding: isMobile ? '64px 24px' : '80px 80px' }}>
           <div style={{ maxWidth: 700, margin: '0 auto' }}>
             <div style={{ textAlign: 'center', marginBottom: 40 }}>
               <GoldLabel>FAQ</GoldLabel>
@@ -514,7 +514,7 @@ export default function ProductDetailPage() {
               onMouseLeave={() => setBarCartHover(false)}
               style={{
                 background: addedToCart ? tokens.charcoal : (barCartHover ? tokens.accentHover : tokens.accent),
-                color: addedToCart ? tokens.warmWhite : tokens.ink,
+                color: addedToCart ? tokens.paper : tokens.ink,
                 fontFamily: tokens.body,
                 fontSize: 11,
                 fontWeight: 600,

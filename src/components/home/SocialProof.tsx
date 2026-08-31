@@ -106,7 +106,7 @@ function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: bool
         <span
           style={{
             ...typeScale.micro,
-            color: tokens.warmWhite,
+            color: tokens.paper,
             border: `1px solid ${tokens.onDarkEdge}`,
             padding: `${space.sm}px ${space.md}px`,
           }}
@@ -205,9 +205,9 @@ export function SocialProof() {
             // pattern is always a colour that was right for a ground the element
             // no longer sits on, which is why the visualiser panel resolves its
             // colours through a skin() rather than reaching for tokens directly.
-            color: tokens.warmWhite,
+            color: tokens.paper,
             textDecoration: 'none',
-            borderBottom: `1px solid ${hover ? tokens.warmWhite : 'transparent'}`,
+            borderBottom: `1px solid ${hover ? tokens.paper : 'transparent'}`,
             paddingBottom: space.xxs,
             transition: 'border-color 0.2s ease',
           }}

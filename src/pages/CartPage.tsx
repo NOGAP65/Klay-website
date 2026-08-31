@@ -42,7 +42,7 @@ export default function CartPage() {
   return (
     <>
       <Nav onLight />
-      <div style={{ background: tokens.warmWhite, minHeight: '100vh', paddingTop: isMobile ? 80 : 100 }}>
+      <div style={{ background: tokens.paper, minHeight: '100vh', paddingTop: isMobile ? 80 : 100 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '24px' : '40px 60px' }}>
 
           <h1 style={{ fontFamily: tokens.display, fontSize: isMobile ? 36 : 48, fontWeight: 300, color: tokens.ink, margin: 0 }}>
@@ -211,7 +211,7 @@ export default function CartPage() {
 
               {/* Checkout Form */}
               <div style={{ flex: 1, maxWidth: isMobile ? '100%' : 420 }}>
-                <div style={{ background: tokens.parchment, borderRadius: 12, padding: isMobile ? 24 : 32 }}>
+                <div style={{ background: tokens.band, borderRadius: 12, padding: isMobile ? 24 : 32 }}>
                   <div style={{ ...eyebrow, marginBottom: 24 }}>Your Details</div>
 
                   <form onSubmit={handleSubmit}>
@@ -233,7 +233,7 @@ export default function CartPage() {
                             borderRadius: 6,
                             fontFamily: tokens.body,
                             fontSize: 14,
-                            background: tokens.warmWhite,
+                            background: tokens.paper,
                             boxSizing: 'border-box',
                           }}
                         />
@@ -255,7 +255,7 @@ export default function CartPage() {
                             borderRadius: 6,
                             fontFamily: tokens.body,
                             fontSize: 14,
-                            background: tokens.warmWhite,
+                            background: tokens.paper,
                             boxSizing: 'border-box',
                           }}
                         />
@@ -279,7 +279,7 @@ export default function CartPage() {
                           borderRadius: 6,
                           fontFamily: tokens.body,
                           fontSize: 14,
-                          background: tokens.warmWhite,
+                          background: tokens.paper,
                           boxSizing: 'border-box',
                         }}
                       />
@@ -302,7 +302,7 @@ export default function CartPage() {
                           borderRadius: 6,
                           fontFamily: tokens.body,
                           fontSize: 14,
-                          background: tokens.warmWhite,
+                          background: tokens.paper,
                           boxSizing: 'border-box',
                         }}
                       />
@@ -325,7 +325,7 @@ export default function CartPage() {
                           borderRadius: 6,
                           fontFamily: tokens.body,
                           fontSize: 14,
-                          background: tokens.warmWhite,
+                          background: tokens.paper,
                           boxSizing: 'border-box',
                         }}
                       />
@@ -349,7 +349,7 @@ export default function CartPage() {
                             borderRadius: 6,
                             fontFamily: tokens.body,
                             fontSize: 14,
-                            background: tokens.warmWhite,
+                            background: tokens.paper,
                             boxSizing: 'border-box',
                           }}
                         />
@@ -369,7 +369,7 @@ export default function CartPage() {
                             borderRadius: 6,
                             fontFamily: tokens.body,
                             fontSize: 14,
-                            background: tokens.warmWhite,
+                            background: tokens.paper,
                             boxSizing: 'border-box',
                           }}
                         >
@@ -400,7 +400,7 @@ export default function CartPage() {
                             borderRadius: 6,
                             fontFamily: tokens.body,
                             fontSize: 14,
-                            background: tokens.warmWhite,
+                            background: tokens.paper,
                             boxSizing: 'border-box',
                           }}
                         />
@@ -424,7 +424,7 @@ export default function CartPage() {
                           borderRadius: 6,
                           fontFamily: tokens.body,
                           fontSize: 14,
-                          background: tokens.warmWhite,
+                          background: tokens.paper,
                           boxSizing: 'border-box',
                           resize: 'vertical',
                         }}

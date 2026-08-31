@@ -201,7 +201,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
    * supported prop and a transparent bar over a photograph genuinely does need
    * the light treatment. */
   const onDarkGround = menuOpen || (!solidBar && !onLight);
-  const linkColor = onDarkGround ? tokens.warmWhite : tokens.ink;
+  const linkColor = onDarkGround ? tokens.paper : tokens.ink;
 
   // scrollY is only published by pages that install the listener (the
   // homepage); everywhere else it stays 0, which resolves to stickBelow — and
@@ -495,7 +495,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             to="/cart"
             onClick={() => setMenuOpen(false)}
             style={{
-              color: tokens.warmWhite,
+              color: tokens.paper,
               textDecoration: 'none',
               fontFamily: tokens.body,
               fontSize: 13,

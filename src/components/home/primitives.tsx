@@ -275,7 +275,7 @@ export function SectionHead({
       <h2
         style={{
           ...headline.section,
-          color: onDark ? tokens.warmWhite : tokens.ink,
+          color: onDark ? tokens.paper : tokens.ink,
         }}
       >
         {title}
@@ -373,7 +373,7 @@ export function SectionBand({
       <h2
         style={{
           ...headline.section,
-          color: onDark ? tokens.warmWhite : tokens.ink,
+          color: onDark ? tokens.paper : tokens.ink,
         }}
       >
         {title}
@@ -705,7 +705,7 @@ export function PhotoTile({
             // watermark.
             fontWeight: 400,
             lineHeight: 1.1,
-            color: tokens.warmWhite,
+            color: tokens.paper,
             // Not decoration — it is what guarantees the label reads on the light
             // photographs without deepening the gradient over the dark ones.
             // Mixed from ink, so it stays warm rather than greying the picture.

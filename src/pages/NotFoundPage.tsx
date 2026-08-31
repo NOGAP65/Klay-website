@@ -29,7 +29,7 @@ export default function NotFoundPage() {
         <div style={{ fontFamily: tokens.display, fontSize: 160, fontWeight: 300, color: tokens.onDark, lineHeight: 1 }}>
           404
         </div>
-        <h1 style={{ fontFamily: tokens.display, fontSize: 32, fontWeight: 300, color: tokens.warmWhite, marginTop: 16, margin: '16px 0 0' }}>
+        <h1 style={{ fontFamily: tokens.display, fontSize: 32, fontWeight: 300, color: tokens.paper, marginTop: 16, margin: '16px 0 0' }}>
           This page doesn't exist.
         </h1>
         <p style={{ ...supporting.onDark, fontSize: 14, marginTop: 12 }}>

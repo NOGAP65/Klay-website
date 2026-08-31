@@ -203,7 +203,7 @@ export default function VisualizerLabPage() {
           fixed too, at the foot, so paddingBottom reserves its height for the
           same reason: without it the Book Installation button and the bottom of
           the canvas sit underneath the bar. */}
-      <div style={{ flex: 1, overflow: 'hidden', paddingTop: 80, paddingBottom: BANNER_H, display: 'flex', background: tokens.warmWhite }}>
+      <div style={{ flex: 1, overflow: 'hidden', paddingTop: 80, paddingBottom: BANNER_H, display: 'flex', background: tokens.paper }}>
         {/* Matches VisualiserSection's rhythm so the same panel doesn't read
             differently on the homepage and here. */}
         <div style={{ width: 348, flexShrink: 0, padding: 28, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column', gap: 28 }}>

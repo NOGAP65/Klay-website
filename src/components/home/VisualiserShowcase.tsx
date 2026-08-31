@@ -69,9 +69,9 @@ const CURTAIN_ENQUIRY = '/contact';
  * Paper fill, ink label. It was `fillStrong` on `onFillStrong`, which is ink on
  * paper — an ink lozenge on the ink card, i.e. no lozenge. */
 const SELECTED = {
-  background: tokens.warmWhite,
+  background: tokens.paper,
   color: tokens.ink,
-  border: tokens.warmWhite,
+  border: tokens.paper,
 } as const;
 
 /** Blinds / Curtains, at the top of the control panel.
@@ -197,7 +197,7 @@ function WindowCount({ value, onChange }: { value: number; onChange: (n: number)
           style={{
             ...typeScale.body,
             fontWeight: 500,
-            color: tokens.warmWhite,
+            color: tokens.paper,
             minWidth: space.md,
             textAlign: 'center',
           }}
@@ -428,7 +428,7 @@ export function VisualiserShowcase() {
     // The join this was guarding is still guarded: the install strip below is
     // warm white and the range row above is warm white, so parchment separates
     // from both. No two adjacent sections share a ground.
-    <section id="visualiser" style={{ background: tokens.parchment }}>
+    <section id="visualiser" style={{ background: tokens.band }}>
       {/* The same band as the category and range sections, from the same
           component, so the page's three big sections are introduced identically
           rather than in three slightly different voices. It supplies this

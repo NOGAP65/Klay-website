@@ -145,7 +145,7 @@ export function Testimonials() {
     // together as one field. That was true when the install strip sat directly
     // above; the charcoal final CTA sits between them now, so the join it was
     // guarding against no longer exists.
-    <section id="reviews" style={{ background: tokens.warmWhite }}>
+    <section id="reviews" style={{ background: tokens.paper }}>
       <SectionBand label="Reviews" title="What our customers say" isMobile={isMobile} />
 
       <div

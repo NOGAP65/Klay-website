@@ -145,7 +145,7 @@ export function RecommendationBanner() {
         <h2
           style={{
             ...headline.section,
-            color: tokens.warmWhite,
+            color: tokens.paper,
             textAlign: 'center',
           }}
         >
@@ -212,7 +212,7 @@ export function RecommendationBanner() {
                 >
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <h3 style={{ ...typeScale.card, color: tokens.warmWhite }}>{step.label}</h3>
+                <h3 style={{ ...typeScale.card, color: tokens.paper }}>{step.label}</h3>
               </div>
 
               {/* WHO DOES IT, in the same slot in all four. This is the argument
@@ -227,7 +227,7 @@ export function RecommendationBanner() {
               <div
                 style={{
                   ...typeScale.micro,
-                  color: tokens.warmWhite,
+                  color: tokens.paper,
                   marginBottom: space.sm,
                 }}
               >
@@ -241,7 +241,7 @@ export function RecommendationBanner() {
                   // supporting role uses. That token is defined against a flat
                   // charcoal ground; over a photograph it loses the sentence in
                   // the bright half of the frame even under this scrim.
-                  color: tokens.warmWhite,
+                  color: tokens.paper,
                   opacity: 0.88,
                 }}
               >

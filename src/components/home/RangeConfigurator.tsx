@@ -256,7 +256,7 @@ export function RangeConfigurator({
         ...(fill ? { flex: '1 1 auto' } : { height: CONFIG_H, flex: '0 0 auto' }),
         minHeight: 0,
         boxSizing: 'border-box',
-        background: tokens.cream,
+        background: tokens.card,
         // Hairline on three sides. The top edge is where the name block ends,
         // and a rule there would read as a divider inside one object.
         ...(fill ? null : {

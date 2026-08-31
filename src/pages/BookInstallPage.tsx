@@ -170,7 +170,7 @@ export default function BookInstallPage() {
         <Nav onLight />
         <main
           style={{
-            background: tokens.warmWhite,
+            background: tokens.paper,
             minHeight: '100vh',
             display: 'flex',
             alignItems: 'center',
@@ -216,7 +216,7 @@ export default function BookInstallPage() {
     <>
       <Nav onLight />
 
-      <main style={{ background: tokens.warmWhite, paddingTop: 140, paddingBottom: 120 }}>
+      <main style={{ background: tokens.paper, paddingTop: 140, paddingBottom: 120 }}>
         <div style={{ maxWidth: layout.containerMax, margin: '0 auto', padding: '0 5vw' }}>
           <div style={{ maxWidth: 640, marginBottom: 56 }}>
             <p style={{ ...eyebrow, color: tokens.onDark, marginBottom: 18 }}>Book an install</p>
@@ -234,7 +234,7 @@ export default function BookInstallPage() {
             <div
               role="status"
               style={{
-                background: tokens.cream,
+                background: tokens.card,
                 border: `1px solid ${tokens.line}`,
                 borderLeft: `2px solid ${tokens.line}`,
                 padding: '16px 20px',
@@ -347,7 +347,7 @@ export default function BookInstallPage() {
               style={{
                 flex: '1 1 340px',
                 minWidth: 300,
-                background: tokens.cream,
+                background: tokens.card,
                 border: `1px solid ${tokens.line}`,
                 padding: 32,
                 position: 'sticky',
@@ -403,7 +403,7 @@ export default function BookInstallPage() {
                   style={{
                     width: 72,
                     padding: '10px 12px',
-                    background: tokens.warmWhite,
+                    background: tokens.paper,
                     border: `1px solid ${tokens.line}`,
                     fontFamily: tokens.body,
                     fontSize: 14,

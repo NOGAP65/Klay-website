@@ -187,7 +187,7 @@ export function AboutPanel() {
         //
         // The value is not the point; the neighbours are. See THE GROUNDS in
         // HomePage before changing either.
-        background: tokens.parchment,
+        background: tokens.band,
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
       }}
