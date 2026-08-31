@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
-import { tokens, motion, supporting } from '../theme';
+import { tokens, motion, supporting } from '@/ds';
 
 // DARK ('#0f0d09') removed — this page is routed at path="*", so the one
 // near-black left on the site was the page a lost visitor lands on.

@@ -30,7 +30,7 @@ import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { ProductCard } from '../components/ProductCard';
 import { useKlayStore } from '../store';
-import { radius, tokens } from '../theme';
+import { radius, tokens } from '@/ds';
 import { useIsMobile, useMediaQuery } from '../hooks/useIsMobile';
 import { FilterRail } from '../components/FilterRail';
 import {

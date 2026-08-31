@@ -43,7 +43,7 @@
 // section on the page that is about the service rather than about a product.
 // ---------------------------------------------------------------------------
 
-import { tokens, headline, layout, space, type as typeScale } from '../../theme';
+import { tokens, headline, layout, space, type as typeScale } from '@/ds';
 import { useMediaQuery } from '../../hooks/useIsMobile';
 import { CtaLink } from './primitives';
 import { STEPS } from '../../data/steps';

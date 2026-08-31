@@ -31,7 +31,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
-import { tokens, eyebrow, headline, layout, prefersReducedMotion, space } from '../../theme';
+import { tokens, eyebrow, headline, layout, prefersReducedMotion, space } from '@/ds';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { CtaButton, scrollToId } from './primitives';
 import { BAR_HEIGHT as TICKER_HEIGHT } from './TrustTicker';

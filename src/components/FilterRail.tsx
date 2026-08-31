@@ -23,7 +23,7 @@
 // ticked, and clicking it would empty the grid.
 // ---------------------------------------------------------------------------
 
-import { radius, tokens } from '../theme';
+import { radius, tokens } from '@/ds';
 import { GROUP_FILTERS, LIGHT_VALUES, countFor, type Facets } from '../data/catalogue';
 
 const GROUP_LABEL = {

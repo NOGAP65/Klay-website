@@ -5,7 +5,7 @@ import { Footer } from '../components/Footer';
 import { FormField, DANGER } from '../components/FormField';
 import { Honeypot } from '../components/Honeypot';
 import { Turnstile, useTurnstileEnabled } from '../components/Turnstile';
-import { radius, tokens, eyebrow, headline, motion, layout } from '../theme';
+import { radius, tokens, eyebrow, headline, motion, layout } from '@/ds';
 import { createCheckoutSession, requestQuote, type BookingPayload, type FieldErrors } from '../lib/api';
 import {
   MAX_QUANTITY,

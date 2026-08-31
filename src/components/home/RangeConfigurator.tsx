@@ -23,7 +23,7 @@
 
 
 import { useNavigate } from 'react-router-dom';
-import { radius, tokens, motion, space, type as typeScale } from '../../theme';
+import { radius, tokens, motion, space, type as typeScale } from '@/ds';
 import type { CatalogueItem } from '../../data/catalogue';
 import {
   configuredLine,

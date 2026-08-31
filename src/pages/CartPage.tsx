@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
-import { tokens, eyebrow, motion } from '../theme';
+import { tokens, eyebrow, motion } from '@/ds';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useCartStore } from '../store/cartStore';
 

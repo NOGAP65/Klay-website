@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
-import { radius, tokens, eyebrow, headline, motion, supporting } from '../theme';
+import { radius, tokens, eyebrow, headline, motion, supporting } from '@/ds';
 import { STEPS, type Step } from '../data/steps';
 
 // GOLD / DARK / PARCHMENT used to be declared here as local literals. DARK was

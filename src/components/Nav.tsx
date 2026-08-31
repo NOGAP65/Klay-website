@@ -47,7 +47,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useKlayStore } from '../store';
 import { useCartStore } from '../store/cartStore';
-import { radius, tokens, motion, space, type as typeScale } from '../theme';
+import { radius, tokens, motion, space, type as typeScale } from '@/ds';
 import { useIsMobile, useMediaQuery } from '../hooks/useIsMobile';
 
 /** WHERE THE BAR BECOMES A DRAWER.

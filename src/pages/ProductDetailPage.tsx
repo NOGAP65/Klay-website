@@ -4,7 +4,7 @@ import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { useKlayStore } from '../store';
 import { useCartStore } from '../store/cartStore';
-import { tokens, eyebrow, motion } from '../theme';
+import { tokens, eyebrow, motion } from '@/ds';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {
   ProductBlindType,

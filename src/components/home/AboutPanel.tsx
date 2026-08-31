@@ -21,7 +21,7 @@
 // if a claim changes it has to change in those places too.
 // ---------------------------------------------------------------------------
 
-import { tokens, headline, eyebrow, layout, space, supporting } from '../../theme';
+import { tokens, headline, eyebrow, layout, space, supporting } from '@/ds';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { CtaLink } from './primitives';
 

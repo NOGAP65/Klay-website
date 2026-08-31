@@ -37,7 +37,7 @@
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
-import { radius, tokens } from '../theme';
+import { radius, tokens } from '@/ds';
 import VisualiserControls from '../visualiser-lab/VisualiserControls';
 import KlayConfigurator from '../visualiser-lab/KlayConfigurator';
 import { useVisualiserStore, ProductCategory } from '../visualiser-lab/useVisualiserStore';

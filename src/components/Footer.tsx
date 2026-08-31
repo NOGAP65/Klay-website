@@ -21,7 +21,7 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { tokens, eyebrow, layout, motion, space, type as typeScale } from '../theme';
+import { tokens, eyebrow, layout, motion, space, type as typeScale } from '@/ds';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { PRODUCTS } from '../data/products';
 

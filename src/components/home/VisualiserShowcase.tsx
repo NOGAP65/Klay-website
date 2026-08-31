@@ -34,7 +34,7 @@
 // ---------------------------------------------------------------------------
 
 import { useNavigate } from 'react-router-dom';
-import { radius, tokens, layout, motion, space, type as typeScale, shadow } from '../../theme';
+import { radius, tokens, layout, motion, space, type as typeScale, shadow } from '@/ds';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { useCartStore } from '../../store/cartStore';
 import { productByBlindType } from '../../data/products';

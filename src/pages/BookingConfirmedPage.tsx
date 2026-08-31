@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
-import { tokens, headline, eyebrow } from '../theme';
+import { tokens, headline, eyebrow } from '@/ds';
 import { formatAUD } from '../lib/pricing';
 
 // ---------------------------------------------------------------------------

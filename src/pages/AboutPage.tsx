@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
-import { radius, tokens, eyebrow, headline, motion, supporting } from '../theme';
+import { radius, tokens, eyebrow, headline, motion, supporting } from '@/ds';
 import { COLOUR_COUNT, PRODUCT_COUNT } from '../data/products';
 
 // DARK ('#0f0d09', a near-black outside the palette) and PARCHMENT (a second

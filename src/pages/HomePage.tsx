@@ -98,7 +98,7 @@
 
 import { useEffect } from 'react';
 import { useKlayStore } from '../store';
-import { tokens } from '../theme';
+import { tokens } from '@/ds';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
 import { TrustTicker, BAR_HEIGHT } from '../components/home/TrustTicker';

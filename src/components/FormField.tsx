@@ -1,5 +1,5 @@
 import { useState, useId } from 'react';
-import { tokens, motion } from '../theme';
+import { tokens, motion } from '@/ds';
 
 // ---------------------------------------------------------------------------
 // A controlled form input in the site's own idiom.

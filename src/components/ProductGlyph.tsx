@@ -34,7 +34,7 @@
 // on the item in data/blindTypes.ts wins and the glyph is simply not rendered.
 // ---------------------------------------------------------------------------
 
-import { tokens } from '../theme';
+import { tokens } from '@/ds';
 
 /** Evenly spaced horizontal rules between two y values — the slats of a
  * venetian and, at a different rhythm, the folds of a roman. */

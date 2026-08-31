@@ -34,7 +34,7 @@
 // ---------------------------------------------------------------------------
 
 import { Link } from 'react-router-dom';
-import { tokens, space, type as typeScale } from '../../theme';
+import { tokens, space, type as typeScale } from '@/ds';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { SectionBand, TILE_GAP, useHover } from './primitives';
 

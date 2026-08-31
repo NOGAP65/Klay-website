@@ -23,7 +23,7 @@
 // The design lives in one place; the mapping lives here.
 // ---------------------------------------------------------------------------
 
-import { type as typeScale } from '../theme';
+import { type as typeScale } from '@/ds';
 import { PhotoTile } from './home/primitives';
 
 export interface Swatch {

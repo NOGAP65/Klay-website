@@ -21,7 +21,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
-import { tokens, prefersReducedMotion, space, layout, type as typeScale } from '../../theme';
+import { tokens, prefersReducedMotion, space, layout, type as typeScale } from '@/ds';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { SectionBand } from './primitives';
 

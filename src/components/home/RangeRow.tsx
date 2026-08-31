@@ -102,7 +102,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { radius, tokens, motion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
+import { radius, tokens, motion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale } from '@/ds';
 import { useIsMobile, useMediaQuery } from '../../hooks/useIsMobile';
 // The cards read data/catalogue.ts — the same fourteen products the shop lists,
 // rendered by the same tile. Four of them, named below; nothing about the range
