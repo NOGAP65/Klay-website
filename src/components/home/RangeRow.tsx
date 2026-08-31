@@ -104,17 +104,17 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { radius, tokens, motion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale } from '@/ds';
-import { useIsMobile, useMediaQuery } from '@/shared';
-
-import { CATALOGUE, type CatalogueItem } from '../../data/catalogue';
-import { defaultSelection, fieldsFor, type Selection } from '../../data/configOptions';
+import { CATALOGUE, type CatalogueItem } from '@/features/catalogue';
+import { defaultSelection, fieldsFor, type Selection } from '@/features/catalogue';
 
 // The cards read data/catalogue.ts — the same fourteen products the shop lists,
 // rendered by the same tile. Four of them, named below; nothing about the range
 // is written down in this file.
 
+import { ProductGlyph } from '@/features/catalogue';
+import { useIsMobile, useMediaQuery } from '@/shared';
+
 import { useVisualiserStore } from '../../visualiser/useVisualiserStore';
-import { ProductGlyph } from '../ProductGlyph';
 
 import { CtaLink, TILE_GAP, scrollToId, useHover } from './primitives';
 import { RangeConfigurator } from './RangeConfigurator';

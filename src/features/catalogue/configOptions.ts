@@ -33,11 +33,11 @@
 // them changes the panel, the cart line and the quote together.
 // ---------------------------------------------------------------------------
 
-import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '../lib/pricing'
+import { HARDWARE_OPTIONS } from '../../data/products'
+import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '../../lib/pricing'
 
-import { HARDWARE_OPTIONS } from './products'
 
-import type { CatalogueItem } from './catalogue'
+import type { CatalogueItem } from './constants'
 
 export type FieldId = 'variant' | 'colour' | 'hardware' | 'size' | 'operation'
 

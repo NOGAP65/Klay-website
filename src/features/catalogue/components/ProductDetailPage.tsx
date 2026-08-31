@@ -1,22 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { tokens, eyebrow, motion } from '@/ds';
+import { tokens, eyebrow, motion,
+  space,
+  radius,
+  type as typeScale } from '@/ds';
 import { useIsMobile } from '@/shared';
 
-import { Footer } from '../components/Footer';
-import { Nav } from '../components/Nav';
+import { Footer } from '../../../components/Footer';
+import { Nav } from '../../../components/Nav';
 import {
   ProductBlindType,
   productByBlindType,
   productBySlug,
-} from '../data/products';
-import { bookingLink } from '../lib/bookingLink';
-import { useKlayStore } from '../store';
-import { useCartStore } from '../store/cartStore';
-import KlayConfigurator from '../visualiser/KlayConfigurator';
-import { useVisualiserStore } from '../visualiser/useVisualiserStore';
-import VisualiserControls from '../visualiser/VisualiserControls';
+} from '../../../data/products';
+import { bookingLink } from '../../../lib/bookingLink';
+import { useKlayStore } from '../../../store';
+import { useCartStore } from '../../../store/cartStore';
+import KlayConfigurator from '../../../visualiser/KlayConfigurator';
+import { useVisualiserStore } from '../../../visualiser/useVisualiserStore';
+import VisualiserControls from '../../../visualiser/VisualiserControls';
 
 const INK_55 = 'rgba(29,29,29,0.55)';
 
@@ -150,9 +153,9 @@ function FaqRow({ q, a, open, onToggle }: { q: string; a: string; open: boolean;
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 24,
+          gap: space.group,
           width: '100%',
-          padding: '20px 0',
+          padding: `${space.item}px 0`,
           background: 'transparent',
           border: 'none',
           cursor: 'pointer',
@@ -161,11 +164,11 @@ function FaqRow({ q, a, open, onToggle }: { q: string; a: string; open: boolean;
           color: tokens.ink,
         }}
       >
-        <span style={{ fontFamily: tokens.body, fontSize: 15, fontWeight: 500, color: tokens.ink }}>{q}</span>
-        <span style={{ flexShrink: 0, color: tokens.onDark, fontSize: 20, fontWeight: 300, transform: open ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>+</span>
+        <span style={{ fontFamily: tokens.body, fontSize: typeScale.body.fontSize, fontWeight: 500, color: tokens.ink }}>{q}</span>
+        <span style={{ flexShrink: 0, color: tokens.onDark, fontSize: typeScale.subhead.fontSize, fontWeight: 300, transform: open ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>+</span>
       </button>
       <div style={{ height, overflow: 'hidden', transition: 'height 0.3s ease' }}>
-        <p ref={bodyRef} style={{ fontFamily: tokens.body, fontSize: 14, lineHeight: 1.7, color: INK_55, paddingBottom: 20, margin: 0 }}>{a}</p>
+        <p ref={bodyRef} style={{ fontFamily: tokens.body, fontSize: typeScale.body.fontSize, lineHeight: 1.7, color: INK_55, paddingBottom: space.item, margin: 0 }}>{a}</p>
       </div>
     </div>
   );
@@ -271,7 +274,7 @@ export default function ProductDetailPage() {
       <div style={{ background: tokens.paper, paddingTop: isMobile ? 60 : 72 }}>
 
         {/* Hero section */}
-        <section style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', width: '100%', background: tokens.paper, overflow: 'visible', padding: isMobile ? '24px' : '60px 60px', gap: 32 }}>
+        <section style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'stretch', width: '100%', background: tokens.paper, overflow: 'visible', padding: isMobile ? '24px' : '60px 60px', gap: space.group }}>
           {/* Visualiser - same as homepage */}
           <div style={{ flex: '1 1 55%', background: tokens.paper, position: 'relative' }}>
             {/* No defaultBlindType. That prop sets the type AND calls
@@ -282,22 +285,22 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Controls panel */}
-          <div style={{ flex: '0 0 380px', background: tokens.paper, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ flex: '0 0 380px', background: tokens.paper, display: 'flex', flexDirection: 'column', gap: space.item }}>
             {/* Product info at top */}
             <div>
               <GoldLabel>{product.type}</GoldLabel>
-              <h1 style={{ fontFamily: tokens.display, fontSize: 32, fontWeight: 300, color: tokens.ink, lineHeight: 1.1, margin: '8px 0 0' }}>
+              <h1 style={{ fontFamily: tokens.display, fontSize: typeScale.numeric.fontSize, fontWeight: 300, color: tokens.ink, lineHeight: 1.1, margin: `${space.tight}px 0 0` }}>
                 {product.name}
               </h1>
-              <p style={{ fontFamily: tokens.body, fontSize: 14, color: INK_55, lineHeight: 1.5, margin: '8px 0 0' }}>
+              <p style={{ fontFamily: tokens.body, fontSize: typeScale.body.fontSize, color: INK_55, lineHeight: 1.5, margin: `${space.tight}px 0 0` }}>
                 {product.tagline}
               </p>
               {/* Star rating */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-                <div style={{ display: 'flex', gap: 2 }}>
-                  {[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.onDark, fontSize: 14 }}>★</span>)}
+              <div style={{ display: 'flex', alignItems: 'center', gap: space.tight, marginTop: space.snug }}>
+                <div style={{ display: 'flex', gap: space.hairline }}>
+                  {[1,2,3,4,5].map(i => <span key={i} style={{ color: tokens.onDark, fontSize: typeScale.body.fontSize }}>★</span>)}
                 </div>
-                <span style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkSoft }}>5.0 (47 reviews)</span>
+                <span style={{ fontFamily: tokens.body, fontSize: typeScale.label.fontSize, color: tokens.inkSoft }}>5.0 (47 reviews)</span>
               </div>
             </div>
 
@@ -306,7 +309,7 @@ export default function ProductDetailPage() {
             <VisualiserControls compact />
 
             {/* Two large CTAs right after price */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: space.snug }}>
               <button
                 onClick={() => {
                   addItem({
@@ -326,16 +329,16 @@ export default function ProductDetailPage() {
                 onMouseLeave={() => setCartHover(false)}
                 style={{
                   width: '100%',
-                  padding: '18px 24px',
+                  padding: `${space.item}px ${space.group}px`,
                   background: addedToCart ? tokens.charcoal : (cartHover ? tokens.accentHover : tokens.accent),
                   color: addedToCart ? tokens.paper : tokens.ink,
                   fontFamily: tokens.body,
-                  fontSize: 14,
+                  fontSize: typeScale.body.fontSize,
                   fontWeight: 600,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                   border: 'none',
-                  borderRadius: 6,
+                  borderRadius: radius.md,
                   cursor: 'pointer',
                   transition: motion.button,
                   textAlign: 'center',
@@ -349,16 +352,16 @@ export default function ProductDetailPage() {
                 onMouseLeave={() => setQuoteHover(false)}
                 style={{
                   width: '100%',
-                  padding: '18px 24px',
+                  padding: `${space.item}px ${space.group}px`,
                   background: 'transparent',
                   color: quoteHover ? tokens.textMuted : tokens.ink,
                   fontFamily: tokens.body,
-                  fontSize: 14,
+                  fontSize: typeScale.body.fontSize,
                   fontWeight: 600,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                   border: `1px solid ${quoteHover ? tokens.line : tokens.lineStrong}`,
-                  borderRadius: 6,
+                  borderRadius: radius.md,
                   cursor: 'pointer',
                   transition: motion.button,
                   textAlign: 'center',
@@ -375,16 +378,16 @@ export default function ProductDetailPage() {
         {/* Features section - dark background for contrast */}
         <section style={{ background: tokens.charcoal, padding: isMobile ? '64px 24px' : '80px 80px' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 48 }}>
-              <p style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, color: tokens.onDark, textTransform: 'uppercase', letterSpacing: '0.25em', margin: 0 }}>Why Choose {product.name}</p>
-              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.paper, margin: '12px 0 0' }}>Built for the way you live.</h2>
+            <div style={{ textAlign: 'center', marginBottom: space.section }}>
+              <p style={{ fontFamily: tokens.body, fontSize: typeScale.micro.fontSize, fontWeight: 500, color: tokens.onDark, textTransform: 'uppercase', letterSpacing: '0.25em', margin: 0 }}>Why Choose {product.name}</p>
+              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.paper, margin: `${space.snug}px 0 0` }}>Built for the way you live.</h2>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 24 : 32 }}>
               {features.map((f) => (
-                <div key={f.title} style={{ textAlign: 'center', padding: 24, background: 'rgba(248,248,248,0.05)', borderRadius: 8, border: '1px solid rgba(248,248,248,0.1)' }}>
-                  <div style={{ color: tokens.onDark, marginBottom: 16, display: 'flex', justifyContent: 'center' }}><FeatureIcon type={f.icon} /></div>
-                  <h3 style={{ fontFamily: tokens.display, fontSize: 20, fontWeight: 400, color: tokens.paper, margin: 0 }}>{f.title}</h3>
-                  <p style={{ fontFamily: tokens.body, fontSize: 13, color: 'rgba(248,248,248,0.65)', margin: '8px 0 0', lineHeight: 1.5 }}>{f.desc}</p>
+                <div key={f.title} style={{ textAlign: 'center', padding: space.group, background: 'rgba(248,248,248,0.05)', borderRadius: radius.md, border: '1px solid rgba(248,248,248,0.1)' }}>
+                  <div style={{ color: tokens.onDark, marginBottom: space.item, display: 'flex', justifyContent: 'center' }}><FeatureIcon type={f.icon} /></div>
+                  <h3 style={{ fontFamily: tokens.display, fontSize: typeScale.subhead.fontSize, fontWeight: 400, color: tokens.paper, margin: 0 }}>{f.title}</h3>
+                  <p style={{ fontFamily: tokens.body, fontSize: typeScale.label.fontSize, color: 'rgba(248,248,248,0.65)', margin: `${space.tight}px 0 0`, lineHeight: 1.5 }}>{f.desc}</p>
                 </div>
               ))}
             </div>
@@ -394,19 +397,19 @@ export default function ProductDetailPage() {
         {/* Specs section */}
         <section style={{ background: tokens.band, padding: isMobile ? '64px 24px' : '80px 80px' }}>
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{ textAlign: 'center', marginBottom: space.section }}>
               <GoldLabel>Specifications</GoldLabel>
-              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.ink, margin: '12px 0 0' }}>The details that matter.</h2>
+              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.ink, margin: `${space.snug}px 0 0` }}>The details that matter.</h2>
             </div>
-            <div style={{ background: tokens.paper, borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 24px rgba(29,29,29,0.06)' }}>
+            <div style={{ background: tokens.paper, borderRadius: radius.lg, overflow: 'hidden', boxShadow: '0 4px 24px rgba(29,29,29,0.06)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <tbody>
                   {specRows.map((row, i) => (
                     <tr key={row.label} style={{ borderBottom: i < specRows.length - 1 ? `1px solid ${tokens.lineFaint}` : 'none' }}>
                       <td style={{
-                        padding: '18px 24px',
+                        padding: `${space.item}px ${space.group}px`,
                         fontFamily: tokens.body,
-                        fontSize: 13,
+                        fontSize: typeScale.label.fontSize,
                         color: tokens.inkSoft,
                         textTransform: 'uppercase',
                         letterSpacing: '0.08em',
@@ -416,9 +419,9 @@ export default function ProductDetailPage() {
                         {row.label}
                       </td>
                       <td style={{
-                        padding: '18px 24px',
+                        padding: `${space.item}px ${space.group}px`,
                         fontFamily: tokens.body,
-                        fontSize: 15,
+                        fontSize: typeScale.body.fontSize,
                         color: tokens.ink,
                         fontWeight: 500,
                         textAlign: 'right',
@@ -437,9 +440,9 @@ export default function ProductDetailPage() {
         {/* FAQ section */}
         <section style={{ background: tokens.paper, padding: isMobile ? '64px 24px' : '80px 80px' }}>
           <div style={{ maxWidth: 700, margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <div style={{ textAlign: 'center', marginBottom: space.section }}>
               <GoldLabel>FAQ</GoldLabel>
-              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.ink, margin: '12px 0 0' }}>Common questions.</h2>
+              <h2 style={{ fontFamily: tokens.display, fontSize: isMobile ? 32 : 42, fontWeight: 300, color: tokens.ink, margin: `${space.snug}px 0 0` }}>Common questions.</h2>
             </div>
             <div>
               {faqs.map((f, i) => (
@@ -468,13 +471,13 @@ export default function ProductDetailPage() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          gap: 16,
+          gap: space.item,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{product.name}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: space.snug }}>
+            <div style={{ fontFamily: tokens.body, fontSize: typeScale.micro.fontSize, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{product.name}</div>
             <div style={{ fontFamily: tokens.display, fontSize: isMobile ? 20 : 24, fontWeight: 300, color: tokens.ink }}>${price}</div>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: space.tight }}>
             <Link
               to={bookHref}
               onMouseEnter={() => setBarQuoteHover(true)}
@@ -483,12 +486,12 @@ export default function ProductDetailPage() {
                 background: 'transparent',
                 color: barQuoteHover ? tokens.textMuted : tokens.ink,
                 fontFamily: tokens.body,
-                fontSize: 11,
+                fontSize: typeScale.micro.fontSize,
                 fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
                 padding: isMobile ? '8px 16px' : '10px 20px',
-                borderRadius: 4,
+                borderRadius: radius.sm,
                 border: `1px solid ${barQuoteHover ? tokens.line : tokens.lineStrong}`,
                 cursor: 'pointer',
                 textDecoration: 'none',
@@ -518,12 +521,12 @@ export default function ProductDetailPage() {
                 background: addedToCart ? tokens.charcoal : (barCartHover ? tokens.accentHover : tokens.accent),
                 color: addedToCart ? tokens.paper : tokens.ink,
                 fontFamily: tokens.body,
-                fontSize: 11,
+                fontSize: typeScale.micro.fontSize,
                 fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
                 padding: isMobile ? '8px 16px' : '10px 20px',
-                borderRadius: 4,
+                borderRadius: radius.sm,
                 border: 'none',
                 cursor: 'pointer',
                 transition: motion.button,

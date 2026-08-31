@@ -118,6 +118,37 @@ export const type = {
     margin: 0,
   } as Style,
 
+  /** 20 — a subheading, and the step between `lead` and `card`.
+   *
+   * ADDED IN P4-3, and it is a gap being closed rather than a step being added.
+   * ADR-017 approved eight type steps — 10·12·14·16·20·26·34·56 — but only six
+   * of them had role names, so 20 and 56 were approved sizes with no way to
+   * reach them. The first conversion pass found this immediately: three call
+   * sites at 20px were pushed down to `lead` (16), a 4px change to values that
+   * were already exactly on the scale.
+   *
+   * The scale is still closed at eight. This is not a ninth. */
+  subhead: {
+    fontFamily: tokens.display,
+    fontSize: 20, // scale step
+    fontWeight: 300,
+    lineHeight: 1.3,
+    margin: 0,
+  } as Style,
+
+  /** 56 — the top of the scale, for a heading that is not the hero and not a
+   * section. The largest step that is a step; `ornament` and the two clamped
+   * headline roles sit outside the scale on purpose. Named alongside `subhead`
+   * for the same reason — see above. */
+  title: {
+    fontFamily: tokens.display,
+    fontSize: 56, // scale step
+    fontWeight: 300,
+    lineHeight: 1.05,
+    letterSpacing: '-0.02em',
+    margin: 0,
+  } as Style,
+
   /** 17 — the hero lead, and nothing else. The one body size above 15. */
   lead: {
     fontFamily: tokens.body,

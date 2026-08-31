@@ -25,7 +25,6 @@
 import { useNavigate } from 'react-router-dom';
 
 import { radius, tokens, motion, space, type as typeScale } from '@/ds';
-
 import {
   configuredLine,
 
@@ -34,12 +33,13 @@ import {
   type ConfigChoice,
   type ConfigField,
   type Selection,
-} from '../../data/configOptions';
+} from '@/features/catalogue';
+
 import { useCartStore } from '../../store/cartStore';
 
 import { useHover } from './primitives';
 
-import type { CatalogueItem } from '../../data/catalogue';
+import type { CatalogueItem } from '@/features/catalogue';
 
 /** The panel's height, shared by all fourteen so every gold button lands on one
  * line. Derived: TWO fields at 52 plus their gap, the price row, the 52px button

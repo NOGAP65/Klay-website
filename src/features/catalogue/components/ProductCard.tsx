@@ -25,7 +25,7 @@
 
 import { type as typeScale } from '@/ds';
 
-import { PhotoTile } from './home/primitives';
+import { PhotoTile } from '../../../components/home/primitives';
 
 export interface Swatch {
   name: string;

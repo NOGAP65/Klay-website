@@ -23,18 +23,28 @@
 // ticked, and clicking it would empty the grid.
 // ---------------------------------------------------------------------------
 
-import { radius, tokens } from '@/ds';
+import {
+  radius,
+  tokens,
+  space,
+  type as typeScale,
+} from '@/ds';
 
-import { GROUP_FILTERS, LIGHT_VALUES, countFor, type Facets } from '../data/catalogue';
+import { LIGHT_VALUES } from '../constants';
+import { GROUP_FILTERS } from '../lib/facets';
+import {
+  countFor,
+  type Facets,
+} from '../lib/facets';
 
 const GROUP_LABEL = {
   fontFamily: tokens.body,
-  fontSize: 10,
+  fontSize: typeScale.micro.fontSize,
   fontWeight: 600,
   letterSpacing: '0.16em',
   textTransform: 'uppercase' as const,
   color: 'rgba(29,29,29,0.4)',
-  margin: '0 0 14px',
+  margin: `0 0 ${space.snug}px`,
 };
 
 /** A 2px square that fills gold when on, and shows a bar rather than a tick
@@ -65,7 +75,7 @@ function Box({ state }: { state: 'off' | 'on' | 'partial' }) {
       {/* The partial dash sits on the same filled box as the tick above, so it
           takes the same inverted colour. Both were ink on gold. */}
       {state === 'partial' && (
-        <span style={{ width: 7, height: 1.6, background: tokens.onFillStrong, borderRadius: 1 }} />
+        <span style={{ width: 7, height: 1.6, background: tokens.onFillStrong, borderRadius: radius.sm }} />
       )}
     </span>
   );
@@ -97,9 +107,9 @@ function Row({
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 10,
+        gap: space.tight,
         width: '100%',
-        padding: '6px 0',
+        padding: `${space.hairline}px 0`,
         paddingLeft: indent ? 25 : 0,
         background: 'transparent',
         border: 'none',
@@ -107,14 +117,14 @@ function Row({
         cursor: dead ? 'default' : 'pointer',
         opacity: dead ? 0.35 : 1,
         fontFamily: tokens.body,
-        fontSize: 13,
+        fontSize: typeScale.label.fontSize,
         fontWeight: strong ? 500 : 400,
         color: tokens.ink,
       }}
     >
       <Box state={state} />
       <span style={{ flex: 1 }}>{label}</span>
-      <span style={{ fontSize: 11, color: 'rgba(29,29,29,0.4)' }}>{count}</span>
+      <span style={{ fontSize: typeScale.micro.fontSize, color: 'rgba(29,29,29,0.4)' }}>{count}</span>
     </button>
   );
 }
@@ -136,7 +146,7 @@ export function FilterRail({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 34 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: space.section }}>
       <div>
         {/* The business's own grouping — Indoor, Outdoor, Other — rather than an
             invented family layer above it. It was Window Coverings / Shade /

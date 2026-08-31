@@ -24,33 +24,34 @@
 // particular frame.
 // ---------------------------------------------------------------------------
 
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-
-import { radius, tokens } from '@/ds';
-import { useIsMobile, useMediaQuery } from '@/shared';
-
-import { FilterRail } from '../components/FilterRail';
-import { Footer } from '../components/Footer';
-import { Nav } from '../components/Nav';
-import { ProductCard } from '../components/ProductCard';
 import {
-  EMPTY_FACETS,
+  useEffect,
+  useMemo,
+  useState } from 'react';
+import { Link,
+  useSearchParams } from 'react-router-dom';
+
+import { radius, space, tokens, type as typeScale } from '@/ds';
+import { useIsMobile,
+  useMediaQuery } from '@/shared';
+
+import { Footer } from '../../../components/Footer';
+import { Nav } from '../../../components/Nav';
+import { useKlayStore } from '../../../store';
+import { type CatalogueItem } from '../constants';
+import { EMPTY_FACETS } from '../lib/facets';
+import {
   applyFacets,
   facetCount,
   groupForCategoryParam,
-  type CatalogueItem,
   type Facets,
-} from '../data/catalogue';
-import { useKlayStore } from '../store';
+} from '../lib/facets';
+import { SORT_OPTIONS, sortProducts, type SortOption } from '../lib/sortProducts';
 
-type SortOption = 'featured' | 'price-low' | 'name-az';
+import { FilterRail } from './FilterRail';
+import { ProductCard } from './ProductCard';
 
-const SORT_OPTIONS: { id: SortOption; label: string }[] = [
-  { id: 'featured', label: 'Featured' },
-  { id: 'price-low', label: 'Price: Low to High' },
-  { id: 'name-az', label: 'Name: A to Z' },
-];
+
 
 /** Wider than the 1240 the rest of the site uses, because the rail eats 200 of
  * it. At 1240 the grid would drop to three cards on a 1600 screen that has the
@@ -90,18 +91,8 @@ export default function ProductsPage() {
   }, [setScrollY]);
 
   const items = useMemo(() => {
-    let result: CatalogueItem[] = applyFacets(facets);
-
-    if (sortBy === 'price-low') {
-      // Unpriced items sort last rather than being treated as $0 — "price on
-      // measure" is not a cheap price, and floating sixteen enquiry cards above
-      // the six you can buy would be exactly backwards.
-      result = [...result].sort((a, b) => (a.priceFrom ?? Infinity) - (b.priceFrom ?? Infinity));
-    } else if (sortBy === 'name-az') {
-      result = [...result].sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    return result;
+    const result: CatalogueItem[] = applyFacets(facets);
+    return sortProducts(result, sortBy);
   }, [facets, sortBy]);
 
   const activeCount = facetCount(facets);
@@ -144,7 +135,7 @@ export default function ProductsPage() {
           style={{
             position: 'relative',
             height: isMobile ? 280 : 360,
-            paddingTop: 72,
+            paddingTop: space.band,
             overflow: 'hidden',
           }}
         >
@@ -181,15 +172,15 @@ export default function ProductsPage() {
             <nav
               style={{
                 fontFamily: tokens.body,
-                fontSize: 12,
+                fontSize: typeScale.label.fontSize,
                 color: 'rgba(248,248,248,0.5)',
-                marginBottom: 16,
+                marginBottom: space.item,
               }}
             >
               <Link to="/" style={{ color: 'rgba(248,248,248,0.5)', textDecoration: 'none' }}>
                 Home
               </Link>
-              <span style={{ margin: '0 8px' }}>/</span>
+              <span style={{ margin: `0 ${space.tight}px` }}>/</span>
               <span style={{ color: tokens.paper }}>Shop</span>
             </nav>
             <h1
@@ -213,11 +204,11 @@ export default function ProductsPage() {
             <p
               style={{
                 fontFamily: tokens.body,
-                fontSize: 15,
+                fontSize: typeScale.body.fontSize,
                 color: 'rgba(248,248,248,0.7)',
                 lineHeight: 1.6,
                 margin: 0,
-                marginTop: 12,
+                marginTop: space.snug,
                 maxWidth: 520,
               }}
             >
@@ -242,7 +233,7 @@ export default function ProductsPage() {
               margin: '0 auto',
               display: 'flex',
               alignItems: 'flex-start',
-              gap: 44,
+              gap: space.section,
             }}
           >
             {!narrow && (
@@ -272,24 +263,24 @@ export default function ProductsPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: 16,
-                  paddingBottom: 16,
+                  gap: space.item,
+                  paddingBottom: space.item,
                   marginBottom: activeChips.length ? 0 : 20,
                   borderBottom: `1px solid ${tokens.lineFaint}`,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: space.snug }}>
                   {narrow && (
                     <button
                       onClick={() => setDrawerOpen(true)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 8,
-                        padding: '10px 16px',
+                        gap: space.tight,
+                        padding: `${space.tight}px ${space.item}px`,
                         borderRadius: radius.md,
                         fontFamily: tokens.body,
-                        fontSize: 13,
+                        fontSize: typeScale.label.fontSize,
                         fontWeight: 500,
                         cursor: 'pointer',
                         background: activeCount ? tokens.charcoal : 'transparent',
@@ -303,7 +294,7 @@ export default function ProductsPage() {
                   <span
                     style={{
                       fontFamily: tokens.body,
-                      fontSize: 13,
+                      fontSize: typeScale.label.fontSize,
                       color: 'rgba(29,29,29,0.5)',
                       whiteSpace: 'nowrap',
                     }}
@@ -318,11 +309,11 @@ export default function ProductsPage() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 8,
-                      padding: '10px 16px',
+                      gap: space.tight,
+                      padding: `${space.tight}px ${space.item}px`,
                       borderRadius: radius.md,
                       fontFamily: tokens.body,
-                      fontSize: 13,
+                      fontSize: typeScale.label.fontSize,
                       cursor: 'pointer',
                       background: 'transparent',
                       color: tokens.ink,
@@ -331,7 +322,7 @@ export default function ProductsPage() {
                     }}
                   >
                     <span>Sort: {SORT_OPTIONS.find(s => s.id === sortBy)?.label}</span>
-                    <span style={{ fontSize: 10 }}>▼</span>
+                    <span style={{ fontSize: typeScale.micro.fontSize }}>▼</span>
                   </button>
 
                   {showSortDropdown && (
@@ -345,7 +336,7 @@ export default function ProductsPage() {
                           position: 'absolute',
                           top: '100%',
                           right: 0,
-                          marginTop: 4,
+                          marginTop: space.hairline,
                           background: tokens.paper,
                           border: `1px solid ${tokens.lineFaint}`,
                           borderRadius: radius.md,
@@ -366,9 +357,9 @@ export default function ProductsPage() {
                               display: 'block',
                               width: '100%',
                               textAlign: 'left',
-                              padding: '12px 16px',
+                              padding: `${space.snug}px ${space.item}px`,
                               fontFamily: tokens.body,
-                              fontSize: 13,
+                              fontSize: typeScale.label.fontSize,
                               cursor: 'pointer',
                               background: sortBy === option.id ? tokens.band : 'transparent',
                               color: tokens.ink,
@@ -396,8 +387,8 @@ export default function ProductsPage() {
                     display: 'flex',
                     flexWrap: 'wrap',
                     alignItems: 'center',
-                    gap: 8,
-                    padding: '16px 0 20px',
+                    gap: space.tight,
+                    padding: `${space.item}px 0 ${space.item}px`,
                   }}
                 >
                   {activeChips.map(chip => (
@@ -407,11 +398,11 @@ export default function ProductsPage() {
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 8,
-                        padding: '7px 12px',
+                        gap: space.tight,
+                        padding: `${space.tight}px ${space.snug}px`,
                         borderRadius: radius.md,
                         fontFamily: tokens.body,
-                        fontSize: 12,
+                        fontSize: typeScale.label.fontSize,
                         cursor: 'pointer',
                         background: tokens.paper,
                         color: tokens.ink,
@@ -419,19 +410,19 @@ export default function ProductsPage() {
                       }}
                     >
                       {chip.value}
-                      <span style={{ fontSize: 13, opacity: 0.5 }}>✕</span>
+                      <span style={{ fontSize: typeScale.label.fontSize, opacity: 0.5 }}>✕</span>
                     </button>
                   ))}
                   <button
                     onClick={() => setFacets(EMPTY_FACETS)}
                     style={{
-                      padding: '7px 4px',
-                      marginLeft: 4,
+                      padding: `${space.tight}px ${space.hairline}px`,
+                      marginLeft: space.hairline,
                       background: 'transparent',
                       border: 'none',
                       cursor: 'pointer',
                       fontFamily: tokens.body,
-                      fontSize: 12,
+                      fontSize: typeScale.label.fontSize,
                       color: tokens.onDark,
                       textDecoration: 'underline',
                       textUnderlineOffset: 3,
@@ -481,11 +472,11 @@ export default function ProductsPage() {
                   ))}
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', padding: '90px 24px' }}>
+                <div style={{ textAlign: 'center', padding: `${space.band}px ${space.group}px` }}>
                   <p
                     style={{
                       fontFamily: tokens.display,
-                      fontSize: 24,
+                      fontSize: typeScale.card.fontSize,
                       fontWeight: 300,
                       color: tokens.ink,
                       margin: 0,
@@ -496,9 +487,9 @@ export default function ProductsPage() {
                   <p
                     style={{
                       fontFamily: tokens.body,
-                      fontSize: 14,
+                      fontSize: typeScale.body.fontSize,
                       color: 'rgba(29,29,29,0.5)',
-                      marginTop: 10,
+                      marginTop: space.tight,
                     }}
                   >
                     Try removing a filter — or tell us what you are after.
@@ -506,11 +497,11 @@ export default function ProductsPage() {
                   <button
                     onClick={() => setFacets(EMPTY_FACETS)}
                     style={{
-                      marginTop: 22,
-                      padding: '13px 26px',
+                      marginTop: space.group,
+                      padding: `${space.snug}px ${space.group}px`,
                       borderRadius: radius.md,
                       fontFamily: tokens.body,
-                      fontSize: 12,
+                      fontSize: typeScale.label.fontSize,
                       fontWeight: 500,
                       letterSpacing: '0.12em',
                       textTransform: 'uppercase',
@@ -555,14 +546,14 @@ export default function ProductsPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '20px 24px',
+                padding: `${space.item}px ${space.group}px`,
                 borderBottom: `1px solid ${tokens.lineFaint}`,
               }}
             >
               <span
                 style={{
                   fontFamily: tokens.body,
-                  fontSize: 11,
+                  fontSize: typeScale.micro.fontSize,
                   fontWeight: 600,
                   letterSpacing: '0.16em',
                   textTransform: 'uppercase',
@@ -577,7 +568,7 @@ export default function ProductsPage() {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  fontSize: 18,
+                  fontSize: typeScale.subhead.fontSize,
                   cursor: 'pointer',
                   color: tokens.ink,
                   lineHeight: 1,
@@ -587,15 +578,15 @@ export default function ProductsPage() {
               </button>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: `${space.group}px` }}>
               <FilterRail facets={facets} onChange={setFacets} />
             </div>
 
             <div
               style={{
                 display: 'flex',
-                gap: 10,
-                padding: '16px 24px',
+                gap: space.tight,
+                padding: `${space.item}px ${space.group}px`,
                 borderTop: `1px solid ${tokens.lineFaint}`,
               }}
             >
@@ -603,10 +594,10 @@ export default function ProductsPage() {
                 onClick={() => setFacets(EMPTY_FACETS)}
                 style={{
                   flex: 1,
-                  padding: '14px',
+                  padding: `${space.snug}px`,
                   borderRadius: radius.md,
                   fontFamily: tokens.body,
-                  fontSize: 12,
+                  fontSize: typeScale.label.fontSize,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
                   cursor: 'pointer',
@@ -621,10 +612,10 @@ export default function ProductsPage() {
                 onClick={() => setDrawerOpen(false)}
                 style={{
                   flex: 2,
-                  padding: '14px',
+                  padding: `${space.snug}px`,
                   borderRadius: radius.md,
                   fontFamily: tokens.body,
-                  fontSize: 12,
+                  fontSize: typeScale.label.fontSize,
                   fontWeight: 500,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',

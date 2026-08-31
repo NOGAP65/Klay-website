@@ -111,19 +111,27 @@ turns unactionable warnings into a wall; leaving it after that is leaving the la
 | Measured at | Feature files reaching legacy | Distinct targets | Edges |
 |---|---:|---:|---:|
 | **P4-1 marketing** | 4 | 4 | 9 |
+| **P4-3 catalogue** | 9 | 8 | 26 |
 
-**The four targets, and what clears each:**
+**The targets, and what clears each:**
 
 | Target | Edges | Cleared by |
 |---|---:|---|
-| `src/components/Nav.tsx` | 3 | **Phase 5** — `app/layouts/`, decision D |
-| `src/components/Footer.tsx` | 3 | **Phase 5** — `app/layouts/`, decision D |
+| `src/components/Nav.tsx` | 5 | **Phase 5** — `app/layouts/`, decision D |
+| `src/components/Footer.tsx` | 5 | **Phase 5** — `app/layouts/`, decision D |
 | `src/lib/api.ts` | 2 | **Phase 6** — moves with booking |
-| `src/data/products.ts` | 1 | **P4-7** — decision H. Cannot move earlier: the frozen visualiser imports it and frozen files may not be edited |
+| `src/data/products.ts` | 4 | **P4-7** — decision H. Cannot move earlier: the frozen visualiser imports it and frozen files may not be edited |
+| `src/store.ts` | 2 | **Phase 6** — item 4, the useKlayStore shim |
+| `src/lib/pricing.ts` | 2 | **Phase 6** — item 1, moves to shared-core |
+| `src/lib/bookingLink.ts` | 1 | **Phase 6** — decision K, moves with booking |
+| `src/components/home/primitives.tsx` | 1 | **P4-6** — decision F's four-way split; `PhotoTile` goes to catalogue |
+
+**It rose, as predicted: 9 edges → 26 after one more feature.** Nav and Footer went from six
+edges to ten, and catalogue brought four new targets with it. This is the shape to expect.
 
 **Expect the count to rise through P4 and collapse at Phase 5.** Every feature that moves
 brings its own `Nav`/`Footer` imports with it, so the number gets worse before it gets better;
-those two targets carry six of the nine edges today and will carry most of whatever P4 adds.
+those two targets carry ten of the twenty-six edges today and will carry most of whatever P4 adds.
 
 Command: `node tools/legacy-countdown.mjs`.
 
