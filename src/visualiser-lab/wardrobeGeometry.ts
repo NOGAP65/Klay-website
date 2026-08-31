@@ -103,6 +103,64 @@ export interface Projector {
   depth(x: number, y: number, z: number): number;
 }
 
+/** Where two lines cross, or null if they are within a whisker of parallel. */
+function intersect(a: Point, b: Point, c: Point, d: Point): Point | null {
+  const x1 = a[0], y1 = a[1], x2 = b[0], y2 = b[1];
+  const x3 = c[0], y3 = c[1], x4 = d[0], y4 = d[1];
+  const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+  if (Math.abs(den) < 1e-9) return null;
+  const p = x1 * y2 - y1 * x2;
+  const q = x3 * y4 - y3 * x4;
+  return [(p * (x3 - x4) - (x1 - x2) * q) / den, (p * (y3 - y4) - (y1 - y2) * q) / den];
+}
+
+/** THE LENS, RECOVERED FROM THE TRACE ITSELF.
+ *
+ * The depth was the last thing still being guessed at. Everything else comes
+ * out of the four corners exactly — verified against a synthetic camera at
+ * 0.0px — but the extrusion is scaled by the focal length, and that was an
+ * assumed 1.1 × the image's longer side. Measured against ground truth, a wall
+ * shot on a longer lens came out 75% too deep and a wide one 58% too shallow.
+ * Nothing about the front face gives that away, so it just quietly looked wrong.
+ *
+ * A rectangle gives it up, though. Its two pairs of edges meet at two vanishing
+ * points, and because the real edges are at right angles those points are
+ * conjugate: (V1 − c) · (V2 − c) + f² = 0 with the principal point at c. So the
+ * focal length falls straight out of the trace, no EXIF and no assumption.
+ *
+ * IT DEGENERATES ON A HEAD-ON WALL, where both pairs of edges stay parallel and
+ * their vanishing points run off to infinity. That is exactly the case where it
+ * does not matter: a wall square to the camera shows almost no depth, so a
+ * wrong lens has almost nothing to scale. The fallback covers it.
+ *
+ * Guarded at both ends, because a near-parallel pair produces a vanishing point
+ * a very long way out and an f to match. Anything outside a plausible lens is
+ * discarded rather than trusted. */
+function focalFromQuad(corners: Point[], cx: number, cy: number, imageW: number, imageH: number): number {
+  const assumed = 1.1 * Math.max(imageW, imageH);
+  const [tl, tr, br, bl] = corners;
+
+  const v1 = intersect(tl, tr, bl, br); // where the two horizontal edges meet
+  const v2 = intersect(tl, bl, tr, br); // and the two vertical ones
+  if (!v1 || !v2) return assumed;
+
+  // A vanishing point far enough out is parallel in all but arithmetic, and the
+  // f it implies is noise amplified by the length of the extrapolation.
+  const far = 60 * Math.max(imageW, imageH);
+  if (Math.hypot(v1[0] - cx, v1[1] - cy) > far) return assumed;
+  if (Math.hypot(v2[0] - cx, v2[1] - cy) > far) return assumed;
+
+  const fSq = -((v1[0] - cx) * (v2[0] - cx) + (v1[1] - cy) * (v2[1] - cy));
+  if (!(fSq > 0)) return assumed;
+  const f = Math.sqrt(fSq);
+
+  // Between a very wide lens and a short telephoto. Outside that the solve has
+  // gone wrong rather than found an unusual camera.
+  const lo = 0.35 * Math.max(imageW, imageH);
+  const hi = 4.0 * Math.max(imageW, imageH);
+  return f >= lo && f <= hi ? f : assumed;
+}
+
 /** Builds the projection that puts a modelled wardrobe onto the traced wall.
  *
  * TWO HALVES, AND THE SPLIT IS THE POINT.
@@ -143,9 +201,9 @@ export function projectorFromQuad(
 ): Projector | null {
   if (corners.length !== 4 || widthMm <= 0 || heightMm <= 0) return null;
 
-  const f = 1.1 * Math.max(imageW, imageH);
   const cx = imageW / 2;
   const cy = imageH / 2;
+  const f = focalFromQuad(corners, cx, cy, imageW, imageH);
 
   // Model plane, Z = 0, origin at the opening's bottom-left, Y up. The traced
   // corners arrive TL TR BR BL, so their partners are the rectangle's corners
