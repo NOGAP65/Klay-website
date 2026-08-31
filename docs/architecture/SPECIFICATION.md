@@ -1,8 +1,8 @@
 # Klay Interiors — Architecture Specification
 
-**Version:** 1.3
-**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3)
-**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11)
+**Version:** 1.4
+**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3, v1.4)
+**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2)
 **Status:** Standing document. This is the constitution, not a work order.
 **Owner:** V
 **Applies to:** NOGAP65/Klay-website-new. Ella adopts it after Klay proves it.
@@ -49,7 +49,7 @@ therefore not an appendix — it is the part that makes the rest real.
 | Layer | Directory | May import from | Purpose |
 |---|---|---|---|
 | **App** | `src/app/` | features, design-system, shared, config, **core** | Composition only. Routing, providers, layouts. No business logic, no product knowledge. |
-| **Features** | `src/features/*/` | design-system, shared, config, **core**, and its own internals only | Everything the business does. Each feature self-contained. |
+| **Features** | `src/features/*/` | design-system, shared, config, **core**, its own internals, and **other features via their barrel only** | Everything the business does. Each feature self-contained. |
 | **Design system** | `src/design-system/` | nothing except itself | Tokens and visual primitives. Knows nothing about blinds, prices, or customers. |
 | **Shared** | `src/shared/` | config, other shared | Genuinely generic. If it mentions a domain noun it is not shared, it is a feature. |
 | **Core** | `shared-core/` | **nothing** | The contract between the browser and the server. Imported by both runtimes, depends on neither. See ADR-014. |
@@ -65,6 +65,15 @@ If `shared/` exceeds roughly **15% of `src/`** by line count, something has been
 `index.ts` and A imports that; the thing isn't really either feature's and moves to `shared/`;
 or the app layer composes them and passes data down as props. Never import from
 `features/b/components/Thing.tsx` directly.
+
+**The restriction is not WHETHER a feature may reach another, it is THROUGH WHAT** — ADR-019.
+Enforced by two rules that are both necessary: `boundaries/dependencies` answers *may this
+layer reach that layer*, and `import/no-internal-modules` answers *through what*, by allowing
+`@/features/*` (one segment, the barrel) and not `@/features/*/**`.
+
+A cross-feature import remains a design signal rather than a free action. A feature barrel
+that grows exports for other features to consume is drifting toward being a shared layer with
+a feature's name on it.
 
 ---
 
@@ -469,6 +478,25 @@ git diff -U0 | grep -E '^+' | grep -E '^+s*(//|*|/*)' | grep '<new-identifier>'
 
 Any output is a comment the rename touched. Review each. Where a comment is *about* the old
 name, leave the old name and add the new one rather than replacing it.
+
+**AND AUTOMATED FIXERS DO NOT REMOVE SUPPRESSION DIRECTIVES.** No `eslint-disable`, no
+`@ts-expect-error`, no `@ts-ignore`, no `biome-ignore` — not by `--fix`, not by a codemod.
+
+A stripped suppression is worse than a stripped comment, because **it lints clean**. The
+directive was load-bearing: something was suppressed for a reason, that reason is usually
+written on the line above, and removing it either re-enables a rule the author had judged
+wrong or silently changes what the tool is checking. Neither shows up in a diff review that is
+scanning for logic changes.
+
+This is not hypothetical here. `eslint --fix` removed two
+`// eslint-disable-next-line react-hooks/exhaustive-deps` directives from
+`Canvas2DCurtainRenderer.tsx` — a **protected IP file** (E-02's sibling) that may not be
+edited at all — and the run reported zero errors. Use `npm run lint:fix`, which is scoped, and
+check the diff for removed directives:
+
+```
+git diff | grep -E '^-.*(eslint-disable|ts-expect-error|ts-ignore)'
+```
 
 **Introducing rules without stopping work:** every new rule starts as `warn` with a recorded
 baseline count. The count may go down; it may not go up. At zero it flips to `error`

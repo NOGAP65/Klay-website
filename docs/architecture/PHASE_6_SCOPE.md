@@ -90,7 +90,42 @@ and are deleted with it.
 
 ## Added during Phase 4
 
-*(nothing yet)*
+### 5. **BLOCKING** — remove the `feature → legacy` boundary allowance
+
+**Phase 6 does not close while this exists.**
+
+`eslint.config.js` currently permits any file under `src/features/` to import anything under
+`src/`. While it is there, most of the layer model is switched off: the rule that says a
+feature may reach only design-system, shared, config, core, its own internals and other
+feature barrels is, in practice, *"a feature may reach anything"*.
+
+It is scaffolding. A migrated feature still imports `Nav`, `Footer`, `lib/api` and
+`data/products`, none of which have reached their destination. Without the allowance the first
+feature to move reported violations nobody could action.
+
+**It comes out when the countdown below reaches zero, and not before.** Removing it earlier
+turns unactionable warnings into a wall; leaving it after that is leaving the layer model off.
+
+#### Countdown — reported at the end of every remaining P4 feature
+
+| Measured at | Feature files reaching legacy | Distinct targets | Edges |
+|---|---:|---:|---:|
+| **P4-1 marketing** | 4 | 4 | 9 |
+
+**The four targets, and what clears each:**
+
+| Target | Edges | Cleared by |
+|---|---:|---|
+| `src/components/Nav.tsx` | 3 | **Phase 5** — `app/layouts/`, decision D |
+| `src/components/Footer.tsx` | 3 | **Phase 5** — `app/layouts/`, decision D |
+| `src/lib/api.ts` | 2 | **Phase 6** — moves with booking |
+| `src/data/products.ts` | 1 | **P4-7** — decision H. Cannot move earlier: the frozen visualiser imports it and frozen files may not be edited |
+
+**Expect the count to rise through P4 and collapse at Phase 5.** Every feature that moves
+brings its own `Nav`/`Footer` imports with it, so the number gets worse before it gets better;
+those two targets carry six of the nine edges today and will carry most of whatever P4 adds.
+
+Command: `node tools/legacy-countdown.mjs`.
 
 ---
 

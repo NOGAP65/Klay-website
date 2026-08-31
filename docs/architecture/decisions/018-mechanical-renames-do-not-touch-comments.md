@@ -1,7 +1,7 @@
-# ADR-018 — Automated renames do not touch comments
+# ADR-018 — Automated fixers do not touch comments or suppression directives
 
 **Status:** Accepted — amends SPECIFICATION.md §11
-**Date:** 1 September 2026
+**Date:** 1 September 2026 · extended 1 September 2026
 **Amends:** §11 (enforcement). Specification version 1.2 → 1.3.
 
 ## Context
@@ -35,6 +35,9 @@ a stale comment, because it reads as current.
 
 **A scripted or automated rename operates on code only. It does not modify comments.**
 
+**And no automated fixer removes a suppression directive** — no `eslint-disable`, no
+`@ts-expect-error`, no `@ts-ignore`. Not by `--fix`, not by a codemod.
+
 Comments referencing a renamed identifier get a **separate, reviewed pass** — read, not
 substituted, because deciding whether a mention should change requires knowing what the
 sentence is claiming.
@@ -51,6 +54,32 @@ Practically, for anyone running one of these:
    from mechanical ones.
 3. Where a comment is *about* the old name — history, or another layer's usage — **leave the
    old name and add the new one**, rather than replacing it.
+
+### Why suppressions are the worse half
+
+A stripped comment leaves documentation stale, which is visible. **A stripped suppression
+lints clean**, which is not.
+
+The directive was load-bearing. Something was suppressed for a reason, that reason is usually
+written on the line above it, and removing it either re-enables a rule the author had
+deliberately judged wrong for that line or silently changes what the tool checks. Neither
+shows up in a review scanning a diff for logic changes — the file gets shorter and greener,
+and nothing looks wrong.
+
+**This happened, twice, to files that may not be edited at all.** `eslint --fix` run without
+scoping removed two `// eslint-disable-next-line react-hooks/exhaustive-deps` directives from
+`Canvas2DCurtainRenderer.tsx` in both the live visualiser and the lab. The run reported zero
+errors. It was caught only by diffing the frozen zone line by line before reverting.
+
+Two guards, because one was not enough:
+
+1. **`npm run lint:fix`** exists so the scoped invocation is the easy one. It excludes
+   `src/visualiser/**` and `src/visualiser-lab/**` and does not touch `netlify/`. Do not run a
+   bare `eslint --fix`.
+2. **Check the diff for removals** before committing:
+   ```
+   git diff | grep -E '^-.*(eslint-disable|ts-expect-error|ts-ignore)'
+   ```
 
 ## Consequences
 

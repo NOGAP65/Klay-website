@@ -159,3 +159,43 @@ one public entrance per feature, and the enforcement in §11 are aimed at exactl
 the count above is how we will know whether they worked.
 
 **The measure of success is that this file stops growing.**
+
+---
+
+## THE SHARED CAUSE — D-03 AND D-05, AND WHY `shared-core` EXISTS
+
+D-03 (an email regex in three places) and D-05 (three curtain implementations) look unrelated.
+They have **one cause between them: there was no legal home for a shared thing.**
+
+**D-03.** The rule "an email address has one @, no spaces, and a dot in the domain" is needed
+by the booking form, the contact form and the server's validator. The two client copies could
+in principle have shared a module. The server's could not — `src/shared/` has no route into
+`netlify/` (§2), and until ADR-014 there was no cross-runtime layer at all. So the third copy
+was not laziness; **it was the only thing the architecture permitted.** Three competent people
+independently wrote the same correct regex because the structure gave them nowhere to put one.
+
+**D-05.** The same shape one level down. Drawing a curtain is needed by the blind renderer's
+curtain path and by the dedicated three.js curtain renderer. There is no
+`rendering/shared/` — §3's target tree provides one; the codebase does not have it yet — so
+each grew its own, and a third implementation is stranded inside
+`Canvas2DBlindRenderer.tsx` unreachable from any UI.
+
+**The pattern, stated once:**
+
+> When a thing is needed in two places and the architecture provides no legal home for it, it
+> gets written twice. Both copies will be correct. One will be updated six months later.
+
+**That is the case for `shared-core`, in evidence rather than in principle.** ADR-014 gives it
+zero dependencies in either direction precisely so it can be that home: importable by a
+browser bundle and a Node function that share nothing else. D-03's third copy is the first
+thing scheduled to move into it (PHASE_6_SCOPE.md item 3), and D-04's postcode regex — logged
+as a *deliberate* non-extraction — is waiting for the same home rather than being relocated
+somewhere it does not solve anything.
+
+**And it is the argument for `rendering/shared/` at P4-7.** Same rule, different scope. If the
+visualiser is unfrozen and reorganised without a place for cross-renderer geometry, D-05 will
+regenerate — because the condition that produced it will not have changed.
+
+**The test for any future divergence: before asking "who duplicated this?", ask "where would
+the single copy have gone?"** If the answer is "nowhere legal", the structure caused it, and
+fixing the copies without fixing the structure buys nothing.
