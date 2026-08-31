@@ -1,8 +1,9 @@
+import { tokens } from '@/ds/tokens/colour';
+import { radius } from '@/ds/tokens/radius';
+import { space } from '@/ds/tokens/space';
+
 import type { CSSProperties, ElementType, ReactNode } from 'react';
 
-import { space } from '../tokens/space';
-import { radius } from '../tokens/radius';
-import { tokens } from '../tokens/colour';
 
 // ---------------------------------------------------------------------------
 // Box — the one primitive that owns padding, background and edges.

@@ -31,11 +31,14 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
+
 import { tokens, eyebrow, headline, layout, prefersReducedMotion, space } from '@/ds';
+
 import { useIsMobile } from '../../hooks/useIsMobile';
+
 import { CtaButton, scrollToId } from './primitives';
-import { BAR_HEIGHT as TICKER_HEIGHT } from './TrustTicker';
 import { STEPS_BAR_HEIGHT } from './StepsBar';
+import { BAR_HEIGHT as TICKER_HEIGHT } from './TrustTicker';
 
 const HERO_VIDEO = '/hero_video.mp4';
 

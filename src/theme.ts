@@ -32,4 +32,4 @@
 // Zero hits is the condition. Until then this file is load-bearing.
 // ---------------------------------------------------------------------------
 
-export * from './design-system/tokens';
+export * from '@/ds';

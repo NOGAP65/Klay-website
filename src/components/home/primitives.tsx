@@ -18,7 +18,9 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+
 import { tokens, eyebrow, headline, motion, radius, space, supporting, type as typeScale } from '@/ds';
+
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { ProductGlyph } from '../ProductGlyph';
 

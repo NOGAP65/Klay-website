@@ -7,6 +7,7 @@
 // ---------------------------------------------------------------------------
 
 import { space } from './space';
+
 import type { Style } from './style';
 
 /** Section rhythm. Both vertical values are scale steps: `xxl` (84) is the

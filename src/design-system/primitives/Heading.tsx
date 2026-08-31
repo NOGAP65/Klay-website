@@ -1,7 +1,8 @@
+import { tokens } from '@/ds/tokens/colour';
+import { type as typeScale } from '@/ds/tokens/type';
+
 import type { CSSProperties, ReactNode } from 'react';
 
-import { type as typeScale } from '../tokens/type';
-import { tokens } from '../tokens/colour';
 
 // ---------------------------------------------------------------------------
 // Heading — the display face, at one of four roles.

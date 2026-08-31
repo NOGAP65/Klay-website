@@ -1,22 +1,23 @@
 import { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
+
+import AboutPage from './pages/AboutPage';
+import BookingConfirmedPage from './pages/BookingConfirmedPage';
+import BookInstallPage from './pages/BookInstallPage';
+import CartPage from './pages/CartPage';
+import ContactPage from './pages/ContactPage';
+import HomePage from './pages/HomePage';
+import HowItWorksPage from './pages/HowItWorksPage';
+import NotFoundPage from './pages/NotFoundPage';
+import ProductDetailPage from './pages/ProductDetailPage';
+import ProductsPage from './pages/ProductsPage';
+import VisualiserPage from './pages/VisualiserPage';
+import VisualizerLabPage from './pages/VisualizerLabPage';
 import {
   LegacyBlindTypeRedirect,
   LegacyCategoryRedirect,
   LEGACY_CATEGORY_SLUGS,
 } from './routes/legacyRedirects';
-import HomePage from './pages/HomePage';
-import ProductsPage from './pages/ProductsPage';
-import ProductDetailPage from './pages/ProductDetailPage';
-import HowItWorksPage from './pages/HowItWorksPage';
-import AboutPage from './pages/AboutPage';
-import ContactPage from './pages/ContactPage';
-import VisualiserPage from './pages/VisualiserPage';
-import VisualizerLabPage from './pages/VisualizerLabPage';
-import BookInstallPage from './pages/BookInstallPage';
-import BookingConfirmedPage from './pages/BookingConfirmedPage';
-import CartPage from './pages/CartPage';
-import NotFoundPage from './pages/NotFoundPage';
 
 /** Scrolls to `#id` after the route renders.
  *

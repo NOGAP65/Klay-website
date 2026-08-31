@@ -22,7 +22,9 @@
 // ---------------------------------------------------------------------------
 
 import { tokens, headline, eyebrow, layout, space, supporting } from '@/ds';
+
 import { useIsMobile } from '../../hooks/useIsMobile';
+
 import { CtaLink } from './primitives';
 
 /** The clearest roller shot in the library — the bracket line across the head of

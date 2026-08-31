@@ -44,9 +44,11 @@
 // ---------------------------------------------------------------------------
 
 import { tokens, headline, layout, space, type as typeScale } from '@/ds';
-import { useMediaQuery } from '../../hooks/useIsMobile';
-import { CtaLink } from './primitives';
+
 import { STEPS } from '../../data/steps';
+import { useMediaQuery } from '../../hooks/useIsMobile';
+
+import { CtaLink } from './primitives';
 
 const BANNER = '/images/range/sheer-curtains.jpg';
 

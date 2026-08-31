@@ -137,7 +137,32 @@ export default tseslint.config(
         },
       ],
       'import/no-cycle': ['warn', { maxDepth: Infinity, ignoreExternal: true }],
-      'import/no-relative-parent-imports': 'warn',
+
+      // §10: "Relative imports permitted only within the same feature or
+      // folder. ../../../shared/lib/format is a lint error."
+      //
+      // NOT `import/no-relative-parent-imports`, which §11 names, and the
+      // reason is worth recording. That rule resolves the specifier before
+      // judging it, so it cannot tell a relative climb from an alias: it fires
+      // on `@/ds` imported from src/pages/ just as readily as on `../../theme`,
+      // because both resolve to a parent directory. It therefore can never
+      // reach zero, and it reports the migration's correct behaviour as a
+      // violation — it was flagging four alias imports in AboutPage.tsx alone.
+      //
+      // `no-restricted-imports` matches the SPECIFIER TEXT, which is what §10
+      // is actually about. An alias passes; a `../` does not.
+      'no-restricted-imports': [
+        'warn',
+        {
+          patterns: [
+            {
+              group: ['../*'],
+              message:
+                'Relative parent import. Use an alias — @/ds, @/shared, @/config, @/core, @/features/<name> — so the layer is visible at the import site (SPECIFICATION.md §10).',
+            },
+          ],
+        },
+      ],
       'import/no-self-import': 'warn',
       'import/no-useless-path-segments': 'warn',
       // Feature internals are private — §1 rule 3. Only the barrel is public.
@@ -147,21 +172,62 @@ export default tseslint.config(
       ],
 
       // --- layer direction: §2 + ADR-014 ------------------------------------
-      'boundaries/element-types': [
+      // eslint-plugin-boundaries v7 syntax: `policies`, and entity selectors
+      // rather than bare strings. The v5-era shorthand still loads but silently
+      // fails to parse the same-feature capture rule — which is the single most
+      // important policy in the table, since it is what stops feature A
+      // importing feature B's internals.
+      'boundaries/dependencies': [
         'warn',
         {
           default: 'disallow',
-          rules: [
-            { from: 'app', allow: ['feature', 'design-system', 'shared', 'config', 'core'] },
-            { from: 'feature', allow: ['design-system', 'shared', 'config', 'core', ['feature', { featureName: '${from.featureName}' }]] },
-            { from: 'design-system', allow: ['design-system'] },
-            { from: 'shared', allow: ['shared', 'config'] },
+          policies: [
+            {
+              from: [{ element: { type: 'app' } }],
+              allow: [
+                { to: { element: { type: 'feature' } } },
+                { to: { element: { type: 'design-system' } } },
+                { to: { element: { type: 'shared' } } },
+                { to: { element: { type: 'config' } } },
+                { to: { element: { type: 'core' } } },
+              ],
+            },
+            {
+              from: [{ element: { type: 'feature' } }],
+              allow: [
+                { to: { element: { type: 'design-system' } } },
+                { to: { element: { type: 'shared' } } },
+                { to: { element: { type: 'config' } } },
+                { to: { element: { type: 'core' } } },
+                // A feature may reach its own internals and nothing else's.
+                { to: { element: { type: 'feature', capture: { featureName: '{{from.capture.featureName}}' } } } },
+              ],
+            },
+            {
+              from: [{ element: { type: 'design-system' } }],
+              allow: [{ to: { element: { type: 'design-system' } } }],
+            },
+            {
+              from: [{ element: { type: 'shared' } }],
+              allow: [{ to: { element: { type: 'shared' } } }, { to: { element: { type: 'config' } } }],
+            },
             // ADR-014: shared-core imports NOTHING. Not src/, not netlify/,
             // not shared/. Zero dependencies in either direction — it is the
             // contract between two runtimes and may not depend on either.
-            { from: 'core', allow: [] },
+            { from: [{ element: { type: 'core' } }], allow: [] },
             // Not yet migrated. No restrictions until it lands somewhere.
-            { from: 'legacy', allow: ['legacy', 'design-system', 'shared', 'config', 'core', 'feature', 'app'] },
+            {
+              from: [{ element: { type: 'legacy' } }],
+              allow: [
+                { to: { element: { type: 'legacy' } } },
+                { to: { element: { type: 'design-system' } } },
+                { to: { element: { type: 'shared' } } },
+                { to: { element: { type: 'config' } } },
+                { to: { element: { type: 'core' } } },
+                { to: { element: { type: 'feature' } } },
+                { to: { element: { type: 'app' } } },
+              ],
+            },
           ],
         },
       ],
@@ -209,6 +275,25 @@ export default tseslint.config(
     rules: { 'klay/no-hardcoded-style-values': 'off' },
   },
 
+  // --- sibling folders inside one layer -------------------------------------
+  // §10 bans relative parent imports because they hide layer violations:
+  // `@/features/cart/components/Thing` is visibly illegal from inside booking
+  // and `../../cart/components/Thing` is not.
+  //
+  // That reasoning does not apply within a single layer. §3's own structure
+  // puts `primitives/` and `tokens/` side by side inside design-system, so any
+  // primitive that uses a token necessarily reaches a sibling folder — and
+  // `import/no-relative-parent-imports` flags it on the RESOLVED path, so
+  // writing `@/ds/tokens/colour` instead of `../tokens/colour` does not satisfy
+  // it either. The rule cannot be complied with here; only switched off.
+  //
+  // Scoped to design-system alone. It stays on everywhere a layer boundary
+  // could actually be crossed.
+  {
+    files: ['src/design-system/**'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
+
   // --- config/env.ts is the one file allowed to read the environment --------
   {
     files: ['src/config/env.ts'],
@@ -230,7 +315,7 @@ export default tseslint.config(
     files: ['*.config.{js,ts}', 'tools/**/*.{js,mjs}', 'research.mjs'],
     languageOptions: { globals: globals.node },
     rules: {
-      'import/no-relative-parent-imports': 'off',
+      'no-restricted-imports': 'off',
       'max-lines': 'off',
       'max-lines-per-function': 'off',
     },

@@ -36,12 +36,14 @@
 
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Nav } from '../components/Nav';
+
 import { radius, tokens } from '@/ds';
-import VisualiserControls from '../visualiser-lab/VisualiserControls';
+
+import { Nav } from '../components/Nav';
+import { bookingLink } from '../lib/bookingLink';
 import KlayConfigurator from '../visualiser-lab/KlayConfigurator';
 import { useVisualiserStore, ProductCategory } from '../visualiser-lab/useVisualiserStore';
-import { bookingLink } from '../lib/bookingLink';
+import VisualiserControls from '../visualiser-lab/VisualiserControls';
 
 const BANNER_H = 30;
 

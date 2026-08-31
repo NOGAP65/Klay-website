@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Nav } from '../components/Nav';
-import { Footer } from '../components/Footer';
+
 import { tokens, headline, eyebrow } from '@/ds';
+
+import { Footer } from '../components/Footer';
+import { Nav } from '../components/Nav';
 import { formatAUD } from '../lib/pricing';
 
 // ---------------------------------------------------------------------------

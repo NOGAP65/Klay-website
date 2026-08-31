@@ -1,6 +1,7 @@
+import { space } from '@/ds/tokens/space';
+
 import type { CSSProperties, ElementType, ReactNode } from 'react';
 
-import { space } from '../tokens/space';
 
 // ---------------------------------------------------------------------------
 // Stack — flow in one direction, with a gap off the scale.

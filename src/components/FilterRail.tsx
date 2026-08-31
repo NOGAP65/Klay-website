@@ -24,6 +24,7 @@
 // ---------------------------------------------------------------------------
 
 import { radius, tokens } from '@/ds';
+
 import { GROUP_FILTERS, LIGHT_VALUES, countFor, type Facets } from '../data/catalogue';
 
 const GROUP_LABEL = {

@@ -34,14 +34,15 @@
 // ---------------------------------------------------------------------------
 
 import { useNavigate } from 'react-router-dom';
+
 import { radius, tokens, layout, motion, space, type as typeScale, shadow } from '@/ds';
-import { useIsMobile } from '../../hooks/useIsMobile';
-import { useCartStore } from '../../store/cartStore';
+
 import { productByBlindType } from '../../data/products';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { bookingLink } from '../../lib/bookingLink';
 import { formatAUD } from '../../lib/pricing';
+import { useCartStore } from '../../store/cartStore';
 import KlayConfigurator from '../../visualiser/KlayConfigurator';
-import VisualiserControls, { Field, GroupHeading, PriceBox } from '../../visualiser/VisualiserControls';
 import {
   MAX_WINDOWS,
   type JobWindow,
@@ -49,6 +50,8 @@ import {
   useVisualiserStore,
   type ProductCategory,
 } from '../../visualiser/useVisualiserStore';
+import VisualiserControls, { Field, GroupHeading, PriceBox } from '../../visualiser/VisualiserControls';
+
 import { CtaButton, CtaLink, SectionBand, TextLink, useHover } from './primitives';
 
 /** Where a curtain enquiry goes. Curtains are configurable here and in the

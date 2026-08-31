@@ -24,6 +24,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
+
 import { tokens, prefersReducedMotion, space, type as typeScale } from '@/ds';
 
 /** How long one full pass of the list takes.

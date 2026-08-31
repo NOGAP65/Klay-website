@@ -24,6 +24,7 @@
 // ---------------------------------------------------------------------------
 
 import { type as typeScale } from '@/ds';
+
 import { PhotoTile } from './home/primitives';
 
 export interface Swatch {

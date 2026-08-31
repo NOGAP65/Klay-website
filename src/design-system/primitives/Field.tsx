@@ -1,31 +1,169 @@
 // ---------------------------------------------------------------------------
-// Field — §3 requires design-system/primitives/Field.tsx, and this is it.
+// Field — moved here from src/components/FormField.tsx in Phase 2.4.
 //
-// IT IS A RE-EXPORT, NOT A NEW COMPONENT, AND THAT IS THE WHOLE POINT.
+// IT WAS BRIEFLY A RE-EXPORT AND THE LINTER WAS RIGHT TO REJECT THAT. §3
+// requires design-system/primitives/Field.tsx, and writing a second form input
+// beside the working one would have been The Second Implementation (§13) — the
+// anti-pattern this architecture exists to prevent. So the first attempt here
+// re-exported FormField from its old home. boundaries/element-types flagged it
+// immediately: design-system may import nothing except itself (§2), and a
+// re-export is still an import.
 //
-// src/components/FormField.tsx already is this primitive: a controlled input
-// with a label, an error message wired through aria-describedby, a focus tint
-// and a shared danger colour. It is used by the booking form and the contact
-// form and it works.
+// So the body moved instead. src/components/FormField.tsx is now the shim, and
+// there is still exactly one implementation.
 //
-// Writing a second form input here to satisfy a checklist item would be The
-// Second Implementation — SPECIFICATION.md §13, the named anti-pattern this
-// entire architecture exists to prevent, and the one this codebase has already
-// committed twice. Two form inputs, both good, neither knowing about the other,
-// is exactly how /cart and /book happened.
-//
-// So the primitive exists at the path the specification asks for, and there is
-// exactly one implementation behind it.
-//
-// PHASE 3 COLLAPSES THIS. FormField's body moves here, `src/components/
-// FormField.tsx` becomes the shim instead, and its consumers are repointed at
-// @/ds. That is a move, and moves belong to Phase 3 — doing it here would have
-// mixed a move into a create.
-//
-// One thing to resolve when that happens: FormField exports DANGER
-// ('#A03A28'), the one red on the site. It is a colour and it belongs in
-// tokens/colour.ts, not beside a component.
+// STILL TO RESOLVE: DANGER below is a colour and belongs in tokens/colour.ts,
+// not exported from a component. Left where it is deliberately — moving a
+// component and editing the palette in one commit is two changes wearing one
+// hat. It moves with the token scale work.
 // ---------------------------------------------------------------------------
 
-export { FormField as Field, DANGER } from '../../components/FormField';
-export type { FormFieldProps as FieldProps } from '../../components/FormField';
+import { useState, useId } from 'react';
+
+import { tokens } from '@/ds/tokens/colour';
+import { motion } from '@/ds/tokens/motion';
+
+// ---------------------------------------------------------------------------
+// A controlled form input in the site's own idiom.
+//
+// ContactPage had its own local Field, but it took no value/onChange — which is
+// exactly why that form could never submit anything. This is the version that
+// holds state, shows validation errors, and is shared by the contact form and
+// the booking form so the two behave identically.
+//
+// Accessibility: outline:'none' strips the browser's focus ring, so a gold
+// border replaces it — a keyboard user must still be able to see where they
+// are. Errors are tied to the input with aria-describedby and announced via
+// role="alert", rather than being colour-only.
+// ---------------------------------------------------------------------------
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontFamily: tokens.body,
+  fontSize: 11,
+  color: tokens.inkSoft,
+  textTransform: 'uppercase',
+  letterSpacing: '0.1em',
+  marginBottom: 8,
+};
+
+export interface FieldProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  required?: boolean;
+  textarea?: boolean;
+  rows?: number;
+  placeholder?: string;
+  autoComplete?: string;
+  /** Server- or client-side message for this field. Presence turns the border red. */
+  error?: string;
+  /** Native constraint, e.g. a date that must not be in the past. */
+  min?: string;
+  inputMode?: 'text' | 'tel' | 'numeric' | 'email';
+  maxLength?: number;
+}
+
+export function Field({
+  label,
+  value,
+  onChange,
+  type = 'text',
+  required,
+  textarea,
+  rows = 4,
+  placeholder,
+  autoComplete,
+  error,
+  min,
+  inputMode,
+  maxLength,
+}: FieldProps) {
+  const [focused, setFocused] = useState(false);
+  const id = useId();
+  const errorId = `${id}-error`;
+
+  // Error outranks focus — a red border that turns bronze when you click into it
+  // would hide the problem at the exact moment you are trying to fix it.
+  //
+  // `accentEdge`, not `accent`: the bronze itself measures 3.45 against paper,
+  // which clears 1.4.11's 3:1 for a border but only barely, and a focus ring is
+  // the one border on the site that has to be unmistakable. The deeper sibling
+  // measures 6.24.
+  const borderColour = error ? DANGER : focused ? tokens.accentEdge : tokens.line;
+
+  const style: React.CSSProperties = {
+    width: '100%',
+    padding: '15px 16px',
+    // THE PALE SHADE, and this is the one place it earns its keep: the focused
+    // field tints as well as taking a bronze edge, so which box has the caret is
+    // legible from across the form rather than from a 1px line. Ink on
+    // accentWash measures 14.73, so the value being typed loses nothing.
+    //
+    // Not applied on error: a bronze-tinted field with a red border is two states
+    // arguing, and the error is the one that matters.
+    background: focused && !error ? tokens.accentWash : tokens.card,
+    border: `1px solid ${borderColour}`,
+    fontFamily: tokens.body,
+    fontSize: 14,
+    color: tokens.ink,
+    outline: 'none',
+    boxSizing: 'border-box',
+    transition: motion.link,
+  };
+
+  const shared = {
+    id,
+    value,
+    required,
+    placeholder,
+    autoComplete,
+    maxLength,
+    'aria-invalid': error ? true : undefined,
+    'aria-describedby': error ? errorId : undefined,
+    onFocus: () => setFocused(true),
+    onBlur: () => setFocused(false),
+  } as const;
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <label style={labelStyle} htmlFor={id}>
+        {label}
+        {required && <span style={{ color: tokens.onDark, marginLeft: 4 }}>*</span>}
+      </label>
+
+      {textarea ? (
+        <textarea
+          {...shared}
+          rows={rows}
+          onChange={(e) => onChange(e.target.value)}
+          style={{ ...style, resize: 'vertical' }}
+        />
+      ) : (
+        <input
+          {...shared}
+          type={type}
+          min={min}
+          inputMode={inputMode}
+          onChange={(e) => onChange(e.target.value)}
+          style={style}
+        />
+      )}
+
+      {error && (
+        <p
+          id={errorId}
+          role="alert"
+          style={{ fontFamily: tokens.body, fontSize: 12, color: DANGER, margin: '6px 0 0' }}
+        >
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** The one red on the site. Deliberately desaturated so it reads as a warning
+ *  inside a warm palette rather than a browser-default error. */
+export const DANGER = '#A03A28';

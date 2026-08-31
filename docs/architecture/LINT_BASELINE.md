@@ -3,7 +3,8 @@
 **Recorded:** 31 August 2026
 **Commit:** Phase 1.2 of the architecture migration
 **Command:** `npm run lint` (`eslint .`)
-**Result:** `1033 problems (0 errors, 1033 warnings)` — exit code **0**, 18.4 s
+**Result at Phase 1.2:** `1033 problems (0 errors, 1033 warnings)` — exit code **0**, 18.4 s
+**Result at Phase 2 close:** `867 problems (0 errors, 867 warnings)` — exit **0**. See the movement table.
 
 ---
 
@@ -179,3 +180,96 @@ npx eslint . -f json -o lint.json # machine-readable, for comparing against this
 A rule's count going **up** is a regression and should fail review, even though the exit code
 is 0. That is the whole contract of §11, and until Phase 6.1 flips rules to `error` it is
 enforced by reading, not by the build.
+
+---
+
+# MOVEMENT — PHASE 2 CLOSE
+
+**867 total, 0 errors.** Movable (excluding the frozen visualiser): **667, down from 837.**
+
+| Rule | All: before → after | Movable: before → after | Δ movable |
+|---|---|---|---:|
+| `klay/no-hardcoded-style-values` | 295 → 295 | 283 → 283 | — |
+| `import/no-internal-modules` | 142 → 142 | 132 → 132 | — |
+| **`no-restricted-imports`** *(new — replaces the rule below)* | 0 → 140 | 0 → 124 | **+124** |
+| **`import/no-relative-parent-imports`** *(retired)* | 169 → 0 | 153 → 0 | **−153** |
+| `@typescript-eslint/naming-convention` | 129 → 128 | 66 → 66 | — |
+| `max-lines-per-function` | 50 → 51 | 27 → 27 | — |
+| **`import/order`** | 174 → 35 | 144 → 3 | **−141** |
+| `complexity` | 24 → 24 | 13 → 13 | — |
+| `react-hooks/refs` | 16 → 16 | 2 → 2 | — |
+| `max-lines` | 15 → 14 | 8 → 8 | — |
+| `react-hooks/set-state-in-effect` | 5 → 5 | 3 → 3 | — |
+| `react-refresh/only-export-components` | 4 → 5 | 4 → 5 | **+1** |
+| `max-params` | 2 → 5 | 0 → 0 | — |
+| `@typescript-eslint/no-unused-vars` | 3 → 3 | 1 → 1 | — |
+| `react-hooks/immutability` | 2 → 2 | 0 → 0 | — |
+| (unused `eslint-disable`) | 2 → 2 | 0 → 0 | — |
+| **`klay/no-direct-env-access`** | 1 → **0** | 1 → **0** | **−1** |
+| **TOTAL** | **1033 → 867** | **837 → 667** | **−170** |
+
+## What moved, and why
+
+**`import/order`: 144 → 3 movable.** Autofixed, which is what §10 says to do with it
+(*"Blank line between groups, autofixed"*). Phase 2.2b briefly pushed this **up** by 32 —
+repointing 29 files from `../theme` to `@/ds` moved those imports into a different group — and
+the autofix cleared 141. The three that remain are in files the fixer could not order
+unambiguously.
+
+**`klay/no-direct-env-access`: 1 → 0.** Phase 2.1. **This rule is now eligible to flip to
+`error` in Phase 6.1** — the first to qualify.
+
+**`react-refresh/only-export-components`: +1.** The new `src/components/FormField.tsx` shim
+re-exports a component *and* `DANGER` from the same file. It goes when the shim goes, in
+Phase 4.
+
+**`max-params` +3 and `max-lines-per-function` +1 are not ours.** Both are entirely inside the
+frozen zone — the wardrobe renderer added during Phase 2 — which is why the movable delta for
+each is zero. This is the split the movable column exists to show.
+
+## RULE CHANGE — `import/no-relative-parent-imports` replaced
+
+§11 names `import/no-relative-parent-imports` as the mechanism for §10's ban on relative
+parent imports. **It is the wrong rule, and the baseline was overstating the problem by 29.**
+
+The rule resolves a specifier before judging it, so it cannot distinguish a relative climb
+from an alias. `@/ds` imported from `src/pages/` resolves to a parent directory, so it fires —
+four times in `AboutPage.tsx` alone, on imports that are exactly what the migration is trying
+to produce. Two consequences: the count could never reach zero, so the rule could never flip
+to `error`; and it reported correct behaviour as a violation, which is how a rule gets
+switched off.
+
+Replaced with `no-restricted-imports` on the pattern `../*`, which matches the **specifier
+text** — the thing §10 is actually about. An alias passes; a `../` does not.
+
+**The genuine count is 124 movable, not 153.** The 29-finding difference was alias imports
+being miscounted. This is not progress and is not recorded as any; it is a correction to the
+measurement.
+
+This is a §11 mechanism deviation and is recorded in the deviations table above. It does not
+require an ADR — §11 lists mechanisms as guidance and the rule it enforces is unchanged.
+
+## Also corrected in Phase 2
+
+**`eslint-plugin-boundaries` was misconfigured and silently failing.** The config was written
+against the v5-era API — `rules`, `element-types`, bare string selectors — which loads with
+deprecation warnings but **does not parse the same-feature capture policy**:
+
+```
+[boundaries/element-types] Detected an unrecognized selector shape in 1 policy at indices: 1.
+```
+
+Index 1 is the `feature → its own internals` policy, which is the single most important entry
+in the layer table: it is what stops feature A importing feature B. It was being dropped.
+Migrated to the v7 API (`boundaries/dependencies`, `policies`, `{ to: { element: … } }`
+selectors, `{{…}}` templates) and the warnings are gone.
+
+The rule still reports **0**, correctly — every file is still classified `legacy`, which has
+no restrictions. But it will now actually work when features arrive.
+
+**`design-system` was importing the legacy layer, and the rule caught it.** Phase 2.4's first
+attempt at `Field.tsx` re-exported `FormField` from `src/components/`.
+`boundaries/element-types` rejected it within seconds: §2 says design-system may import
+nothing except itself, and a re-export is still an import. The body was moved instead. Worth
+recording because it is the first time in this migration that the enforcement caught a
+violation the author had not spotted — which is the entire argument of §11.

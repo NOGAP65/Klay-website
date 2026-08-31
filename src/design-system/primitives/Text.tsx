@@ -1,7 +1,8 @@
+import { tokens } from '@/ds/tokens/colour';
+import { type as typeScale } from '@/ds/tokens/type';
+
 import type { CSSProperties, ElementType, ReactNode } from 'react';
 
-import { type as typeScale } from '../tokens/type';
-import { tokens } from '../tokens/colour';
 
 // ---------------------------------------------------------------------------
 // Text — body copy, labels and micro type. Headings are Heading.

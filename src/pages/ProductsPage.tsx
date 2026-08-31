@@ -26,13 +26,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Nav } from '../components/Nav';
-import { Footer } from '../components/Footer';
-import { ProductCard } from '../components/ProductCard';
-import { useKlayStore } from '../store';
+
 import { radius, tokens } from '@/ds';
-import { useIsMobile, useMediaQuery } from '../hooks/useIsMobile';
+
 import { FilterRail } from '../components/FilterRail';
+import { Footer } from '../components/Footer';
+import { Nav } from '../components/Nav';
+import { ProductCard } from '../components/ProductCard';
 import {
   EMPTY_FACETS,
   applyFacets,
@@ -41,6 +41,8 @@ import {
   type CatalogueItem,
   type Facets,
 } from '../data/catalogue';
+import { useIsMobile, useMediaQuery } from '../hooks/useIsMobile';
+import { useKlayStore } from '../store';
 
 type SortOption = 'featured' | 'price-low' | 'name-az';
 

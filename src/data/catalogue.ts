@@ -26,6 +26,7 @@
 // ---------------------------------------------------------------------------
 
 import { PRODUCTS, RYNAMIC_COLOURS, CURTAIN_COLOURS } from './products'
+
 import type { BlindType } from '../lib/pricing'
 
 export type Group = 'Indoor' | 'Outdoor' | 'Other'

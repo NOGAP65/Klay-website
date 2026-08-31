@@ -97,19 +97,21 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect } from 'react';
-import { useKlayStore } from '../store';
+
 import { tokens } from '@/ds';
-import { Nav } from '../components/Nav';
+
 import { Footer } from '../components/Footer';
-import { TrustTicker, BAR_HEIGHT } from '../components/home/TrustTicker';
+import { AboutPanel } from '../components/home/AboutPanel';
 import { Hero } from '../components/home/Hero';
-import { StepsBar } from '../components/home/StepsBar';
 import { RangeRow } from '../components/home/RangeRow';
 import { RecommendationBanner } from '../components/home/RecommendationBanner';
-import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
-import { AboutPanel } from '../components/home/AboutPanel';
 import { SocialProof } from '../components/home/SocialProof';
+import { StepsBar } from '../components/home/StepsBar';
 import { Testimonials } from '../components/home/Testimonials';
+import { TrustTicker, BAR_HEIGHT } from '../components/home/TrustTicker';
+import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
+import { Nav } from '../components/Nav';
+import { useKlayStore } from '../store';
 
 export default function HomePage() {
   const setScrollY = useKlayStore((s) => s.setScrollY);

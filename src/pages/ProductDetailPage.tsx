@@ -1,20 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Nav } from '../components/Nav';
-import { Footer } from '../components/Footer';
-import { useKlayStore } from '../store';
-import { useCartStore } from '../store/cartStore';
+
 import { tokens, eyebrow, motion } from '@/ds';
-import { useIsMobile } from '../hooks/useIsMobile';
+
+import { Footer } from '../components/Footer';
+import { Nav } from '../components/Nav';
 import {
   ProductBlindType,
   productByBlindType,
   productBySlug,
 } from '../data/products';
-import KlayConfigurator from '../visualiser/KlayConfigurator';
-import VisualiserControls from '../visualiser/VisualiserControls';
-import { useVisualiserStore } from '../visualiser/useVisualiserStore';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { bookingLink } from '../lib/bookingLink';
+import { useKlayStore } from '../store';
+import { useCartStore } from '../store/cartStore';
+import KlayConfigurator from '../visualiser/KlayConfigurator';
+import { useVisualiserStore } from '../visualiser/useVisualiserStore';
+import VisualiserControls from '../visualiser/VisualiserControls';
 
 const INK_55 = 'rgba(29,29,29,0.55)';
 

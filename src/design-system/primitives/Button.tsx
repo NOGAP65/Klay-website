@@ -1,10 +1,10 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 
-import { type as typeScale } from '../tokens/type';
-import { tokens } from '../tokens/colour';
-import { radius } from '../tokens/radius';
-import { space } from '../tokens/space';
-import { motion } from '../tokens/motion';
+import { tokens } from '@/ds/tokens/colour';
+import { motion } from '@/ds/tokens/motion';
+import { radius } from '@/ds/tokens/radius';
+import { space } from '@/ds/tokens/space';
+import { type as typeScale } from '@/ds/tokens/type';
 
 // ---------------------------------------------------------------------------
 // Button — three fills, and no fourth.
