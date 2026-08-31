@@ -1,5 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 
+import { turnstileSiteKey, isTurnstileEnabled } from '@/config';
+
 // ---------------------------------------------------------------------------
 // Cloudflare Turnstile widget — a privacy-preserving captcha alternative.
 //
@@ -32,7 +34,9 @@ declare global {
   }
 }
 
-const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+// Read from @/config rather than import.meta.env — SPECIFICATION.md §3. That
+// module is the only place in src/ that touches the environment.
+const SITE_KEY = turnstileSiteKey;
 const SCRIPT_ID = 'turnstile-script';
 
 let scriptLoaded = false;
@@ -121,5 +125,5 @@ export function Turnstile({ onVerify, onError, theme = 'light' }: TurnstileProps
 }
 
 export function useTurnstileEnabled(): boolean {
-  return !!SITE_KEY;
+  return isTurnstileEnabled;
 }
