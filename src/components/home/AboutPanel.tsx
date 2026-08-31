@@ -22,8 +22,7 @@
 // ---------------------------------------------------------------------------
 
 import { tokens, headline, eyebrow, layout, space, supporting } from '@/ds';
-
-import { useIsMobile } from '../../hooks/useIsMobile';
+import { useIsMobile } from '@/shared';
 
 import { CtaLink } from './primitives';
 

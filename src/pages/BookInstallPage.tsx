@@ -2,12 +2,11 @@ import { useMemo, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 
 import { radius, tokens, eyebrow, headline, motion, layout } from '@/ds';
+import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
 
 import { Footer } from '../components/Footer';
 import { FormField, DANGER } from '../components/FormField';
-import { Honeypot } from '../components/Honeypot';
 import { Nav } from '../components/Nav';
-import { Turnstile, useTurnstileEnabled } from '../components/Turnstile';
 import { createCheckoutSession, requestQuote, type BookingPayload, type FieldErrors } from '../lib/api';
 import {
   MAX_QUANTITY,
@@ -117,7 +116,7 @@ export default function BookInstallPage() {
     const errors: FieldErrors = {};
     if (!form.name.trim()) errors.name = 'Please tell us your name.';
     if (!form.email.trim()) errors.email = 'We need an email to reply to.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    else if (!isValidEmail(form.email)) {
       errors.email = "That email doesn't look right.";
     }
     if (form.postcode.trim() && !/^\d{4}$/.test(form.postcode.trim())) {

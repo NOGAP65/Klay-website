@@ -44,9 +44,9 @@
 // ---------------------------------------------------------------------------
 
 import { tokens, headline, layout, space, type as typeScale } from '@/ds';
+import { useMediaQuery } from '@/shared';
 
 import { STEPS } from '../../data/steps';
-import { useMediaQuery } from '../../hooks/useIsMobile';
 
 import { CtaLink } from './primitives';
 

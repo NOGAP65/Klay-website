@@ -273,3 +273,53 @@ attempt at `Field.tsx` re-exported `FormField` from `src/components/`.
 nothing except itself, and a re-export is still an import. The body was moved instead. Worth
 recording because it is the first time in this migration that the enforcement caught a
 violation the author had not spotted — which is the entire argument of §11.
+
+---
+
+# MOVEMENT — PHASE 3 CLOSE
+
+**845 total, 0 errors.** Movable: **639, down from 837 at the Phase 1.2 baseline.**
+
+| Rule | Movable: baseline → P2 → P3 | Δ from baseline |
+|---|---|---:|
+| `klay/no-hardcoded-style-values` | 283 → 283 → 283 | — |
+| `import/no-internal-modules` | 132 → 132 → **121** | **−11** |
+| `no-restricted-imports` *(replaces the rule below)* | — → 124 → **107** | — |
+| `import/no-relative-parent-imports` *(retired)* | 153 → 0 → 0 | −153 |
+| `@typescript-eslint/naming-convention` | 66 → 66 → 66 | — |
+| `import/order` | 144 → 3 → **3** | **−141** |
+| `max-lines-per-function` | 27 → 27 → 27 | — |
+| `complexity` | 13 → 13 → 13 | — |
+| `max-lines` | 8 → 8 → 8 | — |
+| `react-refresh/only-export-components` | 4 → 5 → 5 | +1 |
+| `react-hooks/set-state-in-effect` | 3 → 3 → 3 | — |
+| `react-hooks/refs` | 2 → 2 → 2 | — |
+| `@typescript-eslint/no-unused-vars` | 1 → 1 → 1 | — |
+| `klay/no-direct-env-access` | 1 → **0** → **0** | **−1** |
+| **TOTAL movable** | **837 → 667 → 639** | **−198** |
+
+## What moved in Phase 3
+
+**`no-restricted-imports`: 124 → 107.** Seventeen relative parent imports retired by the
+shared-layer moves. This is the rule that will fall furthest during Phase 4, since every
+feature that gains a barrel takes a batch of `../../` with it.
+
+**`import/no-internal-modules`: 132 → 121.** Eleven consumers now import `@/shared` — the
+barrel — rather than reaching for `../components/Turnstile` directly. §1 rule 3 working as
+intended for the first time.
+
+**`import/order` held at 3** after two autofix passes. The `@/shared` moves pushed it to 34
+mid-phase; `eslint --fix` cleared 31.
+
+## Rules that did not move, and why that is expected
+
+**`klay/no-hardcoded-style-values` is unchanged at 283.** The scale was adopted and applied in
+Phase 2.3, but applying it to hardcoded literals is a separate pass that belongs with the
+features that own them — ADR-017. **This number is the measure of whether the scale worked,
+and it will not begin falling until Phase 4.**
+
+**`@typescript-eslint/naming-convention` is unchanged at 66.** It is a rename, and renames do
+not happen inside move phases.
+
+**`max-params` rose from 2 to 8 in the ALL column and stayed at 0 movable.** All six are in
+the wardrobe renderer being written in the frozen zone.

@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { tokens, eyebrow, headline, motion, supporting } from '@/ds';
+import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
 
 import { Footer } from '../components/Footer';
 import { FormField, DANGER } from '../components/FormField';
-import { Honeypot } from '../components/Honeypot';
 import { Nav } from '../components/Nav';
-import { Turnstile, useTurnstileEnabled } from '../components/Turnstile';
 import { requestQuote, type FieldErrors } from '../lib/api';
 
 // DARK ('#0f0d09') and PARCHMENT used to be declared here. Contact is a
@@ -67,7 +66,7 @@ export default function ContactPage() {
     const errors: FieldErrors = {};
     if (!form.name.trim()) errors.name = 'Please tell us your name.';
     if (!form.email.trim()) errors.email = 'We need an email to reply to.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    else if (!isValidEmail(form.email)) {
       errors.email = "That email doesn't look right.";
     }
     if (turnstileEnabled && !turnstileToken) {

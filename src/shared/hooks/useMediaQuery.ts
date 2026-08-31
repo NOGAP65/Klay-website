@@ -1,3 +1,14 @@
+// ---------------------------------------------------------------------------
+// useMediaQuery — subscribe to any media query.
+//
+// Moved from src/hooks/useIsMobile.ts in Phase 3.2 and split from useIsMobile
+// in 3.3: the file was named for the smaller of the two hooks it contained,
+// while this one — the general case, with thirteen consumers — had no file of
+// its own. §5 wants the filename to be the hook.
+//
+// Body unchanged.
+// ---------------------------------------------------------------------------
+
 import { useEffect, useState } from 'react';
 
 /** Subscribe to any media query. Re-renders on change, and reads correctly on
@@ -20,10 +31,4 @@ export function useMediaQuery(query: string): boolean {
   }, [query]);
 
   return matches;
-}
-
-const QUERY = '(max-width: 768px)';
-
-export function useIsMobile(): boolean {
-  return useMediaQuery(QUERY);
 }

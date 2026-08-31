@@ -33,8 +33,7 @@
 import { useState } from 'react';
 
 import { tokens, eyebrow, headline, layout, prefersReducedMotion, space } from '@/ds';
-
-import { useIsMobile } from '../../hooks/useIsMobile';
+import { useIsMobile } from '@/shared';
 
 import { CtaButton, scrollToId } from './primitives';
 import { STEPS_BAR_HEIGHT } from './StepsBar';

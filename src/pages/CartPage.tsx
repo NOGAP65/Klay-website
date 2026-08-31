@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { tokens, eyebrow, motion } from '@/ds';
+import { useIsMobile } from '@/shared';
 
 import { Footer } from '../components/Footer';
 import { Nav } from '../components/Nav';
-import { useIsMobile } from '../hooks/useIsMobile';
 import { useCartStore } from '../store/cartStore';
 
 export default function CartPage() {

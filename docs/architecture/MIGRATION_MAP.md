@@ -1101,6 +1101,38 @@ for every downstream consumer (see R7). (3) Re-run Phase 0's inventory against t
 zone immediately before the phase opens, not before Phase 1 — the figures in this document
 are a snapshot. (4) Get an explicit "the visualiser work is finished" before opening it.
 
+### R12 — DEFERRED DESIGN WORK: should the nav compress on every page?
+
+**Not a risk to the migration. A design question the migration surfaced, parked so that it is
+not answered by accident.**
+
+**Specifics.** Twelve pages mount `Nav`. Only three publish scroll position — `HomePage`,
+`ProductsPage`, `ProductDetailPage`. On the other nine `scrollY` is permanently `0`, so
+`compressed` (`Nav.tsx:176`, `scrollY > 60`) is always false and the nav never tightens its
+padding from 11px to 8px (`NAV_PAD`, `Nav.tsx:85`).
+
+Whether that is deliberate or an accident of which pages happened to get a scroll listener is
+**UNKNOWN** — nothing in the code says, and the comment at `Nav.tsx:206-208` describes the
+asymmetry without justifying it.
+
+**Why it is recorded here.** Decision A's correct destination is a hook
+(`shared/hooks/useScrollPosition`), since both writers do nothing but
+`setScrollY(window.scrollY)`. A hook reading live window scroll would make the nav compress on
+all twelve pages — **a visible change to nine of them, arriving as a side effect of a
+refactor.**
+
+**Resolution.** Phase 3 took option 2 instead: the store survives, moved to
+`app/store/scrollStore.ts`, and the publish/subscribe asymmetry survives with it. The nav
+behaves after Phase 3 exactly as it behaved at Phase 0.
+
+**What is owed.** A design decision from Bobby and V: should the nav compress site-wide? If
+yes, it is a two-line change (a hook, or a listener in `RootLayout`) plus a look at nine pages.
+If no, the three pages that publish should stop, and the compression removed — because a
+behaviour that exists on a quarter of the site by accident is worse than either answer.
+
+**Do not resolve this inside a structural phase.** The whole point of parking it is that the
+answer should be a decision, not a consequence.
+
 ---
 
 ## THE `src/visualiser-lab/` DECISION

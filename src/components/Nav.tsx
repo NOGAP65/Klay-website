@@ -47,8 +47,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { radius, tokens, motion, space, type as typeScale } from '@/ds';
+import { useIsMobile, useMediaQuery } from '@/shared';
 
-import { useIsMobile, useMediaQuery } from '../hooks/useIsMobile';
 import { useKlayStore } from '../store';
 import { useCartStore } from '../store/cartStore';
 

@@ -36,9 +36,9 @@
 import { useNavigate } from 'react-router-dom';
 
 import { radius, tokens, layout, motion, space, type as typeScale, shadow } from '@/ds';
+import { useIsMobile } from '@/shared';
 
 import { productByBlindType } from '../../data/products';
-import { useIsMobile } from '../../hooks/useIsMobile';
 import { bookingLink } from '../../lib/bookingLink';
 import { formatAUD } from '../../lib/pricing';
 import { useCartStore } from '../../store/cartStore';

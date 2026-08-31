@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { tokens, eyebrow, motion } from '@/ds';
+import { useIsMobile } from '@/shared';
 
 import { Footer } from '../components/Footer';
 import { Nav } from '../components/Nav';
@@ -10,7 +11,6 @@ import {
   productByBlindType,
   productBySlug,
 } from '../data/products';
-import { useIsMobile } from '../hooks/useIsMobile';
 import { bookingLink } from '../lib/bookingLink';
 import { useKlayStore } from '../store';
 import { useCartStore } from '../store/cartStore';
