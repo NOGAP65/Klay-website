@@ -26,16 +26,22 @@ import { computeHomography, type Point } from './homography';
 // --- The layouts -----------------------------------------------------------
 
 export type ColumnFill =
-  /** Fixed shelves, evenly spaced up the full height. */
+  /** Open shelving. `count` is the number of COMPARTMENTS — the openings you
+   * can put something in — not the number of shelf boards.
+   *
+   * That distinction was a real bug: six was read off the photograph as six
+   * compartments and then used as six boards, which with the carcass's own top
+   * and bottom cuts the column into SEVEN openings. The tower came out one
+   * compartment taller than the product. Compartments are what anyone counts
+   * when they look at a wardrobe, so compartments is what this means. */
   | { kind: 'shelves'; count: number }
   /** One long hanging rail near the top. Coats and dresses. */
   | { kind: 'hang' }
   /** Two rails, one above the other. Shirts and trousers — twice the capacity
    * in the same width, which is why every layout above 4.0 has one. */
   | { kind: 'hang2' }
-  /** A tower: open shelving above a bank of drawers. What the photographs
-   * actually show — the first version put a hanging rail over the drawers,
-   * which none of them has. */
+  /** A tower: open shelving above a bank of drawers. `shelves` counts
+   * COMPARTMENTS above the bank, for the same reason as above. */
   | { kind: 'drawers'; count: number; shelves: number };
 
 export interface Column {

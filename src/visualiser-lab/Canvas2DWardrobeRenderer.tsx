@@ -133,6 +133,16 @@ interface Box {
  * room is still mostly white. */
 const INTERIOR_FALLOFF = 0.16;
 
+/** How far into the carcass the contents sit, as a fraction of its depth.
+ *
+ * A third back rather than against the rear panel. Clothes on a rail hang
+ * forward of the back of the box and folded stacks sit toward the front of a
+ * shelf, which is what puts them in front of the shelf below and behind the
+ * frame in front — and a third is where the eye reads them as being. Flat
+ * against the back would foreshorten them out of the opening on an angled
+ * wall. */
+const CONTENT_DEPTH = 0.34;
+
 const FACE_TONE = {
   front: 1.0,
   top: 0.94,
@@ -166,7 +176,7 @@ function drawBuiltIn(
   if (!projector) return;
 
   const base = hexToRgb(wardrobeColourHex(colourName));
-  const boxes = buildCarcass(layoutId, widthMm, !!art);
+  const { boxes, compartments } = buildCarcass(layoutId, widthMm, !!art);
 
   // Every face of every box, sorted back to front. A painter's sort is enough
   // here: the carcass is a set of boxes that do not interpenetrate, so no two
@@ -233,10 +243,53 @@ function drawBuiltIn(
         toneFar: shade(fz),
         rgb,
         model: modelPts,
-        // Only the room-facing ones. A side return or a shelf top runs along the
-        // depth axis, so every point on it maps to the same column of the
-        // elevation and the projection would smear it into streaks.
-        skinnable: name === 'front' && !box.colour,
+        // NOTHING ON THE CARCASS IS SKINNED any more. Projecting the elevation
+        // onto the front faces put the photograph's shelves and clothes on the
+        // plane of the frame — flat, in front of the geometry, which is what it
+        // looked like. The board is board, so the finish swap works on it, and
+        // the photograph supplies only what is standing INSIDE. See the content
+        // quads below.
+        skinnable: false,
+      });
+    }
+  }
+
+  // WHAT IS STANDING IN EACH COMPARTMENT, taken from the photograph and placed
+  // at the depth it actually occupies.
+  //
+  // This is the difference between a skin and a decal. On the front plane the
+  // photograph reads as a picture hung over the wardrobe; set back into the
+  // opening it reads as contents, because the frame, the dividers and the shelf
+  // front edges are all modelled and all draw OVER it — they sort in front,
+  // since they are nearer the room.
+  //
+  // Cropped by the compartment's own position in the elevation. The
+  // photographs are straight-on elevations of the same product, so a
+  // compartment at (x, y) in the model is at (x, y) in the picture — which only
+  // holds while the modelled layout agrees with the photographed one, and is
+  // why the compartment counts had to be right first.
+  if (art) {
+    for (const c of compartments) {
+      const z = -WARDROBE_DEPTH_MM * CONTENT_DEPTH;
+      const model: [number, number, number][] = [
+        [c.x0, c.y0, z],
+        [c.x1, c.y0, z],
+        [c.x1, c.y1, z],
+        [c.x0, c.y1, z],
+      ];
+      const pts = model.map(([X, Y, Z]) => projector.project(X, Y, Z));
+      const depthSum = model.reduce((acc, [X, Y, Z]) => acc + projector.depth(X, Y, Z), 0);
+      const tone = 1 - CONTENT_DEPTH * INTERIOR_FALLOFF;
+      faces.push({
+        pts,
+        depth: depthSum / 4,
+        near: pts[0],
+        far: pts[2],
+        toneNear: tone,
+        toneFar: tone,
+        rgb: base,
+        model,
+        skinnable: true,
       });
     }
   }
@@ -273,15 +326,12 @@ function drawBuiltIn(
       paint = g;
     }
     if (art && face.skinnable) {
-      // BOARD FIRST, THEN THE DECAL. The cut-out is transparent wherever the
-      // elevation saw past the product, and a skinned face with nothing painted
-      // under it shows the bedroom straight through the back of the wardrobe.
-      // The carcass is board; the photograph only adds what is standing on it.
-      ctx.fillStyle = paint;
-      ctx.fill();
-
-      // The photograph, projected onto this surface. Clipped to the face so a
-      // shelf's own front edge takes only the strip of elevation it occupies.
+      // NO BOARD UNDER A CONTENT QUAD. The carcass behind it is already drawn,
+      // and the cut-out's transparency is exactly what lets the back panel and
+      // the shelf under it show through around whatever is standing there.
+      // Painting board first would seal the compartment shut.
+      //
+      // The photograph, cropped to this compartment and projected onto it.
       ctx.save();
       ctx.clip();
       drawSkinnedFace(
@@ -335,10 +385,21 @@ function drawBuiltIn(
  * modelling worth doing: with an open front you see straight into the carcass,
  * so the side returns, the shelf edges and the back panel are all on show, and
  * those receding surfaces are what tell the eye how deep it is. */
-function buildCarcass(layoutId: string, widthMm: number, skinned: boolean): Box[] {
+/** A compartment's opening, in model millimetres — the rectangle you would
+ * reach through. What goes IN it comes from the photograph. */
+interface Compartment {
+  x0: number; y0: number; x1: number; y1: number;
+}
+
+function buildCarcass(
+  layoutId: string,
+  widthMm: number,
+  skinned: boolean,
+): { boxes: Box[]; compartments: Compartment[] } {
   const D = WARDROBE_DEPTH_MM;
   const H = WARDROBE_HEIGHT_MM;
   const boxes: Box[] = [];
+  const compartments: Compartment[] = [];
 
   // Shell: back, two sides, top, bottom.
   // The back panel sits a little down in value. Nothing lights the inside of a
@@ -432,13 +493,25 @@ function buildCarcass(layoutId: string, widthMm: number, skinned: boolean): Box[
 
     const fill = column.fill;
     if (fill.kind === 'shelves') {
-      for (let s = 1; s <= fill.count; s++) shelf(x, cw, y0 + (innerH / (fill.count + 1)) * s);
+      // count COMPARTMENTS needs count-1 boards: the carcass's own top and
+      // bottom close the first and last openings.
+      for (let s = 1; s < fill.count; s++) shelf(x, cw, y0 + (innerH / fill.count) * s);
+      for (let s = 0; s < fill.count; s++) {
+        compartments.push({
+          x0: x, x1: x + cw,
+          y0: y0 + (innerH / fill.count) * s,
+          y1: y0 + (innerH / fill.count) * (s + 1),
+        });
+      }
     } else if (fill.kind === 'hang') {
       const shelfY = y0 + innerH * 0.82;
       shelf(x, cw, shelfY);
       const railY = shelfY - RAIL_DROP_MM;
       garments(x, cw, railY, innerH * 0.56);
       rail(x, cw, railY);
+      // The bay under the rail, and the shelf over it.
+      compartments.push({ x0: x, x1: x + cw, y0, y1: shelfY });
+      compartments.push({ x0: x, x1: x + cw, y0: shelfY + BOARD_MM, y1: y0 + innerH });
     } else if (fill.kind === 'hang2') {
       const upper = y0 + innerH * 0.86;
       const mid = y0 + innerH * 0.46;
@@ -448,6 +521,9 @@ function buildCarcass(layoutId: string, widthMm: number, skinned: boolean): Box[
       garments(x, cw, mid - RAIL_DROP_MM, innerH * 0.34);
       rail(x, cw, upper - RAIL_DROP_MM);
       rail(x, cw, mid - RAIL_DROP_MM);
+      compartments.push({ x0: x, x1: x + cw, y0, y1: mid });
+      compartments.push({ x0: x, x1: x + cw, y0: mid + BOARD_MM, y1: upper });
+      compartments.push({ x0: x, x1: x + cw, y0: upper + BOARD_MM, y1: y0 + innerH });
     } else {
       // A TOWER, not a rail over drawers. The bank fills the lower half and
       // open shelving stacks above it, which is what every one of these towers
@@ -477,8 +553,15 @@ function buildCarcass(layoutId: string, widthMm: number, skinned: boolean): Box[
       }
       shelf(x, cw, y0 + bankH);
       const above = innerH - bankH;
-      for (let sh = 1; sh <= fill.shelves; sh++) {
-        shelf(x, cw, y0 + bankH + (above / (fill.shelves + 1)) * sh);
+      for (let sh = 1; sh < fill.shelves; sh++) {
+        shelf(x, cw, y0 + bankH + (above / fill.shelves) * sh);
+      }
+      for (let sh = 0; sh < fill.shelves; sh++) {
+        compartments.push({
+          x0: x, x1: x + cw,
+          y0: y0 + bankH + (above / fill.shelves) * sh,
+          y1: y0 + bankH + (above / fill.shelves) * (sh + 1),
+        });
       }
     }
 
@@ -501,7 +584,7 @@ function buildCarcass(layoutId: string, widthMm: number, skinned: boolean): Box[
   // open wardrobe is.
   for (const box of boxes) box.z -= WARDROBE_DEPTH_MM;
 
-  return boxes;
+  return { boxes, compartments };
 }
 
 /** The darkening where the carcass meets the floor. Without it the unit reads
