@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { radius, tokens, space, type as typeScale } from '../theme';
 import { formatAUD, isBlindType } from '../lib/pricing';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
-import { WARDROBE_MODELS, WARDROBE_COLOURS, wardrobeModelById, wardrobeDimensions } from './wardrobes';
+import { WARDROBE_COLOURS, modelsOfKind, wardrobeModelById, wardrobeDimensions } from './wardrobes';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
@@ -470,9 +470,31 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
         <section>
           <GroupHeading onDark={onDark}>Your wardrobe</GroupHeading>
           <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
+            {/* TYPE FIRST, THEN LAYOUT. A built-in and a walk-in are not two
+                options within one product — they are different products, drawn
+                from different viewpoints and placed by different rules, and the
+                layouts on offer depend on which you are buying. Asking in that
+                order is what makes the layout list mean something. */}
+            <Field onDark={onDark} label="Type">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+                {([
+                  ['built-in', 'Built-in'],
+                  ['walk-in', 'Walk-in'],
+                ] as const).map(([id, label]) => (
+                  <Pill
+                    onDark={onDark}
+                    key={id}
+                    label={label}
+                    active={store.wardrobeKind === id}
+                    onClick={() => store.setWardrobeKind(id)}
+                  />
+                ))}
+              </div>
+            </Field>
+
             <Field onDark={onDark} label="Layout">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
-                {WARDROBE_MODELS.map(m => (
+                {modelsOfKind(store.wardrobeKind).map(m => (
                   <Pill
                     onDark={onDark}
                     key={m.id}

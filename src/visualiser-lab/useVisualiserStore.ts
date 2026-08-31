@@ -214,7 +214,11 @@ interface VisualiserStore {
   curtainMount: CurtainMount;
   curtainSize: CurtainSize;
   curtainOpenness: number;
-  /** Which of the ten Forma stickers is shown. */
+  /** Built-in or walk-in. Chosen before the layout, because the two are
+   * different products drawn from different viewpoints and placed by different
+   * rules — see Canvas2DWardrobeRenderer. */
+  wardrobeKind: 'built-in' | 'walk-in';
+  /** Which Forma layout is shown. Always one belonging to wardrobeKind. */
   wardrobeModel: string;
   /** Finish name, resolved against WARDROBE_COLOURS in wardrobes.ts. Separate
    * from fabricColour on purpose: a joinery finish and a blind fabric are
@@ -263,6 +267,7 @@ interface VisualiserStore {
   applyActiveToAll: () => void;
   setCurtainType: (type: CurtainType) => void;
   setCurtainOperation: (op: CurtainOperation) => void;
+  setWardrobeKind: (kind: 'built-in' | 'walk-in') => void;
   setWardrobeModel: (id: string) => void;
   setWardrobeColour: (name: string) => void;
   setCurtainMount: (mount: CurtainMount) => void;
@@ -287,6 +292,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   lockedRange: null,
   defaultWindowActive: true,
   curtainOpenness: 0,
+  wardrobeKind: 'built-in',
   wardrobeModel: '3.0',
   wardrobeColour: 'Matt Wardrobe White',
   windows: [following(DEFAULT_WINDOW)],
@@ -366,6 +372,14 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   // Flat set, not writeThrough: writeThrough mirrors a field onto every window
   // in the job, and a wardrobe is not per-window — it is one piece of joinery
   // for the room, the way productCategory itself is.
+  // Switching kind carries the layout with it, because a built-in id is not a
+  // walk-in id and leaving the old one selected would show a straight run under
+  // a heading that says walk-in. First of the new kind, every time.
+  setWardrobeKind: (kind) =>
+    set({
+      wardrobeKind: kind,
+      wardrobeModel: kind === 'walk-in' ? '7.0L' : '3.0',
+    }),
   setWardrobeModel: (id) => set({ wardrobeModel: id }),
   setWardrobeColour: (name) => set({ wardrobeColour: name }),
   setCurtainMount: (mount) => set(writeThrough({ curtainMount: mount })),
