@@ -1,8 +1,8 @@
 # Klay Interiors — Architecture Specification
 
-**Version:** 1.1
-**Date:** 31 August 2026 (v1.0), amended 31 August 2026 (v1.1)
-**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7)
+**Version:** 1.2
+**Date:** 31 August 2026 (v1.0), amended 31 August 2026 (v1.1, v1.2)
+**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9)
 **Status:** Standing document. This is the constitution, not a work order.
 **Owner:** V
 **Applies to:** NOGAP65/Klay-website-new. Ella adopts it after Klay proves it.
@@ -331,6 +331,45 @@ tokens were not the problem. **Optionality was.**
 - The scale is proportional and **closed** — six to eight steps of spacing, six to eight of
   type. A value between two steps means the design changes or the scale does, deliberately, in
   one file.
+
+### The adopted scales — ADR-017
+
+Both are **closed at eight steps.**
+
+| Step | `space` role | | Step | `type` |
+|---:|---|---|---:|---|
+| 4 | `hairline` | | 10 | `micro` |
+| 8 | `tight` | | 12 | `label` |
+| 12 | `snug` | | 14 | `body` |
+| 16 | `item` — the default | | 16 | `lead` |
+| 24 | `group` | | 20 | — |
+| 40 | `section` | | 26 | `card` |
+| 80 | `band` | | 34 | `numeric` |
+| 120 | `focal` | | 56 | `section` |
+
+`type.ornament` and `type.display` sit outside the type scale. They are display ornament —
+one occurrence each — not body hierarchy, and forcing them onto a text scale would flatten
+both.
+
+**WHAT A REQUEST FOR A NINTH STEP REQUIRES.** It is refused by default. There are exactly two
+legitimate responses to a layout that needs a value between two steps:
+
+1. **Change the layout** to use an existing step. This is the answer in almost every case.
+2. **Change the scale** — deliberately, in one file, with an ADR amending ADR-017, and
+   accepting that every consumer of the neighbouring steps is now in a different proportional
+   relationship.
+
+A ninth step added "just for this one case" is how a scale becomes a list. The previous scale
+did not fail because its numbers were wrong. It failed because it was optional, and the
+codebase grew 34 distinct spacing values and 18 font sizes alongside it.
+
+**AND THE PRINCIPLE THAT SETTLES SCALE ARGUMENTS.** The best-scoring candidate was rejected:
+its first three steps were 11, 13 and 15 — the three most-used sizes in the codebase — and a
+scale built on current usage is the current inconsistency written down and blessed.
+
+> **A scale constrains, it does not accommodate.** Steps one pixel apart cannot express
+> hierarchy. The measure of a scale is whether it makes a hierarchy legible, not whether it
+> minimises churn.
 - `#000000` and `#1A1A1A` are banned, enforced as a lint error.
 
 Today a developer needing 24px types `24px`. After this the build fails, so they open the
@@ -372,7 +411,7 @@ feature, import directly — internal barrels create circular-import risk for no
 | Layer direction | `eslint-plugin-boundaries` / `import/no-restricted-paths` |
 | No sideways feature imports | `eslint-plugin-boundaries` |
 | Feature public API only | `import/no-internal-modules` |
-| No relative parent imports | `import/no-relative-parent-imports` |
+| No relative parent imports | **`no-restricted-imports`** with pattern `../*` — see the note below |
 | Import ordering | `import/order` |
 | File size | `max-lines` |
 | Function size | `max-lines-per-function` |
@@ -386,6 +425,24 @@ feature, import directly — internal barrels create circular-import risk for no
 | No circular imports | `import/no-cycle` |
 | Unused exports | `knip` |
 | Duplication | `jscpd` |
+
+> **WHY NOT `import/no-relative-parent-imports` — ADR-016.** That rule resolves a specifier
+> before judging it, so it cannot tell a relative climb from an alias: `@/ds` imported from
+> `src/pages/` resolves to a parent directory and fires, exactly like `../../theme`. Two
+> consequences. It reports the desired end state as a violation — it was flagging four alias
+> imports in `AboutPage.tsx` that Phase 2.2b had just introduced as the correct form. And
+> **its count can never reach zero, so it can never flip to `error`**, which makes it
+> permanently advisory: the state this section describes as how rules get switched off. It was
+> also inflating the baseline by 29.
+>
+> `no-restricted-imports` matches the SPECIFIER TEXT, which is what §10 is actually about —
+> §10's own justification is that a reader should see the layer at the import site. An alias
+> passes; a `../` does not.
+>
+> **Do not restore the original rule on the strength of this section having once named it.**
+> The two rules are not interchangeable, and the structural half of the job —
+> `@/features/cart/...` being illegal from inside booking — belongs to
+> `boundaries/dependencies`, which does it properly.
 
 **The CI gate.** Nothing merges to `main` unless `npm run typecheck` returns zero, `eslint`
 returns zero errors, `npm run build` passes, `knip` finds no new unused exports, and `jscpd`

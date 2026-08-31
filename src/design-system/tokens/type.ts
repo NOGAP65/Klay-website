@@ -6,6 +6,39 @@
 // not a rewrite, and the reasoning in the comments below is the original's.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// THE TYPE SCALE. Eight steps, closed. ADR-017.
+//
+//   10 · 12 · 14 · 16 · 20 · 26 · 34 · 56
+//
+// Ratios 1.2 · 1.17 · 1.14 · 1.25 · 1.3 · 1.31 · 1.65.
+//
+// THE ROLE NAMES BELOW WERE NEVER THE PROBLEM. micro, label, body, lead, card,
+// numeric, section, hero and ornament are already roles, which is what §9 asks
+// for. Only the sizes behind them changed: lead 17 → 16, body 15 → 14,
+// numeric 32 → 34.
+//
+// ---------------------------------------------------------------------------
+// THE CANDIDATE THAT SCORED BETTER AND WAS REJECTED.
+//
+// 11 · 13 · 15 · 20 · 26 · 34 · 56 matched current usage better — 51.5% of
+// occurrences unchanged against this scale's 45.5%. Its first three steps are
+// the three most-used font sizes in the codebase, which is exactly why it was
+// refused: a scale built on current usage is the current inconsistency written
+// down and blessed. Three steps one pixel apart cannot express a hierarchy — a
+// reader cannot tell 13 from 14, so the distinction does nothing except make
+// the scale unfalsifiable, since any value can be called "close to a step".
+//
+//   A SCALE CONSTRAINS, IT DOES NOT ACCOMMODATE.
+//
+// The six points of exact match this costs are almost entirely 11 → 10 (28
+// occurrences) and 13 → 12 (24) — 1px moves on small UI labels, which is the
+// cheapest kind of change available.
+//
+// TWO SIZES SIT OUTSIDE THE SCALE and should stay there: ornament (116) and
+// the two clamped headline roles. A clamp is a range, not a step.
+// ---------------------------------------------------------------------------
+
 import { tokens } from './colour';
 
 import type { Style } from './style';
@@ -20,7 +53,9 @@ import type { Style } from './style';
 // ---------------------------------------------------------------------------
 
 export const type = {
-  /** 116 — the quote mark in Testimonials. Ornament, not text. */
+  /** 116 — the quote mark in Testimonials. OUTSIDE THE SCALE, deliberately:
+   *  it is ornament, not body hierarchy, and forcing it onto a text scale would
+   *  flatten it to 56. ADR-017. */
   ornament: {
     fontFamily: tokens.display,
     fontSize: 116,
@@ -34,6 +69,8 @@ export const type = {
    * than inline in Hero.tsx, which is the only change made to it. */
   hero: {
     fontFamily: tokens.display,
+    // Clamped, so it is not a scale step and does not need to be one — the
+    // ceiling is the hero's own proportion. LOCKED; see the note above.
     fontSize: 'clamp(38px, 5.4vw, 76px)',
     fontWeight: 300,
     lineHeight: 0.95,
@@ -52,6 +89,8 @@ export const type = {
    * 588px apart — so they do not compete and the hero stays locked. */
   section: {
     fontFamily: tokens.display,
+    // Clamped like the hero. Its floor of 38 sits between scale steps by
+    // design: a clamp is a range, not a step.
     fontSize: 'clamp(38px, 5vw, 64px)',
     fontWeight: 300,
     lineHeight: 1.0,
@@ -62,7 +101,7 @@ export const type = {
   /** 26 — card and step headings, subordinate to a section headline. */
   card: {
     fontFamily: tokens.display,
-    fontSize: 26,
+    fontSize: 26, // scale step
     fontWeight: 300,
     lineHeight: 1.1,
     letterSpacing: '-0.01em',
@@ -73,7 +112,7 @@ export const type = {
    * display face is the one place figures get to feel considered. */
   numeric: {
     fontFamily: tokens.display,
-    fontSize: 32,
+    fontSize: 34, // scale step — was 32, the scale's nearest is 34
     fontWeight: 300,
     lineHeight: 1.1,
     margin: 0,
@@ -82,7 +121,7 @@ export const type = {
   /** 17 — the hero lead, and nothing else. The one body size above 15. */
   lead: {
     fontFamily: tokens.body,
-    fontSize: 17,
+    fontSize: 16, // scale step — was 17
     fontWeight: 300,
     lineHeight: 1.7,
     margin: 0,
@@ -91,7 +130,7 @@ export const type = {
   /** 15 — all body copy. Was six sizes between 12 and 17. */
   body: {
     fontFamily: tokens.body,
-    fontSize: 15,
+    fontSize: 14, // scale step — was 15
     fontWeight: 300,
     lineHeight: 1.75,
     margin: 0,
@@ -100,7 +139,7 @@ export const type = {
   /** 12 — buttons and UI labels. */
   label: {
     fontFamily: tokens.body,
-    fontSize: 12,
+    fontSize: 12, // scale step
     fontWeight: 500,
     lineHeight: 1.6,
     letterSpacing: '0.14em',
@@ -113,7 +152,7 @@ export const type = {
    * nothing consumed it. */
   micro: {
     fontFamily: tokens.body,
-    fontSize: 10,
+    fontSize: 10, // scale step
     fontWeight: 500,
     lineHeight: 1.6,
     letterSpacing: '0.3em',
