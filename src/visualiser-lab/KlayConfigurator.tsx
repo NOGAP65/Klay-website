@@ -5,6 +5,7 @@ import { usePhotoUpload } from './usePhotoUpload';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
+import Canvas2DWardrobeRenderer from './Canvas2DWardrobeRenderer';
 
 // One radius for every surface in the visualiser. The three files used to
 // disagree (0 here, 12px on the homepage wrapper, 4px on the thumbnails),
@@ -686,6 +687,29 @@ const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
   [0.1864, 0.6699], // bottom-left  — x 234, y 840
 ];
 
+/** WHERE A WARDROBE STANDS ON THE DEFAULT PHOTO.
+ *
+ * The seeded trace is the window's glass, which is the right default for
+ * everything that hangs on a window and exactly the wrong one for a wardrobe:
+ * it stands the cabinet inside the opening, floating a metre off the floor with
+ * the garden behind it. The first render of the wardrobe tab did precisely that.
+ *
+ * So wardrobes get their own default footprint on Preview.png — the left-hand
+ * wall, running down to where the floor meets it. Chosen because it is the only
+ * part of this frame not already occupied by the window or the bed; it is a
+ * starting position, not a claim about the room, and the customer retraces or
+ * uploads their own wall from here.
+ *
+ * A rectangle rather than a true quad, because the renderer takes this as a
+ * footprint to stand a photograph in rather than a plane to project onto — see
+ * Canvas2DWardrobeRenderer. */
+const DEFAULT_WARDROBE_CORNERS_PCT: [number, number][] = [
+  [0.055, 0.170],
+  [0.520, 0.170],
+  [0.520, 0.895],
+  [0.055, 0.895],
+];
+
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
 interface KlayConfiguratorProps {
@@ -782,7 +806,11 @@ export default function KlayConfigurator({
       hookPhotoUrl === DEFAULT_WINDOW_URL &&
       useVisualiserStore.getState().tracedAreas.length === 0
     ) {
-      const corners: Point[] = DEFAULT_WINDOW_CORNERS_PCT.map(([px, py]) => [
+      const seed =
+        useVisualiserStore.getState().productCategory === 'wardrobe'
+          ? DEFAULT_WARDROBE_CORNERS_PCT
+          : DEFAULT_WINDOW_CORNERS_PCT;
+      const corners: Point[] = seed.map(([px, py]) => [
         px * photoBitmap.width,
         py * photoBitmap.height,
       ]);
@@ -949,6 +977,28 @@ export default function KlayConfigurator({
 
   useEffect(() => () => stopAuto(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // RE-SEED WHEN THE PRODUCT CHANGES SHAPE. A blind and a wardrobe want
+  // completely different default footprints — the window's glass versus the
+  // wall beside it — and the seed above fires once per photo, so whichever
+  // category happened to be showing at load would otherwise own the trace for
+  // the rest of the session. Crossing between wardrobes and window coverings
+  // therefore drops the seeded default and lets it run again for the category
+  // now in play.
+  //
+  // ONLY WHILE THE DEFAULT PHOTO IS SHOWING. Once the customer has uploaded a
+  // room and traced it, that trace is theirs; throwing it away because they
+  // looked at a different product would be destroying work they did.
+  const seededForWardrobeRef = useRef(store.productCategory === 'wardrobe');
+  useEffect(() => {
+    const isWardrobe = store.productCategory === 'wardrobe';
+    if (isWardrobe === seededForWardrobeRef.current) return;
+    seededForWardrobeRef.current = isWardrobe;
+    if (!store.defaultWindowActive) return;
+    hasSeededDefaultRef.current = false;
+    store.clearTracedAreas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.productCategory, store.defaultWindowActive]);
+
   const canvasTracedAreas: RenderedArea[] = store.tracedAreas.map(a => ({
     ...a,
     blindType: store.blindType,
@@ -1066,7 +1116,7 @@ export default function KlayConfigurator({
   // They mount differently because they ARE different things. The chain belongs
   // to the blind and is placed against it. The handset is held, so it sits off
   // to the side of the frame where a hand would be, unattached to anything.
-  const sideControl = !showRenderState ? null : activeOperation === 'motorised' ? (
+  const sideControl = !showRenderState || store.productCategory === 'wardrobe' ? null : activeOperation === 'motorised' ? (
     <div style={SIDE_CONTROL_POSITION}>
       <MotorRemote
         autoRunning={autoRunning}
@@ -1177,7 +1227,14 @@ export default function KlayConfigurator({
       ) : (
         /* STATE 3 — area traced and confirmed */
         <div ref={rendererContainerRef} style={{ position: 'absolute', inset: 0 }}>
-          {store.productCategory === 'curtain' && confirmedArea ? (
+          {store.productCategory === 'wardrobe' && confirmedArea ? (
+            <Canvas2DWardrobeRenderer
+              photoUrl={store.photoUrl!}
+              corners={confirmedArea.corners as [number, number][]}
+              modelId={store.wardrobeModel}
+              colourName={store.wardrobeColour}
+            />
+          ) : store.productCategory === 'curtain' && confirmedArea ? (
             <Canvas2DCurtainRenderer
               tl={{ x: confirmedArea.corners[0][0], y: confirmedArea.corners[0][1] }}
               tr={{ x: confirmedArea.corners[1][0], y: confirmedArea.corners[1][1] }}

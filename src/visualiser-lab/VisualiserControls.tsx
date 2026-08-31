@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { radius, tokens, space, type as typeScale } from '../theme';
 import { formatAUD, isBlindType } from '../lib/pricing';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
+import { WARDROBE_MODELS, WARDROBE_COLOURS, wardrobeModelById, wardrobeDimensions } from './wardrobes';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
@@ -457,6 +458,64 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
   // different range than the colour the renderer is resolving.
   const palette = coloursFor(store.productCategory);
   const selectedColour = palette.find(c => c.name === store.fabricColour);
+
+  // WARDROBE CONTROLS. Deliberately the shortest panel in the visualiser: the
+  // range is ten fixed Forma units and the only thing a customer changes is the
+  // finish. No size, no operation, no hardware — a wardrobe has no roll
+  // position to drive and is quoted on measure, so a price box here would be
+  // inventing a number the business has not set.
+  if (store.productCategory === 'wardrobe') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: groupGap }}>
+        <section>
+          <GroupHeading onDark={onDark}>Your wardrobe</GroupHeading>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
+            <Field onDark={onDark} label="Layout">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+                {WARDROBE_MODELS.map(m => (
+                  <Pill
+                    onDark={onDark}
+                    key={m.id}
+                    label={m.name}
+                    active={store.wardrobeModel === m.id}
+                    onClick={() => store.setWardrobeModel(m.id)}
+                  />
+                ))}
+              </div>
+              {/* Every layout is 2016 high and 447 deep; only width moves, and
+                  several come in more than one. Stated rather than offered as a
+                  control, because the width is a property of the layout the
+                  customer just chose, not a separate choice. */}
+              <p
+                style={{
+                  ...typeScale.micro,
+                  margin: `${space.xs}px 0 0`,
+                  color: onDark ? tokens.onDarkMuted : tokens.inkSoft,
+                }}
+              >
+                {wardrobeDimensions(wardrobeModelById(store.wardrobeModel))}
+              </p>
+            </Field>
+
+            <Field onDark={onDark} label="Finish" caption={store.wardrobeColour}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
+                {WARDROBE_COLOURS.map(c => (
+                  <Swatch
+                    onDark={onDark}
+                    key={c.name}
+                    hex={c.hex}
+                    label={c.name}
+                    active={store.wardrobeColour === c.name}
+                    onClick={() => store.setWardrobeColour(c.name)}
+                  />
+                ))}
+              </div>
+            </Field>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   // Curtain controls
   if (isCurtain) {
