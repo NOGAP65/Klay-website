@@ -83,7 +83,7 @@ function Quote({ q, isMobile }: { q: (typeof QUOTES)[number]; isMobile: boolean 
         margin: 0,
         // The cards are separated by air, not by rules or card edges — the same
         // restraint the grid had.
-        paddingRight: isMobile ? space.lg : space.xl,
+        paddingRight: isMobile ? space.group : space.section,
       }}
     >
       <div
@@ -96,7 +96,7 @@ function Quote({ q, isMobile }: { q: (typeof QUOTES)[number]; isMobile: boolean 
           // goldText: this sits on a light card ground where the brand gold
           // measures 2.47.
           color: tokens.ink,
-          marginBottom: space.md,
+          marginBottom: space.item,
           userSelect: 'none',
         }}
       >
@@ -119,7 +119,7 @@ function Quote({ q, isMobile }: { q: (typeof QUOTES)[number]; isMobile: boolean 
           // on parchment — it was the clearest case of a non-text token
           // carrying text. inkSoft at 0.7 measures 5.86–6.33.
           color: tokens.inkSoft,
-          marginTop: space.md,
+          marginTop: space.item,
         }}
       >
         <span style={{ color: tokens.ink }}>{q.name}</span>
@@ -160,7 +160,7 @@ export function Testimonials() {
           // motion the reader needs some way to reach the quotes that are off
           // screen.
           overflowX: reduceMotion ? 'auto' : 'hidden',
-          paddingBottom: isMobile ? space.xl : space.xxl,
+          paddingBottom: isMobile ? space.section : space.band,
           paddingLeft: layout.inlinePad(isMobile),
         }}
       >

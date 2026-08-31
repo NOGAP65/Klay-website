@@ -223,14 +223,14 @@ function VisualiseBadge({
       aria-label={`Visualise ${name} in your own room`}
       style={{
         position: 'absolute',
-        top: space.sm,
-        right: space.sm,
+        top: space.snug,
+        right: space.snug,
         zIndex: 2,
         display: 'inline-flex',
         alignItems: 'center',
         gap: 6,
         height: 26,
-        padding: `0 ${space.xs}px`,
+        padding: `0 ${space.tight}px`,
         borderRadius: radius.md,
         border: 'none',
         cursor: 'pointer',
@@ -347,7 +347,7 @@ const PANEL_H = 560;
  * the inset that makes the outer radius and the photograph's radius agree: 4 of
  * padding around a 6 radius reads as a 10 radius on the outside, which is what
  * the card carries. */
-const FRAME = space.xxs;
+const FRAME = space.hairline;
 
 /** THE CARD'S OWN EDGE. One pixel, and it is always there — only its colour
  * changes, from a decorative hairline at rest to the accent on the open card.
@@ -610,7 +610,7 @@ function RangeCard({
               <div
                 style={{
                   position: 'absolute',
-                  inset: space.md,
+                  inset: space.item,
                   border: `1px solid ${
                     hover ? tokens.onDarkEdge : glyphOnLight ? tokens.line : tokens.onDarkLine
                   }`,
@@ -664,7 +664,7 @@ function RangeCard({
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
               color: tokens.inkSoft,
-              marginTop: space.md,
+              marginTop: space.item,
             }}
           >
             {item.group}
@@ -687,7 +687,7 @@ function RangeCard({
               // which is invisible — it is the same warm white as the card.
               minHeight: `${2 * 1.1 * (isMobile ? 20 : 26)}px`,
               color: tokens.ink,
-              marginTop: space.xs,
+              marginTop: space.tight,
               transition: 'color 0.25s ease',
             }}
           >
@@ -708,7 +708,7 @@ function RangeCard({
         <button
           onClick={onToggle}
           style={{
-            marginTop: space.md,
+            marginTop: space.item,
             width: '100%',
             height: 52,
             boxSizing: 'border-box',
@@ -999,10 +999,10 @@ export function RangeRow() {
           flexDirection: isMobile ? 'column' : 'row',
           alignItems: isMobile ? 'flex-start' : 'flex-end',
           justifyContent: 'space-between',
-          gap: space.lg,
+          gap: space.group,
           padding: isMobile
-            ? `${space.xl}px ${layout.inlinePad(isMobile)}px ${space.lg}px`
-            : `${space.xxl}px ${layout.inlinePad(isMobile)}px ${space.lg}px`,
+            ? `${space.section}px ${layout.inlinePad(isMobile)}px ${space.group}px`
+            : `${space.band}px ${layout.inlinePad(isMobile)}px ${space.group}px`,
         }}
       >
         <div>
@@ -1014,9 +1014,9 @@ export function RangeRow() {
               the ones that sell most answers why these four and not the others,
               and leaves the full range unambiguously the place you go to see
               everything. */}
-          <p style={{ ...eyebrow, marginBottom: space.md }}>Most asked for</p>
+          <p style={{ ...eyebrow, marginBottom: space.item }}>Most asked for</p>
           <h2 style={{ ...headline.section, color: tokens.ink }}>Bestsellers</h2>
-          <p style={{ ...supporting.onLight, marginTop: space.md, maxWidth: 460 }}>
+          <p style={{ ...supporting.onLight, marginTop: space.item, maxWidth: 460 }}>
             Made to measure. Installed by experts.
           </p>
         </div>
@@ -1044,7 +1044,7 @@ export function RangeRow() {
           // section rather than a gap between two, so it is closer in weight to
           // the 4px strips framing the cards than to the padding a real section
           // carries.
-          paddingBottom: space.md,
+          paddingBottom: space.item,
         }}
       >
         <div
@@ -1132,7 +1132,7 @@ export function RangeRow() {
             with the cards, not centred — it is the same object that sits at the
             end of the header row on desktop, so it keeps the same alignment. */}
         {isMobile && (
-          <div style={{ paddingTop: space.lg }}>
+          <div style={{ paddingTop: space.group }}>
             <CtaLink to="/products">Shop the full range</CtaLink>
           </div>
         )}

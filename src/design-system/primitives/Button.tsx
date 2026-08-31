@@ -82,7 +82,7 @@ export function Button({
 
   const resolved: CSSProperties = {
     ...typeScale.label,
-    padding: `${space.sm}px ${space.lg}px`,
+    padding: `${space.snug}px ${space.group}px`,
     background: isHovered && !isDisabled ? fill.hoverBackground : fill.background,
     color: fill.color,
     border: fill.border,

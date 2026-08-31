@@ -111,8 +111,8 @@ export function Footer() {
         background: tokens.ink,
         borderTop: `1px solid ${tokens.onDarkLine}`,
         padding: isMobile
-          ? `${space.xl}px ${space.md}px ${space.lg}px`
-          : `${space.xxl}px 80px ${space.xl}px`,
+          ? `${space.section}px ${space.item}px ${space.group}px`
+          : `${space.band}px 80px ${space.section}px`,
       }}
     >
       <div style={{ maxWidth: layout.containerMax, margin: '0 auto' }}>
@@ -120,7 +120,7 @@ export function Footer() {
           style={{
             display: 'grid',
             gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-            gap: `${space.lg}px ${space.md}px`,
+            gap: `${space.group}px ${space.item}px`,
           }}
         >
           {/* Column one is the brand rather than a list of links: mark, one line
@@ -150,7 +150,7 @@ export function Footer() {
               Australian made-to-measure blinds, curtains and wardrobes — measured and installed
               by hand across Victoria.
             </p>
-            <div style={{ marginTop: space.md }}>
+            <div style={{ marginTop: space.item }}>
               <FooterLink to="https://www.instagram.com/klayinteriors">@klayinteriors</FooterLink>
             </div>
           </div>
@@ -159,7 +159,7 @@ export function Footer() {
             <div key={col.heading}>
               {/* Brand gold — the footer is ink, and goldText is for light
                   grounds only. */}
-              <h4 style={{ ...eyebrow, color: tokens.onDark, marginBottom: space.md }}>{col.heading}</h4>
+              <h4 style={{ ...eyebrow, color: tokens.onDark, marginBottom: space.item }}>{col.heading}</h4>
               {col.links.map(l => (
                 <FooterLink key={l.label} to={l.to}>
                   {l.label}
@@ -185,16 +185,16 @@ export function Footer() {
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: space.sm,
-            marginTop: isMobile ? space.xl : space.xxl,
-            paddingTop: space.lg,
+            gap: space.snug,
+            marginTop: isMobile ? space.section : space.band,
+            paddingTop: space.group,
             borderTop: `1px solid ${tokens.onDarkLine}`,
           }}
         >
           <span style={{ ...typeScale.body, color: tokens.onDarkMuted }}>
             © {new Date().getFullYear()} Klay Interiors · Grand Kaman Pty Ltd · ABN 98 151 010 007
           </span>
-          <div style={{ display: 'flex', gap: space.md }}>
+          <div style={{ display: 'flex', gap: space.item }}>
             {['Privacy', 'Terms', 'Warranty'].map(l => (
               <FooterLink key={l} to="/contact">
                 <span style={{ ...typeScale.body, lineHeight: 1 }}>{l}</span>

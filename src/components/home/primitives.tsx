@@ -84,7 +84,7 @@ const ctaBase: React.CSSProperties = {
   // bevel rather than a curve and read as square at this size.
   borderRadius: radius.md,
   height: 52,
-  padding: `0 ${space.lg}px`,
+  padding: `0 ${space.group}px`,
   border: '1px solid transparent',
   transition: motion.button,
   // Belt and braces on the two element types: a <button> inherits a UA
@@ -223,7 +223,7 @@ export function TextLink({
         color: hover ? strongest : rest,
         textDecoration: 'none',
         borderBottom: `1px solid ${hover ? strongest : 'currentColor'}`,
-        paddingBottom: space.xxs,
+        paddingBottom: space.hairline,
         transition: motion.link,
       }}
     >
@@ -268,7 +268,7 @@ export function SectionHead({
           style={{
             ...eyebrow,
             ...(onDark ? { color: tokens.onDark } : null),
-            marginBottom: space.md,
+            marginBottom: space.item,
           }}
         >
           {label}
@@ -289,7 +289,7 @@ export function SectionHead({
             // Within the head group — eyebrow, headline and sub are one object,
             // so they sit at `md` and the section's own padding provides the
             // between-group distance.
-            marginTop: space.md,
+            marginTop: space.item,
             maxWidth: 560,
             marginLeft: centred ? 'auto' : undefined,
             marginRight: centred ? 'auto' : undefined,
@@ -351,11 +351,11 @@ export function SectionBand({
         // is the section's real content and the heading is only naming it.
         padding: compact
           ? isMobile
-            ? `${space.lg}px ${space.md}px`
-            : `${space.xl}px 80px ${space.lg}px`
+            ? `${space.group}px ${space.item}px`
+            : `${space.section}px 80px ${space.group}px`
           : isMobile
-            ? `${space.xl}px ${space.md}px`
-            : `${space.xxl}px 80px`,
+            ? `${space.section}px ${space.item}px`
+            : `${space.band}px 80px`,
         textAlign: 'center',
       }}
     >
@@ -365,7 +365,7 @@ export function SectionBand({
           // On charcoal the brand gold is the legible one (5.53); goldText is
           // for light grounds only.
           ...(onDark ? { color: tokens.onDark } : null),
-          marginBottom: space.md,
+          marginBottom: space.item,
         }}
       >
         {label}
@@ -384,7 +384,7 @@ export function SectionBand({
         <p
           style={{
             ...(onDark ? supporting.onDark : supporting.onLight),
-            margin: `${space.md}px auto 0`,
+            margin: `${space.item}px auto 0`,
             maxWidth: 520,
           }}
         >
@@ -434,7 +434,7 @@ function TileSwatches({ colours }: { colours: { name: string; hex: string }[] })
         );
   const rest = colours.length - shown.length;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: space.xxs, marginTop: space.sm }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: space.hairline, marginTop: space.snug }}>
       {shown.map(c => (
         <span
           key={c.name}
@@ -459,7 +459,7 @@ function TileSwatches({ colours }: { colours: { name: string; hex: string }[] })
             letterSpacing: 'normal',
             textTransform: 'none',
             color: tokens.onDarkMuted,
-            marginLeft: space.xxs,
+            marginLeft: space.hairline,
           }}
         >
           +{rest}
@@ -683,13 +683,13 @@ export function PhotoTile({
       <div
         style={{
           position: 'absolute',
-          left: isMobile ? space.md : space.lg,
-          right: isMobile ? space.md : space.lg,
-          bottom: isMobile ? space.md : space.lg,
+          left: isMobile ? space.item : space.group,
+          right: isMobile ? space.item : space.group,
+          bottom: isMobile ? space.item : space.group,
           display: 'flex',
           ...(ctaBelow
-            ? { flexDirection: 'column' as const, alignItems: 'flex-start', gap: space.md }
-            : { alignItems: 'flex-end', justifyContent: 'space-between', gap: space.md }),
+            ? { flexDirection: 'column' as const, alignItems: 'flex-start', gap: space.item }
+            : { alignItems: 'flex-end', justifyContent: 'space-between', gap: space.item }),
           // The row lifts with the hover rather than staying put, so the whole
           // tile reads as one object responding to the pointer.
           transform: hover ? 'translateY(-4px)' : 'translateY(0)',
@@ -721,7 +721,7 @@ export function PhotoTile({
             style={{
               ...typeScale.body,
               color: 'rgba(248,248,248,0.82)',
-              marginTop: space.xs,
+              marginTop: space.tight,
               maxWidth: 280,
               textShadow: image ? '0 1px 10px rgba(29,29,29,0.5)' : undefined,
             }}
@@ -736,7 +736,7 @@ export function PhotoTile({
               // Brand gold, and it stays: this note sits over a darkened
               // photograph, not a light ground, so goldText would go muddy here.
               color: tokens.onDark,
-              marginTop: space.sm,
+              marginTop: space.snug,
               // The label and the blurb both carry one and the price did not,
               // which is backwards: gold on a sunlit windowsill is far closer to
               // its background than warm white is, so "FROM $220" was the one
@@ -761,7 +761,7 @@ export function PhotoTile({
               display: 'inline-flex',
               alignItems: 'center',
               height: 32,
-              padding: `0 ${space.md}px`,
+              padding: `0 ${space.item}px`,
               borderRadius: radius.md,
               boxSizing: 'border-box',
               ...typeScale.label,
@@ -800,7 +800,7 @@ export function ArrowLink({ label, hovered }: { label: string; hovered: boolean 
         // measures 2.11–2.47.
         color: hovered ? tokens.ink : tokens.ink,
         borderBottom: `1px solid ${hovered ? tokens.ink : tokens.line}`,
-        paddingBottom: space.xxs,
+        paddingBottom: space.hairline,
         whiteSpace: 'nowrap',
         transition: motion.link,
       }}

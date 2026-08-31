@@ -109,8 +109,8 @@ export function AboutPanel() {
         // hard edge doing the framing. 84 top and bottom on top of that was air
         // paid for twice.
         padding: isMobile
-          ? `${space.xl}px ${space.md}px`
-          : `${space.xl}px ${layout.inlinePad(isMobile)}px`,
+          ? `${space.section}px ${space.item}px`
+          : `${space.section}px ${layout.inlinePad(isMobile)}px`,
       }}
     >
       {/* 560, NOT 480. Measured, "Measured, made and hung" needs 621px at the
@@ -123,7 +123,7 @@ export function AboutPanel() {
           off `headline.section` — that scale is every section heading on the
           site and this panel does not get a private one. */}
       <div style={{ maxWidth: 560 }}>
-        <p style={{ ...eyebrow, marginBottom: space.md }}>Who makes them</p>
+        <p style={{ ...eyebrow, marginBottom: space.item }}>Who makes them</p>
         {/* THREE LINES, ALL THREE SET BY HAND, because two is not available and
             the automatic wrap of three is ugly.
 
@@ -150,12 +150,12 @@ export function AboutPanel() {
         <div
           style={{
             ...supporting.onLight,
-            marginTop: space.md,
+            marginTop: space.item,
             display: 'flex',
             flexDirection: 'column',
             // Between paragraphs: within-group, so `md`. The `xl` below is the
             // between-group step to the CTA — 2.6×, which is the hierarchy rule.
-            gap: space.md,
+            gap: space.item,
           }}
         >
           {BODY.map(para => (
@@ -168,7 +168,7 @@ export function AboutPanel() {
             groups are siblings; here the CTA is the end of this one block of
             copy, and the block already closes with 52px of section padding under
             it. */}
-        <div style={{ marginTop: space.lg }}>
+        <div style={{ marginTop: space.group }}>
           <CtaLink to="/about">About Klay →</CtaLink>
         </div>
       </div>

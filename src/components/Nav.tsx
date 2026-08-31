@@ -156,7 +156,7 @@ const barLink = (active: boolean, linkColor: string, accent = false) => ({
   fontWeight: accent ? 500 : 400,
   whiteSpace: 'nowrap' as const,
   opacity: accent || active ? 1 : 0.82,
-  paddingBottom: space.xxs,
+  paddingBottom: space.hairline,
   borderBottom: `1px solid ${active ? tokens.line : 'transparent'}`,
   transition: `${motion.link}, opacity 0.2s ease`,
 });
@@ -284,7 +284,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               left: '50%',
               transform: 'translateX(-50%)',
               display: 'flex',
-              gap: space.lg,
+              gap: space.group,
               alignItems: 'center',
             }}
           >
@@ -380,7 +380,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 alignItems: 'center',
                 justifyContent: 'center',
                 height: NAV_CONTROL,
-                padding: `0 ${space.lg}px`,
+                padding: `0 ${space.group}px`,
                 borderRadius: radius.md,
                 background: ctaHover ? tokens.accentHover : tokens.accent,
                 color: tokens.onAccent,

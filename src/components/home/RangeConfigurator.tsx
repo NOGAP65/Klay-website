@@ -58,7 +58,7 @@ const labelStyle: React.CSSProperties = {
   // inkSoft, not inkFaint — at 0.4 these field labels measured 2.44 on
   // parchment and were the second place a non-text token was carrying text.
   color: tokens.inkSoft,
-  marginBottom: space.xxs,
+  marginBottom: space.hairline,
 };
 
 /** One choice, as a rectangle. Selected is a gold fill with ink text — the same
@@ -93,7 +93,7 @@ function Chip({
         alignItems: 'center',
         height: 32,
         boxSizing: 'border-box',
-        padding: `0 ${space.md}px`,
+        padding: `0 ${space.item}px`,
         borderRadius: radius.md,
         cursor: 'pointer',
         whiteSpace: 'nowrap',
@@ -178,7 +178,7 @@ function Field({
           <span style={{ color: tokens.inkSoft, letterSpacing: '0.3em' }}> · {value}</span>
         )}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.tight }}>
         {field.choices.map(c =>
           field.kind === 'swatches' ? (
             <Swatch key={c.id} choice={c} selected={c.id === value} onSelect={() => onChange(c.id)} />
@@ -272,7 +272,7 @@ export function RangeConfigurator({
         // inside, so the action button can reach the panel's own edges — see the
         // note on it. Padded here, it sat inset on all four sides and read as a
         // button placed in a box rather than as the bar the card's Shop Now is.
-        padding: fill ? 0 : `${space.md}px`,
+        padding: fill ? 0 : `${space.item}px`,
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -291,10 +291,10 @@ export function RangeConfigurator({
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: space.sm,
+          gap: space.snug,
           // The padding the outer box gave up, so this region owns its own inset
           // and the action bar below can be flush.
-          ...(fill ? { padding: `${space.md}px ${space.md}px 0` } : null),
+          ...(fill ? { padding: `${space.item}px ${space.item}px 0` } : null),
         }}
       >
         {/* The colour swatches are NOT here. They render on the card, directly
@@ -309,16 +309,16 @@ export function RangeConfigurator({
       </div>
 
       {/* The action bar, pinned to the bottom of every card in the row. */}
-      <div style={{ flex: '0 0 auto', paddingTop: space.sm }}>
+      <div style={{ flex: '0 0 auto', paddingTop: space.snug }}>
         <div
           style={{
             display: 'flex',
             alignItems: 'baseline',
             justifyContent: 'space-between',
-            gap: space.xs,
-            marginBottom: space.xs,
+            gap: space.tight,
+            marginBottom: space.tight,
             // Inset with the fields above it. Only the button goes flush.
-            ...(fill ? { padding: `0 ${space.md}px` } : null),
+            ...(fill ? { padding: `0 ${space.item}px` } : null),
           }}
         >
           {/* Priced products show the figure this exact configuration costs —
@@ -351,7 +351,7 @@ export function RangeConfigurator({
           onClick={checkout}
           style={{
             width: '100%',
-            padding: `0 ${space.md}px`,
+            padding: `0 ${space.item}px`,
             height: 52,
             boxSizing: 'border-box',
             display: 'inline-flex',

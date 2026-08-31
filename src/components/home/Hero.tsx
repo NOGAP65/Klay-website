@@ -175,7 +175,7 @@ export function Hero() {
           position: 'absolute',
           left: layout.inlinePad(isMobile),
           right: layout.inlinePad(isMobile),
-          bottom: space.xxl,
+          bottom: space.band,
           maxWidth: 700,
         }}
       >
@@ -196,7 +196,7 @@ export function Hero() {
           style={{
             ...eyebrow,
             color: tokens.paper,
-            marginBottom: space.md,
+            marginBottom: space.item,
             textShadow: '0 1px 3px rgba(29,29,29,0.95), 0 2px 16px rgba(29,29,29,0.75)',
           }}
         >
@@ -224,7 +224,7 @@ export function Hero() {
         {/* Design Yours scrolls to the visualiser rather than navigating: the
             tool it promises is on this page, and a page load to reach something
             already loaded is a cost with no benefit. */}
-        <div style={{ marginTop: space.lg }}>
+        <div style={{ marginTop: space.group }}>
           <CtaButton onClick={scrollToId('visualiser')}>Design Yours</CtaButton>
         </div>
       </div>

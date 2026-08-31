@@ -96,7 +96,7 @@ const DURATION_S = 24;
 /** THE BAR'S OWN RENDERED HEIGHT, exported so the hero can position the fold
  * against it rather than carrying a literal.
  *
- * Derived, not measured: the row's vertical padding (`space.md` top and bottom)
+ * Derived, not measured: the row's vertical padding (`space.item` top and bottom)
  * plus the label's own line box. The label is `type.label` — 12px at
  * line-height 1.6 — which lays out at 19.2, and the numeral beside it is set to
  * line-height 1 so it cannot be the taller of the two.
@@ -112,7 +112,7 @@ const DURATION_S = 24;
  *
  * Unchanged by the marquee rewrite, which is the point of the rewrite: the strip
  * gained the full width and the four promises without gaining a pixel of height. */
-export const STEPS_BAR_HEIGHT = space.md * 2 + Math.round(12 * 1.6);
+export const STEPS_BAR_HEIGHT = space.item * 2 + Math.round(12 * 1.6);
 
 /** One pass of the four steps. Rendered twice inside the track — the animation
  * travels exactly -50%, so the wrap lands on an identical frame and the seam
@@ -127,7 +127,7 @@ function Run() {
           style={{
             display: 'inline-flex',
             alignItems: 'baseline',
-            gap: space.xs,
+            gap: space.tight,
             flexShrink: 0,
             whiteSpace: 'nowrap',
           }}
@@ -168,7 +168,7 @@ function Run() {
               textTransform: 'none',
               letterSpacing: '0.06em',
               color: tokens.onDark,
-              paddingLeft: space.xs,
+              paddingLeft: space.tight,
             }}
           >
             {step.promise}
@@ -182,7 +182,7 @@ function Run() {
               seam is the one frame that would give the wrap away. */}
           <span
             aria-hidden="true"
-            style={{ color: tokens.onDarkEdge, padding: `0 ${space.lg}px`, fontSize: 12 }}
+            style={{ color: tokens.onDarkEdge, padding: `0 ${space.group}px`, fontSize: 12 }}
           >
             →
           </span>
@@ -216,10 +216,10 @@ export function StepsBar() {
         // right edge. klay-hscroll hides the scrollbar itself.
         overflowX: reduceMotion ? 'auto' : 'hidden',
         // No horizontal padding, unlike the static row this replaces. A marquee
-        // is meant to be cut by both edges; inset by space.md it would instead
+        // is meant to be cut by both edges; inset by space.item it would instead
         // appear and disappear a gutter early, which reads as a clipping bug
         // rather than as a strip running past the viewport.
-        padding: `${space.md}px 0`,
+        padding: `${space.item}px 0`,
       }}
       className={reduceMotion ? 'klay-hscroll' : undefined}
     >
@@ -239,7 +239,7 @@ export function StepsBar() {
           // target that keeps moving under the pointer is one they have to
           // chase. The ticker is not clickable and stopping it reads as broken.
           animationPlayState: hover ? 'paused' : 'running',
-          paddingLeft: space.lg,
+          paddingLeft: space.group,
         }}
       >
         <Run />

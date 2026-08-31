@@ -97,7 +97,7 @@ function CategoryTabs() {
   ];
 
   return (
-    <div style={{ display: 'flex', gap: space.xxs }}>
+    <div style={{ display: 'flex', gap: space.hairline }}>
       {tabs.map(tab => {
         const active = productCategory === tab.id;
         return (
@@ -107,7 +107,7 @@ function CategoryTabs() {
             onClick={() => setProductCategory(tab.id)}
             style={{
               flex: 1,
-              padding: `${space.sm}px`,
+              padding: `${space.snug}px`,
               borderRadius: radius.md,
               fontFamily: tokens.body,
               fontSize: 10,
@@ -185,7 +185,7 @@ function WindowCount({ value, onChange }: { value: number; onChange: (n: number)
     // buttons — "Number of windows … 1 window" over a control reading "1" is
     // the same fact three times.
     <Field onDark label="Number of windows">
-      <div style={{ display: 'flex', alignItems: 'center', gap: space.sm }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: space.snug }}>
         <StepButton
           label="−"
           ariaLabel="One window fewer"
@@ -201,7 +201,7 @@ function WindowCount({ value, onChange }: { value: number; onChange: (n: number)
             ...typeScale.body,
             fontWeight: 500,
             color: tokens.paper,
-            minWidth: space.md,
+            minWidth: space.item,
             textAlign: 'center',
           }}
         >
@@ -244,7 +244,7 @@ function WindowPicker({
   const count = windows.length;
   return (
     <Field onDark label="Customising" caption={`Window ${active + 1} of ${count}`}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xxs }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.hairline }}>
         {windows.map((w, i) => {
           const isActive = i === active;
           // Window 1 leads, so its own flag is meaningless — it is never dotted,
@@ -314,7 +314,7 @@ function WindowPicker({
             textTransform: 'none',
             fontWeight: 400,
             color: tokens.onDarkMuted,
-            marginTop: space.sm,
+            marginTop: space.snug,
           }}
         >
           Dotted windows keep their own settings
@@ -329,7 +329,7 @@ function WindowPicker({
         <button
           onClick={onMatchAll}
           style={{
-            marginTop: space.xs,
+            marginTop: space.tight,
             padding: 0,
             background: 'none',
             border: 'none',
@@ -460,7 +460,7 @@ export function VisualiserShowcase() {
           of the viewport now, so an 80px inset either side would be measuring
           that 75% against a container the padding had already narrowed — the
           card would land at 75% of 1280 on a 1440 screen, not 75% of 1440. */}
-      <div style={{ padding: isMobile ? `0 ${space.md}px ${space.xl}px` : `0 0 ${space.xxl}px` }}>
+      <div style={{ padding: isMobile ? `0 ${space.item}px ${space.section}px` : `0 0 ${space.band}px` }}>
         <div
           style={{
             // 75% of the screen, centred. Capped at gridMax so the card cannot
@@ -494,7 +494,7 @@ export function VisualiserShowcase() {
           style={{
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
-            gap: space.lg,
+            gap: space.group,
             alignItems: 'stretch',
             // The black rectangle. Ink rather than charcoal — charcoal is the
             // page's ordinary dark and is already doing that job in the nav, the
@@ -507,7 +507,7 @@ export function VisualiserShowcase() {
             // black card separates completely on its own, and the hairline would
             // only muddy the edge that is now doing the work.
             borderRadius: radius.lg,
-            padding: isMobile ? space.md : space.lg,
+            padding: isMobile ? space.item : space.group,
             // THE ONE ELEVATED OBJECT ON THE PAGE. Four shadow tokens were
             // declared and nothing consumed any of them, so nothing on the
             // homepage sat ON the surface rather than in it. One raised object
@@ -534,12 +534,12 @@ export function VisualiserShowcase() {
               // rather than a number anyone chose. Two different browser widths
               // gave two different panels.
               //
-              // Now every gap is space.lg, matching the between-group step the
+              // Now every gap is space.group, matching the between-group step the
               // controls use in compact mode, and all the slack is collected in
               // the one place it reads as deliberate: above the price box, which
               // takes marginTop auto below and sits on the canvas's bottom edge.
               justifyContent: 'flex-start',
-              gap: space.lg,
+              gap: space.group,
             }}
           >
             <CategoryTabs />
@@ -551,7 +551,7 @@ export function VisualiserShowcase() {
                 configurable at all. */}
             <section>
               <GroupHeading onDark>Your windows</GroupHeading>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: space.item }}>
                 <WindowCount value={count} onChange={setWindowCount} />
                 {count > 1 && (
                   <WindowPicker
@@ -590,7 +590,7 @@ export function VisualiserShowcase() {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: space.md,
+                gap: space.item,
                 marginTop: isMobile ? undefined : 'auto',
               }}
             >

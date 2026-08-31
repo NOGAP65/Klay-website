@@ -24,13 +24,13 @@ export const layout = {
    * on a phone reads as a loading error rather than as luxury — but both values
    * stay on the scale. */
   sectionPad: (isMobile: boolean) =>
-    isMobile ? `${space.xl}px ${space.md}px` : `${space.xxl}px 80px`,
+    isMobile ? `${space.section}px ${space.item}px` : `${space.band}px 80px`,
   /** The two focal sections: the visualiser and the closing CTA. */
   sectionPadFocal: (isMobile: boolean) =>
-    isMobile ? `${space.xxl}px ${space.md}px` : `${space.xxxl}px 80px`,
+    isMobile ? `${space.band}px ${space.item}px` : `${space.focal}px 80px`,
   /** Every full-bleed section's content inset. Mobile was 24, which is not on
    * the scale; 20 is. */
-  inlinePad: (isMobile: boolean) => (isMobile ? space.md : 80),
+  inlinePad: (isMobile: boolean) => (isMobile ? space.item : 80),
 };
 
 /** One container, centred. */

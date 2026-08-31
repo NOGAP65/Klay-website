@@ -100,7 +100,7 @@ export function RecommendationBanner() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: stacked ? `${space.xl}px ${space.md}px` : `${space.xxl}px 80px`,
+        padding: stacked ? `${space.section}px ${space.item}px` : `${space.band}px 80px`,
         // Behind the photograph rather than beside it — it is what shows while
         // the image is still loading, and charcoal keeps that moment on-brand
         // instead of flashing white.
@@ -162,8 +162,8 @@ export function RecommendationBanner() {
             listStyle: 'none',
             display: 'grid',
             gridTemplateColumns: fourUp ? 'repeat(4, 1fr)' : stacked ? '1fr' : 'repeat(2, 1fr)',
-            gap: stacked ? space.lg : space.xl,
-            margin: `${space.xl}px 0 0`,
+            gap: stacked ? space.group : space.section,
+            margin: `${space.section}px 0 0`,
             padding: 0,
             textAlign: 'left',
           }}
@@ -182,7 +182,7 @@ export function RecommendationBanner() {
                 style={{
                   height: 1,
                   background: tokens.fillStrong,
-                  marginBottom: space.md,
+                  marginBottom: space.item,
                 }}
               />
 
@@ -196,8 +196,8 @@ export function RecommendationBanner() {
                 style={{
                   display: 'flex',
                   alignItems: 'baseline',
-                  gap: space.sm,
-                  marginBottom: space.xs,
+                  gap: space.snug,
+                  marginBottom: space.tight,
                 }}
               >
                 <span
@@ -230,7 +230,7 @@ export function RecommendationBanner() {
                 style={{
                   ...typeScale.micro,
                   color: tokens.paper,
-                  marginBottom: space.sm,
+                  marginBottom: space.snug,
                 }}
               >
                 {step.actor}
@@ -259,7 +259,7 @@ export function RecommendationBanner() {
             exist. Step two is a technician coming to the house, so booking that
             is what somebody who has read this wants to do next, and the enquiry
             form is genuinely where it happens. */}
-        <div style={{ marginTop: space.xl, textAlign: 'center' }}>
+        <div style={{ marginTop: space.section, textAlign: 'center' }}>
           <CtaLink to="/contact">Book a Free Measure</CtaLink>
         </div>
       </div>

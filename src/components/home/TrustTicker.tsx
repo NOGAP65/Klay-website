@@ -79,7 +79,7 @@ function Run() {
               strip as a list of six rather than as one long sentence. It was ink
               at 0.70 on gold. Inside the span rather than between spans so the
               spacing can never collapse to a bare dot at a wrap point. */}
-          <span aria-hidden="true" style={{ color: 'rgba(248,248,248,0.55)', padding: `0 ${space.md}px` }}>
+          <span aria-hidden="true" style={{ color: 'rgba(248,248,248,0.55)', padding: `0 ${space.item}px` }}>
             ·
           </span>
         </span>
@@ -139,7 +139,7 @@ export function TrustTicker() {
           // Its own compositor layer, so the transform never repaints the bar.
           willChange: 'transform',
           animation: reduceMotion ? undefined : `klay-marquee ${DURATION_S}s linear infinite`,
-          paddingLeft: space.md,
+          paddingLeft: space.item,
         }}
       >
         <Run />

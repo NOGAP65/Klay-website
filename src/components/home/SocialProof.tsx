@@ -111,7 +111,7 @@ function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: bool
             ...typeScale.micro,
             color: tokens.paper,
             border: `1px solid ${tokens.onDarkEdge}`,
-            padding: `${space.sm}px ${space.md}px`,
+            padding: `${space.snug}px ${space.item}px`,
           }}
         >
           See Product
@@ -166,7 +166,7 @@ export function SocialProof() {
         className="klay-hscroll"
         style={
           isMobile
-            ? { display: 'flex', gap: TILE_GAP, overflowX: 'auto', padding: `0 ${space.md}px ${space.xs}px` }
+            ? { display: 'flex', gap: TILE_GAP, overflowX: 'auto', padding: `0 ${space.item}px ${space.tight}px` }
             : {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(5, 1fr)',
@@ -187,8 +187,8 @@ export function SocialProof() {
       <div
         style={{
           textAlign: 'center',
-          paddingTop: isMobile ? space.lg : space.xl,
-          paddingBottom: isMobile ? space.xl : space.xxl,
+          paddingTop: isMobile ? space.group : space.section,
+          paddingBottom: isMobile ? space.section : space.band,
         }}
       >
         <a
@@ -211,7 +211,7 @@ export function SocialProof() {
             color: tokens.paper,
             textDecoration: 'none',
             borderBottom: `1px solid ${hover ? tokens.paper : 'transparent'}`,
-            paddingBottom: space.xxs,
+            paddingBottom: space.hairline,
             transition: 'border-color 0.2s ease',
           }}
         >
