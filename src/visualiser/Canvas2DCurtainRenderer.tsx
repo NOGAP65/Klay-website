@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { computeHomography } from './homography';
 
 // ---------------------------------------------------------------------------
 // WAVE FOLD CURTAINS
@@ -862,6 +863,7 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
 // --- Shaders --------------------------------------------------------------
 
 const VERTEX_SHADER = `
+uniform mat3 uQuadH;
 attribute float aCompression;
 attribute float aDepth;
 
@@ -875,7 +877,15 @@ void main() {
   vUv = uv;
   vCompression = aCompression;
   vDepth = aDepth;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  // ONTO THE TRACED QUAD. Everything above is solved square — the waves, the
+    // sway, the track — in an axis-aligned box, and this is where it gets put
+    // back on a window that was photographed in perspective. modelMatrix first
+    // so the vertex is in world pixel space, then the homography with its
+    // perspective divide, then the ordinary projection.
+    vec4 world = modelMatrix * vec4(position, 1.0);
+    vec3 warped = uQuadH * vec3(world.xy, 1.0);
+    world.xy = warped.xy / warped.z;
+    gl_Position = projectionMatrix * viewMatrix * world;
 }
 `;
 
@@ -1083,10 +1093,19 @@ const RUNNER_PITCH_MM = 80;
 const BRACKET_GAP_MM = 34;
 
 const TRACK_VERTEX_SHADER = `
+uniform mat3 uQuadH;
 varying vec2 vUv;
 void main() {
   vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  // ONTO THE TRACED QUAD. Everything above is solved square — the waves, the
+    // sway, the track — in an axis-aligned box, and this is where it gets put
+    // back on a window that was photographed in perspective. modelMatrix first
+    // so the vertex is in world pixel space, then the homography with its
+    // perspective divide, then the ordinary projection.
+    vec4 world = modelMatrix * vec4(position, 1.0);
+    vec3 warped = uQuadH * vec3(world.xy, 1.0);
+    world.xy = warped.xy / warped.z;
+    gl_Position = projectionMatrix * viewMatrix * world;
 }
 `;
 
@@ -1669,6 +1688,47 @@ export default function Canvas2DCurtainRenderer({
       const windowBottom = Math.min(blPx.y, brPx.y);
       const windowWidth = windowRight - windowLeft;
 
+      // THE SLANT. The blind renderer has always drawn onto the traced quad; the
+      // curtain collapsed that quad to its bounding box and drew square inside
+      // it, so on a window photographed in perspective the curtain's track ran
+      // level while the window's head sloped away beneath it, and the hem sat
+      // flat on a sill that did not. It read as a decal on the photo rather than
+      // as cloth in the room.
+      //
+      // The whole scene is still SOLVED square — the cloth simulation wants a
+      // rectangle and the wave pitch means nothing on a trapezium — and is then
+      // mapped onto the quad by this homography in the vertex shaders. Solve
+      // square, draw crooked.
+      //
+      // Corner order matches the quad's: the box's top-left goes to the quad's
+      // top-left. Geometry outside the box (the track above the head, the
+      // panels' overhang past the reveal) extrapolates through the same
+      // transform, which is what keeps the track parallel to the window head
+      // instead of stopping at it.
+      const quadMatrix = (() => {
+        const box: [number, number][] = [
+          [windowLeft, windowTop],
+          [windowRight, windowTop],
+          [windowRight, windowBottom],
+          [windowLeft, windowBottom],
+        ];
+        const quad: [number, number][] = [
+          [tlPx.x, tlPx.y],
+          [trPx.x, trPx.y],
+          [brPx.x, brPx.y],
+          [blPx.x, blPx.y],
+        ];
+        try {
+          const h = computeHomography(box, quad);
+          // Matrix3.set takes row-major, which is what computeHomography returns.
+          return new THREE.Matrix3().set(h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], h[8]);
+        } catch {
+          // Collinear or coincident corners. An un-warped curtain is wrong; a
+          // missing one is worse, so fall back to drawing it square.
+          return new THREE.Matrix3();
+        }
+      })();
+
       // WAVE COUNT — the same on every window. See WAVES_PER_PANEL.
       const waveCount = WAVES_PER_PANEL;
 
@@ -1776,6 +1836,7 @@ export default function Canvas2DCurtainRenderer({
       const makeMaterial = () =>
         new THREE.ShaderMaterial({
           uniforms: {
+            uQuadH: { value: quadMatrix },
             uColour: { value: colourVec },
             uOpacity: { value: isSheer ? sheerOpacity(colour) : 1.0 },
             uIsSheer: { value: isSheer ? 1.0 : 0.0 },
@@ -1837,6 +1898,7 @@ export default function Canvas2DCurtainRenderer({
 
       const trackMaterial = new THREE.ShaderMaterial({
         uniforms: {
+          uQuadH: { value: quadMatrix },
           uColour: { value: hardwareVec },
           uIsChrome: { value: hardwareColour === 'chrome' ? 1 : 0 },
           // Glider pitch in uv.x. Real 80mm centres — and since the wave pitch is
@@ -1860,7 +1922,7 @@ export default function Canvas2DCurtainRenderer({
       // edge of the opening as if it continued through the wall.
       const capW = Math.max(2, trackHeight * 0.42);
       const capMaterial = new THREE.ShaderMaterial({
-        uniforms: { uColour: { value: hardwareVec } },
+        uniforms: { uQuadH: { value: quadMatrix }, uColour: { value: hardwareVec } },
         vertexShader: TRACK_VERTEX_SHADER,
         fragmentShader: TRACK_CAP_FRAGMENT_SHADER,
       });

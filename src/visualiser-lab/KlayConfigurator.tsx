@@ -1020,33 +1020,43 @@ export default function KlayConfigurator({
     )
   ) : null;
 
-  // WHERE THE CHAIN HANGS, and it is not a styling detail — it is the whole
-  // difference between the chain reading as part of the room and reading as a
-  // widget. Pinned to the right edge of the PHOTOGRAPH it hangs in mid-air
-  // beside the window, attached to nothing, which is what the first version of
-  // this did. It has to hang off the tube, so it is positioned from the blind's
-  // own top-right corner.
+  // HOW LONG THE PULL IS. Sized to the covering's drop so the hardware stays in
+  // proportion to the window — a bit over half its height, which is where a real
+  // chain hangs to. Clamped at both ends so a small traced window still gets
+  // something you can grab and a very tall one does not get a run that falls off
+  // the bottom of the frame.
   //
   // The corners are in photo-pixel space and the box is a percentage of the
   // viewport, so the conversion goes through the photo's dimensions: a fraction
   // of the bitmap is a fraction of the box, whatever size the box is today.
-  //
-  // LENGTH FOLLOWS THE DROP. A real chain is a bit over half the height of the
-  // blind it hangs on; clamped at both ends so a very small traced window still
-  // gets a chain you can grab, and a very tall one does not get a chain running
-  // off the bottom of the frame.
-  const chainAnchor = (() => {
+  const pullRun = (() => {
     if (!confirmedArea || !photoBitmap || !mediaBoxH) return null;
     const topRight = confirmedArea.corners[1];
     const bottomRight = confirmedArea.corners[2];
     if (!topRight || !bottomRight) return null;
     const dropPx = ((bottomRight[1] - topRight[1]) / photoBitmap.height) * mediaBoxH;
-    return {
-      leftPct: (topRight[0] / photoBitmap.width) * 100,
-      topPct: (topRight[1] / photoBitmap.height) * 100,
-      run: Math.max(70, Math.min(240, dropPx * 0.62)),
-    };
+    return Math.max(70, Math.min(240, dropPx * 0.62));
   })();
+
+  // WHERE EVERY CONTROL SITS: against the right edge of the frame, vertically
+  // centred. One position for all three, because they are one control in three
+  // forms and the eye should not have to go looking for it when the operation
+  // changes.
+  //
+  // The pulls used to be positioned from the blind's own top-right corner, which
+  // is where the hardware physically is. It was more truthful and it read worse:
+  // the traced window is usually somewhere in the middle of the photograph, so
+  // the chain landed in the middle of the picture, over the part of the room the
+  // customer is trying to look at, and it moved every time a different window
+  // was traced. Against the frame edge it is out of the photograph's way, it is
+  // in the same place every time, and it is where the handset already was.
+  const SIDE_CONTROL_POSITION: React.CSSProperties = {
+    position: 'absolute',
+    right: 14,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    zIndex: 20,
+  };
 
   // Each operation gets the object it is actually sold with: a chain for
   // manual, a handset for motorised. Both are hardware in the room rather than
@@ -1057,7 +1067,7 @@ export default function KlayConfigurator({
   // to the blind and is placed against it. The handset is held, so it sits off
   // to the side of the frame where a hand would be, unattached to anything.
   const sideControl = !showRenderState ? null : activeOperation === 'motorised' ? (
-    <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', zIndex: 20 }}>
+    <div style={SIDE_CONTROL_POSITION}>
       <MotorRemote
         autoRunning={autoRunning}
         transmitting={motorRunning}
@@ -1067,35 +1077,12 @@ export default function KlayConfigurator({
         onToggleAuto={() => (autoRunning ? stopAuto() : startAuto())}
       />
     </div>
-  ) : chainAnchor ? (
-    <div
-      style={{
-        position: 'absolute',
-        left: `${chainAnchor.leftPct}%`,
-        top: `${chainAnchor.topPct}%`,
-        // BESIDE THE COVERING, NOT ON IT. Centred on the corner, half the run
-        // lies over the fabric, and hardware drawn on top of the product is
-        // hardware the customer reads as part of the product. Shifting by the
-        // padding alone puts the whole loop clear of the edge with only the
-        // pulley overlapping — which is where it genuinely is, bolted to the
-        // end of the tube. Up by the mount's height for the same reason: the
-        // bracket sits ON the tube rather than hanging below it.
-        transform: `translate(-${space.sm}px, -${CHAIN_TOP}px)`,
-        zIndex: 20,
-      }}
-    >
+  ) : pullRun ? (
+    <div style={SIDE_CONTROL_POSITION}>
       {store.productCategory === 'curtain' ? (
-        <CurtainCord
-          value={store.rollPosition}
-          onChange={v => store.setRollPosition(v)}
-          run={chainAnchor.run}
-        />
+        <CurtainCord value={store.rollPosition} onChange={v => store.setRollPosition(v)} run={pullRun} />
       ) : (
-        <BeadChain
-          value={store.rollPosition}
-          onChange={v => store.setRollPosition(v)}
-          run={chainAnchor.run}
-        />
+        <BeadChain value={store.rollPosition} onChange={v => store.setRollPosition(v)} run={pullRun} />
       )}
     </div>
   ) : null;
