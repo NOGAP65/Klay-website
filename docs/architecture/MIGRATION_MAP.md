@@ -889,10 +889,40 @@ with the payment path broken, and the failure surfaces at deploy, on the endpoin
 money.
 
 **Mitigation.** (1) Do not move this file in Phase 3. Move it in Phase 6 together with its
-four consumers and both config files, in **one commit**. (2) Add `npx tsc --noEmit -p
-tsconfig.functions.json` to the phase gate from Phase 1 onward — the current gate does not
-include it. (3) After any move, `grep -rn "lib/pricing" netlify/ tsconfig.functions.json
+four consumers and both config files, in **one commit**. (2) Make `npm run typecheck` the
+gate — see the verified note below; a separate `-p tsconfig.functions.json` run is **not**
+needed. (3) After any move, `grep -rn "lib/pricing" netlify/ tsconfig.functions.json
 netlify.toml` and confirm four plus two hits.
+
+> **VERIFIED 2026-08-31 14:05 — correction to this risk and to R9.**
+>
+> `npm run typecheck` is `tsc -b`, and `tsc -b --verbose` shows it builds **all three**
+> referenced projects every run:
+>
+> ```
+> Building project '.../tsconfig.app.json'...
+> Building project '.../tsconfig.node.json'...
+> Building project '.../tsconfig.functions.json'...
+> ```
+>
+> `tsc -p tsconfig.functions.json --listFiles` confirms the functions program contains all
+> eleven `netlify/**` files **plus** `src/lib/pricing.ts`. A second consecutive run rebuilt
+> all three rather than reporting them up to date, so the incremental cache does not mask
+> errors either.
+>
+> **`netlify/` is therefore already covered by `npm run typecheck`. No Phase 1 fix is
+> required for coverage.** What remains true is that the *work order's* stated gate,
+> `tsc --noEmit`, checks nothing at all in this repository — the root `tsconfig.json` is
+> `{files: [], references: [...]}` and plain `tsc --noEmit` does not walk project
+> references. **The gate must be written as `npm run typecheck`.**
+>
+> **A second, separate gap that this verification exposed:** neither the deploy nor CI runs
+> a typecheck at all. `netlify.toml` sets `command = "npm run build"`, which is `vite build`,
+> which does not invoke `tsc`. Vite transforms 107 modules — `src/` only; `netlify/` is
+> bundled independently by Netlify's esbuild at deploy time. There is no `.github/workflows`
+> directory and no CI configuration anywhere in the repository. **Nothing outside a
+> developer's own terminal has ever typechecked this codebase.** Phase 1.4 is where that
+> gets fixed, and it matters most for Phase 6, whose gate is a deploy preview.
 
 ### R2 — The `theme.ts` split touches 35 files at once
 
@@ -971,17 +1001,27 @@ because it is a scoping question:** if the cart checkout is going to be rewritte
 doing that before P4-4 rather than after saves migrating 473 lines twice. Your call; not mine
 to make.
 
-### R9 — The Phase 1 gate does not currently check the functions project
+### R9 — The gate as written in the work order checks nothing, and nothing outside a developer's terminal checks anything
 
-**Specifics.** The work order's gate is `tsc --noEmit`, `eslint`, `npm run build`. As
-established in the state-of-build document, **plain `npx tsc --noEmit` reads no files in this
-repository** — the root `tsconfig.json` is `{files: [], references: [...]}` and does not walk
-project references. It exits 0 having checked nothing.
+**Specifics.** The work order's gate is `tsc --noEmit`, `eslint`, `npm run build`.
+**Plain `npx tsc --noEmit` reads no files in this repository** — the root `tsconfig.json` is
+`{files: [], references: [...]}` and does not walk project references. It exits 0 having
+checked nothing. `README.md:13-18` records this.
 
-**Mitigation.** The gate must be `npm run typecheck` (`tsc -b`), not `tsc --noEmit`. This is
-recorded in `README.md:13-18` and it would be easy to wire the CI gate to the useless command
-and believe it is green. **Recommend the phase gate is defined as: `npm run typecheck` +
-`npm run build` + the app renders.**
+**Verified 2026-08-31:** `npm run typecheck` (`tsc -b`) **does** build all three projects
+including `tsconfig.functions.json`, whose program contains every `netlify/**` file plus
+`src/lib/pricing.ts`. So coverage is not the problem — *naming the wrong command* is. See
+the verified block under R1.
+
+**And neither the deploy nor CI typechecks at all.** `netlify.toml` runs `npm run build`
+(`vite build`), which never invokes `tsc`; there is no `.github/` directory and no CI
+configuration in the repository.
+
+**Mitigation.** (1) The phase gate is **`npm run typecheck` + `npm run build` + the app
+renders** — never `tsc --noEmit`. (2) Phase 1.4 must add `npm run typecheck` to CI as a
+blocking gate, because today a type error reaches production unchallenged. (3) For Phase 6,
+whose gate is a deploy preview, the preview only proves the bundle builds — add an explicit
+`npm run typecheck` step before pushing, since Netlify will not do it.
 
 ### R10 — `npm run lint` currently crashes, so Phase 1.2's baseline cannot be taken as-is
 
