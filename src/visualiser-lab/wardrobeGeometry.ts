@@ -33,8 +33,10 @@ export type ColumnFill =
   /** Two rails, one above the other. Shirts and trousers — twice the capacity
    * in the same width, which is why every layout above 4.0 has one. */
   | { kind: 'hang2' }
-  /** A bank of drawers in the bottom half with a rail over it. */
-  | { kind: 'drawers'; count: number };
+  /** A tower: open shelving above a bank of drawers. What the photographs
+   * actually show — the first version put a hanging rail over the drawers,
+   * which none of them has. */
+  | { kind: 'drawers'; count: number; shelves: number };
 
 export interface Column {
   /** Share of the total width. The shares in a layout sum to 1. */
@@ -42,45 +44,72 @@ export interface Column {
   fill: ColumnFill;
 }
 
-/** THE INTERNAL ARRANGEMENTS, and they are EDITORIAL — read off the supplied
- * product photographs rather than out of a joinery drawing. The column count,
- * the order and the rough proportions match what each render shows; the exact
- * shelf pitch and drawer heights are a sensible cabinetmaker's default.
+/** THE INTERNAL ARRANGEMENTS, counted off the supplied product photographs.
  *
- * That is the right level of claim for a visualiser, which is selling the look
- * of the thing in the room rather than promising a cutting list. If the real
- * drawings turn up, this is the one place to correct. */
+ * COUNTED, not estimated, and the difference matters: the first version of this
+ * table was written from a glance at each render and six of the seven built-ins
+ * were wrong. 3.0 was given one hanging bay when it has two side by side; 4.9
+ * and 5.0 had their drawer banks in the wrong column and the wrong number; 6.0
+ * was given a double-hang and a single when it is a shelf-and-drawer tower
+ * beside a double-hang beside a full-height hang; 8.0 was given four drawers a
+ * side when it has four in each of two towers with shelving above them. Each
+ * was then checked against the photograph at a size where the drawers and
+ * shelves could actually be counted.
+ *
+ * WHAT IS STILL EDITORIAL is the pitch — how far apart the shelves sit, how tall
+ * a drawer is, where a rail hangs. Those come from a cabinetmaker's defaults
+ * rather than a drawing, because the photographs do not carry dimensions. The
+ * counts and the order are now what the product shows.
+ *
+ * This only drives the unskinned fallback. With a sticker projected onto the
+ * carcass the real arrangement comes from the photograph itself — but the
+ * geometry still has to agree with it, or the modelled dividers land in the
+ * middle of a photographed hanging bay. */
 export const LAYOUT_COLUMNS: Record<string, Column[]> = {
+  // A shelf tower on the left — six openings — beside one full-height hang.
   '2.9': [
-    { width: 0.32, fill: { kind: 'shelves', count: 5 } },
-    { width: 0.68, fill: { kind: 'hang' } },
+    { width: 0.30, fill: { kind: 'shelves', count: 5 } },
+    { width: 0.70, fill: { kind: 'hang' } },
   ],
+  // Shelf tower, then TWO hanging bays side by side with a divider between
+  // them. The first version had one bay running the whole width.
   '3.0': [
-    { width: 0.22, fill: { kind: 'shelves', count: 6 } },
-    { width: 0.78, fill: { kind: 'hang' } },
+    { width: 0.20, fill: { kind: 'shelves', count: 6 } },
+    { width: 0.40, fill: { kind: 'hang' } },
+    { width: 0.40, fill: { kind: 'hang' } },
   ],
+  // Shelf tower, a double-hang in the middle, one long hang on the right.
   '4.0': [
-    { width: 0.22, fill: { kind: 'shelves', count: 6 } },
-    { width: 0.50, fill: { kind: 'hang2' } },
-    { width: 0.28, fill: { kind: 'hang' } },
+    { width: 0.20, fill: { kind: 'shelves', count: 6 } },
+    { width: 0.44, fill: { kind: 'hang2' } },
+    { width: 0.36, fill: { kind: 'hang' } },
   ],
+  // Shelves OVER a four-drawer bank on the left, one hang on the right. The
+  // drawers sit under the shelves in the same tower, which is why this is a
+  // 'drawers' column rather than a shelf one.
   '4.9': [
-    { width: 0.36, fill: { kind: 'drawers', count: 4 } },
-    { width: 0.64, fill: { kind: 'hang' } },
+    { width: 0.34, fill: { kind: 'drawers', count: 4, shelves: 3 } },
+    { width: 0.66, fill: { kind: 'hang' } },
   ],
+  // Same tower with four drawers, then two hanging bays.
   '5.0': [
-    { width: 0.28, fill: { kind: 'drawers', count: 3 } },
-    { width: 0.72, fill: { kind: 'hang' } },
+    { width: 0.24, fill: { kind: 'drawers', count: 4, shelves: 3 } },
+    { width: 0.40, fill: { kind: 'hang' } },
+    { width: 0.36, fill: { kind: 'hang' } },
   ],
+  // Shelf-and-drawer tower, a double-hang, then a full-height hang for long
+  // coats and dresses.
   '6.0': [
-    { width: 0.20, fill: { kind: 'shelves', count: 5 } },
-    { width: 0.46, fill: { kind: 'hang2' } },
+    { width: 0.18, fill: { kind: 'drawers', count: 4, shelves: 2 } },
+    { width: 0.48, fill: { kind: 'hang2' } },
     { width: 0.34, fill: { kind: 'hang' } },
   ],
+  // Symmetrical: a shelf-over-drawers tower at each end, one long hang between
+  // them. Four drawers in each tower.
   '8.0': [
-    { width: 0.24, fill: { kind: 'drawers', count: 4 } },
-    { width: 0.52, fill: { kind: 'hang' } },
-    { width: 0.24, fill: { kind: 'drawers', count: 4 } },
+    { width: 0.22, fill: { kind: 'drawers', count: 4, shelves: 3 } },
+    { width: 0.56, fill: { kind: 'hang' } },
+    { width: 0.22, fill: { kind: 'drawers', count: 4, shelves: 3 } },
   ],
 };
 
