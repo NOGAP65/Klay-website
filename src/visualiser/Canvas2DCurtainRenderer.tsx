@@ -490,10 +490,24 @@ const HARDWARE_HEX: Record<string, string> = {
  *
  * The floor is what matters as much as the range: at 0.62 the previous fixed
  * value the fabric was barely there against a bright window, and a curtain you
- * cannot see is not a visualisation of a curtain. Even the darkest colour now
- * covers most of what is behind it. */
-const SHEER_OPACITY_DARK = 0.82;
-const SHEER_OPACITY_LIGHT = 0.95;
+ * cannot see is not a visualisation of a curtain. Even the darkest colour still
+ * covers most of what is behind it.
+ *
+ * THE SETTLED POINT IS BETWEEN TWO FAILURES. 0.62 was a tinted pane you could
+ * read a fence through, so it stopped selling a curtain; 0.82/0.95 corrected
+ * that and overshot, because at those values a sheer against a bright window
+ * is a pale sheet and the one thing a customer buys a sheer FOR — that it
+ * filters the light instead of stopping it — never appears on screen. These
+ * sit a little below that: the garden behind is legible as shape and colour
+ * without resolving into detail, which is what a sheer actually does, and the
+ * difference from the blockout option is now obvious at a glance rather than a
+ * matter of a few percent of white.
+ *
+ * The gap between the two ends is deliberately unchanged. It is the physics —
+ * a pale sheer scatters daylight forward and hazes over, a dark one absorbs
+ * that scatter and tints — and only the overall level was wrong. */
+const SHEER_OPACITY_DARK = 0.74;
+const SHEER_OPACITY_LIGHT = 0.87;
 
 const sheerOpacity = (colour: string): number => {
   const l = luma01(colour);
