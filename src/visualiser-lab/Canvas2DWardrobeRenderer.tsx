@@ -34,7 +34,7 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef } from 'react';
-import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM, type WardrobeArtwork } from './wardrobes';
+import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM } from './wardrobes';
 import { projectorFromQuad, columnsFor, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
 import type { Point } from './homography';
 
@@ -84,15 +84,7 @@ export default function Canvas2DWardrobeRenderer({
         return;
       }
 
-      // THE STICKER GOES INSIDE THE MODELLED BOX. The geometry gets the
-      // opening's perspective and the reveal right — that is what no
-      // photograph can do — and the photograph gets the interior right, which
-      // is what no reasonable amount of modelling can: real shelves, real
-      // clothes, real shadow between them. Neither is good enough alone and
-      // together they are most of the way to a render.
-      const art = await wardrobeArtwork(model, colourName, 'front');
-      if (cancelled) return;
-      drawBuiltIn(ctx, corners, model.id, model.widths[0], colourName, canvas.width, canvas.height, art);
+      drawBuiltIn(ctx, corners, model.id, model.widths[0], colourName, canvas.width, canvas.height);
     };
 
     render().catch(() => {
@@ -129,6 +121,14 @@ interface Box {
  * catches most, an upward face next, the two side faces fall away, and the
  * inside of the box is in its own shade because nothing lights the inside of a
  * cupboard. It reads as depth without claiming to know where the sun is. */
+/** How much darker the back of the carcass is than its front edge.
+ *
+ * Gentler than it first looks like it should be, because it compounds with the
+ * per-face tone and the back panel's own: at 0.34 a white wardrobe came out
+ * mid-grey, which is a cupboard lit by nothing at all. A cupboard in a bright
+ * room is still mostly white. */
+const INTERIOR_FALLOFF = 0.16;
+
 const FACE_TONE = {
   front: 1.0,
   top: 0.94,
@@ -156,21 +156,27 @@ function drawBuiltIn(
   colourName: string,
   imageW: number,
   imageH: number,
-  art: WardrobeArtwork | null,
 ) {
   const projector = projectorFromQuad(corners, widthMm, WARDROBE_HEIGHT_MM, imageW, imageH);
   if (!projector) return;
 
   const base = hexToRgb(wardrobeColourHex(colourName));
-  // With a photograph going into the opening there is nothing for the modelled
-  // shelves, rails and garments to do but show through its edges. Without one
-  // they are all there is, so the fallback still builds them.
-  const boxes = buildCarcass(layoutId, widthMm, !art);
+  const boxes = buildCarcass(layoutId, widthMm);
 
   // Every face of every box, sorted back to front. A painter's sort is enough
   // here: the carcass is a set of boxes that do not interpenetrate, so no two
   // faces can need splitting.
-  type Face = { pts: [number, number][]; depth: number; fill: string };
+  type Face = {
+    pts: [number, number][];
+    depth: number;
+    /** Tone at the face's nearest and furthest corner, and where those land on
+     * screen — enough to shade the face across itself rather than flat. */
+    near: [number, number];
+    far: [number, number];
+    toneNear: number;
+    toneFar: number;
+    rgb: [number, number, number];
+  };
   const faces: Face[] = [];
 
   for (const box of boxes) {
@@ -186,11 +192,34 @@ function drawBuiltIn(
         pts.push(projector.project(X, Y, Z));
         depthSum += projector.depth(X, Y, Z);
       }
-      const tone = FACE_TONE[name] * (box.tone ?? 1);
+
+      // The corner closest to the room and the one deepest into the carcass.
+      // A face spanning the full 447mm — a side panel, a shelf — runs from full
+      // light at its front edge to the back of the box, and filling it with one
+      // value is what made the whole thing read as cut paper.
+      //
+      // Model Z runs negative into the wall, so the LARGER z is the nearer one.
+      let nz = -Infinity;
+      let fz = Infinity;
+      let nearPt: [number, number] = pts[0];
+      let farPt: [number, number] = pts[0];
+      unit.forEach(([, , uz], k) => {
+        const Z = box.z + uz * box.d;
+        if (Z > nz) { nz = Z; nearPt = pts[k]; }
+        if (Z < fz) { fz = Z; farPt = pts[k]; }
+      });
+
+      const flat = FACE_TONE[name] * (box.tone ?? 1);
+      const shade = (z: number) =>
+        flat * (1 - Math.max(0, Math.min(1, -z / WARDROBE_DEPTH_MM)) * INTERIOR_FALLOFF);
       faces.push({
         pts,
         depth: depthSum / 4,
-        fill: `rgb(${clamp255(rgb[0] * tone)},${clamp255(rgb[1] * tone)},${clamp255(rgb[2] * tone)})`,
+        near: nearPt,
+        far: farPt,
+        toneNear: shade(nz),
+        toneFar: shade(fz),
+        rgb,
       });
     }
   }
@@ -208,45 +237,35 @@ function drawBuiltIn(
   ctx.closePath();
   ctx.clip();
 
+  const toRgb = (c: [number, number, number], t: number) =>
+    `rgb(${clamp255(c[0] * t)},${clamp255(c[1] * t)},${clamp255(c[2] * t)})`;
+
   for (const face of faces) {
     ctx.beginPath();
     ctx.moveTo(face.pts[0][0], face.pts[0][1]);
     for (let i = 1; i < face.pts.length; i++) ctx.lineTo(face.pts[i][0], face.pts[i][1]);
     ctx.closePath();
-    ctx.fillStyle = face.fill;
+
+    const nearFill = toRgb(face.rgb, face.toneNear);
+    let paint: string | CanvasGradient = nearFill;
+    const run = Math.hypot(face.far[0] - face.near[0], face.far[1] - face.near[1]);
+    if (run > 1 && Math.abs(face.toneNear - face.toneFar) > 0.004) {
+      const g = ctx.createLinearGradient(face.near[0], face.near[1], face.far[0], face.far[1]);
+      g.addColorStop(0, nearFill);
+      g.addColorStop(1, toRgb(face.rgb, face.toneFar));
+      paint = g;
+    }
+    ctx.fillStyle = paint;
     ctx.fill();
-    // A hairline of the same colour over the fill closes the seams that
-    // anti-aliasing opens between two quads meeting edge to edge.
-    ctx.strokeStyle = face.fill;
+    // A hairline over the fill closes the seams that anti-aliasing opens
+    // between two quads meeting edge to edge.
+    ctx.strokeStyle = nearFill;
     ctx.lineWidth = 0.6;
     ctx.stroke();
   }
-  // The photograph, set into the reveal. Inset by the board so it sits inside
-  // the carcass's own frame rather than over it, and at z = 0 because that is
-  // the plane the customer traced and the plane the opening is on.
-  if (art) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(corners[0][0], corners[0][1]);
-    for (let i = 1; i < corners.length; i++) ctx.lineTo(corners[i][0], corners[i][1]);
-    ctx.closePath();
-    ctx.clip();
-    drawProjectedImage(
-      ctx,
-      art.image,
-      art.width,
-      art.height,
-      projector,
-      BOARD_MM,
-      BOARD_MM,
-      widthMm - BOARD_MM,
-      WARDROBE_HEIGHT_MM - BOARD_MM,
-      0,
-    );
-    ctx.restore();
-  }
-
   drawContactShadow(ctx, projector, widthMm);
+
+
 }
 
 /** The carcass as a list of boxes, in millimetres, with the opening's
@@ -258,7 +277,7 @@ function drawBuiltIn(
  * modelling worth doing: with an open front you see straight into the carcass,
  * so the side returns, the shelf edges and the back panel are all on show, and
  * those receding surfaces are what tell the eye how deep it is. */
-function buildCarcass(layoutId: string, widthMm: number, includeInterior: boolean): Box[] {
+function buildCarcass(layoutId: string, widthMm: number): Box[] {
   const D = WARDROBE_DEPTH_MM;
   const H = WARDROBE_HEIGHT_MM;
   const boxes: Box[] = [];
@@ -270,7 +289,7 @@ function buildCarcass(layoutId: string, widthMm: number, includeInterior: boolea
   // the largest surface in the opening, though, so it sets the colour of the
   // whole thing: too dark and a white wardrobe reads grey, which is what 0.66
   // did.
-  boxes.push({ x: 0, y: 0, z: 0, w: widthMm, h: H, d: BOARD_MM, tone: 0.82 });
+  boxes.push({ x: 0, y: 0, z: 0, w: widthMm, h: H, d: BOARD_MM, tone: 0.95 });
   boxes.push({ x: 0, y: 0, z: 0, w: BOARD_MM, h: H, d: D });
   boxes.push({ x: widthMm - BOARD_MM, y: 0, z: 0, w: BOARD_MM, h: H, d: D });
   boxes.push({ x: 0, y: H - BOARD_MM, z: 0, w: widthMm, h: BOARD_MM, d: D });
@@ -307,22 +326,36 @@ function buildCarcass(layoutId: string, widthMm: number, includeInterior: boolea
     const count = Math.max(3, Math.floor(cw / PITCH));
     const gw = (cw - 20) / count;
     for (let i = 0; i < count; i++) {
-      const tone = GARMENT_TONES[i % GARMENT_TONES.length];
+      const tone = GARMENT_TONES[(i * 5 + 1) % GARMENT_TONES.length];
       // Lengths vary a little, the way a rail of real clothes does — a dead
       // level hem is the one thing that gives away a repeated block.
-      const drop = dropMm * (0.86 + ((i * 37) % 100) / 100 * 0.14);
+      const drop = dropMm * (0.84 + ((i * 37) % 100) / 100 * 0.16);
+      const gx = cx + 10 + i * gw;
+      // Depth varies too, so the rail reads as a row of things at slightly
+      // different distances rather than one ribbed slab.
+      const gz = D * 0.26 + ((i * 53) % 100) / 100 * D * 0.10;
+
+      // THE SHOULDER IS NARROWER THAN THE BODY, which is the whole silhouette
+      // of a hung garment and the difference between a rail of clothes and a
+      // row of coloured bars. Two boxes is enough to say it at this size.
       boxes.push({
-        x: cx + 12 + i * gw, y: railY - drop, z: D * 0.30,
-        w: gw * 0.97, h: drop, d: 150,
+        x: gx + gw * 0.02, y: railY - drop * 0.24, z: gz,
+        w: gw * 0.94, h: drop * 0.24, d: 140,
         colour: tone,
+      });
+      boxes.push({
+        x: gx + gw * 0.10, y: railY - drop, z: gz + 6,
+        w: gw * 0.78, h: drop * 0.78, d: 128,
+        colour: tone,
+      });
+      // The hanger hook over the rail.
+      boxes.push({
+        x: gx + gw * 0.46, y: railY - 4, z: D * 0.40,
+        w: gw * 0.06, h: 62, d: 14,
+        colour: HANDLE,
       });
     }
   };
-
-  if (!includeInterior) {
-    for (const box of boxes) box.z -= WARDROBE_DEPTH_MM;
-    return boxes;
-  }
 
   const columns = columnsFor(layoutId);
   columns.forEach((column, i) => {
@@ -353,12 +386,24 @@ function buildCarcass(layoutId: string, widthMm: number, includeInterior: boolea
       const bankH = innerH * 0.52;
       const dh = bankH / fill.count;
       for (let d = 0; d < fill.count; d++) {
+        const fy = y0 + d * dh + 4;
         // Fronts stand proud of the carcass, which is what casts the shadow
         // line between one drawer and the next.
         boxes.push({
-          x: x + 4, y: y0 + d * dh + 4, z: D - BOARD_MM,
+          x: x + 4, y: fy, z: D - BOARD_MM,
           w: cw - 8, h: dh - 8, d: BOARD_MM,
           tone: 1.02,
+        });
+        // THE HANDLE. A drawer without one reads as a blank panel, and a bank of
+        // blank panels reads as a fridge. It is the one detail at this scale
+        // that says "this opens" — which is most of what a drawer has to say.
+        // Standing proud of the front by its own depth, so it catches the light
+        // on top and casts a line underneath.
+        const hw = Math.min(cw * 0.42, 320);
+        boxes.push({
+          x: x + (cw - hw) / 2, y: fy + (dh - 8) * 0.72, z: D,
+          w: hw, h: 22, d: 26,
+          colour: HANDLE,
         });
       }
       shelf(x, cw, y0 + bankH);
@@ -421,6 +466,10 @@ function drawContactShadow(ctx: CanvasRenderingContext2D, projector: Projector, 
  * bedroom photograph, so a strong colour would be the loudest thing in the
  * frame and would date the render besides. Charcoals, oatmeals and greys are
  * what the supplied photographs are staged with. */
+/** Brushed metal, for handles, hanger hooks and rails. One colour for all
+ * three because they are the same finish on a real unit. */
+const HANDLE: [number, number, number] = [172, 176, 181];
+
 const GARMENT_TONES: [number, number, number][] = [
   [74, 74, 78],
   [206, 198, 186],
@@ -439,121 +488,6 @@ function hexToRgb(hex: string): [number, number, number] {
     parseInt(clean.slice(2, 4), 16),
     parseInt(clean.slice(4, 6), 16),
   ];
-}
-
-/** Draws an image onto a model-space rectangle through the projector.
- *
- * PERSPECTIVE, BY SUBDIVISION. Canvas 2D can only do affine transforms, which
- * cannot express a perspective warp — an affine map keeps parallel lines
- * parallel, and the whole point here is that they converge. Chopping the
- * rectangle into a grid and drawing each little cell with its own affine
- * approximation gets there: over a cell a few pixels across the perspective is
- * very nearly linear, and the error falls off as the square of the cell size.
- * Twelve divisions is past the point where any of it is visible.
- *
- * Each cell goes down as two triangles, because three points are exactly what
- * an affine transform is determined by. The destination triangle is pushed out
- * about half a pixel from its own centre before it is clipped — adjacent cells
- * otherwise leave hairline gaps where two anti-aliased edges meet, and a grid
- * of pale seams across a photograph is far more visible than the overlap that
- * hiding them costs. */
-function drawProjectedImage(
-  ctx: CanvasRenderingContext2D,
-  image: CanvasImageSource,
-  imgW: number,
-  imgH: number,
-  projector: Projector,
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
-  z: number,
-  divisions = 12,
-) {
-  const N = divisions;
-  // Model→image corner lookup, computed once per grid vertex rather than four
-  // times over as each cell asks for its own.
-  const grid: [number, number][][] = [];
-  for (let j = 0; j <= N; j++) {
-    const row: [number, number][] = [];
-    for (let i = 0; i <= N; i++) {
-      row.push(projector.project(x0 + ((x1 - x0) * i) / N, y0 + ((y1 - y0) * j) / N, z));
-    }
-    grid.push(row);
-  }
-
-  for (let j = 0; j < N; j++) {
-    for (let i = 0; i < N; i++) {
-      // Source rectangle. The model's Y runs up and the image's runs down, so
-      // the vertical index is flipped on the way into the bitmap.
-      const su0 = (imgW * i) / N;
-      const su1 = (imgW * (i + 1)) / N;
-      const sv0 = (imgH * (N - j)) / N;
-      const sv1 = (imgH * (N - j - 1)) / N;
-
-      const p00 = grid[j][i];
-      const p10 = grid[j][i + 1];
-      const p11 = grid[j + 1][i + 1];
-      const p01 = grid[j + 1][i];
-
-      triangle(ctx, image, su0, sv0, su1, sv0, su1, sv1, p00, p10, p11);
-      triangle(ctx, image, su0, sv0, su1, sv1, su0, sv1, p00, p11, p01);
-    }
-  }
-}
-
-/** One affine-mapped triangle of the source image. */
-function triangle(
-  ctx: CanvasRenderingContext2D,
-  image: CanvasImageSource,
-  sx0: number, sy0: number,
-  sx1: number, sy1: number,
-  sx2: number, sy2: number,
-  d0: [number, number],
-  d1: [number, number],
-  d2: [number, number],
-) {
-  const denom = sx0 * (sy2 - sy1) - sx1 * sy2 + sx2 * sy1 + (sx1 - sx2) * sy0;
-  if (Math.abs(denom) < 1e-9) return;
-
-  // Half a pixel of bleed, away from the triangle's own centre. Adjacent cells
-  // otherwise leave hairline gaps where two anti-aliased edges meet, and a grid
-  // of pale seams across a photograph is far more visible than the overlap that
-  // hiding them costs.
-  const ccx = (d0[0] + d1[0] + d2[0]) / 3;
-  const ccy = (d0[1] + d1[1] + d2[1]) / 3;
-  const grow = (p: [number, number]): [number, number] => {
-    const dx = p[0] - ccx;
-    const dy = p[1] - ccy;
-    const len = Math.hypot(dx, dy) || 1;
-    return [p[0] + (dx / len) * 0.5, p[1] + (dy / len) * 0.5];
-  };
-  const [x0, y0] = grow(d0);
-  const [x1, y1] = grow(d1);
-  const [x2, y2] = grow(d2);
-
-  // The affine map taking the three source corners onto the three destination
-  // ones. Three points determine it exactly, which is why the cell is split
-  // into triangles rather than drawn as a quad.
-  const m11 = -(sy0 * (x2 - x1) - sy1 * x2 + sy2 * x1 + (sy1 - sy2) * x0) / denom;
-  const m12 = (sy1 * y2 + sy0 * (y1 - y2) - sy2 * y1 + (sy2 - sy1) * y0) / denom;
-  const m21 = (sx0 * (x2 - x1) - sx1 * x2 + sx2 * x1 + (sx1 - sx2) * x0) / denom;
-  const m22 = -(sx1 * y2 + sx0 * (y1 - y2) - sx2 * y1 + (sx2 - sx1) * y0) / denom;
-  const dx =
-    (sx0 * (sy2 * x1 - sy1 * x2) + sy0 * (sx1 * x2 - sx2 * x1) + (sx2 * sy1 - sx1 * sy2) * x0) / denom;
-  const dy =
-    (sx0 * (sy2 * y1 - sy1 * y2) + sy0 * (sx1 * y2 - sx2 * y1) + (sx2 * sy1 - sx1 * sy2) * y0) / denom;
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(x0, y0);
-  ctx.lineTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.closePath();
-  ctx.clip();
-  ctx.transform(m11, m12, m21, m22, dx, dy);
-  ctx.drawImage(image, 0, 0);
-  ctx.restore();
 }
 
 // --- Walk-in: a view through the opening -----------------------------------
