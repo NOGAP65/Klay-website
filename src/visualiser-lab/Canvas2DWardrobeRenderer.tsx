@@ -12,20 +12,26 @@
 // compound: shelves that were square go to skew, the vertical stiles lean, and
 // the eye reads the result as a crooked picture rather than as furniture.
 //
-// So the quad is used as a FOOTPRINT rather than a projection. The sticker is
-// fitted upright into the quad's width, at its own aspect ratio, and stood on
-// the quad's base. That keeps the photograph's own perspective intact, which is
-// the thing that makes it look like a cabinet, and it costs the one thing a
-// homography would have bought — matching the wall's exact vanishing point.
-// Against that, a wardrobe is nearly always shot square-on and hung on a wall
-// the customer also photographed square-on, so the two agree far more often
+// So the quad is used as a FRAME rather than a projection: the sticker is drawn
+// upright into its bounding box. That keeps the photograph's own perspective
+// intact, which is the thing that makes it look like a cabinet, and it costs the
+// one thing a homography would have bought — matching the wall's exact vanishing
+// point. Against that, a wardrobe is nearly always shot square-on and hung on a
+// wall the customer also photographed square-on, so the two agree far more often
 // than not.
 //
-// BOTTOM-ANCHORED because a wardrobe stands on the floor. If the traced quad is
-// taller than the sticker needs, the gap opens at the TOP, against the ceiling,
-// where a gap is what a real cabinet leaves. Centring it instead would float
-// the whole unit above the floor, which is the single fastest way to make a
-// composite look pasted on.
+// IT FILLS THE OUTLINE EXACTLY. Whatever is traced is where the wardrobe goes:
+// left edge to left edge, base to base, top to top. An earlier version fitted
+// the sticker to the width at its own aspect ratio and stood it on the base,
+// which meant a trace taller than the sticker's proportions left a band of room
+// showing above the cabinet — the customer drew a box and got something smaller
+// than the box, in a place they had not chosen.
+//
+// The trade is that a trace whose proportions are far from the product's will
+// stretch it, and nothing here corrects that. It is the right trade: the outline
+// is the one instruction the customer has actually given, and honouring it is
+// worth more than protecting them from a shape they drew on purpose. The
+// dimensions under the layout picker say what the real proportions are.
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef } from 'react';
@@ -84,18 +90,10 @@ export default function Canvas2DWardrobeRenderer({
       const boxH = bottom - top;
       if (boxW <= 0 || boxH <= 0) return;
 
-      // Fit to width, then give back any height it cannot have. A wide, shallow
-      // trace would otherwise stand a wardrobe straight through the ceiling.
-      const ratio = sticker.width / sticker.height;
-      let drawW = boxW;
-      let drawH = drawW / ratio;
-      if (drawH > boxH) {
-        drawH = boxH;
-        drawW = drawH * ratio;
-      }
-
-      const x = left + (boxW - drawW) / 2;
-      const y = bottom - drawH;
+      const drawW = boxW;
+      const drawH = boxH;
+      const x = left;
+      const y = top;
 
       // A contact shadow along the base. Without it the unit reads as hovering
       // however well it is placed — the eye takes the darkening where an object

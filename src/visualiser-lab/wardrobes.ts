@@ -92,13 +92,150 @@ export const wardrobeColourHex = (name: string): string =>
   (WARDROBE_COLOURS.find(c => c.name === name) ?? WARDROBE_COLOURS[0]).hex;
 
 // --- Keying ----------------------------------------------------------------
+//
+// THE THRESHOLD IS MEASURED FROM EACH FILE, NOT HARDCODED, and that is the
+// whole lesson of this pass. A single constant was used at first — clear
+// anything neutral and brighter than 236 — which worked on the stickers it was
+// written against and quietly failed on others: Forma 4.0 and 6.0 print their
+// darker checker square at 235, four levels under the line, so half of every
+// checkerboard cell survived and the product arrived on a grey lattice. The
+// files were resampled to different sizes at different times and their greys
+// drifted with them, so no one number can be right for all ten.
+//
+// The border is the calibration. It is background by construction, so the two
+// greys the checkerboard is actually printed in on THIS file can be read
+// straight off it, and the flood then runs against those.
+//
+// CHROMA IS WHAT KEEPS IT OFF THE PRODUCT. The floor can sit as low as 229 on
+// some files, and white board sits not far above it, so brightness alone would
+// let the flood walk out of the background and into the carcass. The checker is
+// printed in a pure grey and measures a chroma of 1 to 3 everywhere; the
+// joinery, lit by a warm room, never gets below about 10. That gap does the
+// separating, and it is why the flood tests colour and brightness together.
 
-/** How close to neutral a pixel must be to count as checkerboard. The checker
- * is pure grey; the joinery, even at its palest, carries a warm cast. */
-const CHECKER_MAX_CHROMA = 10;
-/** And how light. The two checker greys measure ~245 and ~254 across the set;
- * 236 clears both with room for the resampling that softened their edges. */
-const CHECKER_MIN_LEVEL = 236;
+/** Chroma above which a neutral-looking pixel is taken to be part of the
+ * product. Measured: checkerboard 1–3 across all ten files, white board 10–13.
+ * Eight sits in the gap. */
+const CHECKER_MAX_CHROMA = 8;
+/** The fringe pass runs tighter still, because it is allowed to take pixels the
+ * flood decided to keep. */
+const FRINGE_MAX_CHROMA = 6;
+/** Margin below the darkest checker grey the border shows, to catch the same
+ * squares where resampling has softened them a level or two. */
+const CHECKER_LEVEL_MARGIN = 4;
+/** Used only if a file's border turns out to be too contaminated to measure —
+ * see checkerProfile. */
+const CHECKER_LEVEL_FALLBACK = 236;
+
+/** A region is trapped checkerboard rather than pale cloth if this share of it
+ * is perfectly flat.
+ *
+ * Measured over whole connected regions on the raw files, which is the only
+ * measurement that counts — a hand-picked patch in the middle of the checker
+ * reads 83% flat, but the region the pass actually gets includes its own
+ * anti-aliased rim and comes out near 0.5. The legitimate pale regions on the
+ * same stickers — shelf edges, shirt highlights, board — measure 0.00 to 0.06.
+ * The gap either side of 0.30 is wide enough that nothing sits near it. */
+const TRAPPED_FLATNESS = 0.3;
+/** And it has to be a REGION, not a speck. Several stickers carry small
+ * blown-out highlights that are perfectly flat by this test — 40 to 90 pixels
+ * apiece, sitting in cloth — and clearing those would punch holes in the
+ * product. Every genuine pool of trapped background measures in the hundreds. */
+const TRAPPED_MIN_PX = 250;
+/** How still a 3×3 neighbourhood has to be to count as flat. The checkerboard
+ * is printed in two exact greys and has no texture inside a cell; cloth and
+ * board always carry some. */
+const FLAT_RANGE = 2;
+/** How near a pixel must sit to one of the two checker greys to count as that
+ * square. Wide enough to survive the resampling that softened them, narrow
+ * enough that the levels stay distinct on the tightest file (8.0, a gap of 7). */
+const LEVEL_TOLERANCE = 3;
+/** How near a pixel must sit to one of the two squares for the FLOOD to travel
+ * through it. Wider than LEVEL_TOLERANCE, which only has to label a pixel after
+ * the fact, because the flood has to cross squares that resampling has spread
+ * over several levels. */
+const BAND_TOLERANCE = 6;
+/** How many times the fringe sweep runs. The first clears the rim around the
+ * product; the rest eat inward along the seams between squares, which need
+ * several passes to travel the length of a long one. Safe to run this many
+ * because every sweep after the first requires background on two sides — see
+ * the pass itself. */
+const FRINGE_SWEEPS = 4;
+/** A detached island bigger than this is treated as part of the product — the
+ * shoes and the bag stand apart from the cabinet and are several thousand
+ * pixels each. Checker debris never approaches it. */
+const SPECK_MAX_PX = 1500;
+/** And this much of an island has to BE checker grey before it is called
+ * debris, which is what keeps a pale detached object out of the sweep. */
+const SPECK_MIN_SHARE = 0.8;
+/** And how much of a trapped region each square has to account for before the
+ * region is called checkerboard rather than a flat panel. */
+const TRAPPED_MIN_SHARE = 0.15;
+
+/** The darkest grey this file's checkerboard is printed in.
+ *
+ * Read off the outer frame, which is background on every one of these files.
+ * NOT off every border pixel, though: on Forma 9.0L and 12.0U the product runs
+ * out to the edge, so the frame carries cabinet as well as checker — 12.0U's
+ * border has a chroma of 54 at the 98th percentile and drops to level 116.
+ * Sampling only the near-neutral border pixels leaves the checker behind, and a
+ * low percentile of those ignores whatever grey trim slipped through.
+ *
+ * Falls back to the old constant if the border turns out to be mostly product,
+ * which none of the current ten are, but a future file might be. */
+interface CheckerProfile {
+  /** The two greys this file's checkerboard is printed in — light, then dark. */
+  light: number;
+  dark: number;
+  /** Everything from the dark square down to the softest resampled edge. */
+  floor: number;
+}
+
+function checkerProfile(px: Uint8ClampedArray, w: number, h: number): CheckerProfile {
+  const levels: number[] = [];
+  let sampled = 0;
+  const consider = (x: number, y: number) => {
+    const i = (y * w + x) * 4;
+    const r = px[i];
+    const g = px[i + 1];
+    const b = px[i + 2];
+    sampled++;
+    if (Math.max(r, g, b) - Math.min(r, g, b) > 4) return;
+    levels.push(Math.min(r, g, b));
+  };
+  const band = 4;
+  for (let y = 0; y < band && y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      consider(x, y);
+      consider(x, h - 1 - y);
+    }
+  }
+  for (let x = 0; x < band && x < w; x++) {
+    for (let y = band; y < h - band; y++) {
+      consider(x, y);
+      consider(w - 1 - x, y);
+    }
+  }
+
+  if (levels.length < sampled * 0.2) {
+    return { light: 254, dark: CHECKER_LEVEL_FALLBACK, floor: CHECKER_LEVEL_FALLBACK };
+  }
+
+  // The two squares are the two commonest levels on the border, and they are
+  // always well apart — measured, the light square is 254 on every one of the
+  // ten and the dark runs from 235 to 247.
+  const hist = new Uint32Array(256);
+  for (const v of levels) hist[v]++;
+  const ranked = [...hist.entries()]
+    .map(([v, c]) => ({ v, c }))
+    .sort((a, b) => b.c - a.c);
+  const light = ranked[0].v;
+  const dark = (ranked.find(r => Math.abs(r.v - light) >= 4) ?? ranked[0]).v;
+
+  levels.sort((a, b) => a - b);
+  const floor = Math.max(200, levels[Math.floor(levels.length * 0.01)] - CHECKER_LEVEL_MARGIN);
+  return { light: Math.max(light, dark), dark: Math.min(light, dark), floor };
+}
 
 /** Strips the baked-in checkerboard and returns a canvas with real alpha.
  *
@@ -107,14 +244,7 @@ const CHECKER_MIN_LEVEL = 236;
  * few levels of each other, so thresholding alone eats the joinery. Filling
  * inward from the edge adds the constraint that actually separates them —
  * connectivity to the outside. A white shelf enclosed by the cabinet is never
- * reached; the checker, which surrounds the product on all sides, always is.
- *
- * Every sticker was measured to confirm the product does not touch its own
- * border, which is what makes the seed safe.
- *
- * Enclosed background — the gap inside a bag handle, say — stays opaque,
- * because it is not connected to the outside. Those are a few dozen pixels
- * apiece and read as part of the object.
+ * reached; the checker, which surrounds the product, always is.
  *
  * The stack is a plain array of pixel indices rather than a recursive fill:
  * these images run to 1.5M pixels and a recursive version overflows the stack
@@ -133,15 +263,33 @@ function keyStickerBackground(source: HTMLImageElement): HTMLCanvasElement {
   const n = w * h;
   const seen = new Uint8Array(n);
 
+  const profile = checkerProfile(px, w, h);
+  const minLevel = profile.floor;
+
+  /** TWO BANDS, NOT ONE RANGE, and this is what keeps the flood off the
+   * joinery. Testing "neutral and brighter than the floor" makes one continuous
+   * band from the dark square up to white, and a painted drawer front sits
+   * inside it — so on four of the ten stickers the flood walked out of the
+   * background and ate holes through the white cabinetry.
+   *
+   * The checkerboard is only ever its two greys. Admitting just those two, each
+   * with enough tolerance to survive resampling, leaves the gap between them
+   * closed: on Forma 6.0 the squares are 254 and 235, so a drawer front at 244
+   * matches neither and is safe, where a single range would have taken it. */
   const isChecker = (i: number) => {
     const r = px[i * 4];
     const g = px[i * 4 + 1];
     const b = px[i * 4 + 2];
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-    return max - min <= CHECKER_MAX_CHROMA && min >= CHECKER_MIN_LEVEL;
+    if (max - min > CHECKER_MAX_CHROMA) return false;
+    return (
+      Math.abs(min - profile.light) <= BAND_TOLERANCE ||
+      Math.abs(min - profile.dark) <= BAND_TOLERANCE
+    );
   };
 
+  // --- PASS 1: the surrounding background ---------------------------------
   const stack: number[] = [];
   for (let x = 0; x < w; x++) {
     stack.push(x, (h - 1) * w + x);
@@ -150,6 +298,10 @@ function keyStickerBackground(source: HTMLImageElement): HTMLCanvasElement {
     stack.push(y * w, y * w + w - 1);
   }
 
+  // DIAGONAL STEPS ALLOWED. Squares of the same grey touch only at their
+  // corners, and the soft line where two squares meet is neither grey, so a
+  // four-way flood gets trapped inside the first square it enters. Eight-way,
+  // it crosses the whole board.
   while (stack.length) {
     const i = stack.pop()!;
     if (seen[i] || !isChecker(i)) continue;
@@ -157,10 +309,214 @@ function keyStickerBackground(source: HTMLImageElement): HTMLCanvasElement {
     px[i * 4 + 3] = 0;
     const x = i % w;
     const y = (i / w) | 0;
-    if (x > 0) stack.push(i - 1);
-    if (x < w - 1) stack.push(i + 1);
-    if (y > 0) stack.push(i - w);
-    if (y < h - 1) stack.push(i + w);
+    const left = x > 0;
+    const right = x < w - 1;
+    const up = y > 0;
+    const down = y < h - 1;
+    if (left) stack.push(i - 1);
+    if (right) stack.push(i + 1);
+    if (up) stack.push(i - w);
+    if (down) stack.push(i + w);
+    if (left && up) stack.push(i - w - 1);
+    if (right && up) stack.push(i - w + 1);
+    if (left && down) stack.push(i + w - 1);
+    if (right && down) stack.push(i + w + 1);
+  }
+
+  // --- PASS 2: the fringe -------------------------------------------------
+  // Where the checkerboard meets the product its pixels are blended with the
+  // object's edge, which drags them under the flood's threshold and leaves a
+  // hairline of grey all the way round. One bounded sweep removes it: any
+  // surviving pixel that is checker-coloured AND already touching cleared
+  // background is cleared too.
+  //
+  // A FEW SWEEPS, not one, because the two-band flood also leaves the soft
+  // seam where two squares meet — it is neither grey, so the flood steps over
+  // it rather than clearing it, and a lattice of hairlines would otherwise
+  // survive across the whole background. Each sweep peels one ring.
+  //
+  // BOUNDED, and the chroma test is tighter than the flood's, because this rule
+  // is allowed to take pixels the flood chose to keep. Left to run until it
+  // stopped finding work it would walk inward along any pale neutral surface
+  // until it hit something warm.
+  for (let sweep = 0; sweep < FRINGE_SWEEPS; sweep++) {
+  const fringe: number[] = [];
+  for (let i = 0; i < n; i++) {
+    if (px[i * 4 + 3] === 0) continue;
+    const r = px[i * 4];
+    const g = px[i * 4 + 1];
+    const b = px[i * 4 + 2];
+    if (Math.max(r, g, b) - Math.min(r, g, b) > FRINGE_MAX_CHROMA) continue;
+    if (Math.min(r, g, b) < minLevel - 20) continue;
+    const x = i % w;
+    const y = (i / w) | 0;
+    let cleared = 0;
+    if (x > 0 && px[(i - 1) * 4 + 3] === 0) cleared++;
+    if (x < w - 1 && px[(i + 1) * 4 + 3] === 0) cleared++;
+    if (y > 0 && px[(i - w) * 4 + 3] === 0) cleared++;
+    if (y < h - 1 && px[(i + w) * 4 + 3] === 0) cleared++;
+    // THE FIRST SWEEP TAKES ANYTHING ON THE EDGE OF THE BACKGROUND; the rest
+    // demand background on two sides. That difference is what tells a seam from
+    // a shelf.
+    //
+    // The soft line where two checker squares meet is background with
+    // background either side of it, so it clears. The lit front edge of a shelf
+    // is just as bright and just as neutral, but it has cabinet behind it and
+    // only ever shows background on one side — so it survives. Sweeping
+    // one-sided pixels repeatedly is what stripped those edges away in lines
+    // when every sweep took anything it touched.
+    if (cleared >= (sweep === 0 ? 1 : 2)) fringe.push(i);
+  }
+  for (const i of fringe) px[i * 4 + 3] = 0;
+  if (!fringe.length) break;
+  }
+
+  // --- PASS 3: trapped background -----------------------------------------
+  // The flood reaches only what is connected to the outside, so checkerboard
+  // fully enclosed by the product survives it — the gap inside the bag handle
+  // on Forma 3.0 is the visible one, a grey window through the photograph.
+  //
+  // Colour alone cannot clear it. A white shirt and a lit shelf edge sit in the
+  // same bright neutral band as the checker, and keying on brightness takes the
+  // shirt with it. FLATNESS is what separates them: the checkerboard is two
+  // exact greys with no texture inside a cell, while cloth and board are never
+  // perfectly still. Measured whole-region, trapped checker runs about 0.5
+  // against cloth's 0.06.
+  //
+  // Each enclosed pool is measured as a whole and cleared only if it is that
+  // flat — a judgment made per region rather than per pixel, because flatness
+  // means nothing on one pixel and a great deal averaged over an area.
+  const pool = new Uint8Array(n);
+  for (let start = 0; start < n; start++) {
+    if (pool[start] || px[start * 4 + 3] === 0 || !isChecker(start)) continue;
+    const region: number[] = [];
+    const queue = [start];
+    pool[start] = 1;
+    while (queue.length) {
+      const i = queue.pop()!;
+      region.push(i);
+      const x = i % w;
+      const y = (i / w) | 0;
+      const step = (j: number) => {
+        if (pool[j] || px[j * 4 + 3] === 0 || !isChecker(j)) return;
+        pool[j] = 1;
+        queue.push(j);
+      };
+      if (x > 0) step(i - 1);
+      if (x < w - 1) step(i + 1);
+      if (y > 0) step(i - w);
+      if (y < h - 1) step(i + w);
+    }
+    if (region.length < TRAPPED_MIN_PX) continue;
+
+    // IT HAS TO SHOW BOTH SQUARES, and this is what stopped the pass eating
+    // the product. Flatness and size alone also describe a painted drawer
+    // front: smooth, pale, neutral, and far bigger than the threshold. Clearing
+    // those punched magenta holes through the white joinery on four of the ten.
+    //
+    // A checkerboard is two greys by definition and a drawer front is one. So
+    // the region has to carry a real share of BOTH of this file's squares
+    // before it can be called background — which no single flat surface does,
+    // however flat it is.
+    let nearLight = 0;
+    let nearDark = 0;
+    for (const i of region) {
+      const v = px[i * 4];
+      if (Math.abs(v - profile.light) <= LEVEL_TOLERANCE) nearLight++;
+      else if (Math.abs(v - profile.dark) <= LEVEL_TOLERANCE) nearDark++;
+    }
+    const share = region.length * TRAPPED_MIN_SHARE;
+    if (nearLight < share || nearDark < share) continue;
+
+    let flat = 0;
+    let measured = 0;
+    for (const i of region) {
+      const x = i % w;
+      const y = (i / w) | 0;
+      if (x === 0 || y === 0 || x === w - 1 || y === h - 1) continue;
+      let min = 255;
+      let max = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const v = px[(i + dy * w + dx) * 4];
+          if (v < min) min = v;
+          if (v > max) max = v;
+        }
+      }
+      measured++;
+      if (max - min <= FLAT_RANGE) flat++;
+    }
+    if (measured && flat / measured >= TRAPPED_FLATNESS) {
+      for (const i of region) px[i * 4 + 3] = 0;
+    }
+  }
+
+  // --- PASS 4: detached specks --------------------------------------------
+  // The two-band flood steps over the soft seam where two squares meet rather
+  // than clearing it, and where a seam crosses an isolated corner of background
+  // the fringe sweeps cannot always reach it. What survives is a scatter of
+  // bright dots and hairlines standing in open background, which on a
+  // photograph read as dirt on the lens.
+  //
+  // They are all islands: not one of them touches the cabinet. So the product
+  // is found as the largest surviving region and everything else is examined —
+  // an island only goes if it is small AND made of this file's checker greys.
+  // Both conditions are needed, because the shoes and the bag are islands too;
+  // they are large, and they are brown.
+  const island = new Int32Array(n).fill(-1);
+  const sizes: number[] = [];
+  const checkerShare: number[] = [];
+  for (let start = 0; start < n; start++) {
+    if (island[start] !== -1 || px[start * 4 + 3] === 0) continue;
+    const id = sizes.length;
+    let count = 0;
+    let checker = 0;
+    const queue = [start];
+    island[start] = id;
+    while (queue.length) {
+      const i = queue.pop()!;
+      count++;
+      // THE WHOLE BACKGROUND RANGE HERE, not the two bands the flood uses, and
+      // that distinction is what this pass turned on. The survivors are mostly
+      // seam pixels — the soft line where two squares meet — and a seam is by
+      // definition BETWEEN the two greys, so testing band membership scored
+      // them at zero and left every streak on the picture.
+      //
+      // Widening to the range is safe here in a way it is not for the flood:
+      // this pass only ever looks at islands that are already known not to be
+      // the cabinet, and it still has the size and share tests to clear.
+      const v = px[i * 4];
+      const r2 = px[i * 4 + 1];
+      const b2 = px[i * 4 + 2];
+      const neutral = Math.max(v, r2, b2) - Math.min(v, r2, b2) <= FRINGE_MAX_CHROMA;
+      if (neutral && v >= profile.dark - BAND_TOLERANCE && v <= profile.light + BAND_TOLERANCE) {
+        checker++;
+      }
+      const x = i % w;
+      const y = (i / w) | 0;
+      const step = (j: number) => {
+        if (island[j] !== -1 || px[j * 4 + 3] === 0) return;
+        island[j] = id;
+        queue.push(j);
+      };
+      if (x > 0) step(i - 1);
+      if (x < w - 1) step(i + 1);
+      if (y > 0) step(i - w);
+      if (y < h - 1) step(i + w);
+    }
+    sizes.push(count);
+    checkerShare.push(checker / Math.max(1, count));
+  }
+
+  let biggest = 0;
+  for (let id = 1; id < sizes.length; id++) if (sizes[id] > sizes[biggest]) biggest = id;
+
+  for (let i = 0; i < n; i++) {
+    const id = island[i];
+    if (id === -1 || id === biggest) continue;
+    if (sizes[id] > SPECK_MAX_PX) continue;
+    if (checkerShare[id] < SPECK_MIN_SHARE) continue;
+    px[i * 4 + 3] = 0;
   }
 
   ctx.putImageData(image, 0, 0);
@@ -169,10 +525,12 @@ function keyStickerBackground(source: HTMLImageElement): HTMLCanvasElement {
   // product floating in the middle, so a good half of some files is empty
   // margin. Left in, that margin is what the renderer stands on the floor —
   // the cabinet hangs above the skirting by however much blank space sits under
-  // it, which is the exact hovering-decal look the contact shadow exists to
-  // avoid. Cropping to the opaque bounds makes the canvas's bottom edge the
+  // it. Cropping to the opaque bounds makes the canvas's bottom edge the
   // cabinet's own base, and its aspect ratio the cabinet's real proportions.
-  let minX = w, minY = h, maxX = -1, maxY = -1;
+  let minX = w;
+  let minY = h;
+  let maxX = -1;
+  let maxY = -1;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       if (px[(y * w + x) * 4 + 3] === 0) continue;

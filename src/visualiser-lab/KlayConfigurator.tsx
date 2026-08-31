@@ -695,19 +695,26 @@ const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
  * the garden behind it. The first render of the wardrobe tab did precisely that.
  *
  * So wardrobes get their own default footprint on Preview.png — the left-hand
- * wall, running down to where the floor meets it. Chosen because it is the only
- * part of this frame not already occupied by the window or the bed; it is a
- * starting position, not a claim about the room, and the customer retraces or
- * uploads their own wall from here.
+ * wall, running down to where the floor meets it.
+ *
+ * ITS PROPORTIONS MATTER now that the renderer fills whatever is traced. The
+ * first version of this box was half as wide as it was tall, so the very first
+ * thing a visitor saw was a wide cabinet squeezed into a narrow slot. This one
+ * is about 1.25:1, which is the shape of the keyed sticker, so the default
+ * opens on the product at its own proportions and any distortion after that is
+ * something the customer drew themselves.
+ *
+ * It is a starting position, not a claim about the room — the customer retraces
+ * or uploads their own wall from here.
  *
  * A rectangle rather than a true quad, because the renderer takes this as a
  * footprint to stand a photograph in rather than a plane to project onto — see
  * Canvas2DWardrobeRenderer. */
 const DEFAULT_WARDROBE_CORNERS_PCT: [number, number][] = [
-  [0.055, 0.170],
-  [0.520, 0.170],
-  [0.520, 0.895],
-  [0.055, 0.895],
+  [0.035, 0.435],
+  [0.605, 0.435],
+  [0.605, 0.900],
+  [0.035, 0.900],
 ];
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
