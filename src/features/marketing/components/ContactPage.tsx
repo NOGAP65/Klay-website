@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { tokens, eyebrow, headline, motion, supporting } from '@/ds';
+import { DANGER, Field } from '@/ds';
 import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
 
-import { Footer } from '../components/Footer';
-import { FormField, DANGER } from '../components/FormField';
-import { Nav } from '../components/Nav';
-import { requestQuote, type FieldErrors } from '../lib/api';
+import { Footer } from '../../../components/Footer';
+import { Nav } from '../../../components/Nav';
+import { type FieldErrors } from '../../../lib/api';
+import { sendEnquiry } from '../api/sendEnquiry';
 
 // DARK ('#0f0d09') and PARCHMENT used to be declared here. Contact is a
 // service moment, not a sales one — there is no dark section on this page now,
@@ -80,19 +81,15 @@ export default function ContactPage() {
     setFieldErrors({});
     setBusy(true);
 
-    // A contact enquiry is a quote request without a configuration, so it goes
-    // to the same endpoint and lands in the same table Klay already watches
-    // rather than needing a second inbox. The blind fields fall back to the
-    // configurator's defaults server-side; `notes` carries the real message.
-    const result = await requestQuote({
+    // A contact enquiry is a quote request without a configuration: same
+    // endpoint, same table, same inbox Klay already watches. The placeholder
+    // blind fields the schema requires live in api/sendEnquiry, named and
+    // explained, rather than reading here as if somebody had chosen them.
+    const result = await sendEnquiry({
       name: form.name,
       email: form.email,
       phone: form.phone,
-      notes: form.notes || 'Sent via the contact form (no configuration).',
-      blindType: 'blockout',
-      windowSize: 'medium',
-      operation: 'manual',
-      quantity: 1,
+      notes: form.notes,
       website: honeypot,
       turnstileToken,
     });
@@ -168,7 +165,7 @@ export default function ContactPage() {
                   void handleSubmit();
                 }}
               >
-                <FormField
+                <Field
                   label="Name"
                   value={form.name}
                   onChange={set('name')}
@@ -177,7 +174,7 @@ export default function ContactPage() {
                   error={fieldErrors.name}
                   maxLength={120}
                 />
-                <FormField
+                <Field
                   label="Email"
                   type="email"
                   value={form.email}
@@ -188,7 +185,7 @@ export default function ContactPage() {
                   error={fieldErrors.email}
                   maxLength={200}
                 />
-                <FormField
+                <Field
                   label="Phone"
                   type="tel"
                   value={form.phone}
@@ -198,7 +195,7 @@ export default function ContactPage() {
                   error={fieldErrors.phone}
                   maxLength={40}
                 />
-                <FormField
+                <Field
                   label="Message"
                   value={form.notes}
                   onChange={set('notes')}

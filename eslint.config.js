@@ -199,8 +199,39 @@ export default tseslint.config(
                 { to: { element: { type: 'shared' } } },
                 { to: { element: { type: 'config' } } },
                 { to: { element: { type: 'core' } } },
-                // A feature may reach its own internals and nothing else's.
-                { to: { element: { type: 'feature', capture: { featureName: '{{from.capture.featureName}}' } } } },
+                // CROSS-FEATURE IS ALLOWED HERE, AND RESTRICTED ELSEWHERE.
+                //
+                // §2's table reads "its own internals only", but §2's prose is
+                // more specific and is the operative rule: "Cross-feature
+                // communication has exactly three legal answers: B exports it
+                // from its index.ts and A imports that; …"
+                //
+                // So the restriction is not WHETHER a feature may reach
+                // another, it is THROUGH WHAT. That half is enforced by
+                // `import/no-internal-modules`, whose allow-list contains
+                // `@/features/*` — one segment, the barrel — and not
+                // `@/features/*/**`. `@/features/catalogue` passes;
+                // `@/features/catalogue/components/Thing.tsx` does not.
+                //
+                // The two rules together say what §2 says. Forbidding
+                // feature→feature here as well would forbid the barrel too,
+                // and there would be no legal way for the homepage to read the
+                // four steps out of marketing.
+                { to: { element: { type: 'feature' } } },
+
+                // TEMPORARY — MIGRATION SCAFFOLDING, REMOVE AT PHASE 6.1.
+                //
+                // A migrated feature still imports Nav, Footer, lib/api and
+                // data/products, none of which have reached their destination
+                // yet. Without this the first feature to move reports a dozen
+                // violations that cannot be fixed until Phase 5 at the
+                // earliest — which is the "reporting violations nobody can
+                // action" failure the legacy element type exists to avoid.
+                //
+                // It is on PHASE_6_SCOPE.md. It must not survive the
+                // migration: while it is here, `feature → anything in src/` is
+                // legal, which is most of the layer model switched off.
+                { to: { element: { type: 'legacy' } } },
               ],
             },
             {

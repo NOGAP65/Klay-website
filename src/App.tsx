@@ -1,13 +1,12 @@
 import { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 
-import AboutPage from './pages/AboutPage';
+import { AboutPage, ContactPage, HowItWorksPage } from '@/features/marketing';
+
 import BookingConfirmedPage from './pages/BookingConfirmedPage';
 import BookInstallPage from './pages/BookInstallPage';
 import CartPage from './pages/CartPage';
-import ContactPage from './pages/ContactPage';
 import HomePage from './pages/HomePage';
-import HowItWorksPage from './pages/HowItWorksPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import ProductsPage from './pages/ProductsPage';

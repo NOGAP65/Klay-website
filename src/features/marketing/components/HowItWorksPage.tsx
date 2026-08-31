@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 
 import { radius, tokens, eyebrow, headline, motion, supporting } from '@/ds';
 
-import { Footer } from '../components/Footer';
-import { Nav } from '../components/Nav';
-import { STEPS, type Step } from '../data/steps';
+import { Footer } from '../../../components/Footer';
+import { Nav } from '../../../components/Nav';
+import { STEPS, type Step } from '../constants';
 
 // GOLD / DARK / PARCHMENT used to be declared here as local literals. DARK was
 // '#0f0d09' — a near-black darker than ink and outside the palette entirely —

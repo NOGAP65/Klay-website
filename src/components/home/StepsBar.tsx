@@ -64,8 +64,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { tokens, prefersReducedMotion, space, type as typeScale } from '@/ds';
-
-import { STEPS } from '../../data/steps';
+import { STEPS } from '@/features/marketing';
 
 import { useHover } from './primitives';
 

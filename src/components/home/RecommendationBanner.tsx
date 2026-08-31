@@ -44,9 +44,9 @@
 // ---------------------------------------------------------------------------
 
 import { tokens, headline, layout, space, type as typeScale } from '@/ds';
+import { STEPS } from '@/features/marketing';
 import { useMediaQuery } from '@/shared';
 
-import { STEPS } from '../../data/steps';
 
 import { CtaLink } from './primitives';
 
