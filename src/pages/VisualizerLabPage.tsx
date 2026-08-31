@@ -90,6 +90,26 @@ function SandboxBanner() {
   );
 }
 
+/** The panel's one full-width action. Shared by both CTAs so the wardrobe's
+ * enquiry button cannot drift from the blind's booking button on anything but
+ * the colour that is meant to separate them. */
+const CTA_STYLE: React.CSSProperties = {
+  display: 'block',
+  width: '100%',
+  padding: '15px 16px',
+  fontFamily: tokens.body,
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.14em',
+  textTransform: 'uppercase',
+  border: 'none',
+  borderRadius: radius.md,
+  cursor: 'pointer',
+  textAlign: 'center',
+  textDecoration: 'none',
+  boxSizing: 'border-box',
+};
+
 const CATEGORY_TAB_STYLE = {
   flex: 1,
   padding: '12px 16px',
@@ -106,9 +126,16 @@ const CATEGORY_TAB_STYLE = {
 function CategorySwitcher() {
   const { productCategory, setProductCategory } = useVisualiserStore();
 
+  // WARDROBES ARE SANDBOX-ONLY, and this array is the whole of why. The
+  // homepage showcase, the product pages and /visualiser render the components
+  // in src/visualiser, which has no wardrobe in it at all; this page renders
+  // src/visualiser-lab, which does. Nothing has to be feature-flagged, because
+  // the two module trees simply carry different products — and that separation
+  // is exactly what the fork was for.
   const tabs: { id: ProductCategory; label: string }[] = [
     { id: 'blind', label: 'Blinds' },
     { id: 'curtain', label: 'Curtains' },
+    { id: 'wardrobe', label: 'Wardrobes' },
   ];
 
   return (
@@ -154,8 +181,9 @@ export default function VisualizerLabPage() {
   // The whole configuration goes into the /book link, so what the customer
   // configured here is what gets quoted or paid for there. Each traced window
   // is one blind, which seeds the quantity; before anything is traced it is 1.
-  const { blindType, windowSize, operation, fabricColour, hardwareColour, tracedAreas } =
+  const { blindType, windowSize, operation, fabricColour, hardwareColour, tracedAreas, productCategory } =
     useVisualiserStore();
+  const isWardrobe = productCategory === 'wardrobe';
   const confirmedWindows = tracedAreas.filter((a) => a.confirmed).length;
 
   if (!isAllowed) {
@@ -181,6 +209,19 @@ export default function VisualizerLabPage() {
         <div style={{ width: 348, flexShrink: 0, padding: 28, overflowY: 'auto', position: 'relative', display: 'flex', flexDirection: 'column', gap: 28 }}>
           <CategorySwitcher />
           <VisualiserControls showCurtainControls />
+          {isWardrobe ? (
+            // Wardrobes are quoted on measure — the catalogue prices them that
+            // way and sends them to the contact form. bookingLink below encodes
+            // a blind's type, size and operation, none of which a wardrobe has,
+            // so pointing it at /book would carry a roller blind's configuration
+            // under a wardrobe's name.
+            <Link
+              to="/contact?product=Wardrobes"
+              style={{ ...CTA_STYLE, background: tokens.accent, color: tokens.onAccent }}
+            >
+              Enquire About This Wardrobe →
+            </Link>
+          ) : (
           <Link
             to={bookingLink({
               blindType,
@@ -190,27 +231,11 @@ export default function VisualizerLabPage() {
               fabricColour,
               hardwareColour,
             })}
-            style={{
-              display: 'block',
-              width: '100%',
-              padding: '15px 16px',
-              background: tokens.fillStrong,
-              color: tokens.onFillStrong,
-              fontFamily: tokens.body,
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              border: 'none',
-              borderRadius: radius.md,
-              cursor: 'pointer',
-              textAlign: 'center',
-              textDecoration: 'none',
-              boxSizing: 'border-box',
-            }}
+            style={{ ...CTA_STYLE, background: tokens.fillStrong, color: tokens.onFillStrong }}
           >
             Book Installation →
           </Link>
+          )}
         </div>
         {/* alignItems via the parent would stretch this column; instead the
             configurator sizes itself to the photo and this scrolls if the

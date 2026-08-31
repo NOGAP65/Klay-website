@@ -20,7 +20,7 @@ interface TracedArea {
 // store keep working.
 export type { BlindType };
 export type HardwareColour = 'white' | 'black' | 'chrome';
-export type ProductCategory = 'blind' | 'curtain';
+export type ProductCategory = 'blind' | 'curtain' | 'wardrobe';
 export type CurtainType = 'blockout' | 'sheer';
 export type CurtainOperation = 'manual' | 'motorised';
 export type CurtainMount = 'ceiling' | 'window';
@@ -35,6 +35,11 @@ export type CurtainSize = 'small' | 'medium' | 'large' | 'xl';
  * colour lookup goes through here so the two can never be crossed. */
 export const coloursFor = (category: ProductCategory) =>
   category === 'curtain' ? CURTAIN_COLOURS : RYNAMIC_COLOURS;
+// ^ 'wardrobe' falls to RYNAMIC_COLOURS deliberately. It never reads this card —
+// wardrobe finishes live in wardrobes.ts under their own state — and returning
+// the blind card means switching to wardrobes reconciles fabricColour against
+// the palette it already held, so crossing to wardrobes and back cannot quietly
+// reset the blind the customer configured.
 
 const CURTAIN_BASE_PRICES: Record<CurtainSize, number> = {
   small: 320,
@@ -209,6 +214,13 @@ interface VisualiserStore {
   curtainMount: CurtainMount;
   curtainSize: CurtainSize;
   curtainOpenness: number;
+  /** Which of the ten Forma stickers is shown. */
+  wardrobeModel: string;
+  /** Finish name, resolved against WARDROBE_COLOURS in wardrobes.ts. Separate
+   * from fabricColour on purpose: a joinery finish and a blind fabric are
+   * different cards, and sharing one field made switching category rewrite the
+   * other product's choice. */
+  wardrobeColour: string;
 
   // Visual state
   photoUrl: string | null;
@@ -251,6 +263,8 @@ interface VisualiserStore {
   applyActiveToAll: () => void;
   setCurtainType: (type: CurtainType) => void;
   setCurtainOperation: (op: CurtainOperation) => void;
+  setWardrobeModel: (id: string) => void;
+  setWardrobeColour: (name: string) => void;
   setCurtainMount: (mount: CurtainMount) => void;
   setCurtainSize: (size: CurtainSize) => void;
   setCurtainOpenness: (openness: number) => void;
@@ -273,6 +287,8 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   lockedRange: null,
   defaultWindowActive: true,
   curtainOpenness: 0,
+  wardrobeModel: '3.0',
+  wardrobeColour: 'Matt Wardrobe White',
   windows: [following(DEFAULT_WINDOW)],
   activeWindow: 0,
   photoUrl: null,
@@ -347,6 +363,11 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   setDefaultWindowActive: (active) => set({ defaultWindowActive: active }),
   setCurtainType: (type) => set(writeThrough({ curtainType: type })),
   setCurtainOperation: (op) => set(writeThrough({ curtainOperation: op })),
+  // Flat set, not writeThrough: writeThrough mirrors a field onto every window
+  // in the job, and a wardrobe is not per-window — it is one piece of joinery
+  // for the room, the way productCategory itself is.
+  setWardrobeModel: (id) => set({ wardrobeModel: id }),
+  setWardrobeColour: (name) => set({ wardrobeColour: name }),
   setCurtainMount: (mount) => set(writeThrough({ curtainMount: mount })),
   setCurtainSize: (size) => set(writeThrough({ curtainSize: size })),
 
