@@ -192,9 +192,45 @@ Byte-copies of the eight above, **plus three files that exist only here**:
 that is 21 lines longer than the original. Target and fate: **NEEDS DECISION** — see the
 recommendation at the end of this document.
 
+### RESOLVED — authoritative layer decisions, 2026-08-31
+
+**All eleven are decided. These supersede the options set out in the notes below**, which are
+kept for the reasoning that led to them.
+
+| # | Decision | Executes in |
+|---|---|---|
+| **A** | **Option 1** — `shared/hooks/useScrollPosition.ts`, no store. *Determined:* both writers do exactly `setScrollY(window.scrollY)` and nothing else; `Nav` reads it only as `scrollY > 60` and `Math.max(0, stickBelow - scrollY)`. Nothing is expressed that `window.scrollY` cannot. `blindHeight` is dead and is **not carried** — left for the cleanup pass. | P3 |
+| **B, G** | **Option 3** — the visualiser exports an embed component from its barrel; the catalogue page and the homepage showcase render it. | Deferred to unfreeze (P4-7) |
+| **C** | **`feature:marketing`**, submitting through booking's barrel. | P4-1 |
+| **D** | **Option 1** — `app/layouts/`. **The app layer may import feature barrels.** | P5 |
+| **E** | **`shared/components/Turnstile.tsx`.** | P3 |
+| **F** | **Split four ways:** `CtaButton` / `CtaLink` / `useHover` → `design-system/primitives/`; `SectionBand` → `design-system/patterns/`; `scrollToId` → `shared/utils/`; **`PhotoTile` → `feature:catalogue`.** *Determined:* `PhotoTile` has exactly one consumer, `src/components/ProductCard.tsx`, which is catalogue. It lives in `components/home/` and no home component imports it. | P2 / P3 / P4-3 |
+| **H** | **Split by what the data is** — SKUs → catalogue; colour cards → catalogue (visualiser consumes via barrel); hardware heights → visualiser. **Stays whole until unfreeze.** | Deferred to P4-7 |
+| **I** | **Option 1.** | P4-3 |
+| **J** | **Option 3** — root-level shared module, aliased into both `src/` and `netlify/`. One commit with all four consumers. | P6 |
+| **K** | **Option 1** — `features/booking/lib/`, consumed via barrel. | P6 (with the rest of booking) |
+
+#### Two consequences of these decisions that need your attention
+
+**A changes behaviour on nine pages, and a move phase must not.** Twelve pages mount `Nav`;
+only three publish `scrollY`. On the other nine it is permanently `0`, so `compressed` is
+always false and the nav never tightens its padding (11px → 8px). A hook reading live window
+scroll makes it compress everywhere. The destination is right; **the change is visible and
+needs signing off as a deliberate fix when P3 executes it**, or the hook must be opt-in per
+page to preserve today's behaviour exactly.
+
+**I collides with J.** `priceFor` does **not** duplicate any pricing logic — verified: it
+imports `pricePerBlind`, `isBlindType`, `isWindowSize` and `isOperation` from
+`src/lib/pricing.ts` and contains no arithmetic of its own. It is a catalogue→pricing
+*adapter*, and its signature takes a `CatalogueItem`. Moving it into the pricing module, as
+Option 1 says, would make a **root-level shared module import a feature type** — which J
+forbids by construction. *Suggested amendment, for you:* `priceFor` stays in
+`feature:catalogue` as the adapter it is; only `configuredLine` moves to `feature:cart`.
+Unresolved and not acted on.
+
 ### The NEEDS DECISION notes
 
-These are yours to resolve. I have set out the ambiguity and the options and stopped.
+Kept for the reasoning. **Superseded by the table above.**
 
 **A — `src/store.ts` (`useKlayStore`).** Two keys. `scrollY` is written by three pages and
 read only by `Nav`; `blindHeight` is written by nobody and read by nobody. The store exists
@@ -1032,6 +1068,38 @@ against `typescript-eslint` 8.x. It has never linted this repository.
 **Mitigation.** Phase 1.2 must begin by aligning those two versions, before any rule is added
 or any baseline recorded. Budget for it; it is a dependency-resolution task, not a config
 task, and `npm audit fix` will not do it.
+
+### R11 — THE VISUALISER PHASE IS THE MIGRATION'S CRITICAL PATH
+
+**Specifics.** Five of the eleven authoritative layer decisions cannot be executed until the
+freeze lifts:
+
+| Decision | What is blocked |
+|---|---|
+| **B** | The catalogue page cannot render a visualiser embed until the visualiser has a barrel to export one from. |
+| **G** | Same, for the homepage showcase. |
+| **H** | `src/data/products.ts` cannot be split by consumer while three of its twelve importers are frozen. It stays whole. |
+| **K** | `bookingLink.ts` moves to `features/booking/lib/`, and three of its four consumers are frozen or frozen-adjacent — so the import rewrite happens twice, or behind a barrel. |
+| **F (part)** | `PhotoTile` → catalogue is unblocked, but the `design-system/primitives` half is consumed by frozen files, which cannot be repointed. |
+
+Add to those the seven cross-feature import edges (of 21) that begin or end in the frozen
+zone, and roughly a fifth of all design-token call sites (R3).
+
+**Why this is the critical path and not merely a late phase.** Every other phase can be
+finished, gated and reverted independently. The visualiser phase is the only one that
+*unblocks other people's work* — five decisions and seven edges are waiting on it, and none
+of them can be closed out until it runs. It is also the largest single body of work in the
+migration (18 files, 17,250 lines, 58% of `src/`), contains all four protected IP files, and
+is the only phase whose scope is still growing: `visualiser-lab` gained three files and
+~450 lines during Phase 0 alone.
+
+**Mitigation.** (1) Treat the visualiser phase's start date as the migration's schedule
+driver — everything downstream of those five decisions is idle until it opens. (2) Build
+`features/visualiser/index.ts` as a barrel **early**, in P4-3, re-exporting from the current
+frozen paths: it is additive, touches no frozen file, and turns P4-7 into a one-file change
+for every downstream consumer (see R7). (3) Re-run Phase 0's inventory against the frozen
+zone immediately before the phase opens, not before Phase 1 — the figures in this document
+are a snapshot. (4) Get an explicit "the visualiser work is finished" before opening it.
 
 ---
 

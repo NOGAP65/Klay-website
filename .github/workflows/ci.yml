@@ -1,0 +1,84 @@
+name: CI
+
+# ---------------------------------------------------------------------------
+# Phase 1.4 of the architecture migration, and the first CI this repository has
+# ever had.
+#
+# WHY THIS IS THE PRIORITY ITEM. Until this file existed, nothing outside a
+# developer's own terminal had ever typechecked this codebase:
+#
+#   - netlify.toml runs `npm run build`, which is `vite build`, which never
+#     invokes tsc. Vite transforms src/ only; netlify/ is bundled separately by
+#     Netlify's own esbuild at deploy time.
+#   - There was no .github directory and no CI configuration of any kind.
+#
+# So a type error in the payment path could reach production unchallenged, and
+# the only thing standing between a broken Netlify function and a customer was
+# whoever last remembered to run `npm run typecheck` by hand.
+#
+# THE COMMAND MATTERS. It is `npm run typecheck` (tsc -b), NEVER `tsc --noEmit`.
+# The root tsconfig.json is `{ files: [], references: [...] }`, and plain
+# `tsc --noEmit` does not walk project references — it exits 0 having read no
+# files at all. `tsc -b` builds all three projects: app, node, and functions
+# (which covers every netlify/** file plus src/lib/pricing.ts).
+# ---------------------------------------------------------------------------
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+# A second push to the same branch cancels the first — no point burning minutes
+# proving a commit that has already been superseded.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: typecheck · build · lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      # `npm ci` rather than `npm install`: the lockfile is committed and the
+      # build must be reproducible. This also matches what Netlify's default
+      # install step does, so CI and deploy install the same tree.
+      - name: Install
+        run: npm ci
+
+      # ---- BLOCKING ----------------------------------------------------
+      - name: Typecheck (app + node + netlify functions)
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      # The three custom architecture rules, exercised against RuleTester.
+      # This runs today and is blocking, because unlike `npm run lint` it works.
+      - name: Custom lint rules — self-test
+        run: npm run lint:rules
+
+      # ---- NON-BLOCKING, UNTIL PHASE 1.2 -------------------------------
+      # `npm run lint` currently crashes before linting a single file:
+      #
+      #   TypeError: Error while loading rule
+      #   '@typescript-eslint/no-unused-expressions':
+      #   Cannot read properties of undefined (reading 'allowShortCircuit')
+      #
+      # eslint 9.39.5 is installed against typescript-eslint 8.x and the rule
+      # signature changed between them. Aligning those versions is task 1 of
+      # Phase 1.2. Making this step blocking before then would put CI red on
+      # every push for a reason unrelated to the commit, which is how a team
+      # learns to ignore CI.
+      #
+      # FLIP `continue-on-error` TO false AS THE LAST STEP OF PHASE 1.2.
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true

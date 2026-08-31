@@ -14,6 +14,30 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* ---------------------------------------------------------------------
+       PATH ALIASES — the five architecture layers, and only those five.
+
+       There is deliberately no `@/*` catch-all. A bare wildcard would let any
+       file import any other by alias, which is exactly what
+       eslint-plugin-boundaries is being installed to prevent — the aliases are
+       the boundary, so each one has to name a layer.
+
+       `paths` is resolved relative to this file, so no `baseUrl` is needed
+       (TS >= 4.1). Vite carries the same five in `resolve.alias`; the two
+       lists must stay in step or an import will typecheck and fail to bundle.
+       --------------------------------------------------------------------- */
+    "paths": {
+      "@/app": ["./src/app/index.ts"],
+      "@/app/*": ["./src/app/*"],
+      "@/config": ["./src/config/index.ts"],
+      "@/config/*": ["./src/config/*"],
+      "@/ds": ["./src/design-system/index.ts"],
+      "@/ds/*": ["./src/design-system/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/shared": ["./src/shared/index.ts"],
+      "@/shared/*": ["./src/shared/*"]
+    },
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
