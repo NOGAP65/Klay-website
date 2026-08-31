@@ -34,7 +34,7 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef } from 'react';
-import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM } from './wardrobes';
+import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM, type WardrobeArtwork } from './wardrobes';
 import { projectorFromQuad, columnsFor, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
 import type { Point } from './homography';
 
@@ -84,7 +84,15 @@ export default function Canvas2DWardrobeRenderer({
         return;
       }
 
-      drawBuiltIn(ctx, corners, model.id, model.widths[0], colourName, canvas.width, canvas.height);
+      // THE STICKER GOES INSIDE THE MODELLED BOX. The geometry gets the
+      // opening's perspective and the reveal right — that is what no
+      // photograph can do — and the photograph gets the interior right, which
+      // is what no reasonable amount of modelling can: real shelves, real
+      // clothes, real shadow between them. Neither is good enough alone and
+      // together they are most of the way to a render.
+      const art = await wardrobeArtwork(model, colourName, 'front');
+      if (cancelled) return;
+      drawBuiltIn(ctx, corners, model.id, model.widths[0], colourName, canvas.width, canvas.height, art);
     };
 
     render().catch(() => {
@@ -148,12 +156,16 @@ function drawBuiltIn(
   colourName: string,
   imageW: number,
   imageH: number,
+  art: WardrobeArtwork | null,
 ) {
   const projector = projectorFromQuad(corners, widthMm, WARDROBE_HEIGHT_MM, imageW, imageH);
   if (!projector) return;
 
   const base = hexToRgb(wardrobeColourHex(colourName));
-  const boxes = buildCarcass(layoutId, widthMm);
+  // With a photograph going into the opening there is nothing for the modelled
+  // shelves, rails and garments to do but show through its edges. Without one
+  // they are all there is, so the fallback still builds them.
+  const boxes = buildCarcass(layoutId, widthMm, !art);
 
   // Every face of every box, sorted back to front. A painter's sort is enough
   // here: the carcass is a set of boxes that do not interpenetrate, so no two
@@ -209,7 +221,30 @@ function drawBuiltIn(
     ctx.lineWidth = 0.6;
     ctx.stroke();
   }
-  ctx.restore();
+  // The photograph, set into the reveal. Inset by the board so it sits inside
+  // the carcass's own frame rather than over it, and at z = 0 because that is
+  // the plane the customer traced and the plane the opening is on.
+  if (art) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(corners[0][0], corners[0][1]);
+    for (let i = 1; i < corners.length; i++) ctx.lineTo(corners[i][0], corners[i][1]);
+    ctx.closePath();
+    ctx.clip();
+    drawProjectedImage(
+      ctx,
+      art.image,
+      art.width,
+      art.height,
+      projector,
+      BOARD_MM,
+      BOARD_MM,
+      widthMm - BOARD_MM,
+      WARDROBE_HEIGHT_MM - BOARD_MM,
+      0,
+    );
+    ctx.restore();
+  }
 
   drawContactShadow(ctx, projector, widthMm);
 }
@@ -223,7 +258,7 @@ function drawBuiltIn(
  * modelling worth doing: with an open front you see straight into the carcass,
  * so the side returns, the shelf edges and the back panel are all on show, and
  * those receding surfaces are what tell the eye how deep it is. */
-function buildCarcass(layoutId: string, widthMm: number): Box[] {
+function buildCarcass(layoutId: string, widthMm: number, includeInterior: boolean): Box[] {
   const D = WARDROBE_DEPTH_MM;
   const H = WARDROBE_HEIGHT_MM;
   const boxes: Box[] = [];
@@ -283,6 +318,11 @@ function buildCarcass(layoutId: string, widthMm: number): Box[] {
       });
     }
   };
+
+  if (!includeInterior) {
+    for (const box of boxes) box.z -= WARDROBE_DEPTH_MM;
+    return boxes;
+  }
 
   const columns = columnsFor(layoutId);
   columns.forEach((column, i) => {
@@ -399,6 +439,121 @@ function hexToRgb(hex: string): [number, number, number] {
     parseInt(clean.slice(2, 4), 16),
     parseInt(clean.slice(4, 6), 16),
   ];
+}
+
+/** Draws an image onto a model-space rectangle through the projector.
+ *
+ * PERSPECTIVE, BY SUBDIVISION. Canvas 2D can only do affine transforms, which
+ * cannot express a perspective warp — an affine map keeps parallel lines
+ * parallel, and the whole point here is that they converge. Chopping the
+ * rectangle into a grid and drawing each little cell with its own affine
+ * approximation gets there: over a cell a few pixels across the perspective is
+ * very nearly linear, and the error falls off as the square of the cell size.
+ * Twelve divisions is past the point where any of it is visible.
+ *
+ * Each cell goes down as two triangles, because three points are exactly what
+ * an affine transform is determined by. The destination triangle is pushed out
+ * about half a pixel from its own centre before it is clipped — adjacent cells
+ * otherwise leave hairline gaps where two anti-aliased edges meet, and a grid
+ * of pale seams across a photograph is far more visible than the overlap that
+ * hiding them costs. */
+function drawProjectedImage(
+  ctx: CanvasRenderingContext2D,
+  image: CanvasImageSource,
+  imgW: number,
+  imgH: number,
+  projector: Projector,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  z: number,
+  divisions = 12,
+) {
+  const N = divisions;
+  // Model→image corner lookup, computed once per grid vertex rather than four
+  // times over as each cell asks for its own.
+  const grid: [number, number][][] = [];
+  for (let j = 0; j <= N; j++) {
+    const row: [number, number][] = [];
+    for (let i = 0; i <= N; i++) {
+      row.push(projector.project(x0 + ((x1 - x0) * i) / N, y0 + ((y1 - y0) * j) / N, z));
+    }
+    grid.push(row);
+  }
+
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      // Source rectangle. The model's Y runs up and the image's runs down, so
+      // the vertical index is flipped on the way into the bitmap.
+      const su0 = (imgW * i) / N;
+      const su1 = (imgW * (i + 1)) / N;
+      const sv0 = (imgH * (N - j)) / N;
+      const sv1 = (imgH * (N - j - 1)) / N;
+
+      const p00 = grid[j][i];
+      const p10 = grid[j][i + 1];
+      const p11 = grid[j + 1][i + 1];
+      const p01 = grid[j + 1][i];
+
+      triangle(ctx, image, su0, sv0, su1, sv0, su1, sv1, p00, p10, p11);
+      triangle(ctx, image, su0, sv0, su1, sv1, su0, sv1, p00, p11, p01);
+    }
+  }
+}
+
+/** One affine-mapped triangle of the source image. */
+function triangle(
+  ctx: CanvasRenderingContext2D,
+  image: CanvasImageSource,
+  sx0: number, sy0: number,
+  sx1: number, sy1: number,
+  sx2: number, sy2: number,
+  d0: [number, number],
+  d1: [number, number],
+  d2: [number, number],
+) {
+  const denom = sx0 * (sy2 - sy1) - sx1 * sy2 + sx2 * sy1 + (sx1 - sx2) * sy0;
+  if (Math.abs(denom) < 1e-9) return;
+
+  // Half a pixel of bleed, away from the triangle's own centre. Adjacent cells
+  // otherwise leave hairline gaps where two anti-aliased edges meet, and a grid
+  // of pale seams across a photograph is far more visible than the overlap that
+  // hiding them costs.
+  const ccx = (d0[0] + d1[0] + d2[0]) / 3;
+  const ccy = (d0[1] + d1[1] + d2[1]) / 3;
+  const grow = (p: [number, number]): [number, number] => {
+    const dx = p[0] - ccx;
+    const dy = p[1] - ccy;
+    const len = Math.hypot(dx, dy) || 1;
+    return [p[0] + (dx / len) * 0.5, p[1] + (dy / len) * 0.5];
+  };
+  const [x0, y0] = grow(d0);
+  const [x1, y1] = grow(d1);
+  const [x2, y2] = grow(d2);
+
+  // The affine map taking the three source corners onto the three destination
+  // ones. Three points determine it exactly, which is why the cell is split
+  // into triangles rather than drawn as a quad.
+  const m11 = -(sy0 * (x2 - x1) - sy1 * x2 + sy2 * x1 + (sy1 - sy2) * x0) / denom;
+  const m12 = (sy1 * y2 + sy0 * (y1 - y2) - sy2 * y1 + (sy2 - sy1) * y0) / denom;
+  const m21 = (sx0 * (x2 - x1) - sx1 * x2 + sx2 * x1 + (sx1 - sx2) * x0) / denom;
+  const m22 = -(sx1 * y2 + sx0 * (y1 - y2) - sx2 * y1 + (sx2 - sx1) * y0) / denom;
+  const dx =
+    (sx0 * (sy2 * x1 - sy1 * x2) + sy0 * (sx1 * x2 - sx2 * x1) + (sx2 * sy1 - sx1 * sy2) * x0) / denom;
+  const dy =
+    (sx0 * (sy2 * y1 - sy1 * y2) + sy0 * (sx1 * y2 - sx2 * y1) + (sx2 * sy1 - sx1 * sy2) * y0) / denom;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.closePath();
+  ctx.clip();
+  ctx.transform(m11, m12, m21, m22, dx, dy);
+  ctx.drawImage(image, 0, 0);
+  ctx.restore();
 }
 
 // --- Walk-in: a view through the opening -----------------------------------
