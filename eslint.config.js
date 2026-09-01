@@ -55,7 +55,11 @@ export default tseslint.config(
   // the ordinary run so it cannot pollute the baseline, and linted explicitly by
   // tools/verify-rules-fire.mjs, which loads THIS config with ignores disabled.
   // ADR-022: a rule is not trusted until it has been shown to fire.
-  { ignores: ['dist', 'node_modules', 'docs', '.netlify', 'tools/rule-fixtures/**'] },
+  { ignores: ['dist', 'node_modules', 'docs', '.netlify', 'tools/rule-fixtures/**',
+    // Parallel wardrobe tooling, not part of this migration and not linted by it.
+    // It has no globals.node override and would otherwise report a no-undef per
+    // Buffer/console reference — a count nobody in this project can action.
+    'scripts/**'] },
 
   // --- base -----------------------------------------------------------------
   ...asWarnings([js.configs.recommended]),

@@ -523,9 +523,28 @@ baseline count. The count may go down; it may not go up. At zero it flips to `er
 permanently. Turning everything to `error` on day one produces 400 failures and the rules get
 switched off.
 
-**A rule may not be promoted from `warn` to `error` on the strength of a zero that has not been
-demonstrated to be a real zero.** The promotion asks two questions, not one: is the count zero,
-and does the rule fire when it should?
+### PROMOTION FROM `warn` TO `error` REQUIRES BOTH CONDITIONS
+
+| | Condition | Evidence |
+|---|---|---|
+| **1** | The recorded count has reached **zero** | `docs/architecture/LINT_BASELINE.md` |
+| **2** | The rule has been **demonstrated to fire** against a fixture built to violate it | `npm run verify:rules` |
+
+**Neither condition is sufficient alone, and condition 2 is the one that was missing.** A rule
+satisfying only 1 is indistinguishable from a rule that does nothing — which is exactly what
+`import/no-cycle` was, and it was next in line behind `klay/no-direct-env-access` to be rewarded
+for it.
+
+**Every rule in the promotion queue is audited against both before any promotion happens**, and
+the audit is recorded in LINT_BASELINE.md with the date it was taken. A rule that fails
+condition 2 does not wait in the queue — it comes off the queue and onto the blind list until
+it can be made to work or replaced.
+
+**And a zero measured against a permissive configuration is a conditional zero.**
+`boundaries/dependencies` reads zero today partly because the temporary `feature → legacy`
+allowance permits most of what it would otherwise catch. It fires, and its count is zero, and it
+still may not be promoted until the scaffolding it is being measured against is gone. Record the
+condition with the count.
 
 **The same doubt applies to anything whose success is an absence** — a test suite that runs no
 tests, a CI step grepping for a renamed pattern, a typecheck over a project that includes no

@@ -193,6 +193,49 @@ Command: `node tools/legacy-countdown.mjs`.
 
 ---
 
+---
+
+## DECISIONS REQUIRED BEFORE PHASE 6 OPENS
+
+**These are V's and Bobby's, not the migration's. Phase 6 does not start until both are
+answered, because the checkout is what Phase 6 moves and both change its shape.**
+
+They exist because P4-5 deleted the cart's fake checkout (D-01) and the cart now links to
+`/book`, which surfaced a gap that had been hidden behind a form that never submitted.
+
+### A. Must checkout accept multiple configurations in one order?
+
+`/book` takes ONE configuration — `type`, `size`, `op`, `qty`, `fabric`, `hw` — and
+re-validates it through `parseOrderConfig`. The cart holds many lines. Today the link carries
+nothing and a customer with three lines books a measure without them.
+
+**The question is not how to encode a basket in a URL.** It is whether an order is one blind or
+many: whether Stripe sees one line item or several, whether the confirmation page and the
+webhook reason about an order or a configuration, and whether a measure appointment is booked
+per order or per window.
+
+### B. What is the canonical order shape?
+
+`blindType` currently carries two different meanings depending on where it came from.
+
+| Origin | Value | What it is |
+|---|---|---|
+| The visualiser / `/book` | `'blockout'` | A **pricing input.** `pricePerBlind` keys off it; `isBlindType` validates it |
+| A card-configured cart line | `'roller-blinds:blockout:surfmist:white:medium:manual'` | A **composite identity**, built by `configuredLine` so two configurations of one product do not collapse into a single cart row |
+
+The second would not validate if it were sent to `/book`, which is one reason a bridge was not
+built. **One field, two incompatible jobs** — and the money path only understands one of them.
+
+The decision is what an order line actually is: which fields are pricing inputs, which are
+identity, which are display, and which of those the server must re-derive rather than accept.
+§7's rule that the browser may display a price but never decide one depends on the answer.
+
+**Not designed here, deliberately.** Inventing an encoding would be a third implementation of
+the thing P4-5 just deleted. DIVERGENCE_LOG.md D-01 records the gap; this records that it
+blocks.
+
+---
+
 ## Standing entries — deferred to Phase 6 by earlier decisions
 
 | Item | Source |

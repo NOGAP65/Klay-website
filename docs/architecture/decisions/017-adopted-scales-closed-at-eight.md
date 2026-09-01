@@ -120,6 +120,36 @@ touched until P4-7. They are deleted with the `theme.ts` shim.
 > `theme.ts` shim are therefore permanent for its life** — E-10. They go with the separate
 > visualiser work, or not at all.
 
+## THE HERO OBSERVATION — recorded at P4-5, and it is a warning about what to do next
+
+**Three page heroes independently wanted a vertical padding past the top of the scale.**
+
+| Page | Was | Became |
+|---|---:|---|
+| About | 180px | `space.focal` (120) |
+| How it works | 200px | `space.focal` (120) |
+| Contact | 180px top, 140px bottom | `space.focal` (120) |
+
+These were not values *between* two steps, which is the case §9 anticipates. The scale is closed
+at eight and tops out at `focal` (120); 180 and 200 are **past the end of it.** All three took
+§9's first answer — change the layout — and the result was checked in a browser at 1440px: two
+heroes lost 80px of air and both still read as heroes.
+
+**THREE IS A PATTERN AND FOUR IS A FINDING.** Three independent authors reaching past the top of
+the scale for the same element is the shape D-03 had: not carelessness, but people arriving
+separately at the same answer because the structure offered nowhere else to go.
+
+**If a fourth hero wants the same thing in Phase 5, do NOT change a fourth layout. Flag it.**
+The question at that point is not whether the layout is wrong, it is whether **full-bleed hero
+spacing is its own axis** rather than a step on the body-copy rhythm — the way `type.ornament`
+and `type.display` already sit outside the type scale because forcing them onto it would flatten
+both.
+
+That would be an amendment to this ADR with its own reasoning, not a ninth step bolted onto
+`space`. **The scale stays closed either way.** A separate, named axis for one element is a
+different thing from a scale that grows a step whenever something does not fit, and only the
+second is the failure §9 describes.
+
 **Applying the scale to hardcoded literals is a separate pass.** There are 283 movable
 `klay/no-hardcoded-style-values` findings, and repointing them means editing files that Phase
 4 is about to move. Doing both at once is the "moving and changing in one commit" the migration

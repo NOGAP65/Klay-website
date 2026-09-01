@@ -682,3 +682,58 @@ blind (ADR-022). **`import/no-cycle` is the blind one, and it is worse than P4-4
 does not merely fail to traverse barrels, it reports nothing against a two-file `a → b → a`
 relative cycle built for no other purpose. It is inert, and §11's circular-import line has never
 enforced anything.
+
+---
+
+# PROMOTION QUEUE AUDIT — 1 September 2026
+
+**Taken under SPECIFICATION.md §11 as amended by ADR-022.** Promotion from `warn` to `error`
+requires BOTH conditions: the count has reached zero, **and** the rule has been demonstrated to
+fire. Every rule at or near zero is audited here before any promotion happens.
+
+| Rule | Count | Fires? | Verdict |
+|---|---:|---|---|
+| `klay/no-direct-env-access` | **0** everywhere, since Phase 2.1 | **YES** — fixture `direct-env-access.ts` | **PROMOTABLE.** Both conditions met. The first rule in this codebase to be promoted on evidence rather than on an absence |
+| `boundaries/dependencies` | **0** everywhere | **YES** — probes at `src/design-system/probe.ts` and `src/shared/probe.ts` | **HOLD — conditional zero.** See below |
+| `import/no-cycle` | **0** everywhere | **NO — INERT** | **REMOVED FROM THE QUEUE.** See below |
+| `klay/no-pure-black` | 1 ALL, **0 movable** | **YES** — fixture `pure-black.ts` | **NOT YET.** Its one finding is inside the out-of-scope visualiser and can never be cleared (ADR-020), so its ALL count never reaches zero. Promotable only against the movable count, which is a different contract and needs its own decision |
+| `max-params` | 9 ALL, **0 movable** | **YES** — fixture `too-many-params.ts` | **NOT YET.** Same shape: all nine are in the out-of-scope wardrobe renderer |
+| `max-depth` | 1 ALL, **0 movable** | **YES** — fixture `too-deep.ts` | **NOT YET.** Same shape |
+| `react-hooks/immutability` | 2 ALL, **0 movable** | Not fixtured | **NOT YET**, and it needs a fixture before it could be |
+
+## `import/no-cycle` — off the queue, not waiting in it
+
+It satisfied condition 1 and would have been promoted. It fails condition 2 completely: it
+reports nothing against `tools/rule-fixtures/cycle-simple`, a two-file `a → b → a` relative
+cycle whose only purpose is to violate it. Tested at `error` level, with a finite `maxDepth`,
+and with `ignoreExternal: false`.
+
+**Promoting it would have made `error` the reward for doing nothing**, and locked that in
+permanently — §11 says the flip to `error` is one-way. Meanwhile five real cycles exist in
+`src/`, found by `tools/cycle-check.mjs`, which is doing the job §11 assigned to this rule.
+
+**It comes off the queue and onto the blind list.** It returns only when
+`npm run verify:rules` reports it firing, which the runner checks on every run and prints as
+`NOW FIRES — re-test and promote`.
+
+## `boundaries/dependencies` — a real zero, measured against a permissive config
+
+It fires, and its count is genuinely zero. It is still on hold, because **the thing it would
+catch is currently allowed.** The temporary `feature → legacy` allowance permits a feature to
+import anything under `src/`, which is most of what this rule exists to forbid. Its zero is
+therefore a statement about the configuration, not about the code.
+
+**Promote it after PHASE_6_SCOPE item 5** — when the blanket allowance is deleted and only
+`feature → legacy-visualiser` survives. Whatever the count is at that moment is the first
+unconditional measurement this rule has ever produced.
+
+## The general shape this audit exposed
+
+**Three rules sit at zero movable and non-zero ALL**, and all three are non-zero only inside the
+out-of-scope visualiser. Under ADR-020 those findings never fall, so those rules can never
+satisfy condition 1 as written — the count *never* reaches zero.
+
+**That is a real gap in §11's mechanism, and it is not resolved here.** Either promotion is
+measured against the movable count for rules whose only remaining findings are out of scope, or
+those rules stay `warn` forever. The first needs an ADR and a precise definition of "movable";
+the second quietly abandons three working rules. **Flagged, not decided.**

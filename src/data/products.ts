@@ -142,4 +142,9 @@ export const HARDWARE_OPTIONS = [
   { id: 'chrome', label: 'Chrome' },
 ] as const
 
-export const MOTORISED_ADDON = 150
+// D-07 — ONE SOURCE, RE-EXPORTED. This used to be a second declaration of 150,
+// beside the one in lib/pricing.ts that the money actually uses. A price shown to
+// a customer diverging from the price charged is a customer-facing failure, not a
+// code-quality one, so it is re-exported rather than repeated: there is now one
+// place to change the motorisation charge, and this file cannot disagree with it.
+export { MOTORISED_ADDON } from '../lib/pricing'
