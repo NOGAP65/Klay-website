@@ -35,24 +35,22 @@
 
 import { useNavigate } from 'react-router-dom';
 
-import { radius, tokens, layout, motion, space, type as typeScale, shadow } from '@/ds';
+import { radius, tokens, layout, motion, space, type as typeScale, shadow, CtaButton, CtaLink, SectionBand, TextLink, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
 import { productByBlindType } from '@/features/catalogue';
 import { useIsMobile } from '@/shared';
 
-import { bookingLink } from '../../lib/bookingLink';
-import { formatAUD } from '../../lib/pricing';
-import KlayConfigurator from '../../visualiser/KlayConfigurator';
+import { bookingLink } from '../../../lib/bookingLink';
+import { formatAUD } from '../../../lib/pricing';
+import KlayConfigurator from '../../../visualiser/KlayConfigurator';
 import {
   MAX_WINDOWS,
   type JobWindow,
   priceWindow,
   useVisualiserStore,
   type ProductCategory,
-} from '../../visualiser/useVisualiserStore';
-import VisualiserControls, { Field, GroupHeading, PriceBox } from '../../visualiser/VisualiserControls';
-
-import { CtaButton, CtaLink, SectionBand, TextLink, useHover } from './primitives';
+} from '../../../visualiser/useVisualiserStore';
+import VisualiserControls, { Field, GroupHeading, PriceBox } from '../../../visualiser/VisualiserControls';
 
 /** Where a curtain enquiry goes. Curtains are configurable here and in the
  * visualiser page, but they are not buyable anywhere on the site: every curtain

@@ -737,3 +737,84 @@ satisfy condition 1 as written — the count *never* reaches zero.
 measured against the movable count for rules whose only remaining findings are out of scope, or
 those rules stay `warn` forever. The first needs an ADR and a precise definition of "movable";
 the second quietly abandons three working rules. **Flagged, not decided.**
+
+---
+
+# MOVEMENT — P4-6 HOME. PHASE 4 IS COMPLETE.
+
+| Measure | P4-5 (+ fixes) | P4-6 | Δ |
+|---|---:|---:|---:|
+| ALL | 693 | 673 | −20 |
+| MOVABLE | 433 | 413 | −20 |
+| IN-SCOPE (new) | 357 | 337 | −20 |
+
+**Runtime cycles: 5 → 4.** The catalogue/`primitives` cycle is gone, and it went for the reason
+P4-5 predicted: `PhotoTile` is now inside catalogue, so `ProductCard` imports a sibling instead
+of reaching out to `components/home/primitives`, which reached back into catalogue's barrel for
+`ProductGlyph`. **A cycle removed by putting a file where it belonged, not by working around
+it** — which is the argument for the whole exercise in miniature.
+
+The remaining four are all `Nav`/`Footer` ↔ feature barrels and all clear at Phase 5.
+
+## Decision F, executed — one file, eleven exports, four unrelated jobs
+
+`src/components/home/primitives.tsx` was 811 lines. It is gone.
+
+| Went to | What | Why |
+|---|---|---|
+| `design-system/primitives/` | `useHover`, `cta.ts` (variants, base box, fills), `CtaButton`, `CtaLink`, `TextLink` | No product knowledge. The CTA is the brand's one piece of chroma and it belongs where the tokens are |
+| `design-system/patterns/` *(new)* | `SectionHead`, `SectionBand` | Primitives composed into a shape the brand repeats, still knowing nothing about blinds |
+| `shared/utils/` | `scrollToId` | Passes the 0.2 lift test outright — names no Klay noun |
+| `features/catalogue/` | `PhotoTile` and its two private helpers | Knows about prices, swatch rows and `ProductGlyph`. Its only consumer is `ProductCard` |
+| `features/home/furniture.tsx` | `TILE_GAP`, `ArrowLink` | The homepage's own grid rhythm, and one dead export |
+
+**`ctaBase` and `ctaFill` became exports rather than being duplicated.** Splitting `CtaButton`
+and `CtaLink` into one file each — §5, one component per file — would otherwise have meant two
+copies of the geometry, and the comment on `ctaBase` exists precisely because that geometry had
+already drifted to six different heights once.
+
+**`ArrowLink` has zero consumers and was deliberately NOT promoted into the design system.**
+Moving a dead export into `@/ds` would have made it a public component with nothing using it.
+It sits in home's private `furniture.tsx` flagged as a `knip` candidate for Phase 6.3, which is
+where a deletion decision belongs rather than in a move phase.
+
+## The barrel that proves the ordering was right
+
+**`features/home/index.ts` exports ONE thing: `HomePage`.**
+
+§0.8 put home last on the grounds that it is the largest *consumer* rather than the largest
+dependency — *"moving it first means rewriting its 11 files' imports once per subsequent
+feature; moving it last means rewriting them once."* The one-export barrel is the evidence: home
+imports catalogue, cart, the design system and shared, and **nothing imports home.**
+
+Set that beside catalogue's barrel, which carries eight exports and its own note that six of
+them exist only because the homepage was reaching into it. That question is now answerable
+rather than theoretical, and it is the last structural question left in Phase 4.
+
+## Phase 4 closes here
+
+| Slot | Feature | State |
+|---|---|---|
+| P4-1 | `marketing` | Done. Tokens converted at P4-5 |
+| P4-2 | `booking` | **Deferred whole to Phase 6** — resolved, not skipped |
+| P4-3 | `catalogue` | Done. 90 → 2 hardcoded values |
+| P4-4 | `cart` | Done. Second checkout deleted at P4-5 |
+| P4-5 | shared clean-up | Done. **Added nothing**, which was the result |
+| P4-6 | `home` | Done |
+| ~~P4-7~~ | ~~visualiser~~ | **Deleted from the plan** — ADR-020 |
+
+**What is left in `src/` outside a layer:** `Nav`, `Footer`, `FormField`, `App.tsx`,
+`routes/`, `store.ts`, `theme.ts`, `lib/` (api, pricing, bookingLink), `data/products.ts`, the
+three remaining `pages/` (BookInstall, BookingConfirmed, NotFound), and the out-of-scope
+visualiser. Every one of those has a named destination in Phase 5 or Phase 6, or an exception
+number saying it stays.
+
+**`klay/no-hardcoded-style-values` in home is 6.** Low because Phase 2.3 already repointed these
+files from `../theme` to `@/ds`; the conversion pass they still want is small and was not done
+here, because P4-6 was a move and mixing a 4,796-line move with a token pass would make both
+unreviewable.
+
+**`@typescript-eslint/naming-convention` in home is 26**, and 26 of those are the `hover`
+variable returned by `useHover` — a boolean without an `is` prefix, in eleven files. It is one
+rename in one hook plus its call sites, it is not a move-phase action (ADR-018), and it is now
+the single largest cluster of that rule left in the codebase.

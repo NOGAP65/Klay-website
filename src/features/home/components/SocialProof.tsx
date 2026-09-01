@@ -35,10 +35,10 @@
 
 import { Link } from 'react-router-dom';
 
-import { tokens, space, type as typeScale } from '@/ds';
+import { tokens, space, type as typeScale, SectionBand, useHover } from '@/ds';
 import { useIsMobile } from '@/shared';
 
-import { SectionBand, TILE_GAP, useHover } from './primitives';
+import { TILE_GAP } from '../furniture';
 
 const INSTAGRAM = 'https://www.instagram.com/klayinteriors';
 

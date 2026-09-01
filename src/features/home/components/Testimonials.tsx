@@ -22,10 +22,8 @@
 
 import { useState } from 'react';
 
-import { tokens, prefersReducedMotion, space, layout, type as typeScale } from '@/ds';
+import { tokens, prefersReducedMotion, space, layout, type as typeScale, SectionBand } from '@/ds';
 import { useIsMobile } from '@/shared';
-
-import { SectionBand } from './primitives';
 
 /** How long one full pass of the five reviews takes. Slow — the point is that
  * the row is alive, not that it is going anywhere.

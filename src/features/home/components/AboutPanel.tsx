@@ -21,11 +21,6 @@
 // if a claim changes it has to change in those places too.
 // ---------------------------------------------------------------------------
 
-import { tokens, headline, eyebrow, layout, space, supporting } from '@/ds';
-import { useIsMobile } from '@/shared';
-
-import { CtaLink } from './primitives';
-
 /** The clearest roller shot in the library — the bracket line across the head of
  * the glazing is the product this company makes, which is the right picture
  * beside copy about making it. Also the hero's still fallback, which is a reuse,
@@ -208,4 +203,6 @@ export function AboutPanel() {
       )}
     </section>
   );
-}
+}import { tokens, headline, eyebrow, layout, space, supporting, CtaLink } from '@/ds';
+import { useIsMobile } from '@/shared';
+

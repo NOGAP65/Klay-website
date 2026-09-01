@@ -100,18 +100,19 @@ import { useEffect } from 'react';
 
 import { tokens } from '@/ds';
 
-import { Footer } from '../components/Footer';
-import { AboutPanel } from '../components/home/AboutPanel';
-import { Hero } from '../components/home/Hero';
-import { RangeRow } from '../components/home/RangeRow';
-import { RecommendationBanner } from '../components/home/RecommendationBanner';
-import { SocialProof } from '../components/home/SocialProof';
-import { StepsBar } from '../components/home/StepsBar';
-import { Testimonials } from '../components/home/Testimonials';
-import { TrustTicker, BAR_HEIGHT } from '../components/home/TrustTicker';
-import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
-import { Nav } from '../components/Nav';
-import { useKlayStore } from '../store';
+import { Footer } from '../../../components/Footer';
+import { Nav } from '../../../components/Nav';
+import { useKlayStore } from '../../../store';
+
+import { AboutPanel } from './AboutPanel';
+import { Hero } from './Hero';
+import { RangeRow } from './RangeRow';
+import { RecommendationBanner } from './RecommendationBanner';
+import { SocialProof } from './SocialProof';
+import { StepsBar } from './StepsBar';
+import { Testimonials } from './Testimonials';
+import { TrustTicker, BAR_HEIGHT } from './TrustTicker';
+import { VisualiserShowcase } from './VisualiserShowcase';
 
 export default function HomePage() {
   const setScrollY = useKlayStore((s) => s.setScrollY);

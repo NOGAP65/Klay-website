@@ -21,10 +21,9 @@
 // rather than to a component.
 // ---------------------------------------------------------------------------
 
-
 import { useNavigate } from 'react-router-dom';
 
-import { radius, tokens, motion, space, type as typeScale } from '@/ds';
+import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
 import {
   configuredLine,
@@ -35,9 +34,6 @@ import {
   type ConfigField,
   type Selection,
 } from '@/features/catalogue';
-
-
-import { useHover } from './primitives';
 
 import type { CatalogueItem } from '@/features/catalogue';
 

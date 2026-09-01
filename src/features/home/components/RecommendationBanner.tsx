@@ -43,12 +43,9 @@
 // section on the page that is about the service rather than about a product.
 // ---------------------------------------------------------------------------
 
-import { tokens, headline, layout, space, type as typeScale } from '@/ds';
+import { tokens, headline, layout, space, type as typeScale, CtaLink } from '@/ds';
 import { STEPS } from '@/features/marketing';
 import { useMediaQuery } from '@/shared';
-
-
-import { CtaLink } from './primitives';
 
 const BANNER = '/images/range/sheer-curtains.jpg';
 

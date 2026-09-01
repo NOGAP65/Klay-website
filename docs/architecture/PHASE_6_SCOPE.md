@@ -133,10 +133,15 @@ allowed edge. A feature reaching the rest of `legacy` is scaffolding.
 > surviving allowance.** At that point the blanket `{ to: { element: { type: 'legacy' } } }`
 > line is deleted from the `feature` policy — one line — and the layer model is fully on.
 
-**The floor is 6, not 7.** It was 7 when the proposal was written; the P4-5 split of
-`data/products.ts` moved the four roller SKUs to `features/catalogue/products.ts` and took one
-permanent edge with them. The floor is a measurement, not a target — `npm run check:countdown`
-prints it as `PERMANENT`, and it moves when the shape of the out-of-scope zone moves.
+**THE FLOOR IS A MEASUREMENT, NOT A TARGET.** It has moved twice already: 7 when the proposal
+was written, **6** after P4-5 took a `data/products.ts` edge away with the SKU split, and **10**
+after P4-6, because `VisualiserShowcase` came into `feature:home` carrying three imports of
+`src/visualiser/` with it — the same shape `ProductDetailPage` already had.
+
+`npm run check:countdown` prints the floor as `PERMANENT` on every run. **Read it at the moment
+you remove the allowance; do not hard-code the number into the exit condition.** It rises
+whenever a feature absorbs a file that talks to the out-of-scope zone, and P4-6 was the last
+such absorption.
 
 Both allowances are in the config now, adjacent and labelled. The temporary one carries
 `REMOVE AT PHASE 6.1`; the permanent one carries the reason it survives.
@@ -150,6 +155,7 @@ Both allowances are in the config now, adjacent and labelled. The temporary one 
 | **P4-3, re-measured after ADR-020** | 9 | 12 | 26 | **19** | **7** |
 | **P4-4 cart** | 10 | 11 | 27 | **20** | 7 |
 | **P4-5 shared pass** | 11 | 11 | 26 | **20** | **6** |
+| **P4-6 home** | 13 | 10 | 34 | **24** | **10** |
 
 **The P4-3 row recorded 8 distinct targets. There were 12.** The targets table below listed
 eight rows summing to 22 of the 26 edges; `src/store/cartStore.ts` and the three
@@ -171,7 +177,7 @@ twenty-six permanent, so a countdown to zero on the total would never terminate.
 | `src/store.ts` | 2 | **Phase 6** — item 4, the useKlayStore shim |
 | `src/lib/pricing.ts` | 2 | **Phase 6** — item 1, moves to shared-core behind a permanent re-export shim |
 | `src/lib/bookingLink.ts` | 1 | **Phase 6** — decision K, moves with booking |
-| `src/components/home/primitives.tsx` | 1 | **P4-6** — decision F's four-way split; `PhotoTile` goes to catalogue |
+| ~~`src/components/home/primitives.tsx`~~ | ~~1~~ | **CLEARED at P4-6.** Decision F executed: the CTA family, `useHover` and `TextLink` to `design-system/primitives/`; `SectionHead` and `SectionBand` to `design-system/patterns/`; `scrollToId` to `shared/utils/`; `PhotoTile` to `features/catalogue/`. The file is gone. |
 | ~~`src/store/cartStore.ts`~~ | ~~1~~ | **CLEARED at P4-4** — it is `features/cart/store/cartStore.ts` now, reached through the barrel. The first target this countdown has ever retired. |
 | `src/visualiser/KlayConfigurator.tsx` | 1 | **NOTHING — ADR-020.** `ProductDetailPage`'s visualiser embed. **PERMANENT.** |
 | `src/visualiser/useVisualiserStore.ts` | 1 | **NOTHING — ADR-020. PERMANENT.** |

@@ -63,10 +63,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { tokens, prefersReducedMotion, space, type as typeScale } from '@/ds';
+import { tokens, prefersReducedMotion, space, type as typeScale, useHover } from '@/ds';
 import { STEPS } from '@/features/marketing';
-
-import { useHover } from './primitives';
 
 /** One full pass of the four steps — and it is set from a measured width, not a
  * guessed one.

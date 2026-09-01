@@ -32,10 +32,9 @@
 
 import { useState } from 'react';
 
-import { tokens, eyebrow, headline, layout, prefersReducedMotion, space } from '@/ds';
-import { useIsMobile } from '@/shared';
+import { tokens, eyebrow, headline, layout, prefersReducedMotion, space, CtaButton } from '@/ds';
+import { useIsMobile, scrollToId } from '@/shared';
 
-import { CtaButton, scrollToId } from './primitives';
 import { STEPS_BAR_HEIGHT } from './StepsBar';
 import { BAR_HEIGHT as TICKER_HEIGHT } from './TrustTicker';
 

@@ -103,7 +103,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { radius, tokens, motion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale } from '@/ds';
+import { radius, tokens, motion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale, CtaLink, useHover } from '@/ds';
 import { CATALOGUE, type CatalogueItem } from '@/features/catalogue';
 import { defaultSelection, fieldsFor, type Selection } from '@/features/catalogue';
 
@@ -112,13 +112,12 @@ import { defaultSelection, fieldsFor, type Selection } from '@/features/catalogu
 // is written down in this file.
 
 import { ProductGlyph } from '@/features/catalogue';
-import { useIsMobile, useMediaQuery } from '@/shared';
+import { useIsMobile, useMediaQuery, scrollToId } from '@/shared';
 
-import { useVisualiserStore } from '../../visualiser/useVisualiserStore';
+import { useVisualiserStore } from '../../../visualiser/useVisualiserStore';
+import { TILE_GAP } from '../furniture';
 
-import { CtaLink, TILE_GAP, scrollToId, useHover } from './primitives';
 import { RangeConfigurator } from './RangeConfigurator';
-
 
 /** THE FOUR, AND THE ONE RULE THAT DECIDES THEM: no two may be the same kind of
  * object. A roller blind stands for every blind, a curtain for every soft
@@ -965,7 +964,6 @@ export function RangeRow() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [openId]);
-
 
   /** ONE CONTAINER FOR THE HEADER AND THE ROW, so the first card's left edge
    * lands on the same vertical line as "Bestsellers" by construction rather than by
