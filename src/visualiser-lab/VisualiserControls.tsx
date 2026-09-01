@@ -533,6 +533,43 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 ))}
               </div>
             </Field>
+
+            {/* HOW DEEP THE OPENING IS — the one thing the photograph cannot
+                tell us, and the one that decides whether this fits.
+
+                Every cabinet in the range is 447 deep. Slide below that and the
+                alcove is shallower than the cabinet, so it stands proud of the
+                wall by the difference and the render shows it doing exactly
+                that. At 0 it is a flat wall and the whole 447 is in the room. */}
+            <Field
+              onDark={onDark}
+              label="Opening depth"
+              caption={
+                store.wardrobeRecessMm >= 447
+                  ? `${store.wardrobeRecessMm} mm · sits flush`
+                  : `${store.wardrobeRecessMm} mm · stands ${447 - store.wardrobeRecessMm} mm proud`
+              }
+            >
+              <input
+                type="range"
+                min={0}
+                max={600}
+                step={10}
+                value={store.wardrobeRecessMm}
+                onChange={e => store.setWardrobeRecessMm(Number(e.target.value))}
+                aria-label="Opening depth in millimetres"
+                style={{ width: '100%', accentColor: onDark ? tokens.onDark : tokens.ink }}
+              />
+              <p
+                style={{
+                  ...typeScale.micro,
+                  margin: `${space.xs}px 0 0`,
+                  color: onDark ? tokens.onDarkMuted : tokens.inkSoft,
+                }}
+              >
+                Flat wall at 0. The cabinet is 447 deep.
+              </p>
+            </Field>
           </div>
         </section>
       </div>

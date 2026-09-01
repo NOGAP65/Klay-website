@@ -13,13 +13,13 @@ import Wardrobe3D from './Wardrobe3D';
 // which is what made the panel read as assembled rather than designed.
 
 /** Caps how tall the media box can get. Width is capped instead of height so
- * the photo's aspect ratio is never violated â€” see the root style. */
+ * the photo's aspect ratio is never violated — see the root style. */
 const MAX_MEDIA_VH = 72;
 
 // --- Buttons ---------------------------------------------------------------
 // Raised, with real press feedback. Inline styles can't express :hover or
 // :active, so the Button component tracks both in state and swaps the
-// shadow â€” a lit top edge and a cast shadow when up, an inset shadow and a
+// shadow — a lit top edge and a cast shadow when up, an inset shadow and a
 // 1px nudge down when pressed.
 
 type ButtonVariant = 'primary' | 'ghost' | 'accent';
@@ -27,7 +27,7 @@ type ButtonVariant = 'primary' | 'ghost' | 'accent';
 const buttonBase: React.CSSProperties = {
   ...typeScale.label,
   lineHeight: 1,
-  // 32 â€” the pill height. These are the configurator's own small controls
+  // 32 — the pill height. These are the configurator's own small controls
   // (Open, Shut, Reset), not the page's primary CTA, so they take the pill's
   // box rather than the CTA's 52.
   height: 32,
@@ -104,7 +104,7 @@ function Button({
 
 // --- Manual: the pull controls ---------------------------------------------
 // Manual operation draws the hardware the product is actually operated by, and
-// dragging that hardware is how the covering moves â€” the control IS the thing
+// dragging that hardware is how the covering moves — the control IS the thing
 // it controls, rather than a slider standing in for one.
 //
 // It replaced a groove-and-thumb slider in a floating charcoal housing. That
@@ -113,7 +113,7 @@ function Button({
 //
 // TWO PRODUCTS, TWO OBJECTS. A roller blind is worked by a loop of beaded ball
 // chain off the end of the tube. A curtain on a corded track is worked by a
-// smooth cord loop with a weight on the bottom â€” no beads, different colour,
+// smooth cord loop with a weight on the bottom — no beads, different colour,
 // different bottom fitting. Shipping the blind's chain on a curtain would be
 // showing the customer hardware they are not buying.
 //
@@ -129,7 +129,7 @@ function Button({
 // growing.
 //
 // STILL A SLIDER TO A SCREEN READER. role, aria-valuenow and the arrow/Home/End
-// keys are carried over from the control this replaced â€” the visual metaphor
+// keys are carried over from the control this replaced — the visual metaphor
 // got richer and the keyboard contract did not change.
 
 /** Bead spacing. Real roller chain is a #10 ball chain at roughly 4.5mm pitch
@@ -138,7 +138,7 @@ const BEAD_PITCH = 7.2;
 const BEAD_R = 2.5;
 /** Fallback run length, used only before the media box has been measured. */
 const CHAIN_H_FALLBACK = 188;
-/** Distance between the two strands â€” the pulley's width. */
+/** Distance between the two strands — the pulley's width. */
 const STRAND_GAP = 13;
 /** Drag distance, in pixels, that takes the covering from fully open to fully
  * shut. Matched to the run length so a drag down the length of the visible
@@ -150,7 +150,7 @@ const CHAIN_TOP = 16;
 const CHAIN_W = STRAND_GAP + BEAD_R * 4 + 8;
 
 /** Repeat spacing of the cord's fibre ticks. Wider than the bead pitch because
- * a twisted cord reads at a coarser rhythm than a ball chain â€” and because the
+ * a twisted cord reads at a coarser rhythm than a ball chain — and because the
  * two must not look like the same object in a different colour. */
 const CORD_PITCH = 11;
 
@@ -166,7 +166,7 @@ function runYs(offset: number, run: number, pitch: number, margin: number): numb
 }
 
 /** Drag, keyboard and hover behaviour for a pull control. Shared so the chain
- * and the cord cannot drift apart on feel â€” they are the same gesture on two
+ * and the cord cannot drift apart on feel — they are the same gesture on two
  * different objects. */
 function usePullDrag(value: number, onChange: (v: number) => void) {
   const [dragging, setDragging] = useState(false);
@@ -216,7 +216,7 @@ function usePullDrag(value: number, onChange: (v: number) => void) {
  *
  * The hardware alone does not say which way to pull. A chain is obviously
  * draggable once you have grabbed it, but nothing on screen says that dragging
- * DOWN is what closes the blind â€” the old slider said Open and Shut at its two
+ * DOWN is what closes the blind — the old slider said Open and Shut at its two
  * ends and that was the one thing worth keeping from it.
  *
  * Set at the two ends of the travel rather than beside the object, so the words
@@ -224,8 +224,8 @@ function usePullDrag(value: number, onChange: (v: number) => void) {
  * arrows carry the direction on their own for anyone who reads the glyph before
  * the word.
  *
- * Dark pills because these land on an unknown photograph â€” a pale wall, a
- * window, a dark curtain â€” and type alone cannot be legible on all three. */
+ * Dark pills because these land on an unknown photograph — a pale wall, a
+ * window, a dark curtain — and type alone cannot be legible on all three. */
 const PULL_LABEL_STYLE: React.CSSProperties = {
   position: 'absolute',
   left: '50%',
@@ -241,7 +241,7 @@ const PULL_LABEL_STYLE: React.CSSProperties = {
   letterSpacing: '0.16em',
   lineHeight: 1,
   whiteSpace: 'nowrap',
-  // The labels are signage on the object, not part of its hit area â€” grabbing
+  // The labels are signage on the object, not part of its hit area — grabbing
   // the word should not start a drag that the word is not attached to.
   pointerEvents: 'none',
   userSelect: 'none',
@@ -251,9 +251,9 @@ const PULL_LABEL_STYLE: React.CSSProperties = {
 function PullLabels({ run, dimmed }: { run: number; dimmed: boolean }) {
   return (
     <>
-      <div style={{ ...PULL_LABEL_STYLE, top: -19, opacity: dimmed ? 0.35 : 1 }}>â–² OPEN</div>
+      <div style={{ ...PULL_LABEL_STYLE, top: -19, opacity: dimmed ? 0.35 : 1 }}>▲ OPEN</div>
       <div style={{ ...PULL_LABEL_STYLE, top: CHAIN_TOP + run + 13, opacity: dimmed ? 0.35 : 1 }}>
-        â–¼ CLOSE
+        ▼ CLOSE
       </div>
     </>
   );
@@ -314,7 +314,7 @@ function PullControl({
   );
 }
 
-/** BLINDS â€” a loop of nickel ball chain off the end of the tube. */
+/** BLINDS — a loop of nickel ball chain off the end of the tube. */
 function BeadChain({
   value,
   onChange,
@@ -330,7 +330,7 @@ function BeadChain({
   const xRight = CHAIN_W / 2 + STRAND_GAP / 2;
 
   return (
-    <PullControl value={value} onChange={onChange} run={run} ariaLabel="Blind position â€” drag the chain">
+    <PullControl value={value} onChange={onChange} run={run} ariaLabel="Blind position — drag the chain">
       {travel => (
         <svg width={CHAIN_W} height={CHAIN_TOP + run + 16} style={{ display: 'block', overflow: 'visible' }}>
           <defs>
@@ -391,7 +391,7 @@ function BeadChain({
   );
 }
 
-/** CURTAINS â€” a corded track's cord loop, weighted at the bottom.
+/** CURTAINS — a corded track's cord loop, weighted at the bottom.
  *
  * Deliberately not the blind's chain. A curtain track runs a smooth braided
  * cord, not a ball chain, and it is tensioned by a weight hanging on the loop
@@ -436,7 +436,7 @@ function CurtainCord({
   );
 
   return (
-    <PullControl value={value} onChange={onChange} run={run} ariaLabel="Curtain position â€” drag the cord">
+    <PullControl value={value} onChange={onChange} run={run} ariaLabel="Curtain position — drag the cord">
       {travel => (
         <svg width={CHAIN_W} height={CHAIN_TOP + run + 20} style={{ display: 'block', overflow: 'visible' }}>
           <defs>
@@ -467,7 +467,7 @@ function CurtainCord({
           {strand(xLeft, travel, 'l')}
           {strand(xRight, -travel, 'r')}
 
-          {/* The cord weight â€” a teardrop acorn that tensions the loop. This is
+          {/* The cord weight — a teardrop acorn that tensions the loop. This is
               the silhouette that most separates a curtain cord from a blind
               chain at a glance. */}
           <path
@@ -497,7 +497,7 @@ function CurtainCord({
 // IT POPS. The handset rises, scales up and fades in on mount, and because
 // sideControl swaps components when the operation changes, that happens every
 // time Motorised is picked rather than only on first paint. Driven by a state
-// flip on the first frame plus a transition, not a keyframe â€” the visualiser
+// flip on the first frame plus a transition, not a keyframe — the visualiser
 // has no stylesheet to put an @keyframes in, and this needs no global CSS.
 //
 // THE MIDDLE KEY IS NEW. The old panel could start a movement but never
@@ -547,7 +547,7 @@ function RemoteKey({
         justifyContent: 'center',
         cursor: 'pointer',
         padding: 0,
-        // Keys are lit from above and sink when pressed â€” the same physical
+        // Keys are lit from above and sink when pressed — the same physical
         // grammar as the configurator's Buttons, at the scale of a handset.
         boxShadow: pressed
           ? 'inset 0 2px 4px rgba(0,0,0,0.7)'
@@ -616,7 +616,7 @@ function MotorRemote({
       }}
     >
       {/* Status LED. Lit while the motor is actually running, which is the only
-          honest moment for it â€” a permanently-on light is decoration. */}
+          honest moment for it — a permanently-on light is decoration. */}
       <div
         style={{
           width: 5,
@@ -643,9 +643,9 @@ function MotorRemote({
         KLAY
       </span>
 
-      <RemoteKey label="â–²" ariaLabel="Open the blind" onClick={onOpen} />
-      <RemoteKey label="â– " ariaLabel="Stop the blind" onClick={onStop} accent />
-      <RemoteKey label="â–¼" ariaLabel="Close the blind" onClick={onShut} />
+      <RemoteKey label="▲" ariaLabel="Open the blind" onClick={onOpen} />
+      <RemoteKey label="■" ariaLabel="Stop the blind" onClick={onStop} accent />
+      <RemoteKey label="▼" ariaLabel="Close the blind" onClick={onShut} />
 
       <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.07)', margin: '1px 0' }} />
 
@@ -663,7 +663,7 @@ function MotorRemote({
 const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-5.png'];
 
 // Loaded automatically on mount so the visualiser never shows an empty
-// upload prompt by default â€” the blind renders immediately against this
+// upload prompt by default — the blind renders immediately against this
 // photo using a fixed set of corner pins (see DEFAULT_WINDOW_CORNERS_PCT),
 // with no CornerPinOverlay involved at all until the user replaces it.
 const DEFAULT_WINDOW_URL = '/images/Preview.png';
@@ -675,17 +675,17 @@ const DEFAULT_WINDOW_URL = '/images/Preview.png';
 // A true quad, not a rectangle: the window is photographed in perspective, so
 // the top edge falls ~63px from left to right while the bottom edge rises
 // ~40px, and the left edge stands ~103px taller than the right. Each corner
-// therefore has its own x AND y â€” an axis-aligned rectangle cannot sit on this
+// therefore has its own x AND y — an axis-aligned rectangle cannot sit on this
 // window. Order is TL, TR, BR, BL, which is what the renderer destructures
 // positionally.
 // Measured by dragging the corner pins onto the glass in the browser, then
-// reading back the confirmed quad â€” so these are the renderer's own numbers,
+// reading back the confirmed quad — so these are the renderer's own numbers,
 // not an estimate off the image.
 const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
-  [0.1918, 0.1989], // top-left     â€” x 241, y 249
-  [0.5841, 0.2492], // top-right    â€” x 732, y 312
-  [0.5830, 0.6382], // bottom-right â€” x 731, y 800
-  [0.1864, 0.6699], // bottom-left  â€” x 234, y 840
+  [0.1918, 0.1989], // top-left     — x 241, y 249
+  [0.5841, 0.2492], // top-right    — x 732, y 312
+  [0.5830, 0.6382], // bottom-right — x 731, y 800
+  [0.1864, 0.6699], // bottom-left  — x 234, y 840
 ];
 
 /** WHERE A WARDROBE STANDS ON THE DEFAULT PHOTO.
@@ -695,7 +695,7 @@ const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
  * it stands the cabinet inside the opening, floating a metre off the floor with
  * the garden behind it. The first render of the wardrobe tab did precisely that.
  *
- * So wardrobes get their own default footprint on Preview.png â€” the left-hand
+ * So wardrobes get their own default footprint on Preview.png — the left-hand
  * wall, running down to where the floor meets it.
  *
  * ITS PROPORTIONS MATTER now that the renderer fills whatever is traced. The
@@ -705,11 +705,11 @@ const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
  * opens on the product at its own proportions and any distortion after that is
  * something the customer drew themselves.
  *
- * It is a starting position, not a claim about the room â€” the customer retraces
+ * It is a starting position, not a claim about the room — the customer retraces
  * or uploads their own wall from here.
  *
  * A rectangle rather than a true quad, because the renderer takes this as a
- * footprint to stand a photograph in rather than a plane to project onto â€” see
+ * footprint to stand a photograph in rather than a plane to project onto — see
  * Canvas2DWardrobeRenderer. */
 const DEFAULT_WARDROBE_CORNERS_PCT: [number, number][] = [
   [0.035, 0.435],
@@ -722,7 +722,7 @@ const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2,
 
 interface KlayConfiguratorProps {
   /** Pre-selects a blind type and locks it, for callers that already know
-   * which product the customer is looking at â€” a product page has no reason
+   * which product the customer is looking at — a product page has no reason
    * to offer the type switcher, since the URL already answered that. Setting
    * `lockedRange` is what hides the switcher in VisualiserControls. */
   defaultBlindType?: BlindType;
@@ -733,8 +733,8 @@ interface KlayConfiguratorProps {
 
 // Canvas-only: renders the upload / trace / rendered-blind states inside a
 // self-contained box. All configurator controls (Range, Hardware, Size,
-// Operation, Price, Book Installation) live in the caller's own layout â€”
-// see VisualiserControls â€” since callers place this box differently
+// Operation, Price, Book Installation) live in the caller's own layout —
+// see VisualiserControls — since callers place this box differently
 // (VisualiserSection's right column vs VisualiserPage's full-bleed canvas).
 export default function KlayConfigurator({
   defaultBlindType,
@@ -744,7 +744,7 @@ export default function KlayConfigurator({
 
   // Before anything else, so the seeded trace and the first render both see
   // the right type. The store is module-global and outlives this component,
-  // so the lock is released on unmount â€” otherwise the general visualiser
+  // so the lock is released on unmount — otherwise the general visualiser
   // page would come up with its type switcher still hidden.
   useEffect(() => {
     if (!defaultBlindType) return;
@@ -764,7 +764,7 @@ export default function KlayConfigurator({
   const hasSeededDefaultRef = useRef(false);
   const [showUploadPrompt, setShowUploadPrompt] = useState(false);
 
-  // Kick off the default window photo once, on mount â€” only if the store
+  // Kick off the default window photo once, on mount — only if the store
   // doesn't already carry a real user photo from earlier in this session.
   useEffect(() => {
     if (store.defaultWindowActive) {
@@ -774,10 +774,10 @@ export default function KlayConfigurator({
   }, []);
 
   // The hook owns photo acquisition; only photoUrl needs to live in the
-  // shared store (photoBitmap stays local â€” it's only needed here for
+  // shared store (photoBitmap stays local — it's only needed here for
   // pixel dimensions). A new photo always invalidates any existing trace.
   // Once the default window has already been seeded once, any further
-  // photo change is a real user upload/preset â€” that ends default mode and
+  // photo change is a real user upload/preset — that ends default mode and
   // hands control back to normal corner-pin tracing.
   useEffect(() => {
     store.setPhotoUrl(hookPhotoUrl);
@@ -791,7 +791,7 @@ export default function KlayConfigurator({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hookPhotoUrl]);
 
-  // Once the default window's bitmap is ready, seed its trace directly â€”
+  // Once the default window's bitmap is ready, seed its trace directly —
   // no CornerPinOverlay, no user interaction, pins locked to the preset.
   //
   // The emptiness check reads LIVE store state rather than this render's
@@ -799,12 +799,12 @@ export default function KlayConfigurator({
   // batches them into one commit and both effects run in the same flush: the
   // effect above clears the trace, and this one used to still see the
   // pre-clear array. On a first load that was harmless because the array was
-  // already empty â€” but arriving from another page that had seeded (homepage
+  // already empty — but arriving from another page that had seeded (homepage
   // to a product page, where the store is shared and nothing had cleared it)
   // it read a stale length of 1, failed the guard, and never retried, because
   // none of this effect's dependencies change when the clear lands. That left
   // the configurator permanently unseeded, which renders as an empty box.
-  // tracedAreas.length is a dependency for the same reason â€” belt and braces
+  // tracedAreas.length is a dependency for the same reason — belt and braces
   // if the two updates ever land in separate commits.
   useEffect(() => {
     if (
@@ -853,7 +853,7 @@ export default function KlayConfigurator({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  // Brief, near-instant window while the default photo's bitmap loads â€”
+  // Brief, near-instant window while the default photo's bitmap loads —
   // rendered as nothing (not the upload prompt) so there's no empty state.
   const isLoadingDefault = store.defaultWindowActive && !hasPhoto && !uploadError && !showUploadPrompt;
 
@@ -922,7 +922,7 @@ export default function KlayConfigurator({
     animFrameRef.current = requestAnimationFrame(step);
   };
 
-  // Lights the handset's LED, and only while the blind is genuinely moving â€”
+  // Lights the handset's LED, and only while the blind is genuinely moving —
   // set when a movement starts, cleared when it lands or is interrupted. The
   // stop key clears it directly, which is what makes stopping feel like it did
   // something even though the blind simply stays where it is.
@@ -945,7 +945,7 @@ export default function KlayConfigurator({
     autoRunningRef.current = true;
     setAutoRunning(true);
     // The LED follows each leg of the cycle rather than staying lit throughout,
-    // so it goes dark in the two 600ms pauses â€” which is exactly when a real
+    // so it goes dark in the two 600ms pauses — which is exactly when a real
     // blind is sitting still at the top or bottom of its travel.
     const cycle = () => {
       if (!autoRunningRef.current) return;
@@ -968,7 +968,7 @@ export default function KlayConfigurator({
   };
 
   // WHICH operation. Blinds and curtains keep separate operation fields, and
-  // this control read the blind's for both â€” so a curtain switched to Motorised
+  // this control read the blind's for both — so a curtain switched to Motorised
   // still got the manual control, and a motorised blind switched to curtains
   // kept a handset the curtain had not asked for. Harmless while the control
   // was an abstract slider; not harmless now that manual and motorised draw
@@ -986,8 +986,8 @@ export default function KlayConfigurator({
   useEffect(() => () => stopAuto(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // RE-SEED WHEN THE PRODUCT CHANGES SHAPE. A blind and a wardrobe want
-  // completely different default footprints â€” the window's glass versus the
-  // wall beside it â€” and the seed above fires once per photo, so whichever
+  // completely different default footprints — the window's glass versus the
+  // wall beside it — and the seed above fires once per photo, so whichever
   // category happened to be showing at load would otherwise own the trace for
   // the rest of the session. Crossing between wardrobes and window coverings
   // therefore drops the seeded default and lets it run again for the category
@@ -1022,7 +1022,7 @@ export default function KlayConfigurator({
   }));
 
   // The default window's pins are seeded in an effect, but these states are
-  // resolved during render â€” so on a cold load there is one painted frame
+  // resolved during render — so on a cold load there is one painted frame
   // where the bitmap has arrived (hasPhoto true) and the seed has not yet
   // committed (tracedAreas still empty). Without this guard that frame
   // resolved to showTraceState, flashing the corner-pin overlay and a
@@ -1040,7 +1040,7 @@ export default function KlayConfigurator({
     !isLoadingDefault && !showUploadState && !confirmedArea && !awaitingDefaultSeed;
   const showRenderState = !isLoadingDefault && !showUploadState && !!confirmedArea;
 
-  /** TURN IT vs SEE IT IN THE ROOM â€” two different questions, so two views.
+  /** TURN IT vs SEE IT IN THE ROOM — two different questions, so two views.
    *
    * The room composite answers "does this fit my bedroom", and it has to be a
    * photograph pasted onto a photograph to do that. The 3D view answers "what
@@ -1056,7 +1056,7 @@ export default function KlayConfigurator({
   // Footer sits BELOW the canvas rather than floating over it, so "Visualise
   // in your own room" is always reachable while the default window shows.
   const footerButtons = showUploadState ? (
-    // Opened from the default window â€” offer a way back to it, otherwise the
+    // Opened from the default window — offer a way back to it, otherwise the
     // upload prompt is a one-way door out of a perfectly good render.
     store.defaultWindowActive && hasPhoto ? (
       <Button onClick={() => setShowUploadPrompt(false)}>Cancel</Button>
@@ -1104,7 +1104,7 @@ export default function KlayConfigurator({
   ) : null;
 
   // HOW LONG THE PULL IS. Sized to the covering's drop so the hardware stays in
-  // proportion to the window â€” a bit over half its height, which is where a real
+  // proportion to the window — a bit over half its height, which is where a real
   // chain hangs to. Clamped at both ends so a small traced window still gets
   // something you can grab and a very tall one does not get a run that falls off
   // the bottom of the frame.
@@ -1143,7 +1143,7 @@ export default function KlayConfigurator({
 
   // Each operation gets the object it is actually sold with: a chain for
   // manual, a handset for motorised. Both are hardware in the room rather than
-  // UI over the top of it, which is the point â€” the visualiser sells what the
+  // UI over the top of it, which is the point — the visualiser sells what the
   // window will look like, and the thing you touch is part of that.
   //
   // They mount differently because they ARE different things. The chain belongs
@@ -1172,7 +1172,7 @@ export default function KlayConfigurator({
 
   // The box takes the photo's own shape instead of sitting in a fixed panel
   // and letterboxing the image inside it. Height is capped by capping WIDTH
-  // (maxWidth = maxHeight x ratio) â€” capping height directly would fight the
+  // (maxWidth = maxHeight x ratio) — capping height directly would fight the
   // aspect-ratio and reintroduce the empty charcoal margins.
   const photoRatio = photoBitmap ? photoBitmap.width / photoBitmap.height : 4 / 3;
 
@@ -1192,7 +1192,7 @@ export default function KlayConfigurator({
     >
       <div ref={mediaBoxRef} style={{ position: 'relative', width: '100%', aspectRatio: String(photoRatio) }}>
       {isLoadingDefault ? null : showUploadState ? (
-        /* STATE 1 â€” no photo yet, or the user asked to visualise their own room */
+        /* STATE 1 — no photo yet, or the user asked to visualise their own room */
         <div
           style={{
             position: 'absolute',
@@ -1240,7 +1240,7 @@ export default function KlayConfigurator({
           </div>
         </div>
       ) : showTraceState ? (
-        /* STATE 2 â€” photo loaded, not yet traced. The media box already
+        /* STATE 2 — photo loaded, not yet traced. The media box already
            carries the photo's aspect ratio, so the image fills it exactly
            and the overlay's pin coordinates line up with what's on screen. */
         <div style={{ position: 'absolute', inset: 0 }}>
@@ -1255,14 +1255,14 @@ export default function KlayConfigurator({
             imageHeight={photoBitmap!.height}
             onConfirm={handleConfirmTrace}
           />
-          {/* Confirm / Change photo live in the footer â€” see footerButtons. */}
+          {/* Confirm / Change photo live in the footer — see footerButtons. */}
         </div>
       ) : (
-        /* STATE 3 â€” area traced and confirmed */
+        /* STATE 3 — area traced and confirmed */
         <div ref={rendererContainerRef} style={{ position: 'absolute', inset: 0 }}>
           {store.productCategory === 'wardrobe' && wardrobe3D ? (
             /* TURN IT. The sticker projected onto the real carcass, orbitable
-               â€” see Wardrobe3D. It stands on its own rather than in the room
+               — see Wardrobe3D. It stands on its own rather than in the room
                photo, because the cabinet is what is being examined here; the
                room view is the other tab. */
             <Wardrobe3D modelId={store.wardrobeModel} colourName={store.wardrobeColour} />
@@ -1272,6 +1272,7 @@ export default function KlayConfigurator({
               corners={confirmedArea.corners as [number, number][]}
               modelId={store.wardrobeModel}
               colourName={store.wardrobeColour}
+              recessMm={store.wardrobeRecessMm}
             />
           ) : store.productCategory === 'curtain' && confirmedArea ? (
             <Canvas2DCurtainRenderer
@@ -1297,7 +1298,7 @@ export default function KlayConfigurator({
             />
           )}
 
-          {/* Each control carries its own absolute placement â€” the chain from
+          {/* Each control carries its own absolute placement — the chain from
               the blind's corner, the handset from the frame's edge. */}
           {sideControl}
         </div>

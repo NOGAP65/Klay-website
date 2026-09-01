@@ -2,33 +2,33 @@
 // THE WARDROBE RENDERER.
 //
 // BUILT-INS ARE MODELLED, NOT PHOTOGRAPHED. The carcass is built in
-// millimetres â€” 2016 high, 447 deep, the layout's own width â€” and projected
+// millimetres — 2016 high, 447 deep, the layout's own width — and projected
 // onto the wall the customer traced. Trace a square-on wall and it comes out
 // square on; trace a wall running away to one side and the side return
 // foreshortens, the shelf fronts converge and the rails run to the same
 // vanishing point as the room, because the geometry is doing it rather than an
 // image being stretched into place.
 //
-// Same idea as the blind and the curtain â€” solve in the product's own space,
-// put it back on the traced quad â€” with the one difference that a wardrobe has
+// Same idea as the blind and the curtain — solve in the product's own space,
+// put it back on the traced quad — with the one difference that a wardrobe has
 // depth, so a flat homography is not enough on its own. See projectorFromQuad.
 //
 // WHY NOT THE SUPPLIED PHOTOGRAPHS. Each carries one viewpoint, and the ten did
 // not agree: some front on, some three-quarter, some looking into a corner. A
 // photograph cannot be turned to face a different way afterwards, because the
 // faces the camera never saw are not in the file. Modelling removes the
-// question â€” there is no baked viewpoint left to disagree with the room. It
+// question — there is no baked viewpoint left to disagree with the room. It
 // also ends the keying, since there is no background to cut away.
 //
 // DRAWN IN 2D, and deliberately. The carcass is a few dozen boxes, which is a
-// few hundred flat quads â€” far below the point where a GPU earns its
+// few hundred flat quads — far below the point where a GPU earns its
 // complication, and this way the projection can be the exact one the wall needs
 // rather than whatever a perspective camera can be talked into. Faces are
 // sorted back to front and filled, which is all the depth ordering a convex
 // open box requires.
 //
 // WALK-INS ARE STILL ARTWORK. 7.0L, 9.0L and 12.0U are rooms rather than
-// objects â€” those renders look INTO the robe at two or three walls receding
+// objects — those renders look INTO the robe at two or three walls receding
 // away. Modelling one would mean modelling a room; the honest placement is a
 // view through the trace.
 // ---------------------------------------------------------------------------
@@ -36,9 +36,9 @@
 import { useEffect, useRef } from 'react';
 import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, wardrobeColour, wardrobeCutoutFor, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM } from './wardrobes';
 import { loadAllContents, type ContentKind, type LoadedContent } from './wardrobeContents';
-import { projectorFromQuad, columnsFor, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
-import { profilePhoto, relightCutout, drawSeatingShadow, applyGrain, makeGrainTile, isWoodFinish } from './wardrobeComposite';
-import { computeHomography, applyHomography, type Point } from './homography';
+import { projectorFromQuad, columnsFor, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
+import { profilePhoto, relightCutout, applyGrain, makeGrainTile, isWoodFinish } from './wardrobeComposite';
+import type { Point } from './homography';
 
 export interface WardrobeRendererProps {
   photoUrl: string;
@@ -46,6 +46,17 @@ export interface WardrobeRendererProps {
   corners: [number, number][];
   modelId: string;
   colourName: string;
+  /** HOW DEEP THE OPENING IS, in millimetres.
+   *
+   * A photograph of a wall cannot give this up — four coplanar corners say
+   * nothing about what is behind them — so it is the customer's to tell us, and
+   * it is the difference between a cabinet that fits and one that sticks out
+   * into the room.
+   *
+   * Defaults to the cabinet's own depth, which is the flush case and the one
+   * the trace already implies: draw a box on a wall and what you mean is "the
+   * front of the wardrobe goes here". */
+  recessMm?: number;
 }
 
 export default function Canvas2DWardrobeRenderer({
@@ -53,6 +64,7 @@ export default function Canvas2DWardrobeRenderer({
   corners,
   modelId,
   colourName,
+  recessMm = WARDROBE_DEPTH_MM,
 }: WardrobeRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -86,178 +98,139 @@ export default function Canvas2DWardrobeRenderer({
         return;
       }
 
-      // THE PHOTOGRAPH'S OWN ARTWORK FIRST, where it exists for this finish.
+      // ONE PATH NOW, AND IT HAS DEPTH.
       //
-      // A cut-out is the product, photographed. Nothing modelled competes with
-      // it on a wall the customer traced square-on, which is most of them, so
-      // this is the path that runs whenever it can. See drawCutout for the one
-      // thing it cannot do.
+      // There used to be two: a flat warp of the whole cut-out onto the traced
+      // quad, and a modelled carcass for everything the warp could not handle.
+      // The warp had the photograph and no depth; the model had depth and flat
+      // fills, and the renderer picked between them on the trace's skew.
+      //
+      // That choice is gone, because it was a false one. The cabinet is always
+      // modelled — so the side returns foreshorten, the shelves converge, and a
+      // cabinet deeper than its recess stands proud of the wall — and the
+      // photograph is projected face by face onto that geometry, so the surface
+      // is still the real product. Where the render exists it is used; where it
+      // does not, the same geometry draws in board.
       const cut = await wardrobeCutoutFor(model, colourName);
       if (cancelled) return;
-      if (cut && !tooSkewedForCutout(corners, cut.view)) {
-        drawCutout(ctx, corners, cut.image, cut.carcass, canvas.width, canvas.height);
-        return;
-      }
+      const skin: WardrobeSkin | null = cut
+        ? { image: cut.image, x0: cut.carcass.x0, y0: cut.carcass.y0, x1: cut.carcass.x1, y1: cut.carcass.y1 }
+        : null;
 
       // The contents, if they have been supplied yet. Absent, the carcass draws
-      // its own modelled blocks instead â€” see buildCarcass.
+      // its own modelled blocks instead — see buildCarcass.
       const contents = await loadAllContents();
       if (cancelled) return;
-      drawBuiltIn(ctx, corners, model.id, model.widths[0], colourName, canvas.width, canvas.height, contents);
+      drawBuiltIn(
+        ctx, corners, model.id, model.widths[0], colourName,
+        canvas.width, canvas.height, contents, skin, recessMm,
+      );
     };
 
     render().catch(() => {
-      /* photo or artwork failed â€” leave the previous frame in place */
+      /* photo or artwork failed — leave the previous frame in place */
     });
 
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoUrl, modelId, colourName, JSON.stringify(corners)]);
+  }, [photoUrl, modelId, colourName, recessMm, JSON.stringify(corners)]);
 
   return <canvas ref={canvasRef} style={{ width: '100%', height: 'auto', display: 'block' }} />;
 }
 
-// --- Built-in: the supplied cut-out ----------------------------------------
-
-/** HOW FAR A FIXED VIEWPOINT CAN BE PUSHED, and this number is measured rather
- * than picked.
- *
- * A cut-out is a plane. Warping one onto a receding wall is geometrically exact
- * for a picture and progressively wrong for a cabinet, because the 447mm of
- * depth never reveals a side return and the bays that ought to occlude each
- * other never do. Rotating a test wall through a normal lens and warping the
- * 8.0 cut-out onto it puts the failure at:
- *
- *     15Â°  skew 0.149   holds -- reads as a wardrobe on an angled wall
- *     30Â°  skew 0.288   doubtful -- the drawer stack starts to shear
- *     45Â°  skew 0.408   gone -- a leaning decal
- *
- * So the cut-out is used out to a skew of 0.30 and the modelled carcass takes
- * over past it. The modelled one is less photographic but it has real depth,
- * and at that angle depth is the thing being looked at.
- *
- * viewForTrace's own TRAPEZOID_THRESHOLD is a different and smaller number on
- * purpose: it only decides WHICH render to ask for, and it should switch to the
- * angled artwork well before the front-on one is in trouble.
- *
- * An angled render is already turned, so it starts from its own viewpoint and
- * has the same latitude either side of it. */
-const CUTOUT_SKEW_LIMIT = 0.30;
-
-function traceSkew(corners: Point[]): number {
-  if (corners.length !== 4) return 0;
-  const [tl, tr, br, bl] = corners;
-  const left = Math.hypot(bl[0] - tl[0], bl[1] - tl[1]);
-  const right = Math.hypot(br[0] - tr[0], br[1] - tr[1]);
-  const mean = (left + right) / 2;
-  return mean > 0 ? Math.abs(left - right) / mean : 0;
+/** The supplied render, plus where the carcass sits inside it — everything the
+ * projection needs to wrap the photograph onto modelled board. */
+export interface WardrobeSkin {
+  /** The supplied render, or the relit copy of it — a canvas once the room's
+   * own light has been carried into it, which is why this is not narrowed to
+   * an HTMLImageElement. */
+  image: CanvasImageSource & { width?: number; height?: number; naturalWidth?: number; naturalHeight?: number };
+  /** The carcass box within the file, 0..1, from the cut-out manifest. */
+  x0: number; y0: number; x1: number; y1: number;
 }
 
-function tooSkewedForCutout(corners: Point[], view: string): boolean {
-  const skew = traceSkew(corners);
-  // The angled render is drawn at roughly 25Â° already, so the wall it suits is
-  // one that is ALREADY skewed -- it is the near-square trace that is wrong for
-  // it, and a steeper one it handles better than the front-on render would.
-  if (view === 'angle') return skew > CUTOUT_SKEW_LIMIT * 2.1;
-  return skew > CUTOUT_SKEW_LIMIT;
+/** Composites the cut-out over solid board, so nothing behind it shows through.
+ *
+ * Cached on the source canvas, because this runs per draw and the relight
+ * already cost a full-image pass. */
+function flattenSkin(src: HTMLCanvasElement, boardHex: string): HTMLCanvasElement {
+  const out = document.createElement('canvas');
+  out.width = src.width;
+  out.height = src.height;
+  const ctx = out.getContext('2d');
+  if (!ctx) return src;
+  ctx.fillStyle = boardHex;
+  ctx.fillRect(0, 0, out.width, out.height);
+  ctx.drawImage(src, 0, 0);
+  return out;
 }
 
-/** Places a cut-out on the traced wall and makes it belong there.
+/** PROJECTS THE PHOTOGRAPH ONTO ONE MODELLED FACE.
  *
- * THE TRACE IS THE CARCASS, NOT THE FILE. Every sticker is staged with cases on
- * top and shoes on the floor in front, so mapping the file's own bounds onto
- * the trace would land the cabinet short of the floor by the height of a pair
- * of shoes and float it. The homography is solved from the CARCASS box to the
- * traced quad, then the whole file is drawn through it -- so the cabinet lands
- * exactly on the trace and the staging falls outside it, which is where a real
- * suitcase on top of a real wardrobe would be.
+ * The same idea the 3D view uses, done in Canvas 2D: the render is very nearly
+ * orthographic and dead front-on, so a point at (x, y) on the cabinet is at
+ * (x, y) in the picture. A face's own model corners therefore map straight into
+ * the carcass box the manifest records, whichever way that face points.
  *
- * WHICH ALSO MEANS NO CLIPPING TO THE TRACE. The old modelled path clips,
- * because a modelled carcass extrudes forward out of the traced plane and has
- * to be contained. Here the overspill is the point.
+ * WHICH IS WHY THE ROOM VIEW NO LONGER HAS TO CHOOSE between real depth and a
+ * real surface. It used to: the flat warp had the photograph and no depth, the
+ * modelled carcass had depth and flat fills. Wrapping the one onto the other
+ * gives both, and the side returns — which the camera never saw — take the
+ * front face's pixels stretched along the depth axis, exactly as they do when
+ * the 3D view is turned.
+ *
+ * `widthMm` is the cabinet's own width, and `xOffset` where it starts within
+ * the traced wall, because the model has already been moved to sit there.
  */
-function drawCutout(
+function drawFaceSkin(
   ctx: CanvasRenderingContext2D,
-  corners: Point[],
-  image: HTMLImageElement,
-  carcass: { x0: number; y0: number; x1: number; y1: number },
-  imageW: number,
-  imageH: number,
+  skin: WardrobeSkin,
+  model: [number, number, number][],
+  projector: Projector,
+  widthMm: number,
+  xOffset: number,
 ) {
-  const w = image.naturalWidth;
-  const h = image.naturalHeight;
-  if (!w || !h) return;
+  const iw = skin.image.naturalWidth ?? skin.image.width ?? 0;
+  const ih = skin.image.naturalHeight ?? skin.image.height ?? 0;
+  if (!iw || !ih || widthMm <= 0) return;
 
-  // Measured before anything is drawn over the photograph, or the wardrobe
-  // would be sampled as though it were the wall.
-  const profile = profilePhoto(ctx, corners, imageW, imageH);
-
-  const src: Point[] = [
-    [carcass.x0 * w, carcass.y0 * h],
-    [carcass.x1 * w, carcass.y0 * h],
-    [carcass.x1 * w, carcass.y1 * h],
-    [carcass.x0 * w, carcass.y1 * h],
+  const uv = (x: number, y: number): [number, number] => [
+    (skin.x0 + ((x - xOffset) / widthMm) * (skin.x1 - skin.x0)) * iw,
+    (skin.y0 + (1 - y / WARDROBE_HEIGHT_MM) * (skin.y1 - skin.y0)) * ih,
   ];
 
-  let hom: number[];
-  try {
-    hom = computeHomography(src, corners);
-  } catch {
-    return;
-  }
+  const [c0, c1, c2, c3] = model;
+  const N = 4;
+  const at = (s: number, t: number): [number, number, number] =>
+    [0, 1, 2].map(
+      k => (1 - s) * (1 - t) * c0[k] + s * (1 - t) * c1[k] + s * t * c2[k] + (1 - s) * t * c3[k],
+    ) as [number, number, number];
 
-  drawSeatingShadow(ctx, corners);
-
-  const relit = relightCutout(image, profile);
-
-  // A LITTLE SOFTER, TO SIT IN THE SAME FOCAL PLANE. A hand-held room photo is
-  // never quite critically sharp, and a render at full acuity on top of one
-  // reads as a different exposure rather than a different object.
-  ctx.save();
-  if (profile.softness > 0.12) ctx.filter = `blur(${profile.softness.toFixed(2)}px)`;
-
-  // Subdivided, because Canvas 2D has only affine transforms and an affine map
-  // keeps parallel lines parallel -- the one thing that must not happen on a
-  // receding wall. Over a cell a few pixels across the perspective is very
-  // nearly linear, so the error falls off as the square of the cell size.
-  const N = 14;
-  const P: Point[][] = [];
+  const P: [number, number][][] = [];
+  const UV: [number, number][][] = [];
   for (let j = 0; j <= N; j++) {
-    const row: Point[] = [];
-    for (let i = 0; i <= N; i++) row.push(applyHomography(hom, [(i / N) * w, (j / N) * h]));
-    P.push(row);
+    const rp: [number, number][] = [];
+    const ru: [number, number][] = [];
+    for (let i = 0; i <= N; i++) {
+      const [X, Y, Z] = at(i / N, j / N);
+      rp.push(projector.project(X, Y, Z));
+      ru.push(uv(X, Y));
+    }
+    P.push(rp);
+    UV.push(ru);
   }
 
   for (let j = 0; j < N; j++)
     for (let i = 0; i < N; i++) {
-      const u0 = (i / N) * w, u1 = ((i + 1) / N) * w;
-      const v0 = (j / N) * h, v1 = ((j + 1) / N) * h;
-      const a = { p: P[j][i], uv: [u0, v0] as Point };
-      const b = { p: P[j][i + 1], uv: [u1, v0] as Point };
-      const c = { p: P[j + 1][i + 1], uv: [u1, v1] as Point };
-      const d = { p: P[j + 1][i], uv: [u0, v1] as Point };
-      skinTriangle(ctx, relit, a, b, c);
-      skinTriangle(ctx, relit, a, c, d);
+      const v00 = { p: P[j][i], uv: UV[j][i] };
+      const v10 = { p: P[j][i + 1], uv: UV[j][i + 1] };
+      const v11 = { p: P[j + 1][i + 1], uv: UV[j + 1][i + 1] };
+      const v01 = { p: P[j + 1][i], uv: UV[j + 1][i] };
+      skinTriangle(ctx, skin.image, v00, v10, v11);
+      skinTriangle(ctx, skin.image, v00, v11, v01);
     }
-  ctx.restore();
-
-  // Grain LAST and only over what was drawn, since the render is the one part
-  // of the frame that arrived with none of its own.
-  const xs = P.flat().map(p => p[0]);
-  const ys = P.flat().map(p => p[1]);
-  const pad = 3;
-  applyGrain(
-    ctx,
-    {
-      x: Math.min(...xs) - pad,
-      y: Math.min(...ys) - pad,
-      w: Math.max(...xs) - Math.min(...xs) + pad * 2,
-      h: Math.max(...ys) - Math.min(...ys) + pad * 2,
-    },
-    profile.grain,
-  );
 }
 
 // --- Built-in: the modelled carcass ----------------------------------------
@@ -272,8 +245,22 @@ export interface Box {
   /** Multiplies the board colour. Lets the back panel and the drawer fronts sit
    * at their own value without needing a second material. */
   tone?: number;
-  /** Overrides the board colour outright â€” the hanging rails. */
+  /** Overrides the board colour outright — the hanging rails. */
   colour?: [number, number, number];
+  /** THE BACK PANEL, and it is called out because it is the one face the
+   * photograph must NOT be projected onto.
+   *
+   * Everything hanging in the cabinet — the rail, the hangers, the coats — is
+   * in front of this panel, so a projection along the view axis lands all of it
+   * here. Skin the back panel and the picture's own rail and clothes get
+   * painted flat onto it, behind the modelled rail and the upright content
+   * planes: two rails, two sets of coats, one of each in the wrong place. That
+   * is the exact failure the old renderer hit when it mapped the whole
+   * elevation onto the frame.
+   *
+   * Left as plain board, it becomes what it should be — the surface BEHIND the
+   * clothes — and the contents stand in front of it at their own depth. */
+  back?: boolean;
 }
 
 /** FACE SHADING, fixed per orientation rather than lit.
@@ -320,12 +307,82 @@ function drawBuiltIn(
   imageW: number,
   imageH: number,
   contents: Map<ContentKind, LoadedContent>,
+  skin: WardrobeSkin | null,
+  recessMm: number,
 ) {
-  const projector = projectorFromQuad(corners, widthMm, WARDROBE_HEIGHT_MM, imageW, imageH);
+  // THE TRACE IS THE WALL, NOT THE WARDROBE.
+  //
+  // It used to be solved as the wardrobe: the model rectangle handed to the
+  // homography was the product's own width by its own height, so the cabinet
+  // was stretched to fill whatever box was dragged. Trace a tall narrow slot
+  // and a 3000-wide wardrobe squeezed into it; trace a wide one and the same
+  // wardrobe sprawled. The product changed shape to suit the drawing, which is
+  // exactly backwards — a wardrobe has a size, and the question is whether it
+  // fits.
+  //
+  // Now the traced box is read as a piece of WALL. Its height is 2016mm because
+  // that is what the range is, and that fixes millimetres-per-pixel; its own
+  // width-to-height ratio then says how wide a piece of wall it is. The cabinet
+  // is drawn inside that at its true size, so a 3000 in a 2400 opening
+  // visibly does not fit — which is the answer the customer actually needs.
+  const wallWidthMm = tracedWidthMm(corners, WARDROBE_HEIGHT_MM);
+  const projector = projectorFromQuad(corners, wallWidthMm, WARDROBE_HEIGHT_MM, imageW, imageH);
   if (!projector) return;
+
+  // MEASURED BEFORE ANYTHING IS DRAWN, or the wardrobe gets sampled as though
+  // it were the wall it is standing on.
+  const profile = profilePhoto(ctx, corners, imageW, imageH);
+
+  // The render is studio-lit and the room is not, so the photograph's own
+  // illuminant is carried into the artwork before a pixel of it is projected.
+  // Doing it once here rather than per face is what keeps it affordable: the
+  // carcass is a few hundred faces and this is a full-image pass.
+  //
+  // AND THEN MADE OPAQUE, which is not optional. The cut-out has a real alpha
+  // channel — the whole open front of the cabinet is transparent, because on
+  // the real product you are looking through it. Projected onto a solid face
+  // that transparency lets the ROOM through, and the wardrobe came out a ghost
+  // with the window visible behind its own back panel. Those pixels are the
+  // back panel showing through the opening, and the back panel is board, so
+  // they are composited over the finish and come back as the surface they were
+  // always showing. Same fix, same reason, as the 3D view's flattenOntoBoard.
+  const litSkin: WardrobeSkin | null = skin
+    ? { ...skin, image: flattenSkin(relightCutout(skin.image, profile), wardrobeColourHex(colourName)) }
+    : null;
 
   const base = hexToRgb(wardrobeColourHex(colourName));
   const { boxes, compartments } = buildCarcass(layoutId, widthMm, contents.size > 0);
+
+  // Centred in the traced wall. Left-aligning would be arbitrary, and centring
+  // is what someone standing in the room would do with a cabinet narrower than
+  // the alcove they are putting it in.
+  const xOffset = (wallWidthMm - widthMm) / 2;
+
+  // HOW DEEP THE OPENING IS, AND THEREFORE HOW MUCH STICKS OUT.
+  //
+  // buildCarcass leaves the cabinet with its front at z = 0 and its back at
+  // z = -447, which is right for a wardrobe standing against a flat wall: all
+  // of it is proud of the plane that was traced.
+  //
+  // In a recess it is not. A 447 cabinet in a 300 alcove stands 147 out of the
+  // wall; in a 500 alcove it sits inside with room to spare. So the whole model
+  // is pushed back by the recess and the front edge lands where it really lands
+  // — the trace stops being where the cabinet's face is and becomes where the
+  // WALL is, which is what it always was.
+  // Back of the cabinet goes to the back of the alcove, at z = −recess. It
+  // arrives with its back at −447, so the shift is the difference.
+  const zShift = WARDROBE_DEPTH_MM - recessMm;
+  /** How far the front now stands out of the wall. Zero when the alcove is at
+   * least as deep as the cabinet. */
+  const proudMm = Math.max(0, WARDROBE_DEPTH_MM - recessMm);
+  for (const box of boxes) {
+    box.x += xOffset;
+    box.z += zShift;
+  }
+  for (const c of compartments) {
+    c.x0 += xOffset;
+    c.x1 += xOffset;
+  }
 
   // Built once per draw and reused across every face, because a fresh tile per
   // face would put a visible seam at each joint.
@@ -338,7 +395,7 @@ function drawBuiltIn(
     pts: [number, number][];
     depth: number;
     /** Tone at the face's nearest and furthest corner, and where those land on
-     * screen â€” enough to shade the face across itself rather than flat. */
+     * screen — enough to shade the face across itself rather than flat. */
     near: [number, number];
     far: [number, number];
     toneNear: number;
@@ -347,13 +404,13 @@ function drawBuiltIn(
     /** The face's own corners in model millimetres, for projecting the skin. */
     model: [number, number, number][];
     /** True where this face is carcass board rather than a garment block, a
-     * rail or a handle â€” the only surfaces timber grain belongs on. */
+     * rail or a handle — the only surfaces timber grain belongs on. */
     board: boolean;
     /** Whether the grain runs up the face or across it. An upright panel is
      * cut with the grain running its length and a shelf across its width, and
      * getting that wrong is more obvious than having no grain at all. */
     grainUpright: boolean;
-    /** True for the faces pointing at the room â€” the only ones an elevation
+    /** True for the faces pointing at the room — the only ones an elevation
      * has anything to say about. */
     skinnable: boolean;
   };
@@ -376,7 +433,7 @@ function drawBuiltIn(
       }
 
       // The corner closest to the room and the one deepest into the carcass.
-      // A face spanning the full 447mm â€” a side panel, a shelf â€” runs from full
+      // A face spanning the full 447mm — a side panel, a shelf — runs from full
       // light at its front edge to the back of the box, and filling it with one
       // value is what made the whole thing read as cut paper.
       //
@@ -405,14 +462,15 @@ function drawBuiltIn(
         model: modelPts,
         // NOTHING ON THE CARCASS IS SKINNED any more. Projecting the elevation
         // onto the front faces put the photograph's shelves and clothes on the
-        // plane of the frame â€” flat, in front of the geometry, which is what it
+        // plane of the frame — flat, in front of the geometry, which is what it
         // looked like. The board is board, so the finish swap works on it, and
         // the photograph supplies only what is standing INSIDE. See the content
         // quads below.
         skinnable: false,
         // A box with its own colour is a rail, a handle or a garment; only the
-        // ones taking the finish are board.
-        board: !box.colour,
+        // ones taking the finish are board. The back panel is board but is
+        // deliberately never skinned — see Box.back.
+        board: !box.colour && !box.back,
         grainUpright: box.h >= box.w,
       });
     }
@@ -422,14 +480,25 @@ function drawBuiltIn(
   faces.sort((a, b) => b.depth - a.depth);
 
   ctx.save();
-  // Clipped to the traced opening. A wardrobe drawn past the wall it was traced
-  // on is the one error that cannot be explained away, and the carcass overruns
-  // by design â€” the side returns project forward, out of the plane.
-  ctx.beginPath();
-  ctx.moveTo(corners[0][0], corners[0][1]);
-  for (let i = 1; i < corners.length; i++) ctx.lineTo(corners[i][0], corners[i][1]);
-  ctx.closePath();
-  ctx.clip();
+  // CLIPPED ONLY WHILE THE CABINET IS INSIDE THE WALL.
+  //
+  // The clip is what keeps a recessed wardrobe inside its opening: an alcove
+  // has masonry either side of it, and anything behind the wall plane has to be
+  // hidden by that masonry.
+  //
+  // But a cabinet deeper than its alcove STANDS OUT into the room, in front of
+  // the brickwork, and must not be cut off by it. Clipping unconditionally
+  // would hide the one thing this depth work exists to show — a 447 cabinet in
+  // a 300 recess proud by 147 — so the clip is dropped as soon as the cabinet
+  // is proud by more than a token amount.
+  const clipped = proudMm <= 8;
+  if (clipped) {
+    ctx.beginPath();
+    ctx.moveTo(corners[0][0], corners[0][1]);
+    for (let i = 1; i < corners.length; i++) ctx.lineTo(corners[i][0], corners[i][1]);
+    ctx.closePath();
+    ctx.clip();
+  }
 
   const toRgb = (c: [number, number, number], t: number) =>
     `rgb(${clamp255(c[0] * t)},${clamp255(c[1] * t)},${clamp255(c[2] * t)})`;
@@ -449,13 +518,31 @@ function drawBuiltIn(
       g.addColorStop(1, toRgb(face.rgb, face.toneFar));
       paint = g;
     }
-    // THE CARCASS IS BOARD, always. Nothing photographic is projected onto it
-    // any more: an elevation mapped onto the front faces puts the picture's own
-    // shelves and clothes on the plane of the frame, flat and in front of the
-    // geometry, which is exactly what it looked like. The photographs now
-    // contribute only the objects standing inside â€” see drawContents.
+    // Board underneath, always — it fills the alpha the render has where the
+    // opening used to be, and it is the whole surface on the three timber
+    // finishes that were never photographed.
     ctx.fillStyle = paint;
     ctx.fill();
+
+    // THE PHOTOGRAPH ON TOP, where there is one.
+    //
+    // An earlier version banned this outright, and the comment it left behind
+    // said projecting an elevation "puts the picture's own shelves and clothes
+    // on the plane of the frame, flat and in front of the geometry". That was
+    // true of the thing it was describing — the whole sticker stretched across
+    // the traced quad as ONE plane.
+    //
+    // It is not true of this. The projection is per FACE, onto geometry that
+    // already has the right depth, so the photographed shelf lands on the
+    // modelled shelf and the side return gets the pixels running off its own
+    // edge. Nothing is flattened, because nothing is being drawn on a single
+    // plane any more.
+    if (litSkin && face.board) {
+      ctx.save();
+      ctx.clip();
+      drawFaceSkin(ctx, litSkin, face.model, projector, widthMm, xOffset);
+      ctx.restore();
+    }
     // A hairline over the fill closes the seams that anti-aliasing opens
     // between two quads meeting edge to edge.
     ctx.strokeStyle = nearFill;
@@ -464,7 +551,7 @@ function drawBuiltIn(
 
     // THE FIGURE, on timber finishes only. Multiplied over board that has
     // already been shaded, so it darkens the grain without disturbing the
-    // modelled lighting â€” and clipped to the face that was just filled, so it
+    // modelled lighting — and clipped to the face that was just filled, so it
     // follows that face's own perspective rather than lying flat across the
     // picture.
     if (grain && face.board) {
@@ -487,24 +574,48 @@ function drawBuiltIn(
   // a clip and a saved state on the context after every draw.
   ctx.restore();
 
-  drawContactShadow(ctx, projector, widthMm);
+  drawContactShadow(ctx, projector, widthMm, xOffset);
+
+  // GRAIN LAST, and only over what was drawn.
+  //
+  // The render arrived noiseless and the photograph did not, so the cabinet is
+  // the one region of the frame with no sensor noise in it — a hole in the
+  // picture that the eye finds before it finds anything about the perspective.
+  // Bounded to the carcass's own projected extent rather than the whole canvas,
+  // because grain over the photograph would be grain on top of its own.
+  const gx: number[] = [];
+  const gy: number[] = [];
+  for (const face of faces) for (const p of face.pts) { gx.push(p[0]); gy.push(p[1]); }
+  if (gx.length) {
+    const pad = 4;
+    applyGrain(
+      ctx,
+      {
+        x: Math.min(...gx) - pad,
+        y: Math.min(...gy) - pad,
+        w: Math.max(...gx) - Math.min(...gx) + pad * 2,
+        h: Math.max(...gy) - Math.min(...gy) + pad * 2,
+      },
+      profile.grain,
+    );
+  }
 }
 
 /** The carcass as a list of boxes, in millimetres, with the opening's
  * bottom-left at the origin: X right along the wall, Y up, Z out of the wall
  * toward the room.
  *
- * OPEN-FRONTED, which is what the Forma range is â€” every supplied photograph
+ * OPEN-FRONTED, which is what the Forma range is — every supplied photograph
  * shows shelves and hanging with no doors on. That is also what makes the
  * modelling worth doing: with an open front you see straight into the carcass,
  * so the side returns, the shelf edges and the back panel are all on show, and
  * those receding surfaces are what tell the eye how deep it is. */
-/** A compartment's opening, in model millimetres â€” the rectangle you would
+/** A compartment's opening, in model millimetres — the rectangle you would
  * reach through. What goes IN it comes from the photograph. */
 export interface Compartment {
   x0: number; y0: number; x1: number; y1: number;
-  /** What belongs in it. The layout knows this â€” a bay under a rail takes
-   * hanging clothes, a shelf opening takes a stack or a box â€” so the renderer
+  /** What belongs in it. The layout knows this — a bay under a rail takes
+   * hanging clothes, a shelf opening takes a stack or a box — so the renderer
    * does not have to guess from the geometry. */
   role: 'shelf' | 'hang-long' | 'hang-short' | 'floor';
 }
@@ -521,18 +632,19 @@ export function buildCarcass(
 
   // Shell: back, two sides, top, bottom.
   // The back panel sits a little down in value. Nothing lights the inside of a
-  // cupboard, and at the same tone as the front frame the box has no inside â€”
+  // cupboard, and at the same tone as the front frame the box has no inside —
   // which is what made the first render read as a white slab on the wall. It is
   // the largest surface in the opening, though, so it sets the colour of the
   // whole thing: too dark and a white wardrobe reads grey, which is what 0.66
   // did.
-  boxes.push({ x: 0, y: 0, z: 0, w: widthMm, h: H, d: BOARD_MM, tone: 0.95 });
+  boxes.push({ x: 0, y: 0, z: 0, w: widthMm, h: H, d: BOARD_MM, tone: 0.95, back: true });
   boxes.push({ x: 0, y: 0, z: 0, w: BOARD_MM, h: H, d: D });
   boxes.push({ x: widthMm - BOARD_MM, y: 0, z: 0, w: BOARD_MM, h: H, d: D });
   boxes.push({ x: 0, y: H - BOARD_MM, z: 0, w: widthMm, h: BOARD_MM, d: D });
   boxes.push({ x: 0, y: 0, z: 0, w: widthMm, h: BOARD_MM, d: D });
 
-  const inner = widthMm - 2 * BOARD_MM;
+  // The usable width is columnsFor's business now that columns are resolved in
+  // millimetres rather than as fractions of it.
   const innerH = H - 2 * BOARD_MM;
   const y0 = BOARD_MM;
   let x = BOARD_MM;
@@ -552,14 +664,14 @@ export function buildCarcass(
    * white box: truthful, and almost impossible to read, because every surface
    * takes nearly the same tone and the depth cues cancel out. Something dark
    * hanging in the opening is what gives the eye a back to the box and a scale
-   * for the shelf above it â€” which is exactly why every supplied photograph is
+   * for the shelf above it — which is exactly why every supplied photograph is
    * staged with clothes in it.
    *
    * Deliberately coarse: blocks of muted colour at the pitch of hanging
    * garments, not modelled clothing. At the size this renders, a block reads as
    * a row of coats and anything more detailed reads as noise. */
   const garments = (cx: number, cw: number, railY: number, dropMm: number) => {
-    // WITH A SKIN THERE ARE ALREADY CLOTHES ON THIS RAIL â€” the real ones, in
+    // WITH A SKIN THERE ARE ALREADY CLOTHES ON THIS RAIL — the real ones, in
     // the elevation, at the pitch and in the colours the product was
     // photographed with. Modelling a second set only paints flat bars over
     // them, which is what the first pass at this did.
@@ -572,7 +684,7 @@ export function buildCarcass(
     const gw = (cw - 20) / count;
     for (let i = 0; i < count; i++) {
       const tone = GARMENT_TONES[(i * 5 + 1) % GARMENT_TONES.length];
-      // Lengths vary a little, the way a rail of real clothes does â€” a dead
+      // Lengths vary a little, the way a rail of real clothes does — a dead
       // level hem is the one thing that gives away a repeated block.
       const drop = dropMm * (0.84 + ((i * 37) % 100) / 100 * 0.16);
       const gx = cx + 10 + i * gw;
@@ -602,9 +714,12 @@ export function buildCarcass(
     }
   };
 
-  const columns = columnsFor(layoutId);
+  // Resolved in millimetres, not as fractions of the cabinet: a drawer tower is
+  // 507 wide in every layout in the range, and only the bays either side of it
+  // take up the slack. See MODULE_WIDTH_MM.
+  const columns = columnsFor(layoutId, widthMm);
   columns.forEach((column, i) => {
-    const cw = inner * column.width;
+    const cw = column.widthMm;
     if (i < columns.length - 1) {
       boxes.push({ x: x + cw, y: y0, z: 0, w: BOARD_MM, h: innerH, d: D });
     }
@@ -643,7 +758,7 @@ export function buildCarcass(
       rail(x, cw, upper - RAIL_DROP_MM);
       rail(x, cw, mid - RAIL_DROP_MM);
       // Two rails, so two runs of short hanging, and the shelf above the top
-      // one. A hanging compartment is recorded at its RAIL â€” the clothes hang
+      // one. A hanging compartment is recorded at its RAIL — the clothes hang
       // from it, so its own height is the asset's business, not the opening's.
       compartments.push({ x0: x, x1: x + cw, y0: mid - RAIL_DROP_MM, y1: mid - RAIL_DROP_MM, role: 'hang-short' });
       compartments.push({ x0: x, x1: x + cw, y0: upper - RAIL_DROP_MM, y1: upper - RAIL_DROP_MM, role: 'hang-short' });
@@ -665,7 +780,7 @@ export function buildCarcass(
         });
         // THE HANDLE. A drawer without one reads as a blank panel, and a bank of
         // blank panels reads as a fridge. It is the one detail at this scale
-        // that says "this opens" â€” which is most of what a drawer has to say.
+        // that says "this opens" — which is most of what a drawer has to say.
         // Standing proud of the front by its own depth, so it catches the light
         // on top and casts a line underneath.
         const hw = Math.min(cw * 0.42, 320);
@@ -698,14 +813,14 @@ export function buildCarcass(
   // Everything above is laid out with the back panel at z = 0 and the opening
   // at z = D, which is the natural way to describe a cabinet. But the plane the
   // customer traced is the plane the projector puts z = 0 on, and if that is
-  // the back then the whole carcass projects FORWARD out of the outline â€” the
+  // the back then the whole carcass projects FORWARD out of the outline — the
   // front face, the one thing that has to land on the trace, ends up outside it
   // and clipped away. Which is what happened: the hanging section lost its
   // right-hand end to the clip and read as half empty.
   //
   // Shifting the model back by its own depth puts the opening on z = 0 and the
   // back panel at z = -D, so the front lands exactly on the traced quad and
-  // everything else recedes behind it â€” which is also just what looking into an
+  // everything else recedes behind it — which is also just what looking into an
   // open wardrobe is.
   for (const box of boxes) box.z -= WARDROBE_DEPTH_MM;
 
@@ -715,7 +830,7 @@ export function buildCarcass(
 /** Places every content cut-out into the compartment it belongs to.
  *
  * HOW EACH ONE IS ANCHORED. A thing that hangs is placed by its TOP edge, at
- * the rail, because that is the only edge whose position is known â€” how far it
+ * the rail, because that is the only edge whose position is known — how far it
  * drops is the garment's business. A thing that stands is placed by its BOTTOM
  * edge, on the surface under it, for the same reason in reverse. Getting this
  * backwards is what makes a composite look like it is floating.
@@ -776,7 +891,7 @@ function drawContents(
     }
 
     // Stands on the surface below it, centred, and never wider than the opening
-    // â€” a 320mm box in a 240mm shelf has to come down to fit.
+    // — a 320mm box in a 240mm shelf has to come down to fit.
     const w = Math.min(item.asset.widthMm, openingW * 0.86);
     const h = item.heightMm * (w / item.asset.widthMm);
     const x0 = c.x0 + (openingW - w) / 2;
@@ -856,7 +971,7 @@ const grainTile = () => (grainCache ??= makeGrainTile(7));
  *
  * Mapped through the face's own model corners rather than drawn in screen
  * space, so on an angled wall the figure foreshortens with the panel it is on.
- * The tile is repeated at a fixed size in MILLIMETRES â€” grain does not scale
+ * The tile is repeated at a fixed size in MILLIMETRES — grain does not scale
  * with the cabinet, and a 3000mm wardrobe with the same number of rings across
  * it as an 1800mm one is a giveaway. */
 function drawGrainOnFace(
@@ -933,15 +1048,25 @@ function drawGrainOnFace(
 }
 
 /** The darkening where the carcass meets the floor. Without it the unit reads
- * as hovering however well it is placed â€” the eye takes the shade at an
+ * as hovering however well it is placed — the eye takes the shade at an
  * object's base as the proof that it is standing on something. Drawn along the
  * projected front-bottom edge, so it follows the wall's own perspective rather
  * than sitting level across the picture. */
-function drawContactShadow(ctx: CanvasRenderingContext2D, projector: Projector, widthMm: number) {
-  const left = projector.project(0, 0, 0);
-  const right = projector.project(widthMm, 0, 0);
-  const backLeft = projector.project(0, 0, -WARDROBE_DEPTH_MM);
-  const backRight = projector.project(widthMm, 0, -WARDROBE_DEPTH_MM);
+function drawContactShadow(
+  ctx: CanvasRenderingContext2D,
+  projector: Projector,
+  widthMm: number,
+  xOffset: number,
+) {
+  // Along the cabinet's own base, wherever it was placed in the traced wall —
+  // not along the wall's full width, which is what put a shadow under thin air
+  // either side of a cabinet narrower than its opening.
+  const x0 = xOffset;
+  const x1 = xOffset + widthMm;
+  const left = projector.project(x0, 0, 0);
+  const right = projector.project(x1, 0, 0);
+  const backLeft = projector.project(x0, 0, -WARDROBE_DEPTH_MM);
+  const backRight = projector.project(x1, 0, -WARDROBE_DEPTH_MM);
   const drop = Math.max(
     3,
     Math.hypot(left[0] - backLeft[0], left[1] - backLeft[1]) * 0.10,
@@ -991,7 +1116,7 @@ function hexToRgb(hex: string): [number, number, number] {
 // --- Warping a cut-out onto a quad ----------------------------------------
 //
 // Canvas 2D has only affine transforms, and an affine map keeps parallel lines
-// parallel â€” which is the one thing that must not happen when a surface is
+// parallel — which is the one thing that must not happen when a surface is
 // receding. So a quad is chopped into a grid and each cell drawn with its own
 // affine approximation: over a cell a few pixels across the perspective is very
 // nearly linear, and the error falls off as the square of the cell size.
@@ -1076,7 +1201,7 @@ function drawWalkIn(
   ctx.clip();
 
   // COVER, NOT STRETCH. A cabinet takes some distortion and still reads as a
-  // cabinet; a room does not â€” the moment its verticals lean it stops looking
+  // cabinet; a room does not — the moment its verticals lean it stops looking
   // like somewhere you could walk into, which is all this view has to do.
   const scale = Math.max(w / imgW, h / imgH);
   const drawW = imgW * scale;
@@ -1085,7 +1210,7 @@ function drawWalkIn(
   // opening or the visitor is looking into a room that floats.
   ctx.drawImage(image, x + (w - drawW) / 2, y + h - drawH, drawW, drawH);
 
-  // The opening's reveal â€” the band of shade that tells the eye it is looking
+  // The opening's reveal — the band of shade that tells the eye it is looking
   // THROUGH something rather than AT a picture hung on the wall.
   const reveal = Math.max(3, Math.min(w, h) * 0.02);
   const side = (fromX: number, toX: number, rx: number, rw: number) => {

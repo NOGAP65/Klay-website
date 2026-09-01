@@ -267,6 +267,17 @@ interface VisualiserStore {
   applyActiveToAll: () => void;
   setCurtainType: (type: CurtainType) => void;
   setCurtainOperation: (op: CurtainOperation) => void;
+  /** HOW DEEP THE OPENING IS, in millimetres.
+   *
+   * The one number a photograph cannot supply. Four coplanar corners say where
+   * a wall is and nothing about what is behind it, so whether a 447mm cabinet
+   * disappears into an alcove or stands proud of a flat wall has to be told to
+   * us — and it is the difference between a render that answers "does it fit"
+   * and one that only answers "what colour is it".
+   *
+   * 447 is flush: the alcove is exactly as deep as the cabinet. */
+  wardrobeRecessMm: number;
+  setWardrobeRecessMm: (mm: number) => void;
   setWardrobeKind: (kind: 'built-in' | 'walk-in') => void;
   setWardrobeModel: (id: string) => void;
   setWardrobeColour: (name: string) => void;
@@ -295,6 +306,9 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   wardrobeKind: 'built-in',
   wardrobeModel: '3.0',
   wardrobeColour: 'Matt Wardrobe White',
+  // Flush by default, because that is what a traced box already means: draw a
+  // rectangle on a wall and you are saying the front of the wardrobe goes here.
+  wardrobeRecessMm: 447,
   windows: [following(DEFAULT_WINDOW)],
   activeWindow: 0,
   photoUrl: null,
@@ -382,6 +396,9 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
     }),
   setWardrobeModel: (id) => set({ wardrobeModel: id }),
   setWardrobeColour: (name) => set({ wardrobeColour: name }),
+  // Clamped to what a wall can actually be: flat, through to a recess deeper
+  // than the cabinet itself.
+  setWardrobeRecessMm: (mm) => set({ wardrobeRecessMm: Math.max(0, Math.min(700, mm)) }),
   setCurtainMount: (mount) => set(writeThrough({ curtainMount: mount })),
   setCurtainSize: (size) => set(writeThrough({ curtainSize: size })),
 
