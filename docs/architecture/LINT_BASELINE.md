@@ -945,3 +945,113 @@ log:
 
 Neither is reported by any lint rule. Both were found by asking a question the lint count cannot
 ask.
+
+---
+
+# PHASE 7 — EXECUTED
+
+| Rule | Before | After |
+|---|---:|---:|
+| `@typescript-eslint/naming-convention` | 65 | **0** |
+| `klay/no-banned-abbreviations` | 1 | **0** |
+| `klay/one-verb-per-concept` | 1 | 1 — accepted exemption |
+| **IN-SCOPE, all rules** | 309 | **242** |
+
+Three of four commits were removals. **That is the finding, not an aside.**
+
+## What the governing rule bought
+
+> *Establish whether the thing should exist before renaming it.*
+
+| | |
+|---|---|
+| Identifiers on the original list | 41 |
+| **Deleted rather than renamed** | **10 sites, 5 identifiers** (D-08) |
+| **De-duplicated rather than renamed** | **4 sites → 1 hook** (D-10) |
+| Renamed | 24 |
+| Exempted, with the reason recorded in the file | 2 |
+| **New divergences found by asking** | **D-08, D-10, D-11** |
+
+**Fourteen of the 41 were not naming problems.** They were two duplications and a third that
+runs deeper, and every one of them was sitting on a list headed "rename these". Renaming them
+would have produced correctly-named, §6-compliant, lint-clean duplicates — and a well-named
+duplicate is harder to find than a badly-named one, because nothing about it looks like a
+mistake.
+
+## The four judgement calls, and one I reversed
+
+| Was | Became | Why a prefix was not enough |
+|---|---|---|
+| `dead` | `isUnavailable` | `count === 0 && state === 'off'` — ticking it returns nothing. `dead` never said that |
+| `onItsOwn` | `hasOwnSettings` | A window customised independently |
+| `follows` | `isFollowingWindowOne` | `isFollows` is not English |
+| `reduceMotion` | `shouldReduceMotion` | §6 permits `should`, and it reads at every call site |
+
+**`stacked` stayed `isStacked` in both files, and this reverses my own recommendation.** The
+inventory said to rename them apart — RangeRow derives it from `FOUR_UP`, RecommendationBanner
+from its own `STACK` query, and one might be read as implying the other. Having read both: they
+are local flags in separate modules, neither is passed between them, and both genuinely mean
+stacked at their own breakpoint. **Renaming them apart would have made the code claim a
+distinction it does not have.** The concern did not survive contact with the code.
+
+## Two errors the typechecker caught, both mine
+
+**`NAV_PAD.compressed` is an object key naming a nav state, not a boolean.** The substitution
+renamed the key and not the access, because the access is preceded by a dot. §6's boolean rule is
+about variables; a padding map keyed by state name is not one.
+
+**The `active` scoping was wrong, and the cause generalises.** My comment mask collapses each
+multi-line comment to a single placeholder line, so the line ranges I passed were *masked*-line
+numbers rather than source ones and landed in the wrong scope. `VisualiserShowcase` has three
+bindings called `active` — two booleans and, at line 231, a **number** prop holding the window
+index. Renaming that one would have collided with the `isActive` two lines below it.
+
+**Neither reached a commit, and neither would have been caught by review.** Both produce
+plausible-looking diffs. `tsc -b` found them in seconds, which is the argument for running the
+typechecker between substitutions rather than at the end of a batch.
+
+## The exemptions, expressed as suppressions rather than as a permanent count
+
+`matches` in `useMediaQuery` carries an `eslint-disable-next-line` with the reason above it. §5:
+code interfacing with a Web API uses that API's spelling — it is the property `MediaQueryList`
+gives, read from `window.matchMedia(query).matches` three lines below, and a hook that renamed it
+would disagree with the thing it wraps.
+
+**That takes `naming-convention` to a real zero rather than a permanent 1**, which matters under
+ADR-023: a rule sitting at 1 forever cannot be promoted, and "1, but it's fine" is not a state
+the mechanism can represent. A written suppression is how an exemption is said out loud.
+
+`loadScript` stays and the rule stays at 1. **Accepted as a false positive in a rule written this
+phase** — §6's verb rule is about network retrieval, this injects a `<script>` element, and
+`fetchScript` would be wrong. A rule that forces a wrong name is broken; renaming to satisfy it
+would make the code lie. `one-verb-per-concept` is therefore **not promotable**, and the honest
+next step is narrowing the rule rather than editing the code.
+
+## One finding I introduced and fixed
+
+`usePrefersReducedMotion` held `prefers`, unprefixed — created by the D-10 extraction earlier in
+the same phase. Counting it as pre-existing would have been dishonest.
+
+## Verification
+
+ADR-018's check ran on every substitution and was clean: **no comment was rewritten.** The
+comments that still say "hover" were read and left — every one is prose about the concept
+("deepens on hover", "the tile darkens behind it"), not a stale identifier reference. Rewriting
+them would be ADR-018's mistake pointing the other way.
+
+In the browser: all twelve routes render chrome exactly once, all six retired URLs still land,
+hover responds on every converted control, and the homepage is unchanged at 6181px with zero
+console errors.
+
+## What Phase 7 leaves open
+
+**D-11 — the hover problem has three solutions in the design system**, and the unused one was
+built for it. `primitives/Button.tsx` says in its own header that solving this once is most of
+why it exists; it has zero consumers, and the fourteen `*Hover` variables it names outlived it.
+Five of six original primitives have no in-scope consumer at all. **That is a decision about what
+the design system is for, it is above a naming pass, and it is scheduled for the `knip` baseline
+at Phase 6.3.**
+
+**And the counts are small because of E-08, not because the codebase is clean.** 127 naming
+findings sit in the out-of-scope visualiser. ADR-020's consequences log records that they arrive
+at once, and that three rules at `error (in-scope)` demote straight back to `warn` when they do.

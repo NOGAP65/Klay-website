@@ -7,7 +7,7 @@ machine, because *"a rule that relies on someone remembering it is not a rule, i
 The entries below are what happens without that enforcement — and every one of them was
 written by someone competent, in code that was individually good.
 
-**Running total: 10 confirmed. 3 resolved, 1 partially resolved, 2 deliberate, 4 open.**
+**Running total: 11 confirmed. 3 resolved, 1 partially resolved, 2 deliberate, 5 open.**
 
 | | Status |
 |---|---|
@@ -21,6 +21,7 @@ written by someone competent, in code that was individually good.
 | **D-08** hover state ×2 implementations | **RESOLVED at Phase 7** — 10 hand-rolled sites removed, not renamed |
 | **D-09** form-field setter ×2 | Open. Identical helper in two forms. Waits for booking to land in Phase 6 |
 | **D-10** reduced-motion snapshot ×4 | **RESOLVED at Phase 7** — usePrefersReducedMotion |
+| **D-11** hover solved 3× in the design system | Open. `Button` was built to end the duplication and has ZERO consumers. Needs a decision above a rename — knip, Phase 6.3 |
 
 The earlier header read "3 resolved, 2 deliberate, 1 open", which never reconciled with the
 entries below it. Corrected while D-01 was being closed.
@@ -326,6 +327,65 @@ duplication would have created one. The design system may import itself, so it s
 which is arguably the better behaviour. That is a behaviour change, and Phase 7 is a naming and
 de-duplication pass — an extraction that quietly alters what the page does is not an extraction.
 **Left as its own decision, with the argument written where someone will find it.**
+
+---
+
+## D-11 — The hover problem has THREE solutions in the design system, and the unused one was built for it
+
+**Type:** The Second Implementation (§13) · **Status:** OPEN — needs a decision above a rename
+**Found:** 1 Sep 2026, Phase 7, while removing D-08
+
+Inline styles cannot express `:hover`, so every interactive element holds a hover boolean. The
+design system solves this **three times**:
+
+| Solution | In-scope consumers |
+|---|---:|
+| `useHover()` | **12 files** |
+| `CtaButton` / `CtaLink` — the hook wrapped in a button | 2 and 4 |
+| **`primitives/Button.tsx`** | **0** |
+
+`Button.tsx` was built for exactly this. Its own header says so:
+
+> *"WHY THIS TRACKS HOVER IN REACT STATE … every interactive element has to hold its own hover
+> boolean. That is a consequence of ADR-003 and it is the single largest source of
+> boolean-naming findings in the lint baseline — fourteen `*Hover` variables across the
+> codebase, each one a component re-solving this. **Solving it once here is most of why this
+> primitive exists.**"*
+
+**It was never adopted.** The fourteen `*Hover` variables it names went on existing until Phase 7
+deleted ten of them (D-08) — and they were replaced with `useHover`, not with `Button`. A
+primitive written to end a duplication, which the duplication then outlived.
+
+### And it is not alone
+
+Checked while confirming the above. Of the six original design-system primitives, **five have
+zero in-scope consumers**: `Box`, `Stack`, `Text`, `Heading`, `Button`. Only `Field` is used, by
+one file. `SectionHead` — moved into `patterns/` at P4-6 — also has none; its single mention is a
+comment in `Hero` explaining that the h1 is written out *rather than* going through it.
+
+That is §13's **Polished Stub** at the layer level: *"Code that looks finished, has no TODO,
+throws no error, and does nothing."*
+
+### Why this is logged rather than fixed
+
+**Deleting six exports from the design system is a decision about what the design system is
+for**, and it is above a naming pass. There are two defensible readings and the log should not
+pick one:
+
+1. **Descriptive** — the design system records what the codebase uses. Then five unused
+   primitives are dead code, and they go.
+2. **Aspirational** — it is the vocabulary the codebase should converge on. Then the finding is
+   not that `Button` is unused but that six components should be using it, and deleting it
+   removes the target.
+
+**The evidence leans to (1), and it is worth stating.** `useHover`, `CtaButton` and `CtaLink`
+were extracted from real duplication and were adopted immediately. `Box`, `Stack`, `Text`,
+`Heading` and `Button` were written ahead of demand and have not been adopted in any phase since.
+That is the difference between extracting a primitive and proposing one.
+
+**Scheduled for the `knip` baseline at Phase 6.3**, which is where unused exports get their
+number. Flagged to V now because a naming pass is where it surfaced and the reason would be lost
+by then.
 
 ---
 

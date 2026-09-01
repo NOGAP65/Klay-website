@@ -1,5 +1,14 @@
 # PHASE 7 SCOPE — THE NAMING PASS
 
+> **EXECUTED 1 September 2026.** naming-convention 65 -> 0 in-scope,
+> no-banned-abbreviations 1 -> 0, one-verb-per-concept holding at 1 as an accepted
+> exemption. Three of the four commits were REMOVALS. The inventory below is kept
+> as the record of what was decided and why; results are in LINT_BASELINE.md.
+>
+> **Still open:** D-11 — five design-system primitives with no consumer, and a
+> Button written to end the hover duplication that the duplication outlived.
+> A decision above a naming pass; scheduled for the knip baseline at Phase 6.3.
+
 **Renames, as their own reviewed commits, after the structure has stopped moving.**
 
 **Why it is a phase and not a chore.** ADR-018 exists because a scripted rename in Phase 2.3
@@ -84,7 +93,12 @@ Every row of the inventory therefore carries a verdict before it carries a new n
 # THE RENAME INVENTORY
 
 **67 in-scope findings, 41 distinct identifiers, across three rules.** Measured with
-`node tools/lint-scope.mjs --cluster <rule>`. **No renames have been executed.**
+`node tools/lint-scope.mjs --cluster <rule>`.
+
+> **This is the inventory AS PLANNED, kept as the record of what was decided before anything was
+> touched.** It has been executed. Two verdicts changed on contact with the code and both are
+> marked below — `stacked` was not renamed apart, and `reduceMotion` became `shouldReduceMotion`
+> once D-10 gave it a hook. Results in LINT_BASELINE.md.
 
 ## REMOVE — 11 findings, 5 identifiers. Do these first; they shrink everything below.
 
@@ -118,7 +132,7 @@ are about to touch will not exist yet.
 | Identifier | Where | Why it needs more than a prefix |
 |---|---|---|
 | `dead` | `FilterRail.tsx:102` | `count === 0 && state === 'off'` — the option cannot combine with what is ticked. **`dead` does not say that.** `isUnavailable` or `isUncombinable`. Phase 4-5 flagged this: a boolean called `dead` in a codebase that just spent six phases finding dead code is either badly named or pointing at something. It is badly named |
-| `stacked` | `RangeRow.tsx:804`, `RecommendationBanner.tsx:85` | **Same name, two different definitions.** RangeRow: `!fourUp`. RecommendationBanner: `useMediaQuery(STACK)`, an independent breakpoint. Not a duplicate — worse, a collision. Rename them apart before prefixing, or one will be assumed to imply the other |
+| `stacked` | `RangeRow.tsx:804`, `RecommendationBanner.tsx:85` | ~~Rename them apart, or one will be assumed to imply the other.~~ **REVERSED ON EXECUTION.** They are local flags in separate modules, neither is passed between them, and both genuinely mean stacked at their own breakpoint. Renaming them apart would have made the code claim a distinction it does not have. Both became `isStacked` |
 | `reduceMotion` | 4 files | Each is `useState(prefersReducedMotion)` — the same four-line snapshot of the same token in four files. Not a divergence (all four are identical and correct), but a `usePrefersReducedMotion` hook is the obvious home. **Decide before renaming four copies** |
 | `onItsOwn`, `follows` | `VisualiserShowcase.tsx:250-251` | Layout booleans whose names describe prose rather than state. Prefixing gives `isOnItsOwn` / `isFollows`, and the second is not English. Needs a real name |
 
