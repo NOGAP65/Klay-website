@@ -7,7 +7,7 @@
 // different vocabularies.
 //
 // FIVE SLOTS, AND NO MORE. A configured line has to survive as a cart line, and
-// the cart's line carries exactly five configurable fields — see store/cartStore.
+// the cart's line carries exactly five configurable fields — see features/cart.
 // So the panel offers at most five, and each maps onto one of them:
 //
 //     variant   → blindType        the choice that changes what the product IS
@@ -38,6 +38,7 @@ import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '../../lib
 
 
 import type { CatalogueItem } from './constants'
+import type { CartItem } from '@/features/cart'
 
 export type FieldId = 'variant' | 'colour' | 'hardware' | 'size' | 'operation'
 
@@ -267,23 +268,21 @@ const labelOf = (fields: ConfigField[], id: FieldId, sel: Selection): string | u
  * has no such control and it is settled at the appointment. */
 const AT_MEASURE = 'Chosen at measure'
 
-/** The cart line for a configured product. Shaped to the cart's own item so it
- * can go to addItem directly. */
-export interface ConfiguredLine {
-  name: string
-  type: string
-  blindType: string
-  fabricColour: string
-  hardwareColour: string
-  windowSize: 'small' | 'medium' | 'large'
-  operation: 'manual' | 'motorised'
-  price: number
-  priceOnMeasure: boolean
-  /** The configuration as the customer chose it, ready to print. Only the
-   * fields this product actually offered, so a wardrobe line never claims a
-   * window size and a shower screen never claims an operation. */
-  options: { label: string; value: string }[]
-}
+/** The cart line for a configured product — the cart's own item, less the two
+ * fields the cart assigns itself. It goes to `addItem` directly.
+ *
+ * DERIVED, NOT RESTATED — ADR-021. This used to declare all twelve fields by
+ * hand, which made it a second copy of a shape the cart already owned: correct
+ * on the day it was written, and one field away from the silent divergence §13
+ * names. `addItem` takes exactly `Omit<CartItem, 'id' | 'quantity'>`, so that
+ * is what this is, and a field added to the cart line reaches this file as a
+ * type error rather than as a value that quietly stops being carried.
+ *
+ * The cost is that `priceOnMeasure` and `options` are optional here where they
+ * used to be required. `configuredLine` sets both on every line it builds, and
+ * its one consumer passes the result straight to `addItem`, so nothing reads
+ * them expecting a guarantee the cart itself does not make. */
+export type ConfiguredLine = Omit<CartItem, 'id' | 'quantity'>
 
 export const configuredLine = (item: CatalogueItem, sel: Selection): ConfiguredLine => {
   const fields = fieldsFor(item)

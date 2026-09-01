@@ -121,7 +121,7 @@ Each becomes the entry component of a feature, or moves under `app/` if it is a 
 | `src/pages/HomePage.tsx` | 214 | Composes ten homepage sections; publishes scroll position. | `features/home/components/HomePage.tsx` | feature:home | LIKELY | P4-6 |
 | `src/pages/ProductsPage.tsx` | 646 | The shop: 14 items, four-facet filter rail, `?category=` preselect. | `features/catalogue/components/ProductsPage.tsx` | feature:catalogue | LIKELY | P4-3 |
 | `src/pages/ProductDetailPage.tsx` | 538 | One roller product, full visualiser embed, specs, FAQs, cart + quote CTAs. | `features/catalogue/components/ProductDetailPage.tsx` | feature:catalogue | NEEDS DECISION — note B | P4-3 |
-| `src/pages/CartPage.tsx` | 473 | Cart lines, total, nine-field form. **Submit handler is `alert()`.** | `features/cart/components/CartPage.tsx` | feature:cart | LIKELY | P4-4 |
+| `src/pages/CartPage.tsx` | 473 | Cart lines, total, nine-field form. **Submit handler is `alert()`.** | `features/cart/components/CartPage.tsx` | feature:cart | RESOLVED | **DONE P4-4** — moved, not fixed. D-01 is a product decision, R8 |
 | `src/pages/BookInstallPage.tsx` | 548 | `/book`. Prices from URL params, posts to the two real endpoints. | `features/booking/components/BookInstallPage.tsx` | feature:booking | CERTAIN | P6 |
 | `src/pages/BookingConfirmedPage.tsx` | 176 | Stripe return URL; polls `/api/order-status` six times. | `features/booking/components/BookingConfirmedPage.tsx` | feature:booking | CERTAIN | P6 |
 | `src/pages/ContactPage.tsx` | 257 | Enquiry form → `/api/request-quote` with placeholder blind fields. | `features/marketing/components/ContactPage.tsx` | feature:marketing | RESOLVED — decision C | **DONE P4-1** |
@@ -177,7 +177,7 @@ Each becomes the entry component of a feature, or moves under `app/` if it is a 
 | `src/lib/api.ts` | 87 | 2 | Browser side of the two booking endpoints. Sends no price. | `features/booking/api/booking.ts` | feature:booking | LIKELY | P6 |
 | `src/lib/bookingLink.ts` | 34 | 4 | Builds the `/book?…` URL from a configuration. | **NEEDS DECISION** — note K | feature:booking | NEEDS DECISION | P6 |
 | `src/hooks/useIsMobile.ts` | 30 | **13** | `useMediaQuery` + a 768px `useIsMobile`. | `shared/hooks/useMediaQuery.ts` | shared | CERTAIN | P3 |
-| `src/store/cartStore.ts` | 99 | 5 | The basket; persisted to `localStorage` as `klay-cart`. | `features/cart/store/cartStore.ts` | feature:cart | LIKELY | P4-4 |
+| `src/store/cartStore.ts` | 99 | 5 | The basket; persisted to `localStorage` as `klay-cart`. | `features/cart/store/cartStore.ts` | feature:cart | RESOLVED | **DONE P4-4** |
 
 ### `src/visualiser/` — FROZEN, 8 files, 8,398 lines
 
@@ -213,7 +213,7 @@ kept for the reasoning that led to them.
 | **E** | **`shared/components/Turnstile.tsx`.** | P3 |
 | **F** | **Split four ways:** `CtaButton` / `CtaLink` / `useHover` → `design-system/primitives/`; `SectionBand` → `design-system/patterns/`; `scrollToId` → `shared/utils/`; **`PhotoTile` → `feature:catalogue`.** *Determined:* `PhotoTile` has exactly one consumer, `src/components/ProductCard.tsx`, which is catalogue. It lives in `components/home/` and no home component imports it. | P2 / P3 / P4-3 |
 | **H** | **Split by what the data is** — SKUs → catalogue; colour cards → catalogue; hardware heights → visualiser. | **OUT OF SCOPE as a split — ADR-020.** Six frozen files import `src/data/products.ts` and may not be edited, so it can neither be split by consumer nor moved without a shim. **`products.ts` now has no scheduled home. OPEN.** |
-| **I** | **Option 1.** | P4-3 |
+| **I** | **NOT Option 1 — see ADR-021.** Both `priceFor` and `configuredLine` stay in `feature:catalogue`. The amendment below was right about `priceFor` and stopped one function short: `configuredLine` needs eight catalogue things, two of them private, so moving it to cart would have grown catalogue's barrel to let cart reach in. Its return type is now **derived** from `CartItem` rather than restated — a §13 silent divergence removed. | **DONE P4-4** |
 | **J** | **Option 3** — root-level shared module, aliased into both `src/` and `netlify/`. One commit with all four consumers. | P6 |
 | **K** | **Option 1** — `features/booking/lib/`, consumed via barrel. | P6 (with the rest of booking) |
 
@@ -234,6 +234,13 @@ Option 1 says, would make a **root-level shared module import a feature type** �
 forbids by construction. *Suggested amendment, for you:* `priceFor` stays in
 `feature:catalogue` as the adapter it is; only `configuredLine` moves to `feature:cart`.
 Unresolved and not acted on.
+
+> **RESOLVED AT P4-4 — ADR-021.** The amendment is adopted for `priceFor` and **extended to
+> `configuredLine`, which it stopped one function short of.** Both stay in catalogue. The test
+> that settles it is what the function needs rather than what it returns: `configuredLine`
+> reaches for eight catalogue things, two of them private, so moving it would have meant
+> exporting `labelOf` and `AT_MEASURE` for cart to reach — growing the barrel ADR-019 already
+> warns is over-grown, to move a function away from everything it uses.
 
 ### The NEEDS DECISION notes
 
@@ -367,6 +374,11 @@ not also a target.
 ### Circular imports
 
 **ZERO.** Full DFS over all 64 `src/` files and 11 `netlify/` files. No cycle of any length.
+
+> **NO LONGER TRUE — found at P4-4.** There are two, both closing through a feature barrel,
+> and `import/no-cycle` reports zero against them because it does not traverse a barrel's
+> `export … from` re-exports. The catalogue one shipped at P4-3 unnoticed. Both clear at
+> Phase 5 (decision D). Measured by `npm run check:cycles`; see LINT_BASELINE.md.
 
 ### Cross-directory imports inside `src/`
 

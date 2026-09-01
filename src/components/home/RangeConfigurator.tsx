@@ -25,6 +25,7 @@
 import { useNavigate } from 'react-router-dom';
 
 import { radius, tokens, motion, space, type as typeScale } from '@/ds';
+import { useCartStore } from '@/features/cart';
 import {
   configuredLine,
 
@@ -35,7 +36,6 @@ import {
   type Selection,
 } from '@/features/catalogue';
 
-import { useCartStore } from '../../store/cartStore';
 
 import { useHover } from './primitives';
 

@@ -7,10 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "lint:fix": "eslint src tools --ignore-pattern src/visualiser/** --ignore-pattern src/visualiser-lab/** --fix",
+    "lint:fix": "eslint src tools --ignore-pattern src/visualiser/** --ignore-pattern src/visualiser-lab/** --ignore-pattern src/pages/VisualiserPage.tsx --ignore-pattern src/pages/VisualizerLabPage.tsx --fix",
     "lint:rules": "node tools/eslint-rules/verify.mjs",
     "preview": "vite preview",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "check:cycles": "node tools/cycle-check.mjs",
+    "check:countdown": "node tools/legacy-countdown.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

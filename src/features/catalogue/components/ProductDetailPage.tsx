@@ -5,6 +5,7 @@ import { tokens, eyebrow, motion,
   space,
   radius,
   type as typeScale } from '@/ds';
+import { useCartStore } from '@/features/cart';
 import { useIsMobile } from '@/shared';
 
 import { Footer } from '../../../components/Footer';
@@ -16,7 +17,6 @@ import {
 } from '../../../data/products';
 import { bookingLink } from '../../../lib/bookingLink';
 import { useKlayStore } from '../../../store';
-import { useCartStore } from '../../../store/cartStore';
 import KlayConfigurator from '../../../visualiser/KlayConfigurator';
 import { useVisualiserStore } from '../../../visualiser/useVisualiserStore';
 import VisualiserControls from '../../../visualiser/VisualiserControls';

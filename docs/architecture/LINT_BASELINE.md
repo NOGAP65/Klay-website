@@ -475,3 +475,112 @@ explicitly included.
 **So `ALL` is now a misleading headline and `IN-SCOPE (new)` is the honest one.** A future
 reader comparing `ALL` across the migration would conclude the codebase was barely improving,
 when in fact 31% of the count is a fixed floor this project is not permitted to touch.
+
+---
+
+# MOVEMENT — P4-4 CART
+
+| Measure | P4-3 | P4-4 | Δ |
+|---|---:|---:|---:|
+| ALL | 779 | 793 | +14 |
+| MOVABLE | 537 | 543 | +6 |
+| IN-SCOPE (new) | 461 | 467 | +6 |
+| **IN-SCOPE, excluding untracked parallel work** | **461** | **454** | **−7** |
+
+**Read the last row, not the first three.** Fourteen findings arrived during this phase from
+work that is not part of it: an untracked `scripts/cut-wardrobe-stickers.mjs` (13 × `no-undef`,
+because the `globals.node` override in `eslint.config.js` covers `tools/**` and `*.config.*` but
+not `scripts/**`) and one `max-depth` in an untracked `src/visualiser-lab/wardrobeComposite.ts`.
+Both belong to the wardrobe work, neither is committed, and neither is P4-4's.
+
+**P4-4's own contribution is −7**, all of it relative climbs retired by the move:
+`no-restricted-imports` 98 → 94 movable, `import/no-internal-modules` 109 → 106.
+
+**`scripts/**` wants the same `globals.node` override `tools/**` has.** Left alone here because
+the directory is untracked wardrobe tooling that arrived mid-phase, and editing another
+session's in-flight work to tidy a lint count is how merge conflicts get made. Worth doing when
+it settles.
+
+## The token conversion was deliberately NOT done, and this is the number
+
+> `klay/no-hardcoded-style-values` in `features/cart`: **67, unchanged.**
+
+P4-3 converted catalogue's 90 → 2 and that was the phase's headline. **P4-4 did not do the
+equivalent for cart, on purpose.**
+
+`CartPage.tsx` is 473 lines whose submit handler is `alert()` + `clearCart()`. It is D-01 — the
+divergence that caused SPECIFICATION.md to be written — and MIGRATION_MAP R8 says so in terms:
+
+> *"130 hardcoded values, zero design-system usage, a 464-line function, nine form fields, and a
+> submit handler that is `alert()` + `clearCart()`. Migrating it faithfully means carefully
+> relocating a large amount of code that does nothing. **Flagged because it is a scoping
+> question:** if the cart checkout is going to be rewritten anyway, doing that before P4-4 rather
+> than after saves migrating 473 lines twice."*
+
+Converting 67 literals inside a page that may be rewritten or deleted is the second half of that
+same waste. **The move was structural and reversible; the conversion would not have been.** It
+waits on the product decision about whether the cart checks out or links to `/book`.
+
+**So Phase 4 will close with two features off the scale, not one:** `marketing` at 49 and `cart`
+at 67. Marketing's is an oversight to correct. Cart's is a decision, recorded here so the two are
+not mistaken for each other.
+
+---
+
+# RULE NOT ENFORCING — `import/no-cycle` IS BLIND TO BARREL CYCLES
+
+**Found at P4-4. This belongs with the Phase 2 finding that `eslint-plugin-boundaries` was
+misconfigured and silently failing, and it is the more serious of the two.**
+
+§11 lists *"No circular imports → `import/no-cycle`"*. The rule is configured
+(`['warn', { maxDepth: Infinity, ignoreExternal: true }]`), `eslint-import-resolver-typescript`
+is installed and resolving — `import/no-unresolved` is silent on every `@/` specifier — and the
+rule reports **zero**.
+
+**There are two real runtime cycles.**
+
+```
+src/features/cart/index.ts
+  -> src/features/cart/components/CartPage.tsx
+  -> src/components/Nav.tsx
+  -> src/features/cart/index.ts
+
+src/features/catalogue/index.ts
+  -> src/features/catalogue/components/ProductsPage.tsx
+  -> src/features/catalogue/components/ProductCard.tsx
+  -> src/components/home/primitives.tsx
+  -> src/features/catalogue/index.ts
+```
+
+Both close through a value import — `useCartStore` and `ProductGlyph`, neither type-only — so
+neither is erased at compile time. Tested at `error` level with a finite `maxDepth` and with
+`ignoreExternal: false`; the rule reports nothing either way. **It does not traverse a barrel's
+`export … from` re-exports**, and a barrel is the only shape of cycle this architecture can now
+produce.
+
+**Phase 0's "Circular imports: ZERO" is therefore stale**, and has been since P4-3 — the
+catalogue cycle shipped in that commit, unnoticed, in a repository that believed it had a rule
+watching for exactly this.
+
+**`tools/cycle-check.mjs` exists until the rule can be made to work.** `npm run check:cycles`.
+It is a DFS over the same alias map the countdown uses, and it excludes type-only edges — an
+`import type` cannot form a runtime cycle, and a checker with false positives gets switched off.
+
+## The cart cycle was introduced knowingly, and here is the reasoning
+
+It would have been avoided by having `Nav` import `@/features/cart/store/cartStore` directly.
+That trades a cycle for a violation of §1 rule 3 — *"every feature has exactly one public
+entrance"* — which is the single rule this migration exists to establish. **A transitional cycle
+is the cheaper of the two, and it is not close.**
+
+Both cycles have one cause: **a page imports the chrome, and the chrome imports the feature.**
+`CartPage` imports `Nav`; `Nav` reads the basket. `ProductCard` imports `PhotoTile` from
+`components/home/primitives`; `primitives` reads `ProductGlyph` from catalogue.
+
+**Both dissolve at Phase 5**, decision D: `Nav` and `Footer` move to `app/layouts/`, the app
+layer composes them around routes, and pages stop importing their own chrome. The app layer is
+explicitly permitted to import feature barrels, and nothing imports back. The catalogue cycle
+additionally clears at P4-6, when decision F splits `primitives.tsx` four ways.
+
+**Baseline: 2. It may go down. It may not go up.** Same contract as every other count in this
+file, now with something that can actually measure it.

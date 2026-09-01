@@ -135,6 +135,7 @@ its exit condition is unwritten.**
 | **P4-1 marketing** | 4 | 4 | 9 | 9 | 0 |
 | **P4-3 catalogue** | 9 | **12** | 26 | — | — |
 | **P4-3, re-measured after ADR-020** | 9 | 12 | 26 | **19** | **7** |
+| **P4-4 cart** | 10 | 11 | 27 | **20** | 7 |
 
 **The P4-3 row recorded 8 distinct targets. There were 12.** The targets table below listed
 eight rows summing to 22 of the 26 edges; `src/store/cartStore.ts` and the three
@@ -157,7 +158,7 @@ twenty-six permanent, so a countdown to zero on the total would never terminate.
 | `src/lib/pricing.ts` | 2 | **Phase 6** — item 1, moves to shared-core behind a permanent re-export shim |
 | `src/lib/bookingLink.ts` | 1 | **Phase 6** — decision K, moves with booking |
 | `src/components/home/primitives.tsx` | 1 | **P4-6** — decision F's four-way split; `PhotoTile` goes to catalogue |
-| `src/store/cartStore.ts` | 1 | **P4-4** — moves into `features/cart/store/`. *Was missing from this table.* |
+| ~~`src/store/cartStore.ts`~~ | ~~1~~ | **CLEARED at P4-4** — it is `features/cart/store/cartStore.ts` now, reached through the barrel. The first target this countdown has ever retired. |
 | `src/visualiser/KlayConfigurator.tsx` | 1 | **NOTHING — ADR-020.** `ProductDetailPage`'s visualiser embed. **PERMANENT.** |
 | `src/visualiser/useVisualiserStore.ts` | 1 | **NOTHING — ADR-020. PERMANENT.** |
 | `src/visualiser/VisualiserControls.tsx` | 1 | **NOTHING — ADR-020. PERMANENT.** |
@@ -167,7 +168,12 @@ edges to ten, and catalogue brought four new targets with it. This is the shape 
 
 **Expect the count to rise through P4 and collapse at Phase 5.** Every feature that moves
 brings its own `Nav`/`Footer` imports with it, so the number gets worse before it gets better;
-those two targets carry ten of the twenty-six edges today and will carry most of whatever P4 adds.
+those two targets carry **twelve of the twenty-seven** edges after P4-4 and will carry most of
+whatever P4-6 adds.
+
+**P4-4 retired the first target this countdown has ever cleared** — `src/store/cartStore.ts`,
+which is now inside the feature that owns it. Targets go down one at a time; edges go up. Both
+are the expected shape.
 
 Command: `node tools/legacy-countdown.mjs`.
 

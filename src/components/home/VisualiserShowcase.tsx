@@ -36,12 +36,12 @@
 import { useNavigate } from 'react-router-dom';
 
 import { radius, tokens, layout, motion, space, type as typeScale, shadow } from '@/ds';
+import { useCartStore } from '@/features/cart';
 import { useIsMobile } from '@/shared';
 
 import { productByBlindType } from '../../data/products';
 import { bookingLink } from '../../lib/bookingLink';
 import { formatAUD } from '../../lib/pricing';
-import { useCartStore } from '../../store/cartStore';
 import KlayConfigurator from '../../visualiser/KlayConfigurator';
 import {
   MAX_WINDOWS,
