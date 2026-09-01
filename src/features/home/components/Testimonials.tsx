@@ -129,11 +129,11 @@ function Quote({ q, isMobile }: { q: (typeof QUOTES)[number]; isMobile: boolean 
 
 export function Testimonials() {
   const isMobile = useIsMobile();
-  const [paused, setPaused] = useState(false);
+  const [isPaused, setPaused] = useState(false);
   // Read once. A row that slides sideways forever is precisely what this
   // preference exists to stop, so under it the marquee holds still and becomes a
   // strip the reader scrolls themselves.
-  const reduceMotion = usePrefersReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
 
   return (
     // WARM WHITE. The section-ground sequence is reassigned in this pass so no
@@ -151,12 +151,12 @@ export function Testimonials() {
       <div
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
-        className={reduceMotion ? 'klay-hscroll' : undefined}
+        className={shouldReduceMotion ? 'klay-hscroll' : undefined}
         style={{
           // Hidden while it animates, scrollable when it does not — under reduced
           // motion the reader needs some way to reach the quotes that are off
           // screen.
-          overflowX: reduceMotion ? 'auto' : 'hidden',
+          overflowX: shouldReduceMotion ? 'auto' : 'hidden',
           paddingBottom: isMobile ? space.section : space.band,
           paddingLeft: layout.inlinePad(isMobile),
         }}
@@ -179,8 +179,8 @@ export function Testimonials() {
             // Its own compositor layer; without it a transform this wide
             // repaints the section every frame.
             willChange: 'transform',
-            animation: reduceMotion ? undefined : `klay-testimonials ${DURATION_S}s linear infinite`,
-            animationPlayState: paused ? 'paused' : 'running',
+            animation: shouldReduceMotion ? undefined : `klay-testimonials ${DURATION_S}s linear infinite`,
+            animationPlayState: isPaused ? 'isPaused' : 'running',
           }}
         >
           {/* Twice. The duplicate is what the wrap at half-width lands on, and it

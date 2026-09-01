@@ -175,21 +175,21 @@ export interface NavProps {
 export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps = {}) {
   const scrollY = useKlayStore((s) => s.scrollY);
   const cartItemCount = useCartStore((s) => s.getItemCount());
-  const compressed = scrollY > 60;
+  const isCompressed = scrollY > 60;
 
   // Two thresholds, and they are not the same question. `isMobile` (768) sizes
   // the logo and the bar's padding — that is about a phone. `collapsed` (860)
   // decides whether the links are a row or a drawer. See NAV_COLLAPSE.
   const isMobile = useIsMobile();
-  const collapsed = useMediaQuery(NAV_COLLAPSE);
+  const isCollapsed = useMediaQuery(NAV_COLLAPSE);
 
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [isMenuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const cartHover = useHover();
   const ctaHover = useHover();
 
-  const alwaysSolid = solid || compressed;
-  const solidBar = alwaysSolid && !menuOpen;
+  const isAlwaysSolid = solid || isCompressed;
+  const isSolidBar = isAlwaysSolid && !isMenuOpen;
   /** THE SOLID BAR IS LIGHT NOW, which inverts what this used to mean.
    *
    * It read `menuOpen || solidBar || (!compressed && !onLight)` — solidBar was
@@ -202,8 +202,8 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
    * to `menuOpen`. It stays written out because `solid={false}` is still a
    * supported prop and a transparent bar over a photograph genuinely does need
    * the light treatment. */
-  const onDarkGround = menuOpen || (!solidBar && !onLight);
-  const linkColor = onDarkGround ? tokens.paper : tokens.ink;
+  const isOnDarkGround = isMenuOpen || (!isSolidBar && !onLight);
+  const linkColor = isOnDarkGround ? tokens.paper : tokens.ink;
 
   // scrollY is only published by pages that install the listener (the
   // homepage); everywhere else it stays 0, which resolves to stickBelow — and
@@ -221,19 +221,19 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: `${compressed ? NAV_PAD.compressed : isMobile ? NAV_PAD.mobile : NAV_PAD.rest}px 5vw`,
+        padding: `${isCompressed ? NAV_PAD.compressed : isMobile ? NAV_PAD.mobile : NAV_PAD.rest}px 5vw`,
         // PAPER, not charcoal. Same value as the page ground, which is how the
         // references do it — Monday runs a black marquee straight into a nav the
         // colour of the page, and the hairline below is the only thing dividing
         // them. Paper is also the logo's own export field, so the dark mark sits
         // in this bar without a seam behind it.
-        background: solidBar ? tokens.paper : 'transparent',
+        background: isSolidBar ? tokens.paper : 'transparent',
         backdropFilter: 'none',
         WebkitBackdropFilter: 'none',
         // The edge has to carry the whole separation now that the bar and the
         // page are the same colour, so it is a light-ground hairline rather than
         // the on-dark one. `lineFaint` over paper resolves to about #E5E5E5.
-        borderBottom: solidBar ? `1px solid ${tokens.lineFaint}` : '1px solid transparent',
+        borderBottom: isSolidBar ? `1px solid ${tokens.lineFaint}` : '1px solid transparent',
         // `top` is deliberately NOT transitioned — it tracks scroll position
         // frame by frame, and easing it would make the nav lag the page.
         // 300ms on the ground and the hairline together, so the bar arrives as
@@ -269,13 +269,13 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             92% of it empty field — so its ratio is 2.074, and letting width be
             `auto` means there is no ratio to match and nothing to letterbox. */}
         <img
-          src={onDarkGround ? '/images/klay-logo-light.png' : '/images/klay-logo.png'}
+          src={isOnDarkGround ? '/images/klay-logo-light.png' : '/images/klay-logo.png'}
           alt="Klay Interiors"
           style={{ height: isMobile ? NAV_LOGO.mobile : NAV_LOGO.rest, width: 'auto', display: 'block' }}
         />
       </Link>
 
-      {!collapsed && (
+      {!isCollapsed && (
         <>
           {/* Centre: the four words. */}
           <div
@@ -320,13 +320,13 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 width: NAV_CONTROL,
                 height: NAV_CONTROL,
                 borderRadius: radius.md,
-                border: `1px solid ${cartHover.isHovered ? tokens.line : onDarkGround ? tokens.onDarkEdge : tokens.line}`,
+                border: `1px solid ${cartHover.isHovered ? tokens.line : isOnDarkGround ? tokens.onDarkEdge : tokens.line}`,
                 // The hover wash follows the ground. A paper wash at 0.12 was
                 // the right move on a charcoal bar and is invisible on a paper
                 // one, so on light it inverts to ink at 0.06 — enough to read as
                 // a pressed state without becoming a second button.
                 background: cartHover.isHovered
-                  ? onDarkGround
+                  ? isOnDarkGround
                     ? 'rgba(248,248,248,0.12)'
                     : 'rgba(29,29,29,0.06)'
                   : 'transparent',
@@ -395,9 +395,9 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
         </>
       )}
 
-      {collapsed && (
+      {isCollapsed && (
         <button
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
           onClick={() => setMenuOpen((v) => !v)}
           style={{
             width: NAV_CONTROL,
@@ -419,11 +419,11 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             flexShrink: 0,
           }}
         >
-          {menuOpen ? '✕' : '☰'}
+          {isMenuOpen ? '✕' : '☰'}
         </button>
       )}
 
-      {collapsed && menuOpen && (
+      {isCollapsed && isMenuOpen && (
         <div
           style={{
             position: 'fixed',

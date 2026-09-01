@@ -52,13 +52,13 @@ function FooterLink({ to, children }: { to: string; children: React.ReactNode })
   // tel:, mailto: and https: are not routes — <Link> would push them onto the
   // history stack and navigate to /tel:1300005529. Only the off-site ones open
   // in a new tab; a mail or phone handler replacing the page would be wrong.
-  const external = /^https?:/.test(to);
+  const isExternal = /^https?:/.test(to);
   return to.includes(':') ? (
     <a
       {...bind}
       href={to}
       style={style}
-      {...(external ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
+      {...(isExternal ? { target: '_blank', rel: 'noreferrer noopener' } : {})}
     >
       {children}
     </a>

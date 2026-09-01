@@ -29,6 +29,6 @@ import { prefersReducedMotion } from '../tokens';
 
 /** True when the visitor asked for reduced motion, read once at mount. */
 export function usePrefersReducedMotion(): boolean {
-  const [prefers] = useState(prefersReducedMotion);
-  return prefers;
+  const [shouldReduce] = useState(prefersReducedMotion);
+  return shouldReduce;
 }

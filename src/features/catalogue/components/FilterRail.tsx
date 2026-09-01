@@ -99,11 +99,11 @@ function Row({
   // A count of zero means this option cannot combine with what is already
   // ticked. It stays visible — hiding options makes the rail jump around under
   // the pointer — but goes quiet and stops responding.
-  const dead = count === 0 && state === 'off';
+  const isUnavailable = count === 0 && state === 'off';
   return (
     <button
-      onClick={dead ? undefined : onToggle}
-      disabled={dead}
+      onClick={isUnavailable ? undefined : onToggle}
+      disabled={isUnavailable}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -114,8 +114,8 @@ function Row({
         background: 'transparent',
         border: 'none',
         textAlign: 'left',
-        cursor: dead ? 'default' : 'pointer',
-        opacity: dead ? 0.35 : 1,
+        cursor: isUnavailable ? 'default' : 'pointer',
+        opacity: isUnavailable ? 0.35 : 1,
         fontFamily: tokens.body,
         fontSize: typeScale.label.fontSize,
         fontWeight: strong ? 500 : 400,

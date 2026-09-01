@@ -64,7 +64,7 @@ const RAIL_COLLAPSE = '(max-width: 1100px)';
 
 export default function ProductsPage() {
   const isMobile = useIsMobile();
-  const narrow = useMediaQuery(RAIL_COLLAPSE);
+  const isNarrow = useMediaQuery(RAIL_COLLAPSE);
   const setScrollY = useKlayStore(s => s.setScrollY);
   const [searchParams] = useSearchParams();
 
@@ -76,8 +76,8 @@ export default function ProductsPage() {
     return range === 'All' ? EMPTY_FACETS : { ...EMPTY_FACETS, groups: new Set([range]) };
   });
   const [sortBy, setSortBy] = useState<SortOption>('featured');
-  const [showSortDropdown, setShowSortDropdown] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [shouldShowSortDropdown, setShowSortDropdown] = useState(false);
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -219,7 +219,7 @@ export default function ProductsPage() {
         <section
           style={{
             background: tokens.band,
-            padding: narrow ? '24px 24px 80px' : '40px 80px 120px',
+            padding: isNarrow ? '24px 24px 80px' : '40px 80px 120px',
           }}
         >
           <div
@@ -231,7 +231,7 @@ export default function ProductsPage() {
               gap: space.section,
             }}
           >
-            {!narrow && (
+            {!isNarrow && (
               <aside
                 style={{
                   width: RAIL_WIDTH,
@@ -265,7 +265,7 @@ export default function ProductsPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: space.snug }}>
-                  {narrow && (
+                  {isNarrow && (
                     <button
                       onClick={() => setDrawerOpen(true)}
                       style={{
@@ -320,7 +320,7 @@ export default function ProductsPage() {
                     <span style={{ fontSize: typeScale.micro.fontSize }}>▼</span>
                   </button>
 
-                  {showSortDropdown && (
+                  {shouldShowSortDropdown && (
                     <>
                       <div
                         style={{ position: 'fixed', inset: 0, zIndex: 98 }}
@@ -436,7 +436,7 @@ export default function ProductsPage() {
                     // simply takes as many ~270px cards as the space left by the
                     // rail allows: three at 1440, four above 1600, two on a
                     // phone. No breakpoint has to know about the rail's width.
-                    gridTemplateColumns: narrow
+                    gridTemplateColumns: isNarrow
                       ? 'repeat(2, 1fr)'
                       : 'repeat(auto-fill, minmax(270px, 1fr))',
                     // Columns tight so adjacent photographs read as one wall;
@@ -447,8 +447,8 @@ export default function ProductsPage() {
                     // to stop one card's price floating toward the picture below
                     // it; with everything inside the tile there is nothing to
                     // separate, and an even gap reads as a wall of photographs.
-                    columnGap: narrow ? 12 : 20,
-                    rowGap: narrow ? 12 : 20,
+                    columnGap: isNarrow ? 12 : 20,
+                    rowGap: isNarrow ? 12 : 20,
                   }}
                 >
                   {items.map(item => (
@@ -517,7 +517,7 @@ export default function ProductsPage() {
 
       {/* The rail as a drawer, below 1100. Same component, so the two can never
           offer different filters. */}
-      {narrow && drawerOpen && (
+      {isNarrow && isDrawerOpen && (
         <>
           <div
             onClick={() => setDrawerOpen(false)}

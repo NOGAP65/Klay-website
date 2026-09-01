@@ -31,14 +31,14 @@ export function SectionHead({
   maxWidth?: number;
   style?: React.CSSProperties;
 }) {
-  const centred = align === 'center';
+  const isCentred = align === 'center';
   return (
     <div
       style={{
         textAlign: align,
         maxWidth,
-        marginLeft: centred ? 'auto' : undefined,
-        marginRight: centred ? 'auto' : undefined,
+        marginLeft: isCentred ? 'auto' : undefined,
+        marginRight: isCentred ? 'auto' : undefined,
         ...style,
       }}
     >
@@ -70,8 +70,8 @@ export function SectionHead({
             // between-group distance.
             marginTop: space.item,
             maxWidth: 560,
-            marginLeft: centred ? 'auto' : undefined,
-            marginRight: centred ? 'auto' : undefined,
+            marginLeft: isCentred ? 'auto' : undefined,
+            marginRight: isCentred ? 'auto' : undefined,
           }}
         >
           {sub}

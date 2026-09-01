@@ -80,7 +80,7 @@ export function Field({
   inputMode,
   maxLength,
 }: FieldProps) {
-  const [focused, setFocused] = useState(false);
+  const [isFocused, setFocused] = useState(false);
   const id = useId();
   const errorId = `${id}-error`;
 
@@ -91,7 +91,7 @@ export function Field({
   // which clears 1.4.11's 3:1 for a border but only barely, and a focus ring is
   // the one border on the site that has to be unmistakable. The deeper sibling
   // measures 6.24.
-  const borderColour = error ? DANGER : focused ? tokens.accentEdge : tokens.line;
+  const borderColour = error ? DANGER : isFocused ? tokens.accentEdge : tokens.line;
 
   const style: React.CSSProperties = {
     width: '100%',
@@ -103,7 +103,7 @@ export function Field({
     //
     // Not applied on error: a bronze-tinted field with a red border is two states
     // arguing, and the error is the one that matters.
-    background: focused && !error ? tokens.accentWash : tokens.card,
+    background: isFocused && !error ? tokens.accentWash : tokens.card,
     border: `1px solid ${borderColour}`,
     fontFamily: tokens.body,
     fontSize: 14,

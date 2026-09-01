@@ -207,25 +207,25 @@ const FALLBACK: ProductOptions = {
 /** The panel's fields, in the order they are asked. Variant first because it is
  * the question that changes what everything below it means. */
 export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
-  const opts = PRODUCT_OPTIONS[item.id] ?? FALLBACK
+  const options = PRODUCT_OPTIONS[item.id] ?? FALLBACK
   const fields: ConfigField[] = [
-    { id: 'variant', label: opts.variantLabel, kind: 'chips', choices: opts.variants },
+    { id: 'variant', label: options.variantLabel, kind: 'chips', choices: options.variants },
   ]
   if (item.colours) {
     fields.push({
       id: 'colour',
-      label: opts.colourLabel ?? 'Colour',
+      label: options.colourLabel ?? 'Colour',
       kind: 'swatches',
       choices: item.colours.map(c => ({ id: c.name, label: c.name, hex: c.hex })),
     })
   }
-  if (opts.hardware) {
+  if (options.hardware) {
     fields.push({ id: 'hardware', label: 'Hardware', kind: 'chips', choices: HARDWARE_CHOICES })
   }
-  if (opts.size) {
+  if (options.size) {
     fields.push({ id: 'size', label: 'Window size', kind: 'chips', choices: SIZE_CHOICES })
   }
-  if (opts.operation) {
+  if (options.operation) {
     fields.push({ id: 'operation', label: 'Operation', kind: 'chips', choices: OPERATION_CHOICES })
   }
   return fields

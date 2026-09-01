@@ -97,11 +97,11 @@ function CategoryTabs() {
   return (
     <div style={{ display: 'flex', gap: space.hairline }}>
       {tabs.map(tab => {
-        const active = productCategory === tab.id;
+        const isActive = productCategory === tab.id;
         return (
           <button
             key={tab.id}
-            aria-pressed={active}
+            aria-pressed={isActive}
             onClick={() => setProductCategory(tab.id)}
             style={{
               flex: 1,
@@ -113,9 +113,9 @@ function CategoryTabs() {
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
               cursor: 'pointer',
-              border: `1px solid ${active ? SELECTED.border : tokens.onDarkEdge}`,
-              background: active ? SELECTED.background : 'transparent',
-              color: active ? SELECTED.color : tokens.onDarkMuted,
+              border: `1px solid ${isActive ? SELECTED.border : tokens.onDarkEdge}`,
+              background: isActive ? SELECTED.background : 'transparent',
+              color: isActive ? SELECTED.color : tokens.onDarkMuted,
               transition: motion.button,
             }}
           >
@@ -142,7 +142,7 @@ function StepButton({
   onClick: () => void;
 }) {
   const { isHovered, bind } = useHover();
-  const active = isHovered && !disabled;
+  const isActive = isHovered && !disabled;
   return (
     <button
       {...bind}
@@ -157,9 +157,9 @@ function StepButton({
         // On the black card, so the hairline and the glyph both invert, and the
         // hover fill is the same lozenge every selected control in the panel
         // wears.
-        border: `1px solid ${active ? SELECTED.border : tokens.onDarkEdge}`,
-        background: active ? SELECTED.background : 'transparent',
-        color: active ? SELECTED.color : tokens.onDarkMuted,
+        border: `1px solid ${isActive ? SELECTED.border : tokens.onDarkEdge}`,
+        background: isActive ? SELECTED.background : 'transparent',
+        color: isActive ? SELECTED.color : tokens.onDarkMuted,
         fontFamily: tokens.body,
         fontSize: 15,
         lineHeight: 1,
@@ -247,15 +247,15 @@ function WindowPicker({
           const isActive = i === active;
           // Window 1 leads, so its own flag is meaningless — it is never dotted,
           // and it is not announced as following itself.
-          const onItsOwn = i > 0 && w.customised;
-          const follows = i > 0 && !w.customised;
+          const hasOwnSettings = i > 0 && w.customised;
+          const isFollowingWindowOne = i > 0 && !w.customised;
           return (
             <button
               key={i}
               aria-pressed={isActive}
               aria-label={
                 `Customise window ${i + 1}` +
-                (onItsOwn ? ' (customised)' : follows ? ' (following window 1)' : '')
+                (hasOwnSettings ? ' (customised)' : isFollowingWindowOne ? ' (following window 1)' : '')
               }
               onClick={() => onSelect(i)}
               style={{
@@ -281,7 +281,7 @@ function WindowPicker({
                   are identical and there is nothing on screen to say which
                   windows a change to window 1 is about to move — which is the
                   one thing about this control that could surprise someone. */}
-              {onItsOwn && (
+              {hasOwnSettings && (
                 <span
                   aria-hidden
                   style={{

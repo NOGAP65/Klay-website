@@ -91,7 +91,7 @@ export function TrustTicker() {
   // Read once, on mount. A strip that slides sideways forever is precisely what
   // this preference exists to stop — index.html also kills every animation
   // under the same query, so this is belt and braces for the DOM it renders.
-  const reduceMotion = usePrefersReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
 
   return (
     <div
@@ -113,9 +113,9 @@ export function TrustTicker() {
         // Hidden while it animates, scrollable when it does not — under reduced
         // motion the reader needs some way to reach the credentials that sit off
         // the right edge. klay-hscroll hides the scrollbar itself.
-        overflowX: reduceMotion ? 'auto' : 'hidden',
+        overflowX: shouldReduceMotion ? 'auto' : 'hidden',
       }}
-      className={reduceMotion ? 'klay-hscroll' : undefined}
+      className={shouldReduceMotion ? 'klay-hscroll' : undefined}
     >
       {/* A CSS ANIMATION, NOT A rAF LOOP.
           It used to advance `style.transform` from JavaScript on every frame,
@@ -137,7 +137,7 @@ export function TrustTicker() {
           width: 'max-content',
           // Its own compositor layer, so the transform never repaints the bar.
           willChange: 'transform',
-          animation: reduceMotion ? undefined : `klay-marquee ${DURATION_S}s linear infinite`,
+          animation: shouldReduceMotion ? undefined : `klay-marquee ${DURATION_S}s linear infinite`,
           paddingLeft: space.item,
         }}
       >

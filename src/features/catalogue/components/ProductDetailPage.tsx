@@ -182,7 +182,7 @@ export default function ProductDetailPage() {
   const cartHover = useHover();
   const barCartHover = useHover();
   const barQuoteHover = useHover();
-  const [addedToCart, setAddedToCart] = useState(false);
+  const [isAddedToCart, setAddedToCart] = useState(false);
 
   const addItem = useCartStore(s => s.addItem);
 
@@ -216,7 +216,7 @@ export default function ProductDetailPage() {
   // correct itself. Until the store has been set from the slug, the slug wins.
   const slugProduct = productBySlug(slug);
   const legacy = slugProduct ? undefined : productByBlindType(slug);
-  const [synced, setSynced] = useState(false);
+  const [isSynced, setSynced] = useState(false);
 
   useEffect(() => {
     if (slugProduct) return;
@@ -232,15 +232,15 @@ export default function ProductDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slugProduct?.slug]);
 
-  const product = (synced ? productByBlindType(store.blindType) : slugProduct) ?? slugProduct;
+  const product = (isSynced ? productByBlindType(store.blindType) : slugProduct) ?? slugProduct;
 
   // Store -> slug. Only once synced, so the initial stale store cannot navigate
   // the visitor away from the page they asked for.
   useEffect(() => {
-    if (!synced || !product || product.slug === slug) return;
+    if (!isSynced || !product || product.slug === slug) return;
     navigate(`/products/${product.slug}`, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [synced, product?.slug, slug]);
+  }, [isSynced, product?.slug, slug]);
 
   useEffect(() => {
     let ticking = false;
@@ -322,8 +322,8 @@ export default function ProductDetailPage() {
                 style={{
                   width: '100%',
                   padding: `${space.item}px ${space.group}px`,
-                  background: addedToCart ? tokens.charcoal : (cartHover.isHovered ? tokens.accentHover : tokens.accent),
-                  color: addedToCart ? tokens.paper : tokens.ink,
+                  background: isAddedToCart ? tokens.charcoal : (cartHover.isHovered ? tokens.accentHover : tokens.accent),
+                  color: isAddedToCart ? tokens.paper : tokens.ink,
                   fontFamily: tokens.body,
                   fontSize: typeScale.body.fontSize,
                   fontWeight: 600,
@@ -336,7 +336,7 @@ export default function ProductDetailPage() {
                   textAlign: 'center',
                 }}
               >
-                {addedToCart ? '✓ Added to Cart' : 'Add to Cart'}
+                {isAddedToCart ? '✓ Added to Cart' : 'Add to Cart'}
               </button>
               <Link
                 to={bookHref}
@@ -505,8 +505,8 @@ export default function ProductDetailPage() {
               }}
               {...barCartHover.bind}
               style={{
-                background: addedToCart ? tokens.charcoal : (barCartHover.isHovered ? tokens.accentHover : tokens.accent),
-                color: addedToCart ? tokens.paper : tokens.ink,
+                background: isAddedToCart ? tokens.charcoal : (barCartHover.isHovered ? tokens.accentHover : tokens.accent),
+                color: isAddedToCart ? tokens.paper : tokens.ink,
                 fontFamily: tokens.body,
                 fontSize: typeScale.micro.fontSize,
                 fontWeight: 600,
@@ -519,7 +519,7 @@ export default function ProductDetailPage() {
                 transition: motion.button,
               }}
             >
-              {addedToCart ? '✓ Added' : 'Add to Cart'}
+              {isAddedToCart ? '✓ Added' : 'Add to Cart'}
             </button>
           </div>
         </div>

@@ -81,8 +81,8 @@ const STACK = '(max-width: 560px)';
 const SCRIM = 0.75;
 
 export function RecommendationBanner() {
-  const fourUp = useMediaQuery(FOUR_UP);
-  const stacked = useMediaQuery(STACK);
+  const isFourUp = useMediaQuery(FOUR_UP);
+  const isStacked = useMediaQuery(STACK);
 
   return (
     <section
@@ -93,11 +93,11 @@ export function RecommendationBanner() {
         // 1440/2.56 = 562. A floor rather than a height, so the two-column and
         // stacked arrangements can be as tall as their content needs while the
         // desktop one holds the role's proportion exactly.
-        minHeight: stacked ? 0 : 562,
+        minHeight: isStacked ? 0 : 562,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: stacked ? `${space.section}px ${space.item}px` : `${space.band}px 80px`,
+        padding: isStacked ? `${space.section}px ${space.item}px` : `${space.band}px 80px`,
         // Behind the photograph rather than beside it — it is what shows while
         // the image is still loading, and charcoal keeps that moment on-brand
         // instead of flashing white.
@@ -158,8 +158,8 @@ export function RecommendationBanner() {
           style={{
             listStyle: 'none',
             display: 'grid',
-            gridTemplateColumns: fourUp ? 'repeat(4, 1fr)' : stacked ? '1fr' : 'repeat(2, 1fr)',
-            gap: stacked ? space.group : space.section,
+            gridTemplateColumns: isFourUp ? 'repeat(4, 1fr)' : isStacked ? '1fr' : 'repeat(2, 1fr)',
+            gap: isStacked ? space.group : space.section,
             margin: `${space.section}px 0 0`,
             padding: 0,
             textAlign: 'left',

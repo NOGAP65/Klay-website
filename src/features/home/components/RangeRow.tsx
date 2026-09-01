@@ -284,23 +284,23 @@ const WIDE_ROW = '(min-width: 1250px)';
 /** Cards across the row. A fraction below the four-up breakpoint, because the
  * sliver of the next card is the only thing that says the row scrolls, and on a
  * whole number it ends on a card edge and reads as a complete grid. */
-const cols = (fourUp: boolean) => (fourUp ? 4 : 1.8);
+const cols = (isFourUp: boolean) => (isFourUp ? 4 : 1.8);
 
 /** One share, as a CSS length for the slots. */
-const cardBasis = (fourUp: boolean) =>
-  `calc((100% - ${(Math.ceil(cols(fourUp)) - 1) * TILE_GAP}px) / ${cols(fourUp)})`;
+const cardBasis = (isFourUp: boolean) =>
+  `calc((100% - ${(Math.ceil(cols(isFourUp)) - 1) * TILE_GAP}px) / ${cols(isFourUp)})`;
 
 /** How many shares the open slot takes. One below the four-up breakpoint, which
  * is the stacked case: the slot goes to the whole row and the panel sits under
  * the photograph rather than beside it. */
-const openShares = (fourUp: boolean, wideRow: boolean) => (!fourUp ? 1 : wideRow ? 2 : 3);
+const openShares = (isFourUp: boolean, isWideRow: boolean) => (!isFourUp ? 1 : isWideRow ? 2 : 3);
 
 /** The open slot's width. See openShares, and WIDE_ROW for why it is not always
  * two. Every card after it slides along by the difference. */
-const cardBasisOpen = (fourUp: boolean, wideRow: boolean) => {
-  if (!fourUp) return '100%';
-  const n = openShares(fourUp, wideRow);
-  return `calc(((100% - ${(cols(fourUp) - 1) * TILE_GAP}px) / ${cols(fourUp)}) * ${n} + ${(n - 1) * TILE_GAP}px)`;
+const cardBasisOpen = (isFourUp: boolean, isWideRow: boolean) => {
+  if (!isFourUp) return '100%';
+  const n = openShares(isFourUp, isWideRow);
+  return `calc(((100% - ${(cols(isFourUp) - 1) * TILE_GAP}px) / ${cols(isFourUp)}) * ${n} + ${(n - 1) * TILE_GAP}px)`;
 };
 
 /** THE SAME SHARE IN PIXELS, from the row's own width — the identical
@@ -312,8 +312,8 @@ const cardBasisOpen = (fourUp: boolean, wideRow: boolean) => {
  * either a card opening or a card closing, and reading it then gives a number
  * between one share and two. Computing it from the row's clientWidth has no such
  * window, because opening a card does not change how wide the row is. */
-const sharePx = (rowWidth: number, fourUp: boolean) =>
-  (rowWidth - (Math.ceil(cols(fourUp)) - 1) * TILE_GAP) / cols(fourUp);
+const sharePx = (rowWidth: number, isFourUp: boolean) =>
+  (rowWidth - (Math.ceil(cols(isFourUp)) - 1) * TILE_GAP) / cols(isFourUp);
 
 /** How long a card takes to widen. Shared by the slot transition, the panel's
  * entrance and the scroll nudge that follows both, so the three cannot drift out
@@ -410,24 +410,24 @@ const DIM_SATURATION = 0.75;
 // ---------------------------------------------------------------------------
 function RangeCard({
   item,
-  open,
-  ready,
+  isOpen,
+  isReady,
   framed,
   onToggle,
   isMobile,
   isHovered,
   dimmed,
-  stacked,
+  isStacked,
   cardPx,
 }: {
   item: CatalogueItem;
   /** Whether this card's configuration panel is showing. One at a time across
    * the whole row — the point of moving the controls off the card is that the
    * visitor reads one set of options rather than four. */
-  open: boolean;
+  isOpen: boolean;
   /** True once the width animation has finished. The configurator waits for it —
    * see the note where the panel renders. */
-  ready: boolean;
+  isReady: boolean;
   /** Whether to draw the gold frame. Not the same as `open`: it stays true for
    * the width transition after the card closes, so the frame shrinks back with
    * the card instead of vanishing at full width. */
@@ -445,7 +445,7 @@ function RangeCard({
   dimmed: boolean;
   /** Below the four-up breakpoint the panel goes UNDER the photograph instead of
    * beside it, because there is no second share to put it in. */
-  stacked: boolean;
+  isStacked: boolean;
   /** The card's width in pixels, computed from the row's own width. Null until
    * the first measurement, when the card falls back to filling its slot. */
   cardPx: number | null;
@@ -468,13 +468,13 @@ function RangeCard({
   // 0.45 luminance the drawing flips to ink, because a warm-white mechanism on a
   // cream fabric is invisible.
   const tileGround = !item.image && chosen?.hex ? chosen.hex : undefined;
-  const glyphOnLight = tileGround ? luminance(tileGround) > 0.45 : false;
+  const isGlyphOnLight = tileGround ? luminance(tileGround) > 0.45 : false;
 
   return (
     <div
       style={{
         display: 'flex',
-        flexDirection: stacked ? 'column' : 'row',
+        flexDirection: isStacked ? 'column' : 'row',
         alignItems: 'stretch',
         height: '100%',
         position: 'relative',
@@ -543,7 +543,7 @@ function RangeCard({
           edge — see the measurement, and BORDER. */}
       <div
         style={{
-          flex: stacked ? '0 0 auto' : cardPx ? `0 0 ${cardPx}px` : '0 0 100%',
+          flex: isStacked ? '0 0 auto' : cardPx ? `0 0 ${cardPx}px` : '0 0 100%',
           minWidth: 0,
           display: 'flex',
           flexDirection: 'column',
@@ -611,7 +611,7 @@ function RangeCard({
                   position: 'absolute',
                   inset: space.item,
                   border: `1px solid ${
-                    isHovered ? tokens.onDarkEdge : glyphOnLight ? tokens.line : tokens.onDarkLine
+                    isHovered ? tokens.onDarkEdge : isGlyphOnLight ? tokens.line : tokens.onDarkLine
                   }`,
                   display: 'flex',
                   alignItems: 'center',
@@ -622,7 +622,7 @@ function RangeCard({
                 <ProductGlyph
                   type={item.glyph ?? ''}
                   size={140}
-                  color={glyphOnLight ? tokens.ink : tokens.paper}
+                  color={isGlyphOnLight ? tokens.ink : tokens.paper}
                   ground={tileGround ?? tokens.charcoal}
                   opacity={isHovered ? 0.75 : 0.6}
                 />
@@ -717,14 +717,14 @@ function RangeCard({
             borderRadius: radius.md,
             border: 'none',
             cursor: 'pointer',
-            background: open || isHovered ? tokens.accentHover : tokens.accent,
+            background: isOpen || isHovered ? tokens.accentHover : tokens.accent,
             color: tokens.onAccent,
             ...typeScale.label,
             lineHeight: 1,
             transition: motion.button,
           }}
         >
-          {open ? 'Close' : 'Shop Now'}
+          {isOpen ? 'Close' : 'Shop Now'}
         </button>
       </div>
 
@@ -732,7 +732,7 @@ function RangeCard({
           sibling rather than an overlay, so it covers nothing and the
           neighbouring cards genuinely move aside instead of being hidden behind
           it. */}
-      {open && (
+      {isOpen && (
         <div
           style={{
             // WHATEVER IS LEFT, not a share of its own. Giving the card and the
@@ -740,9 +740,9 @@ function RangeCard({
             // them overflowed the slot by exactly one gap. The card is sized
             // first, to precisely one share; the panel takes the remainder, so
             // the two cannot add up to more than the slot at any width.
-            flex: stacked ? '1 1 auto' : '1 1 0',
+            flex: isStacked ? '1 1 auto' : '1 1 0',
             minWidth: 0,
-            marginTop: stacked ? TILE_GAP : 0,
+            marginTop: isStacked ? TILE_GAP : 0,
             // EXACTLY THE CARD'S HEIGHT, and this is what enforces it. The panel
             // holds its content in an absolutely-positioned child, so the panel
             // itself has NO intrinsic height — which means the row's height is
@@ -756,7 +756,7 @@ function RangeCard({
             // drew the panel as its own box; the left edge in particular put a
             // rule down the join it is supposed to be crossing. Radius on the
             // outer two corners only, so the shape ends where the card ends.
-            borderRadius: stacked ? `0 0 ${radius.md}px ${radius.md}px` : `0 ${radius.md}px ${radius.md}px 0`,
+            borderRadius: isStacked ? `0 0 ${radius.md}px ${radius.md}px` : `0 ${radius.md}px ${radius.md}px 0`,
             overflow: 'hidden',
             // The same shadow the tile carries, and it continues it rather than
             // repeating it: the panel is flush and painted after, so it covers
@@ -765,7 +765,7 @@ function RangeCard({
             // Fades in once the width has settled, and back out before it
             // narrows — the same move in reverse. Opacity carries both, so a
             // close that interrupts an open just runs from wherever it got to.
-            opacity: ready ? 1 : 0,
+            opacity: isReady ? 1 : 0,
             transition: `opacity ${COLLAPSE_MS}ms ease`,
           }}
         >
@@ -779,7 +779,7 @@ function RangeCard({
               THE ABSOLUTE FILL is what lets the panel match the card rather than
               the card's content stretching to match the panel — inset 0 against a
               box whose height came from its sibling. */}
-          {ready && (
+          {isReady && (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
               {/* NO TITLE BAR, and its 41px is what makes the rest fit. It
                   repeated the product name, which is set at card scale a few
@@ -799,9 +799,9 @@ function RangeCard({
 
 export function RangeRow() {
   const isMobile = useIsMobile();
-  const fourUp = useMediaQuery(FOUR_UP);
-  const wideRow = useMediaQuery(WIDE_ROW);
-  const stacked = !fourUp;
+  const isFourUp = useMediaQuery(FOUR_UP);
+  const isWideRow = useMediaQuery(WIDE_ROW);
+  const isStacked = !isFourUp;
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   /** Which card has its configuration panel open. One at a time. */
@@ -827,7 +827,7 @@ export function RangeRow() {
    * Only where the panel sits BESIDE the card. Stacked, the open slot is the
    * photograph's height plus the panel's and no reserve could cover it without
    * leaving that much empty room at rest. */
-  const rowMinHeight = stacked ? undefined : PANEL_H;
+  const rowMinHeight = isStacked ? undefined : PANEL_H;
 
   /** THE CARD'S WIDTH IN PIXELS, so nothing about the slot's transition can
    * reach it. See the note where it is applied.
@@ -852,14 +852,14 @@ export function RangeRow() {
     // column sits inside the wrapper's content box, which is the slot less two
     // borders and two paddings.
     const measure = () =>
-      setCardPx(sharePx(row.clientWidth, fourUp) - 2 * FRAME - 2 * BORDER);
+      setCardPx(sharePx(row.clientWidth, isFourUp) - 2 * FRAME - 2 * BORDER);
     measure();
     // The row's width is the only input, so the row is what has to be watched —
     // not the window, which also fires on height changes that cannot affect it.
     const ro = new ResizeObserver(measure);
     ro.observe(row);
     return () => ro.disconnect();
-  }, [fourUp]);
+  }, [isFourUp]);
 
   /** THE CLOSE REVERSES THE OPEN, rather than the panel vanishing and the card
    * then shrinking behind it.
@@ -873,7 +873,7 @@ export function RangeRow() {
    * Switching straight from one card to another skips the wait: the outgoing
    * panel has somewhere to go, so making the visitor watch it leave first would
    * be a delay with nothing behind it. */
-  const [closing, setClosing] = useState(false);
+  const [isClosing, setClosing] = useState(false);
 
   const toggle = (id: string) => {
     if (openId !== id) {
@@ -885,13 +885,13 @@ export function RangeRow() {
   };
 
   useEffect(() => {
-    if (!closing) return;
+    if (!isClosing) return;
     const t = window.setTimeout(() => {
       setOpenId(null);
       setClosing(false);
     }, COLLAPSE_MS);
     return () => window.clearTimeout(t);
-  }, [closing]);
+  }, [isClosing]);
 
   /** WHICH CARD WEARS THE GOLD FRAME. It tracks `openId` on the way in and lags
    * it by the width transition on the way out — clearing the id is what STARTS
@@ -910,7 +910,7 @@ export function RangeRow() {
   /** True once the open card has finished widening. The configurator waits for
    * it, so the width animates against an empty box and the form arrives into one
    * that has stopped moving. */
-  const [ready, setReady] = useState(false);
+  const [isReady, setReady] = useState(false);
   useEffect(() => {
     if (!openId) {
       setReady(false);
@@ -946,13 +946,13 @@ export function RangeRow() {
       // read off a closed sibling: a sibling is one share, and the open slot is
       // two shares at one breakpoint and three at another, so doubling a sibling
       // under-nudged by a whole share below 1250.
-      const n = openShares(fourUp, wideRow);
-      const target = sharePx(row.clientWidth, fourUp) * n + (n - 1) * TILE_GAP;
+      const n = openShares(isFourUp, isWideRow);
+      const target = sharePx(row.clientWidth, isFourUp) * n + (n - 1) * TILE_GAP;
       const over = slot.offsetLeft + target - (row.scrollLeft + row.clientWidth);
       if (over > 0) row.scrollTo({ left: row.scrollLeft + over, behavior: 'smooth' });
     }, EXPAND_MS);
     return () => window.clearTimeout(timer);
-  }, [openId, fourUp, wideRow]);
+  }, [openId, isFourUp, isWideRow]);
 
   // Escape closes the panel. A pop-out that can only be dismissed by finding its
   // own X is a pop-out people feel trapped by.
@@ -1069,7 +1069,7 @@ export function RangeRow() {
           }}
         >
           {RANGE.map(item => {
-            const open = openId === item.id;
+            const isOpen = openId === item.id;
             return (
               <div
                 key={item.id}
@@ -1085,12 +1085,12 @@ export function RangeRow() {
                 // style recalculations for a single card opening before this.
                 className="klay-slot"
                 style={{
-                  flex: `0 0 ${open ? cardBasisOpen(fourUp, wideRow) : cardBasis(fourUp)}`,
+                  flex: `0 0 ${isOpen ? cardBasisOpen(isFourUp, isWideRow) : cardBasis(isFourUp)}`,
                   // SNAP OFF WHILE OPEN. Mandatory snapping and a programmatic
                   // scroll fight each other — the browser re-snaps to the nearest
                   // card edge and undoes the nudge that was bringing the open
                   // card into view. It comes back the moment the panel closes.
-                  scrollSnapAlign: open ? 'none' : 'start',
+                  scrollSnapAlign: isOpen ? 'none' : 'start',
                   transition: `flex-basis ${EXPAND_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
                 }}
                 // ON THE SLOT, NOT THE CARD. The card lifts and translates on
@@ -1102,8 +1102,8 @@ export function RangeRow() {
               >
                 <RangeCard
                   item={item}
-                  open={open}
-                  ready={open && ready && !closing}
+                  isOpen={isOpen}
+                  isReady={isOpen && isReady && !isClosing}
                   framed={framedId === item.id}
                   isMobile={isMobile}
                   // The open card keeps the pointer treatment for as long as it is
@@ -1111,13 +1111,13 @@ export function RangeRow() {
                   // the card being worked on, and letting it drop back to a resting
                   // hairline while its own configurator is showing reads as the
                   // card having been abandoned.
-                  isHovered={hoveredId === item.id || open}
+                  isHovered={hoveredId === item.id || isOpen}
                   // AN OPEN CARD OUTRANKS A HOVERED ONE. While one is open the
                   // other three stay back regardless of where the pointer is,
                   // because the visitor is configuring something and a card
                   // brightening under a stray pointer is a distraction from it.
-                  dimmed={openId ? !open : Boolean(hoveredId) && hoveredId !== item.id}
-                  stacked={stacked}
+                  dimmed={openId ? !isOpen : Boolean(hoveredId) && hoveredId !== item.id}
+                  isStacked={isStacked}
                   cardPx={cardPx}
                   onToggle={() => toggle(item.id)}
                 />

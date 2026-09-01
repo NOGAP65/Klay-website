@@ -27,7 +27,7 @@ const DETAILS = [
 // behave identically.
 
 export default function ContactPage() {
-  const [submitted, setSubmitted] = useState(false);
+  const [isSubmitted, setSubmitted] = useState(false);
   const ctaHover = useHover();
 
   // ?product=<name> — set by every GET A QUOTE card on the blind listing pages.
@@ -51,13 +51,13 @@ export default function ContactPage() {
   const set = (key: keyof typeof form) => (value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  const [busy, setBusy] = useState(false);
+  const [isBusy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
 
   const [honeypot, setHoneypot] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
-  const turnstileEnabled = useTurnstileEnabled();
+  const isTurnstileEnabled = useTurnstileEnabled();
 
   async function handleSubmit() {
     setFormError(null);
@@ -68,7 +68,7 @@ export default function ContactPage() {
     else if (!isValidEmail(form.email)) {
       errors.email = "That email doesn't look right.";
     }
-    if (turnstileEnabled && !turnstileToken) {
+    if (isTurnstileEnabled && !turnstileToken) {
       setFormError('Please complete the verification challenge.');
       return;
     }
@@ -148,7 +148,7 @@ export default function ContactPage() {
 
           {/* Right — form */}
           <div style={{ flex: '1 1 400px' }}>
-            {submitted ? (
+            {isSubmitted ? (
               <p style={{ fontFamily: tokens.display, fontSize: typeScale.card.fontSize, fontStyle: 'italic', color: tokens.ink }}>
                 Thanks — we'll be in touch within one business day.
               </p>
@@ -222,19 +222,19 @@ export default function ContactPage() {
 
                 <button
                   type="submit"
-                  disabled={busy}
+                  disabled={isBusy}
                   {...ctaHover.bind}
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: space.tight,
                     fontFamily: tokens.body, fontSize: typeScale.label.fontSize, fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase',
                     padding: `${space.item}px ${space.section}px`, border: 'none',
-                    background: busy ? tokens.inkFaint : ctaHover.isHovered ? tokens.accentHover : tokens.accent,
+                    background: isBusy ? tokens.inkFaint : ctaHover.isHovered ? tokens.accentHover : tokens.accent,
                     color: tokens.onAccent,
-                    cursor: busy ? 'progress' : 'pointer',
+                    cursor: isBusy ? 'progress' : 'pointer',
                     transition: motion.button,
                   }}
                 >
-                  {busy ? 'Sending…' : 'Send Message'}
+                  {isBusy ? 'Sending…' : 'Send Message'}
                 </button>
               </form>
             )}

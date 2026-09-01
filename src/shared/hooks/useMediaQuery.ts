@@ -18,6 +18,13 @@ import { useEffect, useState } from 'react';
  * everything else on the site — see NAV_COLLAPSE. One hook, two thresholds,
  * rather than a second copy of this listener. */
 export function useMediaQuery(query: string): boolean {
+  // `matches`, not `isMatching` — §5: "Code interfacing with a Web or library
+  // API uses that API's spelling." This is the name `MediaQueryList` gives the
+  // property, it is what `window.matchMedia(query).matches` is read from three
+  // lines below, and a hook that renamed it would disagree with the thing it
+  // wraps. The §6 boolean-prefix rule is suppressed here deliberately and for
+  // that reason alone — it is not a rule this file is exempt from generally.
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   const [matches, setMatches] = useState(
     () => typeof window !== 'undefined' && window.matchMedia(query).matches,
   );

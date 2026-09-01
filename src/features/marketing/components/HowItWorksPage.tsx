@@ -231,15 +231,15 @@ export default function HowItWorksPage() {
         </h2>
         <div style={{ maxWidth: 800 }}>
           {FAQS.map((f, i) => {
-            const open = openFaq === i;
-            const hot = hoveredFaq === i;
+            const isOpen = openFaq === i;
+            const isHot = hoveredFaq === i;
             return (
               <div key={f.q} style={{ borderBottom: `1px solid ${tokens.line}` }}>
                 <button
-                  onClick={() => setOpenFaq(open ? null : i)}
+                  onClick={() => setOpenFaq(isOpen ? null : i)}
                   onMouseEnter={() => setHoveredFaq(i)}
                   onMouseLeave={() => setHoveredFaq(cur => (cur === i ? null : cur))}
-                  aria-expanded={open}
+                  aria-expanded={isOpen}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     background: 'transparent', border: 'none', cursor: 'pointer', padding: `${space.group}px 0`,
@@ -247,16 +247,16 @@ export default function HowItWorksPage() {
                     // The row responds, not just the icon. Opacity rather than
                     // a colour shift so the question never reads as a link.
                     color: tokens.ink,
-                    opacity: hot ? 0.7 : 1,
+                    opacity: isHot ? 0.7 : 1,
                     transition: 'opacity 0.2s ease',
                   }}
                 >
                   {f.q}
-                  <span style={{ color: tokens.onDark, fontSize: typeScale.subhead.fontSize, marginLeft: 24, flexShrink: 0, transform: open ? 'rotate(45deg)' : 'none', transition: 'transform 0.25s ease' }}>
+                  <span style={{ color: tokens.onDark, fontSize: typeScale.subhead.fontSize, marginLeft: 24, flexShrink: 0, transform: isOpen ? 'rotate(45deg)' : 'none', transition: 'transform 0.25s ease' }}>
                     +
                   </span>
                 </button>
-                {open && (
+                {isOpen && (
                   <p style={{ ...supporting.onLight, lineHeight: 1.8, margin: `0 0 ${space.group}px`, maxWidth: 640 }}>
                     {f.a}
                   </p>

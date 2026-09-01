@@ -73,7 +73,7 @@ export function Hero() {
   // Read once, on mount. index.html kills CSS animation under a reduced-motion
   // preference, but an autoplaying video is not a CSS animation and slips
   // straight through that rule — it has to be handled here.
-  const reduceMotion = usePrefersReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
 
   return (
     <section
@@ -120,7 +120,7 @@ export function Hero() {
         position: 'relative',
       }}
     >
-      {reduceMotion ? (
+      {shouldReduceMotion ? (
         <img
           src={HERO_STILL}
           alt="A living room with sunscreen roller blinds drawn to the sill"

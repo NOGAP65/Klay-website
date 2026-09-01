@@ -193,7 +193,7 @@ export function StepsBar() {
   // Read once, on mount. A strip that slides sideways forever is precisely what
   // this preference exists to stop — index.html also kills every animation
   // under the same query, so this is belt and braces for the DOM it renders.
-  const reduceMotion = usePrefersReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
 
   return (
     <Link
@@ -210,14 +210,14 @@ export function StepsBar() {
         // Hidden while it animates, scrollable when it does not — under reduced
         // motion the reader needs some way to reach the steps that sit off the
         // right edge. klay-hscroll hides the scrollbar itself.
-        overflowX: reduceMotion ? 'auto' : 'hidden',
+        overflowX: shouldReduceMotion ? 'auto' : 'hidden',
         // No horizontal padding, unlike the static row this replaces. A marquee
         // is meant to be cut by both edges; inset by space.item it would instead
         // appear and disappear a gutter early, which reads as a clipping bug
         // rather than as a strip running past the viewport.
         padding: `${space.item}px 0`,
       }}
-      className={reduceMotion ? 'klay-hscroll' : undefined}
+      className={shouldReduceMotion ? 'klay-hscroll' : undefined}
     >
       <div
         style={{
@@ -228,7 +228,7 @@ export function StepsBar() {
           // See TrustTicker: the rAF version of this pattern cost 296 style
           // recalculations a second while idle. A keyframed transform costs none.
           willChange: 'transform',
-          animation: reduceMotion ? undefined : `klay-marquee ${DURATION_S}s linear infinite`,
+          animation: shouldReduceMotion ? undefined : `klay-marquee ${DURATION_S}s linear infinite`,
           // Pauses under the pointer, which the trust ticker deliberately does
           // not do. The difference is that this strip is a link: a reader who
           // has brought the cursor here is deciding whether to click, and a
@@ -243,7 +243,7 @@ export function StepsBar() {
             frame. Under reduced motion nothing wraps — the track is a plain
             horizontal scroller — and the copy would just mean a reader who
             scrolls it reaches step 04 and then finds all four again. */}
-        {!reduceMotion && (
+        {!shouldReduceMotion && (
           <div aria-hidden="true" style={{ display: 'flex', alignItems: 'baseline' }}>
             <Run />
           </div>

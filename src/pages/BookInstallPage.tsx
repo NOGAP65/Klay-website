@@ -89,11 +89,11 @@ export default function BookInstallPage() {
   const [busy, setBusy] = useState<Mode | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [quoteSent, setQuoteSent] = useState(false);
+  const [isQuoteSent, setQuoteSent] = useState(false);
 
   const [honeypot, setHoneypot] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
-  const turnstileEnabled = useTurnstileEnabled();
+  const isTurnstileEnabled = useTurnstileEnabled();
 
   const payload = (): BookingPayload => ({
     ...form,
@@ -127,7 +127,7 @@ export default function BookInstallPage() {
     setFormError(null);
 
     const errors = localErrors();
-    if (turnstileEnabled && !turnstileToken) {
+    if (isTurnstileEnabled && !turnstileToken) {
       setFormError('Please complete the verification challenge.');
       return;
     }
@@ -163,7 +163,7 @@ export default function BookInstallPage() {
     if (result.fields) setFieldErrors(result.fields);
   }
 
-  if (quoteSent) {
+  if (isQuoteSent) {
     return (
       <>
         <main
