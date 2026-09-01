@@ -476,6 +476,16 @@ function drawBuiltIn(
      * onto: a wood texture tiles in the face own coordinates, so it goes on the
      * side returns and shelf tops too. */
     timber: boolean;
+    /** AMBIENT SHADE, not a surface — the darkening inside one opening, laid on
+     * the back panel behind it.
+     *
+     * It has to travel in the SORTED list rather than be painted afterwards.
+     * Drawn last it went over everything, including the boards standing in
+     * front of it: on a tilted trace the side returns and dividers had the
+     * shadow of the bay behind them painted straight across their faces, which
+     * is exactly what "the boards are see-through" looks like. Sorted, it lands
+     * behind the board it belongs behind. */
+    shade?: boolean;
     /** True on the handles, rails and hanger hooks — the brushed metal, which
      * is shaded along its length rather than filled flat. */
     metal: boolean;
@@ -576,6 +586,42 @@ function drawBuiltIn(
   }
 
   // Larger depth is further away, so those go down first.
+  // The ambient shade for each opening, added to the same list so the painter's
+  // sort puts it behind whatever stands in front of it.
+  //
+  // A HAIR IN FRONT OF THE BACK PANEL, not on it: at exactly the same depth the
+  // sort could order them either way and the shade would flicker in and out
+  // between redraws. One millimetre settles it and is invisible.
+  const zShade = -WARDROBE_DEPTH_MM + BOARD_MM + 1;
+  for (const c of compartments) {
+    if (c.y1 - c.y0 <= 1 || c.x1 - c.x0 <= 1) continue;
+    const corners3: [number, number, number][] = [
+      [c.x0, c.y1, zShade],
+      [c.x1, c.y1, zShade],
+      [c.x1, c.y0, zShade],
+      [c.x0, c.y0, zShade],
+    ];
+    const pts = corners3.map(p => projector.project(p[0], p[1], p[2]));
+    faces.push({
+      pts,
+      depth: corners3.reduce((s, p) => s + projector.depth(p[0], p[1], p[2]), 0) / 4,
+      // The gradient runs from the top of the opening down, so near/far carry
+      // its ends rather than a depth ramp.
+      near: [(pts[0][0] + pts[1][0]) / 2, (pts[0][1] + pts[1][1]) / 2],
+      far: [(pts[3][0] + pts[2][0]) / 2, (pts[3][1] + pts[2][1]) / 2],
+      toneNear: 0,
+      toneFar: 0,
+      rgb: [0, 0, 0],
+      model: corners3,
+      board: false,
+      grainUpright: true,
+      timber: false,
+      metal: false,
+      skinnable: false,
+      shade: true,
+    });
+  }
+
   faces.sort((a, b) => b.depth - a.depth);
 
   ctx.save();
@@ -596,6 +642,19 @@ function drawBuiltIn(
     ctx.moveTo(face.pts[0][0], face.pts[0][1]);
     for (let i = 1; i < face.pts.length; i++) ctx.lineTo(face.pts[i][0], face.pts[i][1]);
     ctx.closePath();
+
+    // A shade face is not a surface: it is the light an opening does not get,
+    // laid over the back panel it sits in front of. Drawn and done — no skin,
+    // no timber, no hairline.
+    if (face.shade) {
+      const g = ctx.createLinearGradient(face.near[0], face.near[1], face.far[0], face.far[1]);
+      g.addColorStop(0, 'rgba(0,0,0,0.26)');
+      g.addColorStop(0.45, 'rgba(0,0,0,0.08)');
+      g.addColorStop(1, 'rgba(0,0,0,0.14)');
+      ctx.fillStyle = g;
+      ctx.fill();
+      continue;
+    }
 
     const nearFill = toRgb(face.rgb, face.toneNear);
     let paint: string | CanvasGradient = nearFill;
@@ -699,18 +758,6 @@ function drawBuiltIn(
       ctx.restore();
     }
   }
-
-  // AMBIENT OCCLUSION IN THE OPENINGS, before anything is stood in them.
-  //
-  // The 3D view gets this from a real shadow map. Canvas 2D has no such thing,
-  // and without it an open carcass is evenly lit board with nothing saying one
-  // shelf is in front of another — the interior reads as a diagram of a
-  // wardrobe rather than the inside of one.
-  //
-  // What it approximates is the light a compartment does NOT receive: the shelf
-  // above throws the deepest shade, so each opening is darkest under its own
-  // lid and lightens toward the front lip.
-  drawCompartmentShade(ctx, projector, compartments);
 
   // WHAT IS STANDING IN THE WARDROBE, drawn after the carcass so it sits inside
   // the openings the carcass has already framed.
@@ -1325,56 +1372,6 @@ function drawGrainOnFace(
           skinTriangle(ctx, tile, v00, v11, v01);
         }
     }
-  }
-}
-
-/** THE SHADE INSIDE EACH OPENING.
- *
- * Drawn on the BACK PANEL rather than across the opening's mouth, because that
- * is the surface the missing light would have fallen on — shading the mouth
- * would darken the clothes hanging in front of it too, which is the opposite of
- * what an occluded background does.
- *
- * Strongest under the shelf above and fading down, with a lighter wash up from
- * the base. Kept well short of black: a bedroom cupboard with the doors off is
- * dim inside, not a cave, and the whole point is to seat the contents rather
- * than to be seen as an effect.
- */
-function drawCompartmentShade(
-  ctx: CanvasRenderingContext2D,
-  projector: Projector,
-  compartments: Compartment[],
-) {
-  const zBack = -WARDROBE_DEPTH_MM + BOARD_MM;
-  for (const c of compartments) {
-    // A hanging compartment is recorded at its rail, with no height of its own,
-    // so there is no opening to shade — the garments are the occluder there.
-    const h = c.y1 - c.y0;
-    if (h <= 1 || c.x1 - c.x0 <= 1) continue;
-
-    const tl = projector.project(c.x0, c.y1, zBack);
-    const tr = projector.project(c.x1, c.y1, zBack);
-    const br = projector.project(c.x1, c.y0, zBack);
-    const bl = projector.project(c.x0, c.y0, zBack);
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(tl[0], tl[1]);
-    ctx.lineTo(tr[0], tr[1]);
-    ctx.lineTo(br[0], br[1]);
-    ctx.lineTo(bl[0], bl[1]);
-    ctx.closePath();
-    ctx.clip();
-
-    const topMid: [number, number] = [(tl[0] + tr[0]) / 2, (tl[1] + tr[1]) / 2];
-    const botMid: [number, number] = [(bl[0] + br[0]) / 2, (bl[1] + br[1]) / 2];
-    const g = ctx.createLinearGradient(topMid[0], topMid[1], botMid[0], botMid[1]);
-    g.addColorStop(0, 'rgba(0,0,0,0.30)');
-    g.addColorStop(0.45, 'rgba(0,0,0,0.10)');
-    g.addColorStop(1, 'rgba(0,0,0,0.16)');
-    ctx.fillStyle = g;
-    ctx.fill();
-    ctx.restore();
   }
 }
 
