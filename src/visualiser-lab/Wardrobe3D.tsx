@@ -219,6 +219,7 @@ export default function Wardrobe3D({
       box: (typeof boxes)[number],
       material: THREE.Material,
       projected: boolean,
+      plain?: THREE.Material,
     ) => {
       const geo = new THREE.BoxGeometry(box.w * MM, box.h * MM, box.d * MM);
       // BoxGeometry is centred on the origin; the model has its origin at the
@@ -241,7 +242,13 @@ export default function Wardrobe3D({
       }
 
       geo.computeVertexNormals();
-      const mesh = new THREE.Mesh(geo, material);
+      // Slots run +X, −X, +Y, −Y, +Z, −Z. Only ±Z face the room and can carry
+      // an undistorted piece of the projection; the other four would smear a
+      // single row or column of pixels across themselves.
+      const mesh = new THREE.Mesh(
+        geo,
+        projected && plain ? [plain, plain, plain, plain, material, material] : material,
+      );
       disposables.push(geo);
       return mesh;
     };
@@ -387,7 +394,22 @@ export default function Wardrobe3D({
         // behind the modelled rail and the upright content planes, giving two
         // of each. Left plain, it is what it should be: the surface behind the
         // clothes.
-        root.add(buildBoxMesh(box, box.back ? plainBoardMat : boardMat, !box.back && !!sticker));
+        // ONLY THE FACES POINTING AT THE ROOM CARRY THE PHOTOGRAPH.
+        //
+        // The projection runs along Z, so a face whose own Z is constant — the
+        // front, the back — gets a proper two-dimensional piece of the picture.
+        // Every other face does not: a shelf's top surface has one Y across the
+        // whole of it, so it samples a single ROW of pixels and smears it
+        // front to back, and a side panel samples a single column. On an 18mm
+        // board edge that passes for an edge; on the carcass top and the shelf
+        // surfaces it is a visible streak, which is what was showing in the 3D
+        // view.
+        //
+        // Those faces take plain board instead. It is the same colour the
+        // photograph would have given them, without the smear.
+        root.add(
+          buildBoxMesh(box, box.back ? plainBoardMat : boardMat, !box.back && !!sticker, plainBoardMat),
+        );
       }
 
       // --- what stands inside ----------------------------------------------
@@ -499,9 +521,13 @@ export default function Wardrobe3D({
         };
 
         if (asset.repeats) {
-          const n = Math.max(1, Math.round(openingW / asset.widthMm));
-          const w = openingW / n;
-          for (let k = 0; k < n; k++) place(c.x0 + k * w, w, c.y0, true);
+          // Real-sized garments, a whole number of them, centred on the rail —
+          // the count changes with the bay, not the size of a coat. See the
+          // room renderer's drawContents for why.
+          const n = Math.max(1, Math.floor(openingW / asset.widthMm));
+          const w = asset.widthMm;
+          const pad = (openingW - n * w) / 2;
+          for (let k = 0; k < n; k++) place(c.x0 + pad + k * w, w, c.y0, true);
           return;
         }
         // Never wider than its opening, and never taller than it either — a

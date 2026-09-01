@@ -534,42 +534,15 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               </div>
             </Field>
 
-            {/* WIDTH — the only cabinet dimension the customer picks.
-                Height is 2016 and depth 500 on every unit in the range, so this
-                is the one choice that changes the shape of the thing.
+            {/* NO WIDTH CONTROL, and that is the design rather than an
+                omission. Height is the only fixed parameter — 2016 on every
+                unit — so the traced box's height is known, which fixes the
+                scale, and its own ratio then gives the width. The customer has
+                already said how wide by drawing it; asking again would be
+                asking them to agree with themselves.
 
-                Shown only where the layout is made in more than one width: a
-                control offering a single option is a statement dressed up as a
-                question, and 2.9, 4.9 and 6.0 are built at 1800 and nothing
-                else. */}
-            {wardrobeModelById(store.wardrobeModel).widths.length > 1 && (
-              <Field
-                onDark={onDark}
-                label="Width"
-                caption={`${store.wardrobeWidthMm} mm`}
-              >
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
-                  {wardrobeModelById(store.wardrobeModel).widths.map(w => (
-                    <Pill
-                      key={w}
-                      onDark={onDark}
-                      label={String(w)}
-                      active={store.wardrobeWidthMm === w}
-                      onClick={() => store.setWardrobeWidthMm(w)}
-                    />
-                  ))}
-                </div>
-                <p
-                  style={{
-                    ...typeScale.micro,
-                    margin: `${space.xs}px 0 0`,
-                    color: onDark ? tokens.onDarkMuted : tokens.inkSoft,
-                  }}
-                >
-                  Drawer and shelf towers stay 507 mm. The hanging bays take up the rest.
-                </p>
-              </Field>
-            )}
+                Drawer and shelf towers hold their 507mm at whatever width comes
+                out of that; the hanging bays take up the difference. */}
           </div>
         </section>
       </div>
