@@ -292,7 +292,7 @@ export default function HowItWorksPage() {
             textTransform: 'uppercase',
             padding: `${space.item}px ${space.section}px`,
             borderRadius: radius.md,
-            background: ctaHover.hover ? tokens.accentHover : tokens.accent,
+            background: ctaHover.isHovered ? tokens.accentHover : tokens.accent,
             color: tokens.onAccent,
             transition: motion.button,
           }}

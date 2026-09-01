@@ -228,7 +228,7 @@ export default function ContactPage() {
                     display: 'inline-flex', alignItems: 'center', gap: space.tight,
                     fontFamily: tokens.body, fontSize: typeScale.label.fontSize, fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase',
                     padding: `${space.item}px ${space.section}px`, border: 'none',
-                    background: busy ? tokens.inkFaint : ctaHover.hover ? tokens.accentHover : tokens.accent,
+                    background: busy ? tokens.inkFaint : ctaHover.isHovered ? tokens.accentHover : tokens.accent,
                     color: tokens.onAccent,
                     cursor: busy ? 'progress' : 'pointer',
                     transition: motion.button,

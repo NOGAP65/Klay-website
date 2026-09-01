@@ -200,7 +200,7 @@ function VisualiseBadge({
   target: NonNullable<CatalogueItem['visualise']>;
   name: string;
 }) {
-  const { hover, bind } = useHover();
+  const { isHovered, bind } = useHover();
   const { setProductCategory, setBlindType, setActiveWindow } = useVisualiserStore();
 
   const onClick = () => {
@@ -237,8 +237,8 @@ function VisualiseBadge({
         // visualiser's own controls use on a dark ground, which is what a
         // photograph is. It goes fully opaque and inverts under the pointer, so
         // the badge answers the mouse before the click does.
-        background: hover ? tokens.ink : 'rgba(248,248,248,0.92)',
-        color: hover ? tokens.paper : tokens.ink,
+        background: isHovered ? tokens.ink : 'rgba(248,248,248,0.92)',
+        color: isHovered ? tokens.paper : tokens.ink,
         ...typeScale.micro,
         transition: motion.button,
       }}
@@ -415,7 +415,7 @@ function RangeCard({
   framed,
   onToggle,
   isMobile,
-  hover,
+  isHovered,
   dimmed,
   stacked,
   cardPx,
@@ -440,7 +440,7 @@ function RangeCard({
    * whole card responds, not just the link: hovering the gold button or the strip
    * of card beside the picture lights the picture, which is what a single object
    * should do. */
-  hover: boolean;
+  isHovered: boolean;
   /** Another card has the attention — this one steps back. See DIM_OPACITY. */
   dimmed: boolean;
   /** Below the four-up breakpoint the panel goes UNDER the photograph instead of
@@ -493,13 +493,13 @@ function RangeCard({
         // that opened it, which is what ties the pair together without a second
         // element to animate.
         border: `${BORDER}px solid ${
-          framed ? tokens.accent : hover ? tokens.lineStrong : tokens.lineFaint
+          framed ? tokens.accent : isHovered ? tokens.lineStrong : tokens.lineFaint
         }`,
         borderRadius: radius.lg,
 
         // --- ELEVATION. See move 2, and LIFT for the budget this spends.
-        boxShadow: hover ? shadow.lift : shadow.rest,
-        transform: hover ? `translateY(-${LIFT}px)` : 'translateY(0)',
+        boxShadow: isHovered ? shadow.lift : shadow.rest,
+        transform: isHovered ? `translateY(-${LIFT}px)` : 'translateY(0)',
 
         // --- THE SPOTLIGHT, from this card's side of it. See move 4.
         opacity: dimmed ? DIM_OPACITY : 1,
@@ -591,7 +591,7 @@ function RangeCard({
                   objectFit: 'cover',
                   objectPosition: item.imagePosition ?? 'center',
                   display: 'block',
-                  transform: hover ? 'scale(1.04)' : 'scale(1)',
+                  transform: isHovered ? 'scale(1.04)' : 'scale(1)',
                   // THE PICTURE LIGHTS UP RATHER THAN ONLY MOVING. A small lift
                   // in contrast and saturation at rest, a little more under the
                   // pointer — see move 3 in the note at the top. The renders come
@@ -599,7 +599,7 @@ function RangeCard({
                   // is also what pulls the four of them into one set: the same
                   // correction on all four is a shared grade, which is the nearest
                   // thing to art direction that can be applied after the fact.
-                  filter: hover
+                  filter: isHovered
                     ? 'saturate(1.12) contrast(1.06) brightness(1.02)'
                     : 'saturate(1.04) contrast(1.03)',
                   transition: 'transform 0.7s ease, filter 0.5s ease',
@@ -611,7 +611,7 @@ function RangeCard({
                   position: 'absolute',
                   inset: space.item,
                   border: `1px solid ${
-                    hover ? tokens.onDarkEdge : glyphOnLight ? tokens.line : tokens.onDarkLine
+                    isHovered ? tokens.onDarkEdge : glyphOnLight ? tokens.line : tokens.onDarkLine
                   }`,
                   display: 'flex',
                   alignItems: 'center',
@@ -624,7 +624,7 @@ function RangeCard({
                   size={140}
                   color={glyphOnLight ? tokens.ink : tokens.paper}
                   ground={tileGround ?? tokens.charcoal}
-                  opacity={hover ? 0.75 : 0.6}
+                  opacity={isHovered ? 0.75 : 0.6}
                 />
               </div>
             )}
@@ -643,7 +643,7 @@ function RangeCard({
                 position: 'absolute',
                 inset: 0,
                 background: VIGNETTE,
-                opacity: hover ? 0.55 : 1,
+                opacity: isHovered ? 0.55 : 1,
                 pointerEvents: 'none',
                 transition: 'opacity 0.5s ease',
               }}
@@ -717,7 +717,7 @@ function RangeCard({
             borderRadius: radius.md,
             border: 'none',
             cursor: 'pointer',
-            background: open || hover ? tokens.accentHover : tokens.accent,
+            background: open || isHovered ? tokens.accentHover : tokens.accent,
             color: tokens.onAccent,
             ...typeScale.label,
             lineHeight: 1,
@@ -1111,7 +1111,7 @@ export function RangeRow() {
                   // the card being worked on, and letting it drop back to a resting
                   // hairline while its own configurator is showing reads as the
                   // card having been abandoned.
-                  hover={hoveredId === item.id || open}
+                  isHovered={hoveredId === item.id || open}
                   // AN OPEN CARD OUTRANKS A HOVERED ONE. While one is open the
                   // other three stay back regardless of where the pointer is,
                   // because the visitor is configuring something and a card

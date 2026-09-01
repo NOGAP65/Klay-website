@@ -42,11 +42,11 @@ const linkStyle: React.CSSProperties = {
  * hover per column, so the Contact column's phone and email were the only
  * links on the page that didn't light up. */
 function FooterLink({ to, children }: { to: string; children: React.ReactNode }) {
-  const [hover, setHover] = useState(false);
-  const style = { ...linkStyle, color: hover ? tokens.onDark : tokens.onDarkMuted };
+  const [isHovered, setIsHovered] = useState(false);
+  const style = { ...linkStyle, color: isHovered ? tokens.onDark : tokens.onDarkMuted };
   const bind = {
-    onMouseEnter: () => setHover(true),
-    onMouseLeave: () => setHover(false),
+    onMouseEnter: () => setIsHovered(true),
+    onMouseLeave: () => setIsHovered(false),
   };
 
   // tel:, mailto: and https: are not routes — <Link> would push them onto the

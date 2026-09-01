@@ -25,9 +25,9 @@ export function CtaLink({
   children: React.ReactNode;
   style?: React.CSSProperties;
 }) {
-  const { hover, bind } = useHover();
+  const { isHovered, bind } = useHover();
   return (
-    <Link {...bind} to={to} style={{ ...ctaBase, ...ctaFill(variant, hover), ...style }}>
+    <Link {...bind} to={to} style={{ ...ctaBase, ...ctaFill(variant, isHovered), ...style }}>
       {children}
     </Link>
   );

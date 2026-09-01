@@ -158,7 +158,7 @@ export function PhotoTile({
    * invisible. Deep starts the ramp higher and finishes darker. */
   scrim?: 'normal' | 'deep';
 }) {
-  const { hover, bind } = useHover();
+  const { isHovered, bind } = useHover();
   const isMobile = useIsMobile();
 
   return (
@@ -209,7 +209,7 @@ export function PhotoTile({
             objectFit: 'cover',
             objectPosition,
             display: 'block',
-            transform: hover ? 'scale(1.05)' : 'scale(1)',
+            transform: isHovered ? 'scale(1.05)' : 'scale(1)',
             transition: 'transform 0.7s ease',
           }}
         />
@@ -223,7 +223,7 @@ export function PhotoTile({
           style={{
             position: 'absolute',
             inset: 16,
-            border: `1px solid ${hover ? tokens.onDarkEdge : tokens.onDarkLine}`,
+            border: `1px solid ${isHovered ? tokens.onDarkEdge : tokens.onDarkLine}`,
             transition: 'border-color 0.3s ease',
             // The mechanism drawing, centred in the frame and held clear of the
             // label block at the bottom. It scales on hover for the same reason
@@ -239,11 +239,11 @@ export function PhotoTile({
             <span
               style={{
                 display: 'block',
-                transform: hover ? 'scale(1.06)' : 'scale(1)',
+                transform: isHovered ? 'scale(1.06)' : 'scale(1)',
                 transition: 'transform 0.7s ease',
               }}
             >
-              <ProductGlyph type={glyph} size={140} opacity={hover ? 0.6 : 0.42} />
+              <ProductGlyph type={glyph} size={140} opacity={isHovered ? 0.6 : 0.42} />
             </span>
           )}
         </div>
@@ -283,7 +283,7 @@ export function PhotoTile({
           position: 'absolute',
           inset: 0,
           background: 'rgba(29,29,29,0.66)',
-          opacity: hover ? 1 : 0,
+          opacity: isHovered ? 1 : 0,
           transition: 'opacity 0.3s ease',
           pointerEvents: 'none',
         }}
@@ -304,7 +304,7 @@ export function PhotoTile({
             : { alignItems: 'flex-end', justifyContent: 'space-between', gap: space.item }),
           // The row lifts with the hover rather than staying put, so the whole
           // tile reads as one object responding to the pointer.
-          transform: hover ? 'translateY(-4px)' : 'translateY(0)',
+          transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
           transition: 'transform 0.4s ease',
         }}
       >
@@ -379,12 +379,12 @@ export function PhotoTile({
               ...typeScale.label,
               lineHeight: 1,
               color: tokens.onAccent,
-              background: hover ? tokens.accentHover : tokens.accent,
+              background: isHovered ? tokens.accentHover : tokens.accent,
               whiteSpace: 'nowrap',
               // Pops forward on hover. transformOrigin is the bottom-right corner
               // it is pinned to, so it grows inward rather than pushing itself
               // past the edge of the tile.
-              transform: hover ? 'scale(1.08)' : 'scale(1)',
+              transform: isHovered ? 'scale(1.08)' : 'scale(1)',
               // The corner the chip is pinned to, so it grows inward rather than
               // pushing itself past the edge of the tile — which side that is
               // depends on whether it sits beside the label or under it.

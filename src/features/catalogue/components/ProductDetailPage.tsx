@@ -322,7 +322,7 @@ export default function ProductDetailPage() {
                 style={{
                   width: '100%',
                   padding: `${space.item}px ${space.group}px`,
-                  background: addedToCart ? tokens.charcoal : (cartHover.hover ? tokens.accentHover : tokens.accent),
+                  background: addedToCart ? tokens.charcoal : (cartHover.isHovered ? tokens.accentHover : tokens.accent),
                   color: addedToCart ? tokens.paper : tokens.ink,
                   fontFamily: tokens.body,
                   fontSize: typeScale.body.fontSize,
@@ -345,13 +345,13 @@ export default function ProductDetailPage() {
                   width: '100%',
                   padding: `${space.item}px ${space.group}px`,
                   background: 'transparent',
-                  color: quoteHover.hover ? tokens.textMuted : tokens.ink,
+                  color: quoteHover.isHovered ? tokens.textMuted : tokens.ink,
                   fontFamily: tokens.body,
                   fontSize: typeScale.body.fontSize,
                   fontWeight: 600,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
-                  border: `1px solid ${quoteHover.hover ? tokens.line : tokens.lineStrong}`,
+                  border: `1px solid ${quoteHover.isHovered ? tokens.line : tokens.lineStrong}`,
                   borderRadius: radius.md,
                   cursor: 'pointer',
                   transition: motion.button,
@@ -472,7 +472,7 @@ export default function ProductDetailPage() {
               {...barQuoteHover.bind}
               style={{
                 background: 'transparent',
-                color: barQuoteHover.hover ? tokens.textMuted : tokens.ink,
+                color: barQuoteHover.isHovered ? tokens.textMuted : tokens.ink,
                 fontFamily: tokens.body,
                 fontSize: typeScale.micro.fontSize,
                 fontWeight: 600,
@@ -480,7 +480,7 @@ export default function ProductDetailPage() {
                 letterSpacing: '0.1em',
                 padding: isMobile ? '8px 16px' : '10px 20px',
                 borderRadius: radius.sm,
-                border: `1px solid ${barQuoteHover.hover ? tokens.line : tokens.lineStrong}`,
+                border: `1px solid ${barQuoteHover.isHovered ? tokens.line : tokens.lineStrong}`,
                 cursor: 'pointer',
                 textDecoration: 'none',
                 transition: motion.button,
@@ -505,7 +505,7 @@ export default function ProductDetailPage() {
               }}
               {...barCartHover.bind}
               style={{
-                background: addedToCart ? tokens.charcoal : (barCartHover.hover ? tokens.accentHover : tokens.accent),
+                background: addedToCart ? tokens.charcoal : (barCartHover.isHovered ? tokens.accentHover : tokens.accent),
                 color: addedToCart ? tokens.paper : tokens.ink,
                 fontFamily: tokens.body,
                 fontSize: typeScale.micro.fontSize,

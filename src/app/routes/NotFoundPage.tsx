@@ -46,8 +46,8 @@ export default function NotFoundPage() {
             // audit. Paper edge and paper text at rest (12.43:1), filling to
             // paper with ink on it (15.87:1).
             padding: '18px 40px', border: `1px solid ${tokens.onDarkEdge}`,
-            background: ctaHover.hover ? tokens.onDark : 'transparent',
-            color: ctaHover.hover ? tokens.ink : tokens.onDark,
+            background: ctaHover.isHovered ? tokens.onDark : 'transparent',
+            color: ctaHover.isHovered ? tokens.ink : tokens.onDark,
             textDecoration: 'none',
             transition: motion.button,
           }}

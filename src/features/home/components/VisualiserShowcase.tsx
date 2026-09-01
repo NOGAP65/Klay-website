@@ -141,8 +141,8 @@ function StepButton({
   disabled: boolean;
   onClick: () => void;
 }) {
-  const { hover, bind } = useHover();
-  const active = hover && !disabled;
+  const { isHovered, bind } = useHover();
+  const active = isHovered && !disabled;
   return (
     <button
       {...bind}

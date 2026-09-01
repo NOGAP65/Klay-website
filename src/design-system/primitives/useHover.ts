@@ -14,12 +14,12 @@ import { useState } from 'react';
 /** Hover state plus the two handlers, so a component that needs three hover
  * targets doesn't declare three useStates by hand. */
 export function useHover() {
-  const [hover, setHover] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   return {
-    hover,
+    isHovered,
     bind: {
-      onMouseEnter: () => setHover(true),
-      onMouseLeave: () => setHover(false),
+      onMouseEnter: () => setIsHovered(true),
+      onMouseLeave: () => setIsHovered(false),
     },
   };
 }

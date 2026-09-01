@@ -189,7 +189,7 @@ function Run() {
 }
 
 export function StepsBar() {
-  const { hover, bind } = useHover();
+  const { isHovered, bind } = useHover();
   // Read once, on mount. A strip that slides sideways forever is precisely what
   // this preference exists to stop — index.html also kills every animation
   // under the same query, so this is belt and braces for the DOM it renders.
@@ -205,7 +205,7 @@ export function StepsBar() {
         textDecoration: 'none',
         // Deepens to ink on hover, so the bar answers the pointer and reads as
         // the link it is. Same move the dark CTA makes everywhere else.
-        background: hover ? tokens.ink : tokens.charcoal,
+        background: isHovered ? tokens.ink : tokens.charcoal,
         transition: 'background 0.25s ease',
         // Hidden while it animates, scrollable when it does not — under reduced
         // motion the reader needs some way to reach the steps that sit off the
@@ -234,7 +234,7 @@ export function StepsBar() {
           // has brought the cursor here is deciding whether to click, and a
           // target that keeps moving under the pointer is one they have to
           // chase. The ticker is not clickable and stopping it reads as broken.
-          animationPlayState: hover ? 'paused' : 'running',
+          animationPlayState: isHovered ? 'paused' : 'running',
           paddingLeft: space.group,
         }}
       >

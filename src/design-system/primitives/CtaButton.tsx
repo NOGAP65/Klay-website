@@ -23,9 +23,9 @@ export function CtaButton({
   children: React.ReactNode;
   style?: React.CSSProperties;
 }) {
-  const { hover, bind } = useHover();
+  const { isHovered, bind } = useHover();
   return (
-    <button {...bind} onClick={onClick} style={{ ...ctaBase, ...ctaFill(variant, hover), ...style }}>
+    <button {...bind} onClick={onClick} style={{ ...ctaBase, ...ctaFill(variant, isHovered), ...style }}>
       {children}
     </button>
   );

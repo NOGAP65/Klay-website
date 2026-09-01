@@ -320,12 +320,12 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 width: NAV_CONTROL,
                 height: NAV_CONTROL,
                 borderRadius: radius.md,
-                border: `1px solid ${cartHover.hover ? tokens.line : onDarkGround ? tokens.onDarkEdge : tokens.line}`,
+                border: `1px solid ${cartHover.isHovered ? tokens.line : onDarkGround ? tokens.onDarkEdge : tokens.line}`,
                 // The hover wash follows the ground. A paper wash at 0.12 was
                 // the right move on a charcoal bar and is invisible on a paper
                 // one, so on light it inverts to ink at 0.06 — enough to read as
                 // a pressed state without becoming a second button.
-                background: cartHover.hover
+                background: cartHover.isHovered
                   ? onDarkGround
                     ? 'rgba(248,248,248,0.12)'
                     : 'rgba(29,29,29,0.06)'
@@ -380,7 +380,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 height: NAV_CONTROL,
                 padding: `0 ${space.group}px`,
                 borderRadius: radius.md,
-                background: ctaHover.hover ? tokens.accentHover : tokens.accent,
+                background: ctaHover.isHovered ? tokens.accentHover : tokens.accent,
                 color: tokens.onAccent,
                 ...typeScale.label,
                 lineHeight: 1,

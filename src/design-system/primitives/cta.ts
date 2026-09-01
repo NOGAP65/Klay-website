@@ -55,28 +55,28 @@ export const ctaBase: React.CSSProperties = {
   lineHeight: 1,
 };
 
-export function ctaFill(variant: CtaVariant, hover: boolean): React.CSSProperties {
+export function ctaFill(variant: CtaVariant, isHovered: boolean): React.CSSProperties {
   switch (variant) {
     // BRONZE, WHITE LABEL, BOLD. The page's primary action, and the only place on
     // the site that carries chroma at all. Deepens on hover.
     case 'primary':
       return {
-        background: hover ? tokens.accentHover : tokens.accent,
+        background: isHovered ? tokens.accentHover : tokens.accent,
         color: tokens.onAccent,
         // The border matches the fill again. It was `accentEdge` for one pass, to
         // hold the block's boundary while the fill was light enough to lose it —
         // deepening the fill for the white label made the fill carry its own
         // boundary (4.58 at rest, 5.60 on hover) and the edge became a dark line
         // around a dark block for no reason.
-        borderColor: hover ? tokens.accentHover : tokens.accent,
+        borderColor: isHovered ? tokens.accentHover : tokens.accent,
       };
     // Charcoal ground, paper text — for light sections that want a quieter
     // primary than the bronze, or a second action beside one.
     case 'onDark':
       return {
-        background: hover ? tokens.ink : tokens.charcoal,
+        background: isHovered ? tokens.ink : tokens.charcoal,
         color: tokens.onDark,
-        borderColor: hover ? tokens.ink : tokens.charcoal,
+        borderColor: isHovered ? tokens.ink : tokens.charcoal,
       };
     // A PAPER-FILLED VARIANT WAS WRITTEN HERE AND THEN REMOVED, which is worth
     // recording because the reasoning was sound and the premise was not.
@@ -101,8 +101,8 @@ export function ctaFill(variant: CtaVariant, hover: boolean): React.CSSPropertie
     case 'ghost':
       return {
         background: 'transparent',
-        color: hover ? tokens.card : tokens.onDarkMuted,
-        borderColor: hover ? tokens.line : tokens.onDarkEdge,
+        color: isHovered ? tokens.card : tokens.onDarkMuted,
+        borderColor: isHovered ? tokens.line : tokens.onDarkEdge,
       };
   }
 }

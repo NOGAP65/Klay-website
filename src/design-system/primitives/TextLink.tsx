@@ -30,7 +30,7 @@ export function TextLink({
    * has to hold its own beside a button rather than recede from it. */
   accent?: boolean;
 }) {
-  const { hover, bind } = useHover();
+  const { isHovered, bind } = useHover();
   /** THE STRONGEST TEXT COLOUR THE GROUND ALLOWS, which is what the accent and
    * the hover state both resolve to.
    *
@@ -51,9 +51,9 @@ export function TextLink({
       to={to}
       style={{
         ...typeScale.body,
-        color: hover ? strongest : rest,
+        color: isHovered ? strongest : rest,
         textDecoration: 'none',
-        borderBottom: `1px solid ${hover ? strongest : 'currentColor'}`,
+        borderBottom: `1px solid ${isHovered ? strongest : 'currentColor'}`,
         paddingBottom: space.hairline,
         transition: motion.link,
       }}

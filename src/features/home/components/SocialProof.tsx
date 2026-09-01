@@ -54,7 +54,7 @@ const SHOTS = [
 ];
 
 function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: boolean }) {
-  const { hover, bind } = useHover();
+  const { isHovered, bind } = useHover();
   return (
     // A route, so <Link> — a bare href here would tear down the SPA and refetch
     // the bundle just to move to a product page.
@@ -87,7 +87,7 @@ function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: bool
           objectFit: 'cover',
           objectPosition: shot.objectPosition,
           display: 'block',
-          transform: hover ? 'scale(1.05)' : 'scale(1)',
+          transform: isHovered ? 'scale(1.05)' : 'scale(1)',
           transition: 'transform 0.7s ease',
         }}
       />
@@ -101,7 +101,7 @@ function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: bool
           alignItems: 'center',
           justifyContent: 'center',
           background: 'rgba(29,29,29,0.42)',
-          opacity: hover ? 1 : 0,
+          opacity: isHovered ? 1 : 0,
           transition: 'opacity 0.3s ease',
         }}
       >
@@ -122,7 +122,7 @@ function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: bool
 
 export function SocialProof() {
   const isMobile = useIsMobile();
-  const { hover, bind } = useHover();
+  const { isHovered, bind } = useHover();
 
   return (
     // CHARCOAL. A GALLERY WALL, AND THE ONE SECTION ON THE PAGE THAT EARNS ONE.
@@ -209,7 +209,7 @@ export function SocialProof() {
             // colours through a skin() rather than reaching for tokens directly.
             color: tokens.paper,
             textDecoration: 'none',
-            borderBottom: `1px solid ${hover ? tokens.paper : 'transparent'}`,
+            borderBottom: `1px solid ${isHovered ? tokens.paper : 'transparent'}`,
             paddingBottom: space.hairline,
             transition: 'border-color 0.2s ease',
           }}
