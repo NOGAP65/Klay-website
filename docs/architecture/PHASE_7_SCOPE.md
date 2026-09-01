@@ -180,6 +180,13 @@ jump by 62 the day E-08 retires.**
 
 ---
 
+## The tool
+
+**`tools/codemod.mjs`.** Written after this phase, from what it got wrong twice — a
+line-preserving comment mask, and typechecking per rename with an automatic revert of any that
+breaks. `docs/runbooks/verifying-source-transforms.md` is the reasoning. **The next naming pass
+starts from that tool, not from a fresh script.**
+
 ## How a Phase 7 commit is shaped
 
 **One concept per commit.** `hover` → `isHovered` is one commit across eleven files; it is not

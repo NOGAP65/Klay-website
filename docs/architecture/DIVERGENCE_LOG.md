@@ -21,7 +21,7 @@ written by someone competent, in code that was individually good.
 | **D-08** hover state ×2 implementations | **RESOLVED at Phase 7** — 10 hand-rolled sites removed, not renamed |
 | **D-09** form-field setter ×2 | Open. Identical helper in two forms. Waits for booking to land in Phase 6 |
 | **D-10** reduced-motion snapshot ×4 | **RESOLVED at Phase 7** — usePrefersReducedMotion |
-| **D-11** hover solved 3× in the design system | Open. `Button` was built to end the duplication and has ZERO consumers. Needs a decision above a rename — knip, Phase 6.3 |
+| **D-11** hover solved 3× in the design system | **RESOLVED at Phase 7** — six unused exports deleted, 471 lines. ADR-025 |
 
 The earlier header read "3 resolved, 2 deliberate, 1 open", which never reconciled with the
 entries below it. Corrected while D-01 was being closed.
@@ -332,7 +332,7 @@ de-duplication pass — an extraction that quietly alters what the page does is 
 
 ## D-11 — The hover problem has THREE solutions in the design system, and the unused one was built for it
 
-**Type:** The Second Implementation (§13) · **Status:** OPEN — needs a decision above a rename
+**Type:** The Second Implementation (§13) · **Status:** **RESOLVED — 1 Sep 2026, Phase 7**
 **Found:** 1 Sep 2026, Phase 7, while removing D-08
 
 Inline styles cannot express `:hover`, so every interactive element holds a hover boolean. The
@@ -366,7 +366,16 @@ comment in `Hero` explaining that the h1 is written out *rather than* going thro
 That is §13's **Polished Stub** at the layer level: *"Code that looks finished, has no TODO,
 throws no error, and does nothing."*
 
-### Why this is logged rather than fixed
+### RESOLVED — deleted, and the specification amended so it cannot recur
+
+**All six are gone**: `Box`, `Stack`, `Text`, `Heading`, `Button`, `SectionHead`. 471 lines.
+
+**And ADR-025 fixes the cause rather than the instance.** The reading below was resolved in
+favour of DESCRIPTIVE, and §3 and §9 were amended: primitives are extracted from observed
+duplication, never created from a target tree, and a thin primitives folder is a healthy state.
+The owner recorded the original §3 list as his own error in writing it.
+
+The two readings, kept because the reasoning is why the answer is not obvious:
 
 **Deleting six exports from the design system is a decision about what the design system is
 for**, and it is above a naming pass. There are two defensible readings and the log should not
