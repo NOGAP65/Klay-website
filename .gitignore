@@ -24,3 +24,21 @@ dist-ssr
 
 # tsc -b incremental build cache (the typecheck gate)
 *.tsbuildinfo
+
+# --- generated during development, never deliverables --------------------------
+# Screenshots the visualiser work leaves at the repo root. Nothing at the root is
+# a tracked image — every real asset lives under public/ — so these are ignored by
+# pattern rather than one by one, and the pattern is anchored to the root so a
+# genuine public/ asset can never be caught by it.
+/curtain-*.png
+/*-screenshot.png
+/screenshot*.png
+/shot-*.png
+
+# Throwaway visual audits written during a session. The architecture record lives
+# in docs/architecture/; these are working notes and are not it.
+/docs/VISUAL_AUDIT*.md
+
+# eslint machine-readable output, written by the re-measure command in
+# docs/architecture/LINT_BASELINE.md.
+/lint.json
