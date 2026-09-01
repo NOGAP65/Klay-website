@@ -101,11 +101,43 @@ export const wardrobeDimensions = (m: WardrobeModel): string =>
  * verbatim, so what is chosen here is what gets written on the quote. The slug
  * is what appears in the artwork filename. */
 export const WARDROBE_COLOURS: { name: string; slug: string; hex: string }[] = [
+  // THE HEXES ARE MEASURED FROM THE BOARDS, not chosen to look like them.
+  //
+  // They were eyeballed, and the eye was wrong in a way that mattered: Notaio
+  // Walnut was set at #6A4A34, a dark chocolate, where the real decor averages
+  // #866750 — a mid brown. So the swatch in the picker promised one board and
+  // the render, once it had the supplier's own sheet on it, delivered another.
+  // Averaged over the decor sheet, they now agree.
   { name: 'Matt Wardrobe White', slug: 'white', hex: '#F1EFEB' },
-  { name: 'Matt Natural Oak', slug: 'natural-oak', hex: '#C2A175' },
-  { name: 'Woodmatt Antico Oak', slug: 'antico-oak', hex: '#9C8C7A' },
-  { name: 'Woodmatt Notaio Walnut', slug: 'notaio-walnut', hex: '#6A4A34' },
+  { name: 'Matt Natural Oak', slug: 'natural-oak', hex: '#B7A486' },
+  { name: 'Woodmatt Antico Oak', slug: 'antico-oak', hex: '#7F7262' },
+  { name: 'Woodmatt Notaio Walnut', slug: 'notaio-walnut', hex: '#866750' },
 ];
+
+/** THE BOARD'S OWN PHOTOGRAPH, for the three timber finishes.
+ *
+ * These are the supplier's decor sheets — the actual Polytec boards the Forma
+ * range is pressed in, which is what the customer receives. Woodgrain drawn
+ * procedurally was standing in for them: it gave the board SOME figure, which
+ * beat a flat brown rectangle, but it was invented figure and it looked it.
+ * Antico Oak in particular is a grey oak with dark knots and splits running
+ * through it, and no amount of sine waves produces a knot.
+ *
+ * White has none, and needs none: Matt Wardrobe White is a plain surface, and
+ * the photographic renders already cover it. */
+export const FINISH_TEXTURE: Record<string, string> = {
+  'natural-oak': `${DIR}/finishes/natural-oak.jpg`,
+  'antico-oak': `${DIR}/finishes/antico-oak.jpg`,
+  'notaio-walnut': `${DIR}/finishes/notaio-walnut.jpg`,
+};
+
+/** How much real board one tile of the texture covers, millimetres.
+ *
+ * Set from the sheet it was cropped from rather than chosen to look right: the
+ * crop is about this much of a real Polytec sheet, so at this size the grain
+ * comes out the size grain actually is. Get it wrong and the board reads as
+ * veneer on a dolls' house or as a barn door. */
+export const FINISH_TILE_MM = { w: 900, h: 1800 };
 
 export const wardrobeColour = (name: string) =>
   WARDROBE_COLOURS.find(c => c.name === name) ?? WARDROBE_COLOURS[0];

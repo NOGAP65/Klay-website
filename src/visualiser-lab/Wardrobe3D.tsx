@@ -39,9 +39,10 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 import { buildCarcass } from './Canvas2DWardrobeRenderer';
-import { WARDROBE_DEPTH_MM, WARDROBE_HEIGHT_MM, wardrobeColour, wardrobeColourHex, wardrobeModelById } from './wardrobes';
+import { WARDROBE_DEPTH_MM, WARDROBE_HEIGHT_MM, FINISH_TEXTURE, FINISH_TILE_MM, wardrobeColour, wardrobeColourHex, wardrobeModelById } from './wardrobes';
 import { cutoutFor } from './wardrobeCutouts';
 import { buildSliceMap, sliceMapper } from './wardrobeSlices';
 import { sampleBoardColour } from './wardrobeComposite';
@@ -177,19 +178,62 @@ export default function Wardrobe3D({
     // the board starts to look plastic. This is only enough to separate the
     // faces that the photograph cannot distinguish -- the side returns and the
     // shelf edges it never saw.
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b2a8, 2.05));
-    const key = new THREE.DirectionalLight(0xffffff, 0.55);
+    // Pulled well down now the environment supplies the ambient — the two together
+    // washed Notaio Walnut out to a mid oak.
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b2a8, 0.26));
+    const key = new THREE.DirectionalLight(0xffffff, 0.62);
     key.position.set(1.4, 2.2, 2.6);
     scene.add(key);
     const fill = new THREE.DirectionalLight(0xffffff, 0.18);
     fill.position.set(-2.0, 0.7, 1.4);
     scene.add(fill);
 
+    // REAL SHADOWS, and they are what an open carcass has been missing.
+    //
+    // A wardrobe with no doors is a grid of boxes you look straight into, and
+    // almost everything that says one shelf is in front of another is the shade
+    // each one casts into the compartment below it. Without them the interior
+    // is evenly lit board and reads as a diagram; with them the shelves sit on
+    // top of each other and the clothes hang in front of the back panel.
+    //
+    // Soft, because the light in a bedroom is. A hard-edged shadow here would
+    // say the cabinet is standing in direct sun.
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.radius = 3;
+    key.shadow.bias = -0.0006;
+    // Framed to the cabinet: a directional light's shadow camera is orthographic
+    // and covers whatever it is told to, so a default box either misses the
+    // wardrobe or wastes most of its resolution on empty room.
+    const sc = key.shadow.camera;
+    sc.near = 0.1;
+    sc.far = 14;
+    sc.left = -2.2; sc.right = 2.2;
+    sc.top = 2.6; sc.bottom = -2.6;
+    sc.updateProjectionMatrix();
+
+    // AN ENVIRONMENT, so the metal has something to be metal about.
+    //
+    // A physically-based metal renders what it REFLECTS, and with nothing to
+    // reflect it reflects nothing — which is black. The drawer handles were
+    // coming out as dark bars for exactly that reason, and no amount of
+    // adjusting their colour would have fixed it, because their colour was
+    // barely in the picture.
+    //
+    // It also does the board a favour: melamine has a slight sheen, and a
+    // subtle reflection of a lit room is most of what separates a matt board
+    // from a flat fill.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const env = pmrem.fromScene(new RoomEnvironment(), 0.04);
+    scene.environment = env.texture;
+
     const root = new THREE.Group();
     scene.add(root);
 
     let disposed = false;
-    const disposables: { dispose(): void }[] = [];
+    const disposables: { dispose(): void }[] = [env.texture, pmrem];
 
     // --- the carcass -------------------------------------------------------
     const { boxes, compartments } = buildCarcass(model.id, widthMm, true);
@@ -221,6 +265,7 @@ export default function Wardrobe3D({
       material: THREE.Material,
       projected: boolean,
       plain?: THREE.Material,
+      timber = false,
     ) => {
       const geo = new THREE.BoxGeometry(box.w * MM, box.h * MM, box.d * MM);
       // BoxGeometry is centred on the origin; the model has its origin at the
@@ -242,6 +287,41 @@ export default function Wardrobe3D({
         uv.needsUpdate = true;
       }
 
+      // TIMBER TILES IN THE FACE'S OWN COORDINATES, at real size.
+      //
+      // BoxGeometry gives every face a 0..1 UV, so a shared texture would be
+      // stretched to fit whatever the face happens to be — the grain on a
+      // 3000mm top rail the same width as the grain on an 18mm shelf edge.
+      // Scaling each face by its own size in millimetres over the tile's size
+      // makes the board one continuous material across the cabinet.
+      //
+      // Vertex order is +X, −X, +Y, −Y, +Z, −Z, four vertices each, and which
+      // model axes run u and v differs per face.
+      if (timber) {
+        const uv = geo.attributes.uv;
+        const T = FINISH_TILE_MM;
+        // Grain runs up an upright and along a shelf, so the tall face of a
+        // panel takes the tile's own long axis.
+        const up = box.h >= box.w;
+        const faces: [number, number][] = [
+          [box.d, box.h], [box.d, box.h],   // ±X: depth across, height up
+          [box.w, box.d], [box.w, box.d],   // ±Y: width across, depth back
+          [box.w, box.h], [box.w, box.h],   // ±Z: width across, height up
+        ];
+        for (let f = 0; f < 6; f++) {
+          const [fw, fh] = faces[f];
+          const tw = up ? T.w : T.h;
+          const th = up ? T.h : T.w;
+          const su = Math.max(0.08, fw / tw);
+          const sv = Math.max(0.08, fh / th);
+          for (let v = 0; v < 4; v++) {
+            const i = f * 4 + v;
+            uv.setXY(i, uv.getX(i) * su, uv.getY(i) * sv);
+          }
+        }
+        uv.needsUpdate = true;
+      }
+
       geo.computeVertexNormals();
       // Slots run +X, −X, +Y, −Y, +Z, −Z. Only ±Z face the room and can carry
       // an undistorted piece of the projection; the other four would smear a
@@ -250,6 +330,10 @@ export default function Wardrobe3D({
         geo,
         projected && plain ? [plain, plain, plain, plain, material, material] : material,
       );
+      // Board casts into the compartments and takes what the shelf above it
+      // throws down.
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       disposables.push(geo);
       return mesh;
     };
@@ -349,15 +433,34 @@ export default function Wardrobe3D({
       }
       if (sticker) disposables.push(sticker);
 
-      // The board. Where the sticker exists this is the photograph; where it
-      // does not — the three timber finishes, which were never rendered — it
-      // falls back to flat board in the right colour, and says so by simply
-      // being plainer.
+      // THE SUPPLIER'S BOARD, on the timber finishes. Loaded before the
+      // materials because both of them want it: on a timber finish there is no
+      // photograph, so the wood IS the surface on every face of the cabinet.
+      const finishUrl = FINISH_TEXTURE[wardrobeColour(colourName).slug];
+      const boardTex = finishUrl ? await load(finishUrl) : null;
+      if (disposed) return;
+      if (boardTex) {
+        boardTex.colorSpace = THREE.SRGBColorSpace;
+        // Mirrored rather than repeated: it hides the seam without needing a
+        // seamless texture, and book-matching is what veneer does anyway.
+        boardTex.wrapS = THREE.MirroredRepeatWrapping;
+        boardTex.wrapT = THREE.MirroredRepeatWrapping;
+        boardTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        disposables.push(boardTex);
+      }
+
+      // The board. Where the sticker exists this is the photograph; on a timber
+      // finish it is the supplier's decor sheet; failing both, flat colour.
       const boardMat = new THREE.MeshStandardMaterial({
-        map: flat ?? null,
-        color: flat ? 0xffffff : base,
-        roughness: 0.82,
+        map: flat ?? boardTex ?? null,
+        color: flat || boardTex ? 0xffffff : base,
+        // Woodmatt is exactly what its name says. A low roughness reads as
+        // lacquer, which is a different product.
+        roughness: boardTex ? 0.78 : 0.82,
         metalness: 0.0,
+        // Board has a sheen, not a shine. Left at full strength the environment
+        // lifts a dark walnut into a mid oak.
+        envMapIntensity: 0.22,
       });
       disposables.push(boardMat);
 
@@ -376,16 +479,22 @@ export default function Wardrobe3D({
         ? new THREE.Color(`rgb(${Math.round(sampled[0])},${Math.round(sampled[1])},${Math.round(sampled[2])})`)
         : base;
       const plainBoardMat = new THREE.MeshStandardMaterial({
-        color: plainBase.clone().multiplyScalar(0.97),
-        roughness: 0.86,
+        map: boardTex ?? null,
+        color: boardTex ? 0xffffff : plainBase.clone().multiplyScalar(0.97),
+        roughness: boardTex ? 0.78 : 0.86,
         metalness: 0.0,
+        envMapIntensity: 0.22,
       });
       disposables.push(plainBoardMat);
 
+      // Brushed rather than polished: a wardrobe handle is satin nickel or
+      // brushed aluminium, so the roughness is well up and the reflection is a
+      // soft sheen rather than a mirror.
       const metalMat = new THREE.MeshStandardMaterial({
-        color: 0xb4b8bd,
-        roughness: 0.36,
-        metalness: 0.85,
+        color: 0xc6cace,
+        roughness: 0.42,
+        metalness: 0.9,
+        envMapIntensity: 1.15,
       });
       disposables.push(metalMat);
 
@@ -420,7 +529,13 @@ export default function Wardrobe3D({
         // Those faces take plain board instead. It is the same colour the
         // photograph would have given them, without the smear.
         root.add(
-          buildBoxMesh(box, box.back ? plainBoardMat : boardMat, !box.back && !!sticker, plainBoardMat),
+          buildBoxMesh(
+            box,
+            (box.back || box.plain) ? plainBoardMat : boardMat,
+            !box.back && !box.plain && !!sticker,
+            plainBoardMat,
+            !!boardTex,
+          ),
         );
       }
 
@@ -529,6 +644,10 @@ export default function Wardrobe3D({
             (hangs ? baseY - h / 2 : baseY + h / 2) * MM,
             z * MM,
           );
+          // Clothes are the biggest shadow-casters in an open carcass — a rail
+          // of coats darkens the whole bay behind it.
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
           root.add(mesh);
         };
 
