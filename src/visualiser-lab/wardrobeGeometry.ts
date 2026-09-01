@@ -315,6 +315,125 @@ function focalFromQuad(corners: Point[], cx: number, cy: number, imageW: number,
   return f >= lo && f <= hi ? f : assumed;
 }
 
+/** A REAL CAMERA RECOVERED FROM THE TRACE, for rendering the cabinet in 3D and
+ * compositing it onto the photograph.
+ *
+ * projectorFromQuad returns a homography plus a depth direction, which is all a
+ * painter's-algorithm renderer needs and is deliberately NOT a rigid camera —
+ * it lets the two axes scale differently so the front face lands exactly on a
+ * hand-traced quad that need not match the product's proportions.
+ *
+ * A GPU cannot be told that. It has one projection matrix, so the camera has to
+ * be rigid, and the price is that the cabinet lands where its real proportions
+ * put it rather than stretched to fill the drawing. That is the right trade
+ * here and it is the same rule the rest of the visualiser now follows: the
+ * trace says where and how big the room is, the product says how big the
+ * product is, and whether it fits is the answer rather than the input.
+ *
+ * The decomposition is standard. A plane's image is K[r1 r2 t] up to scale, so
+ * dividing the intrinsics out of the homography leaves the pose, and the third
+ * rotation column — the axis the photograph never showed — is the cross product
+ * of the other two.
+ *
+ * Returns null on a degenerate trace.
+ */
+export interface QuadCamera {
+  /** Vertical field of view, degrees. */
+  fovDeg: number;
+  /** Camera position in model space, millimetres. */
+  position: [number, number, number];
+  /** Camera basis in model space: right, up, and backward (three.js looks down
+   * its own −Z, so this is the direction OUT of the screen). */
+  right: [number, number, number];
+  up: [number, number, number];
+  back: [number, number, number];
+}
+
+export function cameraFromQuad(
+  corners: Point[],
+  widthMm: number,
+  heightMm: number,
+  imageW: number,
+  imageH: number,
+): QuadCamera | null {
+  if (corners.length !== 4 || widthMm <= 0 || heightMm <= 0) return null;
+
+  const cx = imageW / 2;
+  const cy = imageH / 2;
+  const f = focalFromQuad(corners, cx, cy, imageW, imageH);
+
+  // Model plane, Z = 0, origin at the opening's bottom-left, Y up. Traced
+  // corners arrive TL TR BR BL.
+  const model: Point[] = [[0, heightMm], [widthMm, heightMm], [widthMm, 0], [0, 0]];
+
+  let h: number[];
+  try {
+    h = computeHomography(model, corners);
+  } catch {
+    return null;
+  }
+
+  // K⁻¹H: the top two rows are (row − centre × bottom row) / f.
+  const a = [
+    (h[0] - cx * h[6]) / f, (h[1] - cx * h[7]) / f, (h[2] - cx * h[8]) / f,
+    (h[3] - cy * h[6]) / f, (h[4] - cy * h[7]) / f, (h[5] - cy * h[8]) / f,
+    h[6], h[7], h[8],
+  ];
+  const col = (i: number) => [a[i], a[i + 3], a[i + 6]];
+  const norm = (v: number[]) => Math.hypot(v[0], v[1], v[2]);
+
+  const c0 = col(0);
+  const c1 = col(1);
+  const c2 = col(2);
+  const n0 = norm(c0);
+  const n1 = norm(c1);
+  if (!isFinite(n0) || !isFinite(n1) || n0 < 1e-12 || n1 < 1e-12) return null;
+
+  // One scale for both, so the rotation stays as close to orthonormal as the
+  // trace allows before it is forced.
+  let lambda = 2 / (n0 + n1);
+  // The cabinet must be IN FRONT of the camera. A homography is only defined up
+  // to sign, so half the time the decomposition arrives inside out.
+  if (c2[2] * lambda < 0) lambda = -lambda;
+
+  let r1 = c0.map(v => v * lambda);
+  let r2 = c1.map(v => v * lambda);
+  const t = c2.map(v => v * lambda);
+
+  // Gram-Schmidt, then the third axis follows from the pair.
+  const d = r1[0] * r2[0] + r1[1] * r2[1] + r1[2] * r2[2];
+  r2 = r2.map((v, i) => v - (d / 2) * r1[i]);
+  r1 = r1.map((v, i) => v - (d / 2) * r2[i]);
+  const l1 = norm(r1);
+  const l2 = norm(r2);
+  if (l1 < 1e-12 || l2 < 1e-12) return null;
+  r1 = r1.map(v => v / l1);
+  r2 = r2.map(v => v / l2);
+  const r3 = [
+    r1[1] * r2[2] - r1[2] * r2[1],
+    r1[2] * r2[0] - r1[0] * r2[2],
+    r1[0] * r2[1] - r1[1] * r2[0],
+  ];
+
+  // R maps world to camera, so its ROWS are the camera's axes in world space.
+  // Position is −Rᵀt.
+  const pos: [number, number, number] = [
+    -(r1[0] * t[0] + r2[0] * t[1] + r3[0] * t[2]),
+    -(r1[1] * t[0] + r2[1] * t[1] + r3[1] * t[2]),
+    -(r1[2] * t[0] + r2[2] * t[1] + r3[2] * t[2]),
+  ];
+
+  // Image space has Y DOWN and looks along +Z; three.js has Y UP and looks
+  // along −Z. So the camera's up is −r2 and its backward is −r3.
+  return {
+    fovDeg: (2 * Math.atan(imageH / (2 * f)) * 180) / Math.PI,
+    position: pos,
+    right: [r1[0], r1[1], r1[2]],
+    up: [-r2[0], -r2[1], -r2[2]],
+    back: [-r3[0], -r3[1], -r3[2]],
+  };
+}
+
 /** Builds the projection that puts a modelled wardrobe onto the traced wall.
  *
  * TWO HALVES, AND THE SPLIT IS THE POINT.

@@ -5,7 +5,7 @@ import { usePhotoUpload } from './usePhotoUpload';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
-import Canvas2DWardrobeRenderer from './Canvas2DWardrobeRenderer';
+import WardrobeRoomRenderer from './WardrobeRoomRenderer';
 import Wardrobe3D from './Wardrobe3D';
 
 // One radius for every surface in the visualiser. The three files used to
@@ -1272,7 +1272,7 @@ export default function KlayConfigurator({
               selectedWidthMm={store.wardrobeWidthMm}
             />
           ) : store.productCategory === 'wardrobe' && confirmedArea ? (
-            <Canvas2DWardrobeRenderer
+            <WardrobeRoomRenderer
               photoUrl={store.photoUrl!}
               corners={confirmedArea.corners as [number, number][]}
               modelId={store.wardrobeModel}

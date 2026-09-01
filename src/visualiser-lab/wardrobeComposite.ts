@@ -197,6 +197,15 @@ const EXPOSURE_STRENGTH = 0.42;
 export function relightCutout(
   image: CanvasImageSource & { width?: number; height?: number; naturalWidth?: number; naturalHeight?: number },
   profile: PhotoProfile,
+  /** How much of the correction to apply, 0..1.
+   *
+   * A SUPPLIED PHOTOGRAPH NEEDS THE FULL DOSE and a RENDER NEEDS FAR LESS. The
+   * stickers were shot in a studio under someone else's lights, so all of the
+   * difference between that light and the room's is error to be removed. A
+   * render is lit by lamps this code chose, in a scene it built, and is already
+   * close to neutral — pushing it the whole way to the wall's own cast turned a
+   * white cabinet cream. */
+  strength = 1,
 ): HTMLCanvasElement {
   const w = image.naturalWidth ?? image.width ?? 0;
   const h = image.naturalHeight ?? image.height ?? 0;
@@ -232,14 +241,14 @@ export function relightCutout(
 
   const gain = [0, 1, 2].map(c => {
     const ratio = wallChroma[c] / Math.max(0.001, boardChroma[c]);
-    return 1 + (ratio - 1) * CAST_STRENGTH;
+    return 1 + (ratio - 1) * CAST_STRENGTH * strength;
   });
 
   // EXPOSURE part. A white board photographs a little darker than the wall
   // behind it in the same light -- it is matt, and it is turned away from the
   // window more often than not -- so the target is just under the wall's own
   // level rather than equal to it.
-  const exposure = 1 + ((wallL * 0.98) / Math.max(1, boardLuma) - 1) * EXPOSURE_STRENGTH;
+  const exposure = 1 + ((wallL * 0.98) / Math.max(1, boardLuma) - 1) * EXPOSURE_STRENGTH * strength;
 
   for (let i = 0; i < px.length; i += 4) {
     if (px[i + 3] === 0) continue;

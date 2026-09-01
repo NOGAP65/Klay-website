@@ -832,7 +832,15 @@ export function buildCarcass(
   // the largest surface in the opening, though, so it sets the colour of the
   // whole thing: too dark and a white wardrobe reads grey, which is what 0.66
   // did.
-  boxes.push({ x: 0, y: 0, z: 0, w: widthMm, h: H, d: BOARD_MM, tone: 0.95, back: true });
+  // THERE IS NO BACK PANEL. The Forma range is built IN — fixed to the wall,
+  // with the customer's own wall as the back of every compartment. A modelled
+  // back panel was a whole surface the product does not have, and it was doing
+  // real damage: it filled every opening with white board, which is why the
+  // interior read as flat whatever the shading did, and it hid the one thing
+  // the room view is for, which is the customer's own wall showing through.
+  //
+  // Taking it out is also what lets the wall's own tone and shadow do the work
+  // that the ambient pass was approximating.
   boxes.push({ x: 0, y: 0, z: 0, w: BOARD_MM, h: H, d: D });
   boxes.push({ x: widthMm - BOARD_MM, y: 0, z: 0, w: BOARD_MM, h: H, d: D });
   boxes.push({ x: 0, y: H - BOARD_MM, z: 0, w: widthMm, h: BOARD_MM, d: D });
@@ -1508,7 +1516,7 @@ function skinTriangle(
 
 // --- Walk-in: a view through the opening -----------------------------------
 
-function drawWalkIn(
+export function drawWalkIn(
   ctx: CanvasRenderingContext2D,
   image: CanvasImageSource,
   imgW: number,

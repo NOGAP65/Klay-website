@@ -3,7 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import { radius, tokens, space, type as typeScale } from '../theme';
 import { formatAUD, isBlindType } from '../lib/pricing';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
-import { WARDROBE_COLOURS, modelsOfKind, wardrobeModelById, wardrobeDimensions } from './wardrobes';
+import {
+  WARDROBE_COLOURS, WARDROBE_WIDTHS_MM, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM,
+  modelsOfKind,
+} from './wardrobes';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
@@ -504,19 +507,32 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                   />
                 ))}
               </div>
-              {/* Every layout is 2016 high and 447 deep; only width moves, and
-                  several come in more than one. Stated rather than offered as a
-                  control, because the width is a property of the layout the
-                  customer just chose, not a separate choice. */}
-              <p
-                style={{
-                  ...typeScale.micro,
-                  margin: `${space.xs}px 0 0`,
-                  color: onDark ? tokens.onDarkMuted : tokens.inkSoft,
-                }}
-              >
-                {wardrobeDimensions(wardrobeModelById(store.wardrobeModel))}
-              </p>
+            </Field>
+
+            {/* WIDTH SITS RIGHT AFTER THE LAYOUT, because that is the order the
+                two questions come in: which arrangement, then how wide a run of
+                it. Every layout is built in all five widths, so this never
+                changes shape as the layout changes.
+
+                Height and depth are not here at all — they are fixed for the
+                range, and a control with one answer is a statement dressed up
+                as a question. */}
+            <Field
+              onDark={onDark}
+              label="Width"
+              caption={`${store.wardrobeWidthMm} × ${WARDROBE_HEIGHT_MM} × ${WARDROBE_DEPTH_MM} mm`}
+            >
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+                {WARDROBE_WIDTHS_MM.map(w => (
+                  <Pill
+                    key={w}
+                    onDark={onDark}
+                    label={String(w)}
+                    active={store.wardrobeWidthMm === w}
+                    onClick={() => store.setWardrobeWidthMm(w)}
+                  />
+                ))}
+              </div>
             </Field>
 
             <Field onDark={onDark} label="Finish" caption={store.wardrobeColour}>
@@ -534,33 +550,6 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               </div>
             </Field>
 
-            {/* WIDTH IS A PROPERTY OF THE PRODUCT, and only appears here where
-                the layout is genuinely made in more than one.
-
-                It is not taken from the trace. Height is the one fixed
-                parameter — 2016 on every unit — so the traced box gives the
-                scale and the position, and the chosen width then lands as a
-                ratio against that height. The cabinet may sit narrower than the
-                box or overrun it, which is the answer to "does this fit". */}
-            {wardrobeModelById(store.wardrobeModel).widths.length > 1 && (
-              <Field
-                onDark={onDark}
-                label="Width"
-                caption={`${store.wardrobeWidthMm} mm`}
-              >
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
-                  {wardrobeModelById(store.wardrobeModel).widths.map(w => (
-                    <Pill
-                      key={w}
-                      onDark={onDark}
-                      label={String(w)}
-                      active={store.wardrobeWidthMm === w}
-                      onClick={() => store.setWardrobeWidthMm(w)}
-                    />
-                  ))}
-                </div>
-              </Field>
-            )}
           </div>
         </section>
       </div>
