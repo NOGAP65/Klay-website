@@ -44,9 +44,34 @@ export type ColumnFill =
    * COMPARTMENTS above the bank, for the same reason as above. */
   | { kind: 'drawers'; count: number; shelves: number };
 
+/** THE MODULE WIDTH. Every drawer bank and every shelf tower in the Forma range
+ * is this wide, and it does not change with the cabinet.
+ *
+ * THIS IS THE FACT THAT MAKES THE RANGE A RANGE. A wardrobe is not scaled up
+ * and down like a picture — it is built out of standard parts. The tower is one
+ * carcass, 507 wide, whether it goes in an 1800 or a 3000; what actually
+ * changes between them is how much hanging bay there is either side of it.
+ *
+ * The first version had every column as a FRACTION of the total width, which
+ * quietly said the opposite: it made a 3000's drawers two-thirds wider than an
+ * 1800's, so a customer comparing two layouts saw two different products. Held
+ * in millimetres, a drawer is a drawer. */
+export const MODULE_WIDTH_MM = 507;
+
 export interface Column {
-  /** Share of the total width. The shares in a layout sum to 1. */
-  width: number;
+  /** A fixed 507mm module — a drawer bank or a shelf tower. Its width is the
+   * same in every cabinet in the range. */
+  fixed?: boolean;
+  /** For a bay: its share of whatever width is left once the fixed modules
+   * have taken theirs. Shares within a layout are relative, not absolute, so
+   * two equal bays are 1 and 1 rather than 0.5 and 0.5. */
+  share?: number;
+  fill: ColumnFill;
+}
+
+/** A column once the cabinet's real width is known. */
+export interface ResolvedColumn {
+  widthMm: number;
   fill: ColumnFill;
 }
 
@@ -74,52 +99,84 @@ export interface Column {
 export const LAYOUT_COLUMNS: Record<string, Column[]> = {
   // A shelf tower on the left — six openings — beside one full-height hang.
   '2.9': [
-    { width: 0.30, fill: { kind: 'shelves', count: 5 } },
-    { width: 0.70, fill: { kind: 'hang' } },
+    { fixed: true, fill: { kind: 'shelves', count: 5 } },
+    { share: 1, fill: { kind: 'hang' } },
   ],
   // Shelf tower, then TWO hanging bays side by side with a divider between
   // them. The first version had one bay running the whole width.
   '3.0': [
-    { width: 0.20, fill: { kind: 'shelves', count: 6 } },
-    { width: 0.40, fill: { kind: 'hang' } },
-    { width: 0.40, fill: { kind: 'hang' } },
+    { fixed: true, fill: { kind: 'shelves', count: 6 } },
+    { share: 1, fill: { kind: 'hang' } },
+    { share: 1, fill: { kind: 'hang' } },
   ],
-  // Shelf tower, a double-hang in the middle, one long hang on the right.
+  // Shelf tower, a double-hang in the middle, one long hang on the right. The
+  // double-hang is the wider of the two bays in the photograph.
   '4.0': [
-    { width: 0.20, fill: { kind: 'shelves', count: 6 } },
-    { width: 0.44, fill: { kind: 'hang2' } },
-    { width: 0.36, fill: { kind: 'hang' } },
+    { fixed: true, fill: { kind: 'shelves', count: 6 } },
+    { share: 1.22, fill: { kind: 'hang2' } },
+    { share: 1, fill: { kind: 'hang' } },
   ],
   // Shelves OVER a four-drawer bank on the left, one hang on the right. The
   // drawers sit under the shelves in the same tower, which is why this is a
   // 'drawers' column rather than a shelf one.
   '4.9': [
-    { width: 0.34, fill: { kind: 'drawers', count: 4, shelves: 3 } },
-    { width: 0.66, fill: { kind: 'hang' } },
+    { fixed: true, fill: { kind: 'drawers', count: 4, shelves: 3 } },
+    { share: 1, fill: { kind: 'hang' } },
   ],
   // Same tower with four drawers, then two hanging bays.
   '5.0': [
-    { width: 0.24, fill: { kind: 'drawers', count: 4, shelves: 3 } },
-    { width: 0.40, fill: { kind: 'hang' } },
-    { width: 0.36, fill: { kind: 'hang' } },
+    { fixed: true, fill: { kind: 'drawers', count: 4, shelves: 3 } },
+    { share: 1.1, fill: { kind: 'hang' } },
+    { share: 1, fill: { kind: 'hang' } },
   ],
   // Shelf-and-drawer tower, a double-hang, then a full-height hang for long
   // coats and dresses.
   '6.0': [
-    { width: 0.18, fill: { kind: 'drawers', count: 4, shelves: 2 } },
-    { width: 0.48, fill: { kind: 'hang2' } },
-    { width: 0.34, fill: { kind: 'hang' } },
+    { fixed: true, fill: { kind: 'drawers', count: 4, shelves: 2 } },
+    { share: 1.4, fill: { kind: 'hang2' } },
+    { share: 1, fill: { kind: 'hang' } },
   ],
   // Symmetrical: a shelf-over-drawers tower at each end, one long hang between
-  // them. Four drawers in each tower.
+  // them. Four drawers in each tower — and being fixed modules, both towers are
+  // the same width by construction rather than by two matching fractions.
   '8.0': [
-    { width: 0.22, fill: { kind: 'drawers', count: 4, shelves: 3 } },
-    { width: 0.56, fill: { kind: 'hang' } },
-    { width: 0.22, fill: { kind: 'drawers', count: 4, shelves: 3 } },
+    { fixed: true, fill: { kind: 'drawers', count: 4, shelves: 3 } },
+    { share: 1, fill: { kind: 'hang' } },
+    { fixed: true, fill: { kind: 'drawers', count: 4, shelves: 3 } },
   ],
 };
 
-export const columnsFor = (id: string): Column[] => LAYOUT_COLUMNS[id] ?? LAYOUT_COLUMNS['3.0'];
+/** THE LAYOUT AT A REAL WIDTH: fixed modules take their 507, the bays divide
+ * what is left.
+ *
+ * WHEN THERE IS NOT ENOUGH WIDTH the modules shrink together rather than the
+ * bays going negative. A cabinet narrower than its own towers is not a cabinet
+ * anyone makes, but a customer dragging a trace can ask for one, and a bay of
+ * negative width puts dividers outside the carcass. Every column keeps a floor
+ * of a third of a module so the layout stays legible while it is being dragged.
+ */
+export function columnsFor(id: string, widthMm: number): ResolvedColumn[] {
+  const columns = LAYOUT_COLUMNS[id] ?? LAYOUT_COLUMNS['3.0'];
+  const inner = Math.max(1, widthMm - 2 * BOARD_MM - (columns.length - 1) * BOARD_MM);
+
+  const fixedCount = columns.filter(c => c.fixed).length;
+  const shareTotal = columns.reduce((s, c) => s + (c.fixed ? 0 : c.share ?? 1), 0);
+
+  // What the fixed modules would like, and what is actually available for them.
+  const wanted = fixedCount * MODULE_WIDTH_MM;
+  // Bays must keep something. Below that the modules give ground.
+  const minBay = shareTotal > 0 ? MODULE_WIDTH_MM * 0.33 * (shareTotal / Math.max(1, shareTotal)) * columns.filter(c => !c.fixed).length : 0;
+  const moduleW = wanted > 0 && wanted + minBay > inner
+    ? Math.max(MODULE_WIDTH_MM * 0.33, (inner - minBay) / fixedCount)
+    : MODULE_WIDTH_MM;
+
+  const leftover = Math.max(0, inner - fixedCount * moduleW);
+
+  return columns.map(c => ({
+    widthMm: c.fixed ? moduleW : shareTotal > 0 ? (leftover * (c.share ?? 1)) / shareTotal : 0,
+    fill: c.fill,
+  }));
+}
 
 /** Board thickness, mm. 18mm is what these carcasses are actually made from,
  * and at this scale it is the difference between joinery and a cardboard box —
@@ -128,6 +185,41 @@ export const BOARD_MM = 18;
 /** How far the rail sits below the top of a hanging section. */
 export const RAIL_DROP_MM = 60;
 export const RAIL_RADIUS_MM = 13;
+
+/** WHAT THE TRACED REGION IS, IN MILLIMETRES, WORKED FROM ITS OWN SHAPE.
+ *
+ * THE HEIGHT IS THE ONE THING WE ALREADY KNOW. Every cabinet in the range is
+ * 2016 high — it is not a variable, it is a property of the product — so the
+ * moment a customer drags a box saying "the wardrobe goes here", the height of
+ * that box IS 2016mm. Everything else in the picture can then be read off it.
+ *
+ * AND THAT IS WHY THE PHOTOGRAPH'S DISTANCE STOPS MATTERING. A wall shot from
+ * across the room and the same wall shot from the doorway trace to boxes of
+ * very different pixel sizes, but both are 2016mm tall, so both resolve to the
+ * same millimetres-per-pixel and the same wardrobe. Scale is carried by the
+ * product rather than guessed from the room, which is the only way two
+ * customers photographing the same alcove get the same answer.
+ *
+ * A RATIO, NOT A MEASUREMENT. Nothing here needs the lens, the sensor or the
+ * distance: the traced box's own width-to-height is all that is asked for, and
+ * that ratio survives the camera being anywhere.
+ *
+ * Averaged over both pairs of edges because a hand-drawn quad is never quite
+ * square, and on an angled wall the two uprights genuinely differ — the mean is
+ * the honest reading of a shape that is a trapezium on purpose.
+ */
+export function tracedWidthMm(corners: Point[], heightMm = 2016): number {
+  if (corners.length !== 4) return heightMm;
+  const [tl, tr, br, bl] = corners;
+  const top = Math.hypot(tr[0] - tl[0], tr[1] - tl[1]);
+  const bottom = Math.hypot(br[0] - bl[0], br[1] - bl[1]);
+  const left = Math.hypot(bl[0] - tl[0], bl[1] - tl[1]);
+  const right = Math.hypot(br[0] - tr[0], br[1] - tr[1]);
+  const wPx = (top + bottom) / 2;
+  const hPx = (left + right) / 2;
+  if (hPx <= 0) return heightMm;
+  return (wPx / hPx) * heightMm;
+}
 
 // --- The camera ------------------------------------------------------------
 

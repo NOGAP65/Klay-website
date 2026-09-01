@@ -297,7 +297,7 @@ export default function Wardrobe3D({ modelId, colourName, background = '#EFEDE8'
       if (sticker) disposables.push(sticker);
 
       // The board. Where the sticker exists this is the photograph; where it
-      // does not â€” the three timber finishes, which were never rendered â€” it
+      // does not — the three timber finishes, which were never rendered — it
       // falls back to flat board in the right colour, and says so by simply
       // being plainer.
       const boardMat = new THREE.MeshStandardMaterial({
@@ -307,6 +307,16 @@ export default function Wardrobe3D({ modelId, colourName, background = '#EFEDE8'
         metalness: 0.0,
       });
       disposables.push(boardMat);
+
+      // Board with no photograph on it, for the back panel. Slightly down in
+      // value because nothing lights the inside of a cupboard, and at the same
+      // tone as the front edge the box reads as having no inside at all.
+      const plainBoardMat = new THREE.MeshStandardMaterial({
+        color: base.clone().multiplyScalar(0.97),
+        roughness: 0.86,
+        metalness: 0.0,
+      });
+      disposables.push(plainBoardMat);
 
       const metalMat = new THREE.MeshStandardMaterial({
         color: 0xb4b8bd,
@@ -326,7 +336,13 @@ export default function Wardrobe3D({ modelId, colourName, background = '#EFEDE8'
           root.add(buildBoxMesh(box, metalMat, false));
           continue;
         }
-        root.add(buildBoxMesh(box, boardMat, !!sticker));
+        // THE BACK PANEL TAKES PLAIN BOARD, never the photograph. Everything
+        // hanging in the cabinet is in front of it, so a projection along the
+        // camera axis lands the picture's own rail and coats flat on it —
+        // behind the modelled rail and the upright content planes, giving two
+        // of each. Left plain, it is what it should be: the surface behind the
+        // clothes.
+        root.add(buildBoxMesh(box, box.back ? plainBoardMat : boardMat, !box.back && !!sticker));
       }
 
       // --- what stands inside ----------------------------------------------

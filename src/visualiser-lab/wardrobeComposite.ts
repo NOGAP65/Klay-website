@@ -195,11 +195,11 @@ const EXPOSURE_STRENGTH = 0.42;
  * cached and a finish or photo change re-derives cleanly.
  */
 export function relightCutout(
-  image: HTMLImageElement,
+  image: CanvasImageSource & { width?: number; height?: number; naturalWidth?: number; naturalHeight?: number },
   profile: PhotoProfile,
 ): HTMLCanvasElement {
-  const w = image.naturalWidth;
-  const h = image.naturalHeight;
+  const w = image.naturalWidth ?? image.width ?? 0;
+  const h = image.naturalHeight ?? image.height ?? 0;
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
@@ -355,7 +355,7 @@ export function makeGrainTile(seed = 1): HTMLCanvasElement {
   // WHOLE NUMBERS OF CYCLES ACROSS THE TILE, so the pattern is periodic and the
   // tile meets itself on all four edges. A fractional frequency leaves a step
   // at the join, and once a panel is several tiles wide those steps line up
-  // into visible vertical banding â€” which is what the first version did, and it
+  // into visible vertical banding — which is what the first version did, and it
   // read as a rendering fault rather than as timber.
   const waves = Array.from({ length: 5 }, () => ({
     ring: 1 + Math.floor(rnd() * 4),
