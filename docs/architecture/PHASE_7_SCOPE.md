@@ -31,72 +31,138 @@ recorded the same sentence: *"it is a rename, and renames do not happen inside m
 
 ---
 
-## 1. **THE `hover` CLUSTER — 26 findings across 11 files. Do this one first.**
+## The seeded list has been REPLACED by the measured inventory below
 
-**It is one rename, not twenty-six.** `useHover` returns `{ hover, bind }`, and every consumer
-destructures `hover` — a boolean without an `is` prefix. Rename the property once in
-`design-system/primitives/useHover.ts` and the call sites follow mechanically.
+This section used to carry a hand-written cluster list assembled while Phases 4-6 were running.
+It has been deleted rather than kept beside the inventory, because two lists of the same thing in
+one document is the divergence this project keeps finding in code — and a stale one in a scope
+document is worse, since it is what someone plans from.
 
-```
-design-system/primitives/useHover.ts     the definition
-  -> 11 files across ds/primitives, features/home, features/catalogue
-```
-
-**`hover` is also a parameter name in `ctaFill(variant, hover)`** — same rename, same commit,
-because a reader tracing the value through both should not meet two names for it.
-
-**Suggested:** `isHovered`. Not `isHover`: §6 wants a predicate that reads as a state, and the
-`bind` handlers set it from mouse enter/leave.
-
-**The related cluster goes with it** — same shape, same commit is acceptable **only** if the
-diff stays readable, otherwise one commit each:
-
-| Identifier | Files |
-|---|---:|
-| `ctaHover` | 5 |
-| `cartHover` | 2 |
-| `quoteHover`, `barCartHover`, `barQuoteHover` | 1 each |
-
-These are local `useState` booleans named for what they track, in components that predate
-`useHover`. **Several of them should not be renamed but deleted** — a component holding
-`ctaHover` by hand is a component that could be calling `useHover`. Check before renaming; a
-rename that preserves a duplication is the wrong fix.
-
-## 2. The remaining boolean clusters — 39 findings
-
-| Identifier | Files | Note |
-|---|---:|---|
-| `reduceMotion` | 4 | `prefersReducedMotion` already exists as a token export; this is the local. Pick one name |
-| `fourUp`, `stacked`, `wideRow`, `narrow` | 2, 2, 1, 1 | Layout-mode booleans. `isFourUp`, `isStacked`, … |
-| `open`, `menuOpen`, `drawerOpen`, `closing`, `collapsed`, `compressed` | 1–2 each | Nav and drawer state. **`compressed` is the one from decision A** — the nav padding flag, and its behaviour question is recorded in MIGRATION_MAP §0.1 |
-| `turnstileEnabled` | 2 | `useTurnstileEnabled` returns it; rename at the hook, like `hover` |
-| `external`, `alwaysSolid`, `solidBar`, `onDarkGround`, `glyphOnLight`, `centred`, `focused`, `synced`, `addedToCart`, `showSortDropdown`, `dead` | 1 each | Ordinary locals |
-
-**`dead` is worth a look rather than a prefix.** A boolean called `dead` in a codebase that has
-just spent six phases finding dead code is either badly named or pointing at something.
+**The inventory below is measured, not remembered:** `node tools/lint-scope.mjs --cluster <rule>`,
+against the in-scope definition ADR-023 gives. Two things changed when it was measured properly.
+The hover cluster is 14 findings for `hover` itself plus 10 hand-rolled duplicates, not 26 of one
+kind. And the verb-family and abbreviation work turned out to be two identifiers rather than a
+programme, because 62 of those 64 findings are inside E-08.
 
 ---
 
-## 3. Verb families and abbreviations — deferred from Phase 0, never actioned
-
-MIGRATION_MAP §0.5 recorded two more naming findings at baseline that no phase has touched:
-
-- **Five verb families use synonyms.** §6: *"Pick one verb per concept and never synonyms. If
-  network retrieval is `fetch`, there is no `get`, no `load`, no `retrieve`. Synonyms make a
-  codebase unsearchable."*
-- **Abbreviations outside the permitted list.** §6 permits `id`, `url`, `api`, `ref`, `src`,
-  `px`, `db`, `ui`, `cta`; not `cfg`, `btn`, `msg`, `res`, `req`, `tmp`, `val`, `idx`.
-
-Neither is machine-enforced today. **Both want a rule before they want a rename** — otherwise
-the pass is done by eye, cannot be measured, and regresses. Under ADR-022 any such rule needs a
-fixture proving it fires before its count means anything.
-
----
-
-## 4. The `visualiser`/`visualizer` split is NOT in this phase
+## The `visualiser`/`visualizer` split is NOT in this phase
 
 E-07 and ADR-013. The two spellings live in out-of-scope code (E-08), which may not be edited for
 any reason. It travels with the visualiser's own migration.
+
+
+---
+
+# THE RULE THAT COMES BEFORE ANY RENAME
+
+> **Establish whether the thing should exist before renaming it. Anything that turns out to be a
+> duplicate goes to `DIVERGENCE_LOG.md` and is REMOVED, not renamed.**
+
+**Because a well-named duplicate looks intentional and gets harder to find.** `ctaHover` reads as
+an oversight. `isCtaHovered` reads as a decision — correctly named, §6-compliant, invisible to
+review, and still the tenth hand-rolled copy of a hook that already exists.
+
+A naming pass is the last time anyone will look at these identifiers one at a time. **Spending
+that attention on spelling and not on existence wastes the only pass they get**, and leaves the
+codebase measurably cleaner by the lint count and no better at all.
+
+**It found two divergences on its first application** — D-08 and D-09 below, neither of which
+any lint rule reports, both sitting on the rename list.
+
+Every row of the inventory therefore carries a verdict before it carries a new name:
+
+| Verdict | Meaning |
+|---|---|
+| **REMOVE** | It duplicates something. Log it, delete it, do not rename it |
+| **RENAME** | It should exist and it is misnamed |
+| **RENAME + REVIEW** | It should exist, but the name is wrong about more than its prefix |
+| **EXEMPT** | The rule is wrong here. Record why, in the file |
+
+---
+
+# THE RENAME INVENTORY
+
+**67 in-scope findings, 41 distinct identifiers, across three rules.** Measured with
+`node tools/lint-scope.mjs --cluster <rule>`. **No renames have been executed.**
+
+## REMOVE — 11 findings, 5 identifiers. Do these first; they shrink everything below.
+
+| Identifier | Sites | Verdict |
+|---|---:|---|
+| `ctaHover` | 5 files | **D-08.** Hand-rolled `useState(false)` beside `useHover()`, which 8 other files already use |
+| `quoteHover`, `cartHover`, `barCartHover`, `barQuoteHover` | 6 sites, 2 files | **D-08.** Same. `ProductDetailPage` declares four of them; `useHover`'s own doc comment says it exists so that a component needing three hover targets does not do this |
+
+**Ten sites become `useHover()` calls. Five identifiers leave the rename list by being deleted.**
+
+## RENAME — 24 identifiers. Ordinary unprefixed booleans, §6.
+
+**One rename, not fourteen: `hover` → `isHovered`.** It is the property `useHover` returns and
+the parameter `ctaFill(variant, hover)` takes. Rename it at the definition and the eleven
+consumers follow mechanically. **Do this AFTER the REMOVE block**, or ten of the call sites you
+are about to touch will not exist yet.
+
+| Identifier | Files | Suggested |
+|---|---:|---|
+| `hover` | 11 | `isHovered` — one rename at `useHover.ts` + `cta.ts` |
+| `reduceMotion` | 4 | `prefersReducedMotion` is already the token's name; the local should not disagree with it. **See REVIEW** |
+| `turnstileEnabled` | 2 | `isTurnstileEnabled` — rename at `useTurnstileEnabled`, two call sites follow |
+| `fourUp` | 2 | `isFourUp` |
+| `open`, `menuOpen`, `drawerOpen`, `collapsed`, `closing` | 5 | `isOpen`, `isMenuOpen`, `isDrawerOpen`, `isCollapsed`, `isClosing` |
+| `compressed`, `alwaysSolid`, `solidBar`, `onDarkGround` | 4 | Nav's own state. `isCompressed`, `isAlwaysSolid`, `isSolidBar`, `isOnDarkGround` |
+| `active` | 2 | `isActive` |
+| `external`, `centred`, `focused`, `synced`, `narrow`, `ready`, `paused`, `busy`, `submitted`, `hot`, `wideRow`, `glyphOnLight`, `showSortDropdown`, `addedToCart`, `quoteSent`, `follows`, `onItsOwn` | 1 each | `is`/`has`/`should` prefix as appropriate |
+
+## RENAME + REVIEW — 4 identifiers. The name is wrong about more than its prefix.
+
+| Identifier | Where | Why it needs more than a prefix |
+|---|---|---|
+| `dead` | `FilterRail.tsx:102` | `count === 0 && state === 'off'` — the option cannot combine with what is ticked. **`dead` does not say that.** `isUnavailable` or `isUncombinable`. Phase 4-5 flagged this: a boolean called `dead` in a codebase that just spent six phases finding dead code is either badly named or pointing at something. It is badly named |
+| `stacked` | `RangeRow.tsx:804`, `RecommendationBanner.tsx:85` | **Same name, two different definitions.** RangeRow: `!fourUp`. RecommendationBanner: `useMediaQuery(STACK)`, an independent breakpoint. Not a duplicate — worse, a collision. Rename them apart before prefixing, or one will be assumed to imply the other |
+| `reduceMotion` | 4 files | Each is `useState(prefersReducedMotion)` — the same four-line snapshot of the same token in four files. Not a divergence (all four are identical and correct), but a `usePrefersReducedMotion` hook is the obvious home. **Decide before renaming four copies** |
+| `onItsOwn`, `follows` | `VisualiserShowcase.tsx:250-251` | Layout booleans whose names describe prose rather than state. Prefixing gives `isOnItsOwn` / `isFollows`, and the second is not English. Needs a real name |
+
+## EXEMPT — 2 findings. The rule is wrong here, and that is a finding about the rule.
+
+| Finding | Rule | Why exempt |
+|---|---|---|
+| `matches` in `useMediaQuery.ts:21` | naming-convention | It mirrors `window.matchMedia(q).matches` — the Web API's own word. §5: *"Code interfacing with a Web or library API uses that API's spelling."* Renaming it to `isMatching` makes the hook disagree with the thing it wraps |
+| `loadScript` in `Turnstile.tsx:45` | `klay/one-verb-per-concept` | **A false positive in a rule I wrote this phase.** §6's verb rule is about NETWORK RETRIEVAL — *"if network retrieval is `fetch`, there is no `get`, no `load`"*. This injects a `<script>` element; `loadScript` is the idiomatic name and `fetchScript` would be wrong. Either add an exemption or narrow the family. **Recorded rather than quietly renamed to satisfy my own rule** |
+
+## The abbreviation rule's single in-scope finding
+
+| Finding | Verdict |
+|---|---|
+| `opts` — `configOptions.ts:210` | **RENAME** → `options`. §6: everything not on the permitted list is spelled out |
+
+`specRows` and `params` were considered and are **not** flagged: `spec` is product-specification
+domain vocabulary, and `params` is `URLSearchParams`' own word. Both were deliberately left off
+the banned list — a rule that guessed at "looks abbreviated" would flag them, and a rule with
+false positives gets switched off.
+
+---
+
+# BASELINE — the two new rules, recorded before any rename
+
+| Rule | In-scope | Out-of-scope (E-08) | Fires? |
+|---|---:|---:|---|
+| `klay/no-banned-abbreviations` | **1** | 44 | YES — `tools/rule-fixtures/banned-abbreviations.ts` |
+| `klay/one-verb-per-concept` | **1** | 18 | YES — `tools/rule-fixtures/verb-synonyms.ts` |
+| `@typescript-eslint/naming-convention` | **65** | 63 | YES |
+
+**Both new rules were written and proven to fire BEFORE any rename** — ADR-022, and the reason
+the order matters: a rule introduced after a cleanup has no baseline to have moved, so the
+cleanup cannot be shown to have worked.
+
+**And the baselines confirm what Phase 0 predicted rather than contradicting it.** §0.5 measured
+these two problems across the whole codebase and concluded the genuine violations *"sit largely
+in the frozen zone"*. They do: 62 of the 64 findings are inside E-08, permanently out of scope.
+
+**So Phase 7's abbreviation and verb work is two identifiers, one of which is my own rule's false
+positive.** That is a real result and not an anticlimax — it means the in-scope codebase was
+already close to §6 on those two points, and the rules now hold it there. Their value is
+preventing regression, not cleaning up. **ADR-020's consequences log records that these counts
+jump by 62 the day E-08 retires.**
 
 ---
 

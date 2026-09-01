@@ -898,3 +898,50 @@ thirteen files. Inspecting the diff would not have told us whether it still reso
   still above the bar with the nav offset behind it.
 
 A structural phase that changes what the visitor sees has done something wrong. This one did not.
+
+---
+
+# PHASE 7 PREPARATION — two rules added, baselined, no renames executed
+
+**Phase 6 is blocked on two decisions with V and Bobby, so Phase 7 preparation ran instead.
+Preparation only: the rules exist and are baselined; the inventory is written; nothing has been
+renamed.**
+
+| Rule | In-scope | Out-of-scope (E-08) | Fires? |
+|---|---:|---:|---|
+| `klay/no-banned-abbreviations` *(new)* | **1** | 44 | YES — fixture |
+| `klay/one-verb-per-concept` *(new)* | **1** | 18 | YES — fixture |
+| `@typescript-eslint/naming-convention` | 65 | 63 | YES |
+
+**Written before the rename, not after.** A rule introduced after a cleanup has no baseline to
+have moved, so the cleanup cannot be shown to have worked — and under ADR-022 a rule's count
+means nothing until the rule is proven to fire. Both fire; `npm run verify:rules` is now 15 by
+fixture, 2 by probe, 1 blind.
+
+## Both baselines confirm Phase 0 rather than contradicting it
+
+§0.5 measured verb families and abbreviations across the whole codebase and concluded the genuine
+violations *"sit largely in the frozen zone."* **62 of the 64 findings are inside E-08.**
+
+So the in-scope work is two identifiers — and one of those is a false positive in a rule written
+this phase (`loadScript` injects a `<script>` element; §6's verb rule is about network
+retrieval). **Recorded rather than renamed to satisfy my own rule.**
+
+**The value of these two rules is preventing regression, not cleaning up.** ADR-020's
+consequences log records that both counts jump by 62 the day E-08 retires.
+
+## And the preparation found two divergences, which is the point of the rule that governs it
+
+Phase 7 carries a rule ahead of any rename: **establish whether the thing should exist first.**
+Applied to the inventory, it moved 11 findings out of the rename column and into the divergence
+log:
+
+- **D-08** — hover state has two implementations. `useHover()` in 8 files, and 10 hand-rolled
+  `useState(false)` sites across 6 more. All ten were on the rename list. Renaming them would
+  have produced ten correctly-named duplicates, **and a well-named duplicate looks intentional.**
+- **D-09** — the form-field `set` helper, character-identical in `ContactPage` and
+  `BookInstallPage`. Not extracted yet: one consumer moves to `features/booking` in Phase 6, and
+  choosing a home for it now is the mistake D-04 was logged to avoid.
+
+Neither is reported by any lint rule. Both were found by asking a question the lint count cannot
+ask.

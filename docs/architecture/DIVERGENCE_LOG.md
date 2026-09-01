@@ -7,7 +7,7 @@ machine, because *"a rule that relies on someone remembering it is not a rule, i
 The entries below are what happens without that enforcement — and every one of them was
 written by someone competent, in code that was individually good.
 
-**Running total: 7 confirmed. 1 resolved, 1 partially resolved, 2 deliberate, 3 open.**
+**Running total: 9 confirmed. 1 resolved, 1 partially resolved, 2 deliberate, 5 open.**
 
 | | Status |
 |---|---|
@@ -17,7 +17,9 @@ written by someone competent, in code that was individually good.
 | D-04 postcode regex ×2 | Deliberate non-extraction, waiting for the same home |
 | D-05 three curtain implementations | Open. **Not resolvable by this migration** — ADR-020 |
 | D-06 hardware colour maps ×3 | Open. **Not resolvable by this migration** — ADR-020 |
-| **D-07** `MOTORISED_ADDON` ×2 | Open. A dead duplicate of a live price constant. Goes with the pricing module, Phase 6 |
+| **D-07** `MOTORISED_ADDON` ×2 | **RESOLVED** — data/products.ts re-exports pricing.ts |
+| **D-08** hover state ×2 implementations | Open. 10 hand-rolled sites beside a useHover hook. **Removed, not renamed** — Phase 7 |
+| **D-09** form-field setter ×2 | Open. Identical helper in two forms. Waits for booking to land in Phase 6 |
 
 The earlier header read "3 resolved, 2 deliberate, 1 open", which never reconciled with the
 entries below it. Corrected while D-01 was being closed.
@@ -198,7 +200,7 @@ moment in this migration at which all three collapse. `HARDWARE_HEX` stays in
 
 ## D-07 — `MOTORISED_ADDON = 150`, two copies, one of them across the money boundary
 
-**Type:** The Silent Divergence (§13) · **Status:** OPEN
+**Type:** The Silent Divergence (§13) · **Status:** **RESOLVED — 1 Sep 2026**
 **Found:** 1 Sep 2026, P4-5, while splitting `data/products.ts`
 
 | Location | Consumers |
@@ -219,16 +221,75 @@ constant says the new one.
 returned `src/lib/pricing.ts` three times, which looks like an import and two uses. It is a
 declaration and two uses.
 
-**Not resolved here.** §7 puts pricing authority in one module and Phase 6 moves that module to
-`shared-core/pricing/`. Deleting a constant is not a move-phase action, and the copy that has to
-survive is the one going to `shared-core`. It goes with PHASE_6_SCOPE item 1 — the file it is
-duplicating is the file being moved.
+**RESOLVED, and not deferred.** `data/products.ts` now re-exports `MOTORISED_ADDON` from
+`lib/pricing.ts` — one line, one source. Deferring it to Phase 6 was the original plan and it
+was the wrong call: a display price that can diverge from a charged price is a customer-facing
+failure, not a code-quality one, and it does not wait for a phase. The shim disappears when
+pricing moves to `shared-core` and this file is repointed with it.
 
 **This is the seventh divergence, and the first found by the migration rather than by the
 audit.** §13's test applies to it exactly: before asking who duplicated this, ask where the
 single copy would have gone. Here the answer is not "nowhere legal" — `pricing.ts` was always
 available and always correct. This one is a plain duplicate, which makes it the first entry in
 this log that better structure alone would not have prevented.
+
+---
+
+## D-08 — Hover state, two implementations
+
+**Type:** The Second Implementation (§13) · **Status:** OPEN — removal scheduled, Phase 7
+**Found:** 1 Sep 2026, Phase 7 preparation, by asking whether a thing should exist before
+renaming it
+
+| Implementation | Sites |
+|---|---:|
+| `useHover()` — `design-system/primitives/useHover.ts`, returning `{ hover, bind }` | 8 files |
+| `const [xHover, setXHover] = useState(false)` written out by hand | **10 sites across 6 files** |
+
+`src/app/layouts/Nav.tsx` (2), `src/features/catalogue/components/ProductDetailPage.tsx` (4),
+`src/app/routes/NotFoundPage.tsx`, `AboutPage.tsx`, `ContactPage.tsx`, `HowItWorksPage.tsx`.
+
+**Found because of the rule Phase 7 was given: establish whether the thing should exist before
+renaming it.** All ten were on the rename list — `ctaHover`, `quoteHover`, `cartHover`,
+`barCartHover`, `barQuoteHover`, unprefixed booleans every one. Renaming them to `isCtaHovered`
+would have produced ten correctly-named duplicates of a hook that already exists, and **a
+well-named duplicate looks intentional.** `ctaHover` reads like an oversight; `isCtaHovered`
+reads like a decision.
+
+**The hook's own doc comment states the case against them:** *"Hover state plus the two
+handlers, so a component that needs three hover targets doesn't declare three useStates by
+hand."* `ProductDetailPage` declares four.
+
+**Resolution: removed, not renamed.** Ten sites call `useHover()`; the rename list loses five
+identifiers. Phase 7.
+
+---
+
+## D-09 — The form-field setter, two copies
+
+**Type:** The Silent Divergence (§13) · **Status:** OPEN
+**Found:** 1 Sep 2026, Phase 7 preparation
+
+```ts
+const set = (key: keyof typeof form) => (value: string) =>
+  setForm((f) => ({ ...f, [key]: value }));
+```
+
+Character-identical in `src/features/marketing/components/ContactPage.tsx:51` and
+`src/pages/BookInstallPage.tsx:86`. Both sit above a near-identical
+`busy` / `fieldErrors` / `formError` state trio.
+
+**Two forms, written independently, that reached the same correct answer** — which is D-03's
+shape exactly, and D-03 is the entry that argued `shared-core` into existence.
+
+**Not extracted yet, and the reason matters.** The two consumers are in different features, and
+one of them — `BookInstallPage` — has not migrated: it moves to `features/booking` in Phase 6.
+Extracting now would mean choosing a home for a helper whose second consumer is about to move,
+which is the mistake D-04 was logged to avoid. **It waits for booking to land**, and then the
+question is whether this is a `shared/hooks/useFormState` or two features legitimately having
+small forms.
+
+Logged now because the duplicate is known now.
 
 ---
 

@@ -325,6 +325,10 @@ export default tseslint.config(
       'klay/no-hardcoded-style-values': 'warn',
       'klay/no-pure-black': 'warn',
       'klay/no-direct-env-access': 'warn',
+      // Phase 7 — the naming pass. Baselined before any rename happens, so the
+      // pass has a number to move. ADR-022: both fire against fixtures.
+      'klay/no-banned-abbreviations': 'warn',
+      'klay/one-verb-per-concept': 'warn',
 
       // --- size and complexity: §8 ------------------------------------------
       // Error thresholds only. The warn thresholds in §8 are guidance for a

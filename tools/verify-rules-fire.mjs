@@ -47,6 +47,8 @@ const EXPECTED = [
   'max-params',
   '@typescript-eslint/no-unused-vars',
   '@typescript-eslint/naming-convention',
+  'klay/no-banned-abbreviations',
+  'klay/one-verb-per-concept',
 ];
 
 /** Rules verified by linting a virtual file at a path that means something. */

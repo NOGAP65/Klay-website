@@ -98,3 +98,46 @@ It does not say the visualiser is badly built, or that it should not eventually 
 `features/visualiser/`. It says a migration cannot be gated on work that is still being
 written, and that a slot which has receded at every phase should be named as out of scope
 rather than carried as though it were scheduled.
+
+---
+
+# CONSEQUENCES LOG — THE DEMOLITION ORDER
+
+**Every artefact that exists SOLELY because the visualiser is out of scope.**
+
+When the visualiser migrates, this is the list to take apart, and it is the reason the ADR
+carries a log rather than a paragraph. **Four times now this exception has SHAPED a decision
+rather than merely excluded a file** — and a shaping exception is invisible in the thing it
+shaped. Nothing in `BareLayout` says "I exist because of a frozen renderer" unless it is written
+down, and by the time someone reads it the reason will be years old.
+
+**Maintained in the same commit as the artefact.** An entry added later is an entry that was
+nearly forgotten.
+
+| # | Artefact | Where | What it is | Demolition |
+|---|---|---|---|---|
+| **1** | `src/data/products.ts` remains at its legacy path | `src/data/` | Decision H was executed only as far as the out-of-scope importers allowed. Six E-08 files import `RYNAMIC_COLOURS`, `CURTAIN_COLOURS`, `HARDWARE_HEX`, `HARDWARE_OPTIONS`. **E-10** | Move the four symbols into `features/visualiser/`; catalogue consumes the colour cards through its barrel. Delete the file. Decision H completes |
+| **2** | `theme.ts` shim and the `@deprecated` colour/spacing aliases | `src/theme.ts` | Kept for 12 spacing and 4 font-size occurrences in E-08 files. **E-10**, ADR-017 as amended | Repoint those 16 occurrences, delete the shim and the aliases |
+| **3** | Permanent re-export shim at `src/lib/pricing.ts` | `src/lib/` | Four E-08 files import pricing by relative path. **E-09.** *Not yet created — Phase 6 makes it* | Repoint the four, delete the shim. `@/core/pricing` becomes the only path |
+| **4** | Re-export shim at `src/components/Nav.tsx` | `src/components/` | `VisualiserPage.tsx` and `VisualizerLabPage.tsx` import `Nav` by relative path. **E-11** | Repoint two import lines, delete the file. `src/components/` disappears entirely once `FormField` also goes |
+| **5** | `BareLayout` | `src/app/layouts/` | Exists so the two E-08 pages, which mount their own `<Nav />` and cannot be edited, do not render two navs under `RootLayout` | Move both pages under `RootLayout`, strip their chrome, delete `BareLayout` — unless a genuine no-chrome route has appeared by then |
+| **6** | The `legacy-visualiser` boundary element type | `eslint.config.js` | A permanent `feature → legacy-visualiser` allowance so the blanket `feature → legacy` line can be removed at Phase 6.1 without the countdown having to reach an unreachable zero | Delete the element type and its two policies. `feature → legacy` should then be gone too |
+| **7** | The countdown's permanent floor | `PHASE_6_SCOPE.md` | Currently **10**. Edges from `features/catalogue` and `features/home` into `src/visualiser/` that no phase clears | Falls to zero. The countdown finally means what its name says |
+| **8** | Scope exclusions E-08/E-09/E-10/E-11 | `exceptions.json`, §12 | 4 of 11 exceptions exist for this one decision. They remove ~340 findings from the in-scope count | Delete the four entries. **Files re-enter scope automatically and any rule they violate demotes `error` → `warn`** — ADR-023. Expect that, and expect it to be a lot |
+| **9** | `import/order` and the naming rules reading near-zero in scope | `LINT_BASELINE.md` | `klay/no-banned-abbreviations` is 1 in-scope against 44 out; `one-verb-per-concept` 1 against 18. Phase 0 predicted this: the genuine violations "sit largely in the frozen zone" | Those 62 findings arrive at once. Phase 7's work is small **because** of E-08, not because the codebase is clean |
+
+## What the pattern is, stated once
+
+An out-of-scope zone does not stay out of the way.
+
+Every one of these exists because something **in** scope had to reach something **out** of it,
+and the boundary could not be crossed by editing the other side. The shim is the general shape:
+when you may not touch the importer, you leave the imported path standing.
+
+**That is a cost of the decision, not evidence against it.** ADR-020 was taken because the
+alternative — a migration gated on work that never stopped — could not finish at all. But the
+cost is nine artefacts and roughly half the repository's lint findings held outside the count,
+and it should be paid down deliberately rather than discovered.
+
+**The measure of whether this log worked:** when the visualiser migrates, nothing on this list
+is found by accident.

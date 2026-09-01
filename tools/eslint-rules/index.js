@@ -37,6 +37,8 @@
 import noHardcodedStyleValues from './no-hardcoded-style-values.js';
 import noPureBlack from './no-pure-black.js';
 import noDirectEnvAccess from './no-direct-env-access.js';
+import noBannedAbbreviations from './no-banned-abbreviations.js';
+import oneVerbPerConcept from './one-verb-per-concept.js';
 
 export default {
   meta: {
@@ -47,5 +49,8 @@ export default {
     'no-hardcoded-style-values': noHardcodedStyleValues,
     'no-pure-black': noPureBlack,
     'no-direct-env-access': noDirectEnvAccess,
+    // Phase 7's two, written BEFORE any rename so the pass can be measured.
+    'no-banned-abbreviations': noBannedAbbreviations,
+    'one-verb-per-concept': oneVerbPerConcept,
   },
 };
