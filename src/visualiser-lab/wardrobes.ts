@@ -75,17 +75,32 @@ export const WARDROBE_HEIGHT_MM = 2016;
  * Held here as a constant for the same reason 2016 is. */
 export const WARDROBE_DEPTH_MM = 500;
 
+/** THE WIDTHS THE RANGE IS BUILT IN, and every layout is built in all of them.
+ *
+ * The per-model lists this replaces were wrong in both directions — 2.9 and 6.0
+ * were recorded as 1800-only when they are made across the range, and the lists
+ * disagreed with the renders besides. One list, because there is one answer.
+ *
+ * Which is also what the slicing was for: the fixed modules hold their 507mm at
+ * every one of these, and the hanging bays take up the difference. */
+export const WARDROBE_WIDTHS_MM = [1500, 1800, 2100, 2400, 2700];
+
+/** The width a layout opens on. The renders were shot at about this, so the
+ * visualiser starts on unsliced artwork and the first thing a customer sees is
+ * the photograph at its own proportions. */
+export const DEFAULT_WIDTH_MM = 2400;
+
 export const WARDROBE_MODELS: WardrobeModel[] = [
-  { id: '2.9', name: 'Forma 2.9', kind: 'built-in', widths: [1800], legacyFile: 'Forma Wardrobe 2.9 Sticker.png' },
-  { id: '3.0', name: 'Forma 3.0', kind: 'built-in', widths: [2400, 3000], legacyFile: 'Forma Wardrobe 3.0 Sticker.png' },
-  { id: '4.0', name: 'Forma 4.0', kind: 'built-in', widths: [1800, 2400, 3000], legacyFile: 'Forma Wardrobe 4.0 Sticker.png' },
-  { id: '4.9', name: 'Forma 4.9', kind: 'built-in', widths: [1800], legacyFile: 'Forma Wardrobe 4.9 Sticker.png' },
-  { id: '5.0', name: 'Forma 5.0', kind: 'built-in', widths: [2400, 3000], legacyFile: 'Forma Wardrobe 5.0 Sticker.png' },
-  { id: '6.0', name: 'Forma 6.0', kind: 'built-in', widths: [1800], legacyFile: 'Forma Wardrobe 6.0 Sticker.png' },
-  { id: '8.0', name: 'Forma 8.0', kind: 'built-in', widths: [2400], legacyFile: 'Forma Wardrobe 8.0 Sticker.png' },
-  { id: '7.0L', name: 'Forma 7.0L', kind: 'walk-in', widths: [2400, 3000], legacyFile: 'Forma Wardrobe 7.0L Sticker.png' },
-  { id: '9.0L', name: 'Forma 9.0L', kind: 'walk-in', widths: [2400], legacyFile: 'Forma Wardrobe 9.0L Sticker.png' },
-  { id: '12.0U', name: 'Forma 12.0U', kind: 'walk-in', widths: [2400], legacyFile: 'Forma Wardrobe 12.0U Sticker.png' },
+  { id: '2.9', name: 'Forma 2.9', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 2.9 Sticker.png' },
+  { id: '3.0', name: 'Forma 3.0', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 3.0 Sticker.png' },
+  { id: '4.0', name: 'Forma 4.0', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 4.0 Sticker.png' },
+  { id: '4.9', name: 'Forma 4.9', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 4.9 Sticker.png' },
+  { id: '5.0', name: 'Forma 5.0', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 5.0 Sticker.png' },
+  { id: '6.0', name: 'Forma 6.0', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 6.0 Sticker.png' },
+  { id: '8.0', name: 'Forma 8.0', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 8.0 Sticker.png' },
+  { id: '7.0L', name: 'Forma 7.0L', kind: 'walk-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 7.0L Sticker.png' },
+  { id: '9.0L', name: 'Forma 9.0L', kind: 'walk-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 9.0L Sticker.png' },
+  { id: '12.0U', name: 'Forma 12.0U', kind: 'walk-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 12.0U Sticker.png' },
 ];
 
 export const modelsOfKind = (kind: WardrobeKind) => WARDROBE_MODELS.filter(m => m.kind === kind);

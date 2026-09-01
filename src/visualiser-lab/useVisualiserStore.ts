@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
 import { pricePerBlind, type BlindType } from '../lib/pricing';
-import { wardrobeModelById } from './wardrobes';
+import { DEFAULT_WIDTH_MM } from './wardrobes';
 
 type Point = [number, number];
 
@@ -306,7 +306,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   wardrobeModel: '3.0',
   wardrobeColour: 'Matt Wardrobe White',
   // 3.0's first width, matching wardrobeModel above.
-  wardrobeWidthMm: 2400,
+  wardrobeWidthMm: DEFAULT_WIDTH_MM,
   windows: [following(DEFAULT_WINDOW)],
   activeWindow: 0,
   photoUrl: null,
@@ -395,8 +395,12 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   // The width follows the layout, because the ranges differ — 2.9 is built at
   // one width, 4.0 at three. Carrying a width across a layout change would
   // leave the configurator holding a size that layout is not made in.
-  setWardrobeModel: (id) =>
-    set({ wardrobeModel: id, wardrobeWidthMm: wardrobeModelById(id).widths[0] }),
+  // THE WIDTH SURVIVES A LAYOUT CHANGE now that every layout is built in the
+  // same five widths. It used to reset, because the ranges differed and a
+  // carried width could be one the new layout was not made in. With one shared
+  // list there is nothing to reset to, and resetting would only throw away a
+  // choice the customer had already made.
+  setWardrobeModel: (id) => set({ wardrobeModel: id }),
   setWardrobeColour: (name) => set({ wardrobeColour: name }),
   setWardrobeWidthMm: (mm) => set({ wardrobeWidthMm: mm }),
   setCurtainMount: (mount) => set(writeThrough({ curtainMount: mount })),
