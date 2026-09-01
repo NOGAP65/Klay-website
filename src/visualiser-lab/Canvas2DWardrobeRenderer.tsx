@@ -38,7 +38,7 @@ import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, wardrobeColour, 
 import { loadAllContents, type ContentKind, type LoadedContent } from './wardrobeContents';
 import { projectorFromQuad, columnsFor, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
 import { buildSliceMap, sliceMapper, type SliceMap } from './wardrobeSlices';
-import { profilePhoto, relightCutout, applyGrain, makeGrainTile, isWoodFinish } from './wardrobeComposite';
+import { profilePhoto, relightCutout, applyGrain, makeGrainTile, isWoodFinish, sampleBoardColour } from './wardrobeComposite';
 import type { Point } from './homography';
 
 export interface WardrobeRendererProps {
@@ -112,19 +112,23 @@ export default function Canvas2DWardrobeRenderer({
       // own proportions describe. Every other width is reached by slicing.
       const refWidthMm = model.widths[0];
 
-      // THE WIDTH COMES FROM THE TRACE, not from a control.
+      // THE WIDTH IS THE PRODUCT'S, NOT THE TRACE'S — and this is the whole
+      // proportion rule.
       //
-      // Height is the only fixed parameter — every unit is 2016 — so the traced
-      // box's height IS 2016mm, and that fixes millimetres-per-pixel. Its own
-      // width-to-height ratio then says how wide the customer drew, and that is
-      // the cabinet. Nothing else has to be asked: the one thing the customer
-      // knows is where the wardrobe goes, and they have just drawn it.
+      // Height is the one fixed parameter: every unit is 2016, so the traced
+      // box's height IS 2016mm and that alone fixes the scale. The cabinet's
+      // width is then a property of the layout the customer chose — a 2.9 is a
+      // small unit, a 4.9 is not — and it lands as a ratio against that height.
+      // A 1800 wide unit is 1800/2016 of the traced height across, whatever
+      // shape the box was drawn.
       //
-      // Which is also what makes the slicing carry its weight. A dropdown gives
-      // five widths; a trace gives any width at all, and every one of them has
-      // to keep the tower at 507.
-      const traced = tracedWidthMm(corners, WARDROBE_HEIGHT_MM);
-      const drawWidthMm = widthMm ?? traced;
+      // SO THE TRACE ONLY SAYS WHERE, and the cabinet is free to be narrower
+      // than the box or to overrun it. That is not an error to be corrected: a
+      // 2.9 in a wide alcove leaves a gap and a 4.9 in a narrow one does not
+      // fit, and showing that is the question the visualiser exists to answer.
+      // Taking the width from the trace instead made every layout fill whatever
+      // was drawn, which quietly answered "yes it fits" every time.
+      const drawWidthMm = widthMm ?? refWidthMm;
 
       const skin: WardrobeSkin | null = cut
         ? {
@@ -365,10 +369,6 @@ function drawBuiltIn(
   const projector = projectorFromQuad(corners, wallWidthMm, WARDROBE_HEIGHT_MM, imageW, imageH);
   if (!projector) return;
 
-  // Clamped to what the layout can actually be built as: its fixed modules plus
-  // a usable hanging bay. Traced narrower than that, the cabinet is drawn at
-  // its minimum rather than at an impossible size.
-  widthMm = Math.max(widthMm, skin ? skin.slices.minWidthMm : 900);
 
   // MEASURED BEFORE ANYTHING IS DRAWN, or the wardrobe gets sampled as though
   // it were the wall it is standing on.
@@ -391,7 +391,13 @@ function drawBuiltIn(
     ? { ...skin, image: flattenSkin(relightCutout(skin.image, profile), wardrobeColourHex(colourName)) }
     : null;
 
-  const base = hexToRgb(wardrobeColourHex(colourName));
+  // Taken from the artwork where there is any, so the faces the projection
+  // cannot reach are painted the same white as the ones it can. Painting them
+  // from the swatch hex instead left the shelf interiors and the back panel
+  // reading grey against a photographic white front.
+  const base =
+    (litSkin ? sampleBoardColour(litSkin.image) : null) ??
+    hexToRgb(wardrobeColourHex(colourName));
   const { boxes, compartments } = buildCarcass(layoutId, widthMm, contents.size > 0);
 
   // Centred in the traced wall. Left-aligning would be arbitrary, and centring
@@ -475,9 +481,17 @@ function drawBuiltIn(
         if (Z < fz) { fz = Z; farPt = pts[k]; }
       });
 
-      const flat = FACE_TONE[name] * (box.tone ?? 1);
+      // TONED DOWN WHERE THERE IS A PHOTOGRAPH. These values were set for a
+      // carcass drawn entirely in flat fills, where the shading between faces
+      // is the only thing saying the box has an inside. Beside a projected
+      // photograph — which carries its own lighting already — the same values
+      // are far too strong, and the unskinned faces read as grey panels let
+      // into a white cabinet. Pulled most of the way back toward flat, they
+      // separate the faces without becoming a second, disagreeing light.
+      const toneStrength = litSkin ? 0.34 : 1;
+      const flat = (1 - (1 - FACE_TONE[name]) * toneStrength) * (box.tone ?? 1);
       const shade = (z: number) =>
-        flat * (1 - Math.max(0, Math.min(1, -z / WARDROBE_DEPTH_MM)) * INTERIOR_FALLOFF);
+        flat * (1 - Math.max(0, Math.min(1, -z / WARDROBE_DEPTH_MM)) * INTERIOR_FALLOFF * toneStrength);
       faces.push({
         pts,
         depth: depthSum / 4,

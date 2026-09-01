@@ -534,15 +534,33 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               </div>
             </Field>
 
-            {/* NO WIDTH CONTROL, and that is the design rather than an
-                omission. Height is the only fixed parameter — 2016 on every
-                unit — so the traced box's height is known, which fixes the
-                scale, and its own ratio then gives the width. The customer has
-                already said how wide by drawing it; asking again would be
-                asking them to agree with themselves.
+            {/* WIDTH IS A PROPERTY OF THE PRODUCT, and only appears here where
+                the layout is genuinely made in more than one.
 
-                Drawer and shelf towers hold their 507mm at whatever width comes
-                out of that; the hanging bays take up the difference. */}
+                It is not taken from the trace. Height is the one fixed
+                parameter — 2016 on every unit — so the traced box gives the
+                scale and the position, and the chosen width then lands as a
+                ratio against that height. The cabinet may sit narrower than the
+                box or overrun it, which is the answer to "does this fit". */}
+            {wardrobeModelById(store.wardrobeModel).widths.length > 1 && (
+              <Field
+                onDark={onDark}
+                label="Width"
+                caption={`${store.wardrobeWidthMm} mm`}
+              >
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+                  {wardrobeModelById(store.wardrobeModel).widths.map(w => (
+                    <Pill
+                      key={w}
+                      onDark={onDark}
+                      label={String(w)}
+                      active={store.wardrobeWidthMm === w}
+                      onClick={() => store.setWardrobeWidthMm(w)}
+                    />
+                  ))}
+                </div>
+              </Field>
+            )}
           </div>
         </section>
       </div>
