@@ -250,6 +250,7 @@ them are.
 1. Rewrite `design-system/tokens/space.ts` and `type.ts` with the agreed steps and names.
 2. Keep the old names as `@deprecated` aliases pointing at the nearest new step — the frozen
    visualiser has 12 spacing and 4 font-size occurrences that cannot be touched until P4-7.
+   **ADR-020: P4-7 is deleted and those aliases are now permanent. See ADR-017 as amended.**
 3. Repoint the movable call sites, one commit per token group, never mixed with a file move.
 4. Expect `klay/no-hardcoded-style-values` to fall from 295 as literals become tokens; that
    number is the measure of whether this worked.

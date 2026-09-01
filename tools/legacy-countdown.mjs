@@ -6,7 +6,21 @@ process.chdir(ROOT);
 const LAYERS = ['app', 'config', 'design-system', 'features', 'shared'];
 const isLegacy = (p) => p.startsWith('src/') && !LAYERS.some((l) => p.startsWith('src/' + l + '/'))
   && p !== 'src/main.tsx' && p !== 'src/vite-env.d.ts';
-const isFrozen = (p) => p.startsWith('src/visualiser/') || p.startsWith('src/visualiser-lab/');
+// ADR-020: the visualiser is OUT OF SCOPE, not deferred. These paths are never
+// migrated by this project and may not be edited for any reason.
+const isOutOfScope = (p) =>
+  p.startsWith('src/visualiser/') ||
+  p.startsWith('src/visualiser-lab/') ||
+  p === 'src/pages/VisualiserPage.tsx' ||
+  p === 'src/pages/VisualizerLabPage.tsx';
+
+// Legacy modules that CAN'T move because out-of-scope files import them, so a
+// feature edge onto them never clears either. ADR-020's consequences table.
+const PERMANENT = {
+  'src/data/products.ts': 'six visualiser files import it; decision H lost its slot',
+  'src/theme.ts': 'the visualiser imports the deprecated aliases',
+};
+const isPermanent = (p) => isOutOfScope(p) || p in PERMANENT;
 
 function walk(d, acc = []) {
   for (const e of fs.readdirSync(d, { withFileTypes: true })) {
@@ -55,13 +69,23 @@ const legacyFiles = all.filter(isLegacy);
 const stillNeeded = new Map();
 for (const e of edges) stillNeeded.set(e.to, (stillNeeded.get(e.to) || 0) + 1);
 
+// The number that matters is CLEARABLE, not TOTAL. ADR-020 made some of these
+// edges permanent, so a countdown to zero on the total would never terminate.
+const clearable = edges.filter((e) => !isPermanent(e.to));
+const permanent = edges.filter((e) => isPermanent(e.to));
+
 console.log('=== feature -> legacy COUNTDOWN ===');
 console.log('feature files reaching legacy : ' + new Set(edges.map((e) => e.from)).size);
 console.log('distinct legacy targets       : ' + stillNeeded.size);
 console.log('total edges                   : ' + edges.length);
+console.log('  of which CLEARABLE          : ' + clearable.length + '   <- this is the countdown');
+console.log('  of which PERMANENT          : ' + permanent.length + '   <- ADR-020, will not fall');
 console.log('\n--- legacy files still reachable through the allowance ---');
 for (const [f, n] of [...stillNeeded].sort((a, b) => b[1] - a[1])) {
-  console.log('  ' + String(n).padStart(3) + '  ' + f + (isFrozen(f) ? '   [FROZEN]' : ''));
+  const tag = isOutOfScope(f) ? '   [OUT OF SCOPE — ADR-020]'
+    : f in PERMANENT ? '   [PERMANENT — ' + PERMANENT[f] + ']'
+    : '';
+  console.log('  ' + String(n).padStart(3) + '  ' + f + tag);
 }
 console.log('\n--- which feature reaches what ---');
 for (const e of edges.sort((a, b) => a.from.localeCompare(b.from))) {

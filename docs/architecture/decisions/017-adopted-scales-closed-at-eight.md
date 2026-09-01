@@ -115,6 +115,11 @@ decision.
 the frozen visualiser — which has 12 spacing and 4 font-size occurrences that cannot be
 touched until P4-7. They are deleted with the `theme.ts` shim.
 
+> **AMENDED BY ADR-020.** P4-7 no longer exists and the visualiser is out of scope, so those
+> 16 occurrences are never touched by this migration. **The `@deprecated` aliases and the
+> `theme.ts` shim are therefore permanent for its life** — E-10. They go with the separate
+> visualiser work, or not at all.
+
 **Applying the scale to hardcoded literals is a separate pass.** There are 283 movable
 `klay/no-hardcoded-style-values` findings, and repointing them means editing files that Phase
 4 is about to move. Doing both at once is the "moving and changing in one commit" the migration

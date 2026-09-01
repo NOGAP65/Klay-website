@@ -122,7 +122,8 @@ nobody has noticed, and only the log records which this is.
 | `drawCurtainArea` in `Canvas2DBlindRenderer.tsx:3047` | ~147 | **No** — reachable only via blind-type strings (`'sheer-curtains'`, `'blockout-curtains'`) that no UI can produce |
 
 Three attempts at drawing a curtain, in two files, one of them unreachable. All inside the
-frozen zone, so none can be resolved before P4-7.
+frozen zone. **ADR-020 removed that zone from the migration entirely, so none of the three can
+be resolved by this project.** They are resolved by the separate visualiser work, or not at all.
 
 `Canvas2DBlindRenderer.tsx` is protected IP (E-02) and may not be edited — which means the
 ~704 lines of curtain code inside it can only be addressed when the file is unfrozen.
@@ -142,7 +143,9 @@ frozen zone, so none can be resolved before P4-7.
 
 The blind renderer imports `data/products`' map **and** declares its own. Two of the three are
 in the frozen zone. Decision H already schedules the hardware values to move to the visualiser
-at P4-7; that is the moment to collapse all three.
+at P4-7 — but **ADR-020 deleted P4-7 and put decision H out of scope**, so there is no longer a
+moment in this migration at which all three collapse. `HARDWARE_HEX` stays in
+`src/data/products.ts`, which stays where it is (E-10).
 
 ---
 
@@ -192,7 +195,9 @@ thing scheduled to move into it (PHASE_6_SCOPE.md item 3), and D-04's postcode r
 as a *deliberate* non-extraction — is waiting for the same home rather than being relocated
 somewhere it does not solve anything.
 
-**And it is the argument for `rendering/shared/` at P4-7.** Same rule, different scope. If the
+**And it is the argument for `rendering/shared/` whenever the visualiser is eventually
+reorganised** — ADR-020 moved that out of this migration, but the argument travels with the
+work rather than with the schedule. Same rule, different scope. If the
 visualiser is unfrozen and reorganised without a place for cross-renderer geometry, D-05 will
 regenerate — because the condition that produced it will not have changed.
 

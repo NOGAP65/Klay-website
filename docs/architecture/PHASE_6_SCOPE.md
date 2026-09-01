@@ -41,6 +41,16 @@ netlify.toml` must return four import sites plus two config entries.
 **Do not change the runtime.** ADR-015: `create-checkout-session` stays a serverless function.
 Moving pricing authority to the edge is separate, optional, later work with its own ADR.
 
+**AND LEAVE A PERMANENT RE-EXPORT SHIM AT `src/lib/pricing.ts` — ADR-020.** Four visualiser
+files import it relatively (`../lib/pricing`), and the visualiser is out of scope and may not
+be edited, an import rewrite included. So the module moves to `shared-core/pricing/` and the
+old path stays as a real file re-exporting it. Eleven `src/` consumers still repoint to
+`@/core/pricing`; only the four frozen ones keep the old path.
+
+This does not weaken §7. There is still exactly one price table — one table reached by two
+paths. A re-export cannot diverge from what it re-exports, and divergence is the failure §13
+names.
+
 ### 2. `@/core` alias into `tsconfig.functions.json`
 
 The alias must exist in **three** places, not two:
@@ -106,12 +116,34 @@ feature to move reported violations nobody could action.
 **It comes out when the countdown below reaches zero, and not before.** Removing it earlier
 turns unactionable warnings into a wall; leaving it after that is leaving the layer model off.
 
+**THE COUNTDOWN CAN NO LONGER REACH ZERO — ADR-020, AND THIS IS OPEN.** Three of catalogue's
+edges point into `src/visualiser/` (`ProductDetailPage` imports `KlayConfigurator`,
+`useVisualiserStore`, `VisualiserControls`), and `src/data/products.ts` and the `theme.ts` shim
+are permanent for the same reason. Those edges never clear, so "delete the allowance when the
+count hits zero" no longer terminates.
+
+**A decision is needed and has not been made.** The likely shape is a narrow, named element
+type — `legacy-visualiser`, matching the four out-of-scope paths, which features may import and
+nothing else may — so the blanket `feature → anything in src/` allowance can still come out.
+That is a proposal in ADR-020, not a decision. **Until it is decided, item 5 stays BLOCKING and
+its exit condition is unwritten.**
+
 #### Countdown — reported at the end of every remaining P4 feature
 
-| Measured at | Feature files reaching legacy | Distinct targets | Edges |
-|---|---:|---:|---:|
-| **P4-1 marketing** | 4 | 4 | 9 |
-| **P4-3 catalogue** | 9 | 8 | 26 |
+| Measured at | Feature files reaching legacy | Distinct targets | Edges | Clearable | Permanent |
+|---|---:|---:|---:|---:|---:|
+| **P4-1 marketing** | 4 | 4 | 9 | 9 | 0 |
+| **P4-3 catalogue** | 9 | **12** | 26 | — | — |
+| **P4-3, re-measured after ADR-020** | 9 | 12 | 26 | **19** | **7** |
+
+**The P4-3 row recorded 8 distinct targets. There were 12.** The targets table below listed
+eight rows summing to 22 of the 26 edges; `src/store/cartStore.ts` and the three
+`src/visualiser/` modules were counted in the edge total but never written down. Corrected
+here rather than silently — a countdown whose target list does not reconcile to its own edge
+count is not a countdown.
+
+**And `total` is no longer the number to watch. `clearable` is.** ADR-020 made seven of the
+twenty-six permanent, so a countdown to zero on the total would never terminate.
 
 **The targets, and what clears each:**
 
@@ -119,12 +151,16 @@ turns unactionable warnings into a wall; leaving it after that is leaving the la
 |---|---:|---|
 | `src/components/Nav.tsx` | 5 | **Phase 5** — `app/layouts/`, decision D |
 | `src/components/Footer.tsx` | 5 | **Phase 5** — `app/layouts/`, decision D |
+| `src/data/products.ts` | 4 | **NOTHING — OPEN.** ADR-020 removed P4-7, which was decision H's slot. Six visualiser files import it and may not be edited, so it can neither be split nor moved without a permanent shim. **PERMANENT.** |
 | `src/lib/api.ts` | 2 | **Phase 6** — moves with booking |
-| `src/data/products.ts` | 4 | **P4-7** — decision H. Cannot move earlier: the frozen visualiser imports it and frozen files may not be edited |
 | `src/store.ts` | 2 | **Phase 6** — item 4, the useKlayStore shim |
-| `src/lib/pricing.ts` | 2 | **Phase 6** — item 1, moves to shared-core |
+| `src/lib/pricing.ts` | 2 | **Phase 6** — item 1, moves to shared-core behind a permanent re-export shim |
 | `src/lib/bookingLink.ts` | 1 | **Phase 6** — decision K, moves with booking |
 | `src/components/home/primitives.tsx` | 1 | **P4-6** — decision F's four-way split; `PhotoTile` goes to catalogue |
+| `src/store/cartStore.ts` | 1 | **P4-4** — moves into `features/cart/store/`. *Was missing from this table.* |
+| `src/visualiser/KlayConfigurator.tsx` | 1 | **NOTHING — ADR-020.** `ProductDetailPage`'s visualiser embed. **PERMANENT.** |
+| `src/visualiser/useVisualiserStore.ts` | 1 | **NOTHING — ADR-020. PERMANENT.** |
+| `src/visualiser/VisualiserControls.tsx` | 1 | **NOTHING — ADR-020. PERMANENT.** |
 
 **It rose, as predicted: 9 edges → 26 after one more feature.** Nav and Footer went from six
 edges to ten, and catalogue brought four new targets with it. This is the shape to expect.
@@ -141,7 +177,7 @@ Command: `node tools/legacy-countdown.mjs`.
 
 | Item | Source |
 |---|---|
-| The `theme.ts` shim and the deprecated colour and spacing aliases | Phases 2.2a, 2.2c, 2.3 — they exist for the frozen visualiser and go at **P4-7**, not Phase 6, unless the visualiser slips |
+| The `theme.ts` shim and the deprecated colour and spacing aliases | Phases 2.2a, 2.2c, 2.3. They existed for the frozen visualiser and were to go at P4-7. **ADR-020 deleted P4-7, so they are permanent for the life of this migration** and go with the separate visualiser work |
 | `src/components/FormField.tsx` shim | Phase 2.4 — goes when its two consumers migrate |
 | Flip zeroed lint rules from `warn` to `error` | Phase 6.1. `klay/no-direct-env-access` is the first eligible, at 0 since Phase 2.1 |
 | `knip` and `jscpd` baselines | Phases 6.3, 6.4 — deliberately not taken earlier, against a structure that was about to change |

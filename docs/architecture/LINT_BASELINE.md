@@ -96,12 +96,12 @@ can flip to `error`.
 **196 of 1,033 findings (19%) are in `src/visualiser/`, `src/visualiser-lab/` or
 `KlayConfigurator.tsx`** — the zone excluded from Phases 2–4.
 
-Those 196 cannot fall until the visualiser phase (P4-7). Any measurement of migration progress
+Those 196 cannot fall until the visualiser phase (P4-7). **SUPERSEDED — ADR-020: there is no visualiser phase, so they never fall. See the Phase 4 backfill at the end of this file.** Any measurement of migration progress
 should be taken against the **movable 837**, or it will look stalled for reasons that have
 nothing to do with the work being done.
 
 `@typescript-eslint/naming-convention` is the clearest case: 63 of its 129 findings are
-frozen, so the best achievable count before P4-7 is 66.
+frozen, so the best achievable count before P4-7 is 66. **ADR-020: 66 is now a permanent floor, not a waypoint.**
 
 ---
 
@@ -323,3 +323,155 @@ not happen inside move phases.
 
 **`max-params` rose from 2 to 8 in the ALL column and stayed at 0 movable.** All six are in
 the wardrobe renderer being written in the frozen zone.
+
+---
+
+# MOVEMENT — PHASE 4, BACKFILLED
+
+**Recorded:** 1 September 2026, three phases late. P4-1 and P4-3 both closed without an entry
+here, which is a process failure and not a small one: §11's mechanism is *"every new rule
+starts as `warn` with a recorded baseline count. The count may go down; it may not go up."* A
+count that is not written down cannot be compared, and a rule whose count is never compared is
+already advisory. **The measurement below is the whole point of the mechanism, and it was
+skipped twice.**
+
+## How these numbers were taken
+
+All three snapshots were re-measured **by the same method, from the commits themselves**, in
+throwaway git worktrees — not read out of commit messages. `npx eslint . -f json`, aggregated
+by rule, at `b77c47b` (Phase 3 close), `b017040` (P4-1) and the current tree (P4-3).
+
+Four columns, because "the count" has meant different things at different times:
+
+| Column | Excludes |
+|---|---|
+| **ALL** | nothing |
+| **MOVABLE** | `src/visualiser/`, `src/visualiser-lab/`, `VisualiserPage.tsx`, `VisualizerLabPage.tsx` |
+| **IN-SCOPE (old)** | the two visualiser *directories*, and `netlify/` |
+| **IN-SCOPE (new)** | the above **plus** the two visualiser *pages* — the ADR-020 boundary |
+
+`IN-SCOPE (old)` is the measure the P4-1 and P4-3 commit messages quote, and it reproduces
+them exactly: 583 at P4-1, 497 at P4-3. **From here on, `IN-SCOPE (new)` is the number that
+counts**, because ADR-020 put those two pages permanently out of scope alongside the
+directories.
+
+## The totals
+
+| Snapshot | ALL | MOVABLE | IN-SCOPE (old) | IN-SCOPE (new) |
+|---|---:|---:|---:|---:|
+| **Phase 3 close** — `b77c47b` | 870 | 628 | 588 | 552 |
+| **P4-1 marketing** — `b017040` | 866 | 623 | **583** | 547 |
+| **P4-3 catalogue** — current | **779** | **537** | **497** | **461** |
+| **Δ across Phase 4 so far** | **−91** | **−91** | **−91** | **−91** |
+
+## Per rule, Phase 3 close → P4-1 → P4-3
+
+| Rule | ALL | MOVABLE | IN-SCOPE (new) |
+|---|---|---|---|
+| `klay/no-hardcoded-style-values` | 295 → 295 → **207** | 269 → 269 → **181** | 269 → 269 → **181** |
+| `import/no-internal-modules` | 131 → 129 → 129 | 111 → 109 → 109 | 87 → 85 → 85 |
+| `@typescript-eslint/naming-convention` | 128 → 128 → 128 | 66 → 66 → 66 | 66 → 66 → 66 |
+| `no-restricted-imports` | 123 → 122 → **124** | 97 → 96 → **98** | 73 → 72 → **74** |
+| `import/order` | 60 → 58 → 58 | 28 → 26 → 26 | 3 → 1 → 1 |
+| `max-lines-per-function` | 52 → 53 → 53 | 25 → 25 → 25 | 24 → 24 → 24 |
+| `complexity` | 25 → 25 → 25 | 13 → 13 → 13 | 11 → 11 → 11 |
+| `react-hooks/refs` | 16 → 16 → 16 | 2 → 2 → 2 | 2 → 2 → 2 |
+| `max-lines` | 15 → 15 → 15 | 8 → 8 → 8 | 8 → 8 → 8 |
+| `max-params` | 8 → 8 → 7 | 0 → 0 → 0 | 0 → 0 → 0 |
+| `react-refresh/only-export-components` | 5 → 5 → 5 | 5 → 5 → 5 | 5 → 5 → 5 |
+| `react-hooks/set-state-in-effect` | 5 → 5 → 5 | 3 → 3 → 3 | 3 → 3 → 3 |
+| `@typescript-eslint/no-unused-vars` | 3 → 3 → 3 | 1 → 1 → 1 | 1 → 1 → 1 |
+| `react-hooks/immutability` | 2 → 2 → 2 | 0 → 0 → 0 | 0 → 0 → 0 |
+| (unused `eslint-disable`) | 2 → 2 → 2 | 0 → 0 → 0 | 0 → 0 → 0 |
+| **TOTAL** | **870 → 866 → 779** | **628 → 623 → 537** | **552 → 547 → 461** |
+
+## THE NUMBER THIS PHASE EXISTED TO PRODUCE
+
+> ### `klay/no-hardcoded-style-values` in `features/catalogue`: **90 → 2**
+
+**This is the scale validating, and it is the first evidence that any of §9 worked.**
+
+§9 was written against a specific, humiliating finding: `theme.ts` was well built and had
+**zero consumers across all twelve files in `src/pages/`**, with 127 hardcoded pixel values and
+21 hardcoded font sizes in their place. *"The tokens were not the problem. Optionality was."*
+
+Phase 3 close said as much, and predicted the shape of the answer:
+
+> *"`klay/no-hardcoded-style-values` is unchanged at 283. The scale was adopted and applied in
+> Phase 2.3, but applying it to hardcoded literals is a separate pass that belongs with the
+> features that own them. **This number is the measure of whether the scale worked, and it will
+> not begin falling until Phase 4.**"*
+
+It fell. **119 substitutions across two passes: 59 landed on a step exactly; 60 moved, almost
+all by 1–4px, the largest single move being 90 → 80 in one padding.** A closed eight-step scale
+absorbed a real feature's worth of arbitrary values with a maximum distortion of a few pixels —
+which is the empirical case for §9's *"a scale constrains, it does not accommodate"* that the
+proposal could only argue in principle.
+
+**Two findings remain in catalogue, and both are deliberate.** Both are `boxShadow` literals
+close to but not equal to `shadow.rest`. Mapping them would change how two shadows look, and
+the shadow scale was never part of what ADR-017 approved — it has four tokens, two with zero
+consumers, and call sites writing their own. **It wants the same treatment `space` and `type`
+just had, as its own decision.**
+
+**And the conversion found a real gap rather than merely applying the scale.** ADR-017 approved
+eight type steps, but `type.ts` carried role names for only six — 20 and 56 were approved sizes
+with no way to reach them, so the converter pushed three call sites at 20px down to `lead` (16),
+a 4px change to values that were already exactly on the scale. `type.subhead` (20) and
+`type.title` (56) were added. **The scale is still closed at eight; this closed a gap rather
+than adding a ninth step** — and only a real conversion pass could have surfaced it.
+
+## What else moved, and the one thing that went up
+
+**`no-restricted-imports` rose: 96 → 98 movable.** This is the only rule that went up across
+Phase 4, and under §11 a rise is a regression that should fail review. **It is accepted here,
+with a reason.** Every file catalogue absorbed brought its `../../` relative climbs with it, and
+those climbs are the *measure* of the migration's remaining work rather than new debt — they
+clear at Phase 5 (Nav, Footer) and Phase 6 (api, pricing, store, bookingLink).
+PHASE_6_SCOPE.md's countdown tracks exactly these edges and is the instrument that holds them.
+
+**`import/no-internal-modules` did not fall at P4-3 (109, flat).** Phase 3 predicted this rule
+would *"fall furthest during Phase 4, since every feature that gains a barrel takes a batch of
+`../../` with it."* It did not, for the same reason: catalogue gained a barrel, but its files
+still reach legacy targets that have no barrel to import.
+
+**`marketing` still carries 49 `klay/no-hardcoded-style-values` findings.** P4-1 moved the
+files and did not convert the tokens; P4-3 converted catalogue's. **This is a real gap, not a
+rounding error** — `marketing` is the largest remaining pocket of hardcoded values in a
+migrated feature, and it should be converted before Phase 4 closes rather than left as the one
+feature that moved without being brought onto the scale.
+
+## A discrepancy this backfill found
+
+The P4-1 and P4-3 commit messages both quote a starting figure of **761** in-scope findings.
+**No measurement of `b77c47b` reproduces 761 under any of the four scope definitions above** —
+the closest is 588. The 583 and 497 endpoints reproduce exactly, so only the baseline they were
+subtracted from is unaccounted for.
+
+**Recorded rather than reconciled.** Inventing an explanation for a number nobody can reproduce
+is precisely the failure this file guards against, and the two figures that matter — where P4-1
+and P4-3 actually landed — are measured and sound.
+
+## Rules that did not move, and why that is still expected
+
+**`@typescript-eslint/naming-convention` held at 66 movable across all three snapshots.** It is
+a rename, and renames do not happen inside move phases — ADR-018.
+
+**`max-lines`, `complexity` and `max-lines-per-function` are all flat.** Phase 4 moves files; it
+does not split them. The `constants.ts`/`facets.ts` split and the `sortProducts` extraction at
+P4-3 were cuts at a seam, and neither half changed.
+
+## AND THE FROZEN-ZONE FOOTNOTE IS NOW PERMANENT — ADR-020
+
+This file previously said the 196 findings inside `src/visualiser/` and `src/visualiser-lab/`
+*"cannot fall until the visualiser phase (P4-7)"*, and that *"the best achievable count before
+P4-7 is 66"* for `naming-convention`.
+
+**There is no P4-7.** ADR-020 removed the visualiser from the migration entirely. Those
+findings — **242 today, 31% of the total**, measured against the ADR-020 boundary — do not fall
+in this project at all, and the files may not be edited to make them fall, lint fixes
+explicitly included.
+
+**So `ALL` is now a misleading headline and `IN-SCOPE (new)` is the honest one.** A future
+reader comparing `ALL` across the migration would conclude the codebase was barely improving,
+when in fact 31% of the count is a fixed floor this project is not permitted to touch.

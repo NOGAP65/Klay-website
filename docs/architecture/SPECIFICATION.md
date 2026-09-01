@@ -1,8 +1,8 @@
 # Klay Interiors — Architecture Specification
 
-**Version:** 1.4
-**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3, v1.4)
-**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2)
+**Version:** 1.5
+**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3, v1.4, v1.5)
+**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2), ADR-020 (§12)
 **Status:** Standing document. This is the constitution, not a work order.
 **Owner:** V
 **Applies to:** NOGAP65/Klay-website-new. Ella adopts it after Klay proves it.
@@ -120,11 +120,11 @@ src/
 ├── features/
 │   ├── catalogue/
 │   ├── configurator/
-│   ├── visualiser/
-│   │   ├── photo/
-│   │   ├── tracing/          [PROTECTED IP]
-│   │   ├── rendering/
-│   │   │   ├── blind/        [PROTECTED IP]
+│   ├── visualiser/           NOT BUILT BY THIS MIGRATION — E-08, ADR-020.
+│   │   ├── photo/            The shape below is the eventual target; the code
+│   │   ├── tracing/          stays in src/visualiser/ and src/visualiser-lab/
+│   │   ├── rendering/        until that work is scheduled on its own.
+│   │   │   ├── blind/
 │   │   │   ├── curtain/
 │   │   │   └── shared/
 │   │   └── compare/
@@ -516,8 +516,16 @@ switched off.
 | E-05 | `style-src 'unsafe-inline'` in CSP | Inline-styles-only is a brand-level decision; runtime-computed styles cannot be nonced | If styling approach changes |
 | E-06 | `design-system/tokens/*` exempt from the no-literal-values rule | It is the source of the values | Permanent |
 | E-07 | `visualiser`/`visualizer` spelling split | Live route; unification deferred | When wardrobes ship and the fork resolves |
+| E-08 | `src/visualiser/`, `src/visualiser-lab/`, `VisualiserPage.tsx`, `VisualizerLabPage.tsx` are outside the migration and outside every rule in this document | ADR-020. Under active development; the slot for them receded at every phase. They are not moved, not renamed, not re-aliased, not lint-fixed | When that work is scheduled on its own, with its own plan |
+| E-09 | A permanent re-export shim at `src/lib/pricing.ts` after the module moves to `shared-core/pricing/` | ADR-020. Four E-08 files import it by relative path and may not be edited. One table, two paths — a re-export cannot diverge from what it re-exports | With E-08 |
+| E-10 | `src/data/products.ts` and `src/theme.ts` stay where they are | ADR-020. Imported by E-08 files. `products.ts` additionally cannot be split by consumer, which was decision H | With E-08 |
 
 **Adding to this table requires an ADR. An exception without an ADR is a violation.**
+
+**E-08 is the largest exception in this table by a wide margin — 58% of `src/`.** It is stated
+plainly rather than buried: for the life of this migration, the majority of the codebase by
+line count is not governed by this document. That is the honest description of the situation
+ADR-020 records, and naming it is the only thing that stops it being forgotten.
 
 ---
 

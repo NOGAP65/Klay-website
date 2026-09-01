@@ -12,7 +12,14 @@
 
 ---
 
-## BLOCKER — THE SPECIFICATION IS STILL NOT IN THE REPOSITORY
+## ~~BLOCKER~~ — RESOLVED. The specification is in the repository.
+
+> **Resolved before Phase 1.** `docs/architecture/SPECIFICATION.md` is present and is now at
+> version 1.5. This section is kept as the Phase 0 record, but it is **history, not a live
+> blocker** — it was reading as one at the top of the document, which is its own small version
+> of the problem this migration exists to fix.
+
+The Phase 0 account follows, unchanged:
 
 You said it was committed. It is not here, and I checked thoroughly before saying so:
 
@@ -115,14 +122,14 @@ Each becomes the entry component of a feature, or moves under `app/` if it is a 
 | `src/pages/ProductsPage.tsx` | 646 | The shop: 14 items, four-facet filter rail, `?category=` preselect. | `features/catalogue/components/ProductsPage.tsx` | feature:catalogue | LIKELY | P4-3 |
 | `src/pages/ProductDetailPage.tsx` | 538 | One roller product, full visualiser embed, specs, FAQs, cart + quote CTAs. | `features/catalogue/components/ProductDetailPage.tsx` | feature:catalogue | NEEDS DECISION — note B | P4-3 |
 | `src/pages/CartPage.tsx` | 473 | Cart lines, total, nine-field form. **Submit handler is `alert()`.** | `features/cart/components/CartPage.tsx` | feature:cart | LIKELY | P4-4 |
-| `src/pages/BookInstallPage.tsx` | 548 | `/book`. Prices from URL params, posts to the two real endpoints. | `features/booking/components/BookInstallPage.tsx` | feature:booking | CERTAIN | P4-7 |
-| `src/pages/BookingConfirmedPage.tsx` | 176 | Stripe return URL; polls `/api/order-status` six times. | `features/booking/components/BookingConfirmedPage.tsx` | feature:booking | CERTAIN | P4-7 |
-| `src/pages/ContactPage.tsx` | 257 | Enquiry form → `/api/request-quote` with placeholder blind fields. | `features/booking/components/ContactPage.tsx` | feature:booking | NEEDS DECISION — note C | P4-7 |
+| `src/pages/BookInstallPage.tsx` | 548 | `/book`. Prices from URL params, posts to the two real endpoints. | `features/booking/components/BookInstallPage.tsx` | feature:booking | CERTAIN | P6 |
+| `src/pages/BookingConfirmedPage.tsx` | 176 | Stripe return URL; polls `/api/order-status` six times. | `features/booking/components/BookingConfirmedPage.tsx` | feature:booking | CERTAIN | P6 |
+| `src/pages/ContactPage.tsx` | 257 | Enquiry form → `/api/request-quote` with placeholder blind fields. | `features/marketing/components/ContactPage.tsx` | feature:marketing | RESOLVED — decision C | **DONE P4-1** |
 | `src/pages/AboutPage.tsx` | 177 | Company page. Two of its four figures derive from the catalogue. | `features/marketing/components/AboutPage.tsx` | feature:marketing | LIKELY | P4-1 |
 | `src/pages/HowItWorksPage.tsx` | 310 | Four steps + six FAQs. | `features/marketing/components/HowItWorksPage.tsx` | feature:marketing | LIKELY | P4-1 |
 | `src/pages/NotFoundPage.tsx` | 67 | 404. | `app/routes/NotFoundPage.tsx` | app | LIKELY | P5 |
-| `src/pages/VisualiserPage.tsx` | 125 | Standalone visualiser; hostname allowlist gate. | `features/visualiser/components/VisualiserPage.tsx` | feature:visualiser | CERTAIN | **FROZEN** |
-| `src/pages/VisualizerLabPage.tsx` | 225 | The `/visualizer` sandbox route. | **NEEDS DECISION** — see the recommendation at the end | feature:visualiser | NEEDS DECISION | **FROZEN** |
+| `src/pages/VisualiserPage.tsx` | 125 | Standalone visualiser; hostname allowlist gate. | — not migrated | — | **OUT OF SCOPE — ADR-020** | **NEVER** |
+| `src/pages/VisualizerLabPage.tsx` | 225 | The `/visualizer` sandbox route. | — not migrated | — | **OUT OF SCOPE — ADR-020** | **NEVER** |
 
 ### `src/components/` — 8 shared-ish components, 1,754 lines
 
@@ -131,8 +138,8 @@ Each becomes the entry component of a feature, or moves under `app/` if it is a 
 | `src/components/Nav.tsx` | 514 | 12 | Fixed top bar, four links, cart badge, mobile drawer. | `app/layouts/components/Nav.tsx` | app | NEEDS DECISION — note D | P5 |
 | `src/components/Footer.tsx` | 207 | 10 | Four columns, product links derived from `PRODUCTS`. | `app/layouts/components/Footer.tsx` | app | NEEDS DECISION — note D | P5 |
 | `src/components/FormField.tsx` | 148 | 2 | The one controlled input: label, error, ARIA, focus tint. Exports `DANGER`. | `ds/primitives/Field.tsx` | design-system | LIKELY | P2 |
-| `src/components/Honeypot.tsx` | 40 | 2 | Off-screen bot-trap field. | `features/booking/components/Honeypot.tsx` | feature:booking | LIKELY | P4-7 |
-| `src/components/Turnstile.tsx` | 126 | 2 | Lazy-loads Cloudflare Turnstile; returns `null` with no site key. | `features/booking/components/Turnstile.tsx` | feature:booking | NEEDS DECISION — note E | P4-7 |
+| `src/components/Honeypot.tsx` | 40 | 2 | Off-screen bot-trap field. | `shared/components/Honeypot.tsx` | shared | RESOLVED — 0.2 test | **DONE P3** |
+| `src/components/Turnstile.tsx` | 126 | 2 | Lazy-loads Cloudflare Turnstile; returns `null` with no site key. | `shared/components/Turnstile.tsx` | shared | RESOLVED — decision E | **DONE P3** |
 | `src/components/ProductCard.tsx` | 107 | 1 | Adapter: catalogue item → `PhotoTile`. | `features/catalogue/components/ProductCard.tsx` | feature:catalogue | LIKELY | P4-3 |
 | `src/components/ProductGlyph.tsx` | 422 | 2 | Eleven hand-drawn SVG product mechanisms. | `features/catalogue/components/ProductGlyph.tsx` | feature:catalogue | LIKELY | P4-3 |
 | `src/components/FilterRail.tsx` | 190 | 1 | The shop's four facet groups, tri-state checkboxes, live counts. | `features/catalogue/components/FilterRail.tsx` | feature:catalogue | CERTAIN | P4-3 |
@@ -167,8 +174,8 @@ Each becomes the entry component of a feature, or moves under `app/` if it is a 
 | Current path | Lines | Imp | What it does | Proposed target | Layer | Confidence | Order |
 |---|---:|---:|---|---|---|---|---|
 | `src/lib/pricing.ts` | 192 | 11 (+4 from `netlify/`) | The only place money is worked out. Runs in **both** runtimes. | **NEEDS DECISION** — note J | shared | NEEDS DECISION | P3 |
-| `src/lib/api.ts` | 87 | 2 | Browser side of the two booking endpoints. Sends no price. | `features/booking/api/booking.ts` | feature:booking | LIKELY | P4-7 |
-| `src/lib/bookingLink.ts` | 34 | 4 | Builds the `/book?…` URL from a configuration. | **NEEDS DECISION** — note K | feature:booking | NEEDS DECISION | P4-7 |
+| `src/lib/api.ts` | 87 | 2 | Browser side of the two booking endpoints. Sends no price. | `features/booking/api/booking.ts` | feature:booking | LIKELY | P6 |
+| `src/lib/bookingLink.ts` | 34 | 4 | Builds the `/book?…` URL from a configuration. | **NEEDS DECISION** — note K | feature:booking | NEEDS DECISION | P6 |
 | `src/hooks/useIsMobile.ts` | 30 | **13** | `useMediaQuery` + a 768px `useIsMobile`. | `shared/hooks/useMediaQuery.ts` | shared | CERTAIN | P3 |
 | `src/store/cartStore.ts` | 99 | 5 | The basket; persisted to `localStorage` as `klay-cart`. | `features/cart/store/cartStore.ts` | feature:cart | LIKELY | P4-4 |
 
@@ -200,12 +207,12 @@ kept for the reasoning that led to them.
 | # | Decision | Executes in |
 |---|---|---|
 | **A** | **Option 1** — `shared/hooks/useScrollPosition.ts`, no store. *Determined:* both writers do exactly `setScrollY(window.scrollY)` and nothing else; `Nav` reads it only as `scrollY > 60` and `Math.max(0, stickBelow - scrollY)`. Nothing is expressed that `window.scrollY` cannot. `blindHeight` is dead and is **not carried** — left for the cleanup pass. | P3 |
-| **B, G** | **Option 3** — the visualiser exports an embed component from its barrel; the catalogue page and the homepage showcase render it. | Deferred to unfreeze (P4-7) |
+| **B, G** | **Option 3** — the visualiser exports an embed component from its barrel; the catalogue page and the homepage showcase render it. | **OUT OF SCOPE — ADR-020.** There is no visualiser barrel and none is built. `ProductDetailPage` and `VisualiserShowcase` keep importing `src/visualiser/*` by path. |
 | **C** | **`feature:marketing`**, submitting through booking's barrel. | P4-1 |
 | **D** | **Option 1** — `app/layouts/`. **The app layer may import feature barrels.** | P5 |
 | **E** | **`shared/components/Turnstile.tsx`.** | P3 |
 | **F** | **Split four ways:** `CtaButton` / `CtaLink` / `useHover` → `design-system/primitives/`; `SectionBand` → `design-system/patterns/`; `scrollToId` → `shared/utils/`; **`PhotoTile` → `feature:catalogue`.** *Determined:* `PhotoTile` has exactly one consumer, `src/components/ProductCard.tsx`, which is catalogue. It lives in `components/home/` and no home component imports it. | P2 / P3 / P4-3 |
-| **H** | **Split by what the data is** — SKUs → catalogue; colour cards → catalogue (visualiser consumes via barrel); hardware heights → visualiser. **Stays whole until unfreeze.** | Deferred to P4-7 |
+| **H** | **Split by what the data is** — SKUs → catalogue; colour cards → catalogue; hardware heights → visualiser. | **OUT OF SCOPE as a split — ADR-020.** Six frozen files import `src/data/products.ts` and may not be edited, so it can neither be split by consumer nor moved without a shim. **`products.ts` now has no scheduled home. OPEN.** |
 | **I** | **Option 1.** | P4-3 |
 | **J** | **Option 3** — root-level shared module, aliased into both `src/` and `netlify/`. One commit with all four consumers. | P6 |
 | **K** | **Option 1** — `features/booking/lib/`, consumed via barrel. | P6 (with the rest of booking) |
@@ -868,19 +875,27 @@ Inbound edges per proposed feature, counted from the current graph:
 | `catalogue` | 7 | 2,613 | **6** | `products.ts` reaches into the frozen zone. |
 | `cart` | 2 | 572 | **4** | `Nav` badge, `VisualiserShowcase`, `RangeConfigurator`, `ProductDetailPage`. |
 | `home` | 11 | 4,565 | **1** | Imports everything, is imported by almost nothing. |
-| `visualiser` | 20 | 17,250 | **13** | **FROZEN.** |
+| `visualiser` | 20 | 17,250 | **13** | **OUT OF SCOPE — ADR-020.** Not migrated by this project. |
 
 ### Recommended order
 
 | Slot | Feature | Reason |
 |---:|---|---|
 | **P4-1** | **`marketing`** | Zero inbound edges. Three self-contained pages. The safest possible first feature — it proves the folder anatomy, the barrel pattern and the alias rewiring on something that cannot break checkout. |
-| **P4-2** | **`booking`** *(structure only — see caution)* | Small, well-bounded, already has a clean `api.ts`. **But it owns `/book`, which the work order protects until Phase 6.** Recommend moving only `ContactPage`, `Honeypot` and `Turnstile` here in P4-2 and deferring `BookInstallPage`, `BookingConfirmedPage` and `api.ts` to Phase 6. Alternatively move the whole feature at P4-7. **This is a NEEDS DECISION.** |
+| **P4-2** | **`booking`** — **DEFERRED WHOLE TO PHASE 6. RESOLVED, not open.** | See the decision below. The slot stays numbered so the phase record is not renumbered retrospectively; nothing executes in it. |
 | **P4-3** | **`catalogue`** | Seven files, the facet engine, the product tables. Moderate inbound. Must precede `cart` and `home`, both of which consume it. |
 | **P4-4** | **`cart`** | Two files, but four inbound edges — needs `catalogue` settled first so `configuredLine` has somewhere to land (note I). |
 | **P4-5** | **`shared` clean-up pass** | Not a feature. After four features have moved, whatever is genuinely common has revealed itself. Re-run the 0.2 test before finalising `shared/`. |
 | **P4-6** | **`home`** | 4,565 lines across 11 files, and it imports *every* other feature. Moving it earlier means rewriting its imports twice. Last of the movable features. |
-| **P4-7** | **`visualiser` + `visualiser-lab`** | **FROZEN.** 17,250 lines, 58% of `src/`, 13 inbound edges, four protected IP files, and under active daily development. Migrates last, and only once you tell me the work in it has stopped. |
+
+**There is no P4-7. Phase 4 ends at P4-6 — ADR-020.**
+
+`visualiser` + `visualiser-lab` were scheduled here on the condition that the work inside them
+had stopped. It has not — wardrobes are being built in `visualiser-lab/` right now — and the
+slot receded at every phase. They are **removed from this migration entirely** and migrate as
+separate later work. `features/visualiser/` is not created, and none of those files are edited
+for any reason, including lint fixes and import rewrites. See ADR-020 for what that costs and
+what it leaves open.
 
 ### Two departures from a naive dependency order worth explaining
 
@@ -889,20 +904,44 @@ early. But it is the *largest consumer* — it imports catalogue, cart, visualis
 data and the design system. Moving it first means rewriting its 11 files' imports once per
 subsequent feature. Moving it last means rewriting them once.
 
-**`booking` is split.** Its natural slot is second, but three of its five files are the
-`/book` payment path the work order fences off until Phase 6. Splitting a feature across
-phases is ugly; the alternative is leaving `ContactPage` homeless for five phases. Your call.
+**`booking` is NOT split — RESOLVED 1 September 2026.** Its natural slot is second, but three
+of its five files are the `/book` payment path fenced off until Phase 6. The recommendation
+above was to move the other two early and split the feature across phases. **That is rejected.
+`booking` moves whole, in Phase 6, with the payment path.**
 
-### And the ordering constraint the freeze creates
+**The reasoning, because it generalises past this feature.** A feature migrated in halves has a
+half-written barrel, and a half-written barrel is worse than no barrel. §1 rule 3 — *"every
+feature has exactly one public entrance, anything not exported there is private and unreachable
+from outside"* — is what makes a second implementation impossible to build by accident. A
+barrel that exports `ContactPage` and `Turnstile` but not `createBooking` or `api.ts` does not
+say "booking's public surface is these two things." It says nothing, because the reader cannot
+tell an absence that means *private* from an absence that means *not moved yet*. For five
+phases the feature boundary would be ambiguous exactly where D-01 — two complete checkouts —
+says ambiguity is most expensive.
 
-`src/data/products.ts` (12 inbound, 3 of them from the frozen zone) and `src/lib/pricing.ts`
-(15 inbound, 2 from frozen, 4 from `netlify/`) **cannot be fully resolved until the
-visualiser unfreezes.** Both are scheduled for Phases 2–3, before the freeze lifts.
+`ContactPage` is not homeless in the meantime. Decision C already put it in `feature:marketing`,
+where it moved at P4-1, submitting through booking's barrel when booking exists. That was the
+cost the split was meant to avoid, and it was already paid a different way.
 
-**Recommendation: move them, but do not split them, until Phase 4-7.** Relocate the file and
-update every import including the frozen zone's — that is an import-path edit, which the
-freeze permits (you froze the files from *migration*, and an import rewrite is mechanical).
-Splitting `products.ts` by consumer, which note H proposes, must wait.
+**P4-2 is therefore correctly DEFERRED, not skipped.** The distinction matters in the phase
+record: a skipped slot invites someone to go back and fill it.
+
+### And the constraint the visualiser creates — REWRITTEN BY ADR-020
+
+`src/data/products.ts` and `src/lib/pricing.ts` are both imported by the visualiser
+directories. The original plan was: *"move them, but do not split them, until P4-7 — relocate
+the file and update every import including the frozen zone's, because an import rewrite is
+mechanical and the freeze permits it."*
+
+**ADR-020 withdraws that permission.** The visualiser is out of scope and its files are not
+edited for any reason, an import rewrite included. So:
+
+| Module | Frozen importers | What is now possible |
+|---|---:|---|
+| `src/lib/pricing.ts` | 4 | Moves to `shared-core/pricing/` in Phase 6 **and leaves a permanent re-export shim at `src/lib/pricing.ts`**, because the frozen files reach it by relative path. One table, two paths — a re-export cannot diverge from what it re-exports. |
+| `src/data/products.ts` | 6 | **Cannot be split by consumer at all** (decision H is out of scope), and cannot move without the same shim. **OPEN — it has no scheduled home.** |
+
+Neither is a defeat. §13's failure mode is two copies of a rule, and a shim is not a copy.
 
 ---
 
@@ -1016,6 +1055,13 @@ the collision goes with it.
 
 ### R7 — `KlayConfigurator.tsx` is frozen but `VisualiserShowcase` and `ProductDetailPage` are not
 
+> **ADR-020 settles this by making it permanent, not by resolving it.** The recommendation
+> below was a barrel at the frozen boundary so that P4-7 became a one-file change. There is no
+> P4-7, so the barrel buys nothing and is not built (decisions B and G, out of scope).
+> `ProductDetailPage` — already migrated to `features/catalogue/` — keeps its three direct
+> imports of `src/visualiser/*`, and those three edges are permanent. This is the largest
+> single reason the `feature → legacy` countdown can no longer reach zero.
+
 **Specifics.** Both import `KlayConfigurator`, `VisualiserControls` and `useVisualiserStore`
 directly. Moving those two consumers in P4-3 and P4-6 while their target is frozen means
 writing imports that point at `src/visualiser/`, then rewriting them again in P4-7.
@@ -1070,6 +1116,13 @@ or any baseline recorded. Budget for it; it is a dependency-resolution task, not
 task, and `npm audit fix` will not do it.
 
 ### R11 — THE VISUALISER PHASE IS THE MIGRATION'S CRITICAL PATH
+
+> **CLOSED BY ADR-020 — and this risk is exactly why.** The visualiser phase is no longer the
+> critical path because it is no longer on the path at all. R11 said the phase "is the only one
+> whose scope is still growing"; that never stopped, so the answer was to take the migration off
+> it rather than keep waiting. The risk is not mitigated, it is **removed from scope** — which
+> is a different thing and is recorded as such in E-08. Everything below is the reasoning that
+> led there.
 
 **Specifics.** Five of the eleven authoritative layer decisions cannot be executed until the
 freeze lifts:
@@ -1176,6 +1229,12 @@ there. **The fork is doing exactly the job it was created to do.**
    earlier.
 
 **Marked NEEDS DECISION.** I have not acted on it.
+
+> **SUPERSEDED BY ADR-020, 1 September 2026.** Point 4 no longer has a slot to name: P4-7 is
+> deleted and both `src/visualiser/` and `src/visualiser-lab/` are out of this migration
+> entirely. Points 1–3 stand — they are about the lab as it is, not about when it moves — and
+> point 4's substance survives in a stronger form: the two directories move **together, later,
+> as their own project.** The rest of this section is kept for the reasoning.
 
 ---
 
