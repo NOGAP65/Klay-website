@@ -1,0 +1,78 @@
+{
+  "//": "THE MACHINE-READABLE HALF OF SPECIFICATION.md §12. ADR-023.",
+  "//why": "§12 is the exceptions register and the constitution's own list. Tooling cannot read a markdown table reliably, and a hand-maintained second copy is exactly the silent divergence §13 names. So the paths live here, the prose lives in §12, and tools/verify-exceptions.mjs asserts that every E-number in one appears in the other. Adding an exception still requires an ADR; it now also requires a line here.",
+  "//scope": "`excludesFromScope: true` means the paths leave the in-scope count that gates warn -> error promotion. An exception that is not about scope (E-05's CSP, E-06's token literals) does not carry it.",
+  "exceptions": [
+    {
+      "id": "E-01",
+      "summary": "homography.ts exempt from size and complexity limits",
+      "paths": ["src/visualiser/homography.ts"],
+      "excludesFromScope": false,
+      "note": "Covered by E-08 for scope purposes; listed for completeness."
+    },
+    {
+      "id": "E-02",
+      "summary": "Canvas2DBlindRenderer.tsx exempt from size limits",
+      "paths": ["src/visualiser/Canvas2DBlindRenderer.tsx"],
+      "excludesFromScope": false
+    },
+    {
+      "id": "E-03",
+      "summary": "CornerPinOverlay.tsx exempt from size limits",
+      "paths": ["src/visualiser/CornerPinOverlay.tsx"],
+      "excludesFromScope": false
+    },
+    {
+      "id": "E-04",
+      "summary": "usePhotoUpload.ts exempt from size limits",
+      "paths": ["src/visualiser/usePhotoUpload.ts"],
+      "excludesFromScope": false
+    },
+    {
+      "id": "E-05",
+      "summary": "style-src 'unsafe-inline' in CSP",
+      "paths": [],
+      "excludesFromScope": false
+    },
+    {
+      "id": "E-06",
+      "summary": "design-system/tokens/* exempt from the no-literal-values rule",
+      "paths": ["src/design-system/tokens/**"],
+      "excludesFromScope": false,
+      "note": "A rule-level exemption, not a scope exclusion. These files are in scope for every other rule."
+    },
+    {
+      "id": "E-07",
+      "summary": "visualiser/visualizer spelling split",
+      "paths": [],
+      "excludesFromScope": false
+    },
+    {
+      "id": "E-08",
+      "summary": "The visualiser is outside this migration and outside every rule in the specification",
+      "paths": [
+        "src/visualiser/**",
+        "src/visualiser-lab/**",
+        "src/pages/VisualiserPage.tsx",
+        "src/pages/VisualizerLabPage.tsx"
+      ],
+      "excludesFromScope": true,
+      "retiresWhen": "The visualiser migration is scheduled as its own project. ADR-020."
+    },
+    {
+      "id": "E-09",
+      "summary": "Permanent re-export shim at src/lib/pricing.ts after the module moves to shared-core",
+      "paths": ["src/lib/pricing.ts"],
+      "excludesFromScope": true,
+      "retiresWhen": "With E-08 — the four E-08 files that import it by relative path can be edited.",
+      "note": "Not yet a shim. The path is excluded from the moment the exception is granted, so the count does not jump when Phase 6 creates it."
+    },
+    {
+      "id": "E-10",
+      "summary": "src/data/products.ts and src/theme.ts stay where they are",
+      "paths": ["src/data/products.ts", "src/theme.ts"],
+      "excludesFromScope": true,
+      "retiresWhen": "With E-08."
+    }
+  ]
+}

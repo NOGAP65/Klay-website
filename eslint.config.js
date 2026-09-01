@@ -117,10 +117,20 @@ export default tseslint.config(
         // that has to come out. Two different facts need two different names, or
         // the countdown to zero can never terminate and the allowance can never
         // be removed. Must precede `legacy`: boundaries takes the FIRST match.
+        //
+        // ONLY THE TWO DIRECTORIES ARE LISTED, and E-08 names four paths.
+        // `boundaries` classifies by FOLDER — a file pattern here is silently
+        // partial-matched and the plugin warns about it. VisualiserPage.tsx and
+        // VisualizerLabPage.tsx therefore stay classified `legacy`, which costs
+        // nothing today: their only importer is App.tsx, which is `legacy`, and
+        // legacy -> legacy is allowed either way.
+        //
+        // The file-level half of E-08 is enforced where it CAN be expressed —
+        // tools/scope.mjs, which reads the exception register and does handle
+        // individual files. Two mechanisms because the two tools have different
+        // granularity, and pretending otherwise is what produced the warning.
         { type: 'legacy-visualiser', pattern: 'src/visualiser/**' },
         { type: 'legacy-visualiser', pattern: 'src/visualiser-lab/**' },
-        { type: 'legacy-visualiser', pattern: 'src/pages/VisualiserPage.tsx' },
-        { type: 'legacy-visualiser', pattern: 'src/pages/VisualizerLabPage.tsx' },
         // Everything the migration has not relocated yet. Declared so that
         // boundaries can classify it rather than treating it as unknown; it has
         // no restrictions of its own, because restricting code that has not

@@ -138,10 +138,31 @@ was written, **6** after P4-5 took a `data/products.ts` edge away with the SKU s
 after P4-6, because `VisualiserShowcase` came into `feature:home` carrying three imports of
 `src/visualiser/` with it — the same shape `ProductDetailPage` already had.
 
-`npm run check:countdown` prints the floor as `PERMANENT` on every run. **Read it at the moment
-you remove the allowance; do not hard-code the number into the exit condition.** It rises
-whenever a feature absorbs a file that talks to the out-of-scope zone, and P4-6 was the last
-such absorption.
+`npm run check:countdown` prints the floor as `PERMANENT` on every run. It rises whenever a
+feature absorbs a file that talks to the out-of-scope zone, and P4-6 was the last such
+absorption.
+
+### THE FLOOR FREEZES WHEN PHASE 6 OPENS
+
+**Whatever `PERMANENT` reads on the day Phase 6 opens is recorded here, and that number gates
+Phase 6 closing.**
+
+Up to that point the floor is a live measurement and moving is normal — it has moved three
+times already (7 → 6 → 10). From that point it is a constant, and the reason is that an exit
+condition which recalculates itself is not an exit condition. A floor free to rise during
+Phase 6 would let the phase close by growing its own target.
+
+**If the floor moves after the freeze, PHASE 6 DOES NOT CLOSE, and it is reported rather than
+re-baselined.** A rise means a feature gained a new permanent edge into the out-of-scope zone
+during the phase that was supposed to be removing scaffolding — which is a scope change and a
+decision for V, not an arithmetic adjustment.
+
+| | |
+|---|---|
+| **Floor at Phase 6 open** | *(record it here on the day — do not pre-fill it)* |
+| **Measured by** | `npm run check:countdown`, the `PERMANENT` line |
+| **If it rises** | Phase 6 does not close. Report to V |
+| **If it falls** | Fine, and record why — something left the out-of-scope zone |
 
 Both allowances are in the config now, adjacent and labelled. The temporary one carries
 `REMOVE AT PHASE 6.1`; the permanent one carries the reason it survives.

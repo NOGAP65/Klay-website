@@ -1,8 +1,8 @@
 # Klay Interiors — Architecture Specification
 
-**Version:** 1.6
-**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3–v1.6)
-**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2), ADR-020 (§12), ADR-022 (§11)
+**Version:** 1.7
+**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3–v1.7)
+**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2), ADR-020 (§12), ADR-022 (§11), ADR-023 (§11, §12), ADR-024 (§5)
 **Status:** Standing document. This is the constitution, not a work order.
 **Owner:** V
 **Applies to:** NOGAP65/Klay-website-new. Ella adopts it after Klay proves it.
@@ -203,7 +203,7 @@ features/booking/
 
 | Kind | Convention | Example |
 |---|---|---|
-| React component | `PascalCase.tsx`, one per file, filename = component name | `BookingForm.tsx` |
+| React component | `PascalCase.tsx`, one per file, filename = component name — **but see the shared-definition exception below** | `BookingForm.tsx` |
 | Hook | `useCamelCase.ts` | `useBookingSubmission.ts` |
 | Module | `camelCase.ts` | `createBooking.ts` |
 | Types | `thing.types.ts` | `booking.types.ts` |
@@ -212,6 +212,25 @@ features/booking/
 | Netlify function | `kebab-case.ts` | `create-checkout-session.ts` |
 | Migration | `NNNN_description.sql` | `0003_add_booking_status.sql` |
 | ADR | `NNN-decision-in-a-phrase.md` | `007-server-side-pricing.md` |
+
+**ONE COMPONENT PER FILE, EXCEPT WHERE A SHARED DEFINITION HAS ALREADY DRIFTED — ADR-024.**
+
+> One component per file, except where two components share a definition whose duplication has
+> previously caused drift. The shared definition stays with them, and the reason is recorded in
+> the file.
+
+Three conditions, all required: the components genuinely share it; duplication has **previously**
+caused drift, as a matter of record rather than prediction; and the reason is written in the file.
+
+`CtaButton` and `CtaLink` are the worked example — the same button as a `<button>` and an `<a>`,
+which had already drifted to six different heights when the geometry was not shared. The
+preferred resolution is the one P4-6 took: the shared definition in a non-component
+`camelCase.ts` module (`design-system/primitives/cta.ts`) with one component per component file,
+which satisfies the letter as well as the intent. The exception covers the case where even that
+third file is ceremony.
+
+**This is not cover for two unrelated components in one file.** §8's signal stands unless the
+drift can be named.
 
 **Banned filenames:** `utils.ts`, `helpers.ts`, `misc.ts`, `common.ts`, `index.ts` containing
 logic, `Component2.tsx`, `ThingNew.tsx`, `ThingOld.tsx`, `ThingCopy.tsx`, anything containing
@@ -527,8 +546,32 @@ switched off.
 
 | | Condition | Evidence |
 |---|---|---|
-| **1** | The recorded count has reached **zero** | `docs/architecture/LINT_BASELINE.md` |
+| **1** | The **in-scope** count has reached **zero** | `npm run check:scope` |
 | **2** | The rule has been **demonstrated to fire** against a fixture built to violate it | `npm run verify:rules` |
+
+**IN-SCOPE IS DEFINED, AND COMPUTED — ADR-023.**
+
+```
+in-scope = every file under src/
+           MINUS the paths named by any exception in §12 that excludes from scope
+           MINUS netlify/, scripts/, tools/, assets-source/
+```
+
+**The set is computed from the exception register, not hand-maintained.**
+`docs/architecture/exceptions.json` is §12's machine-readable half;
+`npm run check:exceptions` asserts the two halves carry the same `E-` numbers. A second,
+hand-kept list of what is not being counted is the silent divergence §13 names.
+
+**When an exception retires, its files re-enter scope, and any rule they violate demotes from
+`error` back to `warn` until the count clears.** Promotion on an in-scope zero is a claim about a
+smaller codebase; when the codebase grows the claim is re-earned. That demotion is expected, and
+it is not a reason to keep an exception alive to protect a green tick.
+
+**A rule promoted this way is marked `error (in-scope)` and is NOT equivalent to a globally-zero
+rule.** `klay/no-direct-env-access` is zero everywhere. `max-params` is zero in scope with nine
+findings in the out-of-scope renderer. Both may be `error`; only the first is a statement about
+the whole codebase, and collapsing them would be a green signal that does not mean what it
+appears to.
 
 **Neither condition is sufficient alone, and condition 2 is the one that was missing.** A rule
 satisfying only 1 is indistinguishable from a rule that does nothing — which is exactly what
@@ -569,6 +612,12 @@ invokes it.
 | E-10 | `src/data/products.ts` and `src/theme.ts` stay where they are | ADR-020. Imported by E-08 files. `products.ts` additionally cannot be split by consumer, which was decision H | With E-08 |
 
 **Adding to this table requires an ADR. An exception without an ADR is a violation.**
+
+**AND A ROW IN `docs/architecture/exceptions.json` — ADR-023.** That file is this table's
+machine-readable half: tooling cannot read a markdown table reliably, and the promotion count in
+§11 is computed from the register rather than from a second list someone keeps by hand. An
+exception tooling cannot see silently inflates that count's denominator.
+`npm run check:exceptions` fails if either half is missing an `E-` number.
 
 **E-08 is the largest exception in this table by a wide margin — 58% of `src/`.** It is stated
 plainly rather than buried: for the life of this migration, the majority of the codebase by
