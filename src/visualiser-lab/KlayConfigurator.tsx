@@ -7,7 +7,6 @@ import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
 import Canvas2DWardrobeRenderer from './Canvas2DWardrobeRenderer';
 import Wardrobe3D from './Wardrobe3D';
-import { tracedWidthMm } from './wardrobeGeometry';
 
 // One radius for every surface in the visualiser. The three files used to
 // disagree (0 here, 12px on the homepage wrapper, 4px on the thumbnails),
@@ -1270,11 +1269,7 @@ export default function KlayConfigurator({
             <Wardrobe3D
               modelId={store.wardrobeModel}
               colourName={store.wardrobeColour}
-              selectedWidthMm={
-                confirmedArea
-                  ? tracedWidthMm(confirmedArea.corners as [number, number][], 2016)
-                  : undefined
-              }
+              selectedWidthMm={store.wardrobeWidthMm}
             />
           ) : store.productCategory === 'wardrobe' && confirmedArea ? (
             <Canvas2DWardrobeRenderer
@@ -1282,6 +1277,7 @@ export default function KlayConfigurator({
               corners={confirmedArea.corners as [number, number][]}
               modelId={store.wardrobeModel}
               colourName={store.wardrobeColour}
+              widthMm={store.wardrobeWidthMm}
             />
           ) : store.productCategory === 'curtain' && confirmedArea ? (
             <Canvas2DCurtainRenderer
