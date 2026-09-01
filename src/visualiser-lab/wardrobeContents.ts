@@ -68,15 +68,24 @@ export interface ContentAsset {
   repeats?: boolean;
 }
 
+/** THE SIZES ARE MEASURED OFF THE RENDERS THEY WERE CUT FROM, not chosen.
+ *
+ * Each crop's width in pixels, divided by the carcass's own width in pixels,
+ * times that layout's real width in millimetres. So a run of three coats comes
+ * out at 370mm because three coats packed on a rail really do take about
+ * 120mm each — which is also the sanity check that the arithmetic was right.
+ *
+ * Getting these wrong is not subtle: the projection scales everything by
+ * widthMm, so a stack declared at twice its size arrives as a piece of luggage
+ * on a shelf. */
 export const CONTENT_ASSETS: Record<ContentKind, ContentAsset> = {
-  // A run of hanging clothes about 900mm wide, repeated to fill whatever bay it
-  // is put in. Wider than a single garment so the repeat has some variety in it
-  // rather than reading as one shirt stamped over and over.
-  'hanging-short': { kind: 'hanging-short', file: 'hanging-short.png', widthMm: 900, depth: 0.30, hangs: true, repeats: true },
-  'hanging-long': { kind: 'hanging-long', file: 'hanging-long.png', widthMm: 900, depth: 0.30, hangs: true, repeats: true },
-  stack: { kind: 'stack', file: 'stack.png', widthMm: 300, depth: 0.46 },
-  box: { kind: 'box', file: 'box.png', widthMm: 320, depth: 0.44 },
-  shoes: { kind: 'shoes', file: 'shoes.png', widthMm: 260, depth: 0.40 },
+  // Dark trousers off 4.0's lower rail — the short drop of a double-hang.
+  'hanging-short': { kind: 'hanging-short', file: 'hanging-short.png', widthMm: 200, depth: 0.30, hangs: true, repeats: true },
+  // Three charcoal coats off 3.0's left-hand run, at their full drop.
+  'hanging-long': { kind: 'hanging-long', file: 'hanging-long.png', widthMm: 370, depth: 0.30, hangs: true, repeats: true },
+  stack: { kind: 'stack', file: 'stack.png', widthMm: 280, depth: 0.46 },
+  box: { kind: 'box', file: 'box.png', widthMm: 400, depth: 0.44 },
+  shoes: { kind: 'shoes', file: 'shoes.png', widthMm: 250, depth: 0.40 },
 };
 
 export interface LoadedContent {

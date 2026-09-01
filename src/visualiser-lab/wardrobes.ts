@@ -43,6 +43,8 @@
 // all the faults above, and it is temporary.
 // ---------------------------------------------------------------------------
 
+import { cutoutFor, type WardrobeCutout } from './wardrobeCutouts';
+
 const DIR = '/images/Textures/wardrobes';
 
 export type WardrobeKind = 'built-in' | 'walk-in';
@@ -112,10 +114,16 @@ export const wardrobeAssetPath = (model: WardrobeModel, colourName: string, view
   `${DIR}/${model.id}-${wardrobeColour(colourName).slug}-${view}.png`;
 
 /** How far out of square a trace has to be before it counts as an angled wall.
- * Six per cent difference between the two upright edges — enough that a hand
- * traced rectangle with a wobble in it still reads as square-on, small enough
- * that a genuinely receding wall is caught. */
-const TRAPEZOID_THRESHOLD = 0.06;
+ * Enough that a hand traced rectangle with a wobble in it still reads as
+ * square-on, small enough that a genuinely receding wall is caught.
+ *
+ * RAISED FROM 0.06, which was set by eye and turned out to be about 6° of yaw —
+ * well inside what a front-on render survives. Warping the 8.0 cut-out onto a
+ * wall rotated through a normal lens puts 15° at a skew of 0.149 and still
+ * looking right, with the failure arriving between 30° and 45°. At 0.06 a wall
+ * six degrees off square was already being sent to artwork drawn at
+ * twenty-five, which is a bigger error than the one it was avoiding. */
+const TRAPEZOID_THRESHOLD = 0.15;
 
 /** The viewpoint a built-in should be drawn in, decided by the shape the
  * customer traced.
@@ -195,6 +203,35 @@ export async function wardrobeArtwork(
   }
   const canvas = await legacyStickerFallback(model, wardrobeColourHex(colourName));
   return { image: canvas, width: canvas.width, height: canvas.height, legacy: true };
+}
+
+/** THE CUT-OUT FOR A LAYOUT AND FINISH, or null where there is not one yet.
+ *
+ * The supplied stickers are cut out at build time by
+ * scripts/cut-wardrobe-stickers.mjs and land here as `<id>-<finish>-<view>.png`
+ * with a real alpha channel and a manifest saying where the CARCASS sits inside
+ * each file — see wardrobeCutouts.ts for why that box is not the file's own
+ * bounds.
+ *
+ * ONLY THE FINISH THAT WAS PHOTOGRAPHED. The ten renders are all Matt Wardrobe
+ * White, so that is the only finish this can answer for, and the note at the
+ * top of this file explains why the missing three cannot be faked from it:
+ * recolouring finds the board by colour and white shirts share a white
+ * carcass's signature exactly. Grain makes it worse still — there is no figure
+ * in a white melamine render to modulate into walnut, so no tint invents one.
+ * The other three finishes take the modelled carcass, which is honest about
+ * being modelled and gets the colour right, until their renders land.
+ */
+export async function wardrobeCutoutFor(
+  model: WardrobeModel,
+  colourName: string,
+): Promise<{ image: HTMLImageElement; carcass: WardrobeCutout; view: WardrobeView } | null> {
+  const entry = cutoutFor(model.id);
+  if (!entry) return null;
+  if (wardrobeColour(colourName).slug !== 'white') return null;
+  const image = await loadAsset(`${DIR}/${entry.file}`);
+  if (!image) return null;
+  return { image, carcass: entry, view: entry.view };
 }
 
 /** Is the finished set in place for this configuration? */
