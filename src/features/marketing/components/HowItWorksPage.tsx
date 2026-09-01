@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { radius, tokens, eyebrow, headline, motion, space, supporting, type as typeScale } from '@/ds';
+import { radius, tokens, eyebrow, headline, motion, space, supporting, type as typeScale, useHover } from '@/ds';
 
 import { STEPS, type Step } from '../constants';
 
@@ -132,7 +132,7 @@ const stepSection = (ground: string): React.CSSProperties => ({
 export default function HowItWorksPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [hoveredFaq, setHoveredFaq] = useState<number | null>(null);
-  const [ctaHover, setCtaHover] = useState(false);
+  const ctaHover = useHover();
 
   return (
     <>
@@ -281,8 +281,7 @@ export default function HowItWorksPage() {
         </p>
         <Link
           to="/visualiser"
-          onMouseEnter={() => setCtaHover(true)}
-          onMouseLeave={() => setCtaHover(false)}
+          {...ctaHover.bind}
           style={{
             display: 'inline-block',
             textDecoration: 'none',
@@ -293,7 +292,7 @@ export default function HowItWorksPage() {
             textTransform: 'uppercase',
             padding: `${space.item}px ${space.section}px`,
             borderRadius: radius.md,
-            background: ctaHover ? tokens.accentHover : tokens.accent,
+            background: ctaHover.hover ? tokens.accentHover : tokens.accent,
             color: tokens.onAccent,
             transition: motion.button,
           }}

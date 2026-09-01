@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { tokens, eyebrow, motion,
-  space,
-  radius,
-  type as typeScale } from '@/ds';
+import { tokens, eyebrow, motion, space, radius, type as typeScale, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
 import { useIsMobile } from '@/shared';
 
@@ -181,10 +178,10 @@ export default function ProductDetailPage() {
   const setScrollY = useKlayStore(s => s.setScrollY);
 
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [quoteHover, setQuoteHover] = useState(false);
-  const [cartHover, setCartHover] = useState(false);
-  const [barCartHover, setBarCartHover] = useState(false);
-  const [barQuoteHover, setBarQuoteHover] = useState(false);
+  const quoteHover = useHover();
+  const cartHover = useHover();
+  const barCartHover = useHover();
+  const barQuoteHover = useHover();
   const [addedToCart, setAddedToCart] = useState(false);
 
   const addItem = useCartStore(s => s.addItem);
@@ -321,12 +318,11 @@ export default function ProductDetailPage() {
                   setAddedToCart(true);
                   setTimeout(() => setAddedToCart(false), 2000);
                 }}
-                onMouseEnter={() => setCartHover(true)}
-                onMouseLeave={() => setCartHover(false)}
+                {...cartHover.bind}
                 style={{
                   width: '100%',
                   padding: `${space.item}px ${space.group}px`,
-                  background: addedToCart ? tokens.charcoal : (cartHover ? tokens.accentHover : tokens.accent),
+                  background: addedToCart ? tokens.charcoal : (cartHover.hover ? tokens.accentHover : tokens.accent),
                   color: addedToCart ? tokens.paper : tokens.ink,
                   fontFamily: tokens.body,
                   fontSize: typeScale.body.fontSize,
@@ -344,19 +340,18 @@ export default function ProductDetailPage() {
               </button>
               <Link
                 to={bookHref}
-                onMouseEnter={() => setQuoteHover(true)}
-                onMouseLeave={() => setQuoteHover(false)}
+                {...quoteHover.bind}
                 style={{
                   width: '100%',
                   padding: `${space.item}px ${space.group}px`,
                   background: 'transparent',
-                  color: quoteHover ? tokens.textMuted : tokens.ink,
+                  color: quoteHover.hover ? tokens.textMuted : tokens.ink,
                   fontFamily: tokens.body,
                   fontSize: typeScale.body.fontSize,
                   fontWeight: 600,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
-                  border: `1px solid ${quoteHover ? tokens.line : tokens.lineStrong}`,
+                  border: `1px solid ${quoteHover.hover ? tokens.line : tokens.lineStrong}`,
                   borderRadius: radius.md,
                   cursor: 'pointer',
                   transition: motion.button,
@@ -474,11 +469,10 @@ export default function ProductDetailPage() {
           <div style={{ display: 'flex', gap: space.tight }}>
             <Link
               to={bookHref}
-              onMouseEnter={() => setBarQuoteHover(true)}
-              onMouseLeave={() => setBarQuoteHover(false)}
+              {...barQuoteHover.bind}
               style={{
                 background: 'transparent',
-                color: barQuoteHover ? tokens.textMuted : tokens.ink,
+                color: barQuoteHover.hover ? tokens.textMuted : tokens.ink,
                 fontFamily: tokens.body,
                 fontSize: typeScale.micro.fontSize,
                 fontWeight: 600,
@@ -486,7 +480,7 @@ export default function ProductDetailPage() {
                 letterSpacing: '0.1em',
                 padding: isMobile ? '8px 16px' : '10px 20px',
                 borderRadius: radius.sm,
-                border: `1px solid ${barQuoteHover ? tokens.line : tokens.lineStrong}`,
+                border: `1px solid ${barQuoteHover.hover ? tokens.line : tokens.lineStrong}`,
                 cursor: 'pointer',
                 textDecoration: 'none',
                 transition: motion.button,
@@ -509,10 +503,9 @@ export default function ProductDetailPage() {
                 setAddedToCart(true);
                 setTimeout(() => setAddedToCart(false), 2000);
               }}
-              onMouseEnter={() => setBarCartHover(true)}
-              onMouseLeave={() => setBarCartHover(false)}
+              {...barCartHover.bind}
               style={{
-                background: addedToCart ? tokens.charcoal : (barCartHover ? tokens.accentHover : tokens.accent),
+                background: addedToCart ? tokens.charcoal : (barCartHover.hover ? tokens.accentHover : tokens.accent),
                 color: addedToCart ? tokens.paper : tokens.ink,
                 fontFamily: tokens.body,
                 fontSize: typeScale.micro.fontSize,

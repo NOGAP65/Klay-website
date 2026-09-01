@@ -46,7 +46,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { radius, tokens, motion, space, type as typeScale } from '@/ds';
+import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
 import { useIsMobile, useMediaQuery } from '@/shared';
 
@@ -185,8 +185,8 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
-  const [cartHover, setCartHover] = useState(false);
-  const [ctaHover, setCtaHover] = useState(false);
+  const cartHover = useHover();
+  const ctaHover = useHover();
 
   const alwaysSolid = solid || compressed;
   const solidBar = alwaysSolid && !menuOpen;
@@ -309,8 +309,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
           <div style={{ display: 'flex', alignItems: 'center', gap: CONTROL_GAP, flex: '0 0 auto' }}>
             <Link
               to="/cart"
-              onMouseEnter={() => setCartHover(true)}
-              onMouseLeave={() => setCartHover(false)}
+              {...cartHover.bind}
               style={{
                 position: 'relative',
                 display: 'flex',
@@ -321,12 +320,12 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 width: NAV_CONTROL,
                 height: NAV_CONTROL,
                 borderRadius: radius.md,
-                border: `1px solid ${cartHover ? tokens.line : onDarkGround ? tokens.onDarkEdge : tokens.line}`,
+                border: `1px solid ${cartHover.hover ? tokens.line : onDarkGround ? tokens.onDarkEdge : tokens.line}`,
                 // The hover wash follows the ground. A paper wash at 0.12 was
                 // the right move on a charcoal bar and is invisible on a paper
                 // one, so on light it inverts to ink at 0.06 — enough to read as
                 // a pressed state without becoming a second button.
-                background: cartHover
+                background: cartHover.hover
                   ? onDarkGround
                     ? 'rgba(248,248,248,0.12)'
                     : 'rgba(29,29,29,0.06)'
@@ -373,8 +372,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 still has one unmissable gold way in. Both go to /products. */}
             <Link
               to="/products"
-              onMouseEnter={() => setCtaHover(true)}
-              onMouseLeave={() => setCtaHover(false)}
+              {...ctaHover.bind}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -382,7 +380,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 height: NAV_CONTROL,
                 padding: `0 ${space.group}px`,
                 borderRadius: radius.md,
-                background: ctaHover ? tokens.accentHover : tokens.accent,
+                background: ctaHover.hover ? tokens.accentHover : tokens.accent,
                 color: tokens.onAccent,
                 ...typeScale.label,
                 lineHeight: 1,

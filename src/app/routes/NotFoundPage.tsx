@@ -1,13 +1,12 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { tokens, motion, supporting } from '@/ds';
+import { tokens, motion, supporting, useHover } from '@/ds';
 
 // DARK ('#0f0d09') removed — this page is routed at path="*", so the one
 // near-black left on the site was the page a lost visitor lands on.
 
 export default function NotFoundPage() {
-  const [ctaHover, setCtaHover] = useState(false);
+  const ctaHover = useHover();
 
   return (
     <>
@@ -35,8 +34,7 @@ export default function NotFoundPage() {
         </p>
         <Link
           to="/"
-          onMouseEnter={() => setCtaHover(true)}
-          onMouseLeave={() => setCtaHover(false)}
+          {...ctaHover.bind}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 10, marginTop: 32,
             fontFamily: tokens.body, fontSize: 12, fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase',
@@ -48,8 +46,8 @@ export default function NotFoundPage() {
             // audit. Paper edge and paper text at rest (12.43:1), filling to
             // paper with ink on it (15.87:1).
             padding: '18px 40px', border: `1px solid ${tokens.onDarkEdge}`,
-            background: ctaHover ? tokens.onDark : 'transparent',
-            color: ctaHover ? tokens.ink : tokens.onDark,
+            background: ctaHover.hover ? tokens.onDark : 'transparent',
+            color: ctaHover.hover ? tokens.ink : tokens.onDark,
             textDecoration: 'none',
             transition: motion.button,
           }}

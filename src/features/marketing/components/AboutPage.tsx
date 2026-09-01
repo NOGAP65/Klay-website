@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { radius, tokens, eyebrow, headline, motion, space, supporting, type as typeScale } from '@/ds';
+import { radius, tokens, eyebrow, headline, motion, space, supporting, type as typeScale, useHover } from '@/ds';
 import { COLOUR_COUNT, PRODUCT_COUNT } from '@/features/catalogue';
 
 // DARK ('#0f0d09', a near-black outside the palette) and PARCHMENT (a second
@@ -27,7 +26,7 @@ const CREDENTIALS = [
 ];
 
 export default function AboutPage() {
-  const [ctaHover, setCtaHover] = useState(false);
+  const ctaHover = useHover();
 
   return (
     <>
@@ -145,8 +144,7 @@ export default function AboutPage() {
             </p>
             <Link
               to="/visualiser"
-              onMouseEnter={() => setCtaHover(true)}
-              onMouseLeave={() => setCtaHover(false)}
+              {...ctaHover.bind}
               style={{
                 textDecoration: 'none',
                 fontFamily: tokens.body,
@@ -156,7 +154,7 @@ export default function AboutPage() {
                 textTransform: 'uppercase',
                 padding: `${space.item}px ${space.section}px`,
                 borderRadius: radius.md,
-                background: ctaHover ? tokens.accentHover : tokens.accent,
+                background: ctaHover.hover ? tokens.accentHover : tokens.accent,
                 color: tokens.onAccent,
                 whiteSpace: 'nowrap',
                 transition: motion.button,

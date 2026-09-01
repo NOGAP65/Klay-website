@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { tokens, eyebrow, headline, motion, space, supporting, type as typeScale } from '@/ds';
+import { tokens, eyebrow, headline, motion, space, supporting, type as typeScale, useHover } from '@/ds';
 import { DANGER, Field } from '@/ds';
 import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
 
@@ -28,7 +28,7 @@ const DETAILS = [
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
-  const [ctaHover, setCtaHover] = useState(false);
+  const ctaHover = useHover();
 
   // ?product=<name> — set by every GET A QUOTE card on the blind listing pages.
   // Somebody who has just clicked a specific product should not have to retype
@@ -223,13 +223,12 @@ export default function ContactPage() {
                 <button
                   type="submit"
                   disabled={busy}
-                  onMouseEnter={() => setCtaHover(true)}
-                  onMouseLeave={() => setCtaHover(false)}
+                  {...ctaHover.bind}
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: space.tight,
                     fontFamily: tokens.body, fontSize: typeScale.label.fontSize, fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase',
                     padding: `${space.item}px ${space.section}px`, border: 'none',
-                    background: busy ? tokens.inkFaint : ctaHover ? tokens.accentHover : tokens.accent,
+                    background: busy ? tokens.inkFaint : ctaHover.hover ? tokens.accentHover : tokens.accent,
                     color: tokens.onAccent,
                     cursor: busy ? 'progress' : 'pointer',
                     transition: motion.button,
