@@ -141,6 +141,124 @@ A tool reporting its own success is evidence of neither.
 
 ---
 
+---
+
+# READ BACK AFTER EVERY SHELL-MEDIATED WRITE
+
+> **A write that passes through a shell is verified by reading the file, not by the command
+> exiting zero.**
+
+**SIX instances in one migration. That is a property of the environment, not six accidents.**
+
+| # | What reported success | What was actually true |
+|---|---|---|
+| 1 | `import/no-cycle` — configured, loaded, schema-validated | Inert. Reported zero against a two-file `a → b → a` fixture built to violate it. ADR-022 |
+| 2 | The rename script — *"41 renames applied"* | True, and silent about whether they were the right 41. Two landed in the wrong scope |
+| 3 | The NUL comment mask — round-tripped in tests | Collapsed multi-line comments to one line, shifting every line number after them |
+| 4 | **`git commit` with a heredoc body** | Backticks inside the shell string were **executed as command substitution** and their content silently deleted from the document |
+| 5 | A codemod's directory filter | Skipped directories named `visualiser` and edited `src/pages/VisualizerLabPage.tsx` — a **file**, spelled with a z, protected by E-08 |
+| 6 | `String.replace(anchor, add + anchor)` while writing THIS SECTION | The replacement string contained a `$` before a backtick — a special pattern meaning "everything before the match" — and duplicated 130 lines of this file into itself |
+
+**Four, five and six are the ones this section is about, and they are the same shape as one to
+three: the operation completed, reported success, and did something other than what was asked.**
+
+**Six is the one to read first.** It happened while this section was being written, to this
+section, and the rule being introduced caught it one command later.
+
+## Instance 4, precisely, because it happened twice in a day
+
+Writing a document through a shell heredoc:
+
+```bash
+node -e "s = s.replace('...', '... `/products` referenced nine times ...')"
+```
+
+The backticks around `/products` are **command substitution**. The shell ran `/products`, got
+`No such file or directory`, substituted the empty result, and the sentence went into the
+committed file as `( referenced nine times)`. Exit code zero. No warning that meant anything.
+
+It happened again in the same session with `` `error (in-scope)` `` and `` `warn` `` inside a
+table cell, which produced a syntax error on one and silent deletion on the other.
+
+**Markdown is made of backticks.** Every inline code span in a document written through a shell
+is a substitution waiting to happen, and the failure is invisible precisely because the result
+is *removal* — there is nothing left to notice.
+
+## Instance 5, and why it is worse than it looks
+
+The route-consolidation codemod filtered scope with an ad-hoc test on **directory names**:
+
+```js
+if (e.isDirectory()) { if (!/visualiser/.test(e.name)) walk(p, acc); }
+```
+
+`src/pages/VisualizerLabPage.tsx` is a file, not a directory, and is spelled with a `z`. It was
+edited. It is E-08 — out of the migration, not to be touched for any reason, an import rewrite
+included.
+
+**`tools/scope.mjs` exists to answer exactly this question**, computes the answer from the
+exception register, and handles individual files. It was not used, because writing a two-line
+filter felt faster than importing one.
+
+**That is the second time in this migration that the correct check already existed and an ad-hoc
+substitute was written instead** — the first being `tsc -b` run per batch rather than per
+operation. The rule that falls out:
+
+> **If a check for this already exists in `tools/`, use it. A filter written inline is a second
+> implementation of a rule, and §13 has a name for that.**
+
+Caught by reading the tool's output — the file was listed among fifteen — and reverted before the
+commit. It would not have been caught by the typechecker: the edit was valid TypeScript.
+
+## Instance 6 — which happened while writing this section, and proves it
+
+The section you are reading was spliced into this file with:
+
+    s.replace(anchor, add + anchor)
+
+`add` contained the sentence *"anything containing backticks, `$`, `!` or quotes"*. In a
+replacement **string**, `$` followed by a backtick is a special pattern meaning **"everything
+before the match"** — so `replace` inserted the entire first half of this document into the
+middle of it. 130 duplicated lines. Exit code zero.
+
+**The read-back rule caught it on its first use, one command after being written.** The check was
+`grep -n '^# '` on the file just modified; two headings appeared where one should.
+
+**The fix is to stop using a replacement string.** Slice the file and concatenate:
+
+```js
+const i = s.indexOf(anchor);
+fs.writeFileSync(p, s.slice(0, i) + add + s.slice(i));
+```
+
+`String.replace` with a string replacement interprets `$&`, `` $` ``, `$'` and `$1`. **A slice
+interprets nothing.** For inserting prose — which is full of `$` and backticks — that is the only
+safe form, and `replace(anchor, () => add)` with a *function* is the other, because a function's
+return value is used verbatim.
+
+**Six instances now.** Five were tools reporting success while wrong; this one was a document
+being written *about* tools reporting success while wrong, corrupted by the same class of fault
+it describes, and caught by the rule it was introducing.
+
+## The rule
+
+**After any write that passed through a shell — a heredoc, a `node -e`, a `sed -i`, a `perl -pi`
+— read the changed region back before moving on.**
+
+```bash
+grep -n '<a phrase from what you just wrote>' <file>
+```
+
+If the phrase is not there, or is there with a gap in it, the write did not do what the command
+said it did.
+
+**Prefer a writer that does not go through a shell** for prose and for anything containing
+backticks, `$`, `!` or quotes. Use the shell for *finding* and a file-writing tool for *writing*.
+This project's own transforms (`tools/codemod.mjs`) read and write with `node:fs` for exactly
+this reason — the shell is not in the path at all.
+
+---
+
 # A DEBUGGING SENTINEL MUST BE VISIBLE IN A TERMINAL, A DIFF AND AN EDITOR
 
 **Specific, small, and it cost two failed attempts at fixing a five-line function.**

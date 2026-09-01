@@ -162,14 +162,38 @@ every folder; empty folders are noise"* — and §9 says it about primitives. Th
 the whole tree, in the only form that holds: **an entry that cannot say what would cause it to
 exist is a prediction, not a target, and does not belong here.**
 
-Fifteen entries below do not exist yet. Each names the observation that creates it, and two of
-those observations have already been made.
+### THE TRIGGERS ARE AUDITED AT THE CLOSE OF EVERY PHASE, AND A FIRED TRIGGER IS A FINDING
+
+Not a backlog item. **A trigger that has fired means the duplication it was written to prevent
+already exists**, and the entry is built in that phase.
+
+**A NAMED ENTRY READS AS COVERAGE. That is the failure mode of a target tree, and it is why this
+paragraph is in the specification rather than in a process note.**
+
+`config/site.ts` was in this tree from the day it was written. It was never built. Underneath the
+name, the phone number, email and street address were written out in three files, the trading
+hours drifted into two different wordings of the same fact, and the Instagram URL reached a
+fourth file. **Nobody was careless.** Every author saw `config/site.ts` in the tree, read it as
+"the site's details have a home", and had no reason to check that the home was empty — the entry
+looked like the problem was solved.
+
+An unbuilt entry with a trigger is a claim about the future. **An unbuilt entry whose trigger has
+fired is a claim that is now false**, and it is more dangerous than no entry at all, because it
+suppresses the question it was meant to raise.
+
+So: at every phase close, walk the table below and check each condition against the codebase.
+`config/site.ts` and `config/routes.ts` were both found this way, both on the first audit, and
+both had fired long before anyone looked.
+
+Fifteen entries below did not exist when the triggers were written. **Two were built immediately
+because their conditions had already been met** — they are marked BUILT. One more, the glossary,
+had never had a chance to fire because §6 already required it.
 
 | Unbuilt entry | What causes it to exist |
 |---|---|
 | `app/providers.tsx` | A **second** app-wide provider. `BrowserRouter` is the only one today and sits inline in `main.tsx`, where one provider belongs |
-| `config/site.ts` | A business fact — phone, email, address, ABN — written in two places. **ALREADY FIRED: three.** D-12 |
-| `config/routes.ts` | A path string referenced twice. **ALREADY FIRED: `/products` nine times, `/contact` five, `/cart` four** |
+| ~~`config/site.ts`~~ **BUILT** | A business fact written in two places. **FIRED: three files, and a fourth for the Instagram URL.** D-12 |
+| ~~`config/routes.ts`~~ **BUILT** | A path string referenced twice. **FIRED: `/products` ten times, `/contact` six, `/cart` five** |
 | `features/booking/` | **Phase 6.** Scheduled, not speculative |
 | `features/visualiser/` | The visualiser migration being scheduled as its own project. E-08, ADR-020 |
 | `features/configurator/` | `RangeConfigurator` and `KlayConfigurator` being found to share logic rather than a name. Cannot be assessed while one of them is E-08 |
@@ -180,7 +204,7 @@ those observations have already been made.
 | `netlify/edge-functions/` | A latency measurement that justifies one. ADR-015: moving pricing to the edge is optional, separate, and sized on its own evidence |
 | `supabase/seed.sql` | A second environment needing deterministic starting data |
 | `docs/architecture/data-model.md` | The first relationship a single migration file does not show — a foreign key across two tables |
-| `docs/architecture/glossary.md` | **ALREADY FIRED.** §6 says *"Vocabulary lives in `docs/architecture/glossary.md`"*, and it does not exist. A section of this document depends on a file that was never written |
+| ~~`docs/architecture/glossary.md`~~ **BUILT, INCOMPLETE** | §6 said *"vocabulary lives in `docs/architecture/glossary.md`"* and it did not exist — a section of this document depending on a file nobody wrote. The code half is extracted; the business half is pending from V, and §6 says the business wins |
 | `docs/compliance/` | The first accepted compliance obligation — a privacy commitment, a retention rule, a PCI scope statement |
 
 ## FIVE ENTRIES WERE DELETED FROM THE TREE BECAUSE THEY FAILED THIS TEST

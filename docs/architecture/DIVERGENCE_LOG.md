@@ -7,7 +7,7 @@ machine, because *"a rule that relies on someone remembering it is not a rule, i
 The entries below are what happens without that enforcement — and every one of them was
 written by someone competent, in code that was individually good.
 
-**Running total: 12 confirmed. 4 resolved, 1 partially resolved, 2 deliberate, 5 open.**
+**Running total: 12 confirmed. 5 resolved, 1 partially resolved, 2 deliberate, 4 open.**
 
 | | Status |
 |---|---|
@@ -22,7 +22,7 @@ written by someone competent, in code that was individually good.
 | **D-09** form-field setter ×2 | Open. Identical helper in two forms. Waits for booking to land in Phase 6 |
 | **D-10** reduced-motion snapshot ×4 | **RESOLVED at Phase 7** — usePrefersReducedMotion |
 | **D-11** hover solved 3× in the design system | **RESOLVED at Phase 7** — six unused exports deleted, 471 lines. ADR-025 |
-| **D-12** contact details ×3 | Open. Phone, email and address in Footer, AboutPage and ContactPage. The trigger for `config/site.ts` — already fired |
+| **D-12** contact details ×4 | **RESOLVED** — config/site.ts built. **The first divergence here found by a written condition rather than by reading** |
 
 The earlier header read "3 resolved, 2 deliberate, 1 open", which never reconciled with the
 entries below it. Corrected while D-01 was being closed.
@@ -399,23 +399,46 @@ by then.
 
 ---
 
-## D-12 — The business's contact details, three copies
+## D-12 — The business's contact details, four copies
 
-**Type:** The Silent Divergence (§13) · **Status:** OPEN
+**Type:** The Silent Divergence (§13) · **Status:** **RESOLVED — 2 Sep 2026**
 **Found:** 1 Sep 2026, while giving §3's unbuilt entries triggers
 
-Phone, email and street address, written out in three files:
+Phone, email and street address, written out in three files — and the Instagram URL in a fourth
+that the first grep missed, because it was assigned to a local constant rather than written
+inline:
 
 | Location | What it holds |
 |---|---|
 | `app/layouts/Footer.tsx:99–100, 173` | `1300 00 KLAY`, `hello@klayinteriors.com.au`, `18 Maltings Cct, Epping VIC 3076` — plus the ABN and the trading entity at line 195 |
 | `features/marketing/components/AboutPage.tsx:143` | All three again, as one run-together line |
 | `features/marketing/components/ContactPage.tsx:16–18` | All three again, as labelled rows |
+| `features/home/components/SocialProof.tsx:43` | The Instagram URL, a fourth copy |
 
-**Found by asking what would cause `config/site.ts` to exist.** The trigger written for it was
-*"a business fact written in two places"* — and the answer, once looked at rather than assumed,
-was three. §3 named that file from the start; nothing ever created it, and the duplication it
-was for accumulated underneath.
+## THE FIRST DIVERGENCE IN THIS LOG FOUND BY A WRITTEN CONDITION RATHER THAN BY READING
+
+**D-01 through D-11 were all found by a person asking a question.** A state-of-build audit, a
+phase report, a split that made someone look at a file, a rename pass that asked whether a thing
+should exist. Every one needed attention pointed at the right place at the right moment.
+
+**D-12 was found by evaluating a sentence.** §3's trigger for `config/site.ts` said *"a business
+fact written in two places"*; checking it took one grep and required no judgement at all. The
+answer was three — and then four, when a second pass caught the Instagram URL assigned to a local
+constant rather than written inline.
+
+**That is the difference a written condition makes.** A question has to occur to someone. A
+condition just has to be checked, and it can be checked by anyone, on a schedule, without knowing
+why it matters. §3 now requires exactly that at every phase close.
+
+It is also the reason §0's governing principle is worth restating here: *"a rule that relies on
+someone remembering it is not a rule, it is a hope."* Nine divergences were found by hope. This
+one was found by a checklist item, and the checklist item was already written — it had simply
+never been evaluated.
+
+**And the entry had been sitting there the whole time.** §3 named `config/site.ts` from the day
+it was written. Nothing created it, and the duplication it existed to prevent accumulated
+underneath the name — which is its own finding, now recorded in §3: **a named entry reads as
+coverage.**
 
 **This is the first divergence in this log that a rule could have caught and no rule watches
 for.** Every other entry needed a person to notice. A repeated string literal across features is
