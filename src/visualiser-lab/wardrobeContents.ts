@@ -59,6 +59,15 @@ export interface ContentAsset {
    * is a small difference and it is most of what stops the interior reading as
    * one flat plane of objects. */
   depth: number;
+  /** How deep the object really is, mm — front to back on its shelf.
+   *
+   * Only standing objects need this, and they need it because they are built
+   * as solids rather than as billboards: a folded stack seen from the side is
+   * a slab about 300mm deep, and without a real figure here it would be
+   * guessed from the width, which is wrong for anything that is not square in
+   * plan. A pair of shoes is the clear case — narrow across, long front to
+   * back. */
+  depthMm?: number;
   /** True for things that hang FROM a rail — positioned by their top edge.
    * Everything else stands ON a surface and is positioned by its bottom. */
   hangs?: boolean;
@@ -83,9 +92,12 @@ export const CONTENT_ASSETS: Record<ContentKind, ContentAsset> = {
   'hanging-short': { kind: 'hanging-short', file: 'hanging-short.png', widthMm: 200, depth: 0.30, hangs: true, repeats: true },
   // Three charcoal coats off 3.0's left-hand run, at their full drop.
   'hanging-long': { kind: 'hanging-long', file: 'hanging-long.png', widthMm: 370, depth: 0.30, hangs: true, repeats: true },
-  stack: { kind: 'stack', file: 'stack.png', widthMm: 280, depth: 0.46 },
-  box: { kind: 'box', file: 'box.png', widthMm: 400, depth: 0.44 },
-  shoes: { kind: 'shoes', file: 'shoes.png', widthMm: 250, depth: 0.40 },
+  // Depths are the objects' real front-to-back sizes: a folded stack is about
+  // as deep as it is wide, a storage box a little less than its width, and a
+  // pair of shoes far deeper than they are across.
+  stack: { kind: 'stack', file: 'stack.png', widthMm: 280, depthMm: 300, depth: 0.46 },
+  box: { kind: 'box', file: 'box.png', widthMm: 400, depthMm: 330, depth: 0.44 },
+  shoes: { kind: 'shoes', file: 'shoes.png', widthMm: 250, depthMm: 300, depth: 0.40 },
 };
 
 export interface LoadedContent {

@@ -43,11 +43,15 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { buildCarcass } from './Canvas2DWardrobeRenderer';
 import { WARDROBE_DEPTH_MM, WARDROBE_HEIGHT_MM, wardrobeColour, wardrobeColourHex, wardrobeModelById } from './wardrobes';
 import { cutoutFor } from './wardrobeCutouts';
+import { buildSliceMap, sliceMapper } from './wardrobeSlices';
+import { BOARD_MM } from './wardrobeGeometry';
 import { CONTENT_ASSETS, type ContentKind } from './wardrobeContents';
 
 export interface Wardrobe3DProps {
   modelId: string;
   colourName: string;
+  /** Which width in the layout's range. Defaults to the render's own. */
+  selectedWidthMm?: number;
   /** Filled behind the cabinet. The room photo goes here later; for now it is
    * the panel's own ground, so the unit is not floating on black. */
   background?: string;
@@ -101,7 +105,36 @@ function flattenOntoBoard(tex: THREE.Texture, board: THREE.Color): THREE.Texture
   return out;
 }
 
-export default function Wardrobe3D({ modelId, colourName, background = '#EFEDE8' }: Wardrobe3DProps) {
+/** The average colour of an object's own opaque pixels, for the faces of it the
+ * camera never photographed.
+ *
+ * Only the opaque ones count: a cut-out is mostly transparent, and averaging
+ * the empty margin in would drag every object toward black. Darkened a little
+ * because a side turned away from the room is not as lit as the face that was
+ * photographed square on. */
+function averageTone(img: CanvasImageSource): THREE.Color {
+  const c = document.createElement('canvas');
+  c.width = 32;
+  c.height = 32;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return new THREE.Color(0x9a938c);
+  ctx.drawImage(img, 0, 0, 32, 32);
+  const px = ctx.getImageData(0, 0, 32, 32).data;
+  let r = 0, g = 0, b = 0, n = 0;
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] < 160) continue;
+    r += px[i]; g += px[i + 1]; b += px[i + 2]; n++;
+  }
+  if (!n) return new THREE.Color(0x9a938c);
+  return new THREE.Color(`rgb(${Math.round(r / n * 0.82)},${Math.round(g / n * 0.82)},${Math.round(b / n * 0.82)})`);
+}
+
+export default function Wardrobe3D({
+  modelId,
+  colourName,
+  selectedWidthMm,
+  background = '#EFEDE8',
+}: Wardrobe3DProps) {
   const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -109,8 +142,15 @@ export default function Wardrobe3D({ modelId, colourName, background = '#EFEDE8'
     if (!host) return;
 
     const model = wardrobeModelById(modelId);
-    const widthMm = model.widths[0];
+    // The width the render was made at, and the width being drawn — the same
+    // thing until the customer picks another size, and the whole reason the
+    // artwork has to be sliced rather than stretched.
+    const refWidthMm = model.widths[0];
+    const widthMm = selectedWidthMm ?? refWidthMm;
     const cut = cutoutFor(model.id);
+    const mapU = cut
+      ? sliceMapper(buildSliceMap(model.id, refWidthMm, cut), widthMm)
+      : null;
     const isWhite = wardrobeColour(colourName).slug === 'white';
 
     const scene = new THREE.Scene();
@@ -163,9 +203,14 @@ export default function Wardrobe3D({ modelId, colourName, background = '#EFEDE8'
      * V IS FLIPPED because the manifest measures down from the top of the image
      * while three's textures run up from the bottom. Getting this backwards
      * renders the wardrobe upside down, which is at least obvious. */
+    // PIECEWISE ACROSS THE WIDTH — the same N-slice mapping the room view uses,
+    // and for the same reason: a 507mm module must sample its own 507mm of the
+    // photograph in every cabinet the range is built in, or the drawers come
+    // out wider in a 3000 than in an 1800. Uniform up the height, because
+    // height does not vary.
     const uvFor = (x: number, y: number): [number, number] => {
       if (!cut) return [0, 0];
-      const u = cut.x0 + (x / widthMm) * (cut.x1 - cut.x0);
+      const u = mapU ? mapU(x) : cut.x0 + (x / widthMm) * (cut.x1 - cut.x0);
       const v = (1 - cut.y1) + (y / WARDROBE_HEIGHT_MM) * (cut.y1 - cut.y0);
       return [u, v];
     };
@@ -350,7 +395,7 @@ export default function Wardrobe3D({ modelId, colourName, background = '#EFEDE8'
       // the view turns. That parallax is the difference between a photograph
       // and a room.
       const kinds = Object.keys(CONTENT_ASSETS) as ContentKind[];
-      const loaded = new Map<ContentKind, { tex: THREE.Texture; ratio: number }>();
+      const loaded = new Map<ContentKind, { tex: THREE.Texture; ratio: number; tone: THREE.Color }>();
       await Promise.all(
         kinds.map(async k => {
           const t = await load(`/images/Textures/wardrobes/contents/${CONTENT_ASSETS[k].file}`);
@@ -362,7 +407,11 @@ export default function Wardrobe3D({ modelId, colourName, background = '#EFEDE8'
           t.colorSpace = THREE.SRGBColorSpace;
           t.anisotropy = renderer.capabilities.getMaxAnisotropy();
           disposables.push(t);
-          loaded.set(k, { tex: t, ratio: img.height / img.width });
+          loaded.set(k, {
+            tex: t,
+            ratio: img.height / img.width,
+            tone: averageTone(img as CanvasImageSource),
+          });
         }),
       );
       if (disposed) return;
@@ -386,8 +435,7 @@ export default function Wardrobe3D({ modelId, colourName, background = '#EFEDE8'
 
         const place = (x0: number, w: number, yTop: number, hangs: boolean) => {
           const h = w * item.ratio;
-          const geo = new THREE.PlaneGeometry(w * MM, h * MM);
-          const mat = new THREE.MeshStandardMaterial({
+          const front = new THREE.MeshStandardMaterial({
             map: item.tex,
             transparent: true,
             // Cuts the fringe that bilinear filtering leaves around an alpha
@@ -396,14 +444,55 @@ export default function Wardrobe3D({ modelId, colourName, background = '#EFEDE8'
             roughness: 0.92,
             side: THREE.DoubleSide,
           });
-          disposables.push(geo, mat);
-          const mesh = new THREE.Mesh(geo, mat);
+          disposables.push(front);
+
+          let mesh: THREE.Mesh;
+          if (hangs) {
+            // CLOTHES ON A RAIL STAY FLAT, and that is not a shortcut. A shirt
+            // hanging on a hanger really is a thin thing seen face on, and the
+            // cut-out already carries its folds and shadows — giving it a
+            // modelled thickness would add a hard edge the garment does not
+            // have.
+            const geo = new THREE.PlaneGeometry(w * MM, h * MM);
+            disposables.push(geo);
+            mesh = new THREE.Mesh(geo, front);
+          } else {
+            // ANYTHING STANDING ON A SHELF IS A SOLID OBJECT, and has to be
+            // built as one. A folded stack, a storage box and a pair of shoes
+            // are all things with a front, a top and two sides, and as an
+            // upright plane every one of them turned into a paper cut-out the
+            // moment the view moved off dead-ahead — the object vanished to a
+            // line at ninety degrees.
+            //
+            // So they get real depth: a box carrying the photograph on its
+            // front and the object's own averaged colour on the faces the
+            // camera never saw. It occludes what is behind it, it casts into
+            // the compartment, and it holds up when the wardrobe is turned.
+            const d = Math.min(asset.depthMm ?? w * 0.62, WARDROBE_DEPTH_MM - BOARD_MM * 2);
+            const geo = new THREE.BoxGeometry(w * MM, h * MM, d * MM);
+            disposables.push(geo);
+            const side = new THREE.MeshStandardMaterial({
+              color: item.tone,
+              roughness: 0.95,
+            });
+            disposables.push(side);
+            // BoxGeometry's material slots run +X, −X, +Y, −Y, +Z, −Z, so the
+            // photograph belongs on slot 4 — the face pointing at the room.
+            mesh = new THREE.Mesh(geo, [side, side, side, side, front, side]);
+          }
+
           // A thing that hangs is positioned by its TOP, at the rail; a thing
           // that stands is positioned by its BOTTOM, on the surface under it.
           // Getting this backwards is what makes contents float.
+          //
+          // And a standing object sits ON the shelf board, not in it: the
+          // compartment's y0 is the opening's floor, so the board's own 18mm
+          // has to be cleared or the stack is sunk into the shelf it is
+          // supposed to be resting on.
+          const baseY = hangs ? yTop : yTop + BOARD_MM;
           mesh.position.set(
             (x0 + w / 2) * MM,
-            (hangs ? yTop - h / 2 : yTop + h / 2) * MM,
+            (hangs ? baseY - h / 2 : baseY + h / 2) * MM,
             z * MM,
           );
           root.add(mesh);
@@ -415,7 +504,12 @@ export default function Wardrobe3D({ modelId, colourName, background = '#EFEDE8'
           for (let k = 0; k < n; k++) place(c.x0 + k * w, w, c.y0, true);
           return;
         }
-        const w = Math.min(asset.widthMm, openingW * 0.86);
+        // Never wider than its opening, and never taller than it either — a
+        // stack that overruns its compartment is standing through the shelf
+        // above it.
+        const openingH = Math.max(0, c.y1 - c.y0 - BOARD_MM * 2);
+        let w = Math.min(asset.widthMm, openingW * 0.86);
+        if (openingH > 0 && w * item.ratio > openingH) w = openingH / item.ratio;
         place(c.x0 + (openingW - w) / 2, w, c.y0, false);
       });
 
@@ -435,7 +529,7 @@ export default function Wardrobe3D({ modelId, colourName, background = '#EFEDE8'
       renderer.dispose();
       if (renderer.domElement.parentNode === host) host.removeChild(renderer.domElement);
     };
-  }, [modelId, colourName, background]);
+  }, [modelId, colourName, selectedWidthMm, background]);
 
   return <div ref={hostRef} style={{ width: '100%', height: '100%', minHeight: 420 }} />;
 }

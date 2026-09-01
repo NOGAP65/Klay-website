@@ -1265,14 +1265,18 @@ export default function KlayConfigurator({
                — see Wardrobe3D. It stands on its own rather than in the room
                photo, because the cabinet is what is being examined here; the
                room view is the other tab. */
-            <Wardrobe3D modelId={store.wardrobeModel} colourName={store.wardrobeColour} />
+            <Wardrobe3D
+              modelId={store.wardrobeModel}
+              colourName={store.wardrobeColour}
+              selectedWidthMm={store.wardrobeWidthMm}
+            />
           ) : store.productCategory === 'wardrobe' && confirmedArea ? (
             <Canvas2DWardrobeRenderer
               photoUrl={store.photoUrl!}
               corners={confirmedArea.corners as [number, number][]}
               modelId={store.wardrobeModel}
               colourName={store.wardrobeColour}
-              recessMm={store.wardrobeRecessMm}
+              widthMm={store.wardrobeWidthMm}
             />
           ) : store.productCategory === 'curtain' && confirmedArea ? (
             <Canvas2DCurtainRenderer
