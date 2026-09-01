@@ -106,6 +106,14 @@ to write a colour, and adoption followed. A component cannot be made mandatory t
 is no rule that says "use `Box` instead of a `div`", and there should not be. So a token can be
 specified ahead of demand and a component cannot.
 
+**AND §3 NOW GIVES EVERY UNBUILT ENTRY A TRIGGER, WHICH IS THE SAME RULE GENERALISED.** An
+entry that cannot say what observation would cause it to exist is a prediction rather than a
+target. Fifteen unbuilt entries were given triggers; **five could not be and were deleted from
+the tree** — patterns/Section.tsx, patterns/Card.tsx, src/types/, docs/architecture/overview.md
+and docs/audit/. Two triggers turned out to have already fired: config/site.ts (contact details
+in three files, D-12) and config/routes.ts ( referenced nine times). A third, the
+glossary §6 already depends on, has never existed.
+
 **The deletion is reversible and the git history holds it.** If a real duplication of stacked
 layout or heading levels appears later, the extraction is the same work it always was, done from
 evidence rather than from a diagram.

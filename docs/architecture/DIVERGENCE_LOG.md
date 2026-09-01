@@ -7,7 +7,7 @@ machine, because *"a rule that relies on someone remembering it is not a rule, i
 The entries below are what happens without that enforcement — and every one of them was
 written by someone competent, in code that was individually good.
 
-**Running total: 11 confirmed. 3 resolved, 1 partially resolved, 2 deliberate, 5 open.**
+**Running total: 12 confirmed. 4 resolved, 1 partially resolved, 2 deliberate, 5 open.**
 
 | | Status |
 |---|---|
@@ -22,6 +22,7 @@ written by someone competent, in code that was individually good.
 | **D-09** form-field setter ×2 | Open. Identical helper in two forms. Waits for booking to land in Phase 6 |
 | **D-10** reduced-motion snapshot ×4 | **RESOLVED at Phase 7** — usePrefersReducedMotion |
 | **D-11** hover solved 3× in the design system | **RESOLVED at Phase 7** — six unused exports deleted, 471 lines. ADR-025 |
+| **D-12** contact details ×3 | Open. Phone, email and address in Footer, AboutPage and ContactPage. The trigger for `config/site.ts` — already fired |
 
 The earlier header read "3 resolved, 2 deliberate, 1 open", which never reconciled with the
 entries below it. Corrected while D-01 was being closed.
@@ -395,6 +396,41 @@ That is the difference between extracting a primitive and proposing one.
 **Scheduled for the `knip` baseline at Phase 6.3**, which is where unused exports get their
 number. Flagged to V now because a naming pass is where it surfaced and the reason would be lost
 by then.
+
+---
+
+## D-12 — The business's contact details, three copies
+
+**Type:** The Silent Divergence (§13) · **Status:** OPEN
+**Found:** 1 Sep 2026, while giving §3's unbuilt entries triggers
+
+Phone, email and street address, written out in three files:
+
+| Location | What it holds |
+|---|---|
+| `app/layouts/Footer.tsx:99–100, 173` | `1300 00 KLAY`, `hello@klayinteriors.com.au`, `18 Maltings Cct, Epping VIC 3076` — plus the ABN and the trading entity at line 195 |
+| `features/marketing/components/AboutPage.tsx:143` | All three again, as one run-together line |
+| `features/marketing/components/ContactPage.tsx:16–18` | All three again, as labelled rows |
+
+**Found by asking what would cause `config/site.ts` to exist.** The trigger written for it was
+*"a business fact written in two places"* — and the answer, once looked at rather than assumed,
+was three. §3 named that file from the start; nothing ever created it, and the duplication it
+was for accumulated underneath.
+
+**This is the first divergence in this log that a rule could have caught and no rule watches
+for.** Every other entry needed a person to notice. A repeated string literal across features is
+exactly the shape `jscpd` reports, and `jscpd` is Phase 6.4 — deliberately not baselined earlier,
+against a structure that was about to change. **The structure has now stopped changing.**
+
+**What makes it more than untidy:** a phone number is the thing most likely to change and least
+likely to be searched for exhaustively. Change it in the footer, miss the About page, and the
+site quotes two numbers with no error anywhere. The address is worse — it is on a booking
+confirmation path.
+
+**Not extracted here.** `config/site.ts` is a new module with three consumers in two features,
+and creating it is a small piece of real work with a decision in it (does the ABN and trading
+entity belong there too, or is that a legal-footer concern?). Logged now because the duplicate
+is known now; the extraction is the trigger's own business.
 
 ---
 

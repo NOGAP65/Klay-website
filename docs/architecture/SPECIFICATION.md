@@ -109,9 +109,7 @@ src/
 │   │                     never used by anything and were deleted at Phase 7.
 │   │                     Primitives are EXTRACTED from duplication. See §9.
 │   ├── patterns/
-│   │   ├── Section.tsx
 │   │   ├── SectionBand.tsx
-│   │   ├── Card.tsx
 │   │   └── index.ts
 │   └── index.ts
 ├── features/
@@ -137,7 +135,6 @@ src/
 │   │   └── validate/
 │   ├── types/
 │   └── utils/
-└── types/
 
 shared-core/                  imported by BOTH src/ and netlify/
 └── pricing/                  the price table and rules over it
@@ -152,23 +149,56 @@ supabase/
 
 docs/
 ├── architecture/
-│   ├── overview.md
 │   ├── data-model.md
 │   ├── glossary.md
 │   └── decisions/            ADR-001 …
 ├── runbooks/
-├── compliance/
-└── audit/
+└── compliance/
 ```
 
-**THE TREE ABOVE IS A DESTINATION, NOT A LIST OF FILES TO CREATE — ADR-025.** It names several
-things that do not exist and must not be built merely because it draws them:
-`features/configurator/`, `visualiser/compare/`, `shared/types/`, `shared/utils/`,
-`config/site.ts`, `config/routes.ts`, and `patterns/Section.tsx` and `patterns/Card.tsx` — the
-same shape as the primitives that were deleted. §4 already says this about folders — *"not every feature
-needs every folder; empty folders are noise"* — and it applies to files just as hard. **A file
-created because a diagram named it has no consumer, and 471 lines of the design system were
-deleted at Phase 7 for exactly that reason.**
+**EVERY UNBUILT ENTRY ABOVE HAS A TRIGGER — ADR-025.** The tree is a destination, and a
+destination is not a checklist. §4 already says it about folders — *"not every feature needs
+every folder; empty folders are noise"* — and §9 says it about primitives. This says it about
+the whole tree, in the only form that holds: **an entry that cannot say what would cause it to
+exist is a prediction, not a target, and does not belong here.**
+
+Fifteen entries below do not exist yet. Each names the observation that creates it, and two of
+those observations have already been made.
+
+| Unbuilt entry | What causes it to exist |
+|---|---|
+| `app/providers.tsx` | A **second** app-wide provider. `BrowserRouter` is the only one today and sits inline in `main.tsx`, where one provider belongs |
+| `config/site.ts` | A business fact — phone, email, address, ABN — written in two places. **ALREADY FIRED: three.** D-12 |
+| `config/routes.ts` | A path string referenced twice. **ALREADY FIRED: `/products` nine times, `/contact` five, `/cart` four** |
+| `features/booking/` | **Phase 6.** Scheduled, not speculative |
+| `features/visualiser/` | The visualiser migration being scheduled as its own project. E-08, ADR-020 |
+| `features/configurator/` | `RangeConfigurator` and `KlayConfigurator` being found to share logic rather than a name. Cannot be assessed while one of them is E-08 |
+| `shared/lib/supabase/` | `src/` needing to read Supabase directly, from a second file. **Zero do today** — every query is in `netlify/lib/db.ts`, which is where §7 puts the authority. `@supabase/supabase-js` is nonetheless an installed dependency that `src/` never imports; a knip finding for 6.3 |
+| `shared/lib/format/` | A display formatter with consumers in two features. `formatAUD` is the only one and travels with pricing to `shared-core` |
+| `shared/types/` | A type needed by two features that belongs to neither. `CartItem` is cross-feature but belongs to cart, which is why it is exported from cart's barrel and not from here |
+| `shared-core/pricing/` | **Phase 6, item 1.** Scheduled |
+| `netlify/edge-functions/` | A latency measurement that justifies one. ADR-015: moving pricing to the edge is optional, separate, and sized on its own evidence |
+| `supabase/seed.sql` | A second environment needing deterministic starting data |
+| `docs/architecture/data-model.md` | The first relationship a single migration file does not show — a foreign key across two tables |
+| `docs/architecture/glossary.md` | **ALREADY FIRED.** §6 says *"Vocabulary lives in `docs/architecture/glossary.md`"*, and it does not exist. A section of this document depends on a file that was never written |
+| `docs/compliance/` | The first accepted compliance obligation — a privacy commitment, a retention rule, a PCI scope statement |
+
+## FIVE ENTRIES WERE DELETED FROM THE TREE BECAUSE THEY FAILED THIS TEST
+
+Not deferred. Removed, because no observation could be named that would create them.
+
+| Deleted | Why it had no trigger |
+|---|---|
+| `design-system/patterns/Section.tsx` | No section shell is written twice. `layout.sectionPad` already carries the only part that repeats, and it is a token — which under §9 is exactly the half that *can* be specified ahead of demand |
+| `design-system/patterns/Card.tsx` | No card is written twice. `ProductCard` and `PhotoTile` are catalogue's, know about prices, and would not survive the lift test |
+| `src/types/` | Duplicated `shared/types/`. **Two entries for one idea**, with no rule distinguishing them — the reliable outcome of which is a type in each and no way to know which is right |
+| `docs/architecture/overview.md` | Nothing was identified that it would hold which this document does not. An overview of a specification is a second specification |
+| `docs/audit/` | The one audit performed became `MIGRATION_MAP.md`. No second kind of audit was named, and a folder for future audits is the shape this rule exists to catch |
+
+**These five are the same failure as `Box` and `Stack`: written from a picture of a finished
+codebase rather than from a codebase.** The picture was drawn before the work and was wrong in
+the specific way a picture is always wrong — it is complete, and real structure is not. Git holds
+them; if a trigger ever fires, the entry comes back with its evidence attached.
 
 `config/env.ts` is the only file that reads `import.meta.env`. Everywhere else imports a
 named, typed constant. One file to audit for what ships to the browser. It validates on module
@@ -418,18 +448,34 @@ a note — not a file.
 repetition has been found and named. An empty one means none has been found yet, which is either
 true or a measurement problem, and neither is fixed by writing components.
 
-**This rule is written from an error in §3.** Its tree listed `Box`, `Stack`, `Text`, `Heading`
-and `Button`; they were created because it listed them, and across every phase of the migration
-**not one of them was ever imported by anything.** They were deleted at Phase 7 with
-`SectionHead` — 471 lines. Every primitive that did get adopted came out of counted duplication
-instead: nine slightly different buttons, ten hand-rolled hover states, one reduced-motion
-snapshot written four times.
+### WHY A TOKEN MAY BE SPECIFIED AHEAD OF DEMAND AND A COMPONENT MAY NOT
 
-**TOKENS AND PRIMITIVES FAIL DIFFERENTLY, and that is why this does not contradict the rest of
-§9.** A token is not optional — the literal is a lint error, so there is no other way to write a
-colour, and adoption follows from having no alternative path. **A component cannot be made
-mandatory that way.** There is no rule saying "use `Box` instead of a `div`", and there should
-not be. So a token can be specified ahead of demand and a component cannot.
+This section holds two rules that look contradictory. Tokens are declared up front and adoption
+is compelled. Primitives are extracted from duplication and never declared up front. **The
+difference is not preference. It is that only one of them can have its alternative path closed.**
+
+**A token has no alternative path.** A numeric literal in a `style={{}}` object is a lint error,
+so there is no other way to write a colour or a spacing. The scale becomes load-bearing because
+nothing else is reachable — which is exactly what §9's opening finding demanded, after `theme.ts`
+sat unused beside 127 hardcoded pixel values. *The tokens were not the problem; optionality was.*
+Closing the alternative fixed it.
+
+**A component's alternative path cannot be closed, and should not be.** There is no rule that
+says "use `Box` instead of a `div`", and a codebase that tried to enforce one would be worse for
+it. A `div` is always available, always correct, and always cheaper than importing something. So
+a primitive is never adopted because it exists — it is adopted because it removes work its
+consumers are already doing by hand.
+
+**Which is why a specified token converges and a specified component does not.** The rule below
+follows from that, and so does the fact that a thin primitives folder is a healthy state rather
+than an unfinished one.
+
+**The evidence is in this repository.** §3's tree listed `Box`, `Stack`, `Text`, `Heading` and
+`Button`; they were created because it listed them, and across every phase of the migration not
+one was imported by anything. They were deleted at Phase 7 with `SectionHead` — 471 lines. Every
+primitive that *was* adopted came out of counted duplication: nine slightly different buttons,
+ten hand-rolled hover states, one reduced-motion snapshot written four times. Adoption of the
+extracted set was immediate and total; adoption of the specified set was zero.
 
 Today a developer needing 24px types `24px`. After this the build fails, so they open the
 scale and find `space.md`. The scale becomes load-bearing because there is no alternative path.
@@ -502,6 +548,25 @@ feature, import directly — internal barrels create circular-import risk for no
 > The two rules are not interchangeable, and the structural half of the job —
 > `@/features/cart/...` being illegal from inside booking — belongs to
 > `boundaries/dependencies`, which does it properly.
+
+### HOW CHANGE IS VERIFIED — THE STANDING RULE
+
+> **Read the diff for judgement errors. Use the typechecker for mechanical ones.**
+> **The typechecker holds the whole file; a reviewer holds a fragment.**
+
+`docs/runbooks/verifying-source-transforms.md`. **This supersedes "review the diff carefully" as
+this project's default**, because careful reading is precisely what fails on the mechanical half
+and reading harder does not fix it.
+
+A reviewer sees a hunk with three lines of context. What is needed to catch a mechanical error is
+usually outside that window — another binding of the same name ninety lines down, a consumer in
+another file, a value that is a number where a boolean was assumed. The compiler holds all of it
+for free. Conversely, no tool can tell you a correct change was the wrong change: a state-keyed
+map renamed as though it were a boolean compiles, and so does a worse name.
+
+**Give each class of error to the thing that can see it.** Anything that transforms source runs
+the typechecker per operation, not per batch. Anything that makes a decision gets read by a
+person.
 
 **The CI gate.** Nothing merges to `main` unless `npm run typecheck` returns zero, `eslint`
 returns zero errors, `npm run build` passes, `knip` finds no new unused exports, and `jscpd`
