@@ -259,6 +259,65 @@ this reason — the shell is not in the path at all.
 
 ---
 
+## THE CONSOLIDATION IS THE SEARCH
+
+**Copies of a value cannot be fully enumerated until the visible ones are replaced.**
+
+The remainder are shaped differently from the query — that is *why* they survived the first
+search, and it is not a coincidence that can be designed around by grepping harder.
+
+**The worked example: four Instagram URLs, not three.**
+
+D-12 was logged as three copies of the business's contact details, found with a grep for the
+phone number, the email and the street address. All three were inline string literals in JSX, so
+a search for the literal text found all three.
+
+The fourth was:
+
+```ts
+const INSTAGRAM = 'https://www.instagram.com/klayinteriors';
+```
+
+A named constant in `SocialProof.tsx`. The original search had asked for phone, email and
+address, because those were the facts the trigger named — and the Instagram URL is a business
+fact of the same kind that nobody had thought to list. It only surfaced when the *other* three
+were replaced and the same search was run again against a codebase where every legitimate copy
+had gone.
+
+**Why this generalises.** The copies that a first search misses are, by definition, the ones
+that do not match how you framed the question:
+
+| Missed because | Example |
+|---|---|
+| Assigned to a constant, not written inline | `const INSTAGRAM = '…'` |
+| Formatted differently | `Mon–Fri 8am–6pm` vs `Monday – Friday, 8am – 6pm` — one fact, two renderings, and neither grep finds the other |
+| Split across the query | An address as three fields rather than one string |
+| A fact of the same kind you did not enumerate | Instagram, when you searched for phone, email and address |
+
+**Every one of those becomes findable once the known copies are gone**, because then any
+remaining occurrence of the *concept* stands alone rather than hiding among legitimate ones.
+
+## The rule
+
+**After consolidating, search again — and search for the concept, not the string you replaced.**
+
+```bash
+# not: grep '1300 00 KLAY'
+# but: everything that looks like a business fact, once site.ts is the only legitimate home
+grep -rn "klayinteriors\|1300\|Maltings\|ABN\|instagram" src --include=*.ts --include=*.tsx \
+  | grep -v 'config/site.ts'
+```
+
+**The `grep -v` on the new home is the important half.** It turns the search from *"where is this
+value"* into *"where is this value somewhere it should no longer be"*, and only the second
+question has a meaningful empty result.
+
+**Treat the first count as a lower bound.** D-12 was logged as three and closed as four. A
+divergence count taken before consolidation is a floor, not a total — and saying so in the log
+is better than quietly correcting the number later.
+
+---
+
 # A DEBUGGING SENTINEL MUST BE VISIBLE IN A TERMINAL, A DIFF AND AN EDITOR
 
 **Specific, small, and it cost two failed attempts at fixing a five-line function.**

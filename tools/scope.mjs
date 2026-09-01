@@ -66,6 +66,51 @@ export function isInScope(filePath) {
   return excludedBy(rel) === null;
 }
 
+/**
+ * THE FILE LIST. Every in-scope source file, walked once, filtered here.
+ *
+ * This exists so that no tool ever has a reason to write its own walker, and
+ * that is the point rather than a convenience. Twice in this migration the
+ * correct scope check already existed and an ad-hoc substitute was written
+ * anyway — once a `tsc` run per batch instead of per operation, once a
+ * directory-name filter that missed `src/pages/VisualizerLabPage.tsx` because
+ * it is a file and spelled with a z. E-08 was edited.
+ *
+ * **The cause was an asymmetry: two lines of `readdirSync` is faster to write
+ * than an import is to look up.** Making the correct path mandatory does not
+ * fix that; making it FASTER does. So the list is one import and no arguments.
+ */
+export function inScopeFiles({ root = 'src', extensions = /\.(ts|tsx)$/ } = {}) {
+  const out = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(rel);
+      else if (extensions.test(entry.name) && isInScope(rel)) out.push(rel);
+    }
+  };
+  walk(root);
+  return out;
+}
+
+/**
+ * Throws rather than returning false. For the write path, where a wrong answer
+ * that is merely reported gets ignored by the next line of code.
+ */
+export function assertInScope(filePath) {
+  const rel = normalise(filePath);
+  if (isInScope(rel)) return rel;
+  const why = NON_SRC_EXCLUSIONS.find((x) => rel.startsWith(x))
+    ? `outside src/ (${NON_SRC_EXCLUSIONS.find((x) => rel.startsWith(x))})`
+    : `exception ${excludedBy(rel)}`;
+  throw new Error(
+    `REFUSED: ${rel} is out of scope — ${why}.\n` +
+      `  Nothing in tools/ may modify it. If it genuinely must change, the exception ` +
+      `has to be retired first, in docs/architecture/exceptions.json and SPECIFICATION.md §12, ` +
+      `with an ADR. That is the whole point of the register.`,
+  );
+}
+
 if (process.argv[1] && process.argv[1].endsWith('scope.mjs')) {
   console.log('Scope-excluding exceptions, read from docs/architecture/exceptions.json:\n');
   for (const e of scopeExceptions) {

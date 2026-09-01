@@ -573,6 +573,31 @@ feature, import directly — internal barrels create circular-import risk for no
 > `@/features/cart/...` being illegal from inside booking — belongs to
 > `boundaries/dependencies`, which does it properly.
 
+### AND THE TOOLCHAIN IS HELD TO THIS SECTION TOO
+
+**§11's argument applies to the tools that modify the codebase exactly as it applies to the
+codebase.** *"A rule that relies on someone remembering it is not a rule, it is a hope."*
+
+Twice during this migration a correct scope check already existed in `tools/` and an ad-hoc
+substitute was written instead — the second time editing a file E-08 protects. **Neither was
+ignorance of the rule.** The cause was an asymmetry: two lines of `readdirSync` are faster to
+write than an import is to look up.
+
+So the bypass is closed rather than discouraged.
+
+- **`tools/scope.mjs` is the only source of "which files may be touched"**, computed from the
+  exception register. It exports `inScopeFiles()` — no glob, no filter, no arguments — so nothing
+  has a reason to write its own walker.
+- **`assertInScope` throws**, and every write in `tools/codemod.mjs` goes through it. There is no
+  parameter that widens scope, because a parameter is a bypass with a default.
+- **`npm run verify:scope-guard`** proves it refuses, against eleven out-of-scope shapes including
+  the exact file that was edited — and proves it still allows in-scope files, since a guard that
+  refuses everything demonstrates nothing.
+
+**Making the correct path mandatory does not fix an asymmetry of effort. Making it shorter
+does.** The list is now one import and no arguments; the ad-hoc version is the longer one to
+write.
+
 ### HOW CHANGE IS VERIFIED — THE STANDING RULE
 
 > **Read the diff for judgement errors. Use the typechecker for mechanical ones.**
@@ -769,6 +794,23 @@ nobody knows what ships to the browser.
 
 **The Silent Divergence.** Two copies of the same constant, table or rule. Both correct when
 written, one updated six months later.
+
+> **TWO PRESENTATIONS OF ONE FACT IS FINE. TWO FACTS IS NOT.**
+
+That is the test, and it is sharper than counting copies. The footer renders the opening hours as
+`Mon–Fri 8am–6pm` and the contact page as `Monday – Friday, 8am – 6pm`. Two strings, one fact —
+so `config/site.ts` holds `hoursShort` and `hoursLong`, both derived from a single decision about
+when Klay is open, and neither is a duplicate. Collapsing them would force one surface to render
+the other's format, which is a worse outcome reached by obeying the rule literally.
+
+**What makes a second copy a divergence is that it can be changed alone and be wrong.** A phone
+number written out twice can disagree. A phone number and a `tel:` href cannot — they are one
+fact in two forms, and `config/site.ts` keeps both for exactly that reason.
+
+**Apply the test before extracting, not after.** The failure this anti-pattern names is two
+things that must agree and might not. Deduplicating two things that were never required to be
+byte-identical produces a shared constant nobody can change without breaking a surface it was
+never about.
 
 **The Trusted Client.** Any business decision — price, discount, eligibility — made in the
 browser and accepted by the server.

@@ -32,6 +32,37 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 
+import { assertInScope, inScopeFiles } from './scope.mjs';
+
+// ---------------------------------------------------------------------------
+// SCOPE IS NOT A PARAMETER OF THIS MODULE.
+//
+// There is no glob argument, no directory filter, no `exclude` option and no
+// way to hand it a file list. Every write goes through `assertInScope`, which
+// THROWS, and the only way to enumerate files is `inScopeFiles()` from
+// scope.mjs — which takes its answer from the exception register.
+//
+// This is deliberate and it is a response to a specific, repeated failure.
+// Twice the correct check existed and an ad-hoc substitute was written instead,
+// and the second time it edited an E-08 file. The cause was never ignorance of
+// the rule; it was that `if (!/visualiser/.test(name))` is faster to type than
+// an import is to remember.
+//
+// §11's argument applies to the toolchain exactly as it applies to the code:
+// **a rule that relies on someone remembering it is not a rule, it is a hope.**
+// So the bypass is removed rather than discouraged. A tool that cannot be
+// pointed at the wrong file does not need anyone to remember not to.
+// ---------------------------------------------------------------------------
+
+/** Re-exported so a caller never has a reason to reach for `readdirSync`. */
+export { inScopeFiles };
+
+/** The only write path. Refuses anything the exception register protects. */
+export function writeInScope(file, content) {
+  assertInScope(file);
+  fs.writeFileSync(file, content);
+}
+
 /**
  * A sentinel that cannot occur in TypeScript source. Unicode private-use area
  * rather than NUL: a NUL byte survives a string round-trip but renders as
@@ -87,6 +118,7 @@ export function typecheck() {
  * the line-preserving mask above.
  */
 export function renameInFile(file, oldName, newName, { from, to } = {}) {
+  assertInScope(file);
   const source = fs.readFileSync(file, 'utf8');
   const { masked, stash } = maskComments(source);
   const lines = masked.split('\n');
@@ -97,7 +129,7 @@ export function renameInFile(file, oldName, newName, { from, to } = {}) {
   for (let i = start; i < end; i++) {
     lines[i] = lines[i].replace(pattern, () => { hits++; return newName; });
   }
-  if (hits) fs.writeFileSync(file, unmaskComments(lines.join('\n'), stash));
+  if (hits) writeInScope(file, unmaskComments(lines.join('\n'), stash));
   return hits;
 }
 
@@ -111,6 +143,7 @@ export function renameAll(renames, { verify = true } = {}) {
   const failed = [];
   for (const rename of renames) {
     const { file, from: oldName, to: newName, fromLine, toLine } = rename;
+    assertInScope(file);
     const before = fs.readFileSync(file, 'utf8');
     const hits = renameInFile(file, oldName, newName, { from: fromLine, to: toLine });
     if (!hits) {
@@ -121,7 +154,7 @@ export function renameAll(renames, { verify = true } = {}) {
     if (verify) {
       const { ok, errors } = typecheck();
       if (!ok) {
-        fs.writeFileSync(file, before);
+        writeInScope(file, before);
         failed.push({ ...rename, why: errors.slice(0, 3).join(' | ') });
         console.error(`  REVERTED  ${oldName} -> ${newName}  ${file}`);
         for (const e of errors.slice(0, 3)) console.error(`            ${e}`);

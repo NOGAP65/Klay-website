@@ -421,6 +421,13 @@ inline:
 phase report, a split that made someone look at a file, a rename pass that asked whether a thing
 should exist. Every one needed attention pointed at the right place at the right moment.
 
+**And the count in this entry was wrong when it was written — three, closed as four.** The
+fourth copy was a named constant rather than an inline literal, so the search that found the
+first three could not see it. It surfaced only once the three were replaced and the same ground
+was searched again. **A divergence count taken before consolidation is a floor, not a total** —
+recorded here rather than quietly corrected, and written up as a rule in
+docs/runbooks/verifying-source-transforms.md.
+
 **D-12 was found by evaluating a sentence.** §3's trigger for `config/site.ts` said *"a business
 fact written in two places"*; checking it took one grep and required no judgement at all. The
 answer was three — and then four, when a second pass caught the Instagram URL assigned to a local
