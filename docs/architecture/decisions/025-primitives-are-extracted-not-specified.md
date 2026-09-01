@@ -87,12 +87,14 @@ And §3 is annotated so its tree cannot be read as a checklist again.
 
 ## Consequences
 
-**§3's other lists are subject to the same reading, and the correction generalises.** The target
-tree names `features/configurator/`, `visualiser/compare/`, `shared/types/`, `shared/utils/`,
-`config/site.ts`, `config/routes.ts` and several more that do not exist. **None of those should
-be created because §3 draws them.** §4 already says the right thing about this — *"not every
-feature needs every folder; empty folders are noise"* — and this ADR extends it from folders to
-files.
+**§3's other lists are subject to the same reading, and the correction generalises.** Sixteen
+entries in the target tree did not exist. **None of them should be created because §3 draws
+them** — §4 already says the right thing about folders (*"not every feature needs every folder;
+empty folders are noise"*), and this ADR extends it from folders to files.
+
+That generalisation is now written into §3 as a requirement rather than a warning: **every
+unbuilt entry states the observation that would cause it to exist**, and the five that could not
+were deleted. See the section below.
 
 **The design system now has six exports, and that is the honest number.** `Field`, `useHover`,
 `usePrefersReducedMotion`, the CTA family, `TextLink`, `SectionBand`. Every one has a consumer
@@ -110,9 +112,9 @@ specified ahead of demand and a component cannot.
 entry that cannot say what observation would cause it to exist is a prediction rather than a
 target. Fifteen unbuilt entries were given triggers; **five could not be and were deleted from
 the tree** — patterns/Section.tsx, patterns/Card.tsx, src/types/, docs/architecture/overview.md
-and docs/audit/. Two triggers turned out to have already fired: config/site.ts (contact details
-in three files, D-12) and config/routes.ts ( referenced nine times). A third, the
-glossary §6 already depends on, has never existed.
+and docs/audit/. Two triggers turned out to have already fired: `config/site.ts` (contact details
+in three files, D-12) and `config/routes.ts` (`/products` referenced nine times). A third — the
+glossary §6 already depends on — has never existed at all.
 
 **The deletion is reversible and the git history holds it.** If a real duplication of stacked
 layout or heading levels appears later, the extraction is the same work it always was, done from
