@@ -15,6 +15,10 @@ export interface WardrobeCutout {
   /** Pixel size of the cut-out file. */
   w: number;
   h: number;
+  /** Where a fixed module ends, as a fraction of the CARCASS (not the file),
+   * measured off the artwork. Null where the layout has no module on that side. */
+  towerLead: number | null;
+  towerTrail: number | null;
   /** The carcass box within the file, 0..1. */
   x0: number; y0: number; x1: number; y1: number;
 }
@@ -26,6 +30,8 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     file: "12.0U-white-interior.png",
     w: 1254,
     h: 1254,
+    towerLead: null,
+    towerTrail: 0.84,
     x0: 0.63716,
     y0: 0.33333,
     x1: 0.69777,
@@ -37,6 +43,8 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     file: "2.9-white-front.png",
     w: 1254,
     h: 1254,
+    towerLead: 0.3308457711442786,
+    towerTrail: 0.7786069651741293,
     x0: 0.18022,
     y0: 0.10925,
     x1: 0.82217,
@@ -48,6 +56,8 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     file: "3.0-white-front.png",
     w: 1254,
     h: 1254,
+    towerLead: 0.20308250226654578,
+    towerTrail: 0.814143245693563,
     x0: 0.07257,
     y0: 0.15152,
     x1: 0.95295,
@@ -59,6 +69,8 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     file: "4.0-white-front.png",
     w: 1265,
     h: 1243,
+    towerLead: 0.2051948051948052,
+    towerTrail: 0.8692640692640693,
     x0: 0.0664,
     y0: 0.14401,
     x1: 0.98024,
@@ -70,6 +82,8 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     file: "4.9-white-angle.png",
     w: 1254,
     h: 1254,
+    towerLead: null,
+    towerTrail: 0.7158403869407497,
     x0: 0.17783,
     y0: 0.14434,
     x1: 0.83812,
@@ -81,6 +95,8 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     file: "5.0-white-front.png",
     w: 1307,
     h: 1203,
+    towerLead: 0.20456466610312765,
+    towerTrail: 0.7396449704142012,
     x0: 0.04438,
     y0: 0.17955,
     x1: 0.95027,
@@ -92,6 +108,8 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     file: "6.0-white-front.png",
     w: 1254,
     h: 1254,
+    towerLead: 0.20936395759717313,
+    towerTrail: 0.8065371024734982,
     x0: 0.05662,
     y0: 0.13078,
     x1: 0.96013,
@@ -103,6 +121,8 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     file: "7.0L-white-interior.png",
     w: 1269,
     h: 1240,
+    towerLead: 0.1785400175901495,
+    towerTrail: 0.751099384344767,
     x0: 0.05595,
     y0: 0.05806,
     x1: 0.95272,
@@ -114,6 +134,8 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     file: "8.0-white-front.png",
     w: 1178,
     h: 1234,
+    towerLead: 0.20342034203420342,
+    towerTrail: 0.7965796579657966,
     x0: 0.00085,
     y0: 0.16288,
     x1: 0.94482,
@@ -125,6 +147,8 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     file: "9.0L-white-interior.png",
     w: 1448,
     h: 1086,
+    towerLead: null,
+    towerTrail: null,
     x0: 0.87293,
     y0: 0.40424,
     x1: 0.90746,

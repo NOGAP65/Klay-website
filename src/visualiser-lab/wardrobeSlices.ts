@@ -34,7 +34,7 @@
 // the spec and the boundary has to be measured off the file instead.
 // ---------------------------------------------------------------------------
 
-import { columnsFor, BOARD_MM } from './wardrobeGeometry';
+import { LAYOUT_COLUMNS, MODULE_WIDTH_MM } from './wardrobeGeometry';
 
 export interface Segment {
   /** A fixed segment is a standard module and never stretches. A flex segment
@@ -66,9 +66,14 @@ export interface SliceMap {
  * works out — the render would be correct and the product unbuildable. */
 const MIN_FLEX_MM = 450;
 
-/** The carcass box within the source image, from the cut-out manifest. */
+/** The carcass box within the source image, plus the module boundaries measured
+ * off the artwork — everything the cut-out manifest records about width. */
 export interface CarcassBox {
   x0: number; x1: number;
+  /** Where a fixed module ends / begins, as a fraction of the carcass. Null
+   * where the detector could not read one. */
+  towerLead?: number | null;
+  towerTrail?: number | null;
 }
 
 /** Builds the slice map for one layout at the width its render was made at.
@@ -82,28 +87,49 @@ export function buildSliceMap(
   refWidthMm: number,
   carcass: CarcassBox,
 ): SliceMap {
-  const columns = columnsFor(layoutId, refWidthMm);
-
-  // Column spans in cabinet millimetres, laid out exactly as buildCarcass does:
-  // a board, then each column separated from the next by a board.
-  const spans: { start: number; end: number; fixed: boolean }[] = [];
-  let x = BOARD_MM;
-  for (const c of columns) {
-    spans.push({ start: x, end: x + c.widthMm, fixed: isFixed(c.fill) });
-    x += c.widthMm + BOARD_MM;
-  }
-
-  const bounds: number[] = [0];
-  for (let i = 0; i < spans.length - 1; i++) bounds.push(spans[i].end + BOARD_MM / 2);
-  bounds.push(refWidthMm);
+  const columns = LAYOUT_COLUMNS[layoutId] ?? LAYOUT_COLUMNS['3.0'];
+  const leadFixed = !!columns[0]?.fixed;
+  const trailFixed = columns.length > 1 && !!columns[columns.length - 1]?.fixed;
 
   const span = carcass.x1 - carcass.x0;
-  const segments: Segment[] = spans.map((s, i) => ({
-    type: s.fixed ? 'fixed' : 'flex',
-    refWidthMm: bounds[i + 1] - bounds[i],
-    u0: carcass.x0 + (bounds[i] / refWidthMm) * span,
-    u1: carcass.x0 + (bounds[i + 1] / refWidthMm) * span,
-  }));
+  /** Carcass fraction to image u. */
+  const toU = (f: number) => carcass.x0 + f * span;
+
+  // MEASURED BOUNDARIES WHERE THERE ARE ANY, and this is the whole reason the
+  // slicing can be trusted. Deriving them from the layout meant trusting the
+  // recorded reference width, and four of the seven were wrong: 6.0 was filed
+  // as an 1800 render when its tower measures 20.9% of the carcass, which at a
+  // 507 module is a render nearer 2400. The boundary landed 8% too far right
+  // and painted hanging garments onto the drawer fronts.
+  //
+  // The fallback is the old derivation, for an asset the detector could not
+  // read — 4.9, whose three-quarter viewpoint means its dividers are not
+  // vertical and the column profile has nothing sharp to find.
+  const measuredLead = carcass.towerLead ?? null;
+  const measuredTrail = carcass.towerTrail ?? null;
+  const derivedFraction = (MODULE_WIDTH_MM / Math.max(1, refWidthMm));
+
+  const leadEnd = leadFixed ? (measuredLead ?? derivedFraction) : null;
+  const trailStart = trailFixed ? (measuredTrail ?? 1 - derivedFraction) : null;
+
+  // ALL HANGING SPACE IS ONE FLEX REGION. A layout may have two bays with a
+  // divider between them, but both are hanging space and both grow together, so
+  // the divider inside them can ride along — and it is the one boundary the
+  // detector cannot find reliably, because a coat hangs across it. Modelling it
+  // would add a boundary that has to be right for no benefit.
+  const segments: Segment[] = [];
+  if (leadEnd !== null) {
+    segments.push({ type: 'fixed', refWidthMm: MODULE_WIDTH_MM, u0: toU(0), u1: toU(leadEnd) });
+  }
+  segments.push({
+    type: 'flex',
+    refWidthMm: 0, // set below; a flex segment's reference width is not used
+    u0: toU(leadEnd ?? 0),
+    u1: toU(trailStart ?? 1),
+  });
+  if (trailStart !== null) {
+    segments.push({ type: 'fixed', refWidthMm: MODULE_WIDTH_MM, u0: toU(trailStart), u1: toU(1) });
+  }
 
   const fixedTotalMm = segments
     .filter(s => s.type === 'fixed')
@@ -118,9 +144,6 @@ export function buildSliceMap(
     minWidthMm: fixedTotalMm + flexCount * MIN_FLEX_MM,
   };
 }
-
-const isFixed = (fill: { kind: string }) =>
-  fill.kind === 'drawers' || fill.kind === 'shelves';
 
 /** THE MAPPER: cabinet millimetres in, sticker U out, piecewise.
  *

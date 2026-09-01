@@ -7,6 +7,7 @@ import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
 import Canvas2DWardrobeRenderer from './Canvas2DWardrobeRenderer';
 import Wardrobe3D from './Wardrobe3D';
+import { tracedWidthMm } from './wardrobeGeometry';
 
 // One radius for every surface in the visualiser. The three files used to
 // disagree (0 here, 12px on the homepage wrapper, 4px on the thumbnails),
@@ -1264,11 +1265,16 @@ export default function KlayConfigurator({
             /* TURN IT. The sticker projected onto the real carcass, orbitable
                — see Wardrobe3D. It stands on its own rather than in the room
                photo, because the cabinet is what is being examined here; the
-               room view is the other tab. */
+               room view is the other tab, and it is shown at the width the
+               customer traced so both views are the same cabinet. */
             <Wardrobe3D
               modelId={store.wardrobeModel}
               colourName={store.wardrobeColour}
-              selectedWidthMm={store.wardrobeWidthMm}
+              selectedWidthMm={
+                confirmedArea
+                  ? tracedWidthMm(confirmedArea.corners as [number, number][], 2016)
+                  : undefined
+              }
             />
           ) : store.productCategory === 'wardrobe' && confirmedArea ? (
             <Canvas2DWardrobeRenderer
@@ -1276,7 +1282,6 @@ export default function KlayConfigurator({
               corners={confirmedArea.corners as [number, number][]}
               modelId={store.wardrobeModel}
               colourName={store.wardrobeColour}
-              widthMm={store.wardrobeWidthMm}
             />
           ) : store.productCategory === 'curtain' && confirmedArea ? (
             <Canvas2DCurtainRenderer

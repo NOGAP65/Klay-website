@@ -111,7 +111,20 @@ export default function Canvas2DWardrobeRenderer({
       // photograph was actually taken at, and therefore the one the artwork's
       // own proportions describe. Every other width is reached by slicing.
       const refWidthMm = model.widths[0];
-      const drawWidthMm = widthMm ?? refWidthMm;
+
+      // THE WIDTH COMES FROM THE TRACE, not from a control.
+      //
+      // Height is the only fixed parameter — every unit is 2016 — so the traced
+      // box's height IS 2016mm, and that fixes millimetres-per-pixel. Its own
+      // width-to-height ratio then says how wide the customer drew, and that is
+      // the cabinet. Nothing else has to be asked: the one thing the customer
+      // knows is where the wardrobe goes, and they have just drawn it.
+      //
+      // Which is also what makes the slicing carry its weight. A dropdown gives
+      // five widths; a trace gives any width at all, and every one of them has
+      // to keep the tower at 507.
+      const traced = tracedWidthMm(corners, WARDROBE_HEIGHT_MM);
+      const drawWidthMm = widthMm ?? traced;
 
       const skin: WardrobeSkin | null = cut
         ? {
@@ -352,6 +365,11 @@ function drawBuiltIn(
   const projector = projectorFromQuad(corners, wallWidthMm, WARDROBE_HEIGHT_MM, imageW, imageH);
   if (!projector) return;
 
+  // Clamped to what the layout can actually be built as: its fixed modules plus
+  // a usable hanging bay. Traced narrower than that, the cabinet is drawn at
+  // its minimum rather than at an impossible size.
+  widthMm = Math.max(widthMm, skin ? skin.slices.minWidthMm : 900);
+
   // MEASURED BEFORE ANYTHING IS DRAWN, or the wardrobe gets sampled as though
   // it were the wall it is standing on.
   const profile = profilePhoto(ctx, corners, imageW, imageH);
@@ -479,7 +497,15 @@ function drawBuiltIn(
         // A box with its own colour is a rail, a handle or a garment; only the
         // ones taking the finish are board. The back panel is board but is
         // deliberately never skinned — see Box.back.
-        board: !box.colour && !box.back,
+        // ONLY A FACE THAT SPANS BOTH X AND Y can take the projection. The
+        // mapping reads a point's own (x, y), so a face at one constant Y — a
+        // shelf top, the carcass top — samples a single row of pixels and
+        // smears it along the depth, and a face at constant X samples a single
+        // column. Board is the same colour without the streak.
+        board:
+          !box.colour &&
+          !box.back &&
+          name !== 'top' && name !== 'bottom' && name !== 'left' && name !== 'right',
         grainUpright: box.h >= box.w,
       });
     }
@@ -873,13 +899,23 @@ function drawContents(
     if (openingW <= 0) return;
 
     if (item.asset.repeats) {
-      // Fill the bay with whole repeats, sharing out the remainder so the run
-      // is centred rather than left-aligned with a gap at one end.
-      const n = Math.max(1, Math.round(openingW / item.asset.widthMm));
-      const w = openingW / n;
-      const h = item.heightMm * (w / item.asset.widthMm);
+      // THE GARMENTS KEEP THEIR REAL SIZE; THE COUNT CHANGES.
+      //
+      // This used to divide the bay into n equal parts and stretch a run of
+      // clothes to fill each, so a narrow bay got the same number of garments
+      // drawn narrower and a wide one the same number drawn wider. The clothes
+      // resized instead of thinning out — which is not what happens when you
+      // put a smaller wardrobe in a room. A coat is a coat.
+      //
+      // So the run is a whole number of real-sized garments, centred, with the
+      // remainder left as air at the ends of the rail.
+      const n = Math.max(1, Math.floor(openingW / item.asset.widthMm));
+      const w = item.asset.widthMm;
+      const runW = n * w;
+      const pad = (openingW - runW) / 2;
+      const h = item.heightMm;
       for (let k = 0; k < n; k++) {
-        const x0 = c.x0 + k * w;
+        const x0 = c.x0 + pad + k * w;
         placed.push({
           item, x0, x1: x0 + w, y0: c.y0 - h, y1: c.y0, z,
           depth: projector.depth(x0, c.y0, z),

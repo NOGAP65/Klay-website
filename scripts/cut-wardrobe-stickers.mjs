@@ -444,11 +444,80 @@ function cut({ width: w, height: h, data: px }) {
 
   const [cx0, cy0, cx1, cy1] = [bx0, by0, bx1, by1];
 
+  // --- WHERE THE FIXED MODULES ACTUALLY ARE, measured off the artwork -------
+  //
+  // The slice boundaries were originally derived from the layout table and an
+  // assumed reference width, and four of the seven renders disagreed with it.
+  // 6.0 was recorded as an 1800 render; its tower measures 20.9% of the
+  // carcass, which at a 507mm module puts the real render nearer 2400. The
+  // boundary therefore landed 8% too far right and painted the first hanging
+  // garments onto the drawer fronts — visible only on the white finish, because
+  // white is the only one with a photograph to project.
+  //
+  // So it is measured. A divider is a narrow vertical strip of board standing
+  // PROMINENT above its neighbours — which holds even where a coat hangs across
+  // it, and in a tower whose open shelves are full of dark folded clothes.
+  // Absolute coverage found neither of those cases.
+  // Profiled over the CARCASS's own height only. Taken over the whole file it
+  // includes the cases and baskets staged on top and the shoes on the floor,
+  // which are neither board nor cabinet, and they move the peaks: 5.0's tower
+  // came back at 41% instead of 20%.
+  const colBoard = new Float64Array(cw);
+  for (let x = 0; x < cw; x++) {
+    let n = 0, tot = 0;
+    for (let y = cy0; y <= cy1; y++) {
+      const i = y * cw + x;
+      if (out[i * 4 + 3] < 200) continue;
+      tot++;
+      const mx = Math.max(out[i * 4], out[i * 4 + 1], out[i * 4 + 2]);
+      const mn = Math.min(out[i * 4], out[i * 4 + 1], out[i * 4 + 2]);
+      if (mx >= 176 && mx - mn <= 26) n++;
+    }
+    colBoard[x] = tot ? n / tot : 0;
+  }
+
+  /** Divider-like columns within a fraction range of the carcass, in order. */
+  const dividersIn = (lo, hi) => {
+    const a = Math.round(cx0 + lo * (cx1 - cx0));
+    const b = Math.round(cx0 + hi * (cx1 - cx0));
+    const nb = Math.max(6, Math.round((cx1 - cx0) * 0.035));
+    const hits = [];
+    for (let i = Math.max(nb, a); i <= Math.min(cw - nb - 1, b); i++) {
+      if (colBoard[i] < 0.55) continue;
+      let loMin = 1, hiMin = 1;
+      for (let k = 1; k <= nb; k++) {
+        loMin = Math.min(loMin, colBoard[i - k]);
+        hiMin = Math.min(hiMin, colBoard[i + k]);
+      }
+      const prom = colBoard[i] - Math.max(loMin, hiMin);
+      if (prom < 0.14) continue;
+      let isPeak = true;
+      for (let k = -nb; k <= nb; k++) if (colBoard[i + k] > colBoard[i] + 1e-9) { isPeak = false; break; }
+      if (!isPeak) continue;
+      if (hits.length && i - hits[hits.length - 1] < nb) continue;
+      hits.push(i);
+    }
+    return hits.map(i => (i - cx0) / (cx1 - cx0));
+  };
+
+  // THE FIRST DIVIDER, NOT THE STRONGEST. A tower sits at the end of the run,
+  // so the boundary that closes it is the first one in from that edge —
+  // whatever else is further along is a shelf edge or a bay divider standing
+  // more prominently. Picking by prominence put 5.0's tower at 41% (a bay
+  // divider) instead of 20% (its own).
+  const lead = dividersIn(0.12, 0.46);
+  const trail = dividersIn(0.54, 0.90);
+  const towerLead = lead.length ? lead[0] : null;
+  const towerTrail = trail.length ? trail[trail.length - 1] : null;
+
+  // A leading tower sits in the first half; a trailing one in the last.
+
   return {
     width: cw,
     height: ch,
     data: out,
     sq, L, D,
+    towerLead, towerTrail,
     // Normalised, so the renderer needs no pixel arithmetic of its own.
     carcass: {
       x0: cx0 / cw, y0: cy0 / ch,
@@ -583,7 +652,7 @@ for (const file of files) {
   const res = cut(decodePng(readFileSync(join(DIR, file))));
   const name = `${id}-white-${view}.png`;
   writeFileSync(join(DIR, name), encodePng(res.width, res.height, res.data));
-  manifest.push({ id, view, file: name, ...res.carcass, w: res.width, h: res.height });
+  manifest.push({ id, view, file: name, ...res.carcass, w: res.width, h: res.height, towerLead: res.towerLead, towerTrail: res.towerTrail });
   const pct = v => (v * 100).toFixed(1);
   console.log(
     `${id.padEnd(6)} ${view.padEnd(8)} ${res.width}x${res.height}  sq=${res.sq}  ` +
@@ -619,12 +688,16 @@ export interface WardrobeCutout {
   /** Pixel size of the cut-out file. */
   w: number;
   h: number;
+  /** Where a fixed module ends, as a fraction of the CARCASS (not the file),
+   * measured off the artwork. Null where the layout has no module on that side. */
+  towerLead: number | null;
+  towerTrail: number | null;
   /** The carcass box within the file, 0..1. */
   x0: number; y0: number; x1: number; y1: number;
 }
 
 export const WARDROBE_CUTOUTS: WardrobeCutout[] = ${JSON.stringify(
-    manifest.map(m => ({ id: m.id, view: m.view, file: m.file, w: m.w, h: m.h, x0: +m.x0.toFixed(5), y0: +m.y0.toFixed(5), x1: +m.x1.toFixed(5), y1: +m.y1.toFixed(5) })),
+    manifest.map(m => ({ id: m.id, view: m.view, file: m.file, w: m.w, h: m.h, towerLead: m.towerLead, towerTrail: m.towerTrail, x0: +m.x0.toFixed(5), y0: +m.y0.toFixed(5), x1: +m.x1.toFixed(5), y1: +m.y1.toFixed(5) })),
     null,
     2,
   ).replace(/"([a-z0-9]+)":/gi, '$1:')};

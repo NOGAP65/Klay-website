@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
 import { pricePerBlind, type BlindType } from '../lib/pricing';
-import { wardrobeModelById } from './wardrobes';
 
 type Point = [number, number];
 
@@ -268,17 +267,10 @@ interface VisualiserStore {
   applyActiveToAll: () => void;
   setCurtainType: (type: CurtainType) => void;
   setCurtainOperation: (op: CurtainOperation) => void;
-  /** WHICH WIDTH IN THE LAYOUT'S RANGE, in millimetres.
-   *
-   * The range is made in standard widths and the customer picks one. It is the
-   * only cabinet dimension that varies — height is 2016 and depth is 500 on
-   * every unit — which is what makes the artwork sliceable: the fixed modules
-   * hold their size and the hanging bays absorb the difference.
-   *
-   * Held as a number rather than an index so it survives a layout change onto a
-   * range that offers different widths. */
-  wardrobeWidthMm: number;
-  setWardrobeWidthMm: (mm: number) => void;
+  // NO WIDTH HERE. It is not a choice the customer makes — height is the only
+  // fixed parameter, so the traced box's height gives the scale and its own
+  // ratio gives the width. Holding a width in the store would be holding a
+  // second, disagreeing answer to a question the trace has already settled.
   setWardrobeKind: (kind: 'built-in' | 'walk-in') => void;
   setWardrobeModel: (id: string) => void;
   setWardrobeColour: (name: string) => void;
@@ -307,9 +299,6 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   wardrobeKind: 'built-in',
   wardrobeModel: '3.0',
   wardrobeColour: 'Matt Wardrobe White',
-  // 3.0's first width, matching wardrobeModel above — and the width its render
-  // was actually taken at, so the visualiser opens on unsliced artwork.
-  wardrobeWidthMm: 2400,
   windows: [following(DEFAULT_WINDOW)],
   activeWindow: 0,
   photoUrl: null,
@@ -394,15 +383,10 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
     set({
       wardrobeKind: kind,
       wardrobeModel: kind === 'walk-in' ? '7.0L' : '3.0',
-      wardrobeWidthMm: wardrobeModelById(kind === 'walk-in' ? '7.0L' : '3.0').widths[0],
     }),
-  // THE WIDTH FOLLOWS THE LAYOUT, because the ranges differ: 2.9 is made at
-  // 1800 only, 4.0 at 1800/2400/3000. Carrying a width across a layout change
-  // would leave the configurator holding a size that layout is not built in.
   setWardrobeModel: (id) =>
-    set({ wardrobeModel: id, wardrobeWidthMm: wardrobeModelById(id).widths[0] }),
+    set({ wardrobeModel: id }),
   setWardrobeColour: (name) => set({ wardrobeColour: name }),
-  setWardrobeWidthMm: (mm) => set({ wardrobeWidthMm: mm }),
   setCurtainMount: (mount) => set(writeThrough({ curtainMount: mount })),
   setCurtainSize: (size) => set(writeThrough({ curtainSize: size })),
 
