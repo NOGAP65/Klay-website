@@ -43,6 +43,8 @@
 // section on the page that is about the service rather than about a product.
 // ---------------------------------------------------------------------------
 
+import * as routes from '@/config/routes';
+
 import { tokens, headline, layout, space, type as typeScale, CtaLink } from '@/ds';
 import { STEPS } from '@/features/marketing';
 import { useMediaQuery } from '@/shared';
@@ -257,7 +259,7 @@ export function RecommendationBanner() {
             is what somebody who has read this wants to do next, and the enquiry
             form is genuinely where it happens. */}
         <div style={{ marginTop: space.section, textAlign: 'center' }}>
-          <CtaLink to="/contact">Book a Free Measure</CtaLink>
+          <CtaLink to={routes.contact}>Book a Free Measure</CtaLink>
         </div>
       </div>
     </section>

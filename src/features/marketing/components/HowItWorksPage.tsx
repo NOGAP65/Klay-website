@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import * as routes from '@/config/routes';
+
 import { radius, tokens, eyebrow, headline, motion, space, supporting, type as typeScale, useHover } from '@/ds';
 
 import { STEPS, type Step } from '../constants';
@@ -280,7 +282,7 @@ export default function HowItWorksPage() {
           three weeks from first click to a finished window.
         </p>
         <Link
-          to="/visualiser"
+          to={routes.visualiser}
           {...ctaHover.bind}
           style={{
             display: 'inline-block',

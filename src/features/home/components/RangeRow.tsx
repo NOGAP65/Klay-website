@@ -103,6 +103,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import * as routes from '@/config/routes';
+
 import { radius, tokens, motion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale, CtaLink, useHover } from '@/ds';
 import { CATALOGUE, type CatalogueItem } from '@/features/catalogue';
 import { defaultSelection, fieldsFor, type Selection } from '@/features/catalogue';
@@ -1023,7 +1025,7 @@ export function RangeRow() {
             full-width gold button asking the visitor to leave for the shop
             before they had been shown a single product. It moves below the
             cards, where it means "and there is more", which is what it is for. */}
-        {!isMobile && <CtaLink to="/products">Shop the full range</CtaLink>}
+        {!isMobile && <CtaLink to={routes.products}>Shop the full range</CtaLink>}
       </div>
 
       {/* THE SAME CONTAINER AS THE HEADER ABOVE IT, and the padding is on THIS
@@ -1131,7 +1133,7 @@ export function RangeRow() {
             end of the header row on desktop, so it keeps the same alignment. */}
         {isMobile && (
           <div style={{ paddingTop: space.group }}>
-            <CtaLink to="/products">Shop the full range</CtaLink>
+            <CtaLink to={routes.products}>Shop the full range</CtaLink>
           </div>
         )}
       </div>

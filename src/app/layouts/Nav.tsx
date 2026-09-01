@@ -46,6 +46,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import * as routes from '@/config/routes';
+
 import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
 import { useIsMobile, useMediaQuery } from '@/shared';
@@ -125,15 +127,15 @@ interface NavLink {
  * linked from /about and from the footer, and a fifth word would start this bar
  * back down the road the previous three versions took. */
 const LINKS: NavLink[] = [
-  { label: 'Shop', to: '/products', accent: true },
+  { label: 'Shop', to: routes.products, accent: true },
   // The homepage's visualiser section, not the standalone /visualiser page.
   // The section is the better surface — it introduces the tool, sits in the run
   // of the page and has the range around it — and /visualiser is gated to an
   // allowlist of hosts, so a bare link to it can dead-end depending on where
   // the site is served from. App's ScrollToHash does the scrolling.
   { label: 'Visualise', to: '/#visualiser' },
-  { label: 'About', to: '/about' },
-  { label: 'Contact', to: '/contact' },
+  { label: 'About', to: routes.about },
+  { label: 'Contact', to: routes.contact },
 ];
 
 /** Every word in the bar shares this, so the four cannot drift apart.
@@ -308,7 +310,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               least important thing there. */}
           <div style={{ display: 'flex', alignItems: 'center', gap: CONTROL_GAP, flex: '0 0 auto' }}>
             <Link
-              to="/cart"
+              to={routes.cart}
               {...cartHover.bind}
               style={{
                 position: 'relative',
@@ -371,7 +373,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 who has not registered the small word in the middle of the bar
                 still has one unmissable gold way in. Both go to /products. */}
             <Link
-              to="/products"
+              to={routes.products}
               {...ctaHover.bind}
               style={{
                 display: 'inline-flex',
@@ -472,7 +474,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
 
           {/* Same action, destination and fill as the desktop button. */}
           <Link
-            to="/products"
+            to={routes.products}
             onClick={() => setMenuOpen(false)}
             style={{
               marginTop: 6,
@@ -492,7 +494,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
           </Link>
 
           <Link
-            to="/cart"
+            to={routes.cart}
             onClick={() => setMenuOpen(false)}
             style={{
               color: tokens.paper,

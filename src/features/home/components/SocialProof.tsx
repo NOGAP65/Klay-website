@@ -35,12 +35,14 @@
 
 import { Link } from 'react-router-dom';
 
+import * as site from '@/config/site';
+
 import { tokens, space, type as typeScale, SectionBand, useHover } from '@/ds';
 import { useIsMobile } from '@/shared';
 
 import { TILE_GAP } from '../furniture';
 
-const INSTAGRAM = 'https://www.instagram.com/klayinteriors';
+const INSTAGRAM = site.instagram;
 
 const SHOTS = [
   { image: '/images/room-4.png', to: '/products/dusk', objectPosition: 'center 40%' },

@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom';
 
+import * as routes from '@/config/routes';
+import * as site from '@/config/site';
+
 import { radius, tokens, eyebrow, headline, motion, space, supporting, type as typeScale, useHover } from '@/ds';
 import { COLOUR_COUNT, PRODUCT_COUNT } from '@/features/catalogue';
 
@@ -140,10 +143,10 @@ export default function AboutPage() {
               brand-conviction page that gave a convinced reader nowhere to go. */}
           <div style={{ marginTop: 80, paddingTop: 48, borderTop: `1px solid ${tokens.lineFaint}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: space.group, flexWrap: 'wrap' }}>
             <p style={{ ...supporting.onLight, fontSize: typeScale.body.fontSize, margin: 0 }}>
-              18 Maltings Cct, Epping VIC 3076 · hello@klayinteriors.com.au · 1300 00 KLAY
+              {site.address} · {site.email} · {site.phone}
             </p>
             <Link
-              to="/visualiser"
+              to={routes.visualiser}
               {...ctaHover.bind}
               style={{
                 textDecoration: 'none',

@@ -163,7 +163,7 @@ export function AboutPanel() {
             copy, and the block already closes with 52px of section padding under
             it. */}
         <div style={{ marginTop: space.group }}>
-          <CtaLink to="/about">About Klay →</CtaLink>
+          <CtaLink to={routes.about}>About Klay →</CtaLink>
         </div>
       </div>
     </div>
@@ -203,6 +203,8 @@ export function AboutPanel() {
       )}
     </section>
   );
-}import { tokens, headline, eyebrow, layout, space, supporting, CtaLink } from '@/ds';
+}import * as routes from '@/config/routes';
+
+import { tokens, headline, eyebrow, layout, space, supporting, CtaLink } from '@/ds';
 import { useIsMobile } from '@/shared';
 

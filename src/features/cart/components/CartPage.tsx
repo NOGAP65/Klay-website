@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import * as routes from '@/config/routes';
+
 import { tokens, eyebrow, motion, radius, space, type as typeScale } from '@/ds';
 import { useIsMobile } from '@/shared';
 
@@ -31,7 +33,7 @@ export default function CartPage() {
                 Your cart is empty
               </p>
               <Link
-                to="/products"
+                to={routes.products}
                 style={{
                   display: 'inline-block',
                   padding: '14px 32px',
@@ -223,7 +225,7 @@ export default function CartPage() {
                   </p>
 
                   <Link
-                    to="/book"
+                    to={routes.book}
                     onMouseEnter={() => setIsBookHovered(true)}
                     onMouseLeave={() => setIsBookHovered(false)}
                     style={{

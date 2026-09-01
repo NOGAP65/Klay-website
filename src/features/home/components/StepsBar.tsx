@@ -62,6 +62,8 @@
 
 import { Link } from 'react-router-dom';
 
+import * as routes from '@/config/routes';
+
 import { tokens, space, type as typeScale, useHover, usePrefersReducedMotion } from '@/ds';
 import { STEPS } from '@/features/marketing';
 
@@ -198,7 +200,7 @@ export function StepsBar() {
   return (
     <Link
       {...bind}
-      to="/how-it-works"
+      to={routes.howItWorks}
       aria-label="How Klay works — see the full process"
       style={{
         display: 'block',

@@ -22,6 +22,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import * as routes from '@/config/routes';
+import * as site from '@/config/site';
+
 import { tokens, eyebrow, layout, motion, space, type as typeScale } from '@/ds';
 import { PRODUCTS } from '@/features/catalogue';
 import { useIsMobile } from '@/shared';
@@ -74,7 +77,7 @@ const COLUMNS: { heading: string; links: { label: string; to: string }[] }[] = [
     heading: 'Products',
     links: [
       // Derived, so a renamed or retired product can't leave a dead link here.
-      ...PRODUCTS.map(p => ({ label: `${p.name} ${p.type}`, to: `/products/${p.slug}` })),
+      ...PRODUCTS.map(p => ({ label: `${p.name} ${p.type}`, to: routes.product(p.slug) })),
       // Curtains and wardrobes have no listing page yet — the /products
       // resolver sends both to the enquiry form rather than to a 404.
       { label: 'Curtains', to: '/products?category=curtains' },
@@ -84,20 +87,20 @@ const COLUMNS: { heading: string; links: { label: string; to: string }[] }[] = [
   {
     heading: 'Company',
     links: [
-      { label: 'How It Works', to: '/how-it-works' },
-      { label: 'About Klay', to: '/about' },
+      { label: 'How It Works', to: routes.howItWorks },
+      { label: 'About Klay', to: routes.about },
       // Journal is gone with the homepage tiles that were the only other place
       // it appeared. It never had a blog behind it — the link pointed at
       // /how-it-works — so a nav entry for it was promising a section of the
       // site that does not exist. Put it back when there is something to read.
-      { label: 'Contact', to: '/contact' },
+      { label: 'Contact', to: routes.contact },
     ],
   },
   {
     heading: 'Contact',
     links: [
-      { label: '1300 00 KLAY', to: 'tel:1300005529' },
-      { label: 'hello@klayinteriors.com.au', to: 'mailto:hello@klayinteriors.com.au' },
+      { label: site.phone, to: site.phoneHref },
+      { label: site.email, to: site.emailHref },
     ],
   },
 ];
@@ -151,7 +154,7 @@ export function Footer() {
               by hand across Victoria.
             </p>
             <div style={{ marginTop: space.item }}>
-              <FooterLink to="https://www.instagram.com/klayinteriors">@klayinteriors</FooterLink>
+              <FooterLink to={site.instagram}>{site.instagramHandle}</FooterLink>
             </div>
           </div>
 
@@ -170,9 +173,9 @@ export function Footer() {
                   into it with a dead href. */}
               {col.heading === 'Contact' && (
                 <div style={{ ...linkStyle, color: tokens.onDarkMuted }}>
-                  18 Maltings Cct, Epping VIC 3076
+                  {site.address}
                   <br />
-                  Mon–Fri 8am–6pm
+                  {site.hoursShort}
                 </div>
               )}
             </div>
@@ -192,11 +195,11 @@ export function Footer() {
           }}
         >
           <span style={{ ...typeScale.body, color: tokens.onDarkMuted }}>
-            © {new Date().getFullYear()} Klay Interiors · Grand Kaman Pty Ltd · ABN 98 151 010 007
+            © {new Date().getFullYear()} {site.brand} · {site.tradingEntity} · {site.abn}
           </span>
           <div style={{ display: 'flex', gap: space.item }}>
             {['Privacy', 'Terms', 'Warranty'].map(l => (
-              <FooterLink key={l} to="/contact">
+              <FooterLink key={l} to={routes.contact}>
                 <span style={{ ...typeScale.body, lineHeight: 1 }}>{l}</span>
               </FooterLink>
             ))}

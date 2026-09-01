@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
+import * as routes from '@/config/routes';
+
 import { tokens, headline, eyebrow } from '@/ds';
 
 import { formatAUD } from '../lib/pricing';
@@ -146,7 +148,7 @@ export default function BookingConfirmedPage() {
 
           <div style={{ display: 'flex', gap: 28, justifyContent: 'center', marginTop: 40, flexWrap: 'wrap' }}>
             {state === 'problem' && (
-              <Link to="/book" style={linkStyle}>
+              <Link to={routes.book} style={linkStyle}>
                 Try again
               </Link>
             )}

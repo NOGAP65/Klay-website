@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
+import * as routes from '@/config/routes';
+
 import { tokens, eyebrow, motion, space, radius, type as typeScale, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
 import { useIsMobile } from '@/shared';
@@ -220,7 +222,7 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (slugProduct) return;
-    navigate(legacy ? `/products/${legacy.slug}` : '/products', { replace: true });
+    navigate(legacy ? routes.product(legacy.slug) : routes.products, { replace: true });
   }, [slugProduct, legacy, navigate]);
 
   // Slug -> store. Runs on arrival and on every slug change, including the ones
@@ -238,7 +240,7 @@ export default function ProductDetailPage() {
   // the visitor away from the page they asked for.
   useEffect(() => {
     if (!isSynced || !product || product.slug === slug) return;
-    navigate(`/products/${product.slug}`, { replace: true });
+    navigate(routes.product(product.slug), { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSynced, product?.slug, slug]);
 

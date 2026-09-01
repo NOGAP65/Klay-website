@@ -25,6 +25,8 @@
 // is built from them directly rather than from an invented family layer.
 // ---------------------------------------------------------------------------
 
+import * as routes from '@/config/routes';
+
 import { RYNAMIC_COLOURS, CURTAIN_COLOURS } from '../../data/products'
 
 import { PRODUCTS } from './products'
@@ -114,7 +116,7 @@ const ROLLER_FROM = Math.min(...PRODUCTS.map(p => p.priceFrom))
  * Dusk because it is the blockout: the cheapest of the four, the one ROLLER_FROM
  * already quotes above, and the visualiser's own default type — so the page opens
  * on the fabric the from-price refers to. */
-const productLink = (slug: string) => `/products/${slug}`
+const productLink = (slug: string) => routes.product(slug)
 
 export const CATALOGUE: CatalogueItem[] = [
   // --- INDOOR --------------------------------------------------------------

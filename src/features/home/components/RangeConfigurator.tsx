@@ -23,6 +23,8 @@
 
 import { useNavigate } from 'react-router-dom';
 
+import * as routes from '@/config/routes';
+
 import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
 import {
@@ -230,7 +232,7 @@ export function RangeConfigurator({
   const checkout = () => {
     onInteract?.();
     addItem(configuredLine(item, sel));
-    navigate('/cart');
+    navigate(routes.cart);
     // The app has no scroll restoration, so without this the cart opens at
     // whatever height the homepage was scrolled to — its own footer.
     window.scrollTo(0, 0);

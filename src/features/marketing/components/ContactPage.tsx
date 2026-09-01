@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import * as site from '@/config/site';
+
 import { tokens, eyebrow, headline, motion, space, supporting, type as typeScale, useHover } from '@/ds';
 import { DANGER, Field } from '@/ds';
 import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
@@ -13,11 +15,11 @@ import { sendEnquiry } from '../api/sendEnquiry';
 // so the near-black is gone rather than merely retuned.
 
 const DETAILS = [
-  { label: 'Phone', value: '1300 00 KLAY' },
-  { label: 'Email', value: 'hello@klayinteriors.com.au' },
-  { label: 'Address', value: '18 Maltings Cct, Epping VIC 3076' },
-  { label: 'Hours', value: 'Monday – Friday, 8am – 6pm' },
-  { label: 'Coverage', value: 'Victoria-wide — Melbourne metro and surrounds' },
+  { label: 'Phone', value: site.phone },
+  { label: 'Email', value: site.email },
+  { label: 'Address', value: site.address },
+  { label: 'Hours', value: site.hoursLong },
+  { label: 'Coverage', value: site.coverage },
 ];
 
 // The local `Field` that used to live here has moved to components/FormField

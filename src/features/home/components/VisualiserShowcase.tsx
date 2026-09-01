@@ -35,6 +35,8 @@
 
 import { useNavigate } from 'react-router-dom';
 
+import * as routes from '@/config/routes';
+
 import { radius, tokens, layout, motion, space, type as typeScale, shadow, CtaButton, CtaLink, SectionBand, TextLink, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
 import { productByBlindType } from '@/features/catalogue';
@@ -59,7 +61,7 @@ import VisualiserControls, { Field, GroupHeading, PriceBox } from '../../../visu
  * be the one place on the site that pretends otherwise — and CartItem could not
  * describe the order anyway, since it has no mount, no wave-fold heading and a
  * windowSize that stops at large where curtains go to XL. */
-const CURTAIN_ENQUIRY = '/contact';
+const CURTAIN_ENQUIRY = routes.contact;
 
 /** The selected lozenge on THIS card. Every control in this file sits on the ink
  * card and nowhere else, so unlike VisualiserControls' skin() there is no light
@@ -407,7 +409,7 @@ export function VisualiserShowcase() {
     // customer on a configuration they might still want to adjust — but a Buy Now
     // that silently banks the order and leaves you looking at the same screen
     // reads as a button that did nothing.
-    navigate('/cart');
+    navigate(routes.cart);
   };
 
   return (
