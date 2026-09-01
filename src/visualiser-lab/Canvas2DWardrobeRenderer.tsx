@@ -34,7 +34,7 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef } from 'react';
-import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, wardrobeColour, wardrobeCutoutFor, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM } from './wardrobes';
+import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, wardrobeColour, wardrobeCutoutFor, FINISH_TEXTURE, FINISH_TILE_MM, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM } from './wardrobes';
 import { loadAllContents, type ContentKind, type LoadedContent } from './wardrobeContents';
 import { projectorFromQuad, columnsFor, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
 import { buildSliceMap, sliceMapper, type SliceMap } from './wardrobeSlices';
@@ -143,10 +143,13 @@ export default function Canvas2DWardrobeRenderer({
       // The contents, if they have been supplied yet. Absent, the carcass draws
       // its own modelled blocks instead — see buildCarcass.
       const contents = await loadAllContents();
+      // The supplier board for a timber finish, awaited so it is actually there
+      // when the carcass is drawn rather than one frame too late.
+      const finishImg = await loadFinishTexture(wardrobeColour(colourName).slug);
       if (cancelled) return;
       drawBuiltIn(
         ctx, corners, model.id, drawWidthMm, colourName,
-        canvas.width, canvas.height, contents, skin,
+        canvas.width, canvas.height, contents, skin, finishImg,
       );
     };
 
@@ -284,6 +287,22 @@ export interface Box {
   tone?: number;
   /** Overrides the board colour outright — the hanging rails. */
   colour?: [number, number, number];
+  /** STRUCTURAL BOARD — a divider, a shelf, the back panel. Never skinned.
+   *
+   * The projection maps a point's own (x, y) into the photograph, which is
+   * right for the outer frame because the frame is where the photograph's frame
+   * is. It is wrong for everything INSIDE, because the modelled interior and
+   * the photographed interior are not the same interior: the model puts a
+   * divider where the layout says, the photograph has one where the cabinet
+   * that was shot had one, and the hanging bays between them stretch. So a
+   * modelled divider samples whatever the stretched picture happens to put at
+   * its x — which is garments, drawn across the divider.
+   *
+   * And the cost of not skinning it is nothing, because the board is board: on
+   * the white finish it is white either way, and what makes the interior look
+   * real is the contents, which are their own cut-outs standing in front of it.
+   */
+  plain?: boolean;
   /** THE BACK PANEL, and it is called out because it is the one face the
    * photograph must NOT be projected onto.
    *
@@ -345,6 +364,7 @@ function drawBuiltIn(
   imageH: number,
   contents: Map<ContentKind, LoadedContent>,
   skin: WardrobeSkin | null,
+  finishImg: HTMLImageElement | null,
 ) {
   // Null when this layout cannot be built at this width — the fixed modules
   // alone would not fit. The carcass still draws in board rather than the page
@@ -419,7 +439,12 @@ function drawBuiltIn(
 
   // Built once per draw and reused across every face, because a fresh tile per
   // face would put a visible seam at each joint.
-  const grain = isWoodFinish(wardrobeColour(colourName).slug) ? grainTile() : null;
+  // THE SUPPLIER'S OWN BOARD where it has loaded, invented grain until it does.
+  // A photograph of Antico Oak carries its knots and splits; a procedural tile
+  // carries a plausible rhythm and no knots, which is the difference between
+  // timber and wallpaper.
+  const wood = isWoodFinish(wardrobeColour(colourName).slug);
+  const grain = wood && !finishImg ? grainTile() : null;
 
   // Every face of every box, sorted back to front. A painter's sort is enough
   // here: the carcass is a set of boxes that do not interpenetrate, so no two
@@ -443,6 +468,11 @@ function drawBuiltIn(
      * cut with the grain running its length and a shelf across its width, and
      * getting that wrong is more obvious than having no grain at all. */
     grainUpright: boolean;
+    /** True on every face made of board — the ones a timber finish covers. Wider
+     * than oard, which is only the faces the PHOTOGRAPH can be projected
+     * onto: a wood texture tiles in the face own coordinates, so it goes on the
+     * side returns and shelf tops too. */
+    timber: boolean;
     /** True for the faces pointing at the room — the only ones an elevation
      * has anything to say about. */
     skinnable: boolean;
@@ -519,8 +549,10 @@ function drawBuiltIn(
         board:
           !box.colour &&
           !box.back &&
+          !box.plain &&
           name !== 'top' && name !== 'bottom' && name !== 'left' && name !== 'right',
         grainUpright: box.h >= box.w,
+        timber: !box.colour,
       });
     }
   }
@@ -592,15 +624,40 @@ function drawBuiltIn(
     // modelled lighting — and clipped to the face that was just filled, so it
     // follows that face's own perspective rather than lying flat across the
     // picture.
-    if (grain && face.board) {
+    // ON EVERY BOARD FACE, not only the room-facing ones. The photographic skin
+    // has to skip the side returns and the shelf tops because the projection
+    // smears there; a board texture does not, because it is tiled onto the face
+    // in the face's own coordinates rather than sampled through a fixed axis.
+    // A shelf whose front edge is timber and whose top is flat brown is the
+    // giveaway, so the wood goes on all of it.
+    if ((finishImg || grain) && face.timber) {
       ctx.save();
       ctx.clip();
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.globalAlpha = 1;
-      drawGrainOnFace(ctx, grain, face.model, face.grainUpright, projector);
+      if (finishImg) {
+        // Drawn as colour, not multiplied: the photograph IS the board, so it
+        // replaces the fill rather than shading it. The fill underneath still
+        // matters — it shows through wherever the tile does not quite reach.
+        ctx.globalAlpha = 1;
+        drawBoardOnFace(ctx, finishImg, face.model, face.grainUpright, projector, face.toneNear);
+      } else {
+        ctx.globalCompositeOperation = 'multiply';
+        drawGrainOnFace(ctx, grain!, face.model, face.grainUpright, projector);
+      }
       ctx.restore();
     }
   }
+
+  // AMBIENT OCCLUSION IN THE OPENINGS, before anything is stood in them.
+  //
+  // The 3D view gets this from a real shadow map. Canvas 2D has no such thing,
+  // and without it an open carcass is evenly lit board with nothing saying one
+  // shelf is in front of another — the interior reads as a diagram of a
+  // wardrobe rather than the inside of one.
+  //
+  // What it approximates is the light a compartment does NOT receive: the shelf
+  // above throws the deepest shade, so each opening is darkest under its own
+  // lid and lightens toward the front lip.
+  drawCompartmentShade(ctx, projector, compartments);
 
   // WHAT IS STANDING IN THE WARDROBE, drawn after the carcass so it sits inside
   // the openings the carcass has already framed.
@@ -688,7 +745,7 @@ export function buildCarcass(
   let x = BOARD_MM;
 
   const shelf = (cx: number, cw: number, y: number) =>
-    boxes.push({ x: cx, y, z: BOARD_MM, w: cw, h: BOARD_MM, d: D - BOARD_MM });
+    boxes.push({ x: cx, y, z: BOARD_MM, w: cw, h: BOARD_MM, d: D - BOARD_MM, plain: true });
 
   const rail = (cx: number, cw: number, y: number) =>
     boxes.push({
@@ -759,7 +816,7 @@ export function buildCarcass(
   columns.forEach((column, i) => {
     const cw = column.widthMm;
     if (i < columns.length - 1) {
-      boxes.push({ x: x + cw, y: y0, z: 0, w: BOARD_MM, h: innerH, d: D });
+      boxes.push({ x: x + cw, y: y0, z: 0, w: BOARD_MM, h: innerH, d: D, plain: true });
     }
 
     const fill = column.fill;
@@ -1009,11 +1066,116 @@ function drawContentQuad(
   }
 }
 
-/** ONE GRAIN TILE for the whole session. Regenerating it per draw would make
- * the board crawl every time a control moved, which is the sort of thing that
- * reads as a rendering fault rather than as timber. */
+/** THE BOARD PHOTOGRAPH for a timber finish.
+ *
+ * AWAITED, not polled. The first version returned null while the image
+ * decoded and cached it in onload, on the assumption that the next draw would
+ * pick it up — but there is no next draw. The effect runs once per state
+ * change, so the cabinet was rendered with the procedural fallback and then
+ * left there, and the supplier's board never appeared at all.
+ *
+ * Resolves null on a missing file, so a finish with no texture yet still draws
+ * as coloured board rather than failing the render. */
+const finishCache = new Map<string, Promise<HTMLImageElement | null>>();
+function loadFinishTexture(slug: string): Promise<HTMLImageElement | null> {
+  const hit = finishCache.get(slug);
+  if (hit) return hit;
+  const src = FINISH_TEXTURE[slug];
+  if (!src) return Promise.resolve(null);
+  const job = new Promise<HTMLImageElement | null>(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+  finishCache.set(slug, job);
+  return job;
+}
+
 let grainCache: HTMLCanvasElement | null = null;
 const grainTile = () => (grainCache ??= makeGrainTile(7));
+
+/** Lays the supplier's board photograph over one face of the carcass.
+ *
+ * TILED AT REAL SIZE, in millimetres, so the grain is the size grain is. The
+ * texture covers a known piece of board (FINISH_TILE_MM), so a 2016mm panel
+ * gets a bit over one repeat up its height whatever cabinet it is in, and a
+ * 3000mm one gets three across rather than one stretched.
+ *
+ * SHADED BY THE FACE'S OWN TONE, because the photograph is of a board lying
+ * flat under even light and the face it lands on may be a side return in shade.
+ * Without this every surface of the cabinet comes out the same brightness and
+ * the box loses its corners.
+ */
+function drawBoardOnFace(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  model: [number, number, number][],
+  upright: boolean,
+  projector: Projector,
+  tone: number,
+) {
+  const [c0, c1, c2, c3] = model;
+  const span = (a: number[], b: number[]) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  const wMm = Math.max(1, span(c0, c1));
+  const hMm = Math.max(1, span(c1, c2));
+
+  // Grain runs the length of a panel: up an upright, along a shelf. The tile is
+  // cut with its grain vertical, so a shelf takes it turned a quarter.
+  const tileW = upright ? FINISH_TILE_MM.w : FINISH_TILE_MM.h;
+  const tileH = upright ? FINISH_TILE_MM.h : FINISH_TILE_MM.w;
+  const repU = Math.max(1, Math.min(10, Math.round(wMm / tileW)));
+  const repV = Math.max(1, Math.min(10, Math.round(hMm / tileH)));
+
+  const at = (s: number, u: number): [number, number, number] =>
+    [0, 1, 2].map(
+      k => (1 - s) * (1 - u) * c0[k] + s * (1 - u) * c1[k] + s * u * c2[k] + (1 - s) * u * c3[k],
+    ) as [number, number, number];
+
+  const N = 3;
+  for (let tv = 0; tv < repV; tv++) {
+    for (let tu = 0; tu < repU; tu++) {
+      const P: [number, number][][] = [];
+      const UV: [number, number][][] = [];
+      for (let j = 0; j <= N; j++) {
+        const rp: [number, number][] = [];
+        const ru: [number, number][] = [];
+        for (let i = 0; i <= N; i++) {
+          const [X, Y, Z] = at((tu + i / N) / repU, (tv + j / N) / repV);
+          rp.push(projector.project(X, Y, Z));
+          // MIRRORED on alternate tiles, which is how a seam is avoided without
+          // a seamless texture — and how real veneer is book-matched anyway, so
+          // the symmetry reads as joinery rather than as a repeat.
+          const fu = tu % 2 ? 1 - i / N : i / N;
+          const fv = tv % 2 ? 1 - j / N : j / N;
+          ru.push(
+            upright
+              ? [fu * img.naturalWidth, fv * img.naturalHeight]
+              : [fv * img.naturalWidth, fu * img.naturalHeight],
+          );
+        }
+        P.push(rp);
+        UV.push(ru);
+      }
+      for (let j = 0; j < N; j++)
+        for (let i = 0; i < N; i++) {
+          const v00 = { p: P[j][i], uv: UV[j][i] };
+          const v10 = { p: P[j][i + 1], uv: UV[j][i + 1] };
+          const v11 = { p: P[j + 1][i + 1], uv: UV[j + 1][i + 1] };
+          const v01 = { p: P[j + 1][i], uv: UV[j + 1][i] };
+          skinTriangle(ctx, img, v00, v10, v11);
+          skinTriangle(ctx, img, v00, v11, v01);
+        }
+    }
+  }
+
+  // The face's own shade, laid over the board it was just given. The clip path
+  // is still current, so this fills exactly the face and nothing else.
+  if (tone < 0.995) {
+    ctx.fillStyle = `rgba(0,0,0,${((1 - tone) * 0.9).toFixed(3)})`;
+    ctx.fill();
+  }
+}
 
 /** Lays the grain tile over one face of the carcass.
  *
@@ -1092,6 +1254,56 @@ function drawGrainOnFace(
           skinTriangle(ctx, tile, v00, v11, v01);
         }
     }
+  }
+}
+
+/** THE SHADE INSIDE EACH OPENING.
+ *
+ * Drawn on the BACK PANEL rather than across the opening's mouth, because that
+ * is the surface the missing light would have fallen on — shading the mouth
+ * would darken the clothes hanging in front of it too, which is the opposite of
+ * what an occluded background does.
+ *
+ * Strongest under the shelf above and fading down, with a lighter wash up from
+ * the base. Kept well short of black: a bedroom cupboard with the doors off is
+ * dim inside, not a cave, and the whole point is to seat the contents rather
+ * than to be seen as an effect.
+ */
+function drawCompartmentShade(
+  ctx: CanvasRenderingContext2D,
+  projector: Projector,
+  compartments: Compartment[],
+) {
+  const zBack = -WARDROBE_DEPTH_MM + BOARD_MM;
+  for (const c of compartments) {
+    // A hanging compartment is recorded at its rail, with no height of its own,
+    // so there is no opening to shade — the garments are the occluder there.
+    const h = c.y1 - c.y0;
+    if (h <= 1 || c.x1 - c.x0 <= 1) continue;
+
+    const tl = projector.project(c.x0, c.y1, zBack);
+    const tr = projector.project(c.x1, c.y1, zBack);
+    const br = projector.project(c.x1, c.y0, zBack);
+    const bl = projector.project(c.x0, c.y0, zBack);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(tl[0], tl[1]);
+    ctx.lineTo(tr[0], tr[1]);
+    ctx.lineTo(br[0], br[1]);
+    ctx.lineTo(bl[0], bl[1]);
+    ctx.closePath();
+    ctx.clip();
+
+    const topMid: [number, number] = [(tl[0] + tr[0]) / 2, (tl[1] + tr[1]) / 2];
+    const botMid: [number, number] = [(bl[0] + br[0]) / 2, (bl[1] + br[1]) / 2];
+    const g = ctx.createLinearGradient(topMid[0], topMid[1], botMid[0], botMid[1]);
+    g.addColorStop(0, 'rgba(0,0,0,0.30)');
+    g.addColorStop(0.45, 'rgba(0,0,0,0.10)');
+    g.addColorStop(1, 'rgba(0,0,0,0.16)');
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.restore();
   }
 }
 
