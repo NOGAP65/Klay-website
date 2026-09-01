@@ -6,5 +6,4 @@
 // it here rather than in a feature.
 // ---------------------------------------------------------------------------
 
-export { SectionHead } from './SectionHead';
 export { SectionBand } from './SectionBand';

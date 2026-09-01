@@ -16,10 +16,15 @@ import { eyebrow, headline, space, supporting, tokens } from '../tokens';
  * grid, which is why it lives here — the two have to be the same object, and
  * they were drifting the moment there were two of them.
  *
- * Deliberately not SectionHead. That one is a headline block for a contained
- * section and sizes itself to sit inside one; this is a full-width band whose
- * job is to caption photographs, so its heading runs bigger and its padding
- * stays well short of a real section's. */
+ * IT SIZES ITSELF AS A BAND, NOT AS A SECTION HEADING. A full-width band whose
+ * job is to caption photographs runs its heading bigger and keeps its padding
+ * well short of a real section's.
+ *
+ * This paragraph used to draw that contrast against `SectionHead`, a sibling
+ * pattern. SectionHead was deleted at Phase 7 — D-11, zero consumers — so the
+ * comparison has nothing left to point at, but the sizing decision it explained
+ * is still the reason this component looks the way it does. Kept, with its
+ * referent named rather than quietly dropped. ADR-018. */
 export function SectionBand({
   label,
   title,
