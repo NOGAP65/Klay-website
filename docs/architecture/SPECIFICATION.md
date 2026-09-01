@@ -1,8 +1,8 @@
 # Klay Interiors — Architecture Specification
 
-**Version:** 1.7
-**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3–v1.7)
-**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2), ADR-020 (§12), ADR-022 (§11), ADR-023 (§11, §12), ADR-024 (§5)
+**Version:** 1.8
+**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3–v1.8)
+**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2), ADR-020 (§12), ADR-022 (§11), ADR-023 (§11, §12), ADR-024 (§5), ADR-025 (§3, §9)
 **Status:** Standing document. This is the constitution, not a work order.
 **Owner:** V
 **Applies to:** NOGAP65/Klay-website-new. Ella adopts it after Klay proves it.
@@ -103,14 +103,11 @@ src/
 │   │   ├── motion.ts
 │   │   ├── layout.ts
 │   │   └── index.ts
-│   ├── primitives/
-│   │   ├── Box.tsx
-│   │   ├── Stack.tsx
-│   │   ├── Text.tsx
-│   │   ├── Heading.tsx
-│   │   ├── Button.tsx
-│   │   ├── Field.tsx
-│   │   └── index.ts
+│   ├── primitives/       ILLUSTRATIVE, NOT A MANIFEST — ADR-025.
+│   │                     This list was read as a checklist and the files were
+│   │                     created because it named them. Five of the six were
+│   │                     never used by anything and were deleted at Phase 7.
+│   │                     Primitives are EXTRACTED from duplication. See §9.
 │   ├── patterns/
 │   │   ├── Section.tsx
 │   │   ├── SectionBand.tsx
@@ -163,6 +160,15 @@ docs/
 ├── compliance/
 └── audit/
 ```
+
+**THE TREE ABOVE IS A DESTINATION, NOT A LIST OF FILES TO CREATE — ADR-025.** It names several
+things that do not exist and must not be built merely because it draws them:
+`features/configurator/`, `visualiser/compare/`, `shared/types/`, `shared/utils/`,
+`config/site.ts`, `config/routes.ts`, and `patterns/Section.tsx` and `patterns/Card.tsx` — the
+same shape as the primitives that were deleted. §4 already says this about folders — *"not every feature
+needs every folder; empty folders are noise"* — and it applies to files just as hard. **A file
+created because a diagram named it has no consumer, and 471 lines of the design system were
+deleted at Phase 7 for exactly that reason.**
 
 `config/env.ts` is the only file that reads `import.meta.env`. Everywhere else imports a
 named, typed constant. One file to audit for what ships to the browser. It validates on module
@@ -399,6 +405,31 @@ scale built on current usage is the current inconsistency written down and bless
 > hierarchy. The measure of a scale is whether it makes a hierarchy legible, not whether it
 > minimises churn.
 - `#000000` and `#1A1A1A` are banned, enforced as a lint error.
+
+### A PRIMITIVE EARNS ITS PLACE BY REMOVING A DUPLICATION THAT ALREADY EXISTS — ADR-025
+
+**Primitives are extracted. They are not created from a target tree.**
+
+Before adding one, name the call sites it will replace and count them. If the answer is
+*"components will use this once it exists"*, that is a proposal, and the place for a proposal is
+a note — not a file.
+
+**A thin primitives folder is a healthy state, not an incomplete one.** It means the codebase's
+repetition has been found and named. An empty one means none has been found yet, which is either
+true or a measurement problem, and neither is fixed by writing components.
+
+**This rule is written from an error in §3.** Its tree listed `Box`, `Stack`, `Text`, `Heading`
+and `Button`; they were created because it listed them, and across every phase of the migration
+**not one of them was ever imported by anything.** They were deleted at Phase 7 with
+`SectionHead` — 471 lines. Every primitive that did get adopted came out of counted duplication
+instead: nine slightly different buttons, ten hand-rolled hover states, one reduced-motion
+snapshot written four times.
+
+**TOKENS AND PRIMITIVES FAIL DIFFERENTLY, and that is why this does not contradict the rest of
+§9.** A token is not optional — the literal is a lint error, so there is no other way to write a
+colour, and adoption follows from having no alternative path. **A component cannot be made
+mandatory that way.** There is no rule saying "use `Box` instead of a `div`", and there should
+not be. So a token can be specified ahead of demand and a component cannot.
 
 Today a developer needing 24px types `24px`. After this the build fails, so they open the
 scale and find `space.md`. The scale becomes load-bearing because there is no alternative path.
