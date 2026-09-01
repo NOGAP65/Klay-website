@@ -37,6 +37,7 @@ import { useEffect, useRef } from 'react';
 import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, wardrobeColour, wardrobeCutoutFor, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM } from './wardrobes';
 import { loadAllContents, type ContentKind, type LoadedContent } from './wardrobeContents';
 import { projectorFromQuad, columnsFor, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
+import { buildSliceMap, sliceMapper, type SliceMap } from './wardrobeSlices';
 import { profilePhoto, relightCutout, applyGrain, makeGrainTile, isWoodFinish } from './wardrobeComposite';
 import type { Point } from './homography';
 
@@ -46,17 +47,9 @@ export interface WardrobeRendererProps {
   corners: [number, number][];
   modelId: string;
   colourName: string;
-  /** HOW DEEP THE OPENING IS, in millimetres.
-   *
-   * A photograph of a wall cannot give this up — four coplanar corners say
-   * nothing about what is behind them — so it is the customer's to tell us, and
-   * it is the difference between a cabinet that fits and one that sticks out
-   * into the room.
-   *
-   * Defaults to the cabinet's own depth, which is the flush case and the one
-   * the trace already implies: draw a box on a wall and what you mean is "the
-   * front of the wardrobe goes here". */
-  recessMm?: number;
+  /** Which width in the layout's range to draw. Defaults to the first, which is
+   * the width the render was made at. */
+  widthMm?: number;
 }
 
 export default function Canvas2DWardrobeRenderer({
@@ -64,7 +57,7 @@ export default function Canvas2DWardrobeRenderer({
   corners,
   modelId,
   colourName,
-  recessMm = WARDROBE_DEPTH_MM,
+  widthMm,
 }: WardrobeRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -113,8 +106,21 @@ export default function Canvas2DWardrobeRenderer({
       // does not, the same geometry draws in board.
       const cut = await wardrobeCutoutFor(model, colourName);
       if (cancelled) return;
+
+      // THE REFERENCE WIDTH IS THE FIRST IN THE LAYOUT'S LIST — the width the
+      // photograph was actually taken at, and therefore the one the artwork's
+      // own proportions describe. Every other width is reached by slicing.
+      const refWidthMm = model.widths[0];
+      const drawWidthMm = widthMm ?? refWidthMm;
+
       const skin: WardrobeSkin | null = cut
-        ? { image: cut.image, x0: cut.carcass.x0, y0: cut.carcass.y0, x1: cut.carcass.x1, y1: cut.carcass.y1 }
+        ? {
+            image: cut.image,
+            x0: cut.carcass.x0, y0: cut.carcass.y0, x1: cut.carcass.x1, y1: cut.carcass.y1,
+            // Sliced rather than stretched, so the fixed modules keep their
+            // real width at every cabinet width. See wardrobeSlices.
+            slices: buildSliceMap(model.id, refWidthMm, cut.carcass),
+          }
         : null;
 
       // The contents, if they have been supplied yet. Absent, the carcass draws
@@ -122,8 +128,8 @@ export default function Canvas2DWardrobeRenderer({
       const contents = await loadAllContents();
       if (cancelled) return;
       drawBuiltIn(
-        ctx, corners, model.id, model.widths[0], colourName,
-        canvas.width, canvas.height, contents, skin, recessMm,
+        ctx, corners, model.id, drawWidthMm, colourName,
+        canvas.width, canvas.height, contents, skin,
       );
     };
 
@@ -135,7 +141,7 @@ export default function Canvas2DWardrobeRenderer({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoUrl, modelId, colourName, recessMm, JSON.stringify(corners)]);
+  }, [photoUrl, modelId, colourName, widthMm, JSON.stringify(corners)]);
 
   return <canvas ref={canvasRef} style={{ width: '100%', height: 'auto', display: 'block' }} />;
 }
@@ -149,6 +155,8 @@ export interface WardrobeSkin {
   image: CanvasImageSource & { width?: number; height?: number; naturalWidth?: number; naturalHeight?: number };
   /** The carcass box within the file, 0..1, from the cut-out manifest. */
   x0: number; y0: number; x1: number; y1: number;
+  /** How the artwork divides into fixed modules and flexible hanging space. */
+  slices: SliceMap;
 }
 
 /** Composites the cut-out over solid board, so nothing behind it shows through.
@@ -191,13 +199,25 @@ function drawFaceSkin(
   projector: Projector,
   widthMm: number,
   xOffset: number,
+  mapU: (xMm: number) => number,
 ) {
   const iw = skin.image.naturalWidth ?? skin.image.width ?? 0;
   const ih = skin.image.naturalHeight ?? skin.image.height ?? 0;
   if (!iw || !ih || widthMm <= 0) return;
 
+  // PIECEWISE ACROSS THE WIDTH, uniform up the height.
+  //
+  // The horizontal mapping used to be one linear remap over the whole cabinet,
+  // which is the naive stretch: a 507mm tower in an 1800 cabinet sampled
+  // 507/1800 of the picture when the tower actually occupies 507/2400 of it, so
+  // the drawers were drawn wider than they are. The mapper walks the slice map
+  // instead, so a fixed module samples exactly its own pixels whatever cabinet
+  // it is in.
+  //
+  // Height needs none of this — every unit in the range is 2016, so there is
+  // nothing to absorb and a straight remap is right.
   const uv = (x: number, y: number): [number, number] => [
-    (skin.x0 + ((x - xOffset) / widthMm) * (skin.x1 - skin.x0)) * iw,
+    mapU(x - xOffset) * iw,
     (skin.y0 + (1 - y / WARDROBE_HEIGHT_MM) * (skin.y1 - skin.y0)) * ih,
   ];
 
@@ -308,8 +328,11 @@ function drawBuiltIn(
   imageH: number,
   contents: Map<ContentKind, LoadedContent>,
   skin: WardrobeSkin | null,
-  recessMm: number,
 ) {
+  // Null when this layout cannot be built at this width — the fixed modules
+  // alone would not fit. The carcass still draws in board rather than the page
+  // showing nothing; see MIN_FLEX_MM.
+  const mapU = skin ? sliceMapper(skin.slices, widthMm) : null;
   // THE TRACE IS THE WALL, NOT THE WARDROBE.
   //
   // It used to be solved as the wardrobe: the model rectangle handed to the
@@ -358,27 +381,13 @@ function drawBuiltIn(
   // the alcove they are putting it in.
   const xOffset = (wallWidthMm - widthMm) / 2;
 
-  // HOW DEEP THE OPENING IS, AND THEREFORE HOW MUCH STICKS OUT.
-  //
-  // buildCarcass leaves the cabinet with its front at z = 0 and its back at
-  // z = -447, which is right for a wardrobe standing against a flat wall: all
-  // of it is proud of the plane that was traced.
-  //
-  // In a recess it is not. A 447 cabinet in a 300 alcove stands 147 out of the
-  // wall; in a 500 alcove it sits inside with room to spare. So the whole model
-  // is pushed back by the recess and the front edge lands where it really lands
-  // — the trace stops being where the cabinet's face is and becomes where the
-  // WALL is, which is what it always was.
-  // Back of the cabinet goes to the back of the alcove, at z = −recess. It
-  // arrives with its back at −447, so the shift is the difference.
-  const zShift = WARDROBE_DEPTH_MM - recessMm;
-  /** How far the front now stands out of the wall. Zero when the alcove is at
-   * least as deep as the cabinet. */
-  const proudMm = Math.max(0, WARDROBE_DEPTH_MM - recessMm);
-  for (const box of boxes) {
-    box.x += xOffset;
-    box.z += zShift;
-  }
+  // DEPTH IS NOT A VARIABLE. Every unit is 500 deep and built into its opening,
+  // so the cabinet's front sits on the traced plane and the rest recedes behind
+  // it — which is exactly where buildCarcass already puts it. There was briefly
+  // a control for the opening's depth, on the reasoning that a shallower alcove
+  // would push the cabinet out into the room; the premise was wrong, and a
+  // slider whose answer is always 500 is a question not worth asking.
+  for (const box of boxes) box.x += xOffset;
   for (const c of compartments) {
     c.x0 += xOffset;
     c.x1 += xOffset;
@@ -480,25 +489,14 @@ function drawBuiltIn(
   faces.sort((a, b) => b.depth - a.depth);
 
   ctx.save();
-  // CLIPPED ONLY WHILE THE CABINET IS INSIDE THE WALL.
+  // NOT CLIPPED TO THE TRACE. The cabinet is built into its opening, so its
+  // front lands on the traced plane and everything else recedes behind it —
+  // but a wall photographed at an angle shows its side return, and that return
+  // projects OUTSIDE the traced quad by design. Clipping to the quad cut it
+  // off, which is what made an angled cabinet look posted through a letterbox.
   //
-  // The clip is what keeps a recessed wardrobe inside its opening: an alcove
-  // has masonry either side of it, and anything behind the wall plane has to be
-  // hidden by that masonry.
-  //
-  // But a cabinet deeper than its alcove STANDS OUT into the room, in front of
-  // the brickwork, and must not be cut off by it. Clipping unconditionally
-  // would hide the one thing this depth work exists to show — a 447 cabinet in
-  // a 300 recess proud by 147 — so the clip is dropped as soon as the cabinet
-  // is proud by more than a token amount.
-  const clipped = proudMm <= 8;
-  if (clipped) {
-    ctx.beginPath();
-    ctx.moveTo(corners[0][0], corners[0][1]);
-    for (let i = 1; i < corners.length; i++) ctx.lineTo(corners[i][0], corners[i][1]);
-    ctx.closePath();
-    ctx.clip();
-  }
+  // The geometry is what keeps it honest instead: nothing is drawn that the
+  // model does not put there.
 
   const toRgb = (c: [number, number, number], t: number) =>
     `rgb(${clamp255(c[0] * t)},${clamp255(c[1] * t)},${clamp255(c[2] * t)})`;
@@ -537,10 +535,10 @@ function drawBuiltIn(
     // modelled shelf and the side return gets the pixels running off its own
     // edge. Nothing is flattened, because nothing is being drawn on a single
     // plane any more.
-    if (litSkin && face.board) {
+    if (litSkin && mapU && face.board) {
       ctx.save();
       ctx.clip();
-      drawFaceSkin(ctx, litSkin, face.model, projector, widthMm, xOffset);
+      drawFaceSkin(ctx, litSkin, face.model, projector, widthMm, xOffset, mapU);
       ctx.restore();
     }
     // A hairline over the fill closes the seams that anti-aliasing opens

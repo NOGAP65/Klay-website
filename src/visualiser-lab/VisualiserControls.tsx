@@ -534,42 +534,42 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               </div>
             </Field>
 
-            {/* HOW DEEP THE OPENING IS — the one thing the photograph cannot
-                tell us, and the one that decides whether this fits.
+            {/* WIDTH — the only cabinet dimension the customer picks.
+                Height is 2016 and depth 500 on every unit in the range, so this
+                is the one choice that changes the shape of the thing.
 
-                Every cabinet in the range is 447 deep. Slide below that and the
-                alcove is shallower than the cabinet, so it stands proud of the
-                wall by the difference and the render shows it doing exactly
-                that. At 0 it is a flat wall and the whole 447 is in the room. */}
-            <Field
-              onDark={onDark}
-              label="Opening depth"
-              caption={
-                store.wardrobeRecessMm >= 447
-                  ? `${store.wardrobeRecessMm} mm · sits flush`
-                  : `${store.wardrobeRecessMm} mm · stands ${447 - store.wardrobeRecessMm} mm proud`
-              }
-            >
-              <input
-                type="range"
-                min={0}
-                max={600}
-                step={10}
-                value={store.wardrobeRecessMm}
-                onChange={e => store.setWardrobeRecessMm(Number(e.target.value))}
-                aria-label="Opening depth in millimetres"
-                style={{ width: '100%', accentColor: onDark ? tokens.onDark : tokens.ink }}
-              />
-              <p
-                style={{
-                  ...typeScale.micro,
-                  margin: `${space.xs}px 0 0`,
-                  color: onDark ? tokens.onDarkMuted : tokens.inkSoft,
-                }}
+                Shown only where the layout is made in more than one width: a
+                control offering a single option is a statement dressed up as a
+                question, and 2.9, 4.9 and 6.0 are built at 1800 and nothing
+                else. */}
+            {wardrobeModelById(store.wardrobeModel).widths.length > 1 && (
+              <Field
+                onDark={onDark}
+                label="Width"
+                caption={`${store.wardrobeWidthMm} mm`}
               >
-                Flat wall at 0. The cabinet is 447 deep.
-              </p>
-            </Field>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+                  {wardrobeModelById(store.wardrobeModel).widths.map(w => (
+                    <Pill
+                      key={w}
+                      onDark={onDark}
+                      label={String(w)}
+                      active={store.wardrobeWidthMm === w}
+                      onClick={() => store.setWardrobeWidthMm(w)}
+                    />
+                  ))}
+                </div>
+                <p
+                  style={{
+                    ...typeScale.micro,
+                    margin: `${space.xs}px 0 0`,
+                    color: onDark ? tokens.onDarkMuted : tokens.inkSoft,
+                  }}
+                >
+                  Drawer and shelf towers stay 507 mm. The hanging bays take up the rest.
+                </p>
+              </Field>
+            )}
           </div>
         </section>
       </div>

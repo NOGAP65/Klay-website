@@ -56,6 +56,17 @@ export type ColumnFill =
  * quietly said the opposite: it made a 3000's drawers two-thirds wider than an
  * 1800's, so a customer comparing two layouts saw two different products. Held
  * in millimetres, a drawer is a drawer. */
+/** AN EXTERNAL DIMENSION, and the distinction is worth being explicit about
+ * because getting it the other way round moves every boundary by 27mm.
+ *
+ * 507 is the module's OUTSIDE width — the carcass complete with its own side
+ * panels, which is how a cabinetmaker quotes a module and how the spec's own
+ * slice map reads it (the fixed segment runs from the cabinet's outer edge to
+ * 507mm in, not from the inside face of the first board).
+ *
+ * So the opening you can actually put a shelf in is 507 less the board either
+ * side of it, and that is what columnsFor resolves. Read as an internal width
+ * instead, the tower comes out 534 external and every slice boundary drifts. */
 export const MODULE_WIDTH_MM = 507;
 
 export interface Column {
@@ -159,21 +170,37 @@ export function columnsFor(id: string, widthMm: number): ResolvedColumn[] {
   const columns = LAYOUT_COLUMNS[id] ?? LAYOUT_COLUMNS['3.0'];
   const inner = Math.max(1, widthMm - 2 * BOARD_MM - (columns.length - 1) * BOARD_MM);
 
-  const fixedCount = columns.filter(c => c.fixed).length;
+  // How much board each column carries: the full outer panel at the ends of the
+  // run, half a divider where it meets a neighbour. Subtracting this from the
+  // module's external 507 gives the opening inside it.
+  const flank = (i: number) =>
+    (i === 0 ? BOARD_MM : BOARD_MM / 2) + (i === columns.length - 1 ? BOARD_MM : BOARD_MM / 2);
+
+  const fixedIdx = columns.map((c, i) => (c.fixed ? i : -1)).filter(i => i >= 0);
   const shareTotal = columns.reduce((s, c) => s + (c.fixed ? 0 : c.share ?? 1), 0);
+  const flexCount = columns.filter(c => !c.fixed).length;
 
-  // What the fixed modules would like, and what is actually available for them.
-  const wanted = fixedCount * MODULE_WIDTH_MM;
-  // Bays must keep something. Below that the modules give ground.
-  const minBay = shareTotal > 0 ? MODULE_WIDTH_MM * 0.33 * (shareTotal / Math.max(1, shareTotal)) * columns.filter(c => !c.fixed).length : 0;
-  const moduleW = wanted > 0 && wanted + minBay > inner
-    ? Math.max(MODULE_WIDTH_MM * 0.33, (inner - minBay) / fixedCount)
-    : MODULE_WIDTH_MM;
+  // The openings the fixed modules want, once their own board is taken off.
+  const wantedInner = fixedIdx.reduce((s, i) => s + (MODULE_WIDTH_MM - flank(i)), 0);
+  // A hanging bay narrower than this is not usable, so below it the modules are
+  // the ones that give ground rather than the bays going to nothing.
+  const minBayInner = flexCount * 300;
 
-  const leftover = Math.max(0, inner - fixedCount * moduleW);
+  const squeeze = wantedInner > 0 && wantedInner + minBayInner > inner
+    ? Math.max(0.33, (inner - minBayInner) / wantedInner)
+    : 1;
 
-  return columns.map(c => ({
-    widthMm: c.fixed ? moduleW : shareTotal > 0 ? (leftover * (c.share ?? 1)) / shareTotal : 0,
+  const fixedInner = new Map<number, number>();
+  for (const i of fixedIdx) fixedInner.set(i, (MODULE_WIDTH_MM - flank(i)) * squeeze);
+  const fixedTotalInner = [...fixedInner.values()].reduce((s, v) => s + v, 0);
+  const leftover = Math.max(0, inner - fixedTotalInner);
+
+  return columns.map((c, i) => ({
+    widthMm: c.fixed
+      ? fixedInner.get(i)!
+      : shareTotal > 0
+        ? (leftover * (c.share ?? 1)) / shareTotal
+        : 0,
     fill: c.fill,
   }));
 }

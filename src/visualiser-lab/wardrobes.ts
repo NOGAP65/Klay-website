@@ -66,7 +66,14 @@ export interface WardrobeModel {
  * width and the internal arrangement change. Held once rather than repeated on
  * ten entries, because a per-model copy is ten places for them to disagree. */
 export const WARDROBE_HEIGHT_MM = 2016;
-export const WARDROBE_DEPTH_MM = 447;
+/** 500mm on every unit in the range, and it is not a variable.
+ *
+ * There was briefly a control for the opening's depth, on the reasoning that a
+ * cabinet deeper than its alcove would stand proud of the wall. The premise was
+ * wrong: these are built to the opening, so the depth is a property of the
+ * product like the height, and a slider for it was a question with one answer.
+ * Held here as a constant for the same reason 2016 is. */
+export const WARDROBE_DEPTH_MM = 500;
 
 export const WARDROBE_MODELS: WardrobeModel[] = [
   { id: '2.9', name: 'Forma 2.9', kind: 'built-in', widths: [1800], legacyFile: 'Forma Wardrobe 2.9 Sticker.png' },

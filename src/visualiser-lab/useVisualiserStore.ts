@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
 import { pricePerBlind, type BlindType } from '../lib/pricing';
+import { wardrobeModelById } from './wardrobes';
 
 type Point = [number, number];
 
@@ -267,17 +268,17 @@ interface VisualiserStore {
   applyActiveToAll: () => void;
   setCurtainType: (type: CurtainType) => void;
   setCurtainOperation: (op: CurtainOperation) => void;
-  /** HOW DEEP THE OPENING IS, in millimetres.
+  /** WHICH WIDTH IN THE LAYOUT'S RANGE, in millimetres.
    *
-   * The one number a photograph cannot supply. Four coplanar corners say where
-   * a wall is and nothing about what is behind it, so whether a 447mm cabinet
-   * disappears into an alcove or stands proud of a flat wall has to be told to
-   * us — and it is the difference between a render that answers "does it fit"
-   * and one that only answers "what colour is it".
+   * The range is made in standard widths and the customer picks one. It is the
+   * only cabinet dimension that varies — height is 2016 and depth is 500 on
+   * every unit — which is what makes the artwork sliceable: the fixed modules
+   * hold their size and the hanging bays absorb the difference.
    *
-   * 447 is flush: the alcove is exactly as deep as the cabinet. */
-  wardrobeRecessMm: number;
-  setWardrobeRecessMm: (mm: number) => void;
+   * Held as a number rather than an index so it survives a layout change onto a
+   * range that offers different widths. */
+  wardrobeWidthMm: number;
+  setWardrobeWidthMm: (mm: number) => void;
   setWardrobeKind: (kind: 'built-in' | 'walk-in') => void;
   setWardrobeModel: (id: string) => void;
   setWardrobeColour: (name: string) => void;
@@ -306,9 +307,9 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   wardrobeKind: 'built-in',
   wardrobeModel: '3.0',
   wardrobeColour: 'Matt Wardrobe White',
-  // Flush by default, because that is what a traced box already means: draw a
-  // rectangle on a wall and you are saying the front of the wardrobe goes here.
-  wardrobeRecessMm: 447,
+  // 3.0's first width, matching wardrobeModel above — and the width its render
+  // was actually taken at, so the visualiser opens on unsliced artwork.
+  wardrobeWidthMm: 2400,
   windows: [following(DEFAULT_WINDOW)],
   activeWindow: 0,
   photoUrl: null,
@@ -393,12 +394,15 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
     set({
       wardrobeKind: kind,
       wardrobeModel: kind === 'walk-in' ? '7.0L' : '3.0',
+      wardrobeWidthMm: wardrobeModelById(kind === 'walk-in' ? '7.0L' : '3.0').widths[0],
     }),
-  setWardrobeModel: (id) => set({ wardrobeModel: id }),
+  // THE WIDTH FOLLOWS THE LAYOUT, because the ranges differ: 2.9 is made at
+  // 1800 only, 4.0 at 1800/2400/3000. Carrying a width across a layout change
+  // would leave the configurator holding a size that layout is not built in.
+  setWardrobeModel: (id) =>
+    set({ wardrobeModel: id, wardrobeWidthMm: wardrobeModelById(id).widths[0] }),
   setWardrobeColour: (name) => set({ wardrobeColour: name }),
-  // Clamped to what a wall can actually be: flat, through to a recess deeper
-  // than the cabinet itself.
-  setWardrobeRecessMm: (mm) => set({ wardrobeRecessMm: Math.max(0, Math.min(700, mm)) }),
+  setWardrobeWidthMm: (mm) => set({ wardrobeWidthMm: mm }),
   setCurtainMount: (mount) => set(writeThrough({ curtainMount: mount })),
   setCurtainSize: (size) => set(writeThrough({ curtainSize: size })),
 
