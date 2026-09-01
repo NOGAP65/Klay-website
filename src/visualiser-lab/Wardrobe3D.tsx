@@ -44,6 +44,7 @@ import { buildCarcass } from './Canvas2DWardrobeRenderer';
 import { WARDROBE_DEPTH_MM, WARDROBE_HEIGHT_MM, wardrobeColour, wardrobeColourHex, wardrobeModelById } from './wardrobes';
 import { cutoutFor } from './wardrobeCutouts';
 import { buildSliceMap, sliceMapper } from './wardrobeSlices';
+import { sampleBoardColour } from './wardrobeComposite';
 import { BOARD_MM } from './wardrobeGeometry';
 import { CONTENT_ASSETS, type ContentKind } from './wardrobeContents';
 
@@ -363,8 +364,19 @@ export default function Wardrobe3D({
       // Board with no photograph on it, for the back panel. Slightly down in
       // value because nothing lights the inside of a cupboard, and at the same
       // tone as the front edge the box reads as having no inside at all.
+      // Painted the artwork's OWN white where there is artwork, so the faces
+      // the projection cannot serve agree with the ones it can. From the swatch
+      // hex instead, the shelf interiors and back panel read grey against a
+      // photographic white front — two cabinets in one.
+      // The flattened texture's own canvas — a CanvasTexture wraps the canvas
+      // it was built from, which is what the sampler needs to read pixels.
+      const flatSource = flat?.image as HTMLCanvasElement | undefined;
+      const sampled = flatSource ? sampleBoardColour(flatSource) : null;
+      const plainBase = sampled
+        ? new THREE.Color(`rgb(${Math.round(sampled[0])},${Math.round(sampled[1])},${Math.round(sampled[2])})`)
+        : base;
       const plainBoardMat = new THREE.MeshStandardMaterial({
-        color: base.clone().multiplyScalar(0.97),
+        color: plainBase.clone().multiplyScalar(0.97),
         roughness: 0.86,
         metalness: 0.0,
       });

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
 import { pricePerBlind, type BlindType } from '../lib/pricing';
+import { wardrobeModelById } from './wardrobes';
 
 type Point = [number, number];
 
@@ -267,10 +268,15 @@ interface VisualiserStore {
   applyActiveToAll: () => void;
   setCurtainType: (type: CurtainType) => void;
   setCurtainOperation: (op: CurtainOperation) => void;
-  // NO WIDTH HERE. It is not a choice the customer makes — height is the only
-  // fixed parameter, so the traced box's height gives the scale and its own
-  // ratio gives the width. Holding a width in the store would be holding a
-  // second, disagreeing answer to a question the trace has already settled.
+  /** WHICH WIDTH THE CHOSEN LAYOUT IS BUILT IN, millimetres.
+   *
+   * A property of the product, not of the room. Height is the only fixed
+   * parameter — 2016 on every unit — so the trace supplies the scale and the
+   * position, and this width lands as a ratio against that height. Most layouts
+   * are made in one width and never ask; those made in several offer the
+   * choice. */
+  wardrobeWidthMm: number;
+  setWardrobeWidthMm: (mm: number) => void;
   setWardrobeKind: (kind: 'built-in' | 'walk-in') => void;
   setWardrobeModel: (id: string) => void;
   setWardrobeColour: (name: string) => void;
@@ -299,6 +305,8 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   wardrobeKind: 'built-in',
   wardrobeModel: '3.0',
   wardrobeColour: 'Matt Wardrobe White',
+  // 3.0's first width, matching wardrobeModel above.
+  wardrobeWidthMm: 2400,
   windows: [following(DEFAULT_WINDOW)],
   activeWindow: 0,
   photoUrl: null,
@@ -384,9 +392,13 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
       wardrobeKind: kind,
       wardrobeModel: kind === 'walk-in' ? '7.0L' : '3.0',
     }),
+  // The width follows the layout, because the ranges differ — 2.9 is built at
+  // one width, 4.0 at three. Carrying a width across a layout change would
+  // leave the configurator holding a size that layout is not made in.
   setWardrobeModel: (id) =>
-    set({ wardrobeModel: id }),
+    set({ wardrobeModel: id, wardrobeWidthMm: wardrobeModelById(id).widths[0] }),
   setWardrobeColour: (name) => set({ wardrobeColour: name }),
+  setWardrobeWidthMm: (mm) => set({ wardrobeWidthMm: mm }),
   setCurtainMount: (mount) => set(writeThrough({ curtainMount: mount })),
   setCurtainSize: (size) => set(writeThrough({ curtainSize: size })),
 

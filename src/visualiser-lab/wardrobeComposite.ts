@@ -301,6 +301,69 @@ export function drawSeatingShadow(ctx: CanvasRenderingContext2D, corners: Point[
   ctx.restore();
 }
 
+/** THE BOARD'S OWN COLOUR, read off the artwork.
+ *
+ * WHY THIS IS NOT JUST THE SWATCH HEX. On a skinned cabinet two kinds of
+ * surface sit side by side: faces carrying the photograph, and faces the
+ * projection cannot serve — the shelf interiors, the back panel, the top and
+ * side returns — which fall back to modelled board. If the modelled board is
+ * painted from the nominal hex and the photograph is a slightly different
+ * white, the cabinet comes out in two tones, and the eye reads the mismatch
+ * immediately: the interiors looked grey against a white front.
+ *
+ * Sampling the render settles it. Whatever white the photograph is, the
+ * modelled faces are painted the same white, so the two halves agree by
+ * construction rather than by a hex that was typed in to match.
+ *
+ * The brightest large neutral region is the board: melamine is the lightest
+ * thing in a wardrobe shot after the highlights, and the staged clothing is
+ * either coloured or clearly darker.
+ */
+export function sampleBoardColour(
+  image: CanvasImageSource & { width?: number; height?: number; naturalWidth?: number; naturalHeight?: number },
+): [number, number, number] | null {
+  const w = image.naturalWidth ?? image.width ?? 0;
+  const h = image.naturalHeight ?? image.height ?? 0;
+  if (!w || !h) return null;
+
+  const S = 160; // enough to be representative, small enough to be free
+  const canvas = document.createElement('canvas');
+  canvas.width = S;
+  canvas.height = S;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.drawImage(image, 0, 0, S, S);
+  const px = ctx.getImageData(0, 0, S, S).data;
+
+  // The 88th percentile of the neutral, opaque pixels: high enough to land on
+  // board rather than on shadowed interior, short of the specular highlights
+  // along a front edge, which are not the colour of anything.
+  const lums: number[] = [];
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] < 200) continue;
+    const mx = Math.max(px[i], px[i + 1], px[i + 2]);
+    const mn = Math.min(px[i], px[i + 1], px[i + 2]);
+    if (mx - mn > 30) continue;
+    lums.push(luma(px[i], px[i + 1], px[i + 2]));
+  }
+  if (lums.length < 40) return null;
+  lums.sort((a, b) => a - b);
+  const lo = lums[Math.floor(lums.length * 0.80)];
+  const hi = lums[Math.floor(lums.length * 0.96)];
+
+  let r = 0, g = 0, b = 0, n = 0;
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] < 200) continue;
+    const mx = Math.max(px[i], px[i + 1], px[i + 2]);
+    const mn = Math.min(px[i], px[i + 1], px[i + 2]);
+    if (mx - mn > 30) continue;
+    const l = luma(px[i], px[i + 1], px[i + 2]);
+    if (l < lo || l > hi) continue;
+    r += px[i]; g += px[i + 1]; b += px[i + 2]; n++;
+  }
+  return n ? [r / n, g / n, b / n] : null;
+}
+
 /** WOODGRAIN, for the three finishes with no photograph.
  *
  * The supplied renders are all Matt Wardrobe White, so Natural Oak, Antico Oak
