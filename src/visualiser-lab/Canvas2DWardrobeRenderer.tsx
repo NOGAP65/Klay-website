@@ -262,8 +262,11 @@ function drawCutout(
 
 // --- Built-in: the modelled carcass ----------------------------------------
 
-/** One axis-aligned box in model millimetres, plus how its faces are shaded. */
-interface Box {
+/** One axis-aligned box in model millimetres, plus how its faces are shaded.
+ *
+ * EXPORTED because the 3D scene builds from the same list. One description of
+ * what a Forma actually is, two things drawing it. */
+export interface Box {
   x: number; y: number; z: number;
   w: number; h: number; d: number;
   /** Multiplies the board colour. Lets the back panel and the drawer fronts sit
@@ -498,7 +501,7 @@ function drawBuiltIn(
  * those receding surfaces are what tell the eye how deep it is. */
 /** A compartment's opening, in model millimetres â€” the rectangle you would
  * reach through. What goes IN it comes from the photograph. */
-interface Compartment {
+export interface Compartment {
   x0: number; y0: number; x1: number; y1: number;
   /** What belongs in it. The layout knows this â€” a bay under a rail takes
    * hanging clothes, a shelf opening takes a stack or a box â€” so the renderer
@@ -506,7 +509,7 @@ interface Compartment {
   role: 'shelf' | 'hang-long' | 'hang-short' | 'floor';
 }
 
-function buildCarcass(
+export function buildCarcass(
   layoutId: string,
   widthMm: number,
   skinned: boolean,
@@ -1103,5 +1106,6 @@ function drawWalkIn(
 
   ctx.restore();
 }
+
 
 
