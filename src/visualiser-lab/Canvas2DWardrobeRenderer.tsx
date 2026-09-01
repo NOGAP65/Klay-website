@@ -287,6 +287,9 @@ export interface Box {
   tone?: number;
   /** Overrides the board colour outright — the hanging rails. */
   colour?: [number, number, number];
+  /** Brushed metal: shaded along its length rather than filled flat, because a
+   * flat grey rectangle reads as painted plastic. */
+  metal?: boolean;
   /** STRUCTURAL BOARD — a divider, a shelf, the back panel. Never skinned.
    *
    * The projection maps a point's own (x, y) into the photograph, which is
@@ -333,7 +336,7 @@ export interface Box {
  * per-face tone and the back panel's own: at 0.34 a white wardrobe came out
  * mid-grey, which is a cupboard lit by nothing at all. A cupboard in a bright
  * room is still mostly white. */
-const INTERIOR_FALLOFF = 0.16;
+const INTERIOR_FALLOFF = 0.23;
 
 const FACE_TONE = {
   front: 1.0,
@@ -473,6 +476,9 @@ function drawBuiltIn(
      * onto: a wood texture tiles in the face own coordinates, so it goes on the
      * side returns and shelf tops too. */
     timber: boolean;
+    /** True on the handles, rails and hanger hooks — the brushed metal, which
+     * is shaded along its length rather than filled flat. */
+    metal: boolean;
     /** True for the faces pointing at the room — the only ones an elevation
      * has anything to say about. */
     skinnable: boolean;
@@ -511,17 +517,28 @@ function drawBuiltIn(
         if (Z < fz) { fz = Z; farPt = pts[k]; }
       });
 
-      // TONED DOWN WHERE THERE IS A PHOTOGRAPH. These values were set for a
-      // carcass drawn entirely in flat fills, where the shading between faces
-      // is the only thing saying the box has an inside. Beside a projected
-      // photograph — which carries its own lighting already — the same values
-      // are far too strong, and the unskinned faces read as grey panels let
-      // into a white cabinet. Pulled most of the way back toward flat, they
-      // separate the faces without becoming a second, disagreeing light.
-      const toneStrength = litSkin ? 0.34 : 1;
+      // EASED WHERE THERE IS A PHOTOGRAPH, but not flattened.
+      //
+      // These values were set for a carcass drawn entirely in flat fills, and
+      // beside a projected photograph they were too strong — the unskinned
+      // faces read as grey panels let into a white cabinet. The first fix took
+      // them almost to flat, at 0.34, and that traded one fault for a worse
+      // one: with every face the same brightness nothing said the back panel
+      // was 500mm behind the drawer fronts, so the cabinet lost its depth
+      // entirely and the fronts looked translucent.
+      //
+      // The grey panels were never really the tone's fault anyway — they were
+      // the swatch hex disagreeing with the photograph's white, which
+      // sampleBoardColour now settles. So the shading can do its job again.
+      const toneStrength = litSkin ? 0.62 : 1;
       const flat = (1 - (1 - FACE_TONE[name]) * toneStrength) * (box.tone ?? 1);
       const shade = (z: number) =>
-        flat * (1 - Math.max(0, Math.min(1, -z / WARDROBE_DEPTH_MM)) * INTERIOR_FALLOFF * toneStrength);
+        // DEPTH IS NOT EASED WITH THE REST. How far back a surface is, is the
+        // one cue that has to survive: it is what says the hanging bay's board
+        // is half a metre behind the drawer fronts standing at the opening.
+        // Easing this along with the face tones is what made the fronts look
+        // see-through.
+        flat * (1 - Math.max(0, Math.min(1, -z / WARDROBE_DEPTH_MM)) * INTERIOR_FALLOFF);
       faces.push({
         pts,
         depth: depthSum / 4,
@@ -553,6 +570,7 @@ function drawBuiltIn(
           name !== 'top' && name !== 'bottom' && name !== 'left' && name !== 'right',
         grainUpright: box.h >= box.w,
         timber: !box.colour,
+        metal: !!box.metal,
       });
     }
   }
@@ -587,6 +605,41 @@ function drawBuiltIn(
       g.addColorStop(0, nearFill);
       g.addColorStop(1, toRgb(face.rgb, face.toneFar));
       paint = g;
+    }
+
+    // METAL IS NOT A FLAT FILL, and the handles and rails were being drawn as
+    // one — a grey rectangle, which reads as painted plastic.
+    //
+    // What makes brushed aluminium look like metal is that it is ANISOTROPIC:
+    // it gathers light into a band along its length and falls away sharply
+    // either side, so a round bar has a bright line up its middle and dark
+    // edges. That gradient across the short axis is most of the effect, and it
+    // costs one extra gradient.
+    //
+    // A photograph of a handle would not do this job: it would have to stretch
+    // to whatever length the drawer is, which is the same fault the board
+    // slicing exists to avoid, and it would carry its own lighting into a
+    // cabinet lit from somewhere else.
+    if (face.metal) {
+      const [p0, p1, p2, p3] = face.pts;
+      // Across the shorter pair of edges — the way the highlight runs.
+      const d01 = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
+      const d12 = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+      const a = d01 < d12
+        ? [(p0[0] + p3[0]) / 2, (p0[1] + p3[1]) / 2]
+        : [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
+      const b = d01 < d12
+        ? [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]
+        : [(p3[0] + p2[0]) / 2, (p3[1] + p2[1]) / 2];
+      if (Math.hypot(b[0] - a[0], b[1] - a[1]) > 1) {
+        const g = ctx.createLinearGradient(a[0], a[1], b[0], b[1]);
+        g.addColorStop(0, toRgb(face.rgb, face.toneNear * 0.62));
+        g.addColorStop(0.34, toRgb(face.rgb, face.toneNear * 1.18));
+        g.addColorStop(0.52, toRgb(face.rgb, face.toneNear * 1.32));
+        g.addColorStop(0.72, toRgb(face.rgb, face.toneNear * 0.94));
+        g.addColorStop(1, toRgb(face.rgb, face.toneNear * 0.58));
+        paint = g;
+      }
     }
     // Board underneath, always — it fills the alpha the render has where the
     // opening used to be, and it is the whole surface on the three timber
@@ -712,7 +765,7 @@ export interface Compartment {
   /** What belongs in it. The layout knows this — a bay under a rail takes
    * hanging clothes, a shelf opening takes a stack or a box — so the renderer
    * does not have to guess from the geometry. */
-  role: 'shelf' | 'hang-long' | 'hang-short' | 'floor';
+  role: 'shelf' | 'hang-long' | 'hang-short' | 'floor' | 'bay';
 }
 
 export function buildCarcass(
@@ -752,6 +805,7 @@ export function buildCarcass(
       x: cx, y, z: D * 0.42,
       w: cw, h: 26, d: 26,
       colour: [185, 188, 192],
+      metal: true,
     });
 
   /** WHAT HANGS ON THE RAIL, and it is there for a reason rather than for
@@ -805,6 +859,7 @@ export function buildCarcass(
         x: gx + gw * 0.46, y: railY - 4, z: D * 0.40,
         w: gw * 0.06, h: 62, d: 14,
         colour: HANDLE,
+        metal: true,
       });
     }
   };
@@ -842,6 +897,12 @@ export function buildCarcass(
       rail(x, cw, railY);
       // The bay under the rail, and the shelf over it.
       compartments.push({ x0: x, x1: x + cw, y0: railY, y1: railY, role: 'hang-long' });
+      // THE OPEN BAY ITSELF, recorded so it can be shaded. A hanging
+      // compartment is filed at its RAIL with no height, because that is all
+      // the contents need — but it leaves the biggest opening in the cabinet
+      // with nothing describing it, so the ambient pass skipped it and the bay
+      // came out as flat lit board.
+      compartments.push({ x0: x, x1: x + cw, y0, y1: railY, role: 'bay' });
       compartments.push({ x0: x, x1: x + cw, y0: shelfY + BOARD_MM, y1: y0 + innerH, role: 'shelf' });
     } else if (fill.kind === 'hang2') {
       const upper = y0 + innerH * 0.86;
@@ -857,6 +918,9 @@ export function buildCarcass(
       // from it, so its own height is the asset's business, not the opening's.
       compartments.push({ x0: x, x1: x + cw, y0: mid - RAIL_DROP_MM, y1: mid - RAIL_DROP_MM, role: 'hang-short' });
       compartments.push({ x0: x, x1: x + cw, y0: upper - RAIL_DROP_MM, y1: upper - RAIL_DROP_MM, role: 'hang-short' });
+      // The two open bays under those rails — see the note on 'bay' above.
+      compartments.push({ x0: x, x1: x + cw, y0, y1: mid - RAIL_DROP_MM, role: 'bay' });
+      compartments.push({ x0: x, x1: x + cw, y0: mid + BOARD_MM, y1: upper - RAIL_DROP_MM, role: 'bay' });
       compartments.push({ x0: x, x1: x + cw, y0: upper + BOARD_MM, y1: y0 + innerH, role: 'shelf' });
     } else {
       // A TOWER, not a rail over drawers. The bank fills the lower half and
@@ -883,6 +947,7 @@ export function buildCarcass(
           x: x + (cw - hw) / 2, y: fy + (dh - 8) * 0.72, z: D,
           w: hw, h: 22, d: 26,
           colour: HANDLE,
+          metal: true,
         });
       }
       shelf(x, cw, y0 + bankH);
@@ -944,7 +1009,11 @@ function drawContents(
   compartments: Compartment[],
   contents: Map<ContentKind, LoadedContent>,
 ) {
-  const forRole = (role: Compartment['role'], index: number): ContentKind => {
+  const forRole = (role: Compartment['role'], index: number): ContentKind | null => {
+    // 'bay' exists only so the open hanging space can be shaded. Its clothes
+    // are placed from the RAIL compartment that sits inside it, so putting
+    // anything here would hang a second set in the same opening.
+    if (role === 'bay') return null;
     if (role === 'hang-long') return 'hanging-long';
     if (role === 'hang-short') return 'hanging-short';
     if (role === 'floor') return 'shoes';
@@ -962,7 +1031,9 @@ function drawContents(
   const placed: Placed[] = [];
 
   compartments.forEach((c, i) => {
-    const item = contents.get(forRole(c.role, i));
+    const kind = forRole(c.role, i);
+    if (!kind) return;
+    const item = contents.get(kind);
     if (!item) return;
 
     const z = -WARDROBE_DEPTH_MM * item.asset.depth;
