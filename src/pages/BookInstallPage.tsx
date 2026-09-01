@@ -4,9 +4,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { radius, tokens, eyebrow, headline, motion, layout } from '@/ds';
 import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
 
-import { Footer } from '../components/Footer';
 import { FormField, DANGER } from '../components/FormField';
-import { Nav } from '../components/Nav';
 import { createCheckoutSession, requestQuote, type BookingPayload, type FieldErrors } from '../lib/api';
 import {
   MAX_QUANTITY,
@@ -168,7 +166,6 @@ export default function BookInstallPage() {
   if (quoteSent) {
     return (
       <>
-        <Nav onLight />
         <main
           style={{
             background: tokens.paper,
@@ -208,14 +205,12 @@ export default function BookInstallPage() {
             </Link>
           </div>
         </main>
-        <Footer />
       </>
     );
   }
 
   return (
     <>
-      <Nav onLight />
 
       <main style={{ background: tokens.paper, paddingTop: 140, paddingBottom: 120 }}>
         <div style={{ maxWidth: layout.containerMax, margin: '0 auto', padding: '0 5vw' }}>
@@ -542,7 +537,6 @@ export default function BookInstallPage() {
         </div>
       </main>
 
-      <Footer />
     </>
   );
 }

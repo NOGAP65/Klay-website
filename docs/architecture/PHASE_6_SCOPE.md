@@ -177,6 +177,7 @@ Both allowances are in the config now, adjacent and labelled. The temporary one 
 | **P4-4 cart** | 10 | 11 | 27 | **20** | 7 |
 | **P4-5 shared pass** | 11 | 11 | 26 | **20** | **6** |
 | **P4-6 home** | 13 | 10 | 34 | **24** | **10** |
+| **Phase 5 app layer** | 10 | 8 | 20 | **10** | **10** |
 
 **The P4-3 row recorded 8 distinct targets. There were 12.** The targets table below listed
 eight rows summing to 22 of the 26 edges; `src/store/cartStore.ts` and the three
@@ -191,8 +192,8 @@ twenty-six permanent, so a countdown to zero on the total would never terminate.
 
 | Target | Edges | Cleared by |
 |---|---:|---|
-| `src/components/Nav.tsx` | 5 | **Phase 5** — `app/layouts/`, decision D |
-| `src/components/Footer.tsx` | 5 | **Phase 5** — `app/layouts/`, decision D |
+| ~~`src/components/Nav.tsx`~~ | ~~5~~ | **CLEARED at Phase 5.** Moved to `app/layouts/`; pages no longer render chrome. A re-export shim stays at the old path for two E-08 importers — E-11 |
+| ~~`src/components/Footer.tsx`~~ | ~~5~~ | **CLEARED at Phase 5.** Moved to `app/layouts/` cleanly — no E-08 consumer |
 | `src/data/products.ts` | 4 → **3** | **PARTIALLY CLEARED at P4-5, and the rest is PERMANENT.** Decision H was executed as far as it goes: everything with zero visualiser consumers — the four roller SKUs, the ranges, the counts — moved to `features/catalogue/products.ts`. What stayed is the four symbols six out-of-scope files import: `RYNAMIC_COLOURS`, `CURTAIN_COLOURS`, `HARDWARE_HEX`, `HARDWARE_OPTIONS`. Those three edges do not clear. |
 | `src/lib/api.ts` | 2 | **Phase 6** — moves with booking |
 | `src/store.ts` | 2 | **Phase 6** — item 4, the useKlayStore shim |

@@ -610,6 +610,7 @@ invokes it.
 | E-08 | `src/visualiser/`, `src/visualiser-lab/`, `VisualiserPage.tsx`, `VisualizerLabPage.tsx` are outside the migration and outside every rule in this document | ADR-020. Under active development; the slot for them receded at every phase. They are not moved, not renamed, not re-aliased, not lint-fixed | When that work is scheduled on its own, with its own plan |
 | E-09 | A permanent re-export shim at `src/lib/pricing.ts` after the module moves to `shared-core/pricing/` | ADR-020. Four E-08 files import it by relative path and may not be edited. One table, two paths — a re-export cannot diverge from what it re-exports | With E-08 |
 | E-10 | `src/data/products.ts` and `src/theme.ts` stay where they are | ADR-020. Imported by E-08 files. `products.ts` additionally cannot be split by consumer, which was decision H | With E-08 |
+| E-11 | A permanent re-export shim at `src/components/Nav.tsx` after `Nav` moves to `app/layouts/` | Phase 5, decision D. `VisualiserPage.tsx` and `VisualizerLabPage.tsx` import it by relative path and are E-08 — an import rewrite is still an edit. One component, two paths; a re-export cannot diverge from what it re-exports | With E-08 |
 
 **Adding to this table requires an ADR. An exception without an ADR is a violation.**
 

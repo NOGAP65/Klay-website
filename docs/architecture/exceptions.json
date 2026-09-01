@@ -6,26 +6,34 @@
     {
       "id": "E-01",
       "summary": "homography.ts exempt from size and complexity limits",
-      "paths": ["src/visualiser/homography.ts"],
+      "paths": [
+        "src/visualiser/homography.ts"
+      ],
       "excludesFromScope": false,
       "note": "Covered by E-08 for scope purposes; listed for completeness."
     },
     {
       "id": "E-02",
       "summary": "Canvas2DBlindRenderer.tsx exempt from size limits",
-      "paths": ["src/visualiser/Canvas2DBlindRenderer.tsx"],
+      "paths": [
+        "src/visualiser/Canvas2DBlindRenderer.tsx"
+      ],
       "excludesFromScope": false
     },
     {
       "id": "E-03",
       "summary": "CornerPinOverlay.tsx exempt from size limits",
-      "paths": ["src/visualiser/CornerPinOverlay.tsx"],
+      "paths": [
+        "src/visualiser/CornerPinOverlay.tsx"
+      ],
       "excludesFromScope": false
     },
     {
       "id": "E-04",
       "summary": "usePhotoUpload.ts exempt from size limits",
-      "paths": ["src/visualiser/usePhotoUpload.ts"],
+      "paths": [
+        "src/visualiser/usePhotoUpload.ts"
+      ],
       "excludesFromScope": false
     },
     {
@@ -37,7 +45,9 @@
     {
       "id": "E-06",
       "summary": "design-system/tokens/* exempt from the no-literal-values rule",
-      "paths": ["src/design-system/tokens/**"],
+      "paths": [
+        "src/design-system/tokens/**"
+      ],
       "excludesFromScope": false,
       "note": "A rule-level exemption, not a scope exclusion. These files are in scope for every other rule."
     },
@@ -62,7 +72,9 @@
     {
       "id": "E-09",
       "summary": "Permanent re-export shim at src/lib/pricing.ts after the module moves to shared-core",
-      "paths": ["src/lib/pricing.ts"],
+      "paths": [
+        "src/lib/pricing.ts"
+      ],
       "excludesFromScope": true,
       "retiresWhen": "With E-08 — the four E-08 files that import it by relative path can be edited.",
       "note": "Not yet a shim. The path is excluded from the moment the exception is granted, so the count does not jump when Phase 6 creates it."
@@ -70,9 +82,21 @@
     {
       "id": "E-10",
       "summary": "src/data/products.ts and src/theme.ts stay where they are",
-      "paths": ["src/data/products.ts", "src/theme.ts"],
+      "paths": [
+        "src/data/products.ts",
+        "src/theme.ts"
+      ],
       "excludesFromScope": true,
       "retiresWhen": "With E-08."
+    },
+    {
+      "id": "E-11",
+      "summary": "Permanent re-export shim at src/components/Nav.tsx after Nav moves to app/layouts/",
+      "paths": [
+        "src/components/Nav.tsx"
+      ],
+      "excludesFromScope": true,
+      "retiresWhen": "With E-08 — VisualiserPage.tsx and VisualizerLabPage.tsx import it by relative path and may not be edited."
     }
   ]
 }

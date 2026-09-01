@@ -5,8 +5,6 @@ import { tokens, eyebrow, headline, motion, space, supporting, type as typeScale
 import { DANGER, Field } from '@/ds';
 import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
 
-import { Footer } from '../../../components/Footer';
-import { Nav } from '../../../components/Nav';
 import { type FieldErrors } from '../../../lib/api';
 import { sendEnquiry } from '../api/sendEnquiry';
 
@@ -105,9 +103,6 @@ export default function ContactPage() {
 
   return (
     <>
-      {/* onLight: the hero is warm white now, and the nav's links are warmWhite
-          while transparent — without this they are invisible above the fold. */}
-      <Nav onLight />
 
       {/* Warm white throughout. Contact is a service moment, not a sales one:
           someone here has already decided to talk to you, and a dark hero
@@ -248,7 +243,6 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <Footer />
     </>
   );
 }

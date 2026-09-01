@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom';
 
 import { radius, tokens, eyebrow, headline, motion, space, supporting, type as typeScale } from '@/ds';
 
-import { Footer } from '../../../components/Footer';
-import { Nav } from '../../../components/Nav';
 import { STEPS, type Step } from '../constants';
 
 // GOLD / DARK / PARCHMENT used to be declared here as local literals. DARK was
@@ -138,7 +136,6 @@ export default function HowItWorksPage() {
 
   return (
     <>
-      <Nav />
 
       {/* Hero — charcoal. The one dark moment on the page: a confident opening
           statement, and the contrast that makes the first step feel like the
@@ -305,7 +302,6 @@ export default function HowItWorksPage() {
         </Link>
       </section>
 
-      <Footer />
     </>
   );
 }

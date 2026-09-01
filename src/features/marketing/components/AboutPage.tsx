@@ -4,9 +4,6 @@ import { Link } from 'react-router-dom';
 import { radius, tokens, eyebrow, headline, motion, space, supporting, type as typeScale } from '@/ds';
 import { COLOUR_COUNT, PRODUCT_COUNT } from '@/features/catalogue';
 
-import { Footer } from '../../../components/Footer';
-import { Nav } from '../../../components/Nav';
-
 // DARK ('#0f0d09', a near-black outside the palette) and PARCHMENT (a second
 // copy of a token whose value had since diverged) both used to live here.
 // Everything reads from theme.ts now.
@@ -34,7 +31,6 @@ export default function AboutPage() {
 
   return (
     <>
-      <Nav />
 
       {/* Hero — charcoal behind the photograph rather than a near-black wash.
           The eyebrow was missing entirely, so the page opened on an italic
@@ -172,7 +168,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <Footer />
     </>
   );
 }

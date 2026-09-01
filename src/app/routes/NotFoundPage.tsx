@@ -3,9 +3,6 @@ import { Link } from 'react-router-dom';
 
 import { tokens, motion, supporting } from '@/ds';
 
-import { Footer } from '../components/Footer';
-import { Nav } from '../components/Nav';
-
 // DARK ('#0f0d09') removed — this page is routed at path="*", so the one
 // near-black left on the site was the page a lost visitor lands on.
 
@@ -14,7 +11,6 @@ export default function NotFoundPage() {
 
   return (
     <>
-      <Nav />
 
       <section
         style={{
@@ -62,7 +58,6 @@ export default function NotFoundPage() {
         </Link>
       </section>
 
-      <Footer />
     </>
   );
 }

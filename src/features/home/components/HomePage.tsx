@@ -100,8 +100,6 @@ import { useEffect } from 'react';
 
 import { tokens } from '@/ds';
 
-import { Footer } from '../../../components/Footer';
-import { Nav } from '../../../components/Nav';
 import { useKlayStore } from '../../../store';
 
 import { AboutPanel } from './AboutPanel';
@@ -111,7 +109,6 @@ import { RecommendationBanner } from './RecommendationBanner';
 import { SocialProof } from './SocialProof';
 import { StepsBar } from './StepsBar';
 import { Testimonials } from './Testimonials';
-import { TrustTicker, BAR_HEIGHT } from './TrustTicker';
 import { VisualiserShowcase } from './VisualiserShowcase';
 
 export default function HomePage() {
@@ -137,16 +134,6 @@ export default function HomePage() {
 
   return (
     <>
-      {/* 1 — Trust credentials, moving. In flow rather than fixed, so it scrolls
-          away and the nav takes the top edge for the rest of the page. */}
-      <TrustTicker />
-
-      {/* 2 — Nav. Solid charcoal at every scroll position, like every other page
-          on the site — it used to start transparent over the hero and fill in on
-          scroll, which meant the logo and the links sat on whatever frame of the
-          video happened to be playing behind them. Still offset by the ticker's
-          height until that has scrolled away. */}
-      <Nav stickBelow={BAR_HEIGHT} />
 
       <main style={{ background: tokens.paper }}>
         {/* 3 — The promise, full bleed under the transparent nav. */}
@@ -208,8 +195,6 @@ export default function HomePage() {
             button but other people saying it went fine. */}
         <Testimonials />
 
-        {/* 11 — Footer. */}
-        <Footer />
       </main>
     </>
   );

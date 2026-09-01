@@ -35,8 +35,6 @@ import { radius, space, tokens, type as typeScale } from '@/ds';
 import { useIsMobile,
   useMediaQuery } from '@/shared';
 
-import { Footer } from '../../../components/Footer';
-import { Nav } from '../../../components/Nav';
 import { useKlayStore } from '../../../store';
 import { type CatalogueItem } from '../constants';
 import { EMPTY_FACETS } from '../lib/facets';
@@ -50,8 +48,6 @@ import { SORT_OPTIONS, sortProducts, type SortOption } from '../lib/sortProducts
 
 import { FilterRail } from './FilterRail';
 import { ProductCard } from './ProductCard';
-
-
 
 /** Wider than the 1240 the rest of the site uses, because the rail eats 200 of
  * it. At 1240 the grid would drop to three cards on a 1600 screen that has the
@@ -115,7 +111,6 @@ export default function ProductsPage() {
 
   return (
     <>
-      <Nav />
 
       <main style={{ background: tokens.paper, minHeight: '100vh' }}>
         {/* The banner — the same photographic band the blind listing pages open
@@ -632,7 +627,6 @@ export default function ProductsPage() {
         </>
       )}
 
-      <Footer />
     </>
   );
 }

@@ -4,8 +4,6 @@ import { Link } from 'react-router-dom';
 import { tokens, eyebrow, motion, radius, space, type as typeScale } from '@/ds';
 import { useIsMobile } from '@/shared';
 
-import { Footer } from '../../../components/Footer';
-import { Nav } from '../../../components/Nav';
 import { useCartStore } from '../store/cartStore';
 
 export default function CartPage() {
@@ -20,7 +18,6 @@ export default function CartPage() {
 
   return (
     <>
-      <Nav onLight />
       <div style={{ background: tokens.paper, minHeight: '100vh', paddingTop: isMobile ? 80 : 100 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '24px' : '40px 60px' }}>
 
@@ -260,7 +257,6 @@ export default function CartPage() {
           )}
         </div>
 
-        <Footer />
       </div>
     </>
   );

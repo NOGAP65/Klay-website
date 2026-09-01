@@ -3,8 +3,6 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 import { tokens, headline, eyebrow } from '@/ds';
 
-import { Footer } from '../components/Footer';
-import { Nav } from '../components/Nav';
 import { formatAUD } from '../lib/pricing';
 
 // ---------------------------------------------------------------------------
@@ -120,7 +118,6 @@ export default function BookingConfirmedPage() {
 
   return (
     <>
-      <Nav onLight />
       <main
         style={{
           background: tokens.paper,
@@ -159,7 +156,6 @@ export default function BookingConfirmedPage() {
           </div>
         </div>
       </main>
-      <Footer />
     </>
   );
 }

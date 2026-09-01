@@ -8,8 +8,6 @@ import { tokens, eyebrow, motion,
 import { useCartStore } from '@/features/cart';
 import { useIsMobile } from '@/shared';
 
-import { Footer } from '../../../components/Footer';
-import { Nav } from '../../../components/Nav';
 import { bookingLink } from '../../../lib/bookingLink';
 import { useKlayStore } from '../../../store';
 import KlayConfigurator from '../../../visualiser/KlayConfigurator';
@@ -129,7 +127,6 @@ const SHARED_FAQS = [
   { q: 'How long does installation take?', a: 'A typical single window takes 15–20 minutes. Our technician will measure, then return to install once your blind is manufactured.' },
   { q: 'What warranty do I get?', a: 'Every blind carries a 5 year warranty covering the fabric, the hardware and the motor.' },
 ];
-
 
 // --- UI Components ---
 
@@ -270,7 +267,6 @@ export default function ProductDetailPage() {
 
   return (
     <>
-      <Nav onLight />
       <div style={{ background: tokens.paper, paddingTop: isMobile ? 60 : 72 }}>
 
         {/* Hero section */}
@@ -451,8 +447,6 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </section>
-
-        <Footer />
 
         {/* Spacer for fixed bar */}
         <div style={{ height: 56, background: tokens.ink }} />

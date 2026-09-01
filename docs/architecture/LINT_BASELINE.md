@@ -818,3 +818,83 @@ unreviewable.
 variable returned by `useHover` — a boolean without an `is` prefix, in eleven files. It is one
 rename in one hook plus its call sites, it is not a move-phase action (ADR-018), and it is now
 the single largest cluster of that rule left in the codebase.
+
+---
+
+# MOVEMENT — PHASE 5, THE APP LAYER
+
+| Measure | P4-6 | Phase 5 | Δ |
+|---|---:|---:|---:|
+| ALL | 673 | 648 | −25 |
+| **IN-SCOPE** (ADR-023) | 334 | **307** | **−27** |
+| **Runtime import cycles** | 4 | **0** | **−4** |
+| `feature → legacy` edges | 34 | 20 | −14 |
+| — of which clearable | 24 | **10** | **−14** |
+| — of which permanent | 10 | 10 | — |
+
+## ZERO CYCLES. All four went, and they went by construction rather than by repair.
+
+Every cycle this codebase has ever had was one sentence: **a page imports the chrome, and the
+chrome imports the feature.** `Nav` reads the basket so it imports `@/features/cart`; `CartPage`
+rendered `<Nav />`, so cart's barrel imported it back.
+
+Phase 5 inverted it. `RootLayout` renders the chrome, the page renders through `<Outlet />`, and
+**nothing flows from a feature to a layout.** The app layer may import feature barrels (decision
+D, §2) and nothing imports the app layer, so there is no longer anywhere for a cycle to close.
+
+That is the difference between removing a cycle and breaking one: no import was rewritten to
+dodge a loop. Thirteen pages stopped rendering site chrome, which they should never have been
+doing, and the loops had nothing left to travel through.
+
+**The count is now a real zero, and `import/no-cycle` still cannot see it.** ADR-022's point
+stands: `tools/cycle-check.mjs` produced every one of these numbers.
+
+## `Nav` and `Footer` stopped being countdown targets entirely
+
+They carried **fourteen of the twenty-four clearable edges** at P4-6 — the two highest-fan-in
+components on the site, imported by every feature. Both are gone from the list.
+
+What remains clearable is ten edges over five targets, and every one has a Phase 6 line already
+written: `store.ts` (3, the `useKlayStore` shim), `lib/pricing.ts` (3), `lib/api.ts` (2) and
+`lib/bookingLink.ts` (2) — all four of them item 1, item 4 or "moves with booking".
+
+**Phase 6 is now the only thing between the countdown and its floor.**
+
+## Per-route variation moved from thirteen files to one table
+
+`onLight` and `stickBelow` were props each page passed to its own `Nav`. They are now props the
+router passes to a layout element, and routes are grouped by which nav they want.
+
+That is the same information in one place, and it is the place it belongs: which pages open on a
+pale ground is a fact about the site's composition, and `router.tsx` is where composition is
+written down. Keeping nine files in agreement about it was the previous arrangement.
+
+## Two things Phase 5 could not do cleanly, both for the same reason
+
+**`Nav` could not move without a shim — E-11.** `VisualiserPage.tsx` and `VisualizerLabPage.tsx`
+import it by relative path and are E-08: not editable for any reason, an import rewrite
+included. Rewriting those two lines is the smallest edit imaginable and it is still an edit, so
+`src/components/Nav.tsx` stays as a re-export. `Footer` had no such consumer and moved cleanly.
+
+**`BareLayout` exists for those same two pages.** They mount their own `<Nav />` and cannot stop,
+so under `RootLayout` they would render two. A route under `BareLayout` makes the claim "this
+page owns its own chrome", which a reader of the route table can see — a route with no layout at
+all would say nothing.
+
+**That is the third and fourth time E-08 has shaped a decision rather than merely excluded a
+file** (after `pricing.ts` and `products.ts`). The pattern is worth naming: an out-of-scope zone
+does not stay out of the way. It reaches into every phase that touches anything it imports.
+
+## Verified in a browser, not inferred
+
+The route table was restructured — nested layout routes, a moved catch-all, chrome removed from
+thirteen files. Inspecting the diff would not have told us whether it still resolves.
+
+- **All twelve routes** render, with chrome exactly once. `/products` reports two `<nav>`
+  elements and always did: the second is its own "Home / Shop" breadcrumb.
+- **All six retired URLs still land** where `legacyRedirects` says — `/blinds` → `/products`,
+  `/blinds/roller-blinds` → `/products/dusk`, the three category slugs, and the type fallback.
+- **The homepage is pixel-identical**: 10 sections, 6181px, zero console errors, the ticker
+  still above the bar with the nav offset behind it.
+
+A structural phase that changes what the visitor sees has done something wrong. This one did not.

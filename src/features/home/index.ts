@@ -36,3 +36,11 @@
 // ---------------------------------------------------------------------------
 
 export { default as HomePage } from './components/HomePage';
+
+// --- composed by the app layer, not by a page ------------------------------
+// The trust ticker sits ABOVE the nav and the nav offsets by its height, so the
+// arrangement is chrome composition rather than page content — §7 puts that in
+// src/app/, and router.tsx does it. These two exist so it can, and for no other
+// consumer. TICKER_HEIGHT is re-exported under a clearer name than the module's
+// own BAR_HEIGHT, which reads ambiguously outside the file that defines it.
+export { TrustTicker, BAR_HEIGHT as TICKER_HEIGHT } from './components/TrustTicker';
