@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { tokens, eyebrow, motion } from '@/ds';
+import { tokens, eyebrow, motion, radius, space, type as typeScale } from '@/ds';
 import { useIsMobile } from '@/shared';
 
 import { Footer } from '../../../components/Footer';
@@ -10,31 +10,8 @@ import { useCartStore } from '../store/cartStore';
 
 export default function CartPage() {
   const isMobile = useIsMobile();
-  const { items, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
-  const [checkoutHover, setCheckoutHover] = useState(false);
-
-  // Form state
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    postcode: '',
-    state: 'VIC',
-    notes: '',
-  });
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert('Order submitted! We will contact you shortly to arrange measurement.');
-    clearCart();
-  };
+  const { items, removeItem, updateQuantity, getTotal } = useCartStore();
+  const [isBookHovered, setIsBookHovered] = useState(false);
 
   const total = getTotal();
   /** How many lines carry no price yet. Drives whether the foot of the cart
@@ -211,256 +188,72 @@ export default function CartPage() {
                 </p>
               </div>
 
-              {/* Checkout Form */}
+              {/* WHERE THE BASKET ENDS AND THE CHECKOUT BEGINS — §3, D-01.
+                  This panel used to be a nine-field checkout: first name, last
+                  name, email, phone, street address, city, state, postcode and
+                  notes, behind a button reading REQUEST QUOTE & MEASURE, whose
+                  submit handler was:
+
+                      alert('Order submitted! ...'); clearCart();
+
+                  No network call. It collected a full street address, told the
+                  customer their order was submitted, and emptied the basket so
+                  the evidence went too. That was D-01, the divergence that
+                  caused SPECIFICATION.md to be written, and §3 answers it:
+
+                      "cart holds basket contents. It does not check out. There
+                       is exactly one checkout, in features/booking, and the
+                       cart links to it."
+
+                  So it links. The form is gone rather than wired up, because a
+                  second checkout is the thing being removed — not a second
+                  checkout that works.
+
+                  WHAT THIS LINK CANNOT YET DO. /book takes ONE configuration in
+                  its query string — type, size, op, qty, fabric, hw — and
+                  re-validates it through parseOrderConfig. It has no concept of
+                  a basket. So this is a plain link and carries nothing: a
+                  multi-line basket has nowhere to go, and building a bridge
+                  here would be a third implementation of the thing we just
+                  deleted. Recorded as an open gap in DIVERGENCE_LOG.md D-01. */}
               <div style={{ flex: 1, maxWidth: isMobile ? '100%' : 420 }}>
-                <div style={{ background: tokens.band, borderRadius: 12, padding: isMobile ? 24 : 32 }}>
-                  <div style={{ ...eyebrow, marginBottom: 24 }}>Your Details</div>
+                <div style={{ background: tokens.band, borderRadius: radius.lg, padding: isMobile ? space.group : space.section }}>
+                  <div style={{ ...eyebrow, marginBottom: space.group }}>Next step</div>
 
-                  <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                      <div>
-                        <label style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>
-                          First Name *
-                        </label>
-                        <input
-                          type="text"
-                          name="firstName"
-                          required
-                          value={formData.firstName}
-                          onChange={handleInputChange}
-                          style={{
-                            width: '100%',
-                            padding: '12px 14px',
-                            border: `1px solid ${tokens.lineStrong}`,
-                            borderRadius: 6,
-                            fontFamily: tokens.body,
-                            fontSize: 14,
-                            background: tokens.paper,
-                            boxSizing: 'border-box',
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>
-                          Last Name *
-                        </label>
-                        <input
-                          type="text"
-                          name="lastName"
-                          required
-                          value={formData.lastName}
-                          onChange={handleInputChange}
-                          style={{
-                            width: '100%',
-                            padding: '12px 14px',
-                            border: `1px solid ${tokens.lineStrong}`,
-                            borderRadius: 6,
-                            fontFamily: tokens.body,
-                            fontSize: 14,
-                            background: tokens.paper,
-                            boxSizing: 'border-box',
-                          }}
-                        />
-                      </div>
-                    </div>
+                  <p style={{ fontFamily: tokens.body, fontSize: typeScale.lead.fontSize, color: tokens.ink, lineHeight: 1.7, margin: 0 }}>
+                    Every blind is made to measure, so the quote is settled at the
+                    appointment rather than here.
+                  </p>
 
-                    <div style={{ marginTop: 16 }}>
-                      <label style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>
-                        Email *
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        required
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        style={{
-                          width: '100%',
-                          padding: '12px 14px',
-                          border: `1px solid ${tokens.lineStrong}`,
-                          borderRadius: 6,
-                          fontFamily: tokens.body,
-                          fontSize: 14,
-                          background: tokens.paper,
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                    </div>
+                  <Link
+                    to="/book"
+                    onMouseEnter={() => setIsBookHovered(true)}
+                    onMouseLeave={() => setIsBookHovered(false)}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      marginTop: space.group,
+                      padding: `${space.item}px ${space.group}px`,
+                      background: isBookHovered ? tokens.accentHover : tokens.accent,
+                      color: tokens.onAccent,
+                      fontFamily: tokens.body,
+                      fontSize: typeScale.body.fontSize,
+                      fontWeight: 600,
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      borderRadius: radius.md,
+                      boxSizing: 'border-box',
+                      transition: motion.button,
+                    }}
+                  >
+                    Book a free measure
+                  </Link>
 
-                    <div style={{ marginTop: 16 }}>
-                      <label style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>
-                        Phone *
-                      </label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        required
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        style={{
-                          width: '100%',
-                          padding: '12px 14px',
-                          border: `1px solid ${tokens.lineStrong}`,
-                          borderRadius: 6,
-                          fontFamily: tokens.body,
-                          fontSize: 14,
-                          background: tokens.paper,
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                    </div>
-
-                    <div style={{ marginTop: 16 }}>
-                      <label style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>
-                        Address *
-                      </label>
-                      <input
-                        type="text"
-                        name="address"
-                        required
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        style={{
-                          width: '100%',
-                          padding: '12px 14px',
-                          border: `1px solid ${tokens.lineStrong}`,
-                          borderRadius: 6,
-                          fontFamily: tokens.body,
-                          fontSize: 14,
-                          background: tokens.paper,
-                          boxSizing: 'border-box',
-                        }}
-                      />
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16, marginTop: 16 }}>
-                      <div>
-                        <label style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>
-                          City *
-                        </label>
-                        <input
-                          type="text"
-                          name="city"
-                          required
-                          value={formData.city}
-                          onChange={handleInputChange}
-                          style={{
-                            width: '100%',
-                            padding: '12px 14px',
-                            border: `1px solid ${tokens.lineStrong}`,
-                            borderRadius: 6,
-                            fontFamily: tokens.body,
-                            fontSize: 14,
-                            background: tokens.paper,
-                            boxSizing: 'border-box',
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>
-                          State
-                        </label>
-                        <select
-                          name="state"
-                          value={formData.state}
-                          onChange={handleInputChange}
-                          style={{
-                            width: '100%',
-                            padding: '12px 14px',
-                            border: `1px solid ${tokens.lineStrong}`,
-                            borderRadius: 6,
-                            fontFamily: tokens.body,
-                            fontSize: 14,
-                            background: tokens.paper,
-                            boxSizing: 'border-box',
-                          }}
-                        >
-                          <option value="VIC">VIC</option>
-                          <option value="NSW">NSW</option>
-                          <option value="QLD">QLD</option>
-                          <option value="SA">SA</option>
-                          <option value="WA">WA</option>
-                          <option value="TAS">TAS</option>
-                          <option value="NT">NT</option>
-                          <option value="ACT">ACT</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>
-                          Postcode *
-                        </label>
-                        <input
-                          type="text"
-                          name="postcode"
-                          required
-                          value={formData.postcode}
-                          onChange={handleInputChange}
-                          style={{
-                            width: '100%',
-                            padding: '12px 14px',
-                            border: `1px solid ${tokens.lineStrong}`,
-                            borderRadius: 6,
-                            fontFamily: tokens.body,
-                            fontSize: 14,
-                            background: tokens.paper,
-                            boxSizing: 'border-box',
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop: 16 }}>
-                      <label style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkSoft, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 6 }}>
-                        Notes (optional)
-                      </label>
-                      <textarea
-                        name="notes"
-                        rows={3}
-                        value={formData.notes}
-                        onChange={handleInputChange}
-                        placeholder="Any special requests or instructions..."
-                        style={{
-                          width: '100%',
-                          padding: '12px 14px',
-                          border: `1px solid ${tokens.lineStrong}`,
-                          borderRadius: 6,
-                          fontFamily: tokens.body,
-                          fontSize: 14,
-                          background: tokens.paper,
-                          boxSizing: 'border-box',
-                          resize: 'vertical',
-                        }}
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      onMouseEnter={() => setCheckoutHover(true)}
-                      onMouseLeave={() => setCheckoutHover(false)}
-                      style={{
-                        width: '100%',
-                        marginTop: 24,
-                        padding: '18px 24px',
-                        background: checkoutHover ? tokens.accentHover : tokens.accent,
-                        color: tokens.onAccent,
-                        fontFamily: tokens.body,
-                        fontSize: 14,
-                        fontWeight: 600,
-                        letterSpacing: '0.12em',
-                        textTransform: 'uppercase',
-                        border: 'none',
-                        borderRadius: 6,
-                        cursor: 'pointer',
-                        transition: motion.button,
-                      }}
-                    >
-                      Request Quote & Measure
-                    </button>
-
-                    <p style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.inkFaint, marginTop: 16, textAlign: 'center', lineHeight: 1.6 }}>
-                      We'll contact you within 24 hours to arrange a free measure and provide a final quote.
-                    </p>
-                  </form>
+                  <p style={{ fontFamily: tokens.body, fontSize: typeScale.label.fontSize, color: tokens.inkFaint, marginTop: space.item, textAlign: 'center', lineHeight: 1.6 }}>
+                    Bring this list to the appointment — we confirm each line on site.
+                  </p>
                 </div>
               </div>
             </div>

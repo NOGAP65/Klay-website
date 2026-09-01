@@ -1,0 +1,14 @@
+{
+  "//": "Exists so typescript-eslint's projectService can parse the fixtures. Not referenced by the root tsconfig, so `tsc -b` never sees this directory — the files here are deliberate violations, not code that has to compile. Typed linting matters: @typescript-eslint/naming-convention can only know a variable is a boolean by asking the typechecker.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "types": ["vite/client"]
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}

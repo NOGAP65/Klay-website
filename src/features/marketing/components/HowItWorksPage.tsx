@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { radius, tokens, eyebrow, headline, motion, supporting } from '@/ds';
+import { radius, tokens, eyebrow, headline, motion, space, supporting, type as typeScale } from '@/ds';
 
 import { Footer } from '../../../components/Footer';
 import { Nav } from '../../../components/Nav';
@@ -46,14 +46,14 @@ const FAQS = [
  * surface, and it is what makes the blind above it legible. */
 function VisualiserMock() {
   return (
-    <div style={{ background: tokens.card, border: `1px solid ${tokens.line}`, padding: 28, maxWidth: 420 }}>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+    <div style={{ background: tokens.card, border: `1px solid ${tokens.line}`, padding: space.group, maxWidth: 420 }}>
+      <div style={{ display: 'flex', gap: space.tight, marginBottom: 20 }}>
         {['White', 'Black', 'Chrome'].map((h) => (
           <span
             key={h}
             style={{
-              fontFamily: tokens.body, fontSize: 10, color: tokens.inkSoft, textTransform: 'uppercase',
-              letterSpacing: '0.1em', border: `1px solid ${tokens.line}`, padding: '6px 12px',
+              fontFamily: tokens.body, fontSize: typeScale.micro.fontSize, color: tokens.inkSoft, textTransform: 'uppercase',
+              letterSpacing: '0.1em', border: `1px solid ${tokens.line}`, padding: `${space.tight}px ${space.snug}px`,
             }}
           >
             {h}
@@ -65,7 +65,7 @@ function VisualiserMock() {
         <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(248,248,248,0.2)' }} />
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%', background: 'repeating-linear-gradient(180deg, rgba(232,228,222,0.85) 0px, rgba(232,228,222,0.85) 1px, transparent 1px, transparent 3px), #EDEDED' }} />
       </div>
-      <div style={{ fontFamily: tokens.body, fontSize: 11, color: tokens.textMuted, marginTop: 16, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+      <div style={{ fontFamily: tokens.body, fontSize: typeScale.label.fontSize, color: tokens.textMuted, marginTop: 16, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
         Blockout Roller — from $220
       </div>
     </div>
@@ -124,7 +124,7 @@ function StepPhoto({ step }: { step: Step }) {
 
 const stepSection = (ground: string): React.CSSProperties => ({
   background: ground,
-  padding: '120px 80px',
+  padding: `${space.focal}px ${space.band}px`,
   display: 'flex',
   gap: 80,
   flexWrap: 'wrap',
@@ -143,7 +143,7 @@ export default function HowItWorksPage() {
       {/* Hero — charcoal. The one dark moment on the page: a confident opening
           statement, and the contrast that makes the first step feel like the
           page opening up. */}
-      <section style={{ background: tokens.charcoal, padding: '200px 80px 120px' }}>
+      <section style={{ background: tokens.charcoal, padding: `${space.focal}px ${space.band}px ${space.focal}px` }}>
         <div style={{ ...eyebrow, color: tokens.onDarkMuted, marginBottom: 22 }}>The Klay Process</div>
         <h1 style={{ ...headline.hero, color: tokens.paper, maxWidth: 900 }}>
           Four steps to a perfectly dressed window.
@@ -162,7 +162,7 @@ export default function HowItWorksPage() {
       <section style={stepSection(tokens.band)}>
         <div style={{ flex: '1 1 400px' }}>
           <div style={STEP_NUMBER}>01</div>
-          <h2 style={{ ...headline.section, color: tokens.ink, margin: '8px 0 0' }}>Design online</h2>
+          <h2 style={{ ...headline.section, color: tokens.ink, margin: `${space.tight}px 0 0` }}>Design online</h2>
           <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
             Our visualiser lets you see your exact blind, in your room, before you spend a cent. Pick a range, choose your hardware finish and preview it against a photo of your own window.
           </p>
@@ -182,11 +182,11 @@ export default function HowItWorksPage() {
         </div>
         <div style={{ flex: '1 1 400px' }}>
           <div style={STEP_NUMBER}>02</div>
-          <h2 style={{ ...headline.section, color: tokens.ink, margin: '8px 0 0' }}>We come to you</h2>
+          <h2 style={{ ...headline.section, color: tokens.ink, margin: `${space.tight}px 0 0` }}>We come to you</h2>
           <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
             A Klay technician visits your home within 7–10 days to measure every window precisely — no guesswork, no relying on your own tape measure. They will also talk through hardware and fabric options in person.
           </p>
-          <div style={{ fontFamily: tokens.display, fontStyle: 'italic', fontSize: 20, color: tokens.onDark, marginTop: 20 }}>
+          <div style={{ fontFamily: tokens.display, fontStyle: 'italic', fontSize: typeScale.subhead.fontSize, color: tokens.onDark, marginTop: 20 }}>
             Free measure — no charge, ever.
           </div>
         </div>
@@ -196,7 +196,7 @@ export default function HowItWorksPage() {
       <section style={stepSection(tokens.band)}>
         <div style={{ flex: '1 1 400px' }}>
           <div style={STEP_NUMBER}>03</div>
-          <h2 style={{ ...headline.section, color: tokens.ink, margin: '8px 0 0' }}>Made precisely</h2>
+          <h2 style={{ ...headline.section, color: tokens.ink, margin: `${space.tight}px 0 0` }}>Made precisely</h2>
           <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
             Your exact measurements go straight to our manufacturing partner, Rynamic Industries SA, where every blind is cut and finished to the millimetre. Nothing is made until your window has been measured.
           </p>
@@ -213,7 +213,7 @@ export default function HowItWorksPage() {
       <section style={stepSection(tokens.paper)}>
         <div style={{ flex: '1 1 400px' }}>
           <div style={STEP_NUMBER}>04</div>
-          <h2 style={{ ...headline.section, color: tokens.ink, margin: '8px 0 0' }}>Installed perfectly</h2>
+          <h2 style={{ ...headline.section, color: tokens.ink, margin: `${space.tight}px 0 0` }}>Installed perfectly</h2>
           <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 20, maxWidth: 480 }}>
             The same technician who measured your windows comes back to install them — no handoffs, no re-explaining what you want. They know your home already.
           </p>
@@ -228,7 +228,7 @@ export default function HowItWorksPage() {
 
       {/* FAQ — parchment, keeping the alternation running and matching the
           softer register the product pages use for the same content. */}
-      <section style={{ background: tokens.band, padding: '120px 80px' }}>
+      <section style={{ background: tokens.band, padding: `${space.focal}px ${space.band}px` }}>
         <h2 style={{ ...headline.section, color: tokens.ink, marginBottom: 56 }}>
           Common questions.
         </h2>
@@ -245,8 +245,8 @@ export default function HowItWorksPage() {
                   aria-expanded={open}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    background: 'transparent', border: 'none', cursor: 'pointer', padding: '24px 0',
-                    fontFamily: tokens.display, fontSize: 20, textAlign: 'left',
+                    background: 'transparent', border: 'none', cursor: 'pointer', padding: `${space.group}px 0`,
+                    fontFamily: tokens.display, fontSize: typeScale.subhead.fontSize, textAlign: 'left',
                     // The row responds, not just the icon. Opacity rather than
                     // a colour shift so the question never reads as a link.
                     color: tokens.ink,
@@ -255,12 +255,12 @@ export default function HowItWorksPage() {
                   }}
                 >
                   {f.q}
-                  <span style={{ color: tokens.onDark, fontSize: 20, marginLeft: 24, flexShrink: 0, transform: open ? 'rotate(45deg)' : 'none', transition: 'transform 0.25s ease' }}>
+                  <span style={{ color: tokens.onDark, fontSize: typeScale.subhead.fontSize, marginLeft: 24, flexShrink: 0, transform: open ? 'rotate(45deg)' : 'none', transition: 'transform 0.25s ease' }}>
                     +
                   </span>
                 </button>
                 {open && (
-                  <p style={{ ...supporting.onLight, lineHeight: 1.8, margin: '0 0 24px', maxWidth: 640 }}>
+                  <p style={{ ...supporting.onLight, lineHeight: 1.8, margin: `0 0 ${space.group}px`, maxWidth: 640 }}>
                     {f.a}
                   </p>
                 )}
@@ -274,11 +274,11 @@ export default function HowItWorksPage() {
           the last FAQ, which left someone who had just read the entire process
           with nothing to act on at the exact moment their objections had been
           answered. */}
-      <section style={{ background: tokens.paper, padding: '120px 80px', textAlign: 'center' }}>
+      <section style={{ background: tokens.paper, padding: `${space.focal}px ${space.band}px`, textAlign: 'center' }}>
         <h2 style={{ ...headline.section, color: tokens.ink, maxWidth: 720, margin: '0 auto' }}>
           Start with the part that costs nothing.
         </h2>
-        <p style={{ ...supporting.onLight, maxWidth: 480, margin: '24px auto 40px' }}>
+        <p style={{ ...supporting.onLight, maxWidth: 480, margin: `${space.group}px auto ${space.section}px` }}>
           Design your blind in the visualiser, then book a free measure. Two to
           three weeks from first click to a finished window.
         </p>
@@ -290,11 +290,11 @@ export default function HowItWorksPage() {
             display: 'inline-block',
             textDecoration: 'none',
             fontFamily: tokens.body,
-            fontSize: 13,
+            fontSize: typeScale.body.fontSize,
             fontWeight: 500,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            padding: '18px 40px',
+            padding: `${space.item}px ${space.section}px`,
             borderRadius: radius.md,
             background: ctaHover ? tokens.accentHover : tokens.accent,
             color: tokens.onAccent,

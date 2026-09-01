@@ -116,17 +116,30 @@ feature to move reported violations nobody could action.
 **It comes out when the countdown below reaches zero, and not before.** Removing it earlier
 turns unactionable warnings into a wall; leaving it after that is leaving the layer model off.
 
-**THE COUNTDOWN CAN NO LONGER REACH ZERO — ADR-020, AND THIS IS OPEN.** Three of catalogue's
-edges point into `src/visualiser/` (`ProductDetailPage` imports `KlayConfigurator`,
-`useVisualiserStore`, `VisualiserControls`), and `src/data/products.ts` and the `theme.ts` shim
-are permanent for the same reason. Those edges never clear, so "delete the allowance when the
-count hits zero" no longer terminates.
+**THE COUNTDOWN CANNOT REACH ZERO — ADR-020. THE EXIT CONDITION IS NOW WRITTEN.**
 
-**A decision is needed and has not been made.** The likely shape is a narrow, named element
-type — `legacy-visualiser`, matching the four out-of-scope paths, which features may import and
-nothing else may — so the blanket `feature → anything in src/` allowance can still come out.
-That is a proposal in ADR-020, not a decision. **Until it is decided, item 5 stays BLOCKING and
-its exit condition is unwritten.**
+Three of catalogue's edges point into `src/visualiser/` and are permanent, as are the surviving
+`src/data/products.ts` edges. A countdown to zero would never terminate.
+
+**Decided at P4-5. ADR-020's proposal is accepted and the element type exists.**
+`eslint.config.js` now declares `legacy-visualiser` — `src/visualiser/**`,
+`src/visualiser-lab/**`, `VisualiserPage.tsx`, `VisualizerLabPage.tsx` — ahead of `legacy`,
+because boundaries takes the first matching pattern. A feature reaching **that** is a permanent,
+allowed edge. A feature reaching the rest of `legacy` is scaffolding.
+
+> ### EXIT CONDITION
+>
+> **The countdown stands at its permanent floor, and `feature → legacy-visualiser` is the only
+> surviving allowance.** At that point the blanket `{ to: { element: { type: 'legacy' } } }`
+> line is deleted from the `feature` policy — one line — and the layer model is fully on.
+
+**The floor is 6, not 7.** It was 7 when the proposal was written; the P4-5 split of
+`data/products.ts` moved the four roller SKUs to `features/catalogue/products.ts` and took one
+permanent edge with them. The floor is a measurement, not a target — `npm run check:countdown`
+prints it as `PERMANENT`, and it moves when the shape of the out-of-scope zone moves.
+
+Both allowances are in the config now, adjacent and labelled. The temporary one carries
+`REMOVE AT PHASE 6.1`; the permanent one carries the reason it survives.
 
 #### Countdown — reported at the end of every remaining P4 feature
 
@@ -136,6 +149,7 @@ its exit condition is unwritten.**
 | **P4-3 catalogue** | 9 | **12** | 26 | — | — |
 | **P4-3, re-measured after ADR-020** | 9 | 12 | 26 | **19** | **7** |
 | **P4-4 cart** | 10 | 11 | 27 | **20** | 7 |
+| **P4-5 shared pass** | 11 | 11 | 26 | **20** | **6** |
 
 **The P4-3 row recorded 8 distinct targets. There were 12.** The targets table below listed
 eight rows summing to 22 of the 26 edges; `src/store/cartStore.ts` and the three
@@ -152,7 +166,7 @@ twenty-six permanent, so a countdown to zero on the total would never terminate.
 |---|---:|---|
 | `src/components/Nav.tsx` | 5 | **Phase 5** — `app/layouts/`, decision D |
 | `src/components/Footer.tsx` | 5 | **Phase 5** — `app/layouts/`, decision D |
-| `src/data/products.ts` | 4 | **NOTHING — OPEN.** ADR-020 removed P4-7, which was decision H's slot. Six visualiser files import it and may not be edited, so it can neither be split nor moved without a permanent shim. **PERMANENT.** |
+| `src/data/products.ts` | 4 → **3** | **PARTIALLY CLEARED at P4-5, and the rest is PERMANENT.** Decision H was executed as far as it goes: everything with zero visualiser consumers — the four roller SKUs, the ranges, the counts — moved to `features/catalogue/products.ts`. What stayed is the four symbols six out-of-scope files import: `RYNAMIC_COLOURS`, `CURTAIN_COLOURS`, `HARDWARE_HEX`, `HARDWARE_OPTIONS`. Those three edges do not clear. |
 | `src/lib/api.ts` | 2 | **Phase 6** — moves with booking |
 | `src/store.ts` | 2 | **Phase 6** — item 4, the useKlayStore shim |
 | `src/lib/pricing.ts` | 2 | **Phase 6** — item 1, moves to shared-core behind a permanent re-export shim |

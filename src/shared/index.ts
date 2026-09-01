@@ -24,8 +24,38 @@
 //                       the design system is not the same thing as `shared`.
 //
 // §2 sets a CEILING of roughly 15% of src/ by line count: past that, something
-// has been misfiled. This layer is at 0.94% (298 lines), and 2.23% excluding
-// the frozen visualiser.
+// has been misfiled. This layer is at 0.93% (313 lines), and 2.29% excluding
+// the out-of-scope visualiser.
+//
+// ---------------------------------------------------------------------------
+// P4-5 — THE CLEAN-UP PASS. RE-TESTED WITH FOUR FEATURES MIGRATED, AND NOTHING
+// WAS ADDED.
+//
+// The phase exists because of a specific expectation: "after four features have
+// moved, whatever is genuinely common has revealed itself." marketing,
+// catalogue and cart have moved. What they revealed:
+//
+//   TWO legacy modules are reached by more than one feature — `Nav` and
+//   `Footer`, both by all three. Both FAIL the lift test outright (Klay's four
+//   links, Klay's ABN), so they are not shared-layer candidates. They are app
+//   chrome in the wrong place, and decision D sends them to app/layouts/ at
+//   Phase 5.
+//
+//   NOTHING ELSE is reached by two features at all.
+//
+//   NO helper is declared twice across features. The two names that appear in
+//   more than one — `isMobile` and `product` — are local variables, one of them
+//   the result of calling useIsMobile from this very barrel.
+//
+// SO THE ANSWER TO "what should move into shared/ now" IS: NOTHING. That is a
+// result, not an omission. The thing P4-5 was watching for is the shape that
+// produced D-03 — one rule needed in three places with nowhere legal to put it
+// — and after four features there is not a second instance of it in src/.
+//
+// The remaining cross-boundary pull is entirely Nav and Footer, and it has an
+// answer already scheduled. A shared layer of five genuinely generic things is
+// what §2 is aiming at.
+// ---------------------------------------------------------------------------
 //
 // 15% IS A CEILING, NOT A TARGET. Do not add to this folder to justify it. A
 // shared layer that is too thin is not a problem — it is what a codebase looks

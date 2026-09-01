@@ -44,6 +44,22 @@
 export { default as ProductsPage } from './components/ProductsPage';
 export { default as ProductDetailPage } from './components/ProductDetailPage';
 
+// --- the four roller products, split out of data/products at P4-5 -----------
+// PRODUCTS is read by Footer (app chrome, Phase 5) to build its product column;
+// productByBlindType by VisualiserShowcase (feature:home, P4-6); COLOUR_COUNT
+// and PRODUCT_COUNT by marketing's About page, which quotes both as figures.
+// All four are legitimately catalogue facts that something else states.
+export {
+  PRODUCTS,
+  productBySlug,
+  productByBlindType,
+  COLOUR_COUNT,
+  PRODUCT_COUNT,
+  type Product,
+  type ProductSlug,
+  type ProductBlindType,
+} from './products';
+
 // --- consumed by feature:home (P4-6) ----------------------------------------
 export { ProductGlyph } from './components/ProductGlyph';
 export { CATALOGUE, GROUPS, LIGHT_VALUES, type CatalogueItem, type Group } from './constants';

@@ -23,9 +23,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { tokens, eyebrow, layout, motion, space, type as typeScale } from '@/ds';
+import { PRODUCTS } from '@/features/catalogue';
 import { useIsMobile } from '@/shared';
 
-import { PRODUCTS } from '../data/products';
 
 const linkStyle: React.CSSProperties = {
   // Body role. It was 14 at line-height 2.1 — the loosest leading on the page,

@@ -37,9 +37,9 @@ import { useNavigate } from 'react-router-dom';
 
 import { radius, tokens, layout, motion, space, type as typeScale, shadow } from '@/ds';
 import { useCartStore } from '@/features/cart';
+import { productByBlindType } from '@/features/catalogue';
 import { useIsMobile } from '@/shared';
 
-import { productByBlindType } from '../../data/products';
 import { bookingLink } from '../../lib/bookingLink';
 import { formatAUD } from '../../lib/pricing';
 import KlayConfigurator from '../../visualiser/KlayConfigurator';

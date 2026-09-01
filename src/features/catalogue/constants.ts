@@ -25,7 +25,9 @@
 // is built from them directly rather than from an invented family layer.
 // ---------------------------------------------------------------------------
 
-import { PRODUCTS, RYNAMIC_COLOURS, CURTAIN_COLOURS } from '../../data/products'
+import { RYNAMIC_COLOURS, CURTAIN_COLOURS } from '../../data/products'
+
+import { PRODUCTS } from './products'
 
 import type { BlindType } from '../../lib/pricing'
 

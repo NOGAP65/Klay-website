@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { radius, tokens, eyebrow, headline, motion, supporting } from '@/ds';
+import { radius, tokens, eyebrow, headline, motion, space, supporting, type as typeScale } from '@/ds';
+import { COLOUR_COUNT, PRODUCT_COUNT } from '@/features/catalogue';
 
 import { Footer } from '../../../components/Footer';
 import { Nav } from '../../../components/Nav';
-import { COLOUR_COUNT, PRODUCT_COUNT } from '../../../data/products';
 
 // DARK ('#0f0d09', a near-black outside the palette) and PARCHMENT (a second
 // copy of a token whose value had since diverged) both used to live here.
@@ -39,7 +39,7 @@ export default function AboutPage() {
       {/* Hero — charcoal behind the photograph rather than a near-black wash.
           The eyebrow was missing entirely, so the page opened on an italic
           sentence with nothing to place it. */}
-      <section style={{ position: 'relative', minHeight: '62vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: tokens.charcoal, padding: '180px 80px 120px' }}>
+      <section style={{ position: 'relative', minHeight: '62vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: tokens.charcoal, padding: `${space.focal}px ${space.band}px ${space.focal}px` }}>
         <img
           src="/images/room-5.png"
           alt="A Klay-fitted living room"
@@ -63,25 +63,25 @@ export default function AboutPage() {
 
       {/* Story — warm white. Personal and human, and the lightest ground on the
           page for the one section that is purely someone talking to you. */}
-      <section style={{ background: tokens.paper, padding: '120px 80px' }}>
-        <div style={{ display: 'flex', gap: 80, maxWidth: 1200, margin: '0 auto', flexWrap: 'wrap' }}>
+      <section style={{ background: tokens.paper, padding: `${space.focal}px ${space.band}px` }}>
+        <div style={{ display: 'flex', gap: space.band, maxWidth: 1200, margin: '0 auto', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 320px' }}>
             <h2 style={{ ...headline.section, color: tokens.ink }}>
               Made for Victorian homes.
             </h2>
           </div>
           <div style={{ flex: '1 1 420px' }}>
-            <p style={{ ...supporting.onLight, fontSize: 16, lineHeight: 1.9 }}>
+            <p style={{ ...supporting.onLight, fontSize: typeScale.lead.fontSize, lineHeight: 1.9 }}>
               Klay sells direct to homeowners — no showrooms, no commission-driven sales reps, no markup for a
               retail floor you never asked for. You design and price your blinds online, and every dollar goes
               toward the product and the person who fits it.
             </p>
-            <p style={{ ...supporting.onLight, fontSize: 16, lineHeight: 1.9, marginTop: 22 }}>
+            <p style={{ ...supporting.onLight, fontSize: typeScale.lead.fontSize, lineHeight: 1.9, marginTop: 22 }}>
               The technicians who measure your windows are the same people who come back to install them. They
               are trained, employed and accountable to us directly — not contracted out to whoever is
               available that week.
             </p>
-            <p style={{ ...supporting.onLight, fontSize: 16, lineHeight: 1.9, marginTop: 22 }}>
+            <p style={{ ...supporting.onLight, fontSize: typeScale.lead.fontSize, lineHeight: 1.9, marginTop: 22 }}>
               Everything ships out of our warehouse in Epping, and we cover Melbourne metro and surrounding
               Victorian regions — the same team, start to finish, wherever you are in the state.
             </p>
@@ -92,15 +92,15 @@ export default function AboutPage() {
       {/* Values — parchment. Trust building, and warm rather than the near-black
           this used to be: a page about who you can rely on should not be the
           darkest thing on the site. */}
-      <section style={{ background: tokens.band, padding: '120px 80px' }}>
+      <section style={{ background: tokens.band, padding: `${space.focal}px ${space.band}px` }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <h2 style={{ ...headline.section, color: tokens.ink, marginBottom: 64 }}>
             What we stand for.
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 56, maxWidth: 900 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: space.section, maxWidth: 900 }}>
             {VALUES.map((v) => (
               <div key={v.title}>
-                <h3 style={{ fontFamily: tokens.display, fontSize: 30, fontWeight: 400, color: tokens.ink, margin: 0 }}>
+                <h3 style={{ fontFamily: tokens.display, fontSize: typeScale.card.fontSize, fontWeight: 400, color: tokens.ink, margin: 0 }}>
                   {v.title}
                 </h3>
                 <p style={{ ...supporting.onLight, marginTop: 12 }}>
@@ -116,13 +116,13 @@ export default function AboutPage() {
           there is no team content in the codebase and inventing bios for real
           people is not something a design pass should do, so this states the
           four figures that are verifiable from the catalogue instead. */}
-      <section style={{ background: tokens.paper, padding: '120px 80px' }}>
+      <section style={{ background: tokens.paper, padding: `${space.focal}px ${space.band}px` }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ ...eyebrow, marginBottom: 22 }}>By the numbers</div>
           <h2 style={{ ...headline.section, color: tokens.ink }}>
             What that adds up to.
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 48, marginTop: 64 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: space.section, marginTop: 64 }}>
             {CREDENTIALS.map((c) => (
               <div key={c.label}>
                 {/* `ink`, not `onDark`. This was onDark on a warmWhite section —
@@ -131,10 +131,10 @@ export default function AboutPage() {
                     ground. Found by the contrast audit at exactly 1:1, which is
                     the signature of a token used on the surface it is named
                     against. */}
-                <div style={{ fontFamily: tokens.display, fontSize: 56, fontWeight: 300, lineHeight: 1, color: tokens.ink }}>
+                <div style={{ fontFamily: tokens.display, fontSize: typeScale.title.fontSize, fontWeight: 300, lineHeight: 1, color: tokens.ink }}>
                   {c.figure}
                 </div>
-                <div style={{ ...supporting.onLight, fontSize: 13, marginTop: 12, maxWidth: 180 }}>
+                <div style={{ ...supporting.onLight, fontSize: typeScale.body.fontSize, marginTop: 12, maxWidth: 180 }}>
                   {c.label}
                 </div>
               </div>
@@ -143,8 +143,8 @@ export default function AboutPage() {
 
           {/* The page had no CTA and no interactive element of any kind — a
               brand-conviction page that gave a convinced reader nowhere to go. */}
-          <div style={{ marginTop: 80, paddingTop: 48, borderTop: `1px solid ${tokens.lineFaint}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
-            <p style={{ ...supporting.onLight, fontSize: 14, margin: 0 }}>
+          <div style={{ marginTop: 80, paddingTop: 48, borderTop: `1px solid ${tokens.lineFaint}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: space.group, flexWrap: 'wrap' }}>
+            <p style={{ ...supporting.onLight, fontSize: typeScale.body.fontSize, margin: 0 }}>
               18 Maltings Cct, Epping VIC 3076 · hello@klayinteriors.com.au · 1300 00 KLAY
             </p>
             <Link
@@ -154,11 +154,11 @@ export default function AboutPage() {
               style={{
                 textDecoration: 'none',
                 fontFamily: tokens.body,
-                fontSize: 13,
+                fontSize: typeScale.body.fontSize,
                 fontWeight: 500,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                padding: '18px 40px',
+                padding: `${space.item}px ${space.section}px`,
                 borderRadius: radius.md,
                 background: ctaHover ? tokens.accentHover : tokens.accent,
                 color: tokens.onAccent,

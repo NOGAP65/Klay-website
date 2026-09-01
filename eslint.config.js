@@ -51,7 +51,11 @@ const PROTECTED_IP = [
 ];
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'docs', '.netlify'] },
+  // tools/rule-fixtures/** is deliberately full of violations. It is excluded from
+  // the ordinary run so it cannot pollute the baseline, and linted explicitly by
+  // tools/verify-rules-fire.mjs, which loads THIS config with ignores disabled.
+  // ADR-022: a rule is not trusted until it has been shown to fire.
+  { ignores: ['dist', 'node_modules', 'docs', '.netlify', 'tools/rule-fixtures/**'] },
 
   // --- base -----------------------------------------------------------------
   ...asWarnings([js.configs.recommended]),
@@ -102,6 +106,17 @@ export default tseslint.config(
         { type: 'design-system', pattern: 'src/design-system/**' },
         { type: 'feature', pattern: 'src/features/*/**', capture: ['featureName'] },
         { type: 'shared', pattern: 'src/shared/**' },
+        // OUT OF SCOPE FOR THIS MIGRATION — ADR-020, E-08. Not "not yet moved":
+        // never moved, by this project. It is a separate element type from
+        // `legacy` because a feature reaching it is a PERMANENT, allowed edge,
+        // while a feature reaching the rest of `legacy` is temporary scaffolding
+        // that has to come out. Two different facts need two different names, or
+        // the countdown to zero can never terminate and the allowance can never
+        // be removed. Must precede `legacy`: boundaries takes the FIRST match.
+        { type: 'legacy-visualiser', pattern: 'src/visualiser/**' },
+        { type: 'legacy-visualiser', pattern: 'src/visualiser-lab/**' },
+        { type: 'legacy-visualiser', pattern: 'src/pages/VisualiserPage.tsx' },
+        { type: 'legacy-visualiser', pattern: 'src/pages/VisualizerLabPage.tsx' },
         // Everything the migration has not relocated yet. Declared so that
         // boundaries can classify it rather than treating it as unknown; it has
         // no restrictions of its own, because restricting code that has not
@@ -219,6 +234,18 @@ export default tseslint.config(
                 // four steps out of marketing.
                 { to: { element: { type: 'feature' } } },
 
+                // PERMANENT, AND DELIBERATELY SO — ADR-020, E-08.
+                //
+                // features/catalogue's ProductDetailPage mounts the visualiser
+                // embed and imports three modules from src/visualiser/. Those
+                // files are out of this migration entirely and may not be
+                // edited, so this edge does not clear — not at Phase 5, not at
+                // Phase 6, not ever, by this project.
+                //
+                // THIS IS THE ALLOWANCE THAT SURVIVES. The blanket one below is
+                // the one that comes out.
+                { to: { element: { type: 'legacy-visualiser' } } },
+
                 // TEMPORARY — MIGRATION SCAFFOLDING, REMOVE AT PHASE 6.1.
                 //
                 // A migrated feature still imports Nav, Footer, lib/api and
@@ -246,11 +273,28 @@ export default tseslint.config(
             // not shared/. Zero dependencies in either direction — it is the
             // contract between two runtimes and may not depend on either.
             { from: [{ element: { type: 'core' } }], allow: [] },
+            // Out of scope, and not edited for any reason — so it is given the
+            // same freedom `legacy` has. Constraining code nobody may touch
+            // would report violations that are illegal to fix. ADR-020.
+            {
+              from: [{ element: { type: 'legacy-visualiser' } }],
+              allow: [
+                { to: { element: { type: 'legacy' } } },
+                { to: { element: { type: 'legacy-visualiser' } } },
+                { to: { element: { type: 'design-system' } } },
+                { to: { element: { type: 'shared' } } },
+                { to: { element: { type: 'config' } } },
+                { to: { element: { type: 'core' } } },
+                { to: { element: { type: 'feature' } } },
+                { to: { element: { type: 'app' } } },
+              ],
+            },
             // Not yet migrated. No restrictions until it lands somewhere.
             {
               from: [{ element: { type: 'legacy' } }],
               allow: [
                 { to: { element: { type: 'legacy' } } },
+                { to: { element: { type: 'legacy-visualiser' } } },
                 { to: { element: { type: 'design-system' } } },
                 { to: { element: { type: 'shared' } } },
                 { to: { element: { type: 'config' } } },

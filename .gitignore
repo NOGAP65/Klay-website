@@ -42,3 +42,16 @@ dist-ssr
 # eslint machine-readable output, written by the re-measure command in
 # docs/architecture/LINT_BASELINE.md.
 /lint.json
+
+# Claude Code per-machine settings. A global ignore in ~/.config/git/ignore was
+# protecting these on one machine only, which is why a copy of one had been sitting
+# inside public/images/ — inside the WEB ROOT — since July, one `git add -A` away
+# from being deployed and publicly downloadable. Ignored at repo level so the
+# protection travels with the repository.
+# .claude/settings.json is the shared, tracked one and is deliberately NOT ignored.
+.claude/settings.local*.json
+
+# Large source assets: originals that production never serves. They live outside
+# public/ so they cannot be published by accident, and outside git because they are
+# tens of megabytes of binaries with no diff.
+/assets-source/

@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "check:cycles": "node tools/cycle-check.mjs",
-    "check:countdown": "node tools/legacy-countdown.mjs"
+    "check:countdown": "node tools/legacy-countdown.mjs",
+    "verify:rules": "node tools/verify-rules-fire.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

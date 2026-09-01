@@ -584,3 +584,101 @@ additionally clears at P4-6, when decision F splits `primitives.tsx` four ways.
 
 **Baseline: 2. It may go down. It may not go up.** Same contract as every other count in this
 file, now with something that can actually measure it.
+
+---
+
+# MOVEMENT — P4-5
+
+| Measure | P4-4 | P4-5 | Δ |
+|---|---:|---:|---:|
+| ALL | 793 | 714 | −79 |
+| MOVABLE | 543 | 454 | −89 |
+| IN-SCOPE (new) | 467 | 378 | −89 |
+| **IN-SCOPE, excluding untracked parallel work** | 454 | **355** | **−99** |
+
+The untracked `scripts/cut-wardrobe-stickers.mjs` now contributes 23 `no-undef` findings, up
+from 13, as the wardrobe work continues. Still not this phase's, still not committed. **`scripts/**`
+wants the `globals.node` override that `tools/**` has** — it is the second phase in a row this
+has been noted, and it is a two-line config change whenever that directory settles.
+
+## The rule that moved, and it moved twice as far as P4-3
+
+> ### `klay/no-hardcoded-style-values`: **181 → 89 movable.** Ninety-two gone.
+
+**Forty-three were deleted rather than converted**, with the cart's checkout form. **Forty-nine
+were converted**, in marketing.
+
+| Feature | Before | After | How |
+|---|---:|---:|---|
+| `catalogue` | 90 | 2 | Converted at P4-3 |
+| `marketing` | 49 | **0** | Converted at P4-5 |
+| `cart` | 67 | **24** | 43 deleted with the form; the basket view keeps the rest |
+
+**Marketing is the first feature to reach zero.** The conversion is the same shape P4-3
+reported: most values landed on a step exactly, and the moves were small — 30 → 26, 28 → 26,
+48 → 40, 13 → 14, 11 → 12, 18 → 16.
+
+**Three were not small, and they were the interesting ones.** The three page heroes carried
+`180px`, `200px` and `140px` of vertical padding. The space scale is closed at eight steps and
+tops out at `focal` (120), so there is no step for any of them — they are not between two steps,
+they are **past the end of the scale**.
+
+§9 gives two legal answers and this took the first: *"change the layout to use an existing
+step."* All three became `space.focal`. The pages were driven in a browser before and after to
+size the change rather than guess at it:
+
+| Page | First heading top, before → after | Page height |
+|---|---|---|
+| About | 274 → 244 | 2883 → 2878 |
+| Contact | 218 → 158 | 1597 → 1456 |
+| How it works | 238 → 158 | 4760 → 4675 |
+
+Contact and How-it-works each lost 80px of hero air, which is a real and visible change, and it
+is the change §9 asks for: **the scale constrains, the layout moves.** Screenshotted at 1440px
+and checked — both heroes still read as heroes.
+
+## The cycle baseline went UP, 2 → 5, and this is the accounting
+
+The contract set at P4-4 was *"baseline 2, may go down, may not go up."* It went up. Recorded
+rather than quietly re-baselined.
+
+**All five cycles have one cause, and it is one sentence: app chrome imports a feature barrel,
+and feature barrels export pages that import app chrome.**
+
+```
+Footer -> catalogue barrel -> ProductsPage      -> Footer
+Footer -> catalogue barrel -> ProductDetailPage -> Footer
+cart barrel -> CartPage -> Footer -> catalogue barrel -> ProductDetailPage -> cart barrel
+cart barrel -> CartPage -> Footer -> catalogue barrel -> ProductsPage -> Nav -> cart barrel
+catalogue barrel -> ProductsPage -> ProductCard -> primitives -> catalogue barrel
+```
+
+The three new ones arrived with the `data/products.ts` split: `Footer` used to read `PRODUCTS`
+from a legacy leaf module that imported nothing, and now reads it from the catalogue barrel,
+which is the correct import and also closes a loop.
+
+**The alternative was to have `Footer` import `@/features/catalogue/products` directly.** That
+is an internals import, and §1 rule 3 — one public entrance — is the rule the whole migration
+exists to establish. **Trading it for a cycle count is the wrong trade**, and it is the same
+judgement made for `Nav` at P4-4, for the same reason.
+
+**Verified harmless at runtime, not assumed harmless.** Every route on every cycle was loaded in
+a real browser with a populated basket: `/`, `/cart`, `/products`, `/products/dusk`, `/book`.
+No console errors, no page errors, every route rendered, the nav badge — the live edge of the
+cart cycle — rendered its count. A cycle only bites when a module is *used* during evaluation of
+the partially-initialised graph, and every use here is inside a component body.
+
+**All five clear at Phase 5, decision D**, when `Nav` and `Footer` become `app/layouts/` and the
+app layer composes them around routes instead of pages importing their own chrome. The
+catalogue/primitives one additionally clears at P4-6.
+
+**New baseline: 5. It may go down. It may not go up.** `npm run check:cycles`.
+
+## And the rule count that is now trustworthy
+
+Every number in this file was, until today, produced by rules nobody had ever asked to prove
+they worked. `npm run verify:rules` now does that — 13 rules by fixture, 2 by probe, 1 recorded
+blind (ADR-022). **`import/no-cycle` is the blind one, and it is worse than P4-4 reported:** it
+does not merely fail to traverse barrels, it reports nothing against a two-file `a → b → a`
+relative cycle built for no other purpose. It is inert, and §11's circular-import line has never
+enforced anything.

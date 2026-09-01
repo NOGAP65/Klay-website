@@ -7,7 +7,20 @@ machine, because *"a rule that relies on someone remembering it is not a rule, i
 The entries below are what happens without that enforcement — and every one of them was
 written by someone competent, in code that was individually good.
 
-**Running total: 6 confirmed. 3 resolved, 2 deliberate, 1 open.**
+**Running total: 7 confirmed. 1 resolved, 1 partially resolved, 2 deliberate, 3 open.**
+
+| | Status |
+|---|---|
+| **D-01** two checkouts | **RESOLVED at P4-5** — the second one is deleted |
+| D-02 visualiser fork | Deliberate. Out of this migration's reach — ADR-020 |
+| D-03 email regex ×3 | Partially resolved — 2 of 3 share a module; the third needs `shared-core`, Phase 6 |
+| D-04 postcode regex ×2 | Deliberate non-extraction, waiting for the same home |
+| D-05 three curtain implementations | Open. **Not resolvable by this migration** — ADR-020 |
+| D-06 hardware colour maps ×3 | Open. **Not resolvable by this migration** — ADR-020 |
+| **D-07** `MOTORISED_ADDON` ×2 | Open. A dead duplicate of a live price constant. Goes with the pricing module, Phase 6 |
+
+The earlier header read "3 resolved, 2 deliberate, 1 open", which never reconciled with the
+entries below it. Corrected while D-01 was being closed.
 
 Add an entry the moment one is found, before deciding what to do about it. A divergence that
 is only recorded in a commit message is not recorded.
@@ -16,7 +29,7 @@ is only recorded in a commit message is not recorded.
 
 ## D-01 — Two complete checkouts
 
-**Type:** The Second Implementation (§13) · **Status:** OPEN
+**Type:** The Second Implementation (§13) · **Status:** **RESOLVED — 1 September 2026, P4-5**
 **Found:** 31 Aug 2026, state-of-build audit
 
 `/book` — `src/pages/BookInstallPage.tsx`, 548 lines — is a finished payment path: server-side
@@ -39,8 +52,42 @@ one; the working one is behind buttons labelled *Book Installation* and *Get Quo
 
 **This is the divergence that caused the specification to be written.** §0 cites it by name.
 
-**Still open.** Not a migration task — it is a product decision about whether the cart is
-wired up or removed. MIGRATION_MAP.md R8.
+## RESOLVED — the second checkout is deleted
+
+The product decision was made on 1 September 2026, and it was the one §3 had already written
+down: *"cart holds basket contents. It does not check out. There is exactly one checkout, in
+`features/booking`, and the cart links to it."*
+
+**Removed from `features/cart/components/CartPage.tsx`:** the nine-field form — first name, last
+name, email, phone, street address, city, state, postcode, notes — the `alert()`, and the
+`clearCart()` that followed it. 474 lines to 267.
+
+**Not wired up. Deleted.** Wiring it would have produced a second checkout that works, which is
+the same divergence with the bug removed. The cart now shows what is in the basket and links to
+`/book`.
+
+**Its 67 hardcoded design values were not converted to tokens — 43 of them went with the code.**
+Converting literals inside a form that was about to be deleted was work with a negative return,
+which is why P4-4 deliberately skipped it. 24 remain in the basket view that stays.
+
+### The open gap this leaves, recorded rather than bridged
+
+**`/book` cannot accept a multi-item basket.** It takes ONE configuration in its query string —
+`type`, `size`, `op`, `qty`, `fabric`, `hw` — and re-validates it through `parseOrderConfig`.
+There is no basket concept anywhere in the payment path.
+
+So the cart's link carries nothing. A customer with three lines in the basket books a measure
+and the three lines do not travel with them.
+
+**Deliberately not bridged.** Mapping cart lines onto `/book`'s single-configuration URL would
+mean inventing an encoding the server does not parse, or looping the customer through checkout
+once per line. Both are a third implementation of the thing just deleted. **The cart line's own
+`blindType` is a composite string** (`item.id:variant:colour:…`) built to make cart line ids
+unique, and it is not a pricing `BlindType` — it would not validate if it were sent.
+
+**This is a product and payment-path question, and it belongs to `feature:booking` in Phase 6**,
+where the checkout is the thing being worked on. Logged here because a gap that is known and
+deliberate is a different thing from one nobody has noticed, and only this log records which.
 
 ---
 
@@ -146,6 +193,42 @@ in the frozen zone. Decision H already schedules the hardware values to move to 
 at P4-7 — but **ADR-020 deleted P4-7 and put decision H out of scope**, so there is no longer a
 moment in this migration at which all three collapse. `HARDWARE_HEX` stays in
 `src/data/products.ts`, which stays where it is (E-10).
+
+---
+
+## D-07 — `MOTORISED_ADDON = 150`, two copies, one of them across the money boundary
+
+**Type:** The Silent Divergence (§13) · **Status:** OPEN
+**Found:** 1 Sep 2026, P4-5, while splitting `data/products.ts`
+
+| Location | Consumers |
+|---|---|
+| `src/lib/pricing.ts:36` | **2** — `pricePerBlind` adds it for a motorised order, and `toPriceBreakdown` prints it as a line. This is the authority. |
+| `src/data/products.ts` | **0** |
+
+Two declarations of the same 150. `pricing.ts` does not import the other one; it declares its
+own, and nothing anywhere imports the `products.ts` copy.
+
+**It is harmless today and that is exactly what makes it worth logging.** The dead copy sits in
+a file full of catalogue data, named like catalogue data, and reads as the place a price would
+naturally be corrected. Someone raising the motorisation charge from 150 has better than even
+odds of editing the one that changes nothing — and then the site quotes the old figure while the
+constant says the new one.
+
+**Found only because the file was being split.** A grep for consumers of `MOTORISED_ADDON`
+returned `src/lib/pricing.ts` three times, which looks like an import and two uses. It is a
+declaration and two uses.
+
+**Not resolved here.** §7 puts pricing authority in one module and Phase 6 moves that module to
+`shared-core/pricing/`. Deleting a constant is not a move-phase action, and the copy that has to
+survive is the one going to `shared-core`. It goes with PHASE_6_SCOPE item 1 — the file it is
+duplicating is the file being moved.
+
+**This is the seventh divergence, and the first found by the migration rather than by the
+audit.** §13's test applies to it exactly: before asking who duplicated this, ask where the
+single copy would have gone. Here the answer is not "nowhere legal" — `pricing.ts` was always
+available and always correct. This one is a plain duplicate, which makes it the first entry in
+this log that better structure alone would not have prevented.
 
 ---
 

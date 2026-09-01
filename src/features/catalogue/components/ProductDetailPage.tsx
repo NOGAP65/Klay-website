@@ -10,16 +10,16 @@ import { useIsMobile } from '@/shared';
 
 import { Footer } from '../../../components/Footer';
 import { Nav } from '../../../components/Nav';
-import {
-  ProductBlindType,
-  productByBlindType,
-  productBySlug,
-} from '../../../data/products';
 import { bookingLink } from '../../../lib/bookingLink';
 import { useKlayStore } from '../../../store';
 import KlayConfigurator from '../../../visualiser/KlayConfigurator';
 import { useVisualiserStore } from '../../../visualiser/useVisualiserStore';
 import VisualiserControls from '../../../visualiser/VisualiserControls';
+import {
+  ProductBlindType,
+  productByBlindType,
+  productBySlug,
+} from '../products';
 
 const INK_55 = 'rgba(29,29,29,0.55)';
 

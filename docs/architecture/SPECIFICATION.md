@@ -1,8 +1,8 @@
 # Klay Interiors — Architecture Specification
 
-**Version:** 1.5
-**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3, v1.4, v1.5)
-**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2), ADR-020 (§12)
+**Version:** 1.6
+**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3–v1.6)
+**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2), ADR-020 (§12), ADR-022 (§11)
 **Status:** Standing document. This is the constitution, not a work order.
 **Owner:** V
 **Applies to:** NOGAP65/Klay-website-new. Ella adopts it after Klay proves it.
@@ -498,10 +498,39 @@ check the diff for removed directives:
 git diff | grep -E '^-.*(eslint-disable|ts-expect-error|ts-ignore)'
 ```
 
+**NO RULE COUNTS AS ENFORCEMENT UNTIL IT HAS BEEN SHOWN TO FAIL — ADR-022.**
+
+Every rule in the table above carries a fixture that violates it, and a check that the rule
+reports against that fixture. **A rule that cannot be shown to fire is not enforcing anything,
+and its zero is not evidence.**
+
+`npm run verify:rules`. It loads the real `eslint.config.js`, because the thing under test is
+the configuration as shipped.
+
+This exists because the table has twice recorded a mechanism that was not working.
+`eslint-plugin-boundaries` was misconfigured and silently failing until Phase 2 caught it by
+accident. `import/no-cycle` is loaded, schema-validated, resolving — and **inert**: it reports
+nothing against a two-file `a → b → a` fixture built for no other purpose. §11's circular-import
+line has never enforced anything, and a real cycle shipped at P4-3 into a repository that
+believed otherwise.
+
+**A rule reporting zero is indistinguishable from a rule finding nothing wrong.** Which makes
+the mechanism below actively dangerous on its own: a broken rule reports zero, is judged clean,
+and is promoted to `error` as a reward for not working.
+
 **Introducing rules without stopping work:** every new rule starts as `warn` with a recorded
 baseline count. The count may go down; it may not go up. At zero it flips to `error`
 permanently. Turning everything to `error` on day one produces 400 failures and the rules get
 switched off.
+
+**A rule may not be promoted from `warn` to `error` on the strength of a zero that has not been
+demonstrated to be a real zero.** The promotion asks two questions, not one: is the count zero,
+and does the rule fire when it should?
+
+**The same doubt applies to anything whose success is an absence** — a test suite that runs no
+tests, a CI step grepping for a renamed pattern, a typecheck over a project that includes no
+files. `tsc -b`'s coverage of `netlify/` has never been proven either, and `vite build` never
+invokes it.
 
 ---
 

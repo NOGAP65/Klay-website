@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import { tokens, eyebrow, headline, motion, supporting } from '@/ds';
+import { tokens, eyebrow, headline, motion, space, supporting, type as typeScale } from '@/ds';
 import { DANGER, Field } from '@/ds';
 import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
 
@@ -112,7 +112,7 @@ export default function ContactPage() {
       {/* Warm white throughout. Contact is a service moment, not a sales one:
           someone here has already decided to talk to you, and a dark hero
           performs conviction at a person who no longer needs converting. */}
-      <section style={{ background: tokens.paper, padding: '180px 80px 0' }}>
+      <section style={{ background: tokens.paper, padding: `${space.focal}px ${space.band}px 0` }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ ...eyebrow, marginBottom: 22 }}>Get In Touch</div>
           <h1 style={{ ...headline.hero, color: tokens.ink, maxWidth: 900 }}>
@@ -124,8 +124,8 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section style={{ background: tokens.paper, padding: '80px 80px 140px' }}>
-        <div style={{ display: 'flex', gap: 80, maxWidth: 1200, margin: '0 auto', flexWrap: 'wrap' }}>
+      <section style={{ background: tokens.paper, padding: `${space.band}px ${space.band}px ${space.focal}px` }}>
+        <div style={{ display: 'flex', gap: space.band, maxWidth: 1200, margin: '0 auto', flexWrap: 'wrap' }}>
           {/* Left — details */}
           <div style={{ flex: '1 1 300px' }}>
             {DETAILS.map((d) => (
@@ -135,7 +135,7 @@ export default function ContactPage() {
                 <div
                   style={{
                     fontFamily: tokens.body,
-                    fontSize: 10,
+                    fontSize: typeScale.micro.fontSize,
                     fontWeight: 500,
                     color: tokens.inkSoft,
                     textTransform: 'uppercase',
@@ -144,7 +144,7 @@ export default function ContactPage() {
                 >
                   {d.label}
                 </div>
-                <div style={{ fontFamily: tokens.display, fontSize: 28, fontWeight: 300, color: tokens.ink, marginTop: 8 }}>
+                <div style={{ fontFamily: tokens.display, fontSize: typeScale.card.fontSize, fontWeight: 300, color: tokens.ink, marginTop: 8 }}>
                   {d.value}
                 </div>
               </div>
@@ -154,7 +154,7 @@ export default function ContactPage() {
           {/* Right — form */}
           <div style={{ flex: '1 1 400px' }}>
             {submitted ? (
-              <p style={{ fontFamily: tokens.display, fontSize: 24, fontStyle: 'italic', color: tokens.ink }}>
+              <p style={{ fontFamily: tokens.display, fontSize: typeScale.card.fontSize, fontStyle: 'italic', color: tokens.ink }}>
                 Thanks — we'll be in touch within one business day.
               </p>
             ) : (
@@ -213,12 +213,12 @@ export default function ContactPage() {
                     role="alert"
                     style={{
                       fontFamily: tokens.body,
-                      fontSize: 13,
+                      fontSize: typeScale.body.fontSize,
                       color: DANGER,
                       background: 'rgba(160,58,40,0.06)',
                       border: '1px solid rgba(160,58,40,0.2)',
-                      padding: '12px 14px',
-                      margin: '0 0 20px',
+                      padding: `${space.snug}px ${space.item}px`,
+                      margin: `0 0 ${space.item}px`,
                     }}
                   >
                     {formError}
@@ -231,9 +231,9 @@ export default function ContactPage() {
                   onMouseEnter={() => setCtaHover(true)}
                   onMouseLeave={() => setCtaHover(false)}
                   style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 10,
-                    fontFamily: tokens.body, fontSize: 12, fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase',
-                    padding: '18px 40px', border: 'none',
+                    display: 'inline-flex', alignItems: 'center', gap: space.tight,
+                    fontFamily: tokens.body, fontSize: typeScale.label.fontSize, fontWeight: 500, letterSpacing: '0.15em', textTransform: 'uppercase',
+                    padding: `${space.item}px ${space.section}px`, border: 'none',
                     background: busy ? tokens.inkFaint : ctaHover ? tokens.accentHover : tokens.accent,
                     color: tokens.onAccent,
                     cursor: busy ? 'progress' : 'pointer',
