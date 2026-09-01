@@ -23,9 +23,8 @@
 // interact with, and a strip that halts under the pointer reads as broken.
 // ---------------------------------------------------------------------------
 
-import { useState } from 'react';
 
-import { tokens, prefersReducedMotion, space, type as typeScale } from '@/ds';
+import { tokens, space, type as typeScale, usePrefersReducedMotion } from '@/ds';
 
 /** How long one full pass of the list takes.
  *
@@ -92,7 +91,7 @@ export function TrustTicker() {
   // Read once, on mount. A strip that slides sideways forever is precisely what
   // this preference exists to stop — index.html also kills every animation
   // under the same query, so this is belt and braces for the DOM it renders.
-  const [reduceMotion] = useState(prefersReducedMotion);
+  const reduceMotion = usePrefersReducedMotion();
 
   return (
     <div

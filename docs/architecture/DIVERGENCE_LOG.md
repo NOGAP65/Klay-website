@@ -7,7 +7,7 @@ machine, because *"a rule that relies on someone remembering it is not a rule, i
 The entries below are what happens without that enforcement — and every one of them was
 written by someone competent, in code that was individually good.
 
-**Running total: 9 confirmed. 1 resolved, 1 partially resolved, 2 deliberate, 5 open.**
+**Running total: 10 confirmed. 3 resolved, 1 partially resolved, 2 deliberate, 4 open.**
 
 | | Status |
 |---|---|
@@ -18,8 +18,9 @@ written by someone competent, in code that was individually good.
 | D-05 three curtain implementations | Open. **Not resolvable by this migration** — ADR-020 |
 | D-06 hardware colour maps ×3 | Open. **Not resolvable by this migration** — ADR-020 |
 | **D-07** `MOTORISED_ADDON` ×2 | **RESOLVED** — data/products.ts re-exports pricing.ts |
-| **D-08** hover state ×2 implementations | Open. 10 hand-rolled sites beside a useHover hook. **Removed, not renamed** — Phase 7 |
+| **D-08** hover state ×2 implementations | **RESOLVED at Phase 7** — 10 hand-rolled sites removed, not renamed |
 | **D-09** form-field setter ×2 | Open. Identical helper in two forms. Waits for booking to land in Phase 6 |
+| **D-10** reduced-motion snapshot ×4 | **RESOLVED at Phase 7** — usePrefersReducedMotion |
 
 The earlier header read "3 resolved, 2 deliberate, 1 open", which never reconciled with the
 entries below it. Corrected while D-01 was being closed.
@@ -290,6 +291,41 @@ question is whether this is a `shared/hooks/useFormState` or two features legiti
 small forms.
 
 Logged now because the duplicate is known now.
+
+---
+
+## D-10 — The reduced-motion snapshot, four copies
+
+**Type:** The Silent Divergence (§13) · **Status:** **RESOLVED — 1 Sep 2026, Phase 7**
+**Found:** 1 Sep 2026, Phase 7 preparation
+
+```ts
+const [reduceMotion] = useState(prefersReducedMotion);
+```
+
+Character-identical in `Hero.tsx:77`, `StepsBar.tsx:197`, `Testimonials.tsx:136` and
+`TrustTicker.tsx:95` — the four homepage sections that animate.
+
+**All four correct, all four identical, none aware of the others.** §13 in one line: *"Both
+correct when written, one updated six months later."* The six-months-later change here is
+obvious once named — swapping the snapshot for a live subscription so a marquee stops when the
+visitor changes an OS setting mid-session. Done in three of four files, the homepage would have
+had two motion policies and no error anywhere.
+
+**Resolved: `design-system/primitives/usePrefersReducedMotion`.** Four call sites.
+
+**Two things decided while extracting it, both recorded in the hook.**
+
+**It is not in `shared/`.** §2 lets `shared` import config and other shared, not the design
+system — and the query string it needs is `prefersReducedMotion` in `tokens/motion.ts`. A shared
+version would have had to inline that string a second time, so a hook extracted to remove a
+duplication would have created one. The design system may import itself, so it sits beside
+`useHover`.
+
+**It stays a snapshot.** `shared/hooks/useMediaQuery` already exists and would give live updates,
+which is arguably the better behaviour. That is a behaviour change, and Phase 7 is a naming and
+de-duplication pass — an extraction that quietly alters what the page does is not an extraction.
+**Left as its own decision, with the argument written where someone will find it.**
 
 ---
 

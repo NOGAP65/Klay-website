@@ -30,9 +30,8 @@
 // of the frame height carries no scrim alpha at all.
 // ---------------------------------------------------------------------------
 
-import { useState } from 'react';
 
-import { tokens, eyebrow, headline, layout, prefersReducedMotion, space, CtaButton } from '@/ds';
+import { tokens, eyebrow, headline, layout, space, CtaButton, usePrefersReducedMotion } from '@/ds';
 import { useIsMobile, scrollToId } from '@/shared';
 
 import { STEPS_BAR_HEIGHT } from './StepsBar';
@@ -74,7 +73,7 @@ export function Hero() {
   // Read once, on mount. index.html kills CSS animation under a reduced-motion
   // preference, but an autoplaying video is not a CSS animation and slips
   // straight through that rule — it has to be handled here.
-  const [reduceMotion] = useState(prefersReducedMotion);
+  const reduceMotion = usePrefersReducedMotion();
 
   return (
     <section

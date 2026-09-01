@@ -60,10 +60,9 @@
 // free to be set on its own merits. See DURATION_S.
 // ---------------------------------------------------------------------------
 
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { tokens, prefersReducedMotion, space, type as typeScale, useHover } from '@/ds';
+import { tokens, space, type as typeScale, useHover, usePrefersReducedMotion } from '@/ds';
 import { STEPS } from '@/features/marketing';
 
 /** One full pass of the four steps — and it is set from a measured width, not a
@@ -194,7 +193,7 @@ export function StepsBar() {
   // Read once, on mount. A strip that slides sideways forever is precisely what
   // this preference exists to stop — index.html also kills every animation
   // under the same query, so this is belt and braces for the DOM it renders.
-  const [reduceMotion] = useState(prefersReducedMotion);
+  const reduceMotion = usePrefersReducedMotion();
 
   return (
     <Link

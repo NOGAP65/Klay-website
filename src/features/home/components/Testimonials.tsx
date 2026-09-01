@@ -22,7 +22,7 @@
 
 import { useState } from 'react';
 
-import { tokens, prefersReducedMotion, space, layout, type as typeScale, SectionBand } from '@/ds';
+import { tokens, space, layout, type as typeScale, SectionBand, usePrefersReducedMotion } from '@/ds';
 import { useIsMobile } from '@/shared';
 
 /** How long one full pass of the five reviews takes. Slow — the point is that
@@ -133,7 +133,7 @@ export function Testimonials() {
   // Read once. A row that slides sideways forever is precisely what this
   // preference exists to stop, so under it the marquee holds still and becomes a
   // strip the reader scrolls themselves.
-  const [reduceMotion] = useState(prefersReducedMotion);
+  const reduceMotion = usePrefersReducedMotion();
 
   return (
     // WARM WHITE. The section-ground sequence is reassigned in this pass so no
