@@ -442,7 +442,46 @@ function cut({ width: w, height: h, data: px }) {
     if (tail > best) { best = tail; bx0 = lx0; by0 = ly0; bx1 = lx1; by1 = ly1; }
   }
 
-  const [cx0, cy0, cx1, cy1] = [bx0, by0, bx1, by1];
+  // TRIMMED TO ROWS THAT ARE ACTUALLY BOARD, because the connected region is
+  // not the carcass on its own.
+  //
+  // The largest connected run of bright neutral pixels finds the cabinet, but
+  // it also finds whatever pale thing is TOUCHING it — and every render is
+  // staged with baskets, cases and folded linen sitting on top of the unit. On
+  // 6.0 that put the recorded top 116 rows above the real one, over rows that
+  // are about 1% board and mostly transparent.
+  //
+  // The cost was not a slightly wrong crop. The carcass's top and bottom rails
+  // sample the very top and bottom of that box, so they were sampling empty
+  // space above the cabinet — fully transparent — and the rails came out as
+  // holes you could see the room through.
+  //
+  // A row that is genuinely the top or bottom rail is mostly board across the
+  // cabinet's width. Walking in from each end until that is true finds the
+  // carcass rather than the still life on top of it.
+  const rowIsBoard = y => {
+    let n = 0, tot = 0;
+    for (let x = bx0; x <= bx1; x += 3) {
+      const i = y * cw + x;
+      if (out[i * 4 + 3] < 200) continue;
+      tot++;
+      const r = out[i * 4], g = out[i * 4 + 1], b = out[i * 4 + 2];
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      if (mx >= 176 && mx - mn <= 26) n++;
+    }
+    // Enough of the width to be a rail rather than a prop, and enough coverage
+    // to be board rather than something pale standing on it.
+    return tot > (bx1 - bx0) / 9 && n / tot >= 0.35;
+  };
+
+  let ty = by0;
+  while (ty < by1 && !rowIsBoard(ty)) ty++;
+  let byy = by1;
+  while (byy > ty && !rowIsBoard(byy)) byy--;
+  // Only trust the trim if it left a cabinet behind; otherwise keep the region.
+  const trimmed = byy - ty > (by1 - by0) * 0.4;
+
+  const [cx0, cy0, cx1, cy1] = trimmed ? [bx0, ty, bx1, byy] : [bx0, by0, bx1, by1];
 
   // --- WHERE THE FIXED MODULES ACTUALLY ARE, measured off the artwork -------
   //
