@@ -73,7 +73,11 @@ export interface ConfigField {
   id: FieldId
   /** What the customer reads above the control. */
   label: string
-  kind: 'chips' | 'swatches'
+  /** 'select' is a dropdown. It exists for the same reason the visualiser's
+   * width control is one: a run of values on a scale is not a set of things to
+   * compare, and six near-identical chips spend the panel's widest rows saying
+   * so. Everything else stays chips or swatches. */
+  kind: 'chips' | 'swatches' | 'select'
   choices: ConfigChoice[]
 }
 
@@ -263,7 +267,7 @@ export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
     fields.push({
       id: 'width',
       label: 'Width',
-      kind: 'chips',
+      kind: 'select',
       choices: options.widths.map(w => v(String(w), `${w}mm`)),
     })
   }

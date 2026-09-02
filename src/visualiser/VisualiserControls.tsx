@@ -694,17 +694,15 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               </div>
             </Field>
 
-            {/* SWATCHES, because a finish is a colour and a row of six colour
-                names is a row nobody reads. The supplier's code rides in the
-                caption beside the name — it is what goes on the order, and it
-                is the one thing here a customer might be asked to quote back.
+            {/* SWATCHES, because a finish is a colour and three colour names in
+                a row is a row nobody reads. The supplier's code rides in the
+                caption beside the name — it is what goes on the order, and the
+                one thing here a customer might be asked to quote back.
 
-                Hidden entirely when the handle is routed: there is no metalwork
-                on a handleless front, so offering a finish for it would be
-                collecting an answer that changes nothing. The rails inside
-                still take it — but a customer choosing handleless has said they
-                do not want to think about handles. */}
-            {store.wardrobeHandle !== 'none' && (
+                Always shown. It used to be hidden for the handleless profile,
+                which no longer exists: both remaining profiles are metalwork,
+                so there is no configuration with nothing to finish. */}
+            {(
               <Field
                 onDark={onDark}
                 label="Handle finish"

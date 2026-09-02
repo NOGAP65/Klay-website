@@ -914,60 +914,19 @@ export function buildCarcass(
     const metal = (b: Omit<Box, 'colour' | 'metal'>) =>
       boxes.push({ ...b, colour: hardware.rgb, metal: true });
 
-    switch (hardware.type) {
-      case 'none':
-        // A ROUTED FINGER GROOVE, which is a subtraction rather than an object.
-        // There is nothing to add in front of the front — what reads as the
-        // pull is the shadow in the recess, so this draws the recess: a shallow
-        // band set BACK from the face along the top edge, at board tone rather
-        // than in metal.
-        boxes.push({
-          x: cx + 4, y: fy + fh - 34, z: D - BOARD_MM - 12,
-          w: cw - 8, h: 30, d: 12,
-          tone: 0.72,
-        });
-        break;
-
-      case 'edge': {
-        // A slim lip running nearly the full width, on the top edge. Shallow
-        // and wide is the whole character of it.
-        metal({ x: cx + 10, y: fy + fh - 26, z: D, w: cw - 20, h: 20, d: 14 });
-        break;
-      }
-
-      case 'knob': {
-        // TWO, because one centred knob on a 507mm drawer is what a bathroom
-        // cabinet has. A pair at the thirds is how a wide drawer is actually
-        // fitted, and it is also what tells a knob apart from a short bar at
-        // this size.
-        const r = 34;
-        for (const t of [0.34, 0.66]) {
-          metal({ x: cx + cw * t - r / 2, y: fy + fh / 2 - r / 2, z: D, w: r, h: r, d: 30 });
-        }
-        break;
-      }
-
-      case 'd-pull': {
-        // A short bow: two stubby legs into the front and a squared bar across
-        // them. Narrower and deeper than the bar, which is what makes it read
-        // as something you hook a hand under rather than a rail.
-        const hw = Math.min(cw * 0.30, 200);
-        const x0 = cx + (cw - hw) / 2;
-        const y = fy + fh * 0.5;
-        metal({ x: x0, y: y - 14, z: D, w: 20, h: 28, d: 34 });
-        metal({ x: x0 + hw - 20, y: y - 14, z: D, w: 20, h: 28, d: 34 });
-        metal({ x: x0, y: y - 12, z: D + 22, w: hw, h: 24, d: 14 });
-        break;
-      }
-
-      case 'bar':
-      default: {
-        // The original: a long rail across the front, set low. Wide and thin.
-        const hw = Math.min(cw * 0.42, 320);
-        metal({ x: cx + (cw - hw) / 2, y: fy + fh * 0.72, z: D, w: hw, h: 22, d: 26 });
-        break;
-      }
+    if (hardware.type === 'knob') {
+      // ONE, CENTRED. It was a pair at the thirds, on the reasoning that a wide
+      // drawer is fitted with two — which is true of a 900mm kitchen drawer and
+      // wrong here: the tower is 507 and a single knob is what goes on it. A
+      // pair also read as a short bar with a gap in it at this size, which is
+      // the one thing a knob has to not look like.
+      const r = 38;
+      metal({ x: cx + cw / 2 - r / 2, y: fy + fh / 2 - r / 2, z: D, w: r, h: r, d: 32 });
+      return;
     }
+    // A long rail across the front, set low. Wide and thin.
+    const hw = Math.min(cw * 0.42, 320);
+    metal({ x: cx + (cw - hw) / 2, y: fy + fh * 0.72, z: D, w: hw, h: 22, d: 26 });
   };
 
   // Resolved in millimetres, not as fractions of the cabinet: a drawer tower is

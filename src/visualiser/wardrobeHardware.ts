@@ -2,52 +2,52 @@
 // WARDROBE HARDWARE — the handle, and what it is made of.
 //
 // Two separate questions, and they are separate because they fail differently.
-// The TYPE changes the geometry: a bar pull, a knob and a routed finger groove
-// are three different shapes on the drawer front, and swapping between them
-// changes the silhouette of the whole bank. The FINISH changes only the
-// material, and it is the same six finishes whichever shape carries them.
+// The TYPE changes the geometry — a bar is a line across the drawer front and a
+// knob is a point on it, which is a different silhouette for the whole bank.
+// The FINISH changes only the material, and it is the same three whichever
+// shape carries them.
 //
-// WHERE THE FINISHES COME FROM, and this half is not invented: they are the
-// supplier's own hardware finish range, read off the Stegbar Signature Range
-// deck with their codes intact — F11 through F16. The deck lists them on the
-// shower-screen page under "Hardware Options", and the range is described as
-// colour-matched across the products, so these are the finishes the business
-// already sells rather than a palette chosen here.
+// TWO PROFILES AND THREE FINISHES, WHICH IS THE RANGE. It was five and six,
+// taken from what a joiner could quote and from every finish printed in the
+// Stegbar Signature deck. That was reading a catalogue as an order form: most
+// of them are not what this business sells, and a picker offering choices
+// nobody can order is worse than a short one — each is a render to get right, a
+// line on a quote to honour, and something to explain on the phone.
 //
-// WHERE THE TYPES COME FROM, and this half NEEDS CONFIRMING. The deck says
-// nothing about wardrobe handle profiles — its wardrobe pages cover internals,
-// sliding doors and walk-ins, and none of them name a pull. So the five below
-// are the families a joiner ordinarily quotes, in the trade's own words. They
-// are the right shape and the wrong thing to leave unchecked; this file is the
-// one place to correct them, and correcting them changes the visualiser, the
-// card configurator and the quote together.
+// The finish codes are the supplier's own and are kept verbatim, because they
+// are what goes on the order. Silver, black and brass are the three the range
+// is sold in.
+//
+// This file is the one place to correct any of it, and correcting it changes
+// the visualiser, the card configurator and the quote together.
 // ---------------------------------------------------------------------------
 
 /** How the handle is drawn. The id is what the store holds and what reaches a
  * quote, so it is a stable slug rather than the label. */
-export type HandleTypeId = 'bar' | 'd-pull' | 'edge' | 'knob' | 'none';
+export type HandleTypeId = 'bar' | 'knob';
 
 export interface HandleType {
   id: HandleTypeId;
   label: string;
   /** One line under the name in the picker — what the customer is choosing
-   * between, since "D-pull" and "Bar" mean nothing to most people. */
+   * between, since a profile name on its own is a shape nobody can picture. */
   note: string;
 }
 
-/** THE PROFILES, widest-selling first.
+/** THE TWO PROFILES THE RANGE IS ACTUALLY FITTED WITH.
  *
- * `none` is last and is a real product rather than an opt-out: a handleless
- * robe has a finger groove routed into the top edge of the front, which is how
- * a great many contemporary wardrobes are made. It is listed as a choice
- * because leaving it off would make "no handle" look like a missing selection.
- */
+ * This was five — bar, D-pull, edge pull, knob and handleless — which was the
+ * list of families a joiner COULD quote rather than the list this business
+ * sells. Three of them were speculative, and a picker offering choices nobody
+ * can order is worse than a short one: every extra profile is a render to get
+ * right, a line on a quote to honour and a thing to explain on the phone.
+ *
+ * Two is also enough to be a real choice. A bar and a knob are the two ends of
+ * how a drawer front reads — a horizontal line across it, or a single point on
+ * it — and everything else is a variation between them. */
 export const HANDLE_TYPES: HandleType[] = [
-  { id: 'bar', label: 'Bar', note: 'Round rail, stands off the front' },
-  { id: 'd-pull', label: 'D-pull', note: 'Short squared bow' },
-  { id: 'edge', label: 'Edge pull', note: 'Slim lip along the top' },
-  { id: 'knob', label: 'Knob', note: 'A pair, centred' },
-  { id: 'none', label: 'Handleless', note: 'Routed finger groove' },
+  { id: 'bar', label: 'Bar', note: 'Round rail across the front' },
+  { id: 'knob', label: 'Knob', note: 'One, centred' },
 ];
 
 export interface HandleFinish {
@@ -56,30 +56,36 @@ export interface HandleFinish {
   code: string;
   name: string;
   /** Base colour. For a metal this is the reflectance tint rather than a paint
-   * colour — a brushed nickel is not "grey", it is a mirror with a warm-neutral
-   * cast, and the environment supplies most of what you actually see. */
+   * colour — silver is not "grey", it is a mirror with a neutral cast, and the
+   * environment supplies most of what you actually see. */
   hex: string;
-  /** How much of a mirror it is. The two painted finishes are not metal at all
-   * — matte black and matte white are powder-coated, which is a dielectric —
-   * and rendering them as metal is what makes a black handle read as a hole. */
+  /** How much of a mirror it is. Black is not metal at all — it is powder
+   * coated, which is a dielectric — and rendering it as metal is what makes a
+   * black handle read as a hole punched in the cabinet. */
   metalness: number;
-  /** Brushed rather than polished on most of them: a wardrobe handle is
-   * satin-finished, so the reflection is a sheen and not an image. */
+  /** Brushed rather than polished: a wardrobe handle is satin-finished, so the
+   * reflection is a sheen and not an image. */
   roughness: number;
 }
 
-/** THE SUPPLIER'S SIX, in the deck's own order and with its own codes. */
+/** THE THREE THE RANGE IS SOLD IN, with the supplier's codes kept.
+ *
+ * The deck lists six hardware finishes and all six were offered here, which was
+ * reading a catalogue page as a wardrobe order form. Silver, black and brass
+ * are what the business actually sells against, so gunmetal, matte white and
+ * the second silver are gone — brushed nickel and bright silver were two names
+ * for the customer's one answer, and having both on screen asked a question
+ * with no meaningful difference behind it.
+ *
+ * The codes stay because they are what goes on the order. */
 export const HANDLE_FINISHES: HandleFinish[] = [
-  { code: 'F15', name: 'Brushed Nickel', hex: '#c6cace', metalness: 0.90, roughness: 0.42 },
-  { code: 'F11', name: 'Matte Black', hex: '#2b2b2d', metalness: 0.05, roughness: 0.72 },
-  { code: 'F12', name: 'Brushed Gold', hex: '#c2a161', metalness: 0.88, roughness: 0.40 },
-  { code: 'F14', name: 'Gunmetal', hex: '#5c5f63', metalness: 0.86, roughness: 0.46 },
-  { code: 'F16', name: 'Bright Silver', hex: '#d8dce0', metalness: 0.95, roughness: 0.16 },
-  { code: 'F13', name: 'Matte White', hex: '#eeece8', metalness: 0.04, roughness: 0.70 },
+  { code: 'F16', name: 'Silver', hex: '#d3d7db', metalness: 0.93, roughness: 0.28 },
+  { code: 'F11', name: 'Black', hex: '#2b2b2d', metalness: 0.05, roughness: 0.72 },
+  { code: 'F12', name: 'Brass', hex: '#c2a161', metalness: 0.88, roughness: 0.40 },
 ];
 
 export const DEFAULT_HANDLE: HandleTypeId = 'bar';
-export const DEFAULT_HANDLE_FINISH = 'Brushed Nickel';
+export const DEFAULT_HANDLE_FINISH = 'Silver';
 
 export const handleType = (id: string): HandleType =>
   HANDLE_TYPES.find(h => h.id === id) ?? HANDLE_TYPES[0];
