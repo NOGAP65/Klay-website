@@ -662,25 +662,48 @@ function MotorRemote({
 
 /** THE SAMPLE ROOMS, AND THEY ARE NOT THE SAME FOR EVERY PRODUCT.
  *
- * All five presets are blind and curtain scenes — a window in the middle of a
+ * The window presets are blind and curtain scenes — a window in the middle of a
  * wall, which is exactly what a roller blind needs and exactly the wrong thing
- * for a wardrobe. A wardrobe needs a blank stretch of wall, and offering a
- * window means the first thing a customer does is trace one, and the first
- * thing the visualiser does is stand a cupboard in front of the glass. That is
- * what the default preview has been doing all along.
+ * for a wardrobe. Offered one, the first thing a customer does is trace a
+ * window and the first thing the visualiser does is stand a cupboard in front
+ * of the glass.
  *
- * So the samples are per category. The wardrobe list is the bedroom, which is
- * the only supplied photograph with a wall you would actually build into.
+ * THE WARDROBE ROOMS ARE ALCOVES AT KNOWN WIDTHS, which is worth more than a
+ * backdrop. Each was shot with its opening labelled, so the photograph carries
+ * the one measurement a photograph normally cannot give up — and that lets the
+ * preset seed a trace that is already the right size, instead of asking someone
+ * to guess where the alcove's edges are before they have seen anything.
  *
- * IT IS ONE PHOTOGRAPH, and it should be three or four. Wardrobe room
- * photography is the outstanding asset request — a bedroom alcove, a flat wall
- * beside a bed, a corner — and until it arrives this is honest about having one
- * rather than padding the row with windows. */
+ * They are supplied with doors on. The doors are not the product here — the
+ * opening behind them is — so the trace goes on the opening and the visualiser
+ * draws an open carcass into it. */
 const PRESET_ROOMS_WINDOW = ['/images/room-3.png', '/images/room-4.png', '/images/room-5.png'];
-const PRESET_ROOMS_WARDROBE = ['/images/Preview.png'];
 
-const presetRoomsFor = (category: string) =>
-  category === 'wardrobe' ? PRESET_ROOMS_WARDROBE : PRESET_ROOMS_WINDOW;
+export interface WardrobeRoom {
+  url: string;
+  /** The opening's real width, from the label in the photograph itself. */
+  openingMm: number;
+}
+
+/** NAMED BY THE LABEL IN THE PICTURE, not by the filename.
+ *
+ * `2700mm.jpeg` is a 2400 opening — the dimension drawn across the top of that
+ * photograph says 2400mm, and the cabinet in it is the same width as the other
+ * four-door shot. The file name is wrong and the artwork is right, so the
+ * artwork wins. */
+const PRESET_ROOMS_WARDROBE: WardrobeRoom[] = [
+  { url: '/images/visualizer pictures/1500 .. opening.jpeg', openingMm: 1500 },
+  { url: '/images/visualizer pictures/1800 mm opening.jpeg', openingMm: 1800 },
+  { url: '/images/visualizer pictures/2100 mm.jpeg', openingMm: 2100 },
+  { url: '/images/visualizer pictures/2700mm.jpeg', openingMm: 2400 },
+];
+
+const presetRoomsFor = (category: string): string[] =>
+  category === 'wardrobe' ? PRESET_ROOMS_WARDROBE.map(r => r.url) : PRESET_ROOMS_WINDOW;
+
+/** The opening width a wardrobe sample was shot at, if this is one of them. */
+export const openingWidthFor = (url: string | null): number | null =>
+  PRESET_ROOMS_WARDROBE.find(r => r.url === url)?.openingMm ?? null;
 
 // Loaded automatically on mount so the visualiser never shows an empty
 // upload prompt by default — the blind renders immediately against this
@@ -737,6 +760,35 @@ const DEFAULT_WARDROBE_CORNERS_PCT: [number, number][] = [
   [0.605, 0.900],
   [0.035, 0.900],
 ];
+
+/** WHERE THE ALCOVE IS IN THE SUPPLIED WARDROBE PHOTOGRAPHS.
+ *
+ * All four were shot from the same position with the same lens — only the
+ * opening changes — so the alcove sits in very nearly the same place in each,
+ * growing about the centre. One box scaled by the opening's own width covers
+ * all four, and the customer arrives with the trace already on the alcove
+ * rather than having to find it.
+ *
+ * Measured off the 1800 shot and scaled from there. It is a starting position,
+ * not a claim: the customer retraces or uploads their own wall from here. */
+const ALCOVE_CENTRE_X = 0.503;
+const ALCOVE_TOP_PCT = 0.243;
+const ALCOVE_BOTTOM_PCT = 0.905;
+/** How wide the 1800 opening is as a fraction of the frame. Every other width
+ * is this times its own ratio to 1800. */
+const ALCOVE_1800_WIDTH_PCT = 0.323;
+
+function alcoveCornersPct(openingMm: number): [number, number][] {
+  const halfW = (ALCOVE_1800_WIDTH_PCT * (openingMm / 1800)) / 2;
+  const l = ALCOVE_CENTRE_X - halfW;
+  const r = ALCOVE_CENTRE_X + halfW;
+  return [
+    [l, ALCOVE_TOP_PCT],
+    [r, ALCOVE_TOP_PCT],
+    [r, ALCOVE_BOTTOM_PCT],
+    [l, ALCOVE_BOTTOM_PCT],
+  ];
+}
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
@@ -831,13 +883,20 @@ export default function KlayConfigurator({
       store.defaultWindowActive &&
       !hasSeededDefaultRef.current &&
       photoBitmap &&
-      hookPhotoUrl === DEFAULT_WINDOW_URL &&
+      (hookPhotoUrl === DEFAULT_WINDOW_URL || openingWidthFor(hookPhotoUrl) !== null) &&
       useVisualiserStore.getState().tracedAreas.length === 0
     ) {
+      // A SUPPLIED ALCOVE SEEDS ITS OWN OPENING. These photographs were shot
+      // with the opening labelled, so where the alcove is and how wide it is
+      // are both known — the trace can start on it rather than asking someone
+      // to find it. Everything else falls back to the fixed default.
+      const openingMm = openingWidthFor(hookPhotoUrl);
       const seed =
-        useVisualiserStore.getState().productCategory === 'wardrobe'
-          ? DEFAULT_WARDROBE_CORNERS_PCT
-          : DEFAULT_WINDOW_CORNERS_PCT;
+        openingMm !== null
+          ? alcoveCornersPct(openingMm)
+          : useVisualiserStore.getState().productCategory === 'wardrobe'
+            ? DEFAULT_WARDROBE_CORNERS_PCT
+            : DEFAULT_WINDOW_CORNERS_PCT;
       const corners: Point[] = seed.map(([px, py]) => [
         px * photoBitmap.width,
         py * photoBitmap.height,
