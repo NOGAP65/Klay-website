@@ -10,6 +10,13 @@ interface CornerPinOverlayProps {
   imageWidth: number;
   imageHeight: number;
   onConfirm: (corners: Point[]) => void;
+  /** Where to open the pins, as fractions of the image, TL TR BR BL.
+   *
+   * For a photograph whose subject is known — the supplied alcove shots, which
+   * carry their opening's dimension in the frame — this puts the trace on the
+   * opening from the start. Omitted for an uploaded photo, where nothing is
+   * known and the generic box is the honest default. */
+  initialCornersPct?: Point[];
 }
 
 const DEFAULT_CORNERS_PCT: Point[] = [
@@ -56,9 +63,18 @@ const MIDPOINT_DIAMOND_PX = 10;
 const MIDPOINT_DIAMOND_STROKE_PX = 1.5;
 
 const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProps>(
-  ({ imageWidth, imageHeight, onConfirm }, ref) => {
+  ({ imageWidth, imageHeight, onConfirm, initialCornersPct }, ref) => {
+    // A CALLER MAY SAY WHERE TO START. The supplied wardrobe photographs were
+    // shot with the opening dimensioned, so where the alcove is and how wide it
+    // is are both known — the pins can open on it rather than on a generic box
+    // the customer then has to drag onto the opening.
+    //
+    // The fallback stays 10%..90% for an uploaded photo, where nothing is known
+    // about the room and a box in the middle of the frame is the honest start.
     const [corners, setCorners] = useState<Point[]>(() =>
-      DEFAULT_CORNERS_PCT.map(([px, py]) => [px * imageWidth, py * imageHeight])
+      (initialCornersPct ?? DEFAULT_CORNERS_PCT).map(
+        ([px, py]) => [px * imageWidth, py * imageHeight] as Point,
+      )
     );
     const activeIndex = useRef<number | null>(null);
     const activeMidpoint = useRef<MidpointId | null>(null);

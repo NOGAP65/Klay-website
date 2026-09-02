@@ -87,9 +87,17 @@ export const WARDROBE_HEIGHT_MM = 2016;
  * Held here as a constant for the same reason 2016 is. */
 export const WARDROBE_DEPTH_MM = 500;
 
-/** The width a layout opens on where it is built in it. The renders were shot at
- * about this, so the visualiser starts on unsliced artwork. */
-export const DEFAULT_WIDTH_MM = 2400;
+/** The width a layout opens on.
+ *
+ * MATCHED TO THE PREVIEW PHOTOGRAPH, which is the 1500 alcove. A wardrobe
+ * arriving at 2400 in a 1500 opening is a cabinet visibly overrunning its
+ * alcove, and the first thing a customer sees should be the product fitting
+ * rather than a warning they did not ask for.
+ *
+ * It costs a little: 1500 is not the width the renders were shot at, so the
+ * artwork is sliced from the first frame rather than shown unsliced. The
+ * slicing is exact — that is the whole point of it — so this is the right trade. */
+export const DEFAULT_WIDTH_MM = 1500;
 
 /** THE BUILT-IN RANGE, FROM THE PRODUCT CODES.
  *
@@ -108,7 +116,14 @@ export const DEFAULT_WIDTH_MM = 2400;
  * direction: one shared list of five, applied to everything. SRDH starts at
  * 1200 and stops at 2400; the two tower products start at 1500 and run to 2700.
  * A tower is 507mm of the cabinet, so a 1200 opening with a tower in it has
- * under 700 left for hanging, which is why they do not offer it. */
+ * under 700 left for hanging, which is why they do not offer it.
+ *
+ * THE PHOTOGRAPHS DO NOT COVER EVERY WIDTH, and that must not change this list.
+ * The supplied alcove shots are 1500 / 1800 / 2100 / 2400, so a customer
+ * choosing 2700 sees it against the 2400 room. 2700 was briefly deleted here
+ * because no sample was shot at it — which is backwards: this is the product
+ * range, and a missing photograph is a gap in the sample rooms, not a width
+ * the supplier stops making. */
 export const WARDROBE_MODELS: WardrobeModel[] = [
   {
     id: 'SRDH',

@@ -691,25 +691,59 @@ export interface WardrobeRoom {
  * photograph says 2400mm, and the cabinet in it is the same width as the other
  * four-door shot. The file name is wrong and the artwork is right, so the
  * artwork wins. */
+/** PERCENT-ENCODED AT THE SOURCE. These filenames contain spaces, and a raw
+ * space in an <img src> is not a URL the browser will fetch — the photo simply
+ * never loaded and the visualiser sat on its upload prompt. Encoding here means
+ * the same string is used to request the file and to match it back, which is
+ * also what openingWidthFor needs. */
 const PRESET_ROOMS_WARDROBE: WardrobeRoom[] = [
-  { url: '/images/visualizer pictures/1500 .. opening.jpeg', openingMm: 1500 },
-  { url: '/images/visualizer pictures/1800 mm opening.jpeg', openingMm: 1800 },
-  { url: '/images/visualizer pictures/2100 mm.jpeg', openingMm: 2100 },
-  { url: '/images/visualizer pictures/2700mm.jpeg', openingMm: 2400 },
+  { url: '/images/visualizer%20pictures/1500%20..%20opening.jpeg', openingMm: 1500 },
+  { url: '/images/visualizer%20pictures/1800%20mm%20opening.jpeg', openingMm: 1800 },
+  { url: '/images/visualizer%20pictures/2100%20mm.jpeg', openingMm: 2100 },
+  { url: '/images/visualizer%20pictures/2700mm.jpeg', openingMm: 2400 },
 ];
 
 const presetRoomsFor = (category: string): string[] =>
   category === 'wardrobe' ? PRESET_ROOMS_WARDROBE.map(r => r.url) : PRESET_ROOMS_WINDOW;
 
-/** The opening width a wardrobe sample was shot at, if this is one of them. */
-export const openingWidthFor = (url: string | null): number | null =>
-  PRESET_ROOMS_WARDROBE.find(r => r.url === url)?.openingMm ?? null;
+/** The opening width a wardrobe sample was shot at, if this is one of them.
+ *
+ * COMPARED ON THE DECODED PATH, because the URL does not survive the round trip
+ * unchanged. These filenames contain spaces, so once one has been through an
+ * <img src> and back out it arrives percent-encoded — `1500%20..%20opening` —
+ * and a plain equality test against the literal never matched. The seeded trace
+ * silently fell back to the generic default box, which covers most of the
+ * photograph rather than the alcove. */
+export const openingWidthFor = (url: string | null): number | null => {
+  if (!url) return null;
+  const norm = (u: string) => {
+    try { return decodeURI(u); } catch { return u; }
+  };
+  const want = norm(url);
+  return PRESET_ROOMS_WARDROBE.find(r => norm(r.url) === want)?.openingMm ?? null;
+};
 
 // Loaded automatically on mount so the visualiser never shows an empty
 // upload prompt by default — the blind renders immediately against this
 // photo using a fixed set of corner pins (see DEFAULT_WINDOW_CORNERS_PCT),
 // with no CornerPinOverlay involved at all until the user replaces it.
 const DEFAULT_WINDOW_URL = '/images/Preview.png';
+
+/** THE WARDROBE PREVIEW IS AN ALCOVE, not the window photograph.
+ *
+ * Preview.png is a bedroom with a window in it, and it is right for a blind.
+ * For a wardrobe it was never more than the least-bad option: a customer
+ * arriving on the wardrobe tab saw a cupboard standing against a window, which
+ * is the first thing the visualiser says about the product and it was saying
+ * something false.
+ *
+ * The 1500 alcove says the true thing instead — a built-in robe in an opening,
+ * which is what these are — and it comes dimensioned, so the seeded trace can
+ * be the real opening rather than a guess. */
+const DEFAULT_WARDROBE_URL = '/images/visualizer%20pictures/1500%20..%20opening.jpeg';
+
+const defaultPhotoFor = (category: string) =>
+  category === 'wardrobe' ? DEFAULT_WARDROBE_URL : DEFAULT_WINDOW_URL;
 // The glass aperture of the double window in Preview.png (1254 x 1254).
 //
 // These pins are paired to this photo and only this photo. Swapping
@@ -761,32 +795,33 @@ const DEFAULT_WARDROBE_CORNERS_PCT: [number, number][] = [
   [0.035, 0.900],
 ];
 
-/** WHERE THE ALCOVE IS IN THE SUPPLIED WARDROBE PHOTOGRAPHS.
+/** WHERE THE ALCOVE IS IN EACH SUPPLIED WARDROBE PHOTOGRAPH.
  *
- * All four were shot from the same position with the same lens — only the
- * opening changes — so the alcove sits in very nearly the same place in each,
- * growing about the centre. One box scaled by the opening's own width covers
- * all four, and the customer arrives with the trace already on the alcove
- * rather than having to find it.
+ * MEASURED PER PHOTOGRAPH, not scaled from one of them. The first version
+ * assumed all four were shot from the same spot and derived the others from the
+ * 1800 by ratio; they are not, and the derived boxes drifted. Reading each
+ * picture off a percentage grid takes a minute and is right.
  *
- * Measured off the 1800 shot and scaled from there. It is a starting position,
- * not a claim: the customer retraces or uploads their own wall from here. */
-const ALCOVE_CENTRE_X = 0.503;
-const ALCOVE_TOP_PCT = 0.243;
-const ALCOVE_BOTTOM_PCT = 0.905;
-/** How wide the 1800 opening is as a fraction of the frame. Every other width
- * is this times its own ratio to 1800. */
-const ALCOVE_1800_WIDTH_PCT = 0.323;
+ * The opening runs from under the dimension arrows to the skirting, which is
+ * where the doors in the photograph start and finish — so the traced quad is
+ * the reveal, and the cabinet the visualiser draws goes inside it.
+ *
+ * A starting position rather than a claim: the customer retraces or uploads
+ * their own wall from here. */
+const ALCOVE_BOXES: Record<number, { l: number; r: number; t: number; b: number }> = {
+  1500: { l: 0.362, r: 0.605, t: 0.150, b: 0.828 },
+  1800: { l: 0.340, r: 0.628, t: 0.150, b: 0.828 },
+  2100: { l: 0.318, r: 0.651, t: 0.150, b: 0.828 },
+  2400: { l: 0.296, r: 0.674, t: 0.150, b: 0.828 },
+};
 
 function alcoveCornersPct(openingMm: number): [number, number][] {
-  const halfW = (ALCOVE_1800_WIDTH_PCT * (openingMm / 1800)) / 2;
-  const l = ALCOVE_CENTRE_X - halfW;
-  const r = ALCOVE_CENTRE_X + halfW;
+  const box = ALCOVE_BOXES[openingMm] ?? ALCOVE_BOXES[1500];
   return [
-    [l, ALCOVE_TOP_PCT],
-    [r, ALCOVE_TOP_PCT],
-    [r, ALCOVE_BOTTOM_PCT],
-    [l, ALCOVE_BOTTOM_PCT],
+    [box.l, box.t],
+    [box.r, box.t],
+    [box.r, box.b],
+    [box.l, box.b],
   ];
 }
 
@@ -840,7 +875,12 @@ export default function KlayConfigurator({
   // doesn't already carry a real user photo from earlier in this session.
   useEffect(() => {
     if (store.defaultWindowActive) {
-      loadFromUrl(DEFAULT_WINDOW_URL);
+      // THE CATEGORY IS READ FRESH, not captured. This runs once on mount, and
+      // the store may already say 'wardrobe' — a visitor who left the tab there,
+      // or a host that mounts with it set. Loading the window photo first and
+      // letting the category effect correct it afterwards raced: two loads in
+      // flight, and whichever image decoded last won.
+      loadFromUrl(defaultPhotoFor(useVisualiserStore.getState().productCategory));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -890,6 +930,16 @@ export default function KlayConfigurator({
       // with the opening labelled, so where the alcove is and how wide it is
       // are both known — the trace can start on it rather than asking someone
       // to find it. Everything else falls back to the fixed default.
+      // THE STORE HAS TO LEARN THE PHOTO TOO. loadFromUrl sets the hook's own
+      // state — the bitmap and the URL it decoded — but the store keeps its own
+      // photoUrl, and that is the one the renderer reads. A preset thumbnail
+      // sets both because its click handler calls setPhotoUrl explicitly; the
+      // default path never did, so the store sat on a null photo and the
+      // wardrobe never rendered.
+      if (useVisualiserStore.getState().photoUrl !== hookPhotoUrl) {
+        store.setPhotoUrl(hookPhotoUrl);
+      }
+
       const openingMm = openingWidthFor(hookPhotoUrl);
       const seed =
         openingMm !== null
@@ -1083,6 +1133,13 @@ export default function KlayConfigurator({
     if (!store.defaultWindowActive) return;
     hasSeededDefaultRef.current = false;
     store.clearTracedAreas();
+    // AND THE PHOTOGRAPH CHANGES WITH IT. The two categories have different
+    // default rooms — a window for a blind, an alcove for a wardrobe — so
+    // crossing between them has to reload the photo, not just clear the trace.
+    // Left alone, a customer switching to wardrobes got a cupboard standing
+    // against a window, which is the first thing the visualiser says about the
+    // product.
+    loadFromUrl(defaultPhotoFor(store.productCategory));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.productCategory, store.defaultWindowActive]);
 
@@ -1174,7 +1231,7 @@ export default function KlayConfigurator({
           store.clearTracedAreas();
           store.setDefaultWindowActive(true);
           hasSeededDefaultRef.current = false;
-          loadFromUrl(DEFAULT_WINDOW_URL);
+          loadFromUrl(defaultPhotoFor(store.productCategory));
         }}>Back to preview</Button>
         <Button onClick={() => store.clearTracedAreas()}>Retrace</Button>
         <Button variant="primary" onClick={handleDownload}>Download</Button>
@@ -1329,10 +1386,18 @@ export default function KlayConfigurator({
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
           <CornerPinOverlay
+            // Keyed on the photo, so choosing another sample re-opens the pins
+            // on ITS alcove rather than leaving them where the last one was.
+            key={hookPhotoUrl ?? 'none'}
             ref={overlayRef}
             imageWidth={photoBitmap!.width}
             imageHeight={photoBitmap!.height}
             onConfirm={handleConfirmTrace}
+            initialCornersPct={
+              openingWidthFor(hookPhotoUrl) !== null
+                ? (alcoveCornersPct(openingWidthFor(hookPhotoUrl)!) as Point[])
+                : undefined
+            }
           />
           {/* Confirm / Change photo live in the footer — see footerButtons. */}
         </div>
