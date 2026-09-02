@@ -88,8 +88,10 @@ export interface ContentAsset {
  * widthMm, so a stack declared at twice its size arrives as a piece of luggage
  * on a shelf. */
 export const CONTENT_ASSETS: Record<ContentKind, ContentAsset> = {
-  // Dark trousers off 4.0's lower rail — the short drop of a double-hang.
-  'hanging-short': { kind: 'hanging-short', file: 'hanging-short.png', widthMm: 200, depth: 0.30, hangs: true, repeats: true },
+  // The same three coats as the long run, cut to a double-hang's drop — so both
+  // rails carry the same garments at the same real width, which is what a
+  // double-hang actually is.
+  'hanging-short': { kind: 'hanging-short', file: 'hanging-short.png', widthMm: 370, depth: 0.30, hangs: true, repeats: true },
   // Three charcoal coats off 3.0's left-hand run, at their full drop.
   'hanging-long': { kind: 'hanging-long', file: 'hanging-long.png', widthMm: 370, depth: 0.30, hangs: true, repeats: true },
   // Depths are the objects' real front-to-back sizes: a folded stack is about
