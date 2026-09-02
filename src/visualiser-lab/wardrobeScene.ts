@@ -109,7 +109,10 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // are measured off the artwork in any case; this is the fallback for the one
   // asset the detector cannot read.
   const refWidthMm = DEFAULT_WIDTH_MM;
-  const cut = cutoutFor(model.id);
+  // The artwork this SKU wears, which is not keyed by its own id any more:
+  // the products are filed under their codes and the renders under the names
+  // the stickers arrived with. See WardrobeModel.artworkId.
+  const cut = model.artworkId ? cutoutFor(model.artworkId) : undefined;
   const mapU = cut ? sliceMapper(buildSliceMap(model.id, refWidthMm, cut), widthMm) : null;
   const isWhite = wardrobeColour(colourName).slug === 'white';
 

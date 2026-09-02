@@ -108,6 +108,34 @@ export interface ResolvedColumn {
  * geometry still has to agree with it, or the modelled dividers land in the
  * middle of a photographed hanging bay. */
 export const LAYOUT_COLUMNS: Record<string, Column[]> = {
+  // --- THE BUILT-IN RANGE, BY PRODUCT CODE -------------------------------
+  // Three SKUs at 2016mm, and their names say exactly what is in them.
+
+  /** Divider Support + Double Hang Rail. No tower at all: a divider down the
+   * middle and a double-hung bay either side of it, which is why this is the
+   * one made as narrow as 1200 — there is no 507mm module eating the width. */
+  SRDH: [
+    { share: 1, fill: { kind: 'hang2' } },
+    { share: 1, fill: { kind: 'hang2' } },
+  ],
+
+  /** Shelf Tower + Divider + Double Hang Rail. The tower is the fixed module;
+   * the double-hung bay and the long hang beside it take the rest. Matches
+   * what 4.0's render shows, which is the artwork this SKU wears. */
+  SRSTDH02: [
+    { fixed: true, fill: { kind: 'shelves', count: 6 } },
+    { share: 1.22, fill: { kind: 'hang2' } },
+    { share: 1, fill: { kind: 'hang' } },
+  ],
+
+  /** Drawer Tower + Divider + Double Hang Rail. Same arrangement with a bank of
+   * four drawers under the tower's shelving, as 6.0's render shows. */
+  SRDTDH01: [
+    { fixed: true, fill: { kind: 'drawers', count: 4, shelves: 2 } },
+    { share: 1.4, fill: { kind: 'hang2' } },
+    { share: 1, fill: { kind: 'hang' } },
+  ],
+
   // A shelf tower on the left — six openings — beside one full-height hang.
   '2.9': [
     { fixed: true, fill: { kind: 'shelves', count: 5 } },
@@ -167,7 +195,7 @@ export const LAYOUT_COLUMNS: Record<string, Column[]> = {
  * of a third of a module so the layout stays legible while it is being dragged.
  */
 export function columnsFor(id: string, widthMm: number): ResolvedColumn[] {
-  const columns = LAYOUT_COLUMNS[id] ?? LAYOUT_COLUMNS['3.0'];
+  const columns = LAYOUT_COLUMNS[id] ?? LAYOUT_COLUMNS.SRSTDH02;
   const inner = Math.max(1, widthMm - 2 * BOARD_MM - (columns.length - 1) * BOARD_MM);
 
   // How much board each column carries: the full outer panel at the ends of the

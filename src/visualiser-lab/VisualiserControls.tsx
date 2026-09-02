@@ -4,8 +4,8 @@ import { radius, tokens, space, type as typeScale } from '../theme';
 import { formatAUD, isBlindType } from '../lib/pricing';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
 import {
-  WARDROBE_COLOURS, WARDROBE_WIDTHS_MM, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM,
-  modelsOfKind,
+  WARDROBE_COLOURS, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM,
+  modelsOfKind, wardrobeModelById,
 } from './wardrobes';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
@@ -511,10 +511,14 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
 
             {/* WIDTH SITS RIGHT AFTER THE LAYOUT, because that is the order the
                 two questions come in: which arrangement, then how wide a run of
-                it. Every layout is built in all five widths, so this never
-                changes shape as the layout changes.
+                it.
 
-                Height and depth are not here at all — they are fixed for the
+                THE OPTIONS ARE THE SKU'S OWN. They are not the same across the
+                range: SRDH has no tower, so it is made from 1200, while the two
+                tower products start at 1500 — a 507mm module in a 1200 opening
+                leaves under 700mm for hanging, which is not a wardrobe.
+
+                Height and depth are stated, not offered. They are fixed for the
                 range, and a control with one answer is a statement dressed up
                 as a question. */}
             <Field
@@ -523,7 +527,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               caption={`${store.wardrobeWidthMm} × ${WARDROBE_HEIGHT_MM} × ${WARDROBE_DEPTH_MM} mm`}
             >
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
-                {WARDROBE_WIDTHS_MM.map(w => (
+                {wardrobeModelById(store.wardrobeModel).widths.map(w => (
                   <Pill
                     key={w}
                     onDark={onDark}
