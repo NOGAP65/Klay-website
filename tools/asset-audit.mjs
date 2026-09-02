@@ -58,9 +58,22 @@ for (const file of assets) {
   }
 
   const frozenRefs = referencedBy.filter((s) => s.startsWith('src/') && !isInScope(s));
-  const liveRefs = referencedBy.filter((s) => !frozenRefs.includes(s));
+  // scripts/ and netlify/ are NOT the browser. An asset named only by a build
+  // script is a build input, not a web asset — and counting those as "live"
+  // once hid two wardrobe renders that wardrobeCutouts.ts (E-08) also names.
+  const buildRefs = referencedBy.filter((s) => s.startsWith('scripts/') || s.startsWith('netlify/'));
+  const liveRefs = referencedBy.filter(
+    (s) => !frozenRefs.includes(s) && !buildRefs.includes(s),
+  );
 
-  rows.push({ file, rel, size, referencedBy, frozenRefs, liveRefs });
+  // CONSTRUCTED PATHS DEFEAT ALL OF THIS. wardrobes.ts builds every render's
+  // path as `${model.id}-${colourSlug}-${view}.png`, so a file can be loaded at
+  // runtime while appearing in no source file at all. Anything under this
+  // directory is therefore UNSAFE TO CLASSIFY and must not be moved on the
+  // strength of a static count.
+  const constructedPath = rel.startsWith('/images/Textures/wardrobes/');
+
+  rows.push({ file, rel, size, referencedBy, frozenRefs, buildRefs, liveRefs, constructedPath });
 }
 
 const kb = (n) => (n / 1024).toFixed(0).padStart(6) + ' KB';
@@ -68,9 +81,18 @@ const total = rows.reduce((n, r) => n + r.size, 0);
 
 console.log(`\npublic/ — ${rows.length} files, ${(total / 1048576).toFixed(1)} MB\n`);
 
-const unreferenced = rows.filter((r) => r.referencedBy.length === 0);
-const frozenOnly = rows.filter((r) => r.referencedBy.length > 0 && r.liveRefs.length === 0);
-const live = rows.filter((r) => r.liveRefs.length > 0);
+// Ordered: the unsafe class is taken out FIRST, so nothing under it can be
+// reported as movable by any later rule.
+const unsafe = rows.filter((r) => r.constructedPath);
+const rest = rows.filter((r) => !r.constructedPath);
+
+const unreferenced = rest.filter((r) => r.referencedBy.length === 0);
+const buildOnly = rest.filter((r) => r.referencedBy.length > 0 && r.liveRefs.length === 0 && r.frozenRefs.length === 0);
+const frozenOnly = rest.filter((r) => r.liveRefs.length === 0 && r.frozenRefs.length > 0);
+const live = rest.filter((r) => r.liveRefs.length > 0);
+
+console.log(`  UNSAFE TO CLASSIFY (constructed paths)  : ${unsafe.length}  ${(unsafe.reduce((n, r) => n + r.size, 0) / 1048576).toFixed(1)} MB`);
+console.log(`  build-input only (scripts/, netlify/)   : ${buildOnly.length}  ${(buildOnly.reduce((n, r) => n + r.size, 0) / 1048576).toFixed(1)} MB`);
 
 console.log(`  live (referenced from in-scope code) : ${live.length}  ${(live.reduce((n, r) => n + r.size, 0) / 1048576).toFixed(1)} MB`);
 console.log(`  E-08 ONLY — CANNOT BE MOVED          : ${frozenOnly.length}  ${(frozenOnly.reduce((n, r) => n + r.size, 0) / 1048576).toFixed(1)} MB`);
