@@ -182,10 +182,19 @@ export function makeWhiteBoardMaps(base: THREE.Color): WhiteBoardMaps | null {
   // NORMALS from the height field, by central difference. Wrapped, so the map
   // tiles as cleanly as the noise under it does.
   //
-  // The strength is set here rather than left to normalScale so the map is
-  // right on its own terms: the peel is shallow, and a normal map that says
-  // otherwise turns a pressed board into hammered metal.
-  const STRENGTH = 2.6;
+  // THE STRENGTH IS THE ONE NUMBER TO GET RIGHT, and 2.6 was wrong by an order
+  // of magnitude. Real orange peel is a few microns deep over about half a
+  // millimetre: you never see it as relief, you see it as the reason the sheen
+  // breaks up. At 2.6 the drawer fronts — the only large board panels facing
+  // the camera — came out as rendered stucco, a wall of plaster where a
+  // pressed white front should be.
+  //
+  // It is worse than a wrong-looking surface, because the tile is 180mm and a
+  // 507mm front is about 150 pixels on screen: nearly three tiles of 512 texels
+  // minified into that, which aliases, and a strong normal map is exactly what
+  // turns aliasing into crawling noise. Shallow enough and the mip chain has
+  // almost nothing left to alias.
+  const STRENGTH = 0.30;
   const at = (x: number, y: number) => H[(((y % SIZE) + SIZE) % SIZE) * SIZE + (((x % SIZE) + SIZE) % SIZE)];
   for (let y = 0; y < SIZE; y++) {
     for (let x = 0; x < SIZE; x++) {

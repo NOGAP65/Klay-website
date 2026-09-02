@@ -16,6 +16,18 @@ import Wardrobe3D from './Wardrobe3D';
  * the photo's aspect ratio is never violated — see the root style. */
 const MAX_MEDIA_VH = 72;
 
+/** ONE SWITCH FOR THE WARDROBE'S ROOM VIEW, and it is off.
+ *
+ * The composite is built and works — WardrobeRoomRenderer, the seeded alcoves,
+ * the recess shade, the overhang that says a model will not fit. What is not
+ * settled is the trace it depends on: a customer who outlines their whole
+ * 2460mm doorway instead of where the cabinet sits gets a wardrobe scaled by a
+ * fifth and a fit answer that is wrong. That is worse than not offering it.
+ *
+ * Kept as one named constant rather than deleted branches so turning it back on
+ * is a one-line change and the code beneath cannot rot in the meantime. */
+const ROOM_VIEW_READY = false;
+
 // --- Buttons ---------------------------------------------------------------
 // Raised, with real press feedback. Inline styles can't express :hover or
 // :active, so the Button component tracks both in state and swaps the
@@ -1233,11 +1245,18 @@ export default function KlayConfigurator({
    * IS this thing", which needs the cabinet on its own and turnable, and cannot
    * be a fixed viewpoint however well composited.
    *
-   * Off by default: the room is what a visitor came for. */
-  const [wardrobe3D, setWardrobe3D] = useState(false);
+   * A WARDROBE IS 3D ONLY, FOR NOW, and the room half is switched off rather
+   * than deleted. WardrobeRoomRenderer, the trace, the recess shade and the
+   * seeded alcoves are all still here and still work; what is not offered is
+   * the button that reaches them, for the reason in the footer note — the
+   * composite is only as good as the trace it is given, and the trace is the
+   * part still being settled.
+   *
+   * So this is `true` for a wardrobe and there is nothing to toggle. Blinds and
+   * curtains never had a 3D view and are untouched. Flip ROOM_VIEW_READY when
+   * the trace is trustworthy and both views come back with their toggle. */
   const isWardrobe = store.productCategory === 'wardrobe';
-  // A category switch must not strand the 3D view on a blind.
-  useEffect(() => { if (!isWardrobe) setWardrobe3D(false); }, [isWardrobe]);
+  const wardrobe3D = isWardrobe && !ROOM_VIEW_READY;
 
   // Footer sits BELOW the canvas rather than floating over it, so "Visualise
   // in your own room" is always reachable while the default window shows.
@@ -1259,40 +1278,27 @@ export default function KlayConfigurator({
   ) : showRenderState ? (
     store.defaultWindowActive ? (
       <>
-        {isWardrobe && (
-          <Button
-            variant={wardrobe3D ? 'primary' : undefined}
-            onClick={() => setWardrobe3D(v => !v)}
-          >
-            {wardrobe3D ? 'Back to the preview' : 'Turn it in 3D'}
-          </Button>
-        )}
-        {/* IN YOUR ROOM IS NOT OFFERED FOR WARDROBES YET, and it is shown
-            rather than hidden.
-
-            The room composite works — it is the whole of WardrobeRoomRenderer
-            and none of it has been removed — but it is only as good as the
-            trace it is given, and the trace is the part still being settled: a
-            customer who traces their whole 2460mm doorway rather than where the
-            cabinet sits gets a wardrobe scaled by a fifth and a "won't fit"
-            that is not true. Wrong is worse than absent for the one answer this
-            feature exists to give.
+        {/* IN YOUR ROOM IS NOT OFFERED FOR WARDROBES YET, and it is announced
+            rather than hidden — see ROOM_VIEW_READY for why it is off and what
+            turning it on takes.
 
             A disabled button rather than no button, because "coming soon" is
-            information — it tells a customer the thing they are looking for is
-            planned, and it keeps the row's shape so nothing moves when it goes
-            live. Blinds and curtains are untouched: their composite has been
-            in front of customers for months. */}
-        {!wardrobe3D && (
-          isWardrobe ? (
-            <Button variant="accent" disabled onClick={() => {}}>
-              In your room — coming soon
-            </Button>
-          ) : (
-            <Button variant="accent" onClick={() => setShowUploadPrompt(true)}>
-              Visualise in your own room
-            </Button>
-          )
+            information: it tells a customer the thing they are looking for is
+            planned, and it holds the row's shape so nothing moves when it goes
+            live. There is no "Turn it in 3D" beside it any more, because the 3D
+            view is now the only wardrobe view and a toggle with one destination
+            is a button that does nothing.
+
+            Blinds and curtains are untouched: their composite has been in front
+            of customers for months. */}
+        {isWardrobe ? (
+          <Button variant="accent" disabled onClick={() => {}}>
+            In your room — coming soon
+          </Button>
+        ) : (
+          <Button variant="accent" onClick={() => setShowUploadPrompt(true)}>
+            Visualise in your own room
+          </Button>
         )}
       </>
     ) : (
@@ -1491,6 +1497,8 @@ export default function KlayConfigurator({
               modelId={store.wardrobeModel}
               colourName={store.wardrobeColour}
               selectedWidthMm={store.wardrobeWidthMm}
+              handle={store.wardrobeHandle}
+              handleFinish={store.wardrobeHandleFinish}
             />
           ) : store.productCategory === 'wardrobe' && confirmedArea ? (
             <WardrobeRoomRenderer
@@ -1499,6 +1507,8 @@ export default function KlayConfigurator({
               modelId={store.wardrobeModel}
               colourName={store.wardrobeColour}
               widthMm={store.wardrobeWidthMm}
+              handle={store.wardrobeHandle}
+              handleFinish={store.wardrobeHandleFinish}
             />
           ) : store.productCategory === 'curtain' && confirmedArea ? (
             <Canvas2DCurtainRenderer

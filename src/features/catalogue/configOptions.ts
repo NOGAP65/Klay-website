@@ -34,13 +34,31 @@
 // ---------------------------------------------------------------------------
 
 import { HARDWARE_OPTIONS } from '../../data/products'
+import { HANDLE_TYPES, HANDLE_FINISHES } from '../../visualiser/wardrobeHardware'
+import { modelsOfKind, WARDROBE_WIDTHS } from '../../visualiser/wardrobes'
 import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '../../lib/pricing'
 
 
 import type { CatalogueItem } from './constants'
 import type { CartItem } from '@/features/cart'
 
-export type FieldId = 'variant' | 'colour' | 'hardware' | 'size' | 'operation'
+// SEVEN SLOTS NOW, AND THE TWO NEW ONES ARE NOT WINDOW FIELDS.
+//
+// The header above describes five, each mapping onto one of the cart's fixed
+// columns. Joinery needed two more — a wardrobe's width is a real dimension in
+// millimetres, not a small/medium/large band, and its handle profile is a
+// choice no window product has — and the honest way to add them was to add
+// them. The alternative was reusing "size" for width and "operation" for the
+// pull, which would have put "operation: bar" on a quote.
+//
+// They cost nothing downstream because configuredLine already lists EVERY field
+// in `options`, which is the free-form part of a cart line built for exactly
+// this: 'a wardrobe has no window size and a shower screen has no operation'.
+// Only the four ids below have a fixed column; these two ride in options and in
+// the line id, so two differently-configured wardrobes stay two lines.
+export type FieldId =
+  | 'variant' | 'colour' | 'hardware' | 'size' | 'operation'
+  | 'width' | 'handle'
 
 export interface ConfigChoice {
   /** Stable id. For the roller's variant these ARE the pricing blind types, so
@@ -89,6 +107,17 @@ interface ProductOptions {
   /** What the colour card is called for this product, where the catalogue item
    * carries one. */
   colourLabel?: string
+  /** Overrides the blind hardware list. A wardrobe's visible metalwork is a
+   * handle in one of the supplier's six finishes, not a blind's white / black /
+   * chrome headrail. */
+  hardwareLabel?: string
+  hardwareChoices?: ConfigChoice[]
+  /** Real widths in millimetres, for a product built to an opening rather than
+   * sold in bands. Mutually exclusive with `size` in practice: a thing has one
+   * or the other, never both. */
+  widths?: number[]
+  /** The pull's profile. Wardrobes only. */
+  handles?: ConfigChoice[]
 }
 
 const v = (id: string, label: string): ConfigChoice => ({ id, label })
@@ -181,9 +210,20 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // No size band on any of these: they are built to an opening rather than
   // sold in small/medium/large, so offering a band would be a question with no
   // right answer.
+  // THE FORMA RANGE, and every list here is imported rather than retyped —
+  // the models, the board finishes, the widths and the handles all come from
+  // the visualiser's own modules, so the card and the 3D view cannot drift into
+  // offering different products. Sliding is gone from the variants because
+  // nothing in the range is a sliding unit; it was describing the category
+  // rather than anything orderable.
   wardrobes: {
-    variantLabel: 'Type',
-    variants: [v('built-in', 'Built-in'), v('walk-in', 'Walk-in'), v('sliding', 'Sliding')],
+    variantLabel: 'Model',
+    variants: modelsOfKind('built-in').map(m => v(m.id, m.name)),
+    colourLabel: 'Colour',
+    widths: WARDROBE_WIDTHS,
+    handles: HANDLE_TYPES.map(h => v(h.id, h.label)),
+    hardwareLabel: 'Handle finish',
+    hardwareChoices: HANDLE_FINISHES.map(f => ({ id: f.name, label: f.name, hex: f.hex })),
   },
   shelving: {
     variantLabel: 'Type',
@@ -219,7 +259,27 @@ export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
       choices: item.colours.map(c => ({ id: c.name, label: c.name, hex: c.hex })),
     })
   }
-  if (options.hardware) {
+  if (options.widths) {
+    fields.push({
+      id: 'width',
+      label: 'Width',
+      kind: 'chips',
+      choices: options.widths.map(w => v(String(w), `${w}mm`)),
+    })
+  }
+  if (options.handles) {
+    fields.push({ id: 'handle', label: 'Handle', kind: 'chips', choices: options.handles })
+  }
+  // A product supplies its own metalwork list where its metalwork is not a
+  // blind's. `hardware: true` still means the blind headrail colours.
+  if (options.hardwareChoices) {
+    fields.push({
+      id: 'hardware',
+      label: options.hardwareLabel ?? 'Hardware',
+      kind: 'swatches',
+      choices: options.hardwareChoices,
+    })
+  } else if (options.hardware) {
     fields.push({ id: 'hardware', label: 'Hardware', kind: 'chips', choices: HARDWARE_CHOICES })
   }
   if (options.size) {

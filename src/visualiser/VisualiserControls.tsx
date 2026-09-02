@@ -7,6 +7,7 @@ import {
   WARDROBE_COLOURS, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM,
   modelsOfKind, wardrobeModelById,
 } from './wardrobes';
+import { HANDLE_TYPES, HANDLE_FINISHES, handleFinish } from './wardrobeHardware';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
@@ -534,11 +535,13 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
   const palette = coloursFor(store.productCategory);
   const selectedColour = palette.find(c => c.name === store.fabricColour);
 
-  // WARDROBE CONTROLS. Deliberately the shortest panel in the visualiser: the
-  // range is ten fixed Forma units and the only thing a customer changes is the
-  // finish. No size, no operation, no hardware — a wardrobe has no roll
-  // position to drive and is quoted on measure, so a price box here would be
-  // inventing a number the business has not set.
+  // WARDROBE CONTROLS, in two groups: what the cabinet IS, then what it looks
+  // like. See the heading on the second.
+  //
+  // No size band, no operation, and no price. A wardrobe has no roll position
+  // to drive, it is built to an opening rather than sold in small/medium/large,
+  // and it is quoted on measure — so a price box here would be inventing a
+  // number the business has not set.
   if (store.productCategory === 'wardrobe') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: groupGap }}>
@@ -567,13 +570,38 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               </div>
             </Field>
 
-            {/* THE NAME LEADS AND THE ARRANGEMENT FOLLOWS IT. The pill used to
-                read "Shelf Tower + Double Hang", which is what the unit
-                contains rather than what it is called — and three of those side
-                by side are three long strings differing in one word. "Forma
-                4.0" over "Shelf tower + double hang" is the product and then
-                its description, which is also the order the quote states them
-                in. See WardrobeModel.layout. */}
+            {/* COLOUR SITS SECOND, right under Type. It is the question people
+                arrive with — a customer knows they want white or walnut long
+                before they know which internal arrangement they want — and
+                putting it after the model and the width made them scroll past
+                two technical questions to reach the easy one.
+
+                It also moved OUT of the finish group it was briefly in. The
+                board is not trim: it is the whole visible surface of the
+                cabinet, so it belongs with what the cabinet is rather than
+                beside the handle. */}
+            <Field onDark={onDark} label="Colour" caption={store.wardrobeColour}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
+                {WARDROBE_COLOURS.map(c => (
+                  <Swatch
+                    onDark={onDark}
+                    key={c.name}
+                    hex={c.hex}
+                    label={c.name}
+                    active={store.wardrobeColour === c.name}
+                    onClick={() => store.setWardrobeColour(c.name)}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            {/* THE NAME ALONE. It carried its internal arrangement underneath —
+                "Divider + double hang" — which is trade description in a place
+                a customer is choosing a product: three pills each with two
+                lines of near-identical joinery vocabulary, when the thing being
+                chosen is one of three names. The arrangement is still on the
+                model (WardrobeModel.layout) and still belongs on a spec sheet;
+                it is not what this control is asking. */}
             <Field onDark={onDark} label="Model">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {modelsOfKind(store.wardrobeKind).map(m => (
@@ -581,7 +609,6 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                     onDark={onDark}
                     key={m.id}
                     label={m.name}
-                    sub={m.layout}
                     active={store.wardrobeModel === m.id}
                     onClick={() => store.setWardrobeModel(m.id)}
                   />
@@ -625,21 +652,78 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               />
             </Field>
 
-            <Field onDark={onDark} label="Finish" caption={store.wardrobeColour}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
-                {WARDROBE_COLOURS.map(c => (
-                  <Swatch
+          </div>
+        </section>
+
+        {/* THE SECOND GROUP, AND IT IS A DIFFERENT KIND OF QUESTION.
+            Everything above decides what the cabinet IS — the product, its
+            arrangement and its size, all of which change what is quoted and
+            what is built. Everything here decides what it LOOKS like, and none
+            of it changes the joinery.
+
+            They were one flat run of four fields before, so "Finish" sat under
+            "Width" as though a colour and a dimension were the same sort of
+            answer. Splitting them is also what makes room for the hardware
+            without the panel reading as a list of seven things. */}
+        <section>
+          <GroupHeading onDark={onDark}>Hardware</GroupHeading>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
+            {/* PROFILE AND FINISH ARE TWO QUESTIONS, and they are asked
+                separately because they fail separately: the profile changes the
+                shape on the drawer front and the finish changes only what it is
+                made of. One combined list would be five profiles times six
+                finishes — thirty lozenges for what is two small decisions.
+
+                The profile keeps its one-line note where the model does not,
+                and the difference is real: "Forma 4.0" is a name a customer is
+                choosing between three of, while "D-pull" and "Edge pull" are
+                trade words for shapes nobody can picture. The note is the
+                choice; without it the row is four synonyms for handle. */}
+            <Field onDark={onDark} label="Handle">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+                {HANDLE_TYPES.map(h => (
+                  <Pill
                     onDark={onDark}
-                    key={c.name}
-                    hex={c.hex}
-                    label={c.name}
-                    active={store.wardrobeColour === c.name}
-                    onClick={() => store.setWardrobeColour(c.name)}
+                    key={h.id}
+                    label={h.label}
+                    sub={h.note}
+                    active={store.wardrobeHandle === h.id}
+                    onClick={() => store.setWardrobeHandle(h.id)}
                   />
                 ))}
               </div>
             </Field>
 
+            {/* SWATCHES, because a finish is a colour and a row of six colour
+                names is a row nobody reads. The supplier's code rides in the
+                caption beside the name — it is what goes on the order, and it
+                is the one thing here a customer might be asked to quote back.
+
+                Hidden entirely when the handle is routed: there is no metalwork
+                on a handleless front, so offering a finish for it would be
+                collecting an answer that changes nothing. The rails inside
+                still take it — but a customer choosing handleless has said they
+                do not want to think about handles. */}
+            {store.wardrobeHandle !== 'none' && (
+              <Field
+                onDark={onDark}
+                label="Handle finish"
+                caption={`${handleFinish(store.wardrobeHandleFinish).name} · ${handleFinish(store.wardrobeHandleFinish).code}`}
+              >
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
+                  {HANDLE_FINISHES.map(f => (
+                    <Swatch
+                      onDark={onDark}
+                      key={f.code}
+                      hex={f.hex}
+                      label={`${f.name} (${f.code})`}
+                      active={store.wardrobeHandleFinish === f.name}
+                      onClick={() => store.setWardrobeHandleFinish(f.name)}
+                    />
+                  ))}
+                </div>
+              </Field>
+            )}
           </div>
         </section>
       </div>

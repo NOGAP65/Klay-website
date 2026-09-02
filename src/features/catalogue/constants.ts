@@ -28,6 +28,7 @@
 import * as routes from '@/config/routes';
 
 import { RYNAMIC_COLOURS, CURTAIN_COLOURS } from '../../data/products'
+import { WARDROBE_COLOURS } from '../../visualiser/wardrobes'
 
 import { PRODUCTS } from './products'
 
@@ -287,6 +288,10 @@ export const CATALOGUE: CatalogueItem[] = [
     image: '/images/categories/wardrobes.jpg',
     imagePosition: '13% center',
     glyph: 'wardrobes',
+    // The four board finishes, from the visualiser's own list — see
+    // WARDROBE_COLOURS. Restating them here is how the card and the render
+    // start offering different boards.
+    colours: WARDROBE_COLOURS.map(c => ({ name: c.name, hex: c.hex })),
     // The Forma range is modelled now, so this card carries the badge the two
     // window products have carried all along.
     visualise: { category: 'wardrobe' },

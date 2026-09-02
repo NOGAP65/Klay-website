@@ -38,6 +38,7 @@ import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, wardrobeColour, 
 import { projectorFromQuad, columnsFor, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
 import { buildSliceMap, sliceMapper, type SliceMap } from './wardrobeSlices';
 import { profilePhoto, relightCutout, applyGrain, makeGrainTile, isWoodFinish, sampleBoardColour } from './wardrobeComposite';
+import { DEFAULT_HANDLE, type HardwareSpec } from './wardrobeHardware';
 import type { Point } from './homography';
 
 export interface WardrobeRendererProps {
@@ -838,6 +839,9 @@ export interface Compartment {
 export function buildCarcass(
   layoutId: string,
   widthMm: number,
+  /** The pull's profile and colour. Defaulted so the two callers that do not
+   * care — and any test — need not know the hardware range exists. */
+  hardware: HardwareSpec = { type: DEFAULT_HANDLE, rgb: HANDLE },
 ): { boxes: Box[]; compartments: Compartment[] } {
   const D = WARDROBE_DEPTH_MM;
   const H = WARDROBE_HEIGHT_MM;
@@ -889,9 +893,82 @@ export function buildCarcass(
     boxes.push({
       x: cx, y, z: D * 0.42,
       w: cw, h: 26, d: 26,
-      colour: [185, 188, 192],
+      // THE RAIL TAKES THE HANDLE'S FINISH TOO. It is the other piece of
+      // visible metalwork in the cabinet, it is bought from the same range, and
+      // a brushed-gold pull over a nickel rail is not a robe anybody sells.
+      colour: hardware.rgb,
       metal: true,
     });
+
+  /** ONE DRAWER'S PULL, in whichever profile was chosen.
+   *
+   * `fy` is the front's bottom edge and `fh` its height, so each profile can
+   * place itself against the front rather than against the drawer opening —
+   * an edge pull belongs on the top lip and a knob in the middle, and those are
+   * different distances from different edges.
+   *
+   * Everything here stands at z = D, which is the face of the front: a pull is
+   * the one part of a wardrobe that is deliberately in front of the plane
+   * everything else stops at. */
+  const drawPull = (cx: number, fy: number, cw: number, fh: number) => {
+    const metal = (b: Omit<Box, 'colour' | 'metal'>) =>
+      boxes.push({ ...b, colour: hardware.rgb, metal: true });
+
+    switch (hardware.type) {
+      case 'none':
+        // A ROUTED FINGER GROOVE, which is a subtraction rather than an object.
+        // There is nothing to add in front of the front — what reads as the
+        // pull is the shadow in the recess, so this draws the recess: a shallow
+        // band set BACK from the face along the top edge, at board tone rather
+        // than in metal.
+        boxes.push({
+          x: cx + 4, y: fy + fh - 34, z: D - BOARD_MM - 12,
+          w: cw - 8, h: 30, d: 12,
+          tone: 0.72,
+        });
+        break;
+
+      case 'edge': {
+        // A slim lip running nearly the full width, on the top edge. Shallow
+        // and wide is the whole character of it.
+        metal({ x: cx + 10, y: fy + fh - 26, z: D, w: cw - 20, h: 20, d: 14 });
+        break;
+      }
+
+      case 'knob': {
+        // TWO, because one centred knob on a 507mm drawer is what a bathroom
+        // cabinet has. A pair at the thirds is how a wide drawer is actually
+        // fitted, and it is also what tells a knob apart from a short bar at
+        // this size.
+        const r = 34;
+        for (const t of [0.34, 0.66]) {
+          metal({ x: cx + cw * t - r / 2, y: fy + fh / 2 - r / 2, z: D, w: r, h: r, d: 30 });
+        }
+        break;
+      }
+
+      case 'd-pull': {
+        // A short bow: two stubby legs into the front and a squared bar across
+        // them. Narrower and deeper than the bar, which is what makes it read
+        // as something you hook a hand under rather than a rail.
+        const hw = Math.min(cw * 0.30, 200);
+        const x0 = cx + (cw - hw) / 2;
+        const y = fy + fh * 0.5;
+        metal({ x: x0, y: y - 14, z: D, w: 20, h: 28, d: 34 });
+        metal({ x: x0 + hw - 20, y: y - 14, z: D, w: 20, h: 28, d: 34 });
+        metal({ x: x0, y: y - 12, z: D + 22, w: hw, h: 24, d: 14 });
+        break;
+      }
+
+      case 'bar':
+      default: {
+        // The original: a long rail across the front, set low. Wide and thin.
+        const hw = Math.min(cw * 0.42, 320);
+        metal({ x: cx + (cw - hw) / 2, y: fy + fh * 0.72, z: D, w: hw, h: 22, d: 26 });
+        break;
+      }
+    }
+  };
 
   // Resolved in millimetres, not as fractions of the cabinet: a drawer tower is
   // 507 wide in every layout in the range, and only the bays either side of it
@@ -968,13 +1045,12 @@ export function buildCarcass(
         // that says "this opens" — which is most of what a drawer has to say.
         // Standing proud of the front by its own depth, so it catches the light
         // on top and casts a line underneath.
-        const hw = Math.min(cw * 0.42, 320);
-        boxes.push({
-          x: x + (cw - hw) / 2, y: fy + (dh - 8) * 0.72, z: D,
-          w: hw, h: 22, d: 26,
-          colour: HANDLE,
-          metal: true,
-        });
+        //
+        // FIVE PROFILES, and they are genuinely different objects rather than
+        // one bar at three sizes — see wardrobeHardware. The shape is most of
+        // what distinguishes two otherwise identical robes, so a picker that
+        // changed only the colour would be answering half the question.
+        drawPull(x, fy, cw, dh - 8);
       }
       shelf(x, cw, y0 + bankH);
       const above = innerH - bankH;
