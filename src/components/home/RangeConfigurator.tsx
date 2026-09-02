@@ -60,6 +60,62 @@ const labelStyle: React.CSSProperties = {
 /** One choice, as a rectangle. Selected is a gold fill with ink text — the same
  * pairing every primary action on the site uses, so a chosen option reads as
  * something the page has committed to rather than as a highlight. */
+/** A DROPDOWN, for a field whose choices are a scale rather than a set.
+ *
+ * Native, for the same reasons the visualiser's is: the platform's own picker
+ * beats anything drawn here on a phone, and it is keyboard- and
+ * screen-reader-correct for free. `appearance: none` strips the system chrome so
+ * the box can carry the same height, radius and selected-lozenge treatment as
+ * Chip, and the arrow is an inline data URI rather than a positioned element —
+ * a select cannot have children, and anything absolutely positioned over it
+ * would swallow the click that opens it. */
+function FieldSelect({
+  field,
+  value,
+  onChange,
+}: {
+  field: ConfigField;
+  value: string | undefined;
+  onChange: (choiceId: string) => void;
+}) {
+  const arrow = encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="${tokens.paper}" stroke-width="1.4" stroke-linecap="round"/></svg>`,
+  );
+  return (
+    <select
+      value={value ?? ''}
+      onChange={e => onChange(e.target.value)}
+      style={{
+        width: '100%',
+        height: 34,
+        padding: `0 ${space.lg}px 0 ${space.xs}px`,
+        boxSizing: 'border-box',
+        borderRadius: radius.sm,
+        // The chosen value IS the field, so the box wears the selected chip's
+        // treatment — it is never empty and never reads as unanswered.
+        border: `1px solid ${tokens.ink}`,
+        background: tokens.ink,
+        color: tokens.paper,
+        fontFamily: tokens.body,
+        fontSize: 12,
+        cursor: 'pointer',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        backgroundImage: `url("data:image/svg+xml,${arrow}")`,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: `right ${space.xs}px center`,
+      }}
+    >
+      {field.choices.map(c => (
+        // Unstyled: the list is the platform's, and a colour set here is
+        // honoured on some and ignored on others. Half-styled native chrome
+        // looks worse than none.
+        <option key={c.id} value={c.id}>{c.label}</option>
+      ))}
+    </select>
+  );
+}
+
 function Chip({
   choice,
   selected,
@@ -174,15 +230,20 @@ function Field({
           <span style={{ color: tokens.inkSoft, letterSpacing: '0.3em' }}> · {value}</span>
         )}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
-        {field.choices.map(c =>
-          field.kind === 'swatches' ? (
-            <Swatch key={c.id} choice={c} selected={c.id === value} onSelect={() => onChange(c.id)} />
-          ) : (
-            <Chip key={c.id} choice={c} selected={c.id === value} onSelect={() => onChange(c.id)} />
-          ),
-        )}
-      </div>
+      {/* space.xs on this branch is the value the refactor calls space.xs. */}
+      {field.kind === 'select' ? (
+        <FieldSelect field={field} value={value} onChange={onChange} />
+      ) : (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+          {field.choices.map(c =>
+            field.kind === 'swatches' ? (
+              <Swatch key={c.id} choice={c} selected={c.id === value} onSelect={() => onChange(c.id)} />
+            ) : (
+              <Chip key={c.id} choice={c} selected={c.id === value} onSelect={() => onChange(c.id)} />
+            ),
+          )}
+        </div>
+      )}
     </div>
   );
 }
