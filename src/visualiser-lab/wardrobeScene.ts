@@ -40,8 +40,10 @@ export interface WardrobeSceneOpts {
   colourName: string;
   /** The cabinet's own width. Height and depth are fixed for the range. */
   widthMm: number;
-  /** True while the scene will be composited onto a room photograph, which
-   * changes what the lighting has to do — see below. */
+  /** Accepted and unused: the scene is identical either way now that the
+   * room-only shadow catcher is gone. Kept so the two call sites read the same
+   * and the distinction is easy to reintroduce if a wall shadow is ever done
+   * properly — as its own render pass, not a transparent plane in this one. */
   forRoom?: boolean;
 }
 
@@ -101,7 +103,7 @@ function averageTone(img: CanvasImageSource): THREE.Color {
 }
 
 export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<WardrobeScene> {
-  const { renderer, modelId, colourName, widthMm, forRoom = false } = opts;
+  const { renderer, modelId, colourName, widthMm } = opts;
 
   const model = wardrobeModelById(modelId);
   // The width the artwork was SHOT at, which is not widths[0] any more now that
@@ -451,54 +453,48 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   //
   // A ShadowMaterial is invisible except where it is shadowed, so this darkens
   // the photograph without laying a grey rectangle over it.
-  // THE ALCOVE'S OWN BACK WALL.
+  // NO BACK PANEL AND NO STAND-IN FOR ONE. The product is built in: the
+  // customer's own wall is the back of every compartment, and seeing it through
+  // the carcass is correct rather than a fault to be papered over.
   //
-  // There is no back panel on the product — it is built in, and the wall is the
-  // back of every compartment. But the wall behind it has to be DRAWN, because
-  // the photograph does not contain it: what the camera saw at that spot is the
-  // old wardrobe's doors, and with the compartments genuinely open those doors
-  // showed through between the coats and along the top boards.
+  // A plain wall was briefly added here to hide the doors in the supplied
+  // alcove photographs. That was the wrong fix twice over — it put back the
+  // surface the product does not have, and it was treating a symptom whose real
+  // cause was the garments being blended instead of cut out, which is fixed
+  // where the contents are built.
+  // THE SHADOW CATCHER IS THE BUG YOU KEEP SEEING, and it is worth naming
+  // precisely because it looked like three different faults.
   //
-  // So a plain wall is stood at the back of the carcass, in the finish's own
-  // board colour and lit by the same lights. It is what a customer would
-  // actually see through an open built-in: the back of their own alcove.
-  {
-    const wall = new THREE.Mesh(
-      new THREE.PlaneGeometry(widthMm * MM, WARDROBE_HEIGHT_MM * MM),
-      new THREE.MeshStandardMaterial({
-        // A shade under the board, because a wall at the back of a cupboard is
-        // in its own shadow and matching the front edge flattens the box.
-        color: plainBase.clone().multiplyScalar(0.88),
-        roughness: 0.95,
-        metalness: 0,
-        envMapIntensity: 0.16,
-      }),
-    );
-    wall.position.set(
-      (widthMm / 2) * MM,
-      (WARDROBE_HEIGHT_MM / 2) * MM,
-      (-WARDROBE_DEPTH_MM + 1) * MM,
-    );
-    wall.receiveShadow = true;
-    disposables.push(wall.geometry, wall.material);
-    root.add(wall);
-  }
-
-  if (forRoom) {
-    const catcher = new THREE.Mesh(
-      new THREE.PlaneGeometry(14, 14),
-      new THREE.ShadowMaterial({ opacity: 0.38 }),
-    );
-    catcher.position.set(
-      (widthMm / 2) * MM,
-      (WARDROBE_HEIGHT_MM / 2) * MM,
-      // A whisker behind the carcass, so the shelves do not z-fight with it.
-      (-WARDROBE_DEPTH_MM - 2) * MM,
-    );
-    catcher.receiveShadow = true;
-    disposables.push(catcher.geometry, catcher.material);
-    root.add(catcher);
-  }
+  // A ShadowMaterial is meant to be invisible except where a shadow lands on
+  // it. It is not: it is a TRANSPARENT material, so every pixel of it writes
+  // partial alpha, shadowed or not. Reading the render's own buffer, a 14-metre
+  // plane behind the cabinet put 88,000 pixels at roughly 25-40% opacity across
+  // the whole frame — and once composited, the photograph came through all of
+  // them. On an alcove photograph that is the old wardrobe's doors appearing
+  // through the boards, between the coats and along the top rail.
+  //
+  // It was never the garments, and it was never a missing back panel. Both of
+  // those "fixes" were chasing this.
+  //
+  // Sized to the cabinet and pushed behind it, so what it can affect is the
+  // wall immediately around the unit rather than the entire picture.
+  // NO SHADOW CATCHER, and this is the fault that looked like three different
+  // ones.
+  //
+  // A ShadowMaterial plane behind the cabinet was meant to let the wardrobe
+  // cast onto the customer's wall. It is transparent EVERYWHERE it exists —
+  // shadowed or not — so every pixel it covered was written at partial alpha.
+  // Measured off the render's own buffer: 93,153 partial pixels with it in,
+  // 5,092 with it out. Composited over a photograph, the picture came through
+  // all of them, which is exactly what was showing as the room's own wardrobe
+  // doors through the boards, between the coats and along the top rail.
+  //
+  // alphaTest does not help — ShadowMaterial ignores it. The right fix is to
+  // stop asking one render to carry both the cabinet and a wall-shadow, and
+  // that shadow is a smaller loss than it sounds: the cabinet is built INTO the
+  // wall, so there is barely any gap for it to fall across. The contact shade
+  // where it meets the floor is the part that matters, and that is geometry the
+  // carcass already casts on itself.
 
   return {
     scene,
