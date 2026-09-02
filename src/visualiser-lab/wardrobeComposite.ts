@@ -250,12 +250,24 @@ export function relightCutout(
   // level rather than equal to it.
   const exposure = 1 + ((wallL * 0.98) / Math.max(1, boardLuma) - 1) * EXPOSURE_STRENGTH * strength;
 
+  // ALPHA IS CARRIED THROUGH UNTOUCHED, and on a WebGL source that is not
+  // automatic. A WebGL canvas stores PREMULTIPLIED alpha; getImageData hands
+  // back un-premultiplied bytes and putImageData premultiplies again on the way
+  // in. Scaling the colour of a partly-transparent edge pixel and writing it
+  // back therefore changes what its alpha resolves to, and a cabinet composited
+  // from it let the room show through its own boards — the photograph's old
+  // wardrobe doors appearing between the coats.
+  //
+  // Fully transparent pixels are skipped, and every other pixel keeps the alpha
+  // it arrived with.
   for (let i = 0; i < px.length; i += 4) {
-    if (px[i + 3] === 0) continue;
+    const a = px[i + 3];
+    if (a === 0) continue;
     for (let c = 0; c < 3; c++) {
       const v = px[i + c] * gain[c] * exposure;
       px[i + c] = v < 0 ? 0 : v > 255 ? 255 : v;
     }
+    px[i + 3] = a;
   }
 
   ctx.putImageData(img, 0, 0);

@@ -29,7 +29,7 @@ import * as THREE from 'three';
 import { wardrobeArtwork, wardrobeModelById, WARDROBE_HEIGHT_MM, DEFAULT_WIDTH_MM } from './wardrobes';
 import { cameraFromQuad, tracedWidthMm } from './wardrobeGeometry';
 import { buildWardrobeScene, MM } from './wardrobeScene';
-import { profilePhoto, relightCutout, applyGrain } from './wardrobeComposite';
+import { profilePhoto, applyGrain } from './wardrobeComposite';
 import { drawWalkIn } from './Canvas2DWardrobeRenderer';
 
 export interface WardrobeRoomRendererProps {
@@ -102,6 +102,59 @@ function opaqueBounds(
     w: (x1 - x0 + 1) * sx + pad * 2,
     h: (y1 - y0 + 1) * sy + pad * 2,
   };
+}
+
+/** Carries the room's own light into the render WITHOUT touching its alpha.
+ *
+ * The previous version read the WebGL canvas with getImageData, scaled the
+ * colour and wrote it back. That corrupts transparency: a WebGL canvas stores
+ * PREMULTIPLIED alpha, and the read/write pair un-premultiplies and
+ * re-premultiplies around an operation that changes the colour — so every
+ * partly-transparent edge pixel came back resolving to a different opacity than
+ * it went in with. The cabinet ended up letting the photograph through its own
+ * boards, which showed as the room's old wardrobe doors between the coats.
+ *
+ * Doing it with composite operations instead never reads a pixel. `multiply`
+ * tints toward the wall's colour and `lighter` adds the exposure back, both
+ * clipped to the render's own shape by a final `destination-in` — so the alpha
+ * that leaves is exactly the alpha the GPU wrote.
+ */
+function relightRender(
+  source: HTMLCanvasElement,
+  profile: ReturnType<typeof profilePhoto>,
+  strength: number,
+): HTMLCanvasElement {
+  const out = document.createElement('canvas');
+  out.width = source.width;
+  out.height = source.height;
+  const ctx = out.getContext('2d');
+  if (!ctx) return source;
+
+  ctx.drawImage(source, 0, 0);
+
+  // The wall's cast, normalised so this carries colour and not brightness.
+  const wl = Math.max(1, profile.wallLuma);
+  const cast = profile.wall.map(c => c / wl);
+  const mix = (v: number) => Math.round(255 * (1 - strength * (1 - Math.min(1, v))));
+
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = `rgb(${mix(cast[0])},${mix(cast[1])},${mix(cast[2])})`;
+  ctx.fillRect(0, 0, out.width, out.height);
+
+  // Multiply only ever darkens, so a little of the wall's own light goes back
+  // on top — otherwise a cabinet in a bright room comes out dull.
+  const lift = Math.round(255 * strength * 0.10);
+  if (lift > 0) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = `rgb(${lift},${lift},${lift})`;
+    ctx.fillRect(0, 0, out.width, out.height);
+  }
+
+  // Both fills covered the whole canvas; this trims them back to the cabinet.
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.drawImage(source, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
+  return out;
 }
 
 export default function WardrobeRoomRenderer({
@@ -216,7 +269,7 @@ export default function WardrobeRoomRenderer({
       // lamps and the room by whatever is in it, and colour is the loudest tell
       // there is — ahead of perspective, ahead of scale. Damped hard, because a
       // render starts far closer to right than a studio photograph does.
-      const relit = relightCutout(renderer.domElement, profile, RELIGHT_STRENGTH);
+      const relit = relightRender(renderer.domElement, profile, RELIGHT_STRENGTH);
 
       ctx.save();
       // A little softer, to sit in the same focal plane. A hand-held room photo
