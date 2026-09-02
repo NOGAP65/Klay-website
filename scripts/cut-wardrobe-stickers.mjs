@@ -561,7 +561,20 @@ const CONTENT_CROPS = [
   // Three charcoal coats from 3.0's left-hand run, full drop.
   { out: 'hanging-long.png', from: '3.0-white-front.png', x0: 0.270, y0: 0.235, x1: 0.398, y1: 0.578, key: true },
   // 4.0's lower rail -- dark trousers, the short drop of a double-hang.
-  { out: 'hanging-short.png', from: '4.0-white-front.png', x0: 0.272, y0: 0.512, x1: 0.338, y1: 0.788, key: true },
+  // FROM THE SAME SOURCE AS THE LONG RUN, and shortened rather than taken from
+  // a different photograph.
+  //
+  // It used to come from 4.0's lower rail, where the garments hang against a
+  // shaded interior panel rather than a lit one. The keyer could not separate
+  // them: the crop came out 69% opaque with 9% partial, carrying most of that
+  // wardrobe's grey interior along with the trousers — and every bay it was
+  // placed in got a grey rectangle painted into it, which is the "items going
+  // into the paint of the wardrobe" fault.
+  //
+  // 3.0's run keys cleanly against bright board, so a short drop is cut from
+  // the same coats: the same garments, ending at the height a double-hang rail
+  // needs. One clean source is worth more than two poses.
+  { out: 'hanging-short.png', from: '3.0-white-front.png', x0: 0.270, y0: 0.235, x1: 0.398, y1: 0.470, key: true },
   // A folded stack of dark knitwear from 4.0's tower.
   { out: 'stack.png', from: '4.0-white-front.png', x0: 0.124, y0: 0.352, x1: 0.246, y1: 0.397, key: true },
   // These two already sit against the checkerboard rather than against board,
