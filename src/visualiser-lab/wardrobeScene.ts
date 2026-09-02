@@ -379,10 +379,20 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
 
     const place = (x0: number, w: number, yTop: number, hangs: boolean) => {
       const h = w * item.ratio;
+      // CUT OUT, NOT BLENDED — and the difference is a depth buffer.
+      //
+      // `transparent: true` puts a mesh in the blended pass, which does not
+      // WRITE depth. So a rail of coats never occluded anything: each garment
+      // blended over whatever was behind it, and where its own alpha was zero
+      // the room showed straight through the cabinet. In an alcove photograph
+      // that is the picture's own doors appearing between the jackets.
+      //
+      // alphaTest alone does the job. A pixel is either the garment or it is
+      // not — which is what a cut-out is — so the mesh can stay opaque, write
+      // depth like everything else, and take its place in the ordering.
       const front = new THREE.MeshStandardMaterial({
         map: item.tex,
-        transparent: true,
-        alphaTest: 0.42,
+        alphaTest: 0.5,
         roughness: 0.92,
         side: THREE.DoubleSide,
       });
@@ -441,6 +451,39 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   //
   // A ShadowMaterial is invisible except where it is shadowed, so this darkens
   // the photograph without laying a grey rectangle over it.
+  // THE ALCOVE'S OWN BACK WALL.
+  //
+  // There is no back panel on the product — it is built in, and the wall is the
+  // back of every compartment. But the wall behind it has to be DRAWN, because
+  // the photograph does not contain it: what the camera saw at that spot is the
+  // old wardrobe's doors, and with the compartments genuinely open those doors
+  // showed through between the coats and along the top boards.
+  //
+  // So a plain wall is stood at the back of the carcass, in the finish's own
+  // board colour and lit by the same lights. It is what a customer would
+  // actually see through an open built-in: the back of their own alcove.
+  {
+    const wall = new THREE.Mesh(
+      new THREE.PlaneGeometry(widthMm * MM, WARDROBE_HEIGHT_MM * MM),
+      new THREE.MeshStandardMaterial({
+        // A shade under the board, because a wall at the back of a cupboard is
+        // in its own shadow and matching the front edge flattens the box.
+        color: plainBase.clone().multiplyScalar(0.88),
+        roughness: 0.95,
+        metalness: 0,
+        envMapIntensity: 0.16,
+      }),
+    );
+    wall.position.set(
+      (widthMm / 2) * MM,
+      (WARDROBE_HEIGHT_MM / 2) * MM,
+      (-WARDROBE_DEPTH_MM + 1) * MM,
+    );
+    wall.receiveShadow = true;
+    disposables.push(wall.geometry, wall.material);
+    root.add(wall);
+  }
+
   if (forRoom) {
     const catcher = new THREE.Mesh(
       new THREE.PlaneGeometry(14, 14),
