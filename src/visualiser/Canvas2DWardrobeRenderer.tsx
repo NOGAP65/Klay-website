@@ -38,7 +38,7 @@ import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, wardrobeColour, 
 import { projectorFromQuad, columnsFor, sidePanelsFor, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
 import { buildSliceMap, sliceMapper, type SliceMap } from './wardrobeSlices';
 import { profilePhoto, relightCutout, applyGrain, makeGrainTile, isWoodFinish, sampleBoardColour } from './wardrobeComposite';
-import { DEFAULT_HANDLE, type HardwareSpec } from './wardrobeHardware';
+import { DEFAULT_HANDLE_FINISH, hardwareSpec, type HardwareSpec } from './wardrobeHardware';
 import type { Point } from './homography';
 
 export interface WardrobeRendererProps {
@@ -841,7 +841,7 @@ export function buildCarcass(
   widthMm: number,
   /** The pull's profile and colour. Defaulted so the two callers that do not
    * care — and any test — need not know the hardware range exists. */
-  hardware: HardwareSpec = { type: DEFAULT_HANDLE, rgb: HANDLE },
+  hardware: HardwareSpec = hardwareSpec(DEFAULT_HANDLE_FINISH),
 ): { boxes: Box[]; compartments: Compartment[] } {
   const D = WARDROBE_DEPTH_MM;
   const H = WARDROBE_HEIGHT_MM;
@@ -944,17 +944,6 @@ export function buildCarcass(
     const metal = (b: Omit<Box, 'colour' | 'metal'>) =>
       boxes.push({ ...b, colour: hardware.rgb, metal: true });
 
-    if (hardware.type === 'knob') {
-      // A SMALL RECTANGULAR PLATE, CENTRED — which is what the supplier's own
-      // photograph of the drawer tower shows, and not the deep round stub that
-      // was here. Theirs is a flat landscape rectangle sitting almost flush:
-      // what you see is the shadow under its lip, not a knob standing off the
-      // board. At 32 deep it read as a doorknob, and four doorknobs made the
-      // tower look like a toy.
-      const kw = 46, kh = 24;
-      metal({ x: cx + cw / 2 - kw / 2, y: fy + fh / 2 - kh / 2, z: D, w: kw, h: kh, d: 10 });
-      return;
-    }
     // A SLIM BAR, CENTRED ON THE FRONT. 6.0's render has exactly this: a long
     // thin rail across the middle of each drawer, not a chunky pull set low.
     // It was 22 tall at 0.72 of the front, which sat it near the bottom edge
@@ -1350,9 +1339,9 @@ function drawContactShadow(
   ctx.restore();
 }
 
-/** Brushed metal, for handles, hanger hooks and rails. One colour for all
- * three because they are the same finish on a real unit. */
-const HANDLE: [number, number, number] = [172, 176, 181];
+// The hard-coded brushed metal that used to live here is gone: the metalwork
+// takes the chosen finish now, and buildCarcass defaults to the range's own
+// rather than to a colour written down twice. See wardrobeHardware.
 
 const clamp255 = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
 

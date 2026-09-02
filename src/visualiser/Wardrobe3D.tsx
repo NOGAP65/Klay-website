@@ -25,7 +25,6 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { wardrobeModelById, DEFAULT_WIDTH_MM } from './wardrobes';
 import { buildWardrobeScene, MM, OPENING_HEIGHT_MM } from './wardrobeScene';
-import type { HandleTypeId } from './wardrobeHardware';
 
 export interface Wardrobe3DProps {
   modelId: string;
@@ -34,9 +33,8 @@ export interface Wardrobe3DProps {
   selectedWidthMm?: number;
   /** Filled behind the cabinet, so the unit is not floating on black. */
   background?: string;
-  /** The pull's profile and finish. Both optional so a caller that has not
-   * been given the choice yet still renders the range's default. */
-  handle?: HandleTypeId;
+  /** The metalwork's finish. Optional so a caller that has not been given the
+   * choice yet still renders the range's default. */
   handleFinish?: string;
 }
 
@@ -50,7 +48,6 @@ export default function Wardrobe3D({
   colourName,
   selectedWidthMm,
   background = '#EFEDE8',
-  handle,
   handleFinish,
 }: Wardrobe3DProps) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -79,7 +76,7 @@ export default function Wardrobe3D({
     let disposed = false;
     let cleanup = () => {};
 
-    buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm, handle, handleFinish })
+    buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm, handleFinish })
       .then(built => {
         if (disposed) {
           built.dispose();
@@ -113,7 +110,17 @@ export default function Wardrobe3D({
         // that says the robe is set into a room rather than filling a hole cut
         // to its own size. See OPENING_HEIGHT_MM.
         const span = Math.max(widthMm, OPENING_HEIGHT_MM) * MM;
-        const dist = (span / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))) * 1.72;
+        // 1.28 AGAINST THE OPENING, not 1.72. The multiplier was set when the
+        // subject was the 2016 cabinet; measuring it against a 2700 opening
+        // instead made the same number a third further back, and what filled
+        // the space it opened up was FLOOR — the camera sits at about eye
+        // height, so everything below the horizon is floorboards, and half the
+        // frame went to them. The product ends up small and high.
+        //
+        // 2700 x 1.28 lands within a few millimetres of where 2016 x 1.72 did,
+        // so the opening is framed the way it was while still being what the
+        // framing is measured from.
+        const dist = (span / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))) * 1.28;
         // Aimed a little above the cabinet's own middle, so the opening is
         // centred in frame rather than the unit inside it.
         const aim = built.centre.clone();
@@ -165,12 +172,11 @@ export default function Wardrobe3D({
       renderer.dispose();
       if (renderer.domElement.parentNode === host) host.removeChild(renderer.domElement);
     };
-    // The handle is BOTH of these and neither is optional: its profile changes
-    // the geometry buildCarcass emits and its finish changes the material, so
-    // the scene has to be rebuilt for either. Left off, the picker wrote to the
-    // store, the store re-rendered this component, and the effect declined to
-    // run — which looks exactly like a control that does nothing.
-  }, [modelId, colourName, selectedWidthMm, background, handle, handleFinish]);
+    // The finish is a dependency because it is a MATERIAL on a scene built
+    // once: left off, the picker wrote to the store, the store re-rendered this
+    // component, and the effect declined to run — which looks exactly like a
+    // control that does nothing.
+  }, [modelId, colourName, selectedWidthMm, background, handleFinish]);
 
   return <div ref={hostRef} style={{ width: '100%', height: '100%', minHeight: 420 }} />;
 }

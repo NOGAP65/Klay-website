@@ -7,8 +7,7 @@ import {
   WARDROBE_COLOURS, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM,
   modelsOfKind, wardrobeModelById,
 } from './wardrobes';
-import { HANDLE_TYPES, HANDLE_FINISHES, handleFinish } from './wardrobeHardware';
-import { hasHandlesFor } from './wardrobeGeometry';
+import { HANDLE_FINISHES, handleFinish } from './wardrobeHardware';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
@@ -666,70 +665,47 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             "Width" as though a colour and a dimension were the same sort of
             answer. Splitting them is also what makes room for the hardware
             without the panel reading as a list of seven things. */}
-        {/* ONLY WHERE THERE IS A DRAWER TO PUT A HANDLE ON. Forma 1 is a
-            divider, a shelf and two rails, and Forma 2's tower is open
-            shelving — neither has a front to pull. See hasHandlesFor. */}
-        {hasHandlesFor(store.wardrobeModel) && (
+        {/* ONE HARDWARE QUESTION, AND IT IS ASKED ON ALL THREE.
+            The profile picker is gone. Bar or knob was a choice the range does
+            not offer — the pull on the drawer tower is the pull, and asking
+            which shape it is was inventing a decision to collect. What is left
+            is the finish, which is real: silver, black or brass, the supplier's
+            own three.
+
+            AND IT IS NOT GATED ANY MORE. It used to be hidden on layouts with
+            no drawer, which was right while this asked about a drawer pull and
+            wrong now that it asks about the metalwork. Every model has visible
+            metalwork — the hanging rails, which Forma 1 is almost entirely made
+            of — and they are bought from the same range in the same finish. A
+            robe with black rails is a different robe from one with silver, and
+            Forma 1 is the layout where that shows most. */}
         <section>
           <GroupHeading onDark={onDark}>Hardware</GroupHeading>
           <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
-            {/* PROFILE AND FINISH ARE TWO QUESTIONS, and they are asked
-                separately because they fail separately: the profile changes the
-                shape on the drawer front and the finish changes only what it is
-                made of. One combined list would be five profiles times six
-                finishes — thirty lozenges for what is two small decisions.
-
-                The profile keeps its one-line note where the model does not,
-                and the difference is real: "Forma 4.0" is a name a customer is
-                choosing between three of, while "D-pull" and "Edge pull" are
-                trade words for shapes nobody can picture. The note is the
-                choice; without it the row is four synonyms for handle. */}
-            <Field onDark={onDark} label="Handle">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
-                {HANDLE_TYPES.map(h => (
-                  <Pill
+            {/* SWATCHES, because a finish is a colour and three colour names in
+                a row is a row nobody reads. The supplier's code rides in the
+                caption beside the name — it is what goes on the order, and the
+                one thing here a customer might be asked to quote back. */}
+            <Field
+              onDark={onDark}
+              label="Handle &amp; rail finish"
+              caption={`${handleFinish(store.wardrobeHandleFinish).name} · ${handleFinish(store.wardrobeHandleFinish).code}`}
+            >
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
+                {HANDLE_FINISHES.map(f => (
+                  <Swatch
                     onDark={onDark}
-                    key={h.id}
-                    label={h.label}
-                    sub={h.note}
-                    active={store.wardrobeHandle === h.id}
-                    onClick={() => store.setWardrobeHandle(h.id)}
+                    key={f.code}
+                    hex={f.hex}
+                    label={`${f.name} (${f.code})`}
+                    active={store.wardrobeHandleFinish === f.name}
+                    onClick={() => store.setWardrobeHandleFinish(f.name)}
                   />
                 ))}
               </div>
             </Field>
-
-            {/* SWATCHES, because a finish is a colour and three colour names in
-                a row is a row nobody reads. The supplier's code rides in the
-                caption beside the name — it is what goes on the order, and the
-                one thing here a customer might be asked to quote back.
-
-                Always shown. It used to be hidden for the handleless profile,
-                which no longer exists: both remaining profiles are metalwork,
-                so there is no configuration with nothing to finish. */}
-            {(
-              <Field
-                onDark={onDark}
-                label="Handle finish"
-                caption={`${handleFinish(store.wardrobeHandleFinish).name} · ${handleFinish(store.wardrobeHandleFinish).code}`}
-              >
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
-                  {HANDLE_FINISHES.map(f => (
-                    <Swatch
-                      onDark={onDark}
-                      key={f.code}
-                      hex={f.hex}
-                      label={`${f.name} (${f.code})`}
-                      active={store.wardrobeHandleFinish === f.name}
-                      onClick={() => store.setWardrobeHandleFinish(f.name)}
-                    />
-                  ))}
-                </div>
-              </Field>
-            )}
           </div>
         </section>
-        )}
       </div>
     );
   }
