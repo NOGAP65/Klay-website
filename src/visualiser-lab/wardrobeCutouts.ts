@@ -31,11 +31,11 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     w: 1254,
     h: 1254,
     towerLead: null,
-    towerTrail: 0.84,
+    towerTrail: 0.8266666666666667,
     x0: 0.63716,
-    y0: 0.33333,
+    y0: 0.35327,
     x1: 0.69777,
-    y1: 0.49123
+    y1: 0.48724
   },
   {
     id: "2.9",
@@ -48,7 +48,7 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     x0: 0.18022,
     y0: 0.10925,
     x1: 0.82217,
-    y1: 0.87241
+    y1: 0.87002
   },
   {
     id: "3.0",
@@ -59,9 +59,9 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     towerLead: 0.20308250226654578,
     towerTrail: 0.814143245693563,
     x0: 0.07257,
-    y0: 0.15152,
+    y0: 0.19059,
     x1: 0.95295,
-    y1: 0.82137
+    y1: 0.8134
   },
   {
     id: "4.0",
@@ -72,9 +72,9 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     towerLead: 0.2051948051948052,
     towerTrail: 0.8692640692640693,
     x0: 0.0664,
-    y0: 0.14401,
+    y0: 0.20354,
     x1: 0.98024,
-    y1: 0.82784
+    y1: 0.79566
   },
   {
     id: "4.9",
@@ -82,12 +82,12 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     file: "4.9-white-angle.png",
     w: 1254,
     h: 1254,
-    towerLead: null,
+    towerLead: 0.3482466747279323,
     towerTrail: 0.7158403869407497,
     x0: 0.17783,
-    y0: 0.14434,
+    y0: 0.14992,
     x1: 0.83812,
-    y1: 0.90351
+    y1: 0.89952
   },
   {
     id: "5.0",
@@ -98,9 +98,9 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     towerLead: 0.20456466610312765,
     towerTrail: 0.7396449704142012,
     x0: 0.04438,
-    y0: 0.17955,
+    y0: 0.18038,
     x1: 0.95027,
-    y1: 0.85786
+    y1: 0.8537
   },
   {
     id: "6.0",
@@ -111,9 +111,9 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     towerLead: 0.20936395759717313,
     towerTrail: 0.8065371024734982,
     x0: 0.05662,
-    y0: 0.13078,
+    y0: 0.20893,
     x1: 0.96013,
-    y1: 0.83732
+    y1: 0.83014
   },
   {
     id: "7.0L",
@@ -124,9 +124,9 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     towerLead: 0.1785400175901495,
     towerTrail: 0.751099384344767,
     x0: 0.05595,
-    y0: 0.05806,
+    y0: 0.10645,
     x1: 0.95272,
-    y1: 0.93468
+    y1: 0.77016
   },
   {
     id: "8.0",
@@ -137,9 +137,9 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
     towerLead: 0.20342034203420342,
     towerTrail: 0.7965796579657966,
     x0: 0.00085,
-    y0: 0.16288,
+    y0: 0.20746,
     x1: 0.94482,
-    y1: 0.8436
+    y1: 0.84198
   },
   {
     id: "9.0L",

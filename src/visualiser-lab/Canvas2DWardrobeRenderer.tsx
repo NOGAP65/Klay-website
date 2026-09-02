@@ -841,10 +841,21 @@ export function buildCarcass(
   //
   // Taking it out is also what lets the wall's own tone and shadow do the work
   // that the ambient pass was approximating.
-  boxes.push({ x: 0, y: 0, z: 0, w: BOARD_MM, h: H, d: D });
-  boxes.push({ x: widthMm - BOARD_MM, y: 0, z: 0, w: BOARD_MM, h: H, d: D });
-  boxes.push({ x: 0, y: H - BOARD_MM, z: 0, w: widthMm, h: BOARD_MM, d: D });
-  boxes.push({ x: 0, y: 0, z: 0, w: widthMm, h: BOARD_MM, d: D });
+  // THE SHELL IS PLAIN BOARD, never skinned — same rule as the dividers and
+  // shelves, and for the same reason plus one more.
+  //
+  // The projection samples a face by its own (x, y), so the top rail samples
+  // the very top of the recorded carcass and the bottom rail the very bottom.
+  // Those are the two places a staged photograph is least like a rail: above
+  // the cabinet is baskets and empty space, below it is shoes, a bag and floor
+  // shadow. Measured on 6.0's render, the bottom band is about a third board.
+  //
+  // Skinned, the rails came out as gaps you could see the room through. They
+  // are board on the product and they are board here.
+  boxes.push({ x: 0, y: 0, z: 0, w: BOARD_MM, h: H, d: D, plain: true });
+  boxes.push({ x: widthMm - BOARD_MM, y: 0, z: 0, w: BOARD_MM, h: H, d: D, plain: true });
+  boxes.push({ x: 0, y: H - BOARD_MM, z: 0, w: widthMm, h: BOARD_MM, d: D, plain: true });
+  boxes.push({ x: 0, y: 0, z: 0, w: widthMm, h: BOARD_MM, d: D, plain: true });
 
   // The usable width is columnsFor's business now that columns are resolved in
   // millimetres rather than as fractions of it.
