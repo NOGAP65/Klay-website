@@ -882,16 +882,37 @@ export function buildCarcass(
   const sides = sidePanelsFor(layoutId);
   if (sides.left) boxes.push({ x: 0, y: 0, z: 0, w: BOARD_MM, h: H, d: D, plain: true });
   if (sides.right) boxes.push({ x: widthMm - BOARD_MM, y: 0, z: 0, w: BOARD_MM, h: H, d: D, plain: true });
-  // The top shelf and the base stay on every unit: the deck's own description
-  // leads with "a convenient top shelf and sturdy hanging rail", and the base is
-  // what the run stands on.
-  boxes.push({ x: 0, y: H - BOARD_MM, z: 0, w: widthMm, h: BOARD_MM, d: D, plain: true });
-  boxes.push({ x: 0, y: 0, z: 0, w: widthMm, h: BOARD_MM, d: D, plain: true });
+  // AND NO BASE AT ALL. This is the correction that matters most, and the
+  // supplied renders are unambiguous about it: 3.0 and 6.0 both show a run that
+  // is WALL-HUNG — a shelf across the top, rails under it, and open floor
+  // beneath, with the tower the only part that reaches the ground. There is no
+  // board running along the bottom of the unit and there never was.
+  //
+  // Drawing one made every layout a box: a full-width plank at floor level
+  // closing the picture, which is what a free-standing wardrobe has and what a
+  // built-in shelf-and-rail system does not. The tower supplies its own base
+  // where there is a tower; everything else stops at the rail.
+  //
+  // The top of the run is the full-width shelf below, not a carcass top — see
+  // the note there.
 
   // The usable width is columnsFor's business now that columns are resolved in
   // millimetres rather than as fractions of it.
-  const innerH = H - 2 * BOARD_MM;
-  const y0 = BOARD_MM;
+  // THE TOP SHELF RUNS THE WHOLE WIDTH, and it is the top of the product.
+  //
+  // Read straight off the supplied renders: one continuous shelf across the
+  // full opening with everything hanging below it, and boxes and baskets stood
+  // ON it. Every column used to cap itself at its own height, so a run came out
+  // as two or three separate cupboards standing side by side instead of one
+  // robe under one shelf.
+  //
+  // It sits at the very top of the 2016 — it IS the carcass top — so the run
+  // reads from the shelf down.
+  const shellInnerH = H - BOARD_MM;
+  const topShelfY = H - BOARD_MM;
+  const innerH = shellInnerH;
+  void topShelfY;
+  const y0 = 0;
   // Starts at the wall where there is no panel to start after.
   let x = sides.left ? BOARD_MM : 0;
 
@@ -924,19 +945,51 @@ export function buildCarcass(
       boxes.push({ ...b, colour: hardware.rgb, metal: true });
 
     if (hardware.type === 'knob') {
-      // ONE, CENTRED. It was a pair at the thirds, on the reasoning that a wide
-      // drawer is fitted with two — which is true of a 900mm kitchen drawer and
-      // wrong here: the tower is 507 and a single knob is what goes on it. A
-      // pair also read as a short bar with a gap in it at this size, which is
-      // the one thing a knob has to not look like.
-      const r = 38;
-      metal({ x: cx + cw / 2 - r / 2, y: fy + fh / 2 - r / 2, z: D, w: r, h: r, d: 32 });
+      // A SMALL RECTANGULAR PLATE, CENTRED — which is what the supplier's own
+      // photograph of the drawer tower shows, and not the deep round stub that
+      // was here. Theirs is a flat landscape rectangle sitting almost flush:
+      // what you see is the shadow under its lip, not a knob standing off the
+      // board. At 32 deep it read as a doorknob, and four doorknobs made the
+      // tower look like a toy.
+      const kw = 46, kh = 24;
+      metal({ x: cx + cw / 2 - kw / 2, y: fy + fh / 2 - kh / 2, z: D, w: kw, h: kh, d: 10 });
       return;
     }
-    // A long rail across the front, set low. Wide and thin.
-    const hw = Math.min(cw * 0.42, 320);
-    metal({ x: cx + (cw - hw) / 2, y: fy + fh * 0.72, z: D, w: hw, h: 22, d: 26 });
+    // A SLIM BAR, CENTRED ON THE FRONT. 6.0's render has exactly this: a long
+    // thin rail across the middle of each drawer, not a chunky pull set low.
+    // It was 22 tall at 0.72 of the front, which sat it near the bottom edge
+    // and gave the bank a ladder of heavy rungs.
+    //
+    // SHALLOW, and that is a rendering fix as much as a modelling one. At 18
+    // deep against 14 tall the pull's own TOP face was wider than its front,
+    // and being polished metal it caught the wall's reflection as a second
+    // bright band above the bar — every drawer looked like it had two handles.
+    // Verified against the box list: there is one pull per drawer and always
+    // was, so the doubling was specular rather than geometric. A 10mm return
+    // has almost no top face to light.
+    const hw = Math.min(cw * 0.46, 340);
+    metal({ x: cx + (cw - hw) / 2, y: fy + fh * 0.5 - 7, z: D, w: hw, h: 14, d: 10 });
   };
+
+  // The full-width shelf, spanning between whatever end panels exist.
+  {
+    const sx = sides.left ? BOARD_MM : 0;
+    const sw = widthMm - sx - (sides.right ? BOARD_MM : 0);
+    shelf(sx, sw, H - BOARD_MM);
+  }
+
+  // WHAT HOLDS THE RUN UP WHERE THERE IS NO TOWER.
+  //
+  // "SRDH — Shelf & Rail-Divider Support Double Hang Rail". The Divider Support
+  // is not a full-height panel: in 3.0's render it is a short fin dropping from
+  // the underside of the shelf at mid-span, carrying the shelf and joining the
+  // two lengths of rail. Forma 1 was being drawn with a floor-to-ceiling board
+  // down its middle, which is a carcass divider from a different product and
+  // cut the run into two cupboards.
+  //
+  // Tower layouts keep their real dividers — a tower has a carcass side, and
+  // the board between it and the next bay is that side.
+  const towered = columnsFor(layoutId, widthMm).some(c => c.fill.kind !== 'hang' && c.fill.kind !== 'hang2');
 
   // Resolved in millimetres, not as fractions of the cabinet: a drawer tower is
   // 507 wide in every layout in the range, and only the bays either side of it
@@ -945,7 +998,12 @@ export function buildCarcass(
   columns.forEach((column, i) => {
     const cw = column.widthMm;
     if (i < columns.length - 1) {
-      boxes.push({ x: x + cw, y: y0, z: 0, w: BOARD_MM, h: innerH, d: D, plain: true });
+      // A full divider between real carcasses; a support fin under the shelf
+      // otherwise — see the note on the Divider Support above.
+      const finH = Math.min(innerH, 420);
+      boxes.push(towered
+        ? { x: x + cw, y: y0, z: 0, w: BOARD_MM, h: innerH, d: D, plain: true }
+        : { x: x + cw, y: H - BOARD_MM - finH, z: 0, w: BOARD_MM, h: finH, d: D, plain: true });
     }
 
     const fill = column.fill;
@@ -964,11 +1022,10 @@ export function buildCarcass(
         });
       }
     } else if (fill.kind === 'hang') {
-      const shelfY = y0 + innerH * 0.82;
-      shelf(x, cw, shelfY);
-      const railY = shelfY - RAIL_DROP_MM;
+      // ONE LONG RAIL, HUNG FROM THE FULL-WIDTH SHELF. No shelf of its own —
+      // that was a second board an inch under the first.
+      const railY = H - BOARD_MM - RAIL_DROP_MM;
       rail(x, cw, railY);
-      // The bay under the rail, and the shelf over it.
       compartments.push({ x0: x, x1: x + cw, y0: railY, y1: railY, role: 'hang-long' });
       // THE OPEN BAY ITSELF, recorded so it can be shaded. A hanging
       // compartment is filed at its RAIL with no height, because that is all
@@ -976,12 +1033,18 @@ export function buildCarcass(
       // with nothing describing it, so the ambient pass skipped it and the bay
       // came out as flat lit board.
       compartments.push({ x0: x, x1: x + cw, y0, y1: railY, role: 'bay' });
-      compartments.push({ x0: x, x1: x + cw, y0: shelfY + BOARD_MM, y1: y0 + innerH, role: 'shelf' });
     } else if (fill.kind === 'hang2') {
-      const upper = y0 + innerH * 0.86;
-      const mid = y0 + innerH * 0.46;
-      shelf(x, cw, upper);
-      shelf(x, cw, mid);
+      // DOUBLE HANG: a rail under the shelf and a second one halfway down.
+      //
+      // The mid board between them is a shelf only where there is a carcass to
+      // carry it — 6.0's middle bay has one because it is between a tower side
+      // and a divider. On Forma 1, which has neither, the lower rail hangs on
+      // drop brackets off the upper and there is no board at all, which is what
+      // "Divider Support Double Hang Rail" describes and what makes that
+      // product the simple one it is.
+      const upper = H - BOARD_MM;
+      const mid = y0 + innerH * 0.5;
+      if (towered) shelf(x, cw, mid);
       rail(x, cw, upper - RAIL_DROP_MM);
       rail(x, cw, mid - RAIL_DROP_MM);
       // Two rails, so two runs of short hanging, and the shelf above the top
@@ -992,11 +1055,12 @@ export function buildCarcass(
       // The two open bays under those rails — see the note on 'bay' above.
       compartments.push({ x0: x, x1: x + cw, y0, y1: mid - RAIL_DROP_MM, role: 'bay' });
       compartments.push({ x0: x, x1: x + cw, y0: mid + BOARD_MM, y1: upper - RAIL_DROP_MM, role: 'bay' });
-      compartments.push({ x0: x, x1: x + cw, y0: upper + BOARD_MM, y1: y0 + innerH, role: 'shelf' });
     } else {
       // A TOWER, not a rail over drawers. The bank fills the lower half and
       // open shelving stacks above it, which is what every one of these towers
       // is in the photographs.
+      // The tower runs from the floor to the underside of the full-width
+      // shelf, which is the one column that reaches the ground.
       const bankH = innerH * 0.46;
       const dh = bankH / fill.count;
       for (let d = 0; d < fill.count; d++) {

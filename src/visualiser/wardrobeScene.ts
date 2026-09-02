@@ -36,6 +36,16 @@ import {
  * sized in metres means something. */
 export const MM = 0.001;
 
+/** How thick the wall the robe is built into is, millimetres.
+ *
+ * 90 is a 70mm stud with 10mm lining either side, which is the ordinary
+ * internal wall these are fitted to. It matters because it IS the reveal: this
+ * number is the depth of the return you see around the opening, and it is the
+ * whole of what makes the render read as a hole in a wall rather than a white
+ * frame laid on one. Below about 50 it stops reading; much above 120 and the
+ * opening starts to look like a serving hatch. */
+const WALL_THICKNESS_MM = 90;
+
 export interface WardrobeSceneOpts {
   renderer: THREE.WebGLRenderer;
   modelId: string;
@@ -453,6 +463,115 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // NOTHING IS STOOD IN IT. The contents are off in both views — see the
   // note in Canvas2DWardrobeRenderer. The carcass shows its own board, which
   // is what has to be right before anything is put on a shelf.
+
+  // --- THE WALL IT IS BUILT INTO ---------------------------------------------
+  //
+  // A BUILT-IN ROBE IS A HOLE IN A WALL, and until this the 3D view was showing
+  // it as furniture: a carcass floating on a flat field, edges bare to the air
+  // on every side. That is not the product. Every photograph of it in the
+  // supplier's own deck is the same picture — a white wall with a rectangular
+  // opening cut into it, a reveal deep enough to see the wall's thickness, and
+  // the internals set back inside.
+  //
+  // WHAT ACTUALLY MAKES IT READ AS BUILT IN is the reveal, not the wall. A flat
+  // white plane with a hole in it is still a picture of a hole; what says
+  // "there is a room behind this" is the RETURN — the 90mm of wall you see
+  // going away from you around the opening's four edges, catching the light on
+  // one side and shadowed on the other. It is also what gives the turntable
+  // something to move against: rotate a floating box and only the box turns,
+  // rotate a box in an opening and the reveal opens and closes.
+  //
+  // Four boxes, not a plane with a hole cut in it. A box has the thickness
+  // built into it, so the return comes free and casts and receives shadow like
+  // anything else; punching a hole would mean a shape geometry, a triangulated
+  // face, and no reveal at all without building these four anyway.
+  // ONLY WHERE THERE IS NOT ALREADY A WALL. The room composite is drawn onto a
+  // photograph that has the customer's own wall in it, and the recess shade is
+  // painted into the traced opening — putting a modelled wall in front of that
+  // would be a second wall over the first. This is for the turntable, which has
+  // nothing behind it at all.
+  if (!opts.forRoom) buildSurround();
+
+  function buildSurround() {
+  const surroundMat = new THREE.MeshStandardMaterial({
+    // Plasterboard, not board: a touch cooler and flatter than the cabinet so
+    // the joinery still reads as a different material inside its own opening.
+    color: new THREE.Color(0xf2f1ee),
+    roughness: 0.94,
+    metalness: 0.0,
+  });
+  disposables.push(surroundMat);
+
+  const wall = (x: number, y: number, w: number, h: number) => {
+    const geo = new THREE.BoxGeometry(w * MM, h * MM, WALL_THICKNESS_MM * MM);
+    geo.translate(
+      (x + w / 2) * MM,
+      (y + h / 2) * MM,
+      // Front face of the cabinet is z = 0, so the wall stands in front of it
+      // and the opening looks through to the carcass.
+      (WALL_THICKNESS_MM / 2) * MM,
+    );
+    const mesh = new THREE.Mesh(geo, surroundMat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    disposables.push(geo);
+    root.add(mesh);
+  };
+
+  // How far the wall runs past the opening. Generous, because the turntable
+  // swings 40° either side and the eye finds the end of a wall immediately —
+  // at anything tighter the surround reads as a frame leaning on the cabinet
+  // rather than as the room's own wall.
+  const outX = Math.max(900, widthMm * 0.85);
+  const outTop = 700;
+  wall(-outX, 0, outX, WARDROBE_HEIGHT_MM);                        // left return
+  wall(widthMm, 0, outX, WARDROBE_HEIGHT_MM);                      // right return
+  wall(-outX, WARDROBE_HEIGHT_MM, widthMm + 2 * outX, outTop);     // head
+  // No sill: the opening runs to the floor, which is what a robe does.
+
+  // THE BACK OF THE RECESS, and it is the room's wall rather than the product's.
+  //
+  // This is not the back panel that was taken out. That was a board belonging to
+  // the cabinet, and the whole point of removing it is that a built-in robe does
+  // not have one — the customer's wall closes every compartment. Which means
+  // there IS a surface back there, and with nothing modelled the turntable was
+  // showing the carcass against empty space: white shelves on a white field,
+  // nothing behind the rails, and no way to tell a recess from a cut-out.
+  //
+  // Set a hair behind the carcass so no shelf ever z-fights with it, and darker
+  // than the wall face, because the back of a 500mm recess lit only from the
+  // room in front of it IS darker. That falloff is most of what says depth.
+  const backMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(0xdedbd6),
+    roughness: 0.96,
+    metalness: 0.0,
+  });
+  disposables.push(backMat);
+  const backGeo = new THREE.PlaneGeometry(
+    (widthMm + 2 * outX) * MM,
+    (WARDROBE_HEIGHT_MM + outTop) * MM,
+  );
+  backGeo.translate(
+    (widthMm / 2) * MM,
+    ((WARDROBE_HEIGHT_MM + outTop) / 2) * MM,
+    (-WARDROBE_DEPTH_MM - 6) * MM,
+  );
+  const back = new THREE.Mesh(backGeo, backMat);
+  back.receiveShadow = true;
+  disposables.push(backGeo);
+  root.add(back);
+
+  // AND A FLOOR, for the same reason. The run is wall-hung, so there is open
+  // floor under it in every one of the supplied renders — without one the
+  // cabinet ends in mid-air and the drawer tower has nothing to stand on.
+  const floorGeo = new THREE.PlaneGeometry((widthMm + 2 * outX) * MM, (WARDROBE_DEPTH_MM + 900) * MM);
+  floorGeo.rotateX(-Math.PI / 2);
+  floorGeo.translate((widthMm / 2) * MM, 0, (-WARDROBE_DEPTH_MM / 2 + 300) * MM);
+  const floor = new THREE.Mesh(floorGeo, backMat);
+  floor.receiveShadow = true;
+  disposables.push(floorGeo);
+  root.add(floor);
+  }
 
   // NO BACK PANEL AND NO STAND-IN FOR ONE. The product is built in: the
   // customer's own wall is the back of every compartment, and seeing it through

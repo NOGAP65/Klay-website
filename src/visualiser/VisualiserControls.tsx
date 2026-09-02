@@ -8,6 +8,7 @@ import {
   modelsOfKind, wardrobeModelById,
 } from './wardrobes';
 import { HANDLE_TYPES, HANDLE_FINISHES, handleFinish } from './wardrobeHardware';
+import { hasHandlesFor } from './wardrobeGeometry';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
@@ -665,6 +666,10 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             "Width" as though a colour and a dimension were the same sort of
             answer. Splitting them is also what makes room for the hardware
             without the panel reading as a list of seven things. */}
+        {/* ONLY WHERE THERE IS A DRAWER TO PUT A HANDLE ON. Forma 1 is a
+            divider, a shelf and two rails, and Forma 2's tower is open
+            shelving — neither has a front to pull. See hasHandlesFor. */}
+        {hasHandlesFor(store.wardrobeModel) && (
         <section>
           <GroupHeading onDark={onDark}>Hardware</GroupHeading>
           <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
@@ -724,6 +729,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             )}
           </div>
         </section>
+        )}
       </div>
     );
   }

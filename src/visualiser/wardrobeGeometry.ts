@@ -227,6 +227,22 @@ export function sidePanelsFor(id: string): { left: boolean; right: boolean } {
   };
 }
 
+/** DOES THIS LAYOUT HAVE A PULL ON IT AT ALL?
+ *
+ * A handle belongs to a drawer front, and only the drawer tower has one. Forma
+ * 1 is a divider support, a shelf and two rails — there is no door and no
+ * drawer in it, so there is nothing to put a handle on, and Forma 2's tower is
+ * open shelving. Asking a customer to choose a profile and a finish for a unit
+ * that has neither is collecting an answer that changes nothing on screen and
+ * nothing on the quote.
+ *
+ * Derived from the layout for the same reason sidePanelsFor is: the drawers are
+ * already in the table, so this cannot fall out of step with them. */
+export function hasHandlesFor(id: string): boolean {
+  const columns = LAYOUT_COLUMNS[id] ?? LAYOUT_COLUMNS.SRSTDH02;
+  return columns.some(c => c.fill.kind === 'drawers');
+}
+
 export function columnsFor(id: string, widthMm: number): ResolvedColumn[] {
   const columns = LAYOUT_COLUMNS[id] ?? LAYOUT_COLUMNS.SRSTDH02;
   const sides = sidePanelsFor(id);
