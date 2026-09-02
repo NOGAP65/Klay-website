@@ -137,7 +137,7 @@ export const DEFAULT_WIDTH_MM = 1500;
 export const WARDROBE_MODELS: WardrobeModel[] = [
   {
     id: 'SRDH',
-    name: 'Forma 3.0',
+    name: 'Forma 1',
     layout: 'Divider + double hang',
     code: 'SRDH',
     kind: 'built-in',
@@ -149,7 +149,7 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
   },
   {
     id: 'SRSTDH02',
-    name: 'Forma 4.0',
+    name: 'Forma 2',
     layout: 'Shelf tower + double hang',
     code: 'SRSTDH02',
     kind: 'built-in',
@@ -160,7 +160,7 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
   },
   {
     id: 'SRDTDH01',
-    name: 'Forma 6.0',
+    name: 'Forma 3',
     layout: 'Drawer tower + double hang',
     code: 'SRDTDH01',
     kind: 'built-in',

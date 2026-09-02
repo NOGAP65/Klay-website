@@ -35,7 +35,7 @@
 
 import { useEffect, useRef } from 'react';
 import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, wardrobeColour, wardrobeCutoutFor, FINISH_TEXTURE, FINISH_TILE_MM, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM } from './wardrobes';
-import { projectorFromQuad, columnsFor, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
+import { projectorFromQuad, columnsFor, sidePanelsFor, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
 import { buildSliceMap, sliceMapper, type SliceMap } from './wardrobeSlices';
 import { profilePhoto, relightCutout, applyGrain, makeGrainTile, isWoodFinish, sampleBoardColour } from './wardrobeComposite';
 import { DEFAULT_HANDLE, type HardwareSpec } from './wardrobeHardware';
@@ -875,8 +875,16 @@ export function buildCarcass(
   //
   // Skinned, the rails came out as gaps you could see the room through. They
   // are board on the product and they are board here.
-  boxes.push({ x: 0, y: 0, z: 0, w: BOARD_MM, h: H, d: D, plain: true });
-  boxes.push({ x: widthMm - BOARD_MM, y: 0, z: 0, w: BOARD_MM, h: H, d: D, plain: true });
+  //
+  // AND ONLY THE ENDS THAT HAVE ONE. These are internals fitted into an
+  // opening, so the walls are the ends of the run — a panel is drawn at an end
+  // only where a tower sits there. See sidePanelsFor.
+  const sides = sidePanelsFor(layoutId);
+  if (sides.left) boxes.push({ x: 0, y: 0, z: 0, w: BOARD_MM, h: H, d: D, plain: true });
+  if (sides.right) boxes.push({ x: widthMm - BOARD_MM, y: 0, z: 0, w: BOARD_MM, h: H, d: D, plain: true });
+  // The top shelf and the base stay on every unit: the deck's own description
+  // leads with "a convenient top shelf and sturdy hanging rail", and the base is
+  // what the run stands on.
   boxes.push({ x: 0, y: H - BOARD_MM, z: 0, w: widthMm, h: BOARD_MM, d: D, plain: true });
   boxes.push({ x: 0, y: 0, z: 0, w: widthMm, h: BOARD_MM, d: D, plain: true });
 
@@ -884,7 +892,8 @@ export function buildCarcass(
   // millimetres rather than as fractions of it.
   const innerH = H - 2 * BOARD_MM;
   const y0 = BOARD_MM;
-  let x = BOARD_MM;
+  // Starts at the wall where there is no panel to start after.
+  let x = sides.left ? BOARD_MM : 0;
 
   const shelf = (cx: number, cw: number, y: number) =>
     boxes.push({ x: cx, y, z: BOARD_MM, w: cw, h: BOARD_MM, d: D - BOARD_MM, plain: true });
