@@ -36,7 +36,7 @@
 // main's own paths — see the note in catalogue.ts.
 import type { CatalogueItem } from './catalogue'
 import { HARDWARE_OPTIONS } from './products'
-import { HANDLE_TYPES, HANDLE_FINISHES } from '../visualiser/wardrobeHardware'
+import { HANDLE_FINISHES } from '../visualiser/wardrobeHardware'
 import { modelsOfKind, WARDROBE_WIDTHS } from '../visualiser/wardrobes'
 import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '../lib/pricing'
 
@@ -56,7 +56,7 @@ import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '../lib/pr
 // the line id, so two differently-configured wardrobes stay two lines.
 export type FieldId =
   | 'variant' | 'colour' | 'hardware' | 'size' | 'operation'
-  | 'width' | 'handle'
+  | 'width'
 
 export interface ConfigChoice {
   /** Stable id. For the roller's variant these ARE the pricing blind types, so
@@ -118,8 +118,6 @@ interface ProductOptions {
    * sold in bands. Mutually exclusive with `size` in practice: a thing has one
    * or the other, never both. */
   widths?: number[]
-  /** The pull's profile. Wardrobes only. */
-  handles?: ConfigChoice[]
 }
 
 const v = (id: string, label: string): ConfigChoice => ({ id, label })
@@ -223,7 +221,6 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     variants: modelsOfKind('built-in').map(m => v(m.id, m.name)),
     colourLabel: 'Colour',
     widths: WARDROBE_WIDTHS,
-    handles: HANDLE_TYPES.map(h => v(h.id, h.label)),
     hardwareLabel: 'Handle finish',
     hardwareChoices: HANDLE_FINISHES.map(f => ({ id: f.name, label: f.name, hex: f.hex })),
   },
@@ -269,9 +266,6 @@ export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
       kind: 'select',
       choices: opts.widths.map(w => v(String(w), `${w}mm`)),
     })
-  }
-  if (opts.handles) {
-    fields.push({ id: 'handle', label: 'Handle', kind: 'chips', choices: opts.handles })
   }
   // A product supplies its own metalwork list where its metalwork is not a
   // blind's. `hardware: true` still means the blind headrail colours.

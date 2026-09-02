@@ -1497,7 +1497,6 @@ export default function KlayConfigurator({
               modelId={store.wardrobeModel}
               colourName={store.wardrobeColour}
               selectedWidthMm={store.wardrobeWidthMm}
-              handle={store.wardrobeHandle}
               handleFinish={store.wardrobeHandleFinish}
             />
           ) : store.productCategory === 'wardrobe' && confirmedArea ? (
@@ -1507,7 +1506,6 @@ export default function KlayConfigurator({
               modelId={store.wardrobeModel}
               colourName={store.wardrobeColour}
               widthMm={store.wardrobeWidthMm}
-              handle={store.wardrobeHandle}
               handleFinish={store.wardrobeHandleFinish}
             />
           ) : store.productCategory === 'curtain' && confirmedArea ? (

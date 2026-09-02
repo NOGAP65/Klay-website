@@ -28,9 +28,7 @@ import { cutoutFor } from './wardrobeCutouts';
 import { buildSliceMap, sliceMapper } from './wardrobeSlices';
 import { sampleBoardColour } from './wardrobeComposite';
 import { makeWhiteBoardMaps, WHITE_TILE_MM } from './whiteBoardTexture';
-import {
-  DEFAULT_HANDLE, DEFAULT_HANDLE_FINISH, handleFinish, hardwareSpec, type HandleTypeId,
-} from './wardrobeHardware';
+import { DEFAULT_HANDLE_FINISH, handleFinish, hardwareSpec } from './wardrobeHardware';
 
 /** Millimetres to metres, so the scene is in real units and a shadow camera
  * sized in metres means something. */
@@ -75,9 +73,8 @@ export interface WardrobeSceneOpts {
    * and the distinction is easy to reintroduce if a wall shadow is ever done
    * properly — as its own render pass, not a transparent plane in this one. */
   forRoom?: boolean;
-  /** The pull's profile. Changes the geometry, so it goes into buildCarcass. */
-  handle?: HandleTypeId;
-  /** The finish's name, matching HANDLE_FINISHES. Changes the material. */
+  /** The finish's name, matching HANDLE_FINISHES. Every piece of visible
+   * metalwork in the cabinet takes it — the pulls and the hanging rails. */
   handleFinish?: string;
 }
 
@@ -116,7 +113,6 @@ function flattenOntoBoard(tex: THREE.Texture, board: THREE.Color): THREE.Texture
 
 export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<WardrobeScene> {
   const { renderer, modelId, colourName, widthMm } = opts;
-  const handleTypeId = opts.handle ?? DEFAULT_HANDLE;
   const handleFinishName = opts.handleFinish ?? DEFAULT_HANDLE_FINISH;
 
   const model = wardrobeModelById(modelId);
@@ -237,7 +233,7 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   disposables.push(env.texture, pmrem);
 
   // --- the carcass ---------------------------------------------------------
-  const { boxes } = buildCarcass(model.id, widthMm, hardwareSpec(handleTypeId, handleFinishName));
+  const { boxes } = buildCarcass(model.id, widthMm, hardwareSpec(handleFinishName));
   const base = new THREE.Color(wardrobeColourHex(colourName));
 
   /** Model millimetres to sticker UV — piecewise across the width, so a fixed
