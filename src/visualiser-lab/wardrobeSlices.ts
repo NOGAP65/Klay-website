@@ -87,7 +87,7 @@ export function buildSliceMap(
   refWidthMm: number,
   carcass: CarcassBox,
 ): SliceMap {
-  const columns = LAYOUT_COLUMNS[layoutId] ?? LAYOUT_COLUMNS['3.0'];
+  const columns = LAYOUT_COLUMNS[layoutId] ?? LAYOUT_COLUMNS.SRSTDH02;
   const leadFixed = !!columns[0]?.fixed;
   const trailFixed = columns.length > 1 && !!columns[columns.length - 1]?.fixed;
 

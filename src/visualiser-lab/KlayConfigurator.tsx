@@ -660,7 +660,27 @@ function MotorRemote({
   );
 }
 
-const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-5.png'];
+/** THE SAMPLE ROOMS, AND THEY ARE NOT THE SAME FOR EVERY PRODUCT.
+ *
+ * All five presets are blind and curtain scenes — a window in the middle of a
+ * wall, which is exactly what a roller blind needs and exactly the wrong thing
+ * for a wardrobe. A wardrobe needs a blank stretch of wall, and offering a
+ * window means the first thing a customer does is trace one, and the first
+ * thing the visualiser does is stand a cupboard in front of the glass. That is
+ * what the default preview has been doing all along.
+ *
+ * So the samples are per category. The wardrobe list is the bedroom, which is
+ * the only supplied photograph with a wall you would actually build into.
+ *
+ * IT IS ONE PHOTOGRAPH, and it should be three or four. Wardrobe room
+ * photography is the outstanding asset request — a bedroom alcove, a flat wall
+ * beside a bed, a corner — and until it arrives this is honest about having one
+ * rather than padding the row with windows. */
+const PRESET_ROOMS_WINDOW = ['/images/room-3.png', '/images/room-4.png', '/images/room-5.png'];
+const PRESET_ROOMS_WARDROBE = ['/images/Preview.png'];
+
+const presetRoomsFor = (category: string) =>
+  category === 'wardrobe' ? PRESET_ROOMS_WARDROBE : PRESET_ROOMS_WINDOW;
 
 // Loaded automatically on mount so the visualiser never shows an empty
 // upload prompt by default — the blind renders immediately against this
@@ -1217,7 +1237,7 @@ export default function KlayConfigurator({
               <Button onClick={handleTakePhoto}>Take photo</Button>
             </div>
             <div style={{ display: 'flex', gap: space.md, marginTop: space.lg, justifyContent: 'center' }}>
-              {PRESET_ROOMS.map(url => (
+              {presetRoomsFor(store.productCategory).map(url => (
                 <img
                   key={url}
                   src={url}

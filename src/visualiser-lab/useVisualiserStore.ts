@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
 import { pricePerBlind, type BlindType } from '../lib/pricing';
-import { DEFAULT_WIDTH_MM } from './wardrobes';
+import { DEFAULT_WIDTH_MM, wardrobeModelById } from './wardrobes';
 
 type Point = [number, number];
 
@@ -303,7 +303,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   defaultWindowActive: true,
   curtainOpenness: 0,
   wardrobeKind: 'built-in',
-  wardrobeModel: '3.0',
+  wardrobeModel: 'SRSTDH02',
   wardrobeColour: 'Matt Wardrobe White',
   // 3.0's first width, matching wardrobeModel above.
   wardrobeWidthMm: DEFAULT_WIDTH_MM,
@@ -390,17 +390,28 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   setWardrobeKind: (kind) =>
     set({
       wardrobeKind: kind,
-      wardrobeModel: kind === 'walk-in' ? '7.0L' : '3.0',
+      wardrobeModel: kind === 'walk-in' ? '7.0L' : 'SRSTDH02',
     }),
   // The width follows the layout, because the ranges differ — 2.9 is built at
   // one width, 4.0 at three. Carrying a width across a layout change would
   // leave the configurator holding a size that layout is not made in.
-  // THE WIDTH SURVIVES A LAYOUT CHANGE now that every layout is built in the
-  // same five widths. It used to reset, because the ranges differed and a
-  // carried width could be one the new layout was not made in. With one shared
-  // list there is nothing to reset to, and resetting would only throw away a
-  // choice the customer had already made.
-  setWardrobeModel: (id) => set({ wardrobeModel: id }),
+  // THE WIDTH IS KEPT WHERE THE NEW SKU IS BUILT IN IT, and snapped to its
+  // nearest where it is not.
+  //
+  // The ranges differ — SRDH is made from 1200 and stops at 2400, the tower
+  // products run 1500 to 2700 — so a carried width can be one the new layout is
+  // not made in. Resetting outright throws away a choice the customer made;
+  // carrying it blindly leaves the configurator holding a size that cannot be
+  // ordered. Snapping keeps the intent and stays buildable.
+  setWardrobeModel: (id) =>
+    set(state => {
+      const widths = wardrobeModelById(id).widths;
+      if (widths.includes(state.wardrobeWidthMm)) return { wardrobeModel: id };
+      const nearest = widths.reduce((best, w) =>
+        Math.abs(w - state.wardrobeWidthMm) < Math.abs(best - state.wardrobeWidthMm) ? w : best,
+      widths[0]);
+      return { wardrobeModel: id, wardrobeWidthMm: nearest };
+    }),
   setWardrobeColour: (name) => set({ wardrobeColour: name }),
   setWardrobeWidthMm: (mm) => set({ wardrobeWidthMm: mm }),
   setCurtainMount: (mount) => set(writeThrough({ curtainMount: mount })),

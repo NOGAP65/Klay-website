@@ -54,10 +54,22 @@ export type WardrobeView = 'front' | 'angle' | 'interior';
 export interface WardrobeModel {
   id: string;
   name: string;
+  /** The supplier's product code, where there is one. This is what goes on a
+   * quote, so it is carried rather than reconstructed from the name. */
+  code?: string;
   kind: WardrobeKind;
-  /** Cabinet widths this layout is made in, mm. First is the one the render was
-   * drawn at and the one the visualiser shows. */
+  /** Cabinet widths this SKU is made in, mm. Not shared across the range: a
+   * tower is 507 of the cabinet, so the tower products start at 1500 where the
+   * divider-only one starts at 1200. */
   widths: number[];
+  /** WHICH SUPPLIED RENDER DRESSES THIS SKU.
+   *
+   * Kept separate from the id because the two are no longer the same thing. The
+   * artwork is filed under the names the stickers arrived with; the products
+   * are filed under their codes, and one render can serve a SKU whose id looks
+   * nothing like it. Null where no supplied render is that product — those draw
+   * from the geometry in board. */
+  artworkId: string | null;
   /** The original single render, used until the cut-out set arrives. */
   legacyFile: string;
 }
@@ -75,32 +87,65 @@ export const WARDROBE_HEIGHT_MM = 2016;
  * Held here as a constant for the same reason 2016 is. */
 export const WARDROBE_DEPTH_MM = 500;
 
-/** THE WIDTHS THE RANGE IS BUILT IN, and every layout is built in all of them.
- *
- * The per-model lists this replaces were wrong in both directions — 2.9 and 6.0
- * were recorded as 1800-only when they are made across the range, and the lists
- * disagreed with the renders besides. One list, because there is one answer.
- *
- * Which is also what the slicing was for: the fixed modules hold their 507mm at
- * every one of these, and the hanging bays take up the difference. */
-export const WARDROBE_WIDTHS_MM = [1500, 1800, 2100, 2400, 2700];
-
-/** The width a layout opens on. The renders were shot at about this, so the
- * visualiser starts on unsliced artwork and the first thing a customer sees is
- * the photograph at its own proportions. */
+/** The width a layout opens on where it is built in it. The renders were shot at
+ * about this, so the visualiser starts on unsliced artwork. */
 export const DEFAULT_WIDTH_MM = 2400;
 
+/** THE BUILT-IN RANGE, FROM THE PRODUCT CODES.
+ *
+ * These are the SKUs, not a set of names invented to label the artwork. What
+ * was here before was the ten supplied stickers treated as ten products —
+ * "Forma 2.9" through "Forma 12.0U" — with widths guessed at and, in four
+ * cases, guessed wrong.
+ *
+ * ONLY THE 2016mm PRODUCTS. The catalogue also lists SR02, SRDT02 and SRST02,
+ * which are the same three internals at 1668mm. Height is the visualiser's
+ * scale anchor — the traced box IS 2016mm tall, and that single fact fixes
+ * millimetres-per-pixel — so a 1668 unit is not a variant of these, it is a
+ * second anchor and a second set of artwork. Out of scope until it has both.
+ *
+ * WIDTHS DIFFER BY SKU, which the previous version got wrong in the other
+ * direction: one shared list of five, applied to everything. SRDH starts at
+ * 1200 and stops at 2400; the two tower products start at 1500 and run to 2700.
+ * A tower is 507mm of the cabinet, so a 1200 opening with a tower in it has
+ * under 700 left for hanging, which is why they do not offer it. */
 export const WARDROBE_MODELS: WardrobeModel[] = [
-  { id: '2.9', name: 'Forma 2.9', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 2.9 Sticker.png' },
-  { id: '3.0', name: 'Forma 3.0', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 3.0 Sticker.png' },
-  { id: '4.0', name: 'Forma 4.0', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 4.0 Sticker.png' },
-  { id: '4.9', name: 'Forma 4.9', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 4.9 Sticker.png' },
-  { id: '5.0', name: 'Forma 5.0', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 5.0 Sticker.png' },
-  { id: '6.0', name: 'Forma 6.0', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 6.0 Sticker.png' },
-  { id: '8.0', name: 'Forma 8.0', kind: 'built-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 8.0 Sticker.png' },
-  { id: '7.0L', name: 'Forma 7.0L', kind: 'walk-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 7.0L Sticker.png' },
-  { id: '9.0L', name: 'Forma 9.0L', kind: 'walk-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 9.0L Sticker.png' },
-  { id: '12.0U', name: 'Forma 12.0U', kind: 'walk-in', widths: WARDROBE_WIDTHS_MM, legacyFile: 'Forma Wardrobe 12.0U Sticker.png' },
+  {
+    id: 'SRDH',
+    name: 'Divider + Double Hang',
+    code: 'SRDH',
+    kind: 'built-in',
+    widths: [1200, 1500, 1800, 2100, 2400],
+    // No tower, so nothing in the supplied artwork matches it — every render
+    // has one. Drawn from the geometry until its own render exists.
+    artworkId: null,
+    legacyFile: 'Forma Wardrobe 3.0 Sticker.png',
+  },
+  {
+    id: 'SRSTDH02',
+    name: 'Shelf Tower + Double Hang',
+    code: 'SRSTDH02',
+    kind: 'built-in',
+    widths: [1500, 1800, 2100, 2400, 2700],
+    // 4.0's render is this product: shelf tower, divider, double-hung bay.
+    artworkId: '4.0',
+    legacyFile: 'Forma Wardrobe 4.0 Sticker.png',
+  },
+  {
+    id: 'SRDTDH01',
+    name: 'Drawer Tower + Double Hang',
+    code: 'SRDTDH01',
+    kind: 'built-in',
+    widths: [1500, 1800, 2100, 2400, 2700],
+    // 6.0's render is this one: drawer tower, divider, double-hung bay.
+    artworkId: '6.0',
+    legacyFile: 'Forma Wardrobe 6.0 Sticker.png',
+  },
+  // WALK-INS ARE A DIFFERENT FAMILY and are left as they were — the catalogue
+  // above is the built-in robe range (BIR), and these are not in it.
+  { id: '7.0L', name: 'Forma 7.0L', kind: 'walk-in', widths: [2400, 3000], artworkId: '7.0L', legacyFile: 'Forma Wardrobe 7.0L Sticker.png' },
+  { id: '9.0L', name: 'Forma 9.0L', kind: 'walk-in', widths: [2400], artworkId: '9.0L', legacyFile: 'Forma Wardrobe 9.0L Sticker.png' },
+  { id: '12.0U', name: 'Forma 12.0U', kind: 'walk-in', widths: [2400], artworkId: '12.0U', legacyFile: 'Forma Wardrobe 12.0U Sticker.png' },
 ];
 
 export const modelsOfKind = (kind: WardrobeKind) => WARDROBE_MODELS.filter(m => m.kind === kind);
@@ -280,7 +325,7 @@ export async function wardrobeCutoutFor(
   model: WardrobeModel,
   colourName: string,
 ): Promise<{ image: HTMLImageElement; carcass: WardrobeCutout; view: WardrobeView } | null> {
-  const entry = cutoutFor(model.id);
+  const entry = model.artworkId ? cutoutFor(model.artworkId) : undefined;
   if (!entry) return null;
   if (wardrobeColour(colourName).slug !== 'white') return null;
   const image = await loadAsset(`${DIR}/${entry.file}`);
