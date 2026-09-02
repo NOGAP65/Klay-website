@@ -26,7 +26,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-import { wardrobeArtwork, wardrobeModelById, WARDROBE_HEIGHT_MM, DEFAULT_WIDTH_MM } from './wardrobes';
+import { wardrobeArtwork, wardrobeModelById, WARDROBE_HEIGHT_MM } from './wardrobes';
 import { cameraFromQuad, tracedWidthMm } from './wardrobeGeometry';
 import { buildWardrobeScene, MM } from './wardrobeScene';
 import { profilePhoto, applyGrain } from './wardrobeComposite';
@@ -157,6 +157,52 @@ function relightRender(
   return out;
 }
 
+/** How dark the back of the recess goes, at the head and at the floor.
+ *
+ * Set by eye against the supplied alcoves rather than derived: a real figure
+ * would need the room's illuminant and the opening's own aspect, and the number
+ * that matters here is only "far enough back that the shelves read in front of
+ * it". Deep enough to kill the door mouldings, light enough that a customer's
+ * own wall keeps its colour and its skirting. */
+const RECESS_TOP = 0.58;
+const RECESS_BOTTOM = 0.86;
+
+/** The traced opening, darkened as the hole it is.
+ *
+ * Drawn as a gradient down the quad's own left edge rather than down the
+ * screen, so a photograph taken at an angle — or with the camera rolled —
+ * shades along the wall instead of across it. */
+function shadeRecess(ctx: CanvasRenderingContext2D, corners: [number, number][]) {
+  const [tl, tr, br, bl] = corners;
+  const topMid = [(tl[0] + tr[0]) / 2, (tl[1] + tr[1]) / 2] as const;
+  const botMid = [(bl[0] + br[0]) / 2, (bl[1] + br[1]) / 2] as const;
+
+  const g = ctx.createLinearGradient(topMid[0], topMid[1], botMid[0], botMid[1]);
+  const grey = (v: number) => {
+    const c = Math.round(255 * v);
+    return `rgb(${c},${c},${c})`;
+  };
+  g.addColorStop(0, grey(RECESS_TOP));
+  // Most of the fall-off is in the top third: the head of the opening is what
+  // shades it, so the light comes back quickly once you are below the shelf
+  // line and then stays fairly even down to the floor.
+  g.addColorStop(0.34, grey(RECESS_TOP + (RECESS_BOTTOM - RECESS_TOP) * 0.72));
+  g.addColorStop(1, grey(RECESS_BOTTOM));
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(tl[0], tl[1]);
+  ctx.lineTo(tr[0], tr[1]);
+  ctx.lineTo(br[0], br[1]);
+  ctx.lineTo(bl[0], bl[1]);
+  ctx.closePath();
+  ctx.clip();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.restore();
+}
+
 export default function WardrobeRoomRenderer({
   photoUrl,
   corners,
@@ -205,14 +251,28 @@ export default function WardrobeRoomRenderer({
       // as though it were the wall it is standing on.
       const profile = profilePhoto(ctx, corners, PW, PH);
 
-      const drawWidthMm = widthMm ?? DEFAULT_WIDTH_MM;
-      const cam = cameraFromQuad(
-        corners,
-        tracedWidthMm(corners, WARDROBE_HEIGHT_MM),
-        WARDROBE_HEIGHT_MM,
-        PW,
-        PH,
-      );
+      // BUILT TO THE OPENING, NOT TO THE PICKER, and this is what was making
+      // the cabinet hang over the frame.
+      //
+      // The camera is solved for a plane the size of the TRACE. The scene was
+      // then built at the product's own width, so the two disagreed whenever
+      // they were not the same number: in the 1500 alcove the trace works out
+      // at about 1160mm against a 2016 height, a 1500 cabinet was built into
+      // it, and the extra 340mm projected straight out past the right-hand
+      // architrave. It read as a cupboard stuck on the wall rather than set
+      // into the recess.
+      //
+      // The traced quad is the front frame of the opening, so the cabinet is
+      // built to it — it fills the gap edge to edge and the depth recedes
+      // behind it. The product's own width still decides the SKU and the
+      // module layout; what it no longer does is fight the trace for the
+      // outline. See tracedWidthMm.
+      //
+      // `widthMm` from the picker is still the customer's stated opening and
+      // still selects the SKU upstream; it is deliberately not the number the
+      // outline is built from, because the outline is the trace's to give.
+      const drawWidthMm = tracedWidthMm(corners, WARDROBE_HEIGHT_MM);
+      const cam = cameraFromQuad(corners, drawWidthMm, WARDROBE_HEIGHT_MM, PW, PH);
       if (!cam) return;
 
       // --- render the cabinet on nothing ------------------------------------
@@ -270,6 +330,25 @@ export default function WardrobeRoomRenderer({
       // there is — ahead of perspective, ahead of scale. Damped hard, because a
       // render starts far closer to right than a studio photograph does.
       const relit = relightRender(renderer.domElement, profile, RELIGHT_STRENGTH);
+
+      // THE OPENING IS A HOLE, and until this it was a wall.
+      //
+      // The carcass has no back — the customer's own wall is the back of every
+      // compartment, which is the product — so whatever the photograph has in
+      // the traced quad shows straight through the empty bays. On a bare recess
+      // that is exactly right and is the point. On a photograph of an opening
+      // that still has its old doors in it, the doors came through at full
+      // brightness: knobs, panel mouldings and the meeting stile all legible
+      // between the shelves, and the render read as a cage drawn over a
+      // cupboard rather than a cupboard set into one.
+      //
+      // Nothing is painted in and no back panel comes back. What goes down is
+      // the SHADE a 500mm recess has: a hole that deep, lit only by the room in
+      // front of it, is darkest under its own head and lifts toward the floor
+      // where the light reaches. Multiplied through the quad, so it darkens
+      // what is there rather than covering it — the wall, or the doors, or
+      // whatever else, still reads, at the brightness a recess would give it.
+      shadeRecess(ctx, corners);
 
       ctx.save();
       // A little softer, to sit in the same focal plane. A hand-held room photo

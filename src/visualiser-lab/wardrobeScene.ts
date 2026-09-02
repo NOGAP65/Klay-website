@@ -27,8 +27,6 @@ import {
 import { cutoutFor } from './wardrobeCutouts';
 import { buildSliceMap, sliceMapper } from './wardrobeSlices';
 import { sampleBoardColour } from './wardrobeComposite';
-import { BOARD_MM } from './wardrobeGeometry';
-import { CONTENT_ASSETS, type ContentKind } from './wardrobeContents';
 
 /** Millimetres to metres, so the scene is in real units and a shadow camera
  * sized in metres means something. */
@@ -78,28 +76,6 @@ function flattenOntoBoard(tex: THREE.Texture, board: THREE.Color): THREE.Texture
   const out = new THREE.CanvasTexture(canvas);
   out.flipY = true;
   return out;
-}
-
-/** The average colour of an object's own opaque pixels, for the faces of it the
- * camera never photographed. Only opaque ones count: a cut-out is mostly
- * transparent, and averaging the empty margin in drags everything toward black. */
-function averageTone(img: CanvasImageSource): THREE.Color {
-  const c = document.createElement('canvas');
-  c.width = 32;
-  c.height = 32;
-  const ctx = c.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return new THREE.Color(0x9a938c);
-  ctx.drawImage(img, 0, 0, 32, 32);
-  const px = ctx.getImageData(0, 0, 32, 32).data;
-  let r = 0, g = 0, b = 0, n = 0;
-  for (let i = 0; i < px.length; i += 4) {
-    if (px[i + 3] < 160) continue;
-    r += px[i]; g += px[i + 1]; b += px[i + 2]; n++;
-  }
-  if (!n) return new THREE.Color(0x9a938c);
-  return new THREE.Color(
-    `rgb(${Math.round(r / n * 0.82)},${Math.round(g / n * 0.82)},${Math.round(b / n * 0.82)})`,
-  );
 }
 
 export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<WardrobeScene> {
@@ -186,7 +162,7 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   disposables.push(env.texture, pmrem);
 
   // --- the carcass ---------------------------------------------------------
-  const { boxes, compartments } = buildCarcass(model.id, widthMm, true);
+  const { boxes } = buildCarcass(model.id, widthMm);
   const base = new THREE.Color(wardrobeColourHex(colourName));
 
   /** Model millimetres to sticker UV — piecewise across the width, so a fixed
@@ -343,116 +319,10 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
     );
   }
 
-  // --- what stands inside --------------------------------------------------
-  const kinds = Object.keys(CONTENT_ASSETS) as ContentKind[];
-  const loaded = new Map<ContentKind, { tex: THREE.Texture; ratio: number; tone: THREE.Color }>();
-  await Promise.all(
-    kinds.map(async k => {
-      const t = await load(`/images/Textures/wardrobes/contents/${CONTENT_ASSETS[k].file}`);
-      const img = t?.image as { width?: number; height?: number } | undefined;
-      if (!t || !img?.width || !img.height) return;
-      t.colorSpace = THREE.SRGBColorSpace;
-      t.anisotropy = renderer.capabilities.getMaxAnisotropy();
-      disposables.push(t);
-      loaded.set(k, { tex: t, ratio: img.height / img.width, tone: averageTone(img as CanvasImageSource) });
-    }),
-  );
+  // NOTHING IS STOOD IN IT. The contents are off in both views — see the
+  // note in Canvas2DWardrobeRenderer. The carcass shows its own board, which
+  // is what has to be right before anything is put on a shelf.
 
-  /** 'bay' is shading-only in the room renderer and carries no contents: the
-   * clothes come from the RAIL compartment sitting inside it, so filling it too
-   * would hang a second set in the same opening. */
-  const forRole = (role: string, i: number): ContentKind | null =>
-    role === 'bay' ? null
-    : role === 'hang-long' ? 'hanging-long'
-    : role === 'hang-short' ? 'hanging-short'
-    : role === 'floor' ? 'shoes'
-    : i % 3 === 1 ? 'box' : 'stack';
-
-  compartments.forEach((c, i) => {
-    const kind = forRole(c.role, i);
-    if (!kind) return;
-    const item = loaded.get(kind);
-    if (!item) return;
-    const asset = CONTENT_ASSETS[kind];
-    const openingW = c.x1 - c.x0;
-    if (openingW <= 0) return;
-
-    const z = -WARDROBE_DEPTH_MM * asset.depth;
-
-    const place = (x0: number, w: number, yTop: number, hangs: boolean) => {
-      const h = w * item.ratio;
-      // CUT OUT, NOT BLENDED — and the difference is a depth buffer.
-      //
-      // `transparent: true` puts a mesh in the blended pass, which does not
-      // WRITE depth. So a rail of coats never occluded anything: each garment
-      // blended over whatever was behind it, and where its own alpha was zero
-      // the room showed straight through the cabinet. In an alcove photograph
-      // that is the picture's own doors appearing between the jackets.
-      //
-      // alphaTest alone does the job. A pixel is either the garment or it is
-      // not — which is what a cut-out is — so the mesh can stay opaque, write
-      // depth like everything else, and take its place in the ordering.
-      const front = new THREE.MeshStandardMaterial({
-        map: item.tex,
-        alphaTest: 0.5,
-        roughness: 0.92,
-        side: THREE.DoubleSide,
-      });
-      disposables.push(front);
-
-      let mesh: THREE.Mesh;
-      if (hangs) {
-        // Clothes on a rail stay flat, and that is not a shortcut: a garment on
-        // a hanger really is a thin thing seen face on, and the cut-out already
-        // carries its folds.
-        const geo = new THREE.PlaneGeometry(w * MM, h * MM);
-        disposables.push(geo);
-        mesh = new THREE.Mesh(geo, front);
-      } else {
-        // Anything standing on a shelf is a solid object and has to be built as
-        // one, or it vanishes to a line the moment the view moves off centre.
-        const d = Math.min(asset.depthMm ?? w * 0.62, WARDROBE_DEPTH_MM - BOARD_MM * 2);
-        const geo = new THREE.BoxGeometry(w * MM, h * MM, d * MM);
-        disposables.push(geo);
-        const side = new THREE.MeshStandardMaterial({ color: item.tone, roughness: 0.95 });
-        disposables.push(side);
-        mesh = new THREE.Mesh(geo, [side, side, side, side, front, side]);
-      }
-
-      // A thing that hangs is placed by its TOP at the rail; a thing that
-      // stands is placed by its BOTTOM, clear of the shelf board it rests on.
-      const baseY = hangs ? yTop : yTop + BOARD_MM;
-      mesh.position.set((x0 + w / 2) * MM, (hangs ? baseY - h / 2 : baseY + h / 2) * MM, z * MM);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      root.add(mesh);
-    };
-
-    if (asset.repeats) {
-      // Real-sized garments, a whole number of them, centred on the rail.
-      const n = Math.max(1, Math.floor(openingW / asset.widthMm));
-      const w = asset.widthMm;
-      const pad = (openingW - n * w) / 2;
-      for (let k = 0; k < n; k++) place(c.x0 + pad + k * w, w, c.y0, true);
-      return;
-    }
-    const openingH = Math.max(0, c.y1 - c.y0 - BOARD_MM * 2);
-    let w = Math.min(asset.widthMm, openingW * 0.86);
-    if (openingH > 0 && w * item.ratio > openingH) w = openingH / item.ratio;
-    place(c.x0 + (openingW - w) / 2, w, c.y0, false);
-  });
-
-  // A ROOM COMPOSITE NEEDS SOMETHING FOR THE CABINET TO SIT ON, or the shadow
-  // it casts falls into empty space and is never seen. An invisible plane at
-  // the wall receives the shadow and nothing else, so the darkening lands on
-  // the photograph without a grey rectangle landing with it.
-  // THE WALL IS THE BACK OF THE WARDROBE, so in the room view it has to take
-  // the shadow the cabinet casts onto it. With no back panel there is nothing
-  // else to catch it, and a wardrobe throwing no shade on the wall behind it
-  // is the thing that reads as pasted on.
-  //
-  // A ShadowMaterial is invisible except where it is shadowed, so this darkens
-  // the photograph without laying a grey rectangle over it.
   // NO BACK PANEL AND NO STAND-IN FOR ONE. The product is built in: the
   // customer's own wall is the back of every compartment, and seeing it through
   // the carcass is correct rather than a fault to be papered over.

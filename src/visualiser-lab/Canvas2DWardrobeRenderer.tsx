@@ -35,7 +35,6 @@
 
 import { useEffect, useRef } from 'react';
 import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, wardrobeColour, wardrobeCutoutFor, FINISH_TEXTURE, FINISH_TILE_MM, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM } from './wardrobes';
-import { loadAllContents, type ContentKind, type LoadedContent } from './wardrobeContents';
 import { projectorFromQuad, columnsFor, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
 import { buildSliceMap, sliceMapper, type SliceMap } from './wardrobeSlices';
 import { profilePhoto, relightCutout, applyGrain, makeGrainTile, isWoodFinish, sampleBoardColour } from './wardrobeComposite';
@@ -140,16 +139,13 @@ export default function Canvas2DWardrobeRenderer({
           }
         : null;
 
-      // The contents, if they have been supplied yet. Absent, the carcass draws
-      // its own modelled blocks instead — see buildCarcass.
-      const contents = await loadAllContents();
       // The supplier board for a timber finish, awaited so it is actually there
       // when the carcass is drawn rather than one frame too late.
       const finishImg = await loadFinishTexture(wardrobeColour(colourName).slug);
       if (cancelled) return;
       drawBuiltIn(
         ctx, corners, model.id, drawWidthMm, colourName,
-        canvas.width, canvas.height, contents, skin, finishImg,
+        canvas.width, canvas.height, skin, finishImg,
       );
     };
 
@@ -365,14 +361,16 @@ function drawBuiltIn(
   colourName: string,
   imageW: number,
   imageH: number,
-  contents: Map<ContentKind, LoadedContent>,
   skin: WardrobeSkin | null,
   finishImg: HTMLImageElement | null,
 ) {
   // Null when this layout cannot be built at this width — the fixed modules
   // alone would not fit. The carcass still draws in board rather than the page
   // showing nothing; see MIN_FLEX_MM.
-  const mapU = skin ? sliceMapper(skin.slices, widthMm) : null;
+  // The slice map has to be built at the width the CARCASS is, not the width
+  // the customer picked from the list — those are different now that the
+  // cabinet is made to the opening. Set below, once the opening is known.
+  let mapU: ((xMm: number) => number) | null = null;
   // THE TRACE IS THE WALL, NOT THE WARDROBE.
   //
   // It used to be solved as the wardrobe: the model rectangle handed to the
@@ -388,9 +386,30 @@ function drawBuiltIn(
   // width-to-height ratio then says how wide a piece of wall it is. The cabinet
   // is drawn inside that at its true size, so a 3000 in a 2400 opening
   // visibly does not fit — which is the answer the customer actually needs.
-  const wallWidthMm = tracedWidthMm(corners, WARDROBE_HEIGHT_MM);
-  const projector = projectorFromQuad(corners, wallWidthMm, WARDROBE_HEIGHT_MM, imageW, imageH);
+  // THE TRACE IS THE OPENING, AND THE CABINET FILLS IT.
+  //
+  // A built-in is made to its opening — that is what "built-in" means. It is
+  // not a box of a catalogue size stood in front of a wall and left to fit or
+  // not; it is cut to the alcove, and the standard widths are what gets
+  // ordered, not what gets delivered to the millimetre.
+  //
+  // So the four traced corners are the FRONT FRAME of the recess, and the
+  // carcass is built to exactly that: full width, full height, filling the
+  // opening with no gap either side. Anything else leaves a strip of wall the
+  // customer would never accept from a joiner.
+  //
+  // The previous version drew the cabinet at its catalogue width inside the
+  // traced wall and centred it, which answered "does this fit" — a question
+  // worth answering, but not by leaving a gap in the render. The fit is
+  // reported from the numbers instead; the picture shows the wardrobe they
+  // would actually get.
+  const openingWidthMm = tracedWidthMm(corners, WARDROBE_HEIGHT_MM);
+  const projector = projectorFromQuad(corners, openingWidthMm, WARDROBE_HEIGHT_MM, imageW, imageH);
   if (!projector) return;
+
+  // Sliced at the width being BUILT, so the fixed modules hold their 507mm in
+  // whatever opening the customer traced.
+  mapU = skin ? sliceMapper(skin.slices, openingWidthMm) : null;
 
 
   // MEASURED BEFORE ANYTHING IS DRAWN, or the wardrobe gets sampled as though
@@ -421,24 +440,21 @@ function drawBuiltIn(
   const base =
     (litSkin ? sampleBoardColour(litSkin.image) : null) ??
     hexToRgb(wardrobeColourHex(colourName));
-  const { boxes, compartments } = buildCarcass(layoutId, widthMm, contents.size > 0);
-
-  // Centred in the traced wall. Left-aligning would be arbitrary, and centring
-  // is what someone standing in the room would do with a cabinet narrower than
-  // the alcove they are putting it in.
-  const xOffset = (wallWidthMm - widthMm) / 2;
+  // BUILT TO THE OPENING, so it fills the trace edge to edge.
+  // The compartments outlive the contents that used to stand in them: they are
+  // also what the ambient pass shades, and an opening with nothing describing
+  // it comes out as flat lit board. See the shade loop below.
+  const { boxes, compartments } = buildCarcass(layoutId, openingWidthMm);
+  // FLUSH WITH THE TRACE. The cabinet is built at the traced width, so it
+  // starts where the trace starts and there is nothing to shift it by.
+  const xOffset = 0;
 
   // DEPTH IS NOT A VARIABLE. Every unit is 500 deep and built into its opening,
   // so the cabinet's front sits on the traced plane and the rest recedes behind
-  // it — which is exactly where buildCarcass already puts it. There was briefly
-  // a control for the opening's depth, on the reasoning that a shallower alcove
-  // would push the cabinet out into the room; the premise was wrong, and a
-  // slider whose answer is always 500 is a question not worth asking.
-  for (const box of boxes) box.x += xOffset;
-  for (const c of compartments) {
-    c.x0 += xOffset;
-    c.x1 += xOffset;
-  }
+  // it — which is exactly where buildCarcass already puts it. The traced quad
+  // is the front frame of the recess and the carcass goes back into it, which
+  // is what makes the render read as a cupboard set into a wall rather than a
+  // picture stuck on one.
 
   // Built once per draw and reused across every face, because a fresh tile per
   // face would put a visible seam at each joint.
@@ -761,9 +777,15 @@ function drawBuiltIn(
 
   // WHAT IS STANDING IN THE WARDROBE, drawn after the carcass so it sits inside
   // the openings the carcass has already framed.
-  if (contents.size) {
-    drawContents(ctx, projector, compartments, contents);
-  }
+  // NOTHING IS STOOD IN IT. The staged shirts, boxes and shoes are gone:
+  // they gave the eye a scale, but they were also the loudest thing in the
+  // frame while the geometry was still being got right, and every fault for
+  // several rounds had to be found through them. An empty carcass shows its
+  // own board, and a shelf in the wrong place has nowhere to hide.
+  //
+  // drawContents and the content assets are kept — this is a change of what is
+  // shown, not a decision that photographic contents were the wrong idea.
+  // (nothing — see the note above)
 
   // Balances the save() that set the opening's clip. It was missing, which left
   // a clip and a saved state on the context after every draw.
@@ -818,7 +840,6 @@ export interface Compartment {
 export function buildCarcass(
   layoutId: string,
   widthMm: number,
-  skinned: boolean,
 ): { boxes: Box[]; compartments: Compartment[] } {
   const D = WARDROBE_DEPTH_MM;
   const H = WARDROBE_HEIGHT_MM;
@@ -874,62 +895,6 @@ export function buildCarcass(
       metal: true,
     });
 
-  /** WHAT HANGS ON THE RAIL, and it is there for a reason rather than for
-   * decoration. An empty modelled carcass is a set of white boxes inside a
-   * white box: truthful, and almost impossible to read, because every surface
-   * takes nearly the same tone and the depth cues cancel out. Something dark
-   * hanging in the opening is what gives the eye a back to the box and a scale
-   * for the shelf above it — which is exactly why every supplied photograph is
-   * staged with clothes in it.
-   *
-   * Deliberately coarse: blocks of muted colour at the pitch of hanging
-   * garments, not modelled clothing. At the size this renders, a block reads as
-   * a row of coats and anything more detailed reads as noise. */
-  const garments = (cx: number, cw: number, railY: number, dropMm: number) => {
-    // WITH A SKIN THERE ARE ALREADY CLOTHES ON THIS RAIL — the real ones, in
-    // the elevation, at the pitch and in the colours the product was
-    // photographed with. Modelling a second set only paints flat bars over
-    // them, which is what the first pass at this did.
-    //
-    // They stay for the unskinned case, where they are the only thing standing
-    // between a hanging section and an empty white slot.
-    if (skinned) return;
-    const PITCH = 110;
-    const count = Math.max(3, Math.floor(cw / PITCH));
-    const gw = (cw - 20) / count;
-    for (let i = 0; i < count; i++) {
-      const tone = GARMENT_TONES[(i * 5 + 1) % GARMENT_TONES.length];
-      // Lengths vary a little, the way a rail of real clothes does — a dead
-      // level hem is the one thing that gives away a repeated block.
-      const drop = dropMm * (0.84 + ((i * 37) % 100) / 100 * 0.16);
-      const gx = cx + 10 + i * gw;
-      // Depth varies too, so the rail reads as a row of things at slightly
-      // different distances rather than one ribbed slab.
-      const gz = D * 0.26 + ((i * 53) % 100) / 100 * D * 0.10;
-
-      // THE SHOULDER IS NARROWER THAN THE BODY, which is the whole silhouette
-      // of a hung garment and the difference between a rail of clothes and a
-      // row of coloured bars. Two boxes is enough to say it at this size.
-      boxes.push({
-        x: gx + gw * 0.02, y: railY - drop * 0.24, z: gz,
-        w: gw * 0.94, h: drop * 0.24, d: 140,
-        colour: tone,
-      });
-      boxes.push({
-        x: gx + gw * 0.10, y: railY - drop, z: gz + 6,
-        w: gw * 0.78, h: drop * 0.78, d: 128,
-        colour: tone,
-      });
-      // The hanger hook over the rail.
-      boxes.push({
-        x: gx + gw * 0.46, y: railY - 4, z: D * 0.40,
-        w: gw * 0.06, h: 62, d: 14,
-        colour: HANDLE,
-        metal: true,
-      });
-    }
-  };
-
   // Resolved in millimetres, not as fractions of the cabinet: a drawer tower is
   // 507 wide in every layout in the range, and only the bays either side of it
   // take up the slack. See MODULE_WIDTH_MM.
@@ -959,7 +924,6 @@ export function buildCarcass(
       const shelfY = y0 + innerH * 0.82;
       shelf(x, cw, shelfY);
       const railY = shelfY - RAIL_DROP_MM;
-      garments(x, cw, railY, innerH * 0.56);
       rail(x, cw, railY);
       // The bay under the rail, and the shelf over it.
       compartments.push({ x0: x, x1: x + cw, y0: railY, y1: railY, role: 'hang-long' });
@@ -975,8 +939,6 @@ export function buildCarcass(
       const mid = y0 + innerH * 0.46;
       shelf(x, cw, upper);
       shelf(x, cw, mid);
-      garments(x, cw, upper - RAIL_DROP_MM, innerH * 0.34);
-      garments(x, cw, mid - RAIL_DROP_MM, innerH * 0.34);
       rail(x, cw, upper - RAIL_DROP_MM);
       rail(x, cw, mid - RAIL_DROP_MM);
       // Two rails, so two runs of short hanging, and the shelf above the top
@@ -1051,156 +1013,6 @@ export function buildCarcass(
   for (const box of boxes) box.z -= WARDROBE_DEPTH_MM;
 
   return { boxes, compartments };
-}
-
-/** Places every content cut-out into the compartment it belongs to.
- *
- * HOW EACH ONE IS ANCHORED. A thing that hangs is placed by its TOP edge, at
- * the rail, because that is the only edge whose position is known — how far it
- * drops is the garment's business. A thing that stands is placed by its BOTTOM
- * edge, on the surface under it, for the same reason in reverse. Getting this
- * backwards is what makes a composite look like it is floating.
- *
- * WHAT REPEATS AND WHAT DOES NOT. A rail of shirts fills its bay, so the asset
- * is tiled across the width as many times as fits. A folded stack sits once, in
- * the middle of its shelf. Both are declared on the asset rather than decided
- * here, so a new asset arrives already knowing how it behaves.
- *
- * SORTED BACK TO FRONT among themselves. Contents sit inside compartments the
- * carcass has already drawn, so they only have to be ordered against each
- * other. */
-function drawContents(
-  ctx: CanvasRenderingContext2D,
-  projector: Projector,
-  compartments: Compartment[],
-  contents: Map<ContentKind, LoadedContent>,
-) {
-  const forRole = (role: Compartment['role'], index: number): ContentKind | null => {
-    // 'bay' exists only so the open hanging space can be shaded. Its clothes
-    // are placed from the RAIL compartment that sits inside it, so putting
-    // anything here would hang a second set in the same opening.
-    if (role === 'bay') return null;
-    if (role === 'hang-long') return 'hanging-long';
-    if (role === 'hang-short') return 'hanging-short';
-    if (role === 'floor') return 'shoes';
-    // Shelves alternate between folded clothes and a storage box, which is how
-    // every one of the product photographs is styled. Keyed off the
-    // compartment's own index so a given shelf always shows the same thing
-    // rather than reshuffling on each redraw.
-    return index % 3 === 1 ? 'box' : 'stack';
-  };
-
-  type Placed = {
-    item: LoadedContent;
-    x0: number; y0: number; x1: number; y1: number; z: number; depth: number;
-  };
-  const placed: Placed[] = [];
-
-  compartments.forEach((c, i) => {
-    const kind = forRole(c.role, i);
-    if (!kind) return;
-    const item = contents.get(kind);
-    if (!item) return;
-
-    const z = -WARDROBE_DEPTH_MM * item.asset.depth;
-    const openingW = c.x1 - c.x0;
-    if (openingW <= 0) return;
-
-    if (item.asset.repeats) {
-      // THE GARMENTS KEEP THEIR REAL SIZE; THE COUNT CHANGES.
-      //
-      // This used to divide the bay into n equal parts and stretch a run of
-      // clothes to fill each, so a narrow bay got the same number of garments
-      // drawn narrower and a wide one the same number drawn wider. The clothes
-      // resized instead of thinning out — which is not what happens when you
-      // put a smaller wardrobe in a room. A coat is a coat.
-      //
-      // So the run is a whole number of real-sized garments, centred, with the
-      // remainder left as air at the ends of the rail.
-      const n = Math.max(1, Math.floor(openingW / item.asset.widthMm));
-      const w = item.asset.widthMm;
-      const runW = n * w;
-      const pad = (openingW - runW) / 2;
-      const h = item.heightMm;
-      for (let k = 0; k < n; k++) {
-        const x0 = c.x0 + pad + k * w;
-        placed.push({
-          item, x0, x1: x0 + w, y0: c.y0 - h, y1: c.y0, z,
-          depth: projector.depth(x0, c.y0, z),
-        });
-      }
-      return;
-    }
-
-    // Stands on the surface below it, centred, and never wider than the opening
-    // — a 320mm box in a 240mm shelf has to come down to fit.
-    const w = Math.min(item.asset.widthMm, openingW * 0.86);
-    const h = item.heightMm * (w / item.asset.widthMm);
-    const x0 = c.x0 + (openingW - w) / 2;
-    const y0 = c.y0 + BOARD_MM;
-    placed.push({
-      item, x0, x1: x0 + w, y0, y1: y0 + h, z,
-      depth: projector.depth(x0, y0, z),
-    });
-  });
-
-  placed.sort((p, q) => q.depth - p.depth);
-
-  for (const p of placed) {
-    drawContentQuad(ctx, p.item.image, [
-      [p.x0, p.y0, p.z],
-      [p.x1, p.y0, p.z],
-      [p.x1, p.y1, p.z],
-      [p.x0, p.y1, p.z],
-    ], projector);
-  }
-}
-
-/** One cut-out, warped onto its quad. Subdivided for the same reason as
- * everything else here: Canvas 2D has only affine transforms, and an affine map
- * keeps parallel lines parallel. */
-function drawContentQuad(
-  ctx: CanvasRenderingContext2D,
-  image: HTMLImageElement,
-  model: [number, number, number][],
-  projector: Projector,
-) {
-  const imgW = image.naturalWidth;
-  const imgH = image.naturalHeight;
-  if (!imgW || !imgH) return;
-  const N = 5;
-  const at = (s: number, u: number): [number, number, number] => {
-    const [c0, c1, c2, c3] = model;
-    return [0, 1, 2].map(
-      k => (1 - s) * (1 - u) * c0[k] + s * (1 - u) * c1[k] + s * u * c2[k] + (1 - s) * u * c3[k],
-    ) as [number, number, number];
-  };
-  const P: [number, number][][] = [];
-  const UV: [number, number][][] = [];
-  for (let j = 0; j <= N; j++) {
-    const rp: [number, number][] = [];
-    const ru: [number, number][] = [];
-    for (let i = 0; i <= N; i++) {
-      const [X, Y, Z] = at(i / N, j / N);
-      rp.push(projector.project(X, Y, Z));
-      // The quad's own parameter space IS the image. The corners are listed
-      // bottom-left, bottom-right, top-right, top-left and the bitmap's rows
-      // run the other way, so u is flipped.
-      ru.push([(i / N) * imgW, (1 - j / N) * imgH]);
-    }
-    P.push(rp);
-    UV.push(ru);
-  }
-  for (let j = 0; j < N; j++) {
-    for (let i = 0; i < N; i++) {
-      const v00 = { p: P[j][i], uv: UV[j][i] };
-      const v10 = { p: P[j][i + 1], uv: UV[j][i + 1] };
-      const v11 = { p: P[j + 1][i + 1], uv: UV[j + 1][i + 1] };
-      const v01 = { p: P[j + 1][i], uv: UV[j + 1][i] };
-      skinTriangle(ctx, image, v00, v10, v11);
-      skinTriangle(ctx, image, v00, v11, v01);
-    }
-  }
 }
 
 /** THE BOARD PHOTOGRAPH for a timber finish.
@@ -1432,22 +1244,9 @@ function drawContactShadow(
   ctx.restore();
 }
 
-/** Muted, and none of them saturated. These sit inside somebody's actual
- * bedroom photograph, so a strong colour would be the loudest thing in the
- * frame and would date the render besides. Charcoals, oatmeals and greys are
- * what the supplied photographs are staged with. */
 /** Brushed metal, for handles, hanger hooks and rails. One colour for all
  * three because they are the same finish on a real unit. */
 const HANDLE: [number, number, number] = [172, 176, 181];
-
-const GARMENT_TONES: [number, number, number][] = [
-  [74, 74, 78],
-  [206, 198, 186],
-  [120, 118, 116],
-  [238, 236, 232],
-  [92, 96, 104],
-  [168, 158, 144],
-];
 
 const clamp255 = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
 
