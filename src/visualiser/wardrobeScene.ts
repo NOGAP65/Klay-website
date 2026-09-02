@@ -46,6 +46,24 @@ export const MM = 0.001;
  * opening starts to look like a serving hatch. */
 const WALL_THICKNESS_MM = 90;
 
+/** HOW TALL THE OPENING IS, which is not how tall the wardrobe is.
+ *
+ * The recess was being cut to exactly 2016 — the height of the unit — so the
+ * robe filled its hole to the millimetre and the head of the opening sat on top
+ * of the shelf like a lid. Nothing in a house is built that way. A robe goes
+ * into a reveal that runs to the ceiling, and what you actually see above it is
+ * a band of empty recess: the bulkhead, or the wall carrying on up.
+ *
+ * 2700 is the ordinary Australian ceiling, and it is the top of the range a
+ * normal house is built to — 2400 is the older standard and 2550 to 2700 is
+ * what is put in now. It leaves about 680mm of open reveal over a 2016 unit,
+ * which is the gap the supplier's own photographs show.
+ *
+ * It is deliberately NOT a configurable: the visualiser's whole scale anchor is
+ * the 2016 unit height, and a ceiling the customer can drag would be a second
+ * dimension to get wrong for no gain. This is the room the render is set in. */
+export const OPENING_HEIGHT_MM = 2700;
+
 export interface WardrobeSceneOpts {
   renderer: THREE.WebGLRenderer;
   modelId: string;
@@ -185,7 +203,9 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   sc.far = 14;
   // Sized to the cabinet now that it is centred on it, so the whole 2048 map
   // is spent on the wardrobe rather than mostly on empty room.
-  const half = Math.max(widthMm, WARDROBE_HEIGHT_MM) * MM * 0.72;
+  // Sized to the OPENING now that there is one — the shadow camera has to
+  // cover the reveal and the empty recess above the unit, not just the unit.
+  const half = Math.max(widthMm, OPENING_HEIGHT_MM) * MM * 0.72;
   sc.left = -half; sc.right = half;
   sc.top = half; sc.bottom = -half;
   sc.updateProjectionMatrix();
@@ -522,11 +542,27 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // swings 40° either side and the eye finds the end of a wall immediately —
   // at anything tighter the surround reads as a frame leaning on the cabinet
   // rather than as the room's own wall.
-  const outX = Math.max(900, widthMm * 0.85);
+  // HOW FAR THE WALL RUNS PAST THE OPENING, and it has to run off the frame.
+  //
+  // 900 was sized for a camera framed on the cabinet. Now that the camera backs
+  // off to take in a 2700 opening, the wall's own left and right edges came
+  // into shot — a floating slab with the robe in it, which is a worse object
+  // than the floating cabinet it replaced. A wall the eye can see the end of is
+  // not a wall.
+  //
+  // The frame is about 2.6 opening-heights wide at this distance, so this is
+  // sized off the height rather than the cabinet: whatever the layout's width,
+  // the surround reaches past the edge of the picture.
+  const outX = Math.max(OPENING_HEIGHT_MM * 1.1, widthMm * 1.4);
+  // Above the head, likewise — enough that the ceiling line is off the top of
+  // the frame rather than drawn across it.
   const outTop = 700;
-  wall(-outX, 0, outX, WARDROBE_HEIGHT_MM);                        // left return
-  wall(widthMm, 0, outX, WARDROBE_HEIGHT_MM);                      // right return
-  wall(-outX, WARDROBE_HEIGHT_MM, widthMm + 2 * outX, outTop);     // head
+  // The reveal runs to the ceiling and the unit stands inside it, so the returns
+  // are the full opening height rather than the cabinet's — see
+  // OPENING_HEIGHT_MM for why those are different numbers.
+  wall(-outX, 0, outX, OPENING_HEIGHT_MM);                         // left return
+  wall(widthMm, 0, outX, OPENING_HEIGHT_MM);                       // right return
+  wall(-outX, OPENING_HEIGHT_MM, widthMm + 2 * outX, outTop);      // head
   // No sill: the opening runs to the floor, which is what a robe does.
 
   // THE BACK OF THE RECESS, and it is the room's wall rather than the product's.
@@ -549,11 +585,11 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   disposables.push(backMat);
   const backGeo = new THREE.PlaneGeometry(
     (widthMm + 2 * outX) * MM,
-    (WARDROBE_HEIGHT_MM + outTop) * MM,
+    (OPENING_HEIGHT_MM + outTop) * MM,
   );
   backGeo.translate(
     (widthMm / 2) * MM,
-    ((WARDROBE_HEIGHT_MM + outTop) / 2) * MM,
+    ((OPENING_HEIGHT_MM + outTop) / 2) * MM,
     (-WARDROBE_DEPTH_MM - 6) * MM,
   );
   const back = new THREE.Mesh(backGeo, backMat);
@@ -564,9 +600,16 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // AND A FLOOR, for the same reason. The run is wall-hung, so there is open
   // floor under it in every one of the supplied renders — without one the
   // cabinet ends in mid-air and the drawer tower has nothing to stand on.
-  const floorGeo = new THREE.PlaneGeometry((widthMm + 2 * outX) * MM, (WARDROBE_DEPTH_MM + 900) * MM);
+  //
+  // Deep enough to run off the bottom of the frame. At 1400 it stopped a third
+  // of the way down the picture and the render showed a strip of floor floating
+  // on the background — the same fault the wall's own edges had, and a floor
+  // with a visible far edge is not a floor either. The camera stands about four
+  // metres back, so this runs past it.
+  const floorD = WARDROBE_DEPTH_MM + 7000;
+  const floorGeo = new THREE.PlaneGeometry((widthMm + 2 * outX) * MM, floorD * MM);
   floorGeo.rotateX(-Math.PI / 2);
-  floorGeo.translate((widthMm / 2) * MM, 0, (-WARDROBE_DEPTH_MM / 2 + 300) * MM);
+  floorGeo.translate((widthMm / 2) * MM, 0, (-WARDROBE_DEPTH_MM + floorD / 2) * MM);
   const floor = new THREE.Mesh(floorGeo, backMat);
   floor.receiveShadow = true;
   disposables.push(floorGeo);

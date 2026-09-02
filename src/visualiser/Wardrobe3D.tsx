@@ -23,8 +23,8 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-import { WARDROBE_HEIGHT_MM, wardrobeModelById, DEFAULT_WIDTH_MM } from './wardrobes';
-import { buildWardrobeScene, MM } from './wardrobeScene';
+import { wardrobeModelById, DEFAULT_WIDTH_MM } from './wardrobes';
+import { buildWardrobeScene, MM, OPENING_HEIGHT_MM } from './wardrobeScene';
 import type { HandleTypeId } from './wardrobeHardware';
 
 export interface Wardrobe3DProps {
@@ -107,13 +107,22 @@ export default function Wardrobe3D({
         // the something is cropped off on all four sides. 1.72 leaves a band of
         // wall around the opening, which is what the supplier's own photographs
         // show and what makes the reveal read as a reveal.
-        const span = Math.max(widthMm, WARDROBE_HEIGHT_MM) * MM;
+        // THE OPENING IS THE SUBJECT, not the cabinet. The recess runs to a
+        // 2700 ceiling with the 2016 unit standing in it, so framing on the
+        // cabinet alone cropped the empty reveal above it — which is the part
+        // that says the robe is set into a room rather than filling a hole cut
+        // to its own size. See OPENING_HEIGHT_MM.
+        const span = Math.max(widthMm, OPENING_HEIGHT_MM) * MM;
         const dist = (span / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))) * 1.72;
-        camera.position.set(built.centre.x, built.centre.y + span * 0.04, built.centre.z + dist);
-        camera.lookAt(built.centre);
+        // Aimed a little above the cabinet's own middle, so the opening is
+        // centred in frame rather than the unit inside it.
+        const aim = built.centre.clone();
+        aim.y = (OPENING_HEIGHT_MM / 2) * MM;
+        camera.position.set(aim.x, aim.y + span * 0.03, aim.z + dist);
+        camera.lookAt(aim);
 
         const controls = new OrbitControls(camera, renderer.domElement);
-        controls.target.copy(built.centre);
+        controls.target.copy(aim);
         controls.enableDamping = true;
         controls.dampingFactor = 0.075;
         // No panning. This is a product viewer, not a scene editor: the one
