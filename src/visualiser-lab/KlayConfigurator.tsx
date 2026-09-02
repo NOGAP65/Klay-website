@@ -7,6 +7,8 @@ import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
 import WardrobeRoomRenderer from './WardrobeRoomRenderer';
 import Wardrobe3D from './Wardrobe3D';
+import HeightLineOverlay, { HeightLineOverlayHandle } from './HeightLineOverlay';
+import { WARDROBE_HEIGHT_MM } from './wardrobes';
 
 // One radius for every surface in the visualiser. The three files used to
 // disagree (0 here, 12px on the homepage wrapper, 4px on the thumbnails),
@@ -825,6 +827,39 @@ function alcoveCornersPct(openingMm: number): [number, number][] {
   ];
 }
 
+/** Where the height line should open, for a photograph whose opening is known.
+ *
+ * THE LINE'S LENGTH IS DERIVED FROM THE WIDTH, not measured off the picture,
+ * and that is the whole point of doing it this way.
+ *
+ * The alcoves in these photographs are FULL-HEIGHT built-ins — floor to
+ * ceiling — and the Forma range is 2016. Measured, the 1500 opening's box comes
+ * out 2790mm tall at the scale its own 1500mm width implies, so a line drawn
+ * round the whole opening claims 2790mm of wall is 2016mm and everything the
+ * visualiser draws lands about 38% too big. The four-corner boxes had exactly
+ * that error in them and it was invisible, because nothing checked the two
+ * dimensions against each other.
+ *
+ * The width IS known — it is written across the top of each photograph — so the
+ * scale follows from it, and a 2016mm line is that scale times 2016. The two
+ * dimensions cannot now disagree, because only one of them is measured.
+ *
+ * Anchored at the floor, because that is the end a wardrobe actually stands on.
+ */
+function initialLineFor(
+  url: string | null,
+  imageWidth: number,
+  imageHeight: number,
+): { x: number; top: number; bottom: number } | undefined {
+  const mm = openingWidthFor(url);
+  if (mm === null) return undefined;
+  const box = ALCOVE_BOXES[mm] ?? ALCOVE_BOXES[1500];
+
+  const pxPerMm = ((box.r - box.l) * imageWidth) / mm;
+  const heightFrac = (WARDROBE_HEIGHT_MM * pxPerMm) / imageHeight;
+  return { x: box.l, top: box.b - heightFrac, bottom: box.b };
+}
+
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
 interface KlayConfiguratorProps {
@@ -864,6 +899,10 @@ export default function KlayConfigurator({
   const { photoUrl: hookPhotoUrl, photoBitmap, uploadError, handleUpload, handleTakePhoto, loadFromUrl, clear } = usePhotoUpload();
 
   const overlayRef = useRef<CornerPinOverlayHandle>(null);
+  /** The wardrobe tab traces with two points rather than four — see
+   * HeightLineOverlay. It needs its own ref, because the footer's Confirm has
+   * to reach whichever overlay is actually mounted. */
+  const heightLineRef = useRef<HeightLineOverlayHandle>(null);
   const rendererContainerRef = useRef<HTMLDivElement>(null);
 
   // Set once the default window's traced area has been seeded, so a later
@@ -1202,7 +1241,7 @@ export default function KlayConfigurator({
     // top of the photo and could cover the very corner pins being dragged.
     <>
       <Button onClick={handleChangePhoto}>Change photo</Button>
-      <Button variant="primary" onClick={() => overlayRef.current?.confirm()}>
+      <Button variant="primary" onClick={() => (heightLineRef.current ?? overlayRef.current)?.confirm()}>
         Confirm outline
       </Button>
     </>
@@ -1385,20 +1424,32 @@ export default function KlayConfigurator({
             alt="Your room"
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
-          <CornerPinOverlay
-            // Keyed on the photo, so choosing another sample re-opens the pins
-            // on ITS alcove rather than leaving them where the last one was.
-            key={hookPhotoUrl ?? 'none'}
-            ref={overlayRef}
-            imageWidth={photoBitmap!.width}
-            imageHeight={photoBitmap!.height}
-            onConfirm={handleConfirmTrace}
-            initialCornersPct={
-              openingWidthFor(hookPhotoUrl) !== null
-                ? (alcoveCornersPct(openingWidthFor(hookPhotoUrl)!) as Point[])
-                : undefined
-            }
-          />
+          {store.productCategory === 'wardrobe' ? (
+            /* TWO POINTS FOR A WARDROBE. Height is the only fixed parameter and
+               the width belongs to the product, so a line up the left edge of
+               the opening says everything the render needs — where it starts,
+               how big the picture is, and which way is up. See
+               cornersFromHeightLine. */
+            <HeightLineOverlay
+              key={hookPhotoUrl ?? 'none'}
+              ref={heightLineRef}
+              imageWidth={photoBitmap!.width}
+              imageHeight={photoBitmap!.height}
+              widthMm={store.wardrobeWidthMm}
+              onConfirm={handleConfirmTrace}
+              initialLinePct={initialLineFor(hookPhotoUrl, photoBitmap!.width, photoBitmap!.height)}
+            />
+          ) : (
+            <CornerPinOverlay
+              // Keyed on the photo, so choosing another sample re-opens the pins
+              // on ITS subject rather than leaving them where the last one was.
+              key={hookPhotoUrl ?? 'none'}
+              ref={overlayRef}
+              imageWidth={photoBitmap!.width}
+              imageHeight={photoBitmap!.height}
+              onConfirm={handleConfirmTrace}
+            />
+          )}
           {/* Confirm / Change photo live in the footer — see footerButtons. */}
         </div>
       ) : (
