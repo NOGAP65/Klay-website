@@ -12,6 +12,8 @@
 //   npm run verify:scope-guard
 // ---------------------------------------------------------------------------
 
+import fs from 'node:fs';
+
 import { assertInScope, inScopeFiles } from './scope.mjs';
 import { renameInFile, writeInScope } from './codemod.mjs';
 
@@ -20,7 +22,9 @@ const MUST_REFUSE = [
   ['src/visualiser/homography.ts', 'E-08 directory — protected IP'],
   ['src/visualiser-lab/wardrobes.ts', 'E-08 directory — the active fork'],
   ['src/pages/VisualiserPage.tsx', 'E-08 FILE, not a directory'],
-  ['src/pages/VisualizerLabPage.tsx', 'E-08 file spelled with a z — THE ONE THAT GOT EDITED'],
+  // VisualizerLabPage.tsx was here until the route was deleted and E-07 retired.
+  // It is not listed because the file no longer exists and its E-08 path was
+  // removed with it — a guard case for a path that cannot occur proves nothing.
   ['src/lib/pricing.ts', 'E-09 — the pricing shim'],
   ['src/data/products.ts', 'E-10'],
   ['src/theme.ts', 'E-10'],
@@ -65,15 +69,32 @@ for (const path of MUST_ALLOW) {
 
 // The write path, not just the predicate — a guard that is only consulted is
 // not a guard. These must throw before touching the disk.
+//
+// AND THE PROBE NAMES A FILE THAT HAS NEVER EXISTED, which this file learned
+// the hard way. It used to call writeInScope on a REAL protected file to prove
+// refusal — so on 3 September, when retiring E-07 correctly removed that path
+// from the register, the guard correctly allowed it and THE TEST WROTE ITS
+// PAYLOAD TO DISK. It reported the failure and caused it in the same breath: a
+// one-byte file, recreated seconds after the real one was deleted.
+//
+// A test that proves refusal must not perform the destructive act it is
+// testing. So the probe is a path nothing has ever occupied, and if the write
+// gets through, the test cleans up after itself and says so.
 console.log('\n=== the WRITE path refuses too ===');
+const PROBE = 'src/visualiser/__scope_guard_probe__.ts';
 for (const [fn, label] of [
-  [() => writeInScope('src/pages/VisualizerLabPage.tsx', 'x'), 'writeInScope'],
-  [() => renameInFile('src/visualiser/homography.ts', 'a', 'b'), 'renameInFile'],
+  [() => writeInScope(PROBE, '// scope guard probe — must never reach disk\n'), 'writeInScope'],
+  [() => renameInFile(PROBE, 'a', 'b'), 'renameInFile'],
 ]) {
   let refused = false;
   try { fn(); } catch { refused = true; }
   console.log(`  ${refused ? 'REFUSED' : 'WROTE — FAIL'}  ${label}`);
   if (!refused) failures++;
+}
+if (fs.existsSync(PROBE)) {
+  fs.unlinkSync(PROBE);
+  console.error(`  CLEANED UP  ${PROBE} reached disk — the guard did not hold`);
+  failures++;
 }
 
 // And the file list must never contain anything the guard would refuse.

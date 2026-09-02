@@ -751,11 +751,17 @@ invokes it.
 | E-04 | `usePhotoUpload.ts` exempt from size limits | Protected IP | On unfreeze |
 | E-05 | `style-src 'unsafe-inline'` in CSP | Inline-styles-only is a brand-level decision; runtime-computed styles cannot be nonced | If styling approach changes |
 | E-06 | `design-system/tokens/*` exempt from the no-literal-values rule | It is the source of the values | Permanent |
-| E-07 | `visualiser`/`visualizer` spelling split | Live route; unification deferred | When wardrobes ship and the fork resolves |
-| E-08 | `src/visualiser/`, `src/visualiser-lab/`, `VisualiserPage.tsx`, `VisualizerLabPage.tsx` are outside the migration and outside every rule in this document | ADR-020. Under active development; the slot for them receded at every phase. They are not moved, not renamed, not re-aliased, not lint-fixed | When that work is scheduled on its own, with its own plan |
+| E-08 | `src/visualiser/`, `src/visualiser-lab/` and `VisualiserPage.tsx` are outside the migration and outside every rule in this document | ADR-020. Under active development; the slot for them receded at every phase. They are not moved, not renamed, not re-aliased, not lint-fixed | When that work is scheduled on its own, with its own plan |
 | E-09 | A permanent re-export shim at `src/lib/pricing.ts` after the module moves to `shared-core/pricing/` | ADR-020. Four E-08 files import it by relative path and may not be edited. One table, two paths — a re-export cannot diverge from what it re-exports | With E-08 |
 | E-10 | `src/data/products.ts` and `src/theme.ts` stay where they are | ADR-020. Imported by E-08 files. `products.ts` additionally cannot be split by consumer, which was decision H | With E-08 |
-| E-11 | A permanent re-export shim at `src/components/Nav.tsx` after `Nav` moves to `app/layouts/` | Phase 5, decision D. `VisualiserPage.tsx` and `VisualizerLabPage.tsx` import it by relative path and are E-08 — an import rewrite is still an edit. One component, two paths; a re-export cannot diverge from what it re-exports | With E-08 |
+| E-11 | A permanent re-export shim at `src/components/Nav.tsx` after `Nav` moves to `app/layouts/` | Phase 5, decision D. `VisualiserPage.tsx` imports it by relative path and is E-08 (it was two files until `VisualizerLabPage.tsx` was deleted) — an import rewrite is still an edit. One component, two paths; a re-export cannot diverge from what it re-exports | With E-08 |
+
+**RETIRED — E-07**, the `visualiser`/`visualizer` spelling split, on 3 September 2026. The
+z-spelled route and its page were deleted rather than the two spellings unified, so the exception
+had nothing left to except. **It closed earlier than ADR-013's stated condition** — which was
+"when wardrobes ship and the fork resolves" — because removing the surface resolved it before the
+condition could be met. ADR-013 records the difference. Kept as prose rather than a table row so
+that `npm run check:exceptions` sees a retired exception in neither half.
 
 **Adding to this table requires an ADR. An exception without an ADR is a violation.**
 

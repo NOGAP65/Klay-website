@@ -1,6 +1,9 @@
 # GLOSSARY — the words the code uses, and what they mean
 
-> ## INCOMPLETE — the business half is pending, from V.
+> ## INCOMPLETE — partially filled 3 September 2026.
+>
+> **The job's four stages are now canonical and confirmed** — see the first section. The rest of
+> the business column is still pending from V.
 >
 > **What is here is extracted from the codebase**: every domain term that appears as an
 > identifier, with where it is defined and what the code takes it to mean. It is one half of a
@@ -22,6 +25,37 @@ since the specification was written, and the file did not exist. A section of th
 depended on a document nobody had written — found on 1 September 2026 while giving every unbuilt
 entry in §3 a trigger, and this one had never had a chance to fire because §6 had already
 required it.
+
+---
+
+## The job, and its four stages — CANONICAL BUSINESS VOCABULARY
+
+**Confirmed by the business, 3 September 2026. These are the words to use.**
+
+Klay runs a **job**, not a purchase. It has four stages, and **payment is the first of them
+rather than the conclusion**:
+
+> **payment → measure → manufacture → install**
+
+| Stage | What it is | Identifier | Where it is modelled |
+|---|---|---|---|
+| **Payment** | The customer pays. `/book`, Stripe, the webhook, the `orders` row | `createBooking`, `orders` | The only stage the site models |
+| **Measure** | A technician attends and measures the actual windows | **NONE** | **Nowhere** |
+| **Manufacture** | The blinds are made to those measurements | **NONE** | **Nowhere** |
+| **Install** | The same technician returns and fits them | **NONE** | **Nowhere** |
+
+**Three of the four stages have no representation in this codebase.** No type, no table, no
+column, no function. Not partially modelled — absent.
+
+**And nothing represents assignment.** No stage has a person attached to it, and the business's
+own promise — from the About page, in Klay's words — is *"the technicians who measure your
+windows are the same people who come back to install them."* **That continuity is the product**,
+and the codebase cannot express it, because it has neither a technician nor a stage to attach one
+to.
+
+**This is recorded, not modelled.** ADR-026. The site is not wrong to model only payment — it is
+a website, and the rest of the job may well belong in FieldInsight. What is wrong is that the
+order it creates is shaped as if payment were the end.
 
 ---
 
@@ -67,8 +101,10 @@ and the money path understands only the first. PHASE_6_SCOPE decision B.
 | **Line** | `CartItem`, `ConfiguredLine` | `features/cart/`, `configOptions.ts` | One configured product plus a quantity | ? |
 | **Booking** | `createBooking`, `/book` | `netlify/lib/booking.ts` | The paid path. Server-priced, Stripe-backed, webhook-confirmed | ? |
 | **Quote request** | `quote_requests`, `sendEnquiry` | `netlify/`, `features/marketing/api/` | An enquiry with no payment. The contact form posts one | ? |
-| **Measure** | *(no identifier)* | — | **The code has no word for this.** The cart links to `/book` to "book a free measure", and nothing in the codebase models the appointment, the measurer, or what happens at it | **?— likely a real gap** |
-| **Check measure** | *(no identifier)* | — | §6 uses this as its worked example of business vocabulary — *"if the business calls it a check measure, the function is `scheduleCheckMeasure`"* — and **no such function exists**. Either the process is not modelled or it has another name here | **?** |
+| **Measure** | **NONE — a stated gap** | — | **Stage two of four.** A technician attends and measures the actual windows. The business's second stage; the codebase's blind spot. See the stages table above and ADR-026 | **measure** — confirmed |
+| **Manufacture** | **NONE — a stated gap** | — | Stage three. The blinds are made to the measurements taken | **manufacture** — confirmed |
+| **Install** | **NONE — a stated gap** | — | Stage four. The same technician returns and fits them | **install** — confirmed |
+| **Check measure** | *(no identifier)* | — | §6's own worked example of business vocabulary — *"if the business calls it a check measure, the function is `scheduleCheckMeasure`"* — and no such function exists. **Now understood as part of the measure stage** rather than a separate missing term, but whether the business distinguishes a check measure from a measure is still open | **?** |
 
 ## Visualising
 

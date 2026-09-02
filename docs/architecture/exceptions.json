@@ -52,22 +52,16 @@
       "note": "A rule-level exemption, not a scope exclusion. These files are in scope for every other rule."
     },
     {
-      "id": "E-07",
-      "summary": "visualiser/visualizer spelling split",
-      "paths": [],
-      "excludesFromScope": false
-    },
-    {
       "id": "E-08",
       "summary": "The visualiser is outside this migration and outside every rule in the specification",
       "paths": [
         "src/visualiser/**",
         "src/visualiser-lab/**",
-        "src/pages/VisualiserPage.tsx",
-        "src/pages/VisualizerLabPage.tsx"
+        "src/pages/VisualiserPage.tsx"
       ],
       "excludesFromScope": true,
-      "retiresWhen": "The visualiser migration is scheduled as its own project. ADR-020."
+      "retiresWhen": "The visualiser migration is scheduled as its own project. ADR-020.",
+      "note": "VisualizerLabPage.tsx was removed at the asset phase — the route was deleted, closing E-07. src/visualiser-lab/ is untouched and stays."
     },
     {
       "id": "E-09",

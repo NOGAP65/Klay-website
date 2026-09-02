@@ -40,7 +40,6 @@ import { AboutPage, ContactPage, HowItWorksPage } from '@/features/marketing';
 import BookingConfirmedPage from '../pages/BookingConfirmedPage';
 import BookInstallPage from '../pages/BookInstallPage';
 import VisualiserPage from '../pages/VisualiserPage';
-import VisualizerLabPage from '../pages/VisualizerLabPage';
 
 import { BareLayout } from './layouts/BareLayout';
 import { RootLayout } from './layouts/RootLayout';
@@ -85,17 +84,18 @@ export function AppRoutes() {
         <Route path="/cart" element={<CartPage />} />
       </Route>
 
-      {/* THESE TWO OWN THEIR OWN CHROME AND MUST. Both mount their own <Nav />
-          and both are E-08 — out of this migration, not editable for any reason,
-          an import rewrite included. Under RootLayout they would render two
-          navs. BareLayout is the honest way to say so in the table. */}
+      {/* IT OWNS ITS OWN CHROME AND MUST. VisualiserPage mounts its own <Nav />
+          and is E-08 — out of this migration, not editable for any reason, an
+          import rewrite included. Under RootLayout it would render two navs.
+          BareLayout is the honest way to say so in the table.
+
+          /visualizer — the z-spelled wardrobe review page — WAS HERE AND IS
+          GONE. Deleting it closed E-07, the visualiser/visualizer spelling
+          split, earlier than ADR-013's stated condition: the route was removed
+          rather than the two spellings unified. `visualiser` is the house
+          spelling and now the only one on a route. */}
       <Route element={<BareLayout />}>
         <Route path="/visualiser" element={<VisualiserPage />} />
-        {/* The sandbox. Deliberately unlinked — it is reachable by typing the
-            URL and nothing on the site points at it, because it is a
-            near-duplicate of the line above and a visitor who lands on it by
-            accident gets a page with a builder's bar across the foot. */}
-        <Route path="/visualizer" element={<VisualizerLabPage />} />
       </Route>
 
       {/* --- retired URLs ------------------------------------------------- */}

@@ -77,3 +77,32 @@ the migration's critical path (MIGRATION_MAP.md, R11).
 **Watch for.** If the wardrobe work runs long, the two spellings will be copied into new files
 by anyone working in the lab. The count going above 10 is the signal that this deferral is
 costing more than it saves, and should trigger revisiting rather than waiting.
+
+---
+
+## RESOLVED 3 September 2026 — EARLIER THAN THIS ADR'S OWN CONDITION, AND NOT THE WAY IT EXPECTED
+
+**E-07 is retired.** The `visualiser`/`visualizer` split no longer exists: `/visualizer` and
+`src/pages/VisualizerLabPage.tsx` were deleted. `visualiser` is the house spelling and now the
+only one on a route.
+
+**The stated exit condition was never met.** This ADR deferred the split until *"wardrobes ship
+and the fork resolves"* — and the resolution came from a third direction entirely: **the surface
+carrying the second spelling was removed.** Nothing was unified, nothing was renamed, and no
+wardrobe shipped.
+
+**That is worth recording rather than quietly closing, because the deferral reasoned about the
+wrong axis.** It treated the two spellings as a naming problem awaiting a merge, when what
+actually held them apart was a *page* — and a page can be deleted. An exception whose exit
+condition names someone else's future work is an exception that can only be closed by that work;
+this one turned out to have a cheaper exit that nobody had looked for, for eight weeks.
+
+**The general form, since ADR-020 has the same shape:** when an exception's exit condition is
+another team's milestone, ask separately whether the thing being excepted could simply stop
+existing. E-08's condition is *"the visualiser migration is scheduled as its own project"*, and
+the same question is worth asking of it.
+
+**What did NOT change.** `src/visualiser-lab/` is untouched and remains E-08 — the wardrobe work
+stays exactly where it is. The page's own header records that the fork was reconciled back into
+`src/visualiser` and that `visualiser-lab` is now unreferenced; **that is a separate finding and
+this ADR does not act on it.**

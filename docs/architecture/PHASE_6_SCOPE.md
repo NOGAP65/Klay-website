@@ -231,7 +231,14 @@ answered, because the checkout is what Phase 6 moves and both change its shape.*
 They exist because P4-5 deleted the cart's fake checkout (D-01) and the cart now links to
 `/book`, which surfaced a gap that had been hidden behind a form that never submitted.
 
-### A. Must checkout accept multiple configurations in one order?
+### A. Must checkout accept multiple configurations in one order? — **STILL WITH V AND BOBBY**
+
+**Not proceeding on this.** ADR-026 sharpens the question without answering it: if an order
+starts a job, then *"can one order contain several blinds"* is really **"is a job one window or
+one house"** — a question about how Klay schedules a measure, not about a database.
+
+**If the order-shape work reaches a point where this blocks it, stop and report rather than
+assume either answer.**
 
 `/book` takes ONE configuration — `type`, `size`, `op`, `qty`, `fabric`, `hw` — and
 re-validates it through `parseOrderConfig`. The cart holds many lines. Today the link carries
@@ -242,7 +249,40 @@ many: whether Stripe sees one line item or several, whether the confirmation pag
 webhook reason about an order or a configuration, and whether a measure appointment is booked
 per order or per window.
 
-### B. What is the canonical order shape?
+### B. What is the canonical order shape? — **RESOLVED IN PRINCIPLE, NOT IN CODE**
+
+> **The order shape must carry configuration as STRUCTURED FIELDS, and must be able to reference
+> a job with stages.** ADR-026.
+
+**A Phase 6 task with a stated constraint, no longer an open question.** What remains is the
+design, and it is not designed here.
+
+**Why the composite identity is wrong**, stated as a reason rather than a preference:
+`roller-blinds:blockout:surfmist:white:medium:manual` **encodes a configuration into a single
+field that the money path cannot read.** `pricePerBlind` needs `blindType`, `windowSize` and
+`operation` as separate values. So does manufacture, which acts on each. One field packing six
+is unreadable at both ends, and it was built to satisfy a third requirement entirely — making
+cart-line ids unique. **That requirement is real and needs its own answer; it must not be met by
+overloading a pricing input.**
+
+**And "reference a job with stages" is the half that is easy to skip.** The business runs
+payment → measure → manufacture → install. An order is stage one. An order that cannot be
+pointed at from a job is a dead end at the moment the job begins — and three of the four stages
+have no representation in this codebase at all.
+
+**Two things this does NOT decide**, and both belong to the design:
+
+- **Where the stages live.** Plausibly FieldInsight, plausibly Supabase, plausibly both.
+- **What FieldInsight calls a job.** Its API is UNKNOWN — nothing in this repository describes
+  it — and `STATE_OF_BUILD_2026-08.md` §13 already found the same difficulty from the other side:
+  *"The customer fields map cleanly. The configuration does not."* **The order shape and the CRM
+  mapping are one decision.** Designing the shape without the CRM's job model means designing
+  against a guess and building a translation layer later between two models that were each
+  designed alone.
+
+The original reasoning is kept below, because it is what the constraint was derived from.
+
+### The original statement of the question
 
 `blindType` currently carries two different meanings depending on where it came from.
 
