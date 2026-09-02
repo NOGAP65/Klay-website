@@ -1,47 +1,40 @@
 // ---------------------------------------------------------------------------
-// /visualizer — THE VISUALISER SANDBOX.
+// /visualizer — THE WARDROBE ENTRY POINT.
 //
-// A COMPLETE FORK OF THE VISUALISER, and the point is that it shares nothing.
-// This page renders src/visualiser-lab/*, a byte copy of src/visualiser/* taken
-// at the commit that introduced it. Break whatever you like in here; the live
-// tool does not move.
+// THIS WAS A SANDBOX AND IS NOT ONE ANY MORE. It began as a complete fork of
+// the visualiser — src/visualiser-lab, a byte copy of src/visualiser — so that
+// the wardrobe work could break whatever it liked without moving the live tool
+// under the four surfaces that mount it: /visualiser, the product pages, the
+// homepage showcase and the homepage range cards.
 //
-// WHY FORK THE WHOLE MODULE RATHER THAN JUST THIS PAGE. The visualiser is ~8k
-// lines across nine files, and four surfaces mount them:
+// That work is done, and the diff against live turned out to be almost purely
+// additive: a wider ProductCategory, a wardrobe branch in the controls, a
+// wardrobe branch in the configurator, and eight new files nothing else
+// imports. So it was moved across rather than reconciled, and src/visualiser is
+// the one copy again.
 //
-//     /visualiser                the live standalone page
-//     /products/<slug>           ProductDetailPage's configurator
-//     homepage #visualiser       components/home/VisualiserShowcase
-//     homepage range cards       RangeRow, for the store alone
+// THE URL IS KEPT, because it is where the wardrobe work has been reviewed, and
+// it now opens the same module on the wardrobe category rather than a second
+// implementation of it. The spelling still tells the two apart — /visualiser is
+// the site's own and lands on blinds — but they are no longer different code,
+// and the banner says so.
 //
-// A page-level copy would still have imported the shared renderers, controls
-// and store, so editing a renderer to try something here would have changed all
-// four at once — exactly the accident this page exists to prevent.
-//
-// THE STORE IS THE SUBTLE HALF. useVisualiserStore is a zustand store created
-// at module scope, so it is one global object shared by everything that imports
-// it. The fork gets its own instance for free by being a separate module: a
-// fabric picked in the lab cannot leak into the live page's state, and the lab
-// cannot be handed stale state left behind by the homepage.
-//
-// SPELLING IS THE SWITCH. Live is /visualiser (British, as the rest of the site
-// spells it), sandbox is /visualizer (American). One letter is a thin thing to
-// hang a distinction on, so the page also says which one it is in a bar across
-// the top.
-//
-// WHEN THE WORK IS DONE: diff visualiser-lab against visualiser, move across
-// what you want, then delete this page, its route and the lab directory
-// together. This is scaffolding, not a second product.
+// src/visualiser-lab is now unreferenced. It could not be deleted from here;
+// deleting it is safe and is the last step of this move.
 // ---------------------------------------------------------------------------
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
+// main still imports the theme directly rather than through the @/ds barrel —
+// that barrel arrives with the architecture refactor, which has not landed
+// here. Keeping main's own path; only the visualiser-lab → visualiser move is
+// what this commit is bringing across.
 import { radius, tokens } from '../theme';
-import VisualiserControls from '../visualiser-lab/VisualiserControls';
-import KlayConfigurator from '../visualiser-lab/KlayConfigurator';
-import { useVisualiserStore, ProductCategory } from '../visualiser-lab/useVisualiserStore';
 import { bookingLink } from '../lib/bookingLink';
+import KlayConfigurator from '../visualiser/KlayConfigurator';
+import { useVisualiserStore, ProductCategory } from '../visualiser/useVisualiserStore';
+import VisualiserControls from '../visualiser/VisualiserControls';
 
 const BANNER_H = 30;
 
@@ -82,9 +75,9 @@ function SandboxBanner() {
         boxSizing: 'border-box',
       }}
     >
-      <span>Sandbox · renders visualiser-lab · the live tool is untouched</span>
+      <span>Wardrobes · the same tool the rest of the site runs</span>
       <Link to="/visualiser" style={{ color: '#FFF7ED', textUnderlineOffset: 3 }}>
-        Live page →
+        Blinds &amp; curtains →
       </Link>
     </div>
   );
@@ -126,12 +119,11 @@ const CATEGORY_TAB_STYLE = {
 function CategorySwitcher() {
   const { productCategory, setProductCategory } = useVisualiserStore();
 
-  // WARDROBES ARE SANDBOX-ONLY, and this array is the whole of why. The
-  // homepage showcase, the product pages and /visualiser render the components
-  // in src/visualiser, which has no wardrobe in it at all; this page renders
-  // src/visualiser-lab, which does. Nothing has to be feature-flagged, because
-  // the two module trees simply carry different products — and that separation
-  // is exactly what the fork was for.
+  // WARDROBES ARE NO LONGER SANDBOX-ONLY. This array used to be the whole of
+  // why they were: the homepage, the product pages and /visualiser rendered
+  // src/visualiser, which had no wardrobe in it, and only this page rendered
+  // the fork that did. The fork has been moved across, so all four surfaces
+  // carry the same three products and the homepage offers the same three tabs.
   const tabs: { id: ProductCategory; label: string }[] = [
     { id: 'blind', label: 'Blinds' },
     { id: 'curtain', label: 'Curtains' },
@@ -184,6 +176,34 @@ export default function VisualizerLabPage() {
   const { blindType, windowSize, operation, fabricColour, hardwareColour, tracedAreas, productCategory } =
     useVisualiserStore();
   const isWardrobe = productCategory === 'wardrobe';
+
+  // OPENS ON WARDROBES, which is what this URL is for now.
+  //
+  // It used to open on blinds because it was a byte copy of the live page that
+  // happened to also carry a wardrobe tab. Now that every surface carries all
+  // three, an address otherwise identical to /visualiser has to be about
+  // something, and this is where the wardrobe range is reviewed — which is also
+  // what the banner says. Once: a visitor who then clicks Blinds is not argued
+  // with.
+  //
+  // DURING RENDER, NOT IN AN EFFECT, and that is forced. KlayConfigurator picks
+  // its default photograph in its own mount effect, reading the category fresh
+  // precisely so it loads the right one first time — and child effects run
+  // before the parent's. Setting the category from an effect here therefore
+  // landed after the child had already started loading the WINDOW photograph,
+  // so two loads were in flight and the one that decoded last won: /visualizer
+  // opened on the wardrobe tab showing a bedroom window with no wardrobe in it.
+  // That is the same race the note on that mount effect describes.
+  //
+  // A lazy useState initialiser runs during this component's first render,
+  // before any child mounts, so the configurator sees 'wardrobe' when it looks.
+  // Writing to an external store from a render is the one thing zustand is
+  // safe for here: it is idempotent, it runs once, and nothing in React's tree
+  // has rendered against the old value yet.
+  useState(() => {
+    useVisualiserStore.getState().setProductCategory('wardrobe');
+    return true;
+  });
   const confirmedWindows = tracedAreas.filter((a) => a.confirmed).length;
 
   if (!isAllowed) {

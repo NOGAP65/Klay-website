@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
 import { pricePerBlind, type BlindType } from '../lib/pricing';
+import { DEFAULT_WIDTH_MM, wardrobeModelById } from './wardrobes';
 
 type Point = [number, number];
 
@@ -20,7 +21,7 @@ interface TracedArea {
 // store keep working.
 export type { BlindType };
 export type HardwareColour = 'white' | 'black' | 'chrome';
-export type ProductCategory = 'blind' | 'curtain';
+export type ProductCategory = 'blind' | 'curtain' | 'wardrobe';
 export type CurtainType = 'blockout' | 'sheer';
 export type CurtainOperation = 'manual' | 'motorised';
 export type CurtainMount = 'ceiling' | 'window';
@@ -35,6 +36,11 @@ export type CurtainSize = 'small' | 'medium' | 'large' | 'xl';
  * colour lookup goes through here so the two can never be crossed. */
 export const coloursFor = (category: ProductCategory) =>
   category === 'curtain' ? CURTAIN_COLOURS : RYNAMIC_COLOURS;
+// ^ 'wardrobe' falls to RYNAMIC_COLOURS deliberately. It never reads this card —
+// wardrobe finishes live in wardrobes.ts under their own state — and returning
+// the blind card means switching to wardrobes reconciles fabricColour against
+// the palette it already held, so crossing to wardrobes and back cannot quietly
+// reset the blind the customer configured.
 
 const CURTAIN_BASE_PRICES: Record<CurtainSize, number> = {
   small: 320,
@@ -209,6 +215,17 @@ interface VisualiserStore {
   curtainMount: CurtainMount;
   curtainSize: CurtainSize;
   curtainOpenness: number;
+  /** Built-in or walk-in. Chosen before the layout, because the two are
+   * different products drawn from different viewpoints and placed by different
+   * rules — see Canvas2DWardrobeRenderer. */
+  wardrobeKind: 'built-in' | 'walk-in';
+  /** Which Forma layout is shown. Always one belonging to wardrobeKind. */
+  wardrobeModel: string;
+  /** Finish name, resolved against WARDROBE_COLOURS in wardrobes.ts. Separate
+   * from fabricColour on purpose: a joinery finish and a blind fabric are
+   * different cards, and sharing one field made switching category rewrite the
+   * other product's choice. */
+  wardrobeColour: string;
 
   // Visual state
   photoUrl: string | null;
@@ -251,6 +268,18 @@ interface VisualiserStore {
   applyActiveToAll: () => void;
   setCurtainType: (type: CurtainType) => void;
   setCurtainOperation: (op: CurtainOperation) => void;
+  /** WHICH WIDTH THE CHOSEN LAYOUT IS BUILT IN, millimetres.
+   *
+   * A property of the product, not of the room. Height is the only fixed
+   * parameter — 2016 on every unit — so the trace supplies the scale and the
+   * position, and this width lands as a ratio against that height. Most layouts
+   * are made in one width and never ask; those made in several offer the
+   * choice. */
+  wardrobeWidthMm: number;
+  setWardrobeWidthMm: (mm: number) => void;
+  setWardrobeKind: (kind: 'built-in' | 'walk-in') => void;
+  setWardrobeModel: (id: string) => void;
+  setWardrobeColour: (name: string) => void;
   setCurtainMount: (mount: CurtainMount) => void;
   setCurtainSize: (size: CurtainSize) => void;
   setCurtainOpenness: (openness: number) => void;
@@ -273,6 +302,11 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   lockedRange: null,
   defaultWindowActive: true,
   curtainOpenness: 0,
+  wardrobeKind: 'built-in',
+  wardrobeModel: 'SRSTDH02',
+  wardrobeColour: 'Matt Wardrobe White',
+  // 3.0's first width, matching wardrobeModel above.
+  wardrobeWidthMm: DEFAULT_WIDTH_MM,
   windows: [following(DEFAULT_WINDOW)],
   activeWindow: 0,
   photoUrl: null,
@@ -347,6 +381,39 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   setDefaultWindowActive: (active) => set({ defaultWindowActive: active }),
   setCurtainType: (type) => set(writeThrough({ curtainType: type })),
   setCurtainOperation: (op) => set(writeThrough({ curtainOperation: op })),
+  // Flat set, not writeThrough: writeThrough mirrors a field onto every window
+  // in the job, and a wardrobe is not per-window — it is one piece of joinery
+  // for the room, the way productCategory itself is.
+  // Switching kind carries the layout with it, because a built-in id is not a
+  // walk-in id and leaving the old one selected would show a straight run under
+  // a heading that says walk-in. First of the new kind, every time.
+  setWardrobeKind: (kind) =>
+    set({
+      wardrobeKind: kind,
+      wardrobeModel: kind === 'walk-in' ? '7.0L' : 'SRSTDH02',
+    }),
+  // The width follows the layout, because the ranges differ — 2.9 is built at
+  // one width, 4.0 at three. Carrying a width across a layout change would
+  // leave the configurator holding a size that layout is not made in.
+  // THE WIDTH IS KEPT WHERE THE NEW SKU IS BUILT IN IT, and snapped to its
+  // nearest where it is not.
+  //
+  // The ranges differ — SRDH is made from 1200 and stops at 2400, the tower
+  // products run 1500 to 2700 — so a carried width can be one the new layout is
+  // not made in. Resetting outright throws away a choice the customer made;
+  // carrying it blindly leaves the configurator holding a size that cannot be
+  // ordered. Snapping keeps the intent and stays buildable.
+  setWardrobeModel: (id) =>
+    set(state => {
+      const widths = wardrobeModelById(id).widths;
+      if (widths.includes(state.wardrobeWidthMm)) return { wardrobeModel: id };
+      const nearest = widths.reduce((best, w) =>
+        Math.abs(w - state.wardrobeWidthMm) < Math.abs(best - state.wardrobeWidthMm) ? w : best,
+      widths[0]);
+      return { wardrobeModel: id, wardrobeWidthMm: nearest };
+    }),
+  setWardrobeColour: (name) => set({ wardrobeColour: name }),
+  setWardrobeWidthMm: (mm) => set({ wardrobeWidthMm: mm }),
   setCurtainMount: (mount) => set(writeThrough({ curtainMount: mount })),
   setCurtainSize: (size) => set(writeThrough({ curtainSize: size })),
 

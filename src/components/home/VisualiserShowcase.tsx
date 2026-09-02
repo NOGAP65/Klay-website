@@ -60,6 +60,14 @@ import { CtaButton, CtaLink, SectionBand, TextLink, useHover } from './primitive
  * windowSize that stops at large where curtains go to XL. */
 const CURTAIN_ENQUIRY = '/contact';
 
+/** Where a wardrobe enquiry goes, and it is the same door for a stronger
+ * reason. A curtain is unbuyable because the cart cannot describe it; a wardrobe
+ * is unbuyable because nobody knows what it costs until it has been measured —
+ * it is cut to an opening, and the opening is in someone's house. */
+// A literal, matching CURTAIN_ENQUIRY above it. The routes module those two
+// read from arrives with the architecture refactor and is not on this branch.
+const WARDROBE_ENQUIRY = '/contact';
+
 /** The selected lozenge on THIS card. Every control in this file sits on the ink
  * card and nowhere else, so unlike VisualiserControls' skin() there is no light
  * variant to carry — but the values have to be the same ones that panel resolves
@@ -74,7 +82,7 @@ const SELECTED = {
   border: tokens.warmWhite,
 } as const;
 
-/** Blinds / Curtains, at the top of the control panel.
+/** Blinds / Curtains / Wardrobes, at the top of the control panel.
  *
  * VisualiserPage has its own version of this and keeps it: that one is written
  * for a cream sidebar and fills the active tab with ink, which on this card
@@ -83,14 +91,23 @@ const SELECTED = {
  * muted text for the other — so it reads as the first field of the form rather
  * than as a widget above it.
  *
- * It has to exist for curtains to be reachable at all. VisualiserControls only
- * renders its curtain branch when the store's category is already 'curtain', and
- * nothing on the homepage could set that before this. */
+ * It has to exist for curtains and wardrobes to be reachable at all.
+ * VisualiserControls only renders its curtain branch when the store's category
+ * is already 'curtain', and its wardrobe branch likewise; nothing on the
+ * homepage could set either before this.
+ *
+ * THE LETTERSPACING COMES OFF AT THREE. At 0.3em, "WARDROBES" is nine tracked
+ * characters in a third of the panel and it wraps — and two tabs that fit
+ * beside one that does not is a row of different heights. Tracking is the right
+ * thing to spend here: it is decoration on a label whose job is to be legible
+ * and clicked, and 0.16em still reads as the same small-caps language as the
+ * group headings under it. */
 function CategoryTabs() {
   const { productCategory, setProductCategory } = useVisualiserStore();
   const tabs: { id: ProductCategory; label: string }[] = [
     { id: 'blind', label: 'Blinds' },
     { id: 'curtain', label: 'Curtains' },
+    { id: 'wardrobe', label: 'Wardrobes' },
   ];
 
   return (
@@ -104,13 +121,18 @@ function CategoryTabs() {
             onClick={() => setProductCategory(tab.id)}
             style={{
               flex: 1,
-              padding: `${space.sm}px`,
+              // Horizontal padding comes in with the third tab: "WARDROBES" is
+              // the longest label and 12px either side of it pushes the row
+              // past the panel. main's scale names these sm/xxs; the refactor
+              // branch calls the same two values snug/hairline.
+              padding: `${space.sm}px ${space.xxs}px`,
               borderRadius: radius.md,
               fontFamily: tokens.body,
               fontSize: 10,
               fontWeight: 500,
-              letterSpacing: '0.3em',
+              letterSpacing: '0.16em',
               textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
               cursor: 'pointer',
               border: `1px solid ${active ? SELECTED.border : tokens.onDarkEdge}`,
               background: active ? SELECTED.background : 'transparent',
@@ -371,6 +393,7 @@ export function VisualiserShowcase() {
   } = useVisualiserStore();
 
   const isCurtain = productCategory === 'curtain';
+  const isWardrobe = productCategory === 'wardrobe';
   const count = windows.length;
   // The whole job, each window on its own configuration and its own category's
   // pricing axis. It was unitPrice * windows, which is only the same number
@@ -545,22 +568,34 @@ export function VisualiserShowcase() {
                 question below it gets asked, so it cannot come after them — and
                 it certainly cannot come after the price, which is where it was.
                 The picker under it is what makes the windows individually
-                configurable at all. */}
-            <section>
-              <GroupHeading onDark>Your windows</GroupHeading>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
-                <WindowCount value={count} onChange={setWindowCount} />
-                {count > 1 && (
-                  <WindowPicker
-                    windows={windows}
-                    active={activeWindow}
-                    matched={windowsMatch()}
-                    onSelect={setActiveWindow}
-                    onMatchAll={applyActiveToAll}
-                  />
-                )}
-              </div>
-            </section>
+                configurable at all.
+
+                NOT FOR A WARDROBE. This whole section is per-window, and a
+                wardrobe is not a window: it is one piece of joinery for the
+                room, which is exactly why the store keeps productCategory and
+                the wardrobe fields OUTSIDE the windows array (see the note on
+                setWardrobeKind). Left in, it asked "Number of windows" above a
+                cupboard, and every window past the first was a blind
+                configuration being carried invisibly under a wardrobe. */}
+            {!isWardrobe && (
+              <section>
+                <GroupHeading onDark>Your windows</GroupHeading>
+                {/* space.md here, which is what main's scale calls the value the
+                    refactor branch names space.item. */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
+                  <WindowCount value={count} onChange={setWindowCount} />
+                  {count > 1 && (
+                    <WindowPicker
+                      windows={windows}
+                      active={activeWindow}
+                      matched={windowsMatch()}
+                      onSelect={setActiveWindow}
+                      onMatchAll={applyActiveToAll}
+                    />
+                  )}
+                </div>
+              </section>
+            )}
 
             {/* showCurtainControls is what lets the panel switch branches at all
                 — without it the tabs would move the store and the renderer but
@@ -591,20 +626,38 @@ export function VisualiserShowcase() {
                 marginTop: isMobile ? undefined : 'auto',
               }}
             >
-              <PriceBox
-                onDark
-                amount={jobTotal}
-                note={
-                  count === 1
-                    ? '+ installation across Australia'
-                    : `${count} windows + installation across Australia`
-                }
-              />
+              {/* NO PRICE ON A WARDROBE, and this is the important half of the
+                  wardrobe's arrival on this card.
 
-              {/* The action splits by category, because only one of the two can
-                  be bought. A curtain gets an enquiry — see CURTAIN_ENQUIRY — and
-                  no second link under it, since a quote link below a quote button
-                  is the same destination twice.
+                  priceWindow falls through to pricePerBlind for anything that is
+                  not a curtain, so leaving the box in would have quoted a
+                  wardrobe at a roller blind's price — a real number, in dollars,
+                  attached to the wrong product. The Forma range is quoted on
+                  measure and the business has not set a figure for it, which is
+                  the same reason VisualiserControls gives no price box in the
+                  wardrobe branch.
+
+                  A missing box rather than a "POA": the enquiry button
+                  underneath already says how the number is got. */}
+              {!isWardrobe && (
+                <PriceBox
+                  onDark
+                  amount={jobTotal}
+                  note={
+                    count === 1
+                      ? '+ installation across Australia'
+                      : `${count} windows + installation across Australia`
+                  }
+                />
+              )}
+
+              {/* The action splits by category, because only one of the three
+                  can be bought. A curtain gets an enquiry — see CURTAIN_ENQUIRY
+                  — and no second link under it, since a quote link below a quote
+                  button is the same destination twice. A wardrobe is the same
+                  case for a different reason: it is joinery, cut to an opening
+                  someone has to come and measure, so there is no configuration
+                  of it that has a price without a visit.
 
                   Blinds are unchanged: Buy Now, the same words as every tile on
                   the page, with the price on the label because this is the only
@@ -619,7 +672,11 @@ export function VisualiserShowcase() {
                   100% lets the label set the constraint instead: at the narrowest
                   desktop column it is the button that is measured, not the
                   layout. */}
-              {isCurtain ? (
+              {isWardrobe ? (
+                <CtaLink to={WARDROBE_ENQUIRY} style={{ width: '100%' }}>
+                  Enquire about this wardrobe
+                </CtaLink>
+              ) : isCurtain ? (
                 <CtaLink to={CURTAIN_ENQUIRY} style={{ width: '100%' }}>
                   Enquire — from {formatAUD(jobTotal)}
                 </CtaLink>

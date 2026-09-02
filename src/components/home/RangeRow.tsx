@@ -214,7 +214,16 @@ function VisualiseBadge({
     <button
       {...bind}
       onClick={onClick}
-      aria-label={`Visualise ${name} in your own room`}
+      // "IN YOUR OWN ROOM" IS ONLY TRUE FOR TWO OF THE THREE. Blinds and
+      // curtains composite onto a photograph you upload; a wardrobe opens on
+      // its preview and turns in 3D, and the room composite is not offered for
+      // it yet — see the footer in KlayConfigurator. The badge is the same
+      // control either way, so only the promise changes.
+      aria-label={
+        target.category === 'wardrobe'
+          ? `See ${name} in 3D`
+          : `Visualise ${name} in your own room`
+      }
       style={{
         position: 'absolute',
         top: space.sm,
@@ -239,7 +248,7 @@ function VisualiseBadge({
       }}
     >
       <ViewfinderIcon />
-      Visualise
+      {target.category === 'wardrobe' ? 'See in 3D' : 'Visualise'}
     </button>
   );
 }
