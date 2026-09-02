@@ -343,6 +343,62 @@ function focalFromQuad(corners: Point[], cx: number, cy: number, imageW: number,
   return f >= lo && f <= hi ? f : assumed;
 }
 
+/** THE WHOLE TRACE, FROM TWO POINTS ON ONE EDGE.
+ *
+ * WHY TWO IS ENOUGH, and it follows from the rule the rest of this file already
+ * runs on: height is the only fixed parameter. Every unit is 2016 tall, so a
+ * line drawn up the left edge of where the wardrobe goes says three things at
+ * once —
+ *
+ *   WHERE it starts, from the line's own position;
+ *   HOW BIG the picture is, because that line IS 2016mm and its length in
+ *     pixels therefore fixes millimetres-per-pixel;
+ *   WHICH WAY IS UP, from the line's tilt, so a photograph taken with the
+ *     camera slightly rolled puts the cabinet on the same lean as the room.
+ *
+ * The width is not asked for, because the width is the product's — a 1500 unit
+ * is 1500 wide wherever it is put. So the cabinet is extruded to the RIGHT of
+ * the line by its own width at the scale the line established, and whether it
+ * fits the alcove is the answer rather than the input.
+ *
+ * FOUR PINS ASKED FOR SOMETHING NOBODY CAN GIVE. Dragging a box onto an
+ * opening means judging four corners against a photograph, and the two that
+ * matter least — the right-hand pair — were the ones the customer had to guess
+ * hardest at, since the render ignores the width they describe anyway. Two
+ * points on one edge is a smaller question with a better answer.
+ *
+ * WHAT IT GIVES UP: yaw. Four corners could be solved for a receding wall,
+ * because a trapezium says which way it recedes; two points on one edge cannot,
+ * so the wall is taken as square to the camera. Most people photograph a wall
+ * roughly face on, and the pins are still there for a customer who needs the
+ * angled case.
+ */
+export function cornersFromHeightLine(
+  top: Point,
+  bottom: Point,
+  widthMm: number,
+  heightMm = 2016,
+): Point[] {
+  const ux = top[0] - bottom[0];
+  const uy = top[1] - bottom[1];
+  const len = Math.hypot(ux, uy);
+  if (len < 1e-6) return [top, top, bottom, bottom];
+
+  // Screen Y runs down, so "up" has a negative y and the rightward normal is
+  // (-uy, ux) — check it on a vertical line: up (0, -h) gives right (h, 0).
+  const pxPerMm = len / heightMm;
+  const rx = (-uy / len) * widthMm * pxPerMm;
+  const ry = (ux / len) * widthMm * pxPerMm;
+
+  // TL TR BR BL, the order everything downstream expects.
+  return [
+    [top[0], top[1]],
+    [top[0] + rx, top[1] + ry],
+    [bottom[0] + rx, bottom[1] + ry],
+    [bottom[0], bottom[1]],
+  ];
+}
+
 /** A REAL CAMERA RECOVERED FROM THE TRACE, for rendering the cabinet in 3D and
  * compositing it onto the photograph.
  *
