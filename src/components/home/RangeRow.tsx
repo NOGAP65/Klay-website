@@ -101,7 +101,8 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+// main's own paths, less the Link — the photograph is a button now, so nothing
+// in this file navigates.
 import { radius, tokens, motion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale } from '../../theme';
 import { useIsMobile, useMediaQuery } from '../../hooks/useIsMobile';
 // The cards read data/catalogue.ts — the same fourteen products the shop lists,
@@ -556,12 +557,38 @@ function RangeCard({
           position: 'relative',
         }}
       >
-        {/* Only the picture and the name are inside the link. The button below
-            and the panel beside carry real buttons, and a <button> nested inside
-            an <a> is invalid and swallows its own clicks. */}
-        <Link
-          to={item.to}
-          style={{ display: 'block', textDecoration: 'none', flex: '0 0 auto' }}
+        {/* THE PICTURE OPENS THE CONFIGURATOR. It used to be a <Link to={item.to}>,
+            which for most of the catalogue is the enquiry form — so clicking the
+            photograph of a wardrobe took you off the homepage to a contact page,
+            while the gold button eighty pixels below it opened the panel that
+            actually lets you specify one. Two controls on one card, pointing at
+            two different ideas of what the card is for, and the bigger one was
+            the worse answer.
+
+            It is the same action as Shop Now now, because it is the same
+            intention: a photograph is the most clickable thing on the card and
+            what it promises is "show me this one".
+
+            A <button>, not an <a>, since there is no destination — and it is
+            what lets the picture and the name sit inside it at all: the panel
+            beside and the action below are real buttons, and a <button> nested
+            in an <a> is invalid and swallows its own clicks. Reset to nothing so
+            the layout is the block the Link was. */}
+        <button
+          onClick={onToggle}
+          aria-expanded={open}
+          style={{
+            display: 'block',
+            flex: '0 0 auto',
+            textAlign: 'left',
+            width: '100%',
+            padding: 0,
+            border: 'none',
+            background: 'none',
+            font: 'inherit',
+            color: 'inherit',
+            cursor: 'pointer',
+          }}
         >
           {/* The tile carries its own ground, one step off the section's — the
               mount the picture sits in. MONDAY does the same, and it is what
@@ -699,7 +726,7 @@ function RangeCard({
                 vaguer number twenty pixels above a real one. */}
             {item.name}
           </h3>
-        </Link>
+        </button>
 
         {/* Only on the products the visualiser can draw — see `visualise` in
             data/catalogue.ts. Two of these four cards carry it; a wardrobe and

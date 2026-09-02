@@ -194,15 +194,55 @@ export const LAYOUT_COLUMNS: Record<string, Column[]> = {
  * negative width puts dividers outside the carcass. Every column keeps a floor
  * of a third of a module so the layout stays legible while it is being dragged.
  */
+/** WHICH ENDS OF THE RUN HAVE A BOARD ON THEM, and for most of the range the
+ * answer is one of them.
+ *
+ * THESE ARE INTERNALS, NOT CABINETS. The deck files all three 2016mm SKUs under
+ * "Internals" and describes them as Shelf & Rail systems — SRDH is "Shelf &
+ * Rail - Divider Support Double Hang Rail", the other two are the same with a
+ * Tower in front of it. They are fitted INTO an opening, so the customer's own
+ * walls are the ends of the run and there is no panel standing against them.
+ *
+ * What does have sides is a TOWER. A shelf tower or a drawer bank is a real
+ * carcass module, 507 wide complete with its own two side panels, and that is
+ * the "fixed" column in the layout table. So the rule is not a new flag to keep
+ * in step with anything: an end carries a panel exactly when a tower sits at
+ * that end.
+ *
+ * Which gives, for the range as it stands:
+ *
+ *   Forma 1  (SRDH)      divider support only, no tower  ->  neither end
+ *   Forma 2  (SRSTDH02)  shelf tower at the left         ->  left only
+ *   Forma 3  (SRDTDH01)  drawer tower at the left        ->  left only
+ *
+ * Drawing both ends regardless was making every unit a free-standing box, which
+ * is the wrong product: it put a white panel between the run and the wall it is
+ * fixed to, and on Forma 1 — which is a rail, a shelf and a divider — it
+ * invented a carcass the customer is not buying. */
+export function sidePanelsFor(id: string): { left: boolean; right: boolean } {
+  const columns = LAYOUT_COLUMNS[id] ?? LAYOUT_COLUMNS.SRSTDH02;
+  return {
+    left: !!columns[0]?.fixed,
+    right: !!columns[columns.length - 1]?.fixed,
+  };
+}
+
 export function columnsFor(id: string, widthMm: number): ResolvedColumn[] {
   const columns = LAYOUT_COLUMNS[id] ?? LAYOUT_COLUMNS.SRSTDH02;
-  const inner = Math.max(1, widthMm - 2 * BOARD_MM - (columns.length - 1) * BOARD_MM);
+  const sides = sidePanelsFor(id);
+  // Only the panels that exist come off the width — see sidePanelsFor. With
+  // both subtracted unconditionally, a unit with no end panels lost 36mm of
+  // opening to board that is not there, and every column inside it was drawn
+  // narrow by its share of that.
+  const endBoards = (sides.left ? BOARD_MM : 0) + (sides.right ? BOARD_MM : 0);
+  const inner = Math.max(1, widthMm - endBoards - (columns.length - 1) * BOARD_MM);
 
-  // How much board each column carries: the full outer panel at the ends of the
-  // run, half a divider where it meets a neighbour. Subtracting this from the
-  // module's external 507 gives the opening inside it.
+  // How much board each column carries: the full outer panel at an end of the
+  // run that HAS one, half a divider where it meets a neighbour. Subtracting
+  // this from the module's external 507 gives the opening inside it.
   const flank = (i: number) =>
-    (i === 0 ? BOARD_MM : BOARD_MM / 2) + (i === columns.length - 1 ? BOARD_MM : BOARD_MM / 2);
+    (i === 0 ? (sides.left ? BOARD_MM : 0) : BOARD_MM / 2) +
+    (i === columns.length - 1 ? (sides.right ? BOARD_MM : 0) : BOARD_MM / 2);
 
   const fixedIdx = columns.map((c, i) => (c.fixed ? i : -1)).filter(i => i >= 0);
   const shareTotal = columns.reduce((s, c) => s + (c.fixed ? 0 : c.share ?? 1), 0);
