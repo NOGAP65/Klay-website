@@ -26,7 +26,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-import { wardrobeArtwork, wardrobeModelById, WARDROBE_HEIGHT_MM } from './wardrobes';
+import { wardrobeArtwork, wardrobeModelById, WARDROBE_HEIGHT_MM, DEFAULT_WIDTH_MM } from './wardrobes';
 import { cameraFromQuad, tracedWidthMm } from './wardrobeGeometry';
 import { buildWardrobeScene, MM } from './wardrobeScene';
 import { profilePhoto, applyGrain } from './wardrobeComposite';
@@ -251,28 +251,38 @@ export default function WardrobeRoomRenderer({
       // as though it were the wall it is standing on.
       const profile = profilePhoto(ctx, corners, PW, PH);
 
-      // BUILT TO THE OPENING, NOT TO THE PICKER, and this is what was making
-      // the cabinet hang over the frame.
+      // BUILT AT THE PRODUCT'S OWN WIDTH, AND ALLOWED TO NOT FIT.
       //
-      // The camera is solved for a plane the size of the TRACE. The scene was
-      // then built at the product's own width, so the two disagreed whenever
-      // they were not the same number: in the 1500 alcove the trace works out
-      // at about 1160mm against a 2016 height, a 1500 cabinet was built into
-      // it, and the extra 340mm projected straight out past the right-hand
-      // architrave. It read as a cupboard stuck on the wall rather than set
-      // into the recess.
+      // The trace does not size the cabinet. It fixes the SCALE and the plane:
+      // the quad is an opening `tracedWidthMm` across and 2016 high, which is
+      // what turns the photograph into millimetres. The cabinet is then built
+      // at the width the customer picked and put into that space at true size.
       //
-      // The traced quad is the front frame of the opening, so the cabinet is
-      // built to it — it fills the gap edge to edge and the depth recedes
-      // behind it. The product's own width still decides the SKU and the
-      // module layout; what it no longer does is fight the trace for the
-      // outline. See tracedWidthMm.
+      // So when the two agree the cabinet fills the opening exactly, and when
+      // they do not it overhangs — and THAT IS THE ANSWER, not a fault. A 2400
+      // unit picked against a 1500 opening runs 900mm past the architrave, on
+      // screen, at the scale of the customer's own room. It is the one thing
+      // the visualiser can say that a dimension table cannot: this model will
+      // not fit your place. Building to the trace instead made every width
+      // land flush and threw that away, which is the whole reason a customer
+      // clicks through the widths at all.
       //
-      // `widthMm` from the picker is still the customer's stated opening and
-      // still selects the SKU upstream; it is deliberately not the number the
-      // outline is built from, because the outline is the trace's to give.
-      const drawWidthMm = tracedWidthMm(corners, WARDROBE_HEIGHT_MM);
-      const cam = cameraFromQuad(corners, drawWidthMm, WARDROBE_HEIGHT_MM, PW, PH);
+      // Left-aligned, because the model's origin is the opening's bottom-left
+      // and a built-in starts from one wall — so the overhang collects at the
+      // right-hand end where the trace's own edge is there to measure it
+      // against, rather than being split invisibly across both sides.
+      //
+      // What this DOES require is that the trace be honest about the opening,
+      // since tracedWidthMm reads it as 2016 high — see ALCOVE_BOXES, where
+      // getting that wrong by 10% had every width overhanging.
+      const drawWidthMm = widthMm ?? DEFAULT_WIDTH_MM;
+      const cam = cameraFromQuad(
+        corners,
+        tracedWidthMm(corners, WARDROBE_HEIGHT_MM),
+        WARDROBE_HEIGHT_MM,
+        PW,
+        PH,
+      );
       if (!cam) return;
 
       // --- render the cabinet on nothing ------------------------------------
