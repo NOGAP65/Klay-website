@@ -73,12 +73,18 @@ export interface CatalogueItem {
   /** What this product's "Visualise" badge should select in the visualiser — set
    * ONLY on the products the visualiser can actually draw.
    *
-   * That is roller blinds and curtains, and it is a limit of the renderer rather
-   * than an editorial choice: Canvas2DBlindRenderer draws a roller and
-   * Canvas2DCurtainRenderer draws a wave-fold curtain, and there is no wardrobe
-   * and no awning in either of them. Absent means no badge, because a badge that
-   * opened the visualiser on a roller blind from a wardrobe card would be a
-   * promise the next screen breaks.
+   * That is roller blinds, curtains and now wardrobes, and it is a limit of the
+   * renderers rather than an editorial choice: Canvas2DBlindRenderer draws a
+   * roller, Canvas2DCurtainRenderer a wave-fold curtain, and wardrobeScene the
+   * Forma range in three.js. There is still no awning in any of them. Absent
+   * means no badge, because a badge that opened the visualiser on a roller
+   * blind from an awning card would be a promise the next screen breaks.
+   *
+   * WHAT THE BADGE PROMISES IS THE VISUALISER, NOT THE ROOM COMPOSITE. A
+   * wardrobe opens on its preview and turns in 3D; putting it in a photograph
+   * of your own room is not offered yet (see the footer in KlayConfigurator).
+   * The badge is honest either way — it says "see this drawn", which is what
+   * happens — and the label is set per category where it needs to differ.
    *
    * A SELECTION, NOT A URL. It used to be a `/visualiser?...` link, and the badge
    * left the homepage to use a tool the homepage already has further down it.
@@ -86,7 +92,7 @@ export interface CatalogueItem {
    * visualiser and set it, and would still be what a link needed if one ever
    * wanted building from it. */
   visualise?: {
-    category: 'blind' | 'curtain'
+    category: 'blind' | 'curtain' | 'wardrobe'
     /** Blinds only — which of the four the panel should open on. */
     blindType?: BlindType
   }
@@ -281,6 +287,9 @@ export const CATALOGUE: CatalogueItem[] = [
     image: '/images/categories/wardrobes.jpg',
     imagePosition: '13% center',
     glyph: 'wardrobes',
+    // The Forma range is modelled now, so this card carries the badge the two
+    // window products have carried all along.
+    visualise: { category: 'wardrobe' },
   },
   {
     id: 'shelving',

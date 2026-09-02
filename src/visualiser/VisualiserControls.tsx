@@ -3,6 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import { radius, tokens, space, type as typeScale } from '../theme';
 import { formatAUD, isBlindType } from '../lib/pricing';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
+import {
+  WARDROBE_COLOURS, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM,
+  modelsOfKind, wardrobeModelById,
+} from './wardrobes';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
@@ -191,6 +195,78 @@ function Pill({
       <span>{label}</span>
       {sub && <span style={{ ...typeScale.micro, letterSpacing: 'normal', textTransform: 'none', opacity: 0.75 }}>{sub}</span>}
     </button>
+  );
+}
+
+/** A NATIVE SELECT, dressed to match the pills.
+ *
+ * Native rather than a custom listbox, and that is not laziness: this renders
+ * on a phone as often as on a desktop, and the platform's own picker is a
+ * full-height wheel that beats anything drawn here — plus it is keyboard
+ * accessible, screen-reader correct and closes on scroll without a line of code.
+ * The styling is only the parts a select lets you have: the box, the type and
+ * the arrow. `appearance: none` removes the system chrome so the box can carry
+ * the same 32px height, radius and border language as Pill.
+ *
+ * The arrow is an inline SVG data URI rather than a positioned element, because
+ * a select cannot have children — anything absolutely positioned over it would
+ * sit above the hit area and swallow the click that opens it. */
+function Select<T extends string | number>({
+  value,
+  options,
+  onChange,
+  onDark = false,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+  onDark?: boolean;
+}) {
+  const sk = skin(onDark);
+  const arrow = encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="${sk.quiet}" stroke-width="1.4" stroke-linecap="round"/></svg>`,
+  );
+  return (
+    <select
+      value={value}
+      onChange={e => {
+        const raw = e.target.value;
+        const hit = options.find(o => String(o.value) === raw);
+        if (hit) onChange(hit.value);
+      }}
+      style={{
+        width: '100%',
+        height: 32,
+        // Room on the right for the arrow, so a long option cannot run under it.
+        padding: `0 ${space.xl}px 0 ${space.md}px`,
+        boxSizing: 'border-box',
+        borderRadius: radius.md,
+        border: `1px solid ${sk.edgeActive}`,
+        // The chosen width IS the value, so the box wears the selected pill's
+        // treatment rather than an unselected one's — it is never empty.
+        background: sk.fillActive,
+        color: sk.onFillActive,
+        ...typeScale.label,
+        letterSpacing: 'normal',
+        textTransform: 'none',
+        cursor: 'pointer',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        backgroundImage: `url("data:image/svg+xml,${arrow}")`,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: `right ${space.md}px center`,
+        transition: 'background 0.2s ease, border-color 0.2s ease, color 0.2s ease',
+      }}
+    >
+      {options.map(o => (
+        // The list itself is the platform's, so the options carry no styling —
+        // a colour set here is honoured on some platforms and ignored on
+        // others, and half-styled native chrome looks worse than none.
+        <option key={String(o.value)} value={String(o.value)}>
+          {o.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -457,6 +533,118 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
   // different range than the colour the renderer is resolving.
   const palette = coloursFor(store.productCategory);
   const selectedColour = palette.find(c => c.name === store.fabricColour);
+
+  // WARDROBE CONTROLS. Deliberately the shortest panel in the visualiser: the
+  // range is ten fixed Forma units and the only thing a customer changes is the
+  // finish. No size, no operation, no hardware — a wardrobe has no roll
+  // position to drive and is quoted on measure, so a price box here would be
+  // inventing a number the business has not set.
+  if (store.productCategory === 'wardrobe') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: groupGap }}>
+        <section>
+          <GroupHeading onDark={onDark}>Your wardrobe</GroupHeading>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
+            {/* TYPE FIRST, THEN LAYOUT. A built-in and a walk-in are not two
+                options within one product — they are different products, drawn
+                from different viewpoints and placed by different rules, and the
+                layouts on offer depend on which you are buying. Asking in that
+                order is what makes the layout list mean something. */}
+            <Field onDark={onDark} label="Type">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+                {([
+                  ['built-in', 'Built-in'],
+                  ['walk-in', 'Walk-in'],
+                ] as const).map(([id, label]) => (
+                  <Pill
+                    onDark={onDark}
+                    key={id}
+                    label={label}
+                    active={store.wardrobeKind === id}
+                    onClick={() => store.setWardrobeKind(id)}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            {/* THE NAME LEADS AND THE ARRANGEMENT FOLLOWS IT. The pill used to
+                read "Shelf Tower + Double Hang", which is what the unit
+                contains rather than what it is called — and three of those side
+                by side are three long strings differing in one word. "Forma
+                4.0" over "Shelf tower + double hang" is the product and then
+                its description, which is also the order the quote states them
+                in. See WardrobeModel.layout. */}
+            <Field onDark={onDark} label="Model">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+                {modelsOfKind(store.wardrobeKind).map(m => (
+                  <Pill
+                    onDark={onDark}
+                    key={m.id}
+                    label={m.name}
+                    sub={m.layout}
+                    active={store.wardrobeModel === m.id}
+                    onClick={() => store.setWardrobeModel(m.id)}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            {/* WIDTH SITS RIGHT AFTER THE LAYOUT, because that is the order the
+                two questions come in: which arrangement, then how wide a run of
+                it.
+
+                THE OPTIONS ARE THE SKU'S OWN. They are not the same across the
+                range: SRDH has no tower, so it is made from 1200, while the two
+                tower products start at 1500 — a 507mm module in a 1200 opening
+                leaves under 700mm for hanging, which is not a wardrobe.
+
+                Height and depth are stated, not offered. They are fixed for the
+                range, and a control with one answer is a statement dressed up
+                as a question. */}
+            {/* A DROPDOWN, NOT FIVE PILLS, and the reason is what the widths
+                are. Every other pill row here is a real choice between things
+                that differ — built-in or walk-in, oak or walnut — and the eye
+                is meant to compare them. Five widths are one number on a scale;
+                there is nothing to compare, only a value to state, and a row of
+                five near-identical lozenges spends the panel's widest row
+                saying so. It also does not grow: the range is 1200 to 2700
+                today and a longer list would wrap to two rows.
+
+                The select carries the full dimensions in each option rather
+                than only in the caption, so the fixed 2016 × 500 is visible at
+                the moment of choosing rather than after. */}
+            <Field onDark={onDark} label="Width">
+              <Select
+                onDark={onDark}
+                value={store.wardrobeWidthMm}
+                onChange={w => store.setWardrobeWidthMm(w)}
+                options={wardrobeModelById(store.wardrobeModel).widths.map(w => ({
+                  value: w,
+                  label: `${w} × ${WARDROBE_HEIGHT_MM} × ${WARDROBE_DEPTH_MM} mm`,
+                }))}
+              />
+            </Field>
+
+            <Field onDark={onDark} label="Finish" caption={store.wardrobeColour}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
+                {WARDROBE_COLOURS.map(c => (
+                  <Swatch
+                    onDark={onDark}
+                    key={c.name}
+                    hex={c.hex}
+                    label={c.name}
+                    active={store.wardrobeColour === c.name}
+                    onClick={() => store.setWardrobeColour(c.name)}
+                  />
+                ))}
+              </div>
+            </Field>
+
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   // Curtain controls
   if (isCurtain) {

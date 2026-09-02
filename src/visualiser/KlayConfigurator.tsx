@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { radius, tokens, space, type as typeScale } from '../theme';
 import { useVisualiserStore, BlindType } from './useVisualiserStore';
 import { usePhotoUpload } from './usePhotoUpload';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
+import WardrobeRoomRenderer from './WardrobeRoomRenderer';
+import Wardrobe3D from './Wardrobe3D';
 
 // One radius for every surface in the visualiser. The three files used to
 // disagree (0 here, 12px on the homepage wrapper, 4px on the thumbnails),
@@ -68,30 +70,42 @@ function Button({
   children,
   style,
   ariaLabel,
+  disabled = false,
 }: {
   variant?: ButtonVariant;
   onClick: () => void;
   children: React.ReactNode;
   style?: React.CSSProperties;
   ariaLabel?: string;
+  /** Shown, and plainly not available. Used by the wardrobe's "In your room",
+   * which is announced rather than hidden — see the footer. A disabled button
+   * keeps its place in the row, so nothing shifts when it becomes live. */
+  disabled?: boolean;
 }) {
   const [hover, setHover] = useState(false);
   const [pressed, setPressed] = useState(false);
   const fill = VARIANT_FILL[variant];
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       aria-label={ariaLabel}
-      onPointerEnter={() => setHover(true)}
+      onPointerEnter={() => !disabled && setHover(true)}
       onPointerLeave={() => { setHover(false); setPressed(false); }}
-      onPointerDown={() => setPressed(true)}
+      onPointerDown={() => !disabled && setPressed(true)}
       onPointerUp={() => setPressed(false)}
       onPointerCancel={() => setPressed(false)}
       style={{
         ...buttonBase,
         ...fill,
-        boxShadow: pressed ? PRESSED_SHADOW : hover ? RAISED_SHADOW_HOVER : RAISED_SHADOW,
-        transform: pressed ? 'translateY(1px)' : 'translateY(0)',
+        // FLAT AND FADED, rather than greyed to a different colour. It keeps the
+        // variant's own fill so it still reads as the button it will be; losing
+        // the shadow is what says it cannot be pressed, since every live button
+        // here sits up off the page.
+        boxShadow: disabled ? 'none' : pressed ? PRESSED_SHADOW : hover ? RAISED_SHADOW_HOVER : RAISED_SHADOW,
+        transform: pressed && !disabled ? 'translateY(1px)' : 'translateY(0)',
+        opacity: disabled ? 0.5 : 1,
+        cursor: disabled ? 'default' : 'pointer',
         ...style,
       }}
     >
@@ -658,13 +672,90 @@ function MotorRemote({
   );
 }
 
-const PRESET_ROOMS = ['/images/room-3.png', '/images/room-4.png', '/images/room-5.png'];
+/** THE SAMPLE ROOMS, AND THEY ARE NOT THE SAME FOR EVERY PRODUCT.
+ *
+ * The window presets are blind and curtain scenes — a window in the middle of a
+ * wall, which is exactly what a roller blind needs and exactly the wrong thing
+ * for a wardrobe. Offered one, the first thing a customer does is trace a
+ * window and the first thing the visualiser does is stand a cupboard in front
+ * of the glass.
+ *
+ * THE WARDROBE ROOMS ARE ALCOVES AT KNOWN WIDTHS, which is worth more than a
+ * backdrop. Each was shot with its opening labelled, so the photograph carries
+ * the one measurement a photograph normally cannot give up — and that lets the
+ * preset seed a trace that is already the right size, instead of asking someone
+ * to guess where the alcove's edges are before they have seen anything.
+ *
+ * They are supplied with doors on. The doors are not the product here — the
+ * opening behind them is — so the trace goes on the opening and the visualiser
+ * draws an open carcass into it. */
+const PRESET_ROOMS_WINDOW = ['/images/room-3.png', '/images/room-4.png', '/images/room-5.png'];
+
+export interface WardrobeRoom {
+  url: string;
+  /** The opening's real width, from the label in the photograph itself. */
+  openingMm: number;
+}
+
+/** NAMED BY THE LABEL IN THE PICTURE, not by the filename.
+ *
+ * `2700mm.jpeg` is a 2400 opening — the dimension drawn across the top of that
+ * photograph says 2400mm, and the cabinet in it is the same width as the other
+ * four-door shot. The file name is wrong and the artwork is right, so the
+ * artwork wins. */
+/** PERCENT-ENCODED AT THE SOURCE. These filenames contain spaces, and a raw
+ * space in an <img src> is not a URL the browser will fetch — the photo simply
+ * never loaded and the visualiser sat on its upload prompt. Encoding here means
+ * the same string is used to request the file and to match it back, which is
+ * also what openingWidthFor needs. */
+const PRESET_ROOMS_WARDROBE: WardrobeRoom[] = [
+  { url: '/images/visualizer%20pictures/1500%20..%20opening.jpeg', openingMm: 1500 },
+  { url: '/images/visualizer%20pictures/1800%20mm%20opening.jpeg', openingMm: 1800 },
+  { url: '/images/visualizer%20pictures/2100%20mm.jpeg', openingMm: 2100 },
+  { url: '/images/visualizer%20pictures/2700mm.jpeg', openingMm: 2400 },
+];
+
+const presetRoomsFor = (category: string): string[] =>
+  category === 'wardrobe' ? PRESET_ROOMS_WARDROBE.map(r => r.url) : PRESET_ROOMS_WINDOW;
+
+/** The opening width a wardrobe sample was shot at, if this is one of them.
+ *
+ * COMPARED ON THE DECODED PATH, because the URL does not survive the round trip
+ * unchanged. These filenames contain spaces, so once one has been through an
+ * <img src> and back out it arrives percent-encoded — `1500%20..%20opening` —
+ * and a plain equality test against the literal never matched. The seeded trace
+ * silently fell back to the generic default box, which covers most of the
+ * photograph rather than the alcove. */
+export const openingWidthFor = (url: string | null): number | null => {
+  if (!url) return null;
+  const norm = (u: string) => {
+    try { return decodeURI(u); } catch { return u; }
+  };
+  const want = norm(url);
+  return PRESET_ROOMS_WARDROBE.find(r => norm(r.url) === want)?.openingMm ?? null;
+};
 
 // Loaded automatically on mount so the visualiser never shows an empty
 // upload prompt by default — the blind renders immediately against this
 // photo using a fixed set of corner pins (see DEFAULT_WINDOW_CORNERS_PCT),
 // with no CornerPinOverlay involved at all until the user replaces it.
 const DEFAULT_WINDOW_URL = '/images/Preview.png';
+
+/** THE WARDROBE PREVIEW IS AN ALCOVE, not the window photograph.
+ *
+ * Preview.png is a bedroom with a window in it, and it is right for a blind.
+ * For a wardrobe it was never more than the least-bad option: a customer
+ * arriving on the wardrobe tab saw a cupboard standing against a window, which
+ * is the first thing the visualiser says about the product and it was saying
+ * something false.
+ *
+ * The 1500 alcove says the true thing instead — a built-in robe in an opening,
+ * which is what these are — and it comes dimensioned, so the seeded trace can
+ * be the real opening rather than a guess. */
+const DEFAULT_WARDROBE_URL = '/images/visualizer%20pictures/1500%20..%20opening.jpeg';
+
+const defaultPhotoFor = (category: string) =>
+  category === 'wardrobe' ? DEFAULT_WARDROBE_URL : DEFAULT_WINDOW_URL;
 // The glass aperture of the double window in Preview.png (1254 x 1254).
 //
 // These pins are paired to this photo and only this photo. Swapping
@@ -685,6 +776,84 @@ const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
   [0.5830, 0.6382], // bottom-right — x 731, y 800
   [0.1864, 0.6699], // bottom-left  — x 234, y 840
 ];
+
+/** WHERE A WARDROBE STANDS ON THE DEFAULT PHOTO.
+ *
+ * The seeded trace is the window's glass, which is the right default for
+ * everything that hangs on a window and exactly the wrong one for a wardrobe:
+ * it stands the cabinet inside the opening, floating a metre off the floor with
+ * the garden behind it. The first render of the wardrobe tab did precisely that.
+ *
+ * So wardrobes get their own default footprint on Preview.png — the left-hand
+ * wall, running down to where the floor meets it.
+ *
+ * ITS PROPORTIONS MATTER now that the renderer fills whatever is traced. The
+ * first version of this box was half as wide as it was tall, so the very first
+ * thing a visitor saw was a wide cabinet squeezed into a narrow slot. This one
+ * is about 1.25:1, which is the shape of the keyed sticker, so the default
+ * opens on the product at its own proportions and any distortion after that is
+ * something the customer drew themselves.
+ *
+ * It is a starting position, not a claim about the room — the customer retraces
+ * or uploads their own wall from here.
+ *
+ * A rectangle rather than a true quad, because the renderer takes this as a
+ * footprint to stand a photograph in rather than a plane to project onto — see
+ * Canvas2DWardrobeRenderer. */
+const DEFAULT_WARDROBE_CORNERS_PCT: [number, number][] = [
+  [0.035, 0.435],
+  [0.605, 0.435],
+  [0.605, 0.900],
+  [0.035, 0.900],
+];
+
+/** WHERE THE WARDROBE GOES IN EACH SUPPLIED PHOTOGRAPH.
+ *
+ * MEASURED PER PHOTOGRAPH, and the previous set was not, whatever its comment
+ * said: all four shared a top and a bottom, which is the signature of exactly
+ * the ratio-scaling it disowned. The top sat about 70px above the architrave in
+ * the 1500 shot, so the seeded quad was some 10% too tall and the render hung
+ * over the frame before anything else went wrong.
+ *
+ * THE ARROW IS THE RULER. Each photograph is annotated with a white dimension
+ * arrow spanning the opening and labelled in millimetres, which fixes
+ * millimetres-per-pixel exactly. Left and right are read straight off it.
+ *
+ * THIS IS THE CABINET'S FOOTPRINT, NOT THE DOORWAY, and the difference matters
+ * because the four photographs do not agree with each other. Scaled by their
+ * own arrows, the openings measure:
+ *
+ *   1500 x 2460    1800 x 2467    2100 x 1990    2400 x 1997
+ *
+ * Two of them are 2016-high openings and two are full-height door openings.
+ * Every unit in the range is 2016 tall, so seeding to the doorway would draw a
+ * 1500 cabinet 2460 high — the proportion wrong by a fifth, and worse, the
+ * width the renderer derives from the trace would come out at about 1160mm and
+ * the fixed 507 modules would be sliced against a number that is not real.
+ *
+ * So the box is the opening's full width, standing on its floor, 2016 tall at
+ * that photograph's own scale. Where the doorway is 2016 the two coincide;
+ * where it is taller, the gap above the cabinet is left showing, because that
+ * is what a 2016 unit in a 2460 opening actually looks like.
+ *
+ * A starting position rather than a claim: the customer drags the pins or
+ * uploads their own wall from here. */
+const ALCOVE_BOXES: Record<number, { l: number; r: number; t: number; b: number }> = {
+  1500: { l: 0.357, r: 0.602, t: 0.326, b: 0.820 },
+  1800: { l: 0.348, r: 0.645, t: 0.336, b: 0.835 },
+  2100: { l: 0.293, r: 0.715, t: 0.207, b: 0.815 },
+  2400: { l: 0.255, r: 0.755, t: 0.189, b: 0.815 },
+};
+
+function alcoveCornersPct(openingMm: number): [number, number][] {
+  const box = ALCOVE_BOXES[openingMm] ?? ALCOVE_BOXES[1500];
+  return [
+    [box.l, box.t],
+    [box.r, box.t],
+    [box.r, box.b],
+    [box.l, box.b],
+  ];
+}
 
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
@@ -736,7 +905,12 @@ export default function KlayConfigurator({
   // doesn't already carry a real user photo from earlier in this session.
   useEffect(() => {
     if (store.defaultWindowActive) {
-      loadFromUrl(DEFAULT_WINDOW_URL);
+      // THE CATEGORY IS READ FRESH, not captured. This runs once on mount, and
+      // the store may already say 'wardrobe' — a visitor who left the tab there,
+      // or a host that mounts with it set. Loading the window photo first and
+      // letting the category effect correct it afterwards raced: two loads in
+      // flight, and whichever image decoded last won.
+      loadFromUrl(defaultPhotoFor(useVisualiserStore.getState().productCategory));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -775,14 +949,52 @@ export default function KlayConfigurator({
   // tracedAreas.length is a dependency for the same reason — belt and braces
   // if the two updates ever land in separate commits.
   useEffect(() => {
+    // THE PHOTO HAS TO BE THIS CATEGORY'S OWN, and that is not a tidiness
+    // check — it is what stops the wardrobe landing on a trace overlay.
+    //
+    // Switching category clears the trace and starts loading the other default
+    // photograph, and loadFromUrl is asynchronous. So there is a commit where
+    // tracedAreas is empty, the category says 'wardrobe', and hookPhotoUrl is
+    // still the WINDOW photograph from a moment ago. The old guard accepted
+    // that — it asked only whether the URL was a default of some kind — so it
+    // seeded window corners onto a wardrobe and set hasSeededDefaultRef. When
+    // the alcove then arrived, the photo effect saw that ref already true, read
+    // the load as a real upload and turned default mode off. No reseed, no
+    // confirmed area, and the visitor got "Confirm outline" over an alcove
+    // instead of the wardrobe rendered in it.
+    //
+    // Comparing against defaultPhotoFor(category) means the seed waits for the
+    // photograph it is actually seeding.
+    const expected = defaultPhotoFor(store.productCategory);
     if (
       store.defaultWindowActive &&
       !hasSeededDefaultRef.current &&
       photoBitmap &&
-      hookPhotoUrl === DEFAULT_WINDOW_URL &&
+      hookPhotoUrl === expected &&
       useVisualiserStore.getState().tracedAreas.length === 0
     ) {
-      const corners: Point[] = DEFAULT_WINDOW_CORNERS_PCT.map(([px, py]) => [
+      // A SUPPLIED ALCOVE SEEDS ITS OWN OPENING. These photographs were shot
+      // with the opening labelled, so where the alcove is and how wide it is
+      // are both known — the trace can start on it rather than asking someone
+      // to find it. Everything else falls back to the fixed default.
+      // THE STORE HAS TO LEARN THE PHOTO TOO. loadFromUrl sets the hook's own
+      // state — the bitmap and the URL it decoded — but the store keeps its own
+      // photoUrl, and that is the one the renderer reads. A preset thumbnail
+      // sets both because its click handler calls setPhotoUrl explicitly; the
+      // default path never did, so the store sat on a null photo and the
+      // wardrobe never rendered.
+      if (useVisualiserStore.getState().photoUrl !== hookPhotoUrl) {
+        store.setPhotoUrl(hookPhotoUrl);
+      }
+
+      const openingMm = openingWidthFor(hookPhotoUrl);
+      const seed =
+        openingMm !== null
+          ? alcoveCornersPct(openingMm)
+          : useVisualiserStore.getState().productCategory === 'wardrobe'
+            ? DEFAULT_WARDROBE_CORNERS_PCT
+            : DEFAULT_WINDOW_CORNERS_PCT;
+      const corners: Point[] = seed.map(([px, py]) => [
         px * photoBitmap.width,
         py * photoBitmap.height,
       ]);
@@ -798,8 +1010,11 @@ export default function KlayConfigurator({
       });
       hasSeededDefaultRef.current = true;
     }
+    // productCategory is a dependency because `expected` is derived from it:
+    // the effect has to re-run when the category changes, or the guard above is
+    // comparing against the previous category's photograph.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoBitmap, hookPhotoUrl, store.defaultWindowActive, store.tracedAreas.length]);
+  }, [photoBitmap, hookPhotoUrl, store.defaultWindowActive, store.tracedAreas.length, store.productCategory]);
 
   const hasPhoto = !!(store.photoUrl && photoBitmap);
   const confirmedArea = store.tracedAreas.find(a => a.confirmed);
@@ -949,6 +1164,35 @@ export default function KlayConfigurator({
 
   useEffect(() => () => stopAuto(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // RE-SEED WHEN THE PRODUCT CHANGES SHAPE. A blind and a wardrobe want
+  // completely different default footprints — the window's glass versus the
+  // wall beside it — and the seed above fires once per photo, so whichever
+  // category happened to be showing at load would otherwise own the trace for
+  // the rest of the session. Crossing between wardrobes and window coverings
+  // therefore drops the seeded default and lets it run again for the category
+  // now in play.
+  //
+  // ONLY WHILE THE DEFAULT PHOTO IS SHOWING. Once the customer has uploaded a
+  // room and traced it, that trace is theirs; throwing it away because they
+  // looked at a different product would be destroying work they did.
+  const seededForWardrobeRef = useRef(store.productCategory === 'wardrobe');
+  useEffect(() => {
+    const isWardrobe = store.productCategory === 'wardrobe';
+    if (isWardrobe === seededForWardrobeRef.current) return;
+    seededForWardrobeRef.current = isWardrobe;
+    if (!store.defaultWindowActive) return;
+    hasSeededDefaultRef.current = false;
+    store.clearTracedAreas();
+    // AND THE PHOTOGRAPH CHANGES WITH IT. The two categories have different
+    // default rooms — a window for a blind, an alcove for a wardrobe — so
+    // crossing between them has to reload the photo, not just clear the trace.
+    // Left alone, a customer switching to wardrobes got a cupboard standing
+    // against a window, which is the first thing the visualiser says about the
+    // product.
+    loadFromUrl(defaultPhotoFor(store.productCategory));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.productCategory, store.defaultWindowActive]);
+
   const canvasTracedAreas: RenderedArea[] = store.tracedAreas.map(a => ({
     ...a,
     blindType: store.blindType,
@@ -982,6 +1226,19 @@ export default function KlayConfigurator({
     !isLoadingDefault && !showUploadState && !confirmedArea && !awaitingDefaultSeed;
   const showRenderState = !isLoadingDefault && !showUploadState && !!confirmedArea;
 
+  /** TURN IT vs SEE IT IN THE ROOM — two different questions, so two views.
+   *
+   * The room composite answers "does this fit my bedroom", and it has to be a
+   * photograph pasted onto a photograph to do that. The 3D view answers "what
+   * IS this thing", which needs the cabinet on its own and turnable, and cannot
+   * be a fixed viewpoint however well composited.
+   *
+   * Off by default: the room is what a visitor came for. */
+  const [wardrobe3D, setWardrobe3D] = useState(false);
+  const isWardrobe = store.productCategory === 'wardrobe';
+  // A category switch must not strand the 3D view on a blind.
+  useEffect(() => { if (!isWardrobe) setWardrobe3D(false); }, [isWardrobe]);
+
   // Footer sits BELOW the canvas rather than floating over it, so "Visualise
   // in your own room" is always reachable while the default window shows.
   const footerButtons = showUploadState ? (
@@ -1001,9 +1258,43 @@ export default function KlayConfigurator({
     </>
   ) : showRenderState ? (
     store.defaultWindowActive ? (
-      <Button variant="accent" onClick={() => setShowUploadPrompt(true)}>
-        Visualise in your own room
-      </Button>
+      <>
+        {isWardrobe && (
+          <Button
+            variant={wardrobe3D ? 'primary' : undefined}
+            onClick={() => setWardrobe3D(v => !v)}
+          >
+            {wardrobe3D ? 'Back to the preview' : 'Turn it in 3D'}
+          </Button>
+        )}
+        {/* IN YOUR ROOM IS NOT OFFERED FOR WARDROBES YET, and it is shown
+            rather than hidden.
+
+            The room composite works — it is the whole of WardrobeRoomRenderer
+            and none of it has been removed — but it is only as good as the
+            trace it is given, and the trace is the part still being settled: a
+            customer who traces their whole 2460mm doorway rather than where the
+            cabinet sits gets a wardrobe scaled by a fifth and a "won't fit"
+            that is not true. Wrong is worse than absent for the one answer this
+            feature exists to give.
+
+            A disabled button rather than no button, because "coming soon" is
+            information — it tells a customer the thing they are looking for is
+            planned, and it keeps the row's shape so nothing moves when it goes
+            live. Blinds and curtains are untouched: their composite has been
+            in front of customers for months. */}
+        {!wardrobe3D && (
+          isWardrobe ? (
+            <Button variant="accent" disabled onClick={() => {}}>
+              In your room — coming soon
+            </Button>
+          ) : (
+            <Button variant="accent" onClick={() => setShowUploadPrompt(true)}>
+              Visualise in your own room
+            </Button>
+          )
+        )}
+      </>
     ) : (
       <>
         <Button onClick={() => {
@@ -1012,7 +1303,7 @@ export default function KlayConfigurator({
           store.clearTracedAreas();
           store.setDefaultWindowActive(true);
           hasSeededDefaultRef.current = false;
-          loadFromUrl(DEFAULT_WINDOW_URL);
+          loadFromUrl(defaultPhotoFor(store.productCategory));
         }}>Back to preview</Button>
         <Button onClick={() => store.clearTracedAreas()}>Retrace</Button>
         <Button variant="primary" onClick={handleDownload}>Download</Button>
@@ -1066,7 +1357,7 @@ export default function KlayConfigurator({
   // They mount differently because they ARE different things. The chain belongs
   // to the blind and is placed against it. The handset is held, so it sits off
   // to the side of the frame where a hand would be, unattached to anything.
-  const sideControl = !showRenderState ? null : activeOperation === 'motorised' ? (
+  const sideControl = !showRenderState || store.productCategory === 'wardrobe' ? null : activeOperation === 'motorised' ? (
     <div style={SIDE_CONTROL_POSITION}>
       <MotorRemote
         autoRunning={autoRunning}
@@ -1134,7 +1425,7 @@ export default function KlayConfigurator({
               <Button onClick={handleTakePhoto}>Take photo</Button>
             </div>
             <div style={{ display: 'flex', gap: space.md, marginTop: space.lg, justifyContent: 'center' }}>
-              {PRESET_ROOMS.map(url => (
+              {presetRoomsFor(store.productCategory).map(url => (
                 <img
                   key={url}
                   src={url}
@@ -1166,18 +1457,50 @@ export default function KlayConfigurator({
             alt="Your room"
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
+          {/* FOUR POINTS, and for a wardrobe they are the ALCOVE'S FRONT FRAME.
+              Two points could not describe a recess — they fixed a scale and a
+              lean and nothing else, so a wall running away to one side had
+              nowhere to say so. A quad can, and that is what a built-in needs:
+              the opening it is being built into. See drawBuiltIn. */}
           <CornerPinOverlay
+            // Keyed on the photo, so choosing another sample re-opens the pins
+            // on ITS subject rather than leaving them where the last one was.
+            key={hookPhotoUrl ?? 'none'}
             ref={overlayRef}
             imageWidth={photoBitmap!.width}
             imageHeight={photoBitmap!.height}
             onConfirm={handleConfirmTrace}
+            initialCornersPct={
+              openingWidthFor(hookPhotoUrl) !== null
+                ? (alcoveCornersPct(openingWidthFor(hookPhotoUrl)!) as Point[])
+                : undefined
+            }
           />
           {/* Confirm / Change photo live in the footer — see footerButtons. */}
         </div>
       ) : (
         /* STATE 3 — area traced and confirmed */
         <div ref={rendererContainerRef} style={{ position: 'absolute', inset: 0 }}>
-          {store.productCategory === 'curtain' && confirmedArea ? (
+          {store.productCategory === 'wardrobe' && wardrobe3D ? (
+            /* TURN IT. The sticker projected onto the real carcass, orbitable
+               — see Wardrobe3D. It stands on its own rather than in the room
+               photo, because the cabinet is what is being examined here; the
+               room view is the other tab, and it is shown at the width the
+               customer traced so both views are the same cabinet. */
+            <Wardrobe3D
+              modelId={store.wardrobeModel}
+              colourName={store.wardrobeColour}
+              selectedWidthMm={store.wardrobeWidthMm}
+            />
+          ) : store.productCategory === 'wardrobe' && confirmedArea ? (
+            <WardrobeRoomRenderer
+              photoUrl={store.photoUrl!}
+              corners={confirmedArea.corners as [number, number][]}
+              modelId={store.wardrobeModel}
+              colourName={store.wardrobeColour}
+              widthMm={store.wardrobeWidthMm}
+            />
+          ) : store.productCategory === 'curtain' && confirmedArea ? (
             <Canvas2DCurtainRenderer
               tl={{ x: confirmedArea.corners[0][0], y: confirmedArea.corners[0][1] }}
               tr={{ x: confirmedArea.corners[1][0], y: confirmedArea.corners[1][1] }}
@@ -1227,3 +1550,4 @@ export default function KlayConfigurator({
     </div>
   );
 }
+
