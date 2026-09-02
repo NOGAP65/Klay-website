@@ -100,8 +100,15 @@ export default function Wardrobe3D({
 
         // Backed off far enough that the whole cabinet sits in frame with a
         // little air, whatever width the layout is.
+        //
+        // AND FURTHER NOW THERE IS A WALL AROUND IT. At 1.32 the opening filled
+        // the frame edge to edge, which is the one framing that hides the thing
+        // the wall was added for: you cannot see a robe is set INTO something if
+        // the something is cropped off on all four sides. 1.72 leaves a band of
+        // wall around the opening, which is what the supplier's own photographs
+        // show and what makes the reveal read as a reveal.
         const span = Math.max(widthMm, WARDROBE_HEIGHT_MM) * MM;
-        const dist = (span / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))) * 1.32;
+        const dist = (span / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))) * 1.72;
         camera.position.set(built.centre.x, built.centre.y + span * 0.04, built.centre.z + dist);
         camera.lookAt(built.centre);
 
