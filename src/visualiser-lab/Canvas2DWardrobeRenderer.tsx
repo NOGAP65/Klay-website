@@ -386,30 +386,26 @@ function drawBuiltIn(
   // width-to-height ratio then says how wide a piece of wall it is. The cabinet
   // is drawn inside that at its true size, so a 3000 in a 2400 opening
   // visibly does not fit — which is the answer the customer actually needs.
-  // THE TRACE IS THE OPENING, AND THE CABINET FILLS IT.
+  // THE TRACE IS THE SCALE, NOT THE SIZE.
   //
-  // A built-in is made to its opening — that is what "built-in" means. It is
-  // not a box of a catalogue size stood in front of a wall and left to fit or
-  // not; it is cut to the alcove, and the standard widths are what gets
-  // ordered, not what gets delivered to the millimetre.
+  // The quad is read as an opening `openingWidthMm` across and 2016 high, which
+  // is what turns the photograph into millimetres. The cabinet is then built at
+  // its own catalogue width and put into that space at true size — so a 2400
+  // unit against a 1500 opening runs past the architrave, on screen, at the
+  // scale of the customer's own room.
   //
-  // So the four traced corners are the FRONT FRAME of the recess, and the
-  // carcass is built to exactly that: full width, full height, filling the
-  // opening with no gap either side. Anything else leaves a strip of wall the
-  // customer would never accept from a joiner.
-  //
-  // The previous version drew the cabinet at its catalogue width inside the
-  // traced wall and centred it, which answered "does this fit" — a question
-  // worth answering, but not by leaving a gap in the render. The fit is
-  // reported from the numbers instead; the picture shows the wardrobe they
-  // would actually get.
+  // That overhang is the answer, not a fault: it is the one thing the picture
+  // can say that a dimension table cannot, which is that this model will not
+  // fit. Building to the trace instead makes every width land flush and takes
+  // the question away. See WardrobeRoomRenderer, which is the renderer the room
+  // view actually uses and carries the same rule.
   const openingWidthMm = tracedWidthMm(corners, WARDROBE_HEIGHT_MM);
   const projector = projectorFromQuad(corners, openingWidthMm, WARDROBE_HEIGHT_MM, imageW, imageH);
   if (!projector) return;
 
-  // Sliced at the width being BUILT, so the fixed modules hold their 507mm in
-  // whatever opening the customer traced.
-  mapU = skin ? sliceMapper(skin.slices, openingWidthMm) : null;
+  // Sliced at the width being BUILT, so the fixed modules hold their 507mm
+  // whatever the cabinet's own width turns out to be.
+  mapU = skin ? sliceMapper(skin.slices, widthMm) : null;
 
 
   // MEASURED BEFORE ANYTHING IS DRAWN, or the wardrobe gets sampled as though
@@ -440,13 +436,15 @@ function drawBuiltIn(
   const base =
     (litSkin ? sampleBoardColour(litSkin.image) : null) ??
     hexToRgb(wardrobeColourHex(colourName));
-  // BUILT TO THE OPENING, so it fills the trace edge to edge.
+  // BUILT AT THE CATALOGUE WIDTH, so it can overhang — see the note above.
   // The compartments outlive the contents that used to stand in them: they are
   // also what the ambient pass shades, and an opening with nothing describing
   // it comes out as flat lit board. See the shade loop below.
-  const { boxes, compartments } = buildCarcass(layoutId, openingWidthMm);
-  // FLUSH WITH THE TRACE. The cabinet is built at the traced width, so it
-  // starts where the trace starts and there is nothing to shift it by.
+  const { boxes, compartments } = buildCarcass(layoutId, widthMm);
+  // LEFT-ALIGNED IN THE OPENING. A built-in starts from one wall, so the
+  // difference between the cabinet and the trace collects at the right-hand end
+  // where the trace's own edge is there to measure it against — rather than
+  // being halved and hidden at both sides.
   const xOffset = 0;
 
   // DEPTH IS NOT A VARIABLE. Every unit is 500 deep and built into its opening,
