@@ -25,7 +25,11 @@
 // is built from them directly rather than from an invented family layer.
 // ---------------------------------------------------------------------------
 
+// main's own paths: this file is src/data/catalogue.ts here, one level
+// shallower than the refactor branch's src/features/catalogue/constants.ts, and
+// there is no @/config/routes barrel on this branch either.
 import { PRODUCTS, RYNAMIC_COLOURS, CURTAIN_COLOURS } from './products'
+import { WARDROBE_COLOURS } from '../visualiser/wardrobes'
 import type { BlindType } from '../lib/pricing'
 
 export type Group = 'Indoor' | 'Outdoor' | 'Other'
@@ -282,6 +286,10 @@ export const CATALOGUE: CatalogueItem[] = [
     image: '/images/categories/wardrobes.jpg',
     imagePosition: '13% center',
     glyph: 'wardrobes',
+    // The four board finishes, from the visualiser's own list — see
+    // WARDROBE_COLOURS. Restating them here is how the card and the render
+    // start offering different boards.
+    colours: WARDROBE_COLOURS.map(c => ({ name: c.name, hex: c.hex })),
     // The Forma range is modelled now, so this card carries the badge the two
     // window products have carried all along.
     visualise: { category: 'wardrobe' },

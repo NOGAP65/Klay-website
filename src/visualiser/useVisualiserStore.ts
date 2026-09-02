@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
 import { pricePerBlind, type BlindType } from '../lib/pricing';
 import { DEFAULT_WIDTH_MM, wardrobeModelById } from './wardrobes';
+import { DEFAULT_HANDLE, DEFAULT_HANDLE_FINISH, type HandleTypeId } from './wardrobeHardware';
 
 type Point = [number, number];
 
@@ -227,6 +228,18 @@ interface VisualiserStore {
    * other product's choice. */
   wardrobeColour: string;
 
+  /** THE PULL'S PROFILE, and it is a separate question from its colour.
+   *
+   * Held on the store rather than derived from the model because it is the
+   * customer's choice and not the SKU's: every Forma unit takes any of the five
+   * profiles, and two robes that differ only in their handles are two different
+   * quotes. See wardrobeHardware. */
+  wardrobeHandle: HandleTypeId;
+  /** The finish's NAME, matching HANDLE_FINISHES — the same convention
+   * wardrobeColour uses, so what is stored is what gets written on the quote
+   * rather than a hex nobody can read back. */
+  wardrobeHandleFinish: string;
+
   // Visual state
   photoUrl: string | null;
   rollPosition: number;         // 0 = open, 1 = closed
@@ -280,6 +293,8 @@ interface VisualiserStore {
   setWardrobeKind: (kind: 'built-in' | 'walk-in') => void;
   setWardrobeModel: (id: string) => void;
   setWardrobeColour: (name: string) => void;
+  setWardrobeHandle: (id: HandleTypeId) => void;
+  setWardrobeHandleFinish: (name: string) => void;
   setCurtainMount: (mount: CurtainMount) => void;
   setCurtainSize: (size: CurtainSize) => void;
   setCurtainOpenness: (openness: number) => void;
@@ -305,6 +320,8 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   wardrobeKind: 'built-in',
   wardrobeModel: 'SRSTDH02',
   wardrobeColour: 'Matt Wardrobe White',
+  wardrobeHandle: DEFAULT_HANDLE,
+  wardrobeHandleFinish: DEFAULT_HANDLE_FINISH,
   // 3.0's first width, matching wardrobeModel above.
   wardrobeWidthMm: DEFAULT_WIDTH_MM,
   windows: [following(DEFAULT_WINDOW)],
@@ -413,6 +430,11 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
       return { wardrobeModel: id, wardrobeWidthMm: nearest };
     }),
   setWardrobeColour: (name) => set({ wardrobeColour: name }),
+  // Flat sets, like the rest of the wardrobe fields: a wardrobe is one piece of
+  // joinery for the room rather than something each window carries, so these do
+  // not writeThrough. See the note on setWardrobeKind.
+  setWardrobeHandle: (id) => set({ wardrobeHandle: id }),
+  setWardrobeHandleFinish: (name) => set({ wardrobeHandleFinish: name }),
   setWardrobeWidthMm: (mm) => set({ wardrobeWidthMm: mm }),
   setCurtainMount: (mount) => set(writeThrough({ curtainMount: mount })),
   setCurtainSize: (size) => set(writeThrough({ curtainSize: size })),

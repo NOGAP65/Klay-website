@@ -29,6 +29,7 @@ import * as THREE from 'three';
 import { wardrobeArtwork, wardrobeModelById, WARDROBE_HEIGHT_MM, DEFAULT_WIDTH_MM } from './wardrobes';
 import { cameraFromQuad, tracedWidthMm } from './wardrobeGeometry';
 import { buildWardrobeScene, MM } from './wardrobeScene';
+import type { HandleTypeId } from './wardrobeHardware';
 import { profilePhoto, applyGrain } from './wardrobeComposite';
 import { drawWalkIn } from './Canvas2DWardrobeRenderer';
 
@@ -40,6 +41,9 @@ export interface WardrobeRoomRendererProps {
   colourName: string;
   /** Which width in the layout's range. */
   widthMm?: number;
+  /** The pull's profile and finish — see wardrobeHardware. */
+  handle?: HandleTypeId;
+  handleFinish?: string;
 }
 
 /** How large the offscreen render may get.
@@ -209,6 +213,8 @@ export default function WardrobeRoomRenderer({
   modelId,
   colourName,
   widthMm,
+  handle,
+  handleFinish,
 }: WardrobeRoomRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -310,6 +316,8 @@ export default function WardrobeRoomRenderer({
         colourName,
         widthMm: drawWidthMm,
         forRoom: true,
+        handle,
+        handleFinish,
       });
       if (cancelled) {
         built.dispose();
@@ -387,7 +395,7 @@ export default function WardrobeRoomRenderer({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoUrl, modelId, colourName, widthMm, JSON.stringify(corners)]);
+  }, [photoUrl, modelId, colourName, widthMm, handle, handleFinish, JSON.stringify(corners)]);
 
   return <canvas ref={canvasRef} style={{ width: '100%', height: 'auto', display: 'block' }} />;
 }

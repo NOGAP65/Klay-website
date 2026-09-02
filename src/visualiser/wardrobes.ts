@@ -178,6 +178,18 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
 
 export const modelsOfKind = (kind: WardrobeKind) => WARDROBE_MODELS.filter(m => m.kind === kind);
 
+/** EVERY WIDTH THE BUILT-IN RANGE IS MADE IN, deduplicated and in order.
+ *
+ * Derived rather than written out, so adding a width to one SKU cannot leave
+ * this behind. It is the list for a surface that has to offer widths BEFORE a
+ * model is known — the range card, where width and model are two chips in the
+ * same panel and neither has been answered first. The visualiser asks in order
+ * and can therefore offer the chosen SKU's own narrower list, which is why that
+ * one reads `wardrobeModelById(...).widths` instead. */
+export const WARDROBE_WIDTHS: number[] = [
+  ...new Set(modelsOfKind('built-in').flatMap(m => m.widths)),
+].sort((a, b) => a - b);
+
 export const wardrobeModelById = (id: string): WardrobeModel =>
   WARDROBE_MODELS.find(m => m.id === id) ?? WARDROBE_MODELS[0];
 

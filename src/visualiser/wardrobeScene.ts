@@ -28,6 +28,9 @@ import { cutoutFor } from './wardrobeCutouts';
 import { buildSliceMap, sliceMapper } from './wardrobeSlices';
 import { sampleBoardColour } from './wardrobeComposite';
 import { makeWhiteBoardMaps, WHITE_TILE_MM } from './whiteBoardTexture';
+import {
+  DEFAULT_HANDLE, DEFAULT_HANDLE_FINISH, handleFinish, hardwareSpec, type HandleTypeId,
+} from './wardrobeHardware';
 
 /** Millimetres to metres, so the scene is in real units and a shadow camera
  * sized in metres means something. */
@@ -44,6 +47,10 @@ export interface WardrobeSceneOpts {
    * and the distinction is easy to reintroduce if a wall shadow is ever done
    * properly — as its own render pass, not a transparent plane in this one. */
   forRoom?: boolean;
+  /** The pull's profile. Changes the geometry, so it goes into buildCarcass. */
+  handle?: HandleTypeId;
+  /** The finish's name, matching HANDLE_FINISHES. Changes the material. */
+  handleFinish?: string;
 }
 
 export interface WardrobeScene {
@@ -81,6 +88,8 @@ function flattenOntoBoard(tex: THREE.Texture, board: THREE.Color): THREE.Texture
 
 export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<WardrobeScene> {
   const { renderer, modelId, colourName, widthMm } = opts;
+  const handleTypeId = opts.handle ?? DEFAULT_HANDLE;
+  const handleFinishName = opts.handleFinish ?? DEFAULT_HANDLE_FINISH;
 
   const model = wardrobeModelById(modelId);
   // The width the artwork was SHOT at, which is not widths[0] any more now that
@@ -198,7 +207,7 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   disposables.push(env.texture, pmrem);
 
   // --- the carcass ---------------------------------------------------------
-  const { boxes } = buildCarcass(model.id, widthMm);
+  const { boxes } = buildCarcass(model.id, widthMm, hardwareSpec(handleTypeId, handleFinishName));
   const base = new THREE.Color(wardrobeColourHex(colourName));
 
   /** Model millimetres to sticker UV — piecewise across the width, so a fixed
@@ -255,7 +264,18 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // albedo mottle. The colour is still the measured #F1EFEB — this varies it,
   // it does not replace it.
   const whiteMaps = isWhite ? makeWhiteBoardMaps(base) : null;
-  if (whiteMaps) disposables.push(whiteMaps);
+  if (whiteMaps) {
+    disposables.push(whiteMaps);
+    // ANISOTROPY, because these maps are minified hard. A 180mm tile on a
+    // 507mm drawer front is nearly three repeats inside 150 screen pixels, and
+    // the shelves and returns are seen at a glancing angle where the default
+    // trilinear filter takes a single mip level for the whole face and turns a
+    // fine texture into shimmer. This is the filter built for that case.
+    const aniso = renderer.capabilities.getMaxAnisotropy();
+    whiteMaps.map.anisotropy = aniso;
+    whiteMaps.roughnessMap.anisotropy = aniso;
+    whiteMaps.normalMap.anisotropy = aniso;
+  }
 
   /** Every board material gets the same surface treatment, so a shelf and a
    * carcass side are the same sheet of board and not two different products. */
@@ -270,7 +290,9 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
             // The roughness map is the multiplier, so this is the ceiling
             // rather than the value — 1.0 lets the map speak for itself.
             roughness: 1.0,
-            normalScale: new THREE.Vector2(0.85, 0.85),
+            // Down with STRENGTH, for the same reason — see the note there.
+            // The peel is meant to break the sheen, not to be seen.
+            normalScale: new THREE.Vector2(0.35, 0.35),
           }
         : null),
       ...over,
@@ -305,16 +327,26 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   });
   disposables.push(plainBoardMat);
 
-  // Brushed, not polished: a wardrobe handle is satin nickel or brushed
-  // aluminium, so roughness is well up and the reflection is a sheen.
+  // THE CHOSEN FINISH, and every one of its four numbers matters.
+  //
+  // It used to be one hard-coded brushed nickel. With six finishes on offer the
+  // colour alone will not carry them: matte black and matte white are
+  // POWDER-COATED, which is a dielectric, and rendering a dielectric as metal
+  // is what makes a black handle come out as a hole in the cabinet — a metal
+  // reflects its environment and a dark metal reflects a dark environment, so
+  // there is nothing left to see. metalness and roughness travel with the
+  // colour for exactly that reason. See wardrobeHardware.
+  const hw = handleFinish(handleFinishName);
   const metalMat = new THREE.MeshStandardMaterial({
-    color: 0xc6cace,
-    roughness: 0.42,
-    metalness: 0.9,
+    color: new THREE.Color(hw.hex),
+    roughness: hw.roughness,
+    metalness: hw.metalness,
     // ITS OWN, rather than the scene's — the reflection the handles need
     // without the flood of diffuse light that came with it.
     envMap: env.texture,
-    envMapIntensity: 1.15,
+    // The painted finishes want much less of it: at 1.15 a matte white handle
+    // collects the environment like chrome and disappears into a white board.
+    envMapIntensity: hw.metalness > 0.5 ? 1.15 : 0.35,
   });
   disposables.push(metalMat);
 
@@ -395,10 +427,16 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
 
   for (const box of boxes) {
     if (box.colour) {
-      // Rails and handles are real metal; the modelled garment blocks are
-      // dropped, because the photographic contents replace them.
-      const isMetal = box.colour[0] > 150 && Math.abs(box.colour[0] - box.colour[2]) < 24;
-      if (!isMetal) continue;
+      // THE BOX SAYS WHETHER IT IS METALWORK, and it is asked rather than
+      // guessed. This used to sniff the colour — bright and near-neutral meant
+      // a rail or a handle, anything else meant a garment block — which worked
+      // only while every piece of hardware was the same brushed nickel. With
+      // six finishes on offer it fails on three of them: matte black is 43,43,45
+      // and gunmetal is 92,95,99, so both would have been read as garments and
+      // dropped, and choosing them would have deleted the handles rather than
+      // recoloured them. The garment blocks are gone anyway; `metal` is what
+      // the flag was always for.
+      if (!box.metal) continue;
       root.add(buildBoxMesh(box, metalMat, false));
       continue;
     }

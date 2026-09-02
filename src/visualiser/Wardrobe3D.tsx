@@ -25,6 +25,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { WARDROBE_HEIGHT_MM, wardrobeModelById, DEFAULT_WIDTH_MM } from './wardrobes';
 import { buildWardrobeScene, MM } from './wardrobeScene';
+import type { HandleTypeId } from './wardrobeHardware';
 
 export interface Wardrobe3DProps {
   modelId: string;
@@ -33,6 +34,10 @@ export interface Wardrobe3DProps {
   selectedWidthMm?: number;
   /** Filled behind the cabinet, so the unit is not floating on black. */
   background?: string;
+  /** The pull's profile and finish. Both optional so a caller that has not
+   * been given the choice yet still renders the range's default. */
+  handle?: HandleTypeId;
+  handleFinish?: string;
 }
 
 /** How far the view may be turned off dead-ahead. Measured rather than picked:
@@ -45,6 +50,8 @@ export default function Wardrobe3D({
   colourName,
   selectedWidthMm,
   background = '#EFEDE8',
+  handle,
+  handleFinish,
 }: Wardrobe3DProps) {
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -72,7 +79,7 @@ export default function Wardrobe3D({
     let disposed = false;
     let cleanup = () => {};
 
-    buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm })
+    buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm, handle, handleFinish })
       .then(built => {
         if (disposed) {
           built.dispose();
@@ -142,7 +149,12 @@ export default function Wardrobe3D({
       renderer.dispose();
       if (renderer.domElement.parentNode === host) host.removeChild(renderer.domElement);
     };
-  }, [modelId, colourName, selectedWidthMm, background]);
+    // The handle is BOTH of these and neither is optional: its profile changes
+    // the geometry buildCarcass emits and its finish changes the material, so
+    // the scene has to be rebuilt for either. Left off, the picker wrote to the
+    // store, the store re-rendered this component, and the effect declined to
+    // run — which looks exactly like a control that does nothing.
+  }, [modelId, colourName, selectedWidthMm, background, handle, handleFinish]);
 
   return <div ref={hostRef} style={{ width: '100%', height: '100%', minHeight: 420 }} />;
 }
