@@ -22,9 +22,6 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-import * as routes from '@/config/routes';
 
 import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
@@ -437,7 +434,6 @@ export function RangeConfigurator({
    * good once anyone starts specifying something. */
   onInteract?: () => void;
 }) {
-  const navigate = useNavigate();
   const addItem = useCartStore(s => s.addItem);
   const { isHovered, bind } = useHover();
   /** WHICH QUESTION IS OPEN. Null — every row shut — is the resting state,
@@ -451,13 +447,28 @@ export function RangeConfigurator({
 
   const choose = (fieldId: string) => (choiceId: string) => onChange(fieldId, choiceId);
 
-  const checkout = () => {
+  /** ADDS, AND STAYS PUT.
+   *
+   * It used to add the line, navigate to the cart and scroll that page to the
+   * top, which between them made a basket impossible to build: somebody doing a
+   * whole house has four or five windows to specify, and each one ended the
+   * session on the cart and sent them back to find their place in a
+   * fourteen-card grid.
+   *
+   * Nothing else was missing. The nav already counts the cart and already links
+   * to it, and the cart already ends in the one checkout — see the note in
+   * CartPage. All that was needed was a button that does not leave.
+   *
+   * It says so for two seconds afterwards, because a button that banks
+   * something silently and leaves you on the same screen reads as a button that
+   * did nothing. Then it reverts: two of the same window is a real order, so the
+   * row has to stay addable. */
+  const [justAdded, setJustAdded] = useState(false);
+  const addToCart = () => {
     onInteract?.();
     addItem(configuredLine(item, sel));
-    navigate(routes.cart);
-    // The app has no scroll restoration, so without this the cart opens at
-    // whatever height the homepage was scrolled to — its own footer.
-    window.scrollTo(0, 0);
+    setJustAdded(true);
+    window.setTimeout(() => setJustAdded(false), 2000);
   };
 
   return (
@@ -588,7 +599,7 @@ export function RangeConfigurator({
         </div>
         <button
           {...bind}
-          onClick={checkout}
+          onClick={addToCart}
           style={{
             width: '100%',
             padding: `0 ${space.item}px`,
@@ -619,10 +630,15 @@ export function RangeConfigurator({
             transition: motion.button,
           }}
         >
-          {/* Says where the click goes. "Add to cart" would leave the visitor
-              wondering whether anything more is needed; this is the last step
-              before the details form. */}
-          {price !== null ? 'Add & Checkout' : 'Add & Request Quote'}
+          {/* Says what the click DOES, which is now all it does — it no longer
+              goes anywhere. The old label promised checkout because the click
+              took you there; a button that says Checkout and stays put would be
+              worse than one that says Add and stays put.
+
+              The quote wording survives because the distinction survives: an
+              unpriced line goes into the same cart but leaves with a request
+              rather than a total. */}
+          {justAdded ? 'Added' : price !== null ? 'Add to cart' : 'Add for quote'}
         </button>
       </div>
     </div>

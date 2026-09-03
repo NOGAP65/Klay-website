@@ -6,6 +6,8 @@ import * as site from '@/config/site';
 import { radius, tokens, eyebrow, headline, motion, space, supporting, type as typeScale, useHover } from '@/ds';
 import { COLOUR_COUNT, PRODUCT_COUNT } from '@/features/catalogue';
 
+import { AboutPanel } from './AboutPanel';
+
 // DARK ('#0f0d09', a near-black outside the palette) and PARCHMENT (a second
 // copy of a token whose value had since diverged) both used to live here.
 // Everything reads from theme.ts now.
@@ -168,6 +170,16 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      {/* WHO TURNS UP AT THE HOUSE. Off the homepage, where it was the one
+          section not selling a product, and onto the page where that IS the
+          subject — see the note at the top of the panel itself.
+
+          LAST, on grounds of ground: this page runs charcoal, paper, band,
+          paper, and the panel is band, so it alternates here where it would
+          have doubled a band anywhere in the middle. It also closes the page on
+          a CTA, which About otherwise ended without. */}
+      <AboutPanel />
 
     </>
   );
