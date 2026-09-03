@@ -7,7 +7,7 @@
       "id": "E-01",
       "summary": "homography.ts exempt from size and complexity limits",
       "paths": [
-        "src/visualiser/homography.ts"
+        "src/features/visualiser/homography.ts"
       ],
       "excludesFromScope": false,
       "note": "PERMANENT, not deferred. These files may never unfreeze. \"On unfreeze\" was a word that sounded like a condition — it named no date, no trigger and no owner. A permanent exception is a documented decision; a temporary one that never ends is rot.",
@@ -18,7 +18,7 @@
       "id": "E-02",
       "summary": "Canvas2DBlindRenderer.tsx exempt from size limits",
       "paths": [
-        "src/visualiser/Canvas2DBlindRenderer.tsx"
+        "src/features/visualiser/Canvas2DBlindRenderer.tsx"
       ],
       "excludesFromScope": false,
       "permanent": true,
@@ -29,7 +29,7 @@
       "id": "E-03",
       "summary": "CornerPinOverlay.tsx exempt from size limits",
       "paths": [
-        "src/visualiser/CornerPinOverlay.tsx"
+        "src/features/visualiser/CornerPinOverlay.tsx"
       ],
       "excludesFromScope": false,
       "permanent": true,
@@ -40,7 +40,7 @@
       "id": "E-04",
       "summary": "usePhotoUpload.ts exempt from size limits",
       "paths": [
-        "src/visualiser/usePhotoUpload.ts"
+        "src/features/visualiser/usePhotoUpload.ts"
       ],
       "excludesFromScope": false,
       "permanent": true,
@@ -63,5 +63,5 @@
       "note": "A rule-level exemption, not a scope exclusion. These files are in scope for every other rule."
     }
   ],
-  "//unfreeze": "E-08, E-09, E-10 and E-11 were RETIRED on 3 September 2026 when V approved the unfreeze. The zone they protected is now in scope and governed by the specification. E-01 to E-04 remain: they are rule exemptions for four protected IP files, not scope exclusions, and their contents are still not edited."
+  "//unfreeze": "E-08, E-09, E-10 and E-11 were RETIRED on 3 September 2026 when V approved the unfreeze. The zone they protected is now in scope and governed by the specification. The zone moved to src/features/visualiser/ at U5 on the same day, and these paths moved with it — E-01 to E-04 remain: they are rule exemptions for four protected IP files, not scope exclusions, and their contents are still not edited."
 }

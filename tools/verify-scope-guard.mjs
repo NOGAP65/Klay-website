@@ -41,9 +41,9 @@ const MUST_REFUSE = [
  * asserting they are now allowed is what proves the register actually drives
  * the guard rather than a hardcoded list somewhere. */
 const MUST_ALLOW = [
-  'src/visualiser/Canvas2DBlindRenderer.tsx',
-  'src/visualiser/homography.ts',
-  'src/visualiser/wardrobes.ts',
+  'src/features/visualiser/Canvas2DBlindRenderer.tsx',
+  'src/features/visualiser/homography.ts',
+  'src/features/visualiser/wardrobes.ts',
   'src/pages/VisualiserPage.tsx',
   'src/lib/pricing.ts',
   'src/data/products.ts',

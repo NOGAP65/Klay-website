@@ -178,7 +178,7 @@ From ADR-020's demolition log, now actionable:
 | 4 | `src/theme.ts` shim + `@deprecated` aliases | **Three** zone files repointed to `@/ds`, not the six recorded here — `visualiser-lab/` held the others and went at U1 | **DONE — U2** |
 | 5 | `src/data/products.ts` at its legacy path | Split by consumer — decision H, finally executable | U6 |
 | 6 | `src/lib/pricing.ts` shim | Never created. **Move it straight to `shared-core/` with no shim** | Phase 6 |
-| 7 | `legacy-visualiser` boundary element type | Delete when the zone is inside `features/` | U5 |
+| 7 | `legacy-visualiser` boundary element type | Deleted. The edge it protected is feature -> feature now and needs no exception | **DONE — U5** |
 | 8 | The countdown's clearable/permanent split | Rewritten to read the register. **13 permanent became 0** | **DONE — U1** |
 
 **Every shim the freeze created is gone.** Rows 1–4 were the whole of it, and they came out in one
@@ -240,7 +240,7 @@ map** — it removes the last `%20` encoding in the codebase and the last z-spel
 | **U2** | **Retire the shims — Nav, BareLayout, `theme.ts`. DONE, 3 Sep** | Cleared all four demolition rows. One consequence worth knowing: `/visualiser` now has a footer and therefore scrolls | Low |
 | **U3** | **Fix the countdown tool; adopt the wardrobe manifest. DONE, 3 Sep — landed with U1** | Both were measurement corrections, and both were wrong in ways their own output could not show | Low |
 | **U4** | Move assets: `Textures/`, openings, `Preview.png` | Depends on U3's manifest for the wardrobe set | **Medium — silent failure** |
-| **U5** | Move files into `features/visualiser/` | The move itself. Paths only, no decomposition | Medium |
+| **U5** | **Move files into `features/visualiser/`. DONE, 3 Sep** | 21 files, one barrel, 13 deep imports became 6 barrel imports. Cleared demolition row 7 as well | Medium |
 | **U6** | Split `data/products.ts` — decision H | Finally executable | Low |
 | **U7** | Decompose the renderers to §8 limits | The real work, and the only phase that changes code | **HIGH** |
 | **U8** | Phase 7 re-run over the zone | Renames last, after structure settles | Low |

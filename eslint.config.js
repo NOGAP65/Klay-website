@@ -110,27 +110,21 @@ export default tseslint.config(
         { type: 'design-system', pattern: 'src/design-system/**' },
         { type: 'feature', pattern: 'src/features/*/**', capture: ['featureName'] },
         { type: 'shared', pattern: 'src/shared/**' },
-        // OUT OF SCOPE FOR THIS MIGRATION — ADR-020, E-08. Not "not yet moved":
-        // never moved, by this project. It is a separate element type from
-        // `legacy` because a feature reaching it is a PERMANENT, allowed edge,
-        // while a feature reaching the rest of `legacy` is temporary scaffolding
-        // that has to come out. Two different facts need two different names, or
-        // the countdown to zero can never terminate and the allowance can never
-        // be removed. Must precede `legacy`: boundaries takes the FIRST match.
+        // THE legacy-visualiser ELEMENT TYPE WAS HERE AND IS GONE — U5.
         //
-        // ONLY THE TWO DIRECTORIES ARE LISTED, and E-08 names four paths.
-        // `boundaries` classifies by FOLDER — a file pattern here is silently
-        // partial-matched and the plugin warns about it. VisualiserPage.tsx and
-        // VisualizerLabPage.tsx therefore stay classified `legacy`, which costs
-        // nothing today: their only importer is App.tsx, which is `legacy`, and
-        // legacy -> legacy is allowed either way.
+        // It existed to say one thing the layer model could not otherwise
+        // express: a feature reaching the visualiser was a PERMANENT allowed
+        // edge, while a feature reaching the rest of `legacy` was temporary
+        // scaffolding that had to come out. Two different facts needed two
+        // different names, or the countdown to zero could never terminate.
         //
-        // The file-level half of E-08 is enforced where it CAN be expressed —
-        // tools/scope.mjs, which reads the exception register and does handle
-        // individual files. Two mechanisms because the two tools have different
-        // granularity, and pretending otherwise is what produced the warning.
-        { type: 'legacy-visualiser', pattern: 'src/visualiser/**' },
-        { type: 'legacy-visualiser', pattern: 'src/visualiser-lab/**' },
+        // Both halves stopped being true. The edge is not permanent — the zone
+        // is `src/features/visualiser/` now, so catalogue reaching it is
+        // feature -> feature through a barrel, which the rules below already
+        // allow and which needs no exception at all. And the countdown reached
+        // 23 clearable, 0 permanent when it stopped hardcoding the old answer.
+        //
+        // Deleting it is the last of ADR-020's demolition log.
         // Everything the migration has not relocated yet. Declared so that
         // boundaries can classify it rather than treating it as unknown; it has
         // no restrictions of its own, because restricting code that has not
@@ -248,17 +242,8 @@ export default tseslint.config(
                 // four steps out of marketing.
                 { to: { element: { type: 'feature' } } },
 
-                // PERMANENT, AND DELIBERATELY SO — ADR-020, E-08.
-                //
-                // features/catalogue's ProductDetailPage mounts the visualiser
-                // embed and imports three modules from src/visualiser/. Those
-                // files are out of this migration entirely and may not be
-                // edited, so this edge does not clear — not at Phase 5, not at
-                // Phase 6, not ever, by this project.
-                //
-                // THIS IS THE ALLOWANCE THAT SURVIVES. The blanket one below is
-                // the one that comes out.
-                { to: { element: { type: 'legacy-visualiser' } } },
+                // The visualiser used to need its own allowance here. It is a
+                // feature now, so the feature -> feature rule above covers it.
 
                 // TEMPORARY — MIGRATION SCAFFOLDING, REMOVE AT PHASE 6.1.
                 //
@@ -287,28 +272,11 @@ export default tseslint.config(
             // not shared/. Zero dependencies in either direction — it is the
             // contract between two runtimes and may not depend on either.
             { from: [{ element: { type: 'core' } }], allow: [] },
-            // Out of scope, and not edited for any reason — so it is given the
-            // same freedom `legacy` has. Constraining code nobody may touch
-            // would report violations that are illegal to fix. ADR-020.
-            {
-              from: [{ element: { type: 'legacy-visualiser' } }],
-              allow: [
-                { to: { element: { type: 'legacy' } } },
-                { to: { element: { type: 'legacy-visualiser' } } },
-                { to: { element: { type: 'design-system' } } },
-                { to: { element: { type: 'shared' } } },
-                { to: { element: { type: 'config' } } },
-                { to: { element: { type: 'core' } } },
-                { to: { element: { type: 'feature' } } },
-                { to: { element: { type: 'app' } } },
-              ],
-            },
             // Not yet migrated. No restrictions until it lands somewhere.
             {
               from: [{ element: { type: 'legacy' } }],
               allow: [
                 { to: { element: { type: 'legacy' } } },
-                { to: { element: { type: 'legacy-visualiser' } } },
                 { to: { element: { type: 'design-system' } } },
                 { to: { element: { type: 'shared' } } },
                 { to: { element: { type: 'config' } } },

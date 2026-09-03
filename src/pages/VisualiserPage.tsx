@@ -3,9 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { radius, tokens } from '@/ds';
 
 import { bookingLink } from '../lib/bookingLink';
-import KlayConfigurator from '../visualiser/KlayConfigurator';
-import { useVisualiserStore, ProductCategory } from '../visualiser/useVisualiserStore';
-import VisualiserControls from '../visualiser/VisualiserControls';
+import { KlayConfigurator, VisualiserControls, useVisualiserStore, ProductCategory } from '@/features/visualiser';
 
 const CATEGORY_TAB_STYLE = {
   flex: 1,

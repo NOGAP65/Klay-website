@@ -27,8 +27,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(fileURLToPath(import.meta.url), '../..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
-const cutouts = read('src/visualiser/wardrobeCutouts.ts');
-const models = read('src/visualiser/wardrobes.ts');
+const cutouts = read('src/features/visualiser/wardrobeCutouts.ts');
+const models = read('src/features/visualiser/wardrobes.ts');
 
 /** The directory constant, read from the source rather than repeated here --
  * a second copy of it is exactly the drift this check is meant to catch. */

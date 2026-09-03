@@ -156,12 +156,12 @@ src/
 ├── features/
 │   ├── catalogue/
 │   ├── configurator/
-│   ├── visualiser/           NOT BUILT BY THIS MIGRATION — E-08, ADR-020.
-│   │   ├── photo/            The shape below is the eventual target; the code
-│   │   ├── tracing/          stays in src/visualiser/ and src/visualiser-lab/
-│   │   ├── rendering/        until that work is scheduled on its own.
-│   │   │   ├── blind/
-│   │   │   ├── curtain/
+│   ├── visualiser/           MOVED HERE AT U5. 21 files, flat, behind one
+│   │   ├── photo/            barrel. The sub-shape below is still the target
+│   │   ├── tracing/          and is U7's work — decomposition, not a move.
+│   │   ├── rendering/        Four files inside carry E-01 to E-04: they may be
+│   │   │   ├── blind/        moved and have imports rewritten, and their
+│   │   │   ├── curtain/      contents are not edited.
 │   │   │   └── shared/
 │   │   └── compare/
 │   ├── cart/                 basket contents only — no checkout
@@ -903,15 +903,32 @@ that `npm run check:exceptions` sees a retired exception in neither half.
 
 **An asset whose path is built at runtime may not be moved by any automated pass.**
 
-`src/visualiser/wardrobes.ts` builds every wardrobe render's URL as:
+`wardrobes.ts` built every wardrobe render's URL as:
 
 ```ts
 `${DIR}/${model.id}-${wardrobeColour(colourName).slug}-${view}.png`
 ```
 
-**Twenty-eight files load through that expression and appear in no source file at all.** A
-static reference check — `grep`, an import graph, `npm run audit:assets` — cannot see them,
-because the string that names them does not exist until the moment it is used.
+**Twenty-eight files loaded through that expression and appeared in no source file at all.** A
+static reference check — `grep`, an import graph, `npm run audit:assets` — could not see them,
+because the string that named them did not exist until the moment it was used.
+
+> ### THE CUT-OUT HALF OF THIS WAS FIXED AT U1, AND THE FIX IS THE POINT OF THE RULE.
+>
+> `suppliedAssetPath` no longer builds a name. It asks `wardrobeCutouts.ts` — a generated
+> manifest carrying each file's own `file` string — so the set is **enumerable**, and
+> `npm run check:wardrobe-assets` asserts every file it names is on disk. **The rule did not stop
+> applying; the code stopped triggering it.**
+>
+> **And the unauditable version was concealing a defect the whole time.** The built name used
+> `model.id` where the files are named by `artworkId`, so seven of ten models could only ever have
+> requested a file that has never existed. Nothing could see it, because the only thing that could
+> have was the check the constructed path made impossible.
+
+**The finish textures and the legacy stickers are still assembled at runtime**, so the rule stands
+for them and for anything like them. What U1 shows is the remedy: **a runtime-assembled path
+becomes auditable the moment something enumerates the set it can produce**, and that something is
+cheap to write and can be proven to fail.
 
 **This is a permanent class, not a gap in the tool.** No better audit closes it: the information
 is not in the source. A checker that guessed would be worse than one that abstains, because it
@@ -964,7 +981,7 @@ in agreement.
 **RETIRED — E-08, E-09, E-10, E-11**, on 3 September 2026, when V approved the unfreeze.
 
 They existed for one reason: the visualiser was outside this migration and could not be edited.
-**It is inside it now.** `src/visualiser/`, `VisualiserPage.tsx`, `src/lib/pricing.ts`,
+**It is inside it now.** The zone moved to `src/features/visualiser/` at U5. It, `VisualiserPage.tsx`, `src/lib/pricing.ts`,
 `src/data/products.ts` and what were `src/theme.ts` and `src/components/Nav.tsx` are all in scope
 and governed by every rule in this document. `src/visualiser-lab/` was deleted at U1.
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { computeHomography, toColumnMajor, Point } from './homography';
-import { HARDWARE_HEX } from '../data/products';
+import { HARDWARE_HEX } from '../../data/products';
 import { tokens } from '@/ds';
 
 /** One traced, confirmed window area to render — the shape VisualizerConfigurator

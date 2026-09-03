@@ -9,9 +9,7 @@ import { useIsMobile } from '@/shared';
 
 import { bookingLink } from '../../../lib/bookingLink';
 import { useKlayStore } from '../../../store';
-import KlayConfigurator from '../../../visualiser/KlayConfigurator';
-import { useVisualiserStore } from '../../../visualiser/useVisualiserStore';
-import VisualiserControls from '../../../visualiser/VisualiserControls';
+import { KlayConfigurator, VisualiserControls, useVisualiserStore } from '@/features/visualiser';
 import {
   ProductBlindType,
   productByBlindType,

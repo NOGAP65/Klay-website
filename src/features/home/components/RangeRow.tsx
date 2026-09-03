@@ -115,7 +115,7 @@ import { defaultSelection, fieldsFor, type Selection } from '@/features/catalogu
 import { ProductGlyph } from '@/features/catalogue';
 import { useIsMobile, useMediaQuery, scrollToId } from '@/shared';
 
-import { useVisualiserStore } from '../../../visualiser/useVisualiserStore';
+import { useVisualiserStore } from '@/features/visualiser';
 import { TILE_GAP } from '../furniture';
 
 import { RangeConfigurator } from '@/features/catalogue';
@@ -386,19 +386,6 @@ const BORDER = 1;
  * tie. */
 const LIFT = 3;
 
-/** THE VIGNETTE — the lighting, and the single most useful thing here.
- *
- * A radial wash, transparent across the middle of the frame and a fifth of ink
- * at the corners, centred slightly above the middle because that is where the
- * window is in every one of these renders. It gives a photograph of a whole room
- * the falloff a studio shot of one object has for free, which is what stops the
- * eye reading the skirting boards.
- *
- * Ink at low alpha rather than black: a pure-black wash greys a warm render, the
- * same reason the shadows are mixed from ink. */
-const VIGNETTE =
-  'radial-gradient(118% 88% at 50% 42%, rgba(29,29,29,0) 42%, rgba(29,29,29,0.08) 70%, rgba(29,29,29,0.20) 100%)';
-
 /** How far the non-focused cards drop while another is hovered or open. Opacity
  * and saturation together, because either alone is too polite to notice.
  *
@@ -668,25 +655,12 @@ function RangeCard({
               </div>
             )}
 
-            {/* THE VIGNETTE. See move 3 at the top of the file and the note on
-                VIGNETTE itself. Painted over the picture and under nothing, and
-                pointer-transparent so it takes no clicks off the link it sits in.
-
-                It lightens under the pointer rather than deepening: the hovered
-                card is the one being looked at, so the frame opens up while the
-                other three keep their falloff — the vignette and the spotlight
-                are the same gesture from two directions. */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: VIGNETTE,
-                opacity: isHovered ? 0.55 : 1,
-                pointerEvents: 'none',
-                transition: 'opacity 0.5s ease',
-              }}
-            />
+            {/* NO SCRIM. It used to sit here, and its note made a fair case:
+                a radial fifth of ink at the corners gives a photograph of a
+                whole room the falloff a studio shot of one object gets for
+                free. It is still ink over the product, though, and neither
+                reference site darkens a product shot at all — see the note on
+                the shop card, which lost the same wash for the same reason. */}
           </div>
 
           {/* Small caps group, big name — MONDAY's stack in Klay's faces.

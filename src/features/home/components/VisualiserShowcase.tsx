@@ -44,16 +44,19 @@ import { useIsMobile } from '@/shared';
 
 import { bookingLink } from '../../../lib/bookingLink';
 import { formatAUD } from '../../../lib/pricing';
-import KlayConfigurator from '../../../visualiser/KlayConfigurator';
 import {
+  KlayConfigurator,
+  VisualiserControls,
+  Field,
+  GroupHeading,
+  PriceBox,
   MAX_WINDOWS,
   type JobWindow,
   priceWindow,
   useVisualiserStore,
   isJoinery,
   type ProductCategory,
-} from '../../../visualiser/useVisualiserStore';
-import VisualiserControls, { Field, GroupHeading, PriceBox } from '../../../visualiser/VisualiserControls';
+} from '@/features/visualiser';
 
 /** Where a curtain enquiry goes. Curtains are configurable here and in the
  * visualiser page, but they are not buyable anywhere on the site: every curtain

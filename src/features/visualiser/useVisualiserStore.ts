@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
-import { pricePerBlind, type BlindType } from '../lib/pricing';
+import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../../data/products';
+import { pricePerBlind, type BlindType } from '../../lib/pricing';
 import { DEFAULT_WIDTH_MM, wardrobeModelById, WARDROBE_MODELS, type WardrobeKind } from './wardrobes';
 import { DEFAULT_WALL_COLOUR } from './wallColours';
 import { DEFAULT_HANDLE_FINISH } from './wardrobeHardware';

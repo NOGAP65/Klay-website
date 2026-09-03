@@ -47,7 +47,7 @@ check('no-pure-black', klay.rules['no-pure-black'], {
     // The StepsBar case: the only two occurrences in the repo are in the
     // comment that forbids the colour. Comments are off by default.
     { code: `// Klay has no black — #000000 and #1A1A1A are banned outright.\nconst x = 1;`, filename: 'src/components/home/StepsBar.tsx' },
-    { code: `const s = 'rgba(0,0,0,0.38)';`, filename: 'src/visualiser/KlayConfigurator.tsx' },
+    { code: `const s = 'rgba(0,0,0,0.38)';`, filename: 'src/features/visualiser/KlayConfigurator.tsx' },
   ],
   invalid: [
     { code: `const a = '#000';`, filename: 'src/pages/Thing.tsx', errors: 1 },

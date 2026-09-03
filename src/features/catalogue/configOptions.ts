@@ -34,8 +34,7 @@
 // ---------------------------------------------------------------------------
 
 import { HARDWARE_OPTIONS } from '../../data/products'
-import { HANDLE_FINISHES } from '../../visualiser/wardrobeHardware'
-import { modelsOfKind, WARDROBE_WIDTHS } from '../../visualiser/wardrobes'
+import { HANDLE_FINISHES, modelsOfKind, WARDROBE_WIDTHS } from '@/features/visualiser'
 import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '../../lib/pricing'
 
 

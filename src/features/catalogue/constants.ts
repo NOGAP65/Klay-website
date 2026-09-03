@@ -28,7 +28,7 @@
 import * as routes from '@/config/routes';
 
 import { RYNAMIC_COLOURS, CURTAIN_COLOURS } from '../../data/products'
-import { WARDROBE_COLOURS } from '../../visualiser/wardrobes'
+import { WARDROBE_COLOURS } from '@/features/visualiser'
 
 import { PRODUCTS } from './products'
 
