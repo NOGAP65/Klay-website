@@ -126,7 +126,14 @@ export const LANE_DIP_PX = 26;
  * smaller than the homepage's on the page whose whole job is showing product.
  * It also has to divide by two, since the open card spans two columns. */
 export const COLUMN_MIN = 340;
-export const COLUMN_GAP = 20;
+/** The gutter, and it widened when the cards lost their frames.
+ *
+ * 20 was set while every card carried a border, a radius and a shadow — three
+ * things stating where one product stopped and the next began. With those gone
+ * the gap is the only separator left, and two photographs 20px apart read as one
+ * strip. Monday runs 30 between tiles that likewise have no frame; 28 keeps four
+ * columns on a 1440 viewport, which 30 would not. */
+export const COLUMN_GAP = 28;
 
 /** One grid column in pixels, from the grid's own width.
  *
@@ -141,17 +148,6 @@ export const columnWidth = (gridWidth: number): number => {
   const cols = Math.max(1, Math.floor((gridWidth + COLUMN_GAP) / (COLUMN_MIN + COLUMN_GAP)));
   return (gridWidth - (cols - 1) * COLUMN_GAP) / cols;
 };
-
-/** How far the card rises under the pointer. The row's number, so the two
- * surfaces feel like the same object. */
-const LIFT = 3;
-
-/** The row's own lighting: a radial wash, transparent across the middle and a
- * fifth of ink at the corners, centred slightly above centre because that is
- * where the window is in these renders. It gives a photograph of a whole room
- * the falloff a studio shot of one object has for free. */
-const VIGNETTE =
-  'radial-gradient(118% 88% at 50% 42%, rgba(29,29,29,0) 42%, rgba(29,29,29,0.08) 70%, rgba(29,29,29,0.20) 100%)';
 
 export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colWidth, isShown }: ShopCardProps) {
   // main's useHover returns `hover`; the refactor branch renamed it isHovered.
@@ -211,17 +207,18 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colW
         // channel between Close and Add & Checkout, and it pushed the card's
         // button down by its own bottom padding so the two halves of what
         // should be one bar sat at different heights.
-        padding: isOpen ? 0 : space.xxs,
-        ...(isOpen
-          ? null
-          : {
-              background: tokens.card,
-              border: `1px solid ${lit ? tokens.lineStrong : tokens.lineFaint}`,
-              borderRadius: radius.lg,
-              boxShadow: lit ? shadow.lift : shadow.rest,
-              transform: lit ? `translateY(-${LIFT}px)` : 'translateY(0)',
-            }),
-        transition: `${motion.card}, border-color 0.3s ease`,
+        // NO CARD AT ALL WHEN CLOSED — no background, no border, no radius, no
+        // padding, no shadow. That is not a stylistic preference, it is what
+        // both reference sites measure: mondayhaircare and kookai both report
+        // background rgba(0, 0, 0, 0), border 0px, radius 0px, shadow none on
+        // the repeating product tile. We had every one of them, and each was a
+        // line drawn AROUND the product rather than a way of showing it.
+        //
+        // The photograph is the card now. The hover signal moves onto the
+        // picture, which already scales and warms — a lift needs something to
+        // lift, and there is no longer a plate under the image to raise.
+        padding: 0,
+        transition: motion.card,
       }}
     >
       {/* Only the picture and the name are inside the link, and the link is a
@@ -234,20 +231,31 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colW
             position: 'relative',
             overflow: 'hidden',
             borderRadius: radius.md,
-            // 5:4 RATHER THAN 4:5, and the shop is the one place that should
-            // differ from the row. The row shows four cards side by side across
-            // a full-width band, where a portrait tile is what stops them
-            // reading as one long strip. The shop stacks fourteen down a page
-            // beside a filter rail: at 4:5 a 390-wide card ran near 700 tall,
-            // so barely two rows cleared the fold and scrolling the range meant
-            // scrolling past the same card four times.
+            // 4:5, AND THIS IS THE SINGLE BIGGEST REASON THE PRODUCTS NOW
+            // READ. At 5:4 the picture was 343x275 in a 434 card — under two
+            // thirds of it — where monday measures 347x499 in 688 and kookai
+            // 295x443 in 511. Portrait, at 73% and 87%. Ours was landscape at
+            // 63%, which is a photograph illustrating a card instead of a
+            // photograph being one. 4:5 takes it to 429px tall: 1.6x the image
+            // area in the same column, and the same share of the card monday
+            // gives it.
             //
-            // Landscape is also truer to the photographs. Every one of them is
-            // a room — a kitchen, a bed, a patio — and a room is wider than it
-            // is tall; the portrait crop was cutting the sides off the very
-            // thing the picture is of.
-            aspectRatio: '5 / 4',
-            background: item.image ? tokens.band : tokens.charcoal,
+            // THE OLD NOTE HERE ARGUED 5:4 ON TWO GROUNDS, and both need
+            // answering rather than ignoring. It said 4:5 ran a card near 700
+            // tall — but that was arithmetic on a 390-wide card, and COLUMN_MIN
+            // has been 340 since, so the card lands at 588, between the two
+            // references. It also said landscape is truer to photographs of
+            // rooms, which is real: the crop is why this is 4:5 and not the 0.70
+            // and 0.67 the references run. A moderate portrait keeps the window
+            // in frame — and objectPosition is per item for the few where the
+            // subject sits off centre.
+            aspectRatio: '4 / 5',
+            // A MISSING PHOTOGRAPH IS AN EMPTY FRAME, NOT A BLACK ONE. On the
+            // old landscape tile the charcoal fallback was a smallish dark
+            // rectangle; at 4:5 it is 435px tall and was out-shouting every
+            // product that does have a picture. The band is the page's own
+            // quiet grey, so a gap in the photography now reads as a gap.
+            background: tokens.band,
           }}
         >
           {item.image ? (
@@ -258,7 +266,12 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colW
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
-                objectPosition: item.imagePosition ?? 'center',
+                // NOT 'center'. A room cropped to 4:5 about its middle lands
+                // on the floor, and every product here — blinds, curtains,
+                // shutters, awnings — hangs high on a wall. 35% keeps the
+                // window in frame. Per-item imagePosition still wins, which is
+                // what that field is for.
+                objectPosition: item.imagePosition ?? '50% 35%',
                 display: 'block',
                 transform: lit ? 'scale(1.04)' : 'scale(1)',
                 filter: lit
@@ -272,26 +285,19 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colW
               style={{
                 position: 'absolute',
                 inset: space.md,
-                border: `1px solid ${tokens.onDarkLine}`,
+                border: `1px solid ${tokens.lineFaint}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <ProductGlyph type={item.glyph ?? ''} size={140} color={tokens.paper} ground={tokens.charcoal} opacity={lit ? 0.75 : 0.6} />
+              <ProductGlyph type={item.glyph ?? ''} size={140} color={tokens.inkSoft} ground={tokens.band} opacity={lit ? 0.75 : 0.55} />
             </div>
           )}
-          <div
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: VIGNETTE,
-              opacity: lit ? 0.55 : 1,
-              pointerEvents: 'none',
-              transition: 'opacity 0.5s ease',
-            }}
-          />
+          {/* NO SCRIM. The vignette existed to give the photograph an edge
+              against the white card behind it; there is no card behind it now,
+              so all it did was put up to a fifth of ink over the product. Both
+              references darken their product shots by nothing at all. */}
         </div>
 
         {/* THE GROUP AND THE NAME, UNDER the picture rather than on it. Three
@@ -337,16 +343,49 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colW
           boxSizing: 'border-box',
           display: 'inline-flex',
           alignItems: 'center',
-          justifyContent: 'center',
+          // HARD LEFT UNDER THE NAME, in the same column as it and the kicker.
+          // Centred, the action floated in the middle of its own line and the
+          // card read as a text block with something else underneath. Open, it
+          // centres again — by then it is the left half of a real bar with Add &
+          // Checkout, not a link under a picture.
+          justifyContent: isOpen ? 'center' : 'flex-start',
           // SQUARE ON THE JOIN. Open, this button and the panel's Add &
           // Checkout are flush against each other at the same 52px, so a radius
           // on the inside edge would put a notch in what has to read as one bar
           // across the whole card.
           borderRadius: isOpen ? `${radius.md}px 0 0 ${radius.md}px` : radius.md,
-          border: 'none',
           cursor: 'pointer',
-          background: isOpen || isHovered ? tokens.accentHover : tokens.accent,
-          color: tokens.onAccent,
+          // QUIET AT REST, BRONZE ON APPROACH. Fourteen solid bronze bars, one
+          // per card, were the highest-contrast thing on the page — so a
+          // customer scanning the range saw a column of buttons rather than the
+          // products. Neither reference fills a button at all: monday uses two
+          // underlined text links, kookai has none.
+          //
+          // It does not disappear, though. Hiding the action until hover would
+          // cost every touch device the thing the card is for, so it keeps its
+          // full width and height and gives up only the fill: a hairline and
+          // ink at rest, the bronze arriving under the pointer and staying
+          // while it is open.
+          // NO FILL UNLESS IT IS OPEN. The photograph already scales and warms
+          // under the pointer; a bronze bar arriving beneath it at the same
+          // moment was a second and louder answer to the same question. The
+          // label takes the bronze instead and keeps its underline, so the card
+          // lights up in one place — the picture.
+          background: isOpen ? tokens.accentHover : 'transparent',
+          // NO BOX AT REST. A hairline rectangle under every card is still
+          // fourteen rectangles, and with the card's own frame gone they were
+          // the only ones left on the page. Monday gives its actions as
+          // underlined text at 14px and no box; the underline is what says this
+          // is a thing you press.
+          //
+          // The width and the 52px stay. That is the touch target, and shrinking
+          // the action to the width of two words would cost every phone the
+          // thing the card exists for. What goes is the outline, not the size.
+          border: '1px solid transparent',
+          color: isOpen ? tokens.onAccent : isHovered ? tokens.accent : tokens.ink,
+          textDecoration: isOpen ? 'none' : 'underline',
+          textUnderlineOffset: 5,
+          textDecorationThickness: 1,
           ...typeScale.label,
           lineHeight: 1,
           transition: motion.button,
