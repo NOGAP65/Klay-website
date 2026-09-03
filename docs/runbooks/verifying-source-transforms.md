@@ -19,6 +19,42 @@ to believe.
 
 **Every row is a real occurrence in this project**, and every one was believed at the time.
 
+## THE STANDING EXPECTATION, BEFORE ANY OF IT
+
+> ### Anything built to check something needs checking, and it will be inert the first time.
+>
+> **Assume it. Do not wait to be surprised by it.**
+
+**Nine instances is a property of the work, not a run of bad luck.** They are not nine unrelated
+slips that happened to land in one project. They are one thing arriving repeatedly: **a check is
+written by the same person, in the same sitting, holding the same belief about the world as the
+code it checks.** If that belief is wrong, both halves are wrong together and they agree with each
+other. The check does not fail. It concurs.
+
+So the expectation is not "be careful and this will be rare". It is **"the first version is inert,
+plan the five minutes to prove otherwise"** — the same way you would not ship a function without
+running it once.
+
+### And twice now the verifier has been the last place looked, for the same reason
+
+| | |
+|---|---|
+| **Instance 7** | `verify-scope-guard.mjs` reported a refusal while having written a real file |
+| **Instance 8** | `legacy-countdown.mjs` reported a floor that had been demolished that morning |
+
+Both were the tool everything else was being judged against, and both were the last thing anyone
+thought to doubt. **That is not a coincidence, it is the mechanism**: the verifier is the thing that
+looks, so nothing is looking at it. Every other file in the project has something pointed at it —
+that is what the verifier is for. The verifier has whatever you deliberately point at it, and
+nothing else.
+
+**Which means the order is backwards from the intuitive one.** The instinct is to verify the risky
+code first and the checking tools last, because the tools are small and boring. But an unverified
+tool silently vouches for everything downstream of it, so **it is the highest-leverage thing in the
+project to be wrong**, and it is the cheapest to test. Prove the tool, then use it.
+
+---
+
 ## What to do when the answer is "the same thing"
 
 **Make it fail on purpose, once.** That is the entire remedy and it is usually five minutes.
@@ -517,19 +553,50 @@ protected file. This is the same bypass with a slower fuse: **the codemod acted 
 the countdown only reported from it.** A wrong number does no damage the day it appears, which is
 precisely why it survives — nobody reverts a report.
 
-### And the hardcoded table was wrong in both directions, not merely stale
+### The distinction that matters: it had never been right, not gone stale
 
-Deriving the answer instead of remembering it showed the remembered version had never been right.
-Re-excluding the visualiser as a probe, the tool now reports:
+**"Stale" is the flattering reading and it is the wrong one.** Stale means it was true once and the
+world moved. That is ordinary, forgivable, and it would have made this a smaller finding.
 
-```
-  3  src/data/products.ts   [PERMANENT — held by 3: src/visualiser/Canvas2DBlindRenderer.tsx +2]
-  3  src/lib/pricing.ts     [PERMANENT — held by 2: src/visualiser/useVisualiserStore.ts +1]
-```
+**It had been wrong from the day it was written.** `products.ts` was listed as held by *six*
+visualiser files; it was held by three. `lib/pricing.ts` was held by two and **was not in the table
+at all**. Neither number described any state the project has ever been in. The unfreeze did not
+make the table wrong — the unfreeze is merely what finally made someone ask.
 
-**`products.ts` was held by three importers, not the six the comment claimed.** And `lib/pricing.ts`
-was held by two and **was not in the table at all**. A hand-written list of consequences was
-overstating one entry and missing another, and had been for the length of the project.
+**Deriving the answer is what exposed it, and that is the reusable part.** Nobody re-counted the
+importers and found a discrepancy; nobody would have. The count only surfaced because the hardcoded
+table was replaced with a computation and the two could be compared. **A wrong constant and a right
+constant are indistinguishable until something else computes the same thing** — which is the
+argument for deriving even where a literal would be simpler and faster.
+
+### A tool that misinforms is more durable than one that misbehaves
+
+**This is the same bypass as instance 6, and it survived far longer for a reason that is worth
+stating on its own.**
+
+| | Instance 6 — the codemod | Instance 8 — the countdown |
+|---|---|---|
+| Held | Its own directory filter instead of `isInScope` | Its own copy of ADR-020 |
+| Did what with it | **Acted** — edited a protected file | **Reported** — printed a wrong number |
+| Detected | Same session, within minutes | Never, until the tool was rewritten for other reasons |
+
+**An action leaves evidence. A report leaves a belief.** The codemod's stale copy produced a
+modified file, a diff, a hash that had changed — artefacts that sit in the repository being wrong
+at you until somebody looks. The countdown's stale copy produced a sentence on a terminal that
+scrolled away, and left behind only the impression that thirteen edges would never clear.
+
+**Nobody reverts a report.** There is no diff to notice, no failing check, no hash to compare. The
+wrong number is not stored anywhere it can be caught — it is stored in whoever read it, and it
+gets re-derived, identically wrong, on every run.
+
+**So the durability is inverted from the severity.** A tool that misbehaves is dangerous and
+short-lived. A tool that misinforms is harmless in any single instant and can run for the length of
+a project, quietly shaping every decision made downstream of it. **The countdown decides whether the
+migration is finished.** It said there was a floor. There was no floor.
+
+**Which is why reporting tools deserve the verification that acting tools get, not less of it.**
+The instinct is the reverse — a tool that only prints seems safe to leave unproven — and that
+instinct is what bought this one its long run.
 
 ### The fix is not a better list. It is no list.
 
@@ -557,6 +624,100 @@ no invalidation. The countdown had one, the codemod had one, and `lint:fix`'s ig
 **And a derived zero must be shown to be capable of being non-zero.** Otherwise "the floor is gone"
 and "the tool stopped measuring the floor" produce identical output, and one of those is the thing
 you were trying to detect.
+
+## Instance 9 — A NEW CLASS: the latent defect behind a feature flag
+
+**Every instance before this one was a check that could not see. This one is a check that could
+not run.** It is a different failure and it needs its own name, because the remedy for the others
+does not touch it.
+
+### What it was
+
+`wardrobeAssetPath` built `<model.id>-<finish>-<view>.png`. The cut-out files are named by
+**artwork id** — `4.0`, the layout that was photographed — while a model carries the supplier's
+own code, `SRSTDH02`. Those two agree for the three walk-ins and for nothing else.
+
+**Seven of the ten models could only ever have requested a file that has never existed.** Not "did
+not exist yet" — has never existed, under any name, at any point in the project.
+
+### Why nothing caught it, and why nothing could have
+
+Not one of the project's checks was capable of seeing it:
+
+| Check | Why it was silent |
+|---|---|
+| `tsc -b` | Every reference resolves. The bug is in the *value* of a string |
+| `eslint` | No rule violated |
+| The route check | The page renders |
+| The image check | **No `<img>` is involved.** The path goes to `new Image()` in `loadAsset` |
+| The console watch | `loadAsset` resolves `null` by design. Nothing throws |
+| **The render baseline** | **The pixels are correct** — the fallback draws, and the fallback is what the baseline recorded |
+| **The network trace** | **Six requests, all 200.** No 404 to find |
+
+The last two are the ones that matter, because they are the checks specifically built to catch
+silent render failures, and both were **green and correct**. There was no 404 because there was no
+request. There was no wrong pixel because there was no draw.
+
+### THE GENERAL FORM
+
+> ### Asking THE TEST of a flagged code path returns nothing either way.
+>
+> **The flag defeats every check by preventing execution.** A check distinguishes working from
+> broken by observing behaviour. Behind an off flag there is no behaviour, so there is nothing to
+> observe and every check agrees — correctly, and uselessly.
+
+THE TEST asks *what would this output if it were broken?* For flagged code the honest answer is
+**"exactly what it outputs now, because it outputs nothing"** — and unlike every earlier instance,
+that is not a defect in the check. The check is fine. It is pointed at a thing that is not
+happening.
+
+**So this class cannot be fixed by improving checks.** Adding cases, tightening thresholds, making
+a rule fire — none of it reaches code that does not run. The remedy is different in kind.
+
+### The flag's own comment claimed the opposite, and that is the sharpest part
+
+```js
+/* Kept as one named constant rather than deleted branches so turning it back on
+ * is a one-line change and the code beneath cannot rot in the meantime. */
+const ROOM_VIEW_READY = false;
+```
+
+**"The code beneath cannot rot in the meantime" is the belief this bug disproves.** The reasoning
+is sound as far as it goes: a named constant keeps the branch compiling, so it cannot break the way
+commented-out code breaks — no stale syntax, no undefined identifiers, no drift in the type
+signature. `tsc` really does keep looking at it.
+
+**But `tsc` is exactly the check that could not see this.** The defect lives in agreement between a
+runtime string and a set of filenames, which is the class of thing no compiler checks and only
+execution reveals. The constant preserved everything a compiler can protect and nothing else, and
+the comment mistook the first for the whole.
+
+**A flag does not preserve code. It preserves the syntax of code and suspends every guarantee that
+comes from running it.**
+
+### What actually works
+
+**Give the flagged path a check that does not require the feature to be on.**
+
+That is what `check:wardrobe-assets` is. It does not render, does not navigate, does not need
+`ROOM_VIEW_READY` to be `true`. It reads the manifest and the model table as data and asserts that
+every file they name is on disk — a *static* question about a *runtime* fact. It would have caught
+this on the day the naming diverged.
+
+The pattern generalises: **behind a flag, verify the data, because you cannot verify the
+behaviour.** Filenames, ids, routes, config keys, the correspondence between two tables — these can
+all be checked without executing anything.
+
+**And date the flag.** A flag with no owner and no expected flip date is the "on unfreeze" problem
+from §12 in a different costume: a word that sounds like a condition while naming no date, no
+trigger and no owner. `docs/architecture/FEATURE_FLAGS.md` now carries every one in the project,
+what it gates, and whether the code behind it has ever run.
+
+### The rule
+
+**Code behind an off flag is unverified code, however good it looks and however green the build
+is.** Treat flipping a flag as shipping unreviewed work — because that is what it is — and check
+its data while it waits.
 
 ## The general lesson, which is not about renames
 
