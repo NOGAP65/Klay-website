@@ -95,11 +95,14 @@ export const STAGGER_SPAN_MS = 90;
  * out from the same two, so the tracks the browser draws and the widths the
  * card pins to cannot disagree.
  *
- * 340 up from 270 because of the photograph — a 1440 viewport less the 200px
- * rail fits four columns of about 290 at 270, and a 4:5 picture 290 wide is
- * smaller than the homepage's on the page whose whole job is showing product.
- * It also has to divide by two, since the open card spans two columns. */
-export const COLUMN_MIN = 340;
+ * 480, because the card is now a photograph AND a column of questions beside
+ * it — about half a page each. Ella, which this is measured against, runs 677 in
+ * a 1400 container; 480 puts two on our 1200 grid (1440 less the 200px rail) and
+ * drops to one below that, which is what a phone wants regardless.
+ *
+ * It was 340 when the card was a photograph with a name under it, and 270 before
+ * the picture was made the point of it. */
+export const COLUMN_MIN = 480;
 /** The gutter, and it widened when the cards lost their frames.
  *
  * 20 was set while every card carried a border, a radius and a shadow — three
@@ -136,6 +139,16 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
         flexDirection: 'column',
         height: '100%',
         boxSizing: 'border-box',
+        // THE EDGE COMES BACK, and Ella is why. It went when the photograph WAS
+        // the card and a frame round it was a line drawn between the customer
+        // and the product. A card that also holds a column of controls is a
+        // different object: two of them per row, side by side, and without an
+        // edge one card's questions read as the next one's.
+        background: tokens.card,
+        border: `1px solid ${lit ? tokens.lineStrong : tokens.lineFaint}`,
+        borderRadius: radius.lg,
+        padding: space.md,
+        transition: `${motion.card}, border-color 0.3s ease`,
         // NO CARD AT ALL WHEN CLOSED — no background, no border, no radius, no
         // padding, no shadow. That is not a stylistic preference, it is what
         // both reference sites measure: mondayhaircare and kookai both report
@@ -146,15 +159,59 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
         // The photograph is the card now. The hover signal moves onto the
         // picture, which already scales and warms — a lift needs something to
         // lift, and there is no longer a plate under the image to raise.
-        padding: 0,
-        transition: motion.card,
       }}
     >
-      {/* Only the picture and the name are inside the link, and the link is a
-          real one: on the shop, unlike the homepage, a product page is
-          somewhere a customer might actually want to go. The action below is
-          what opens the configurator. */}
-      <Link to={item.to} style={{ display: 'block', textDecoration: 'none', flex: '0 0 auto' }}>
+      {/* THE HEAD, spanning both columns. Stacked, the name sat between the
+          picture and the questions and read as a caption on the photograph;
+          across the top it does a name's job — says what this whole card is
+          about before either column starts.
+
+          The link is a real one: on the shop, unlike the homepage, a product
+          page is somewhere a customer might actually want to go. */}
+      <Link
+        to={item.to}
+        style={{ display: 'block', textDecoration: 'none', flex: '0 0 auto', marginBottom: space.sm }}
+      >
+        <div
+          style={{
+            fontFamily: tokens.body,
+            fontSize: 10,
+            fontWeight: 500,
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            color: tokens.inkSoft,
+          }}
+        >
+          {item.group}
+        </div>
+        <h3 style={{ ...typeScale.card, color: tokens.ink, marginTop: 2 }}>{item.name}</h3>
+        {item.tagline && (
+          <p
+            style={{
+              ...typeScale.micro,
+              letterSpacing: 'normal',
+              textTransform: 'none',
+              color: tokens.inkSoft,
+              margin: `${space.xs}px 0 0`,
+            }}
+          >
+            {item.tagline}
+          </p>
+        )}
+      </Link>
+
+      {/* THE TWO COLUMNS. */}
+      <div style={{ display: 'flex', gap: space.md, flex: '1 1 auto', minHeight: 0, alignItems: 'stretch' }}>
+        <Link
+          to={item.to}
+          style={{
+            textDecoration: 'none',
+            flex: '1 1 46%',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
         <div
           style={{
             position: 'relative',
@@ -178,7 +235,18 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             // and 0.67 the references run. A moderate portrait keeps the window
             // in frame — and objectPosition is per item for the few where the
             // subject sits off centre.
-            aspectRatio: '4 / 5',
+            // NO RATIO AT ALL — IT FILLS THE COLUMN. A fixed one in a column
+            // whose height is set by the questions beside it means the picture
+            // stops wherever the ratio says and the rest of the column is
+            // nothing; the last pass left a third of the left side empty. Taking
+            // the height from the card removes the dead space AND makes the
+            // photograph the biggest thing on the card again, which is where
+            // this started.
+            //
+            // The crop rules do the rest: cover, anchored high, so a room stays
+            // a room whatever shape the column turns out to be.
+            flex: '1 1 auto',
+            minHeight: 200,
             // A MISSING PHOTOGRAPH IS AN EMPTY FRAME, NOT A BLACK ONE. On the
             // old landscape tile the charcoal fallback was a smallish dark
             // rectangle; at 4:5 it is 435px tall and was out-shouting every
@@ -200,7 +268,10 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                 // shutters, awnings — hangs high on a wall. 35% keeps the
                 // window in frame. Per-item imagePosition still wins, which is
                 // what that field is for.
-                objectPosition: item.imagePosition ?? '50% 35%',
+                // Back toward the middle with the crop: 35% was pulling the
+                // frame up to keep a window in a TALL crop. A landscape one is
+                // already looking at the top half of the room.
+                objectPosition: item.imagePosition ?? '50% 45%',
                 display: 'block',
                 transform: lit ? 'scale(1.04)' : 'scale(1)',
                 filter: lit
@@ -229,38 +300,11 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
               references darken their product shots by nothing at all. */}
         </div>
 
-        {/* THE GROUP AND THE NAME, UNDER the picture rather than on it. Three
-            lines at most, and the price is not one of them: the panel prices
-            the actual configuration, and a from-figure twenty pixels above a
-            real one is a second, vaguer number. */}
-        <div
-          style={{
-            fontFamily: tokens.body,
-            fontSize: 10,
-            fontWeight: 500,
-            letterSpacing: '0.3em',
-            textTransform: 'uppercase',
-            color: tokens.inkSoft,
-            marginTop: space.md,
-          }}
-        >
-          {item.group}
-        </div>
-        <h3
-          style={{
-            ...typeScale.card,
-            // TWO LINES' WORTH, RESERVED, whether the name needs them or not —
-            // the actions are the strongest horizontal line in the grid and
-            // they have to land together across a row. A single name that wraps
-            // would otherwise drop its button below its neighbours'.
-            minHeight: `${2 * 1.1 * parseFloat(String(typeScale.card.fontSize))}px`,
-            color: tokens.ink,
-            marginTop: space.xs,
-          }}
-        >
-          {item.name}
-        </h3>
-      </Link>
+        {/* THE NAME IS NOT HERE ANY MORE — it moved to the head of the card,
+            above both columns. Under the picture it read as a caption on the
+            photograph; across the top it says which product the whole card is
+            about, which is a name's job. */}
+        </Link>
 
       {/* THE CONFIGURATION, UNDER THE PICTURE AND ALWAYS THERE.
           Dense mode: every question one line, answerable where it stands, no
@@ -269,13 +313,13 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
           It carries its own Add to cart, so the card needs no button of its
           own — the thing that used to say Shop Now was only ever a door to
           this. */}
-      {/* FILLS WHAT IS LEFT, so every Add to cart in a row lands on one line.
-          The grid stretches each card to the tallest in its row; without this
-          the configurator sized to its own questions and a five-row product put
-          its button 40px above a six-row neighbour's. The panel pushes its own
-          action bar to the bottom once it has the height. */}
-      <div style={{ marginTop: space.md, flex: '1 1 auto', display: 'flex', minHeight: 0 }}>
-        <RangeConfigurator item={item} sel={sel} onChange={onChange} dense />
+        {/* THE QUESTIONS, in the other column. It fills the height the
+            photograph set, and pushes its own price and Add to cart to the
+            bottom of it — so every card in a row ends on one line whatever it
+            asks. */}
+        <div style={{ flex: '1 1 54%', minWidth: 0, display: 'flex', minHeight: 0 }}>
+          <RangeConfigurator item={item} sel={sel} onChange={onChange} dense />
+        </div>
       </div>
     </article>
   );

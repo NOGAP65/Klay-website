@@ -120,10 +120,15 @@ function Chip({
   choice,
   selected,
   onSelect,
+  compact = false,
 }: {
   choice: ConfigChoice;
   selected: boolean;
   onSelect: () => void;
+  /** SIZED FOR A COLUMN, NOT A PANEL. 32px and 16px either side is right across
+   * the full width of a card; in the half-card column of the shop grid four of
+   * them wrap onto three rows and the card grows a row of height per field. */
+  compact?: boolean;
 }) {
   const { hover, bind } = useHover();
   return (
@@ -143,9 +148,9 @@ function Chip({
         // The one pill: height 32, 20 either side.
         display: 'inline-flex',
         alignItems: 'center',
-        height: 32,
+        height: compact ? 26 : 32,
         boxSizing: 'border-box',
-        padding: `0 ${space.md}px`,
+        padding: compact ? '0 10px' : `0 ${space.md}px`,
         borderRadius: radius.md,
         cursor: 'pointer',
         whiteSpace: 'nowrap',
@@ -265,6 +270,57 @@ function DenseField({
   const caret = encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="7" height="4" viewBox="0 0 7 4"><path d="M0 0l3.5 4L7 0z" fill="${tokens.inkSoft}"/></svg>`,
   );
+  // A ROW SHOWS ITS CHOICES UNLESS THERE ARE TOO MANY TO SHOW. Two, three or
+  // four answers fit on a line or two and are more use laid out than hidden —
+  // "Blockout Light filter Sunscreen Dual" is not longer than a select reading
+  // "Blockout" with a chevron, it just says more.
+  //
+  // A COLOUR CARD IS ALWAYS SHOWN, however many colours it has, because the
+  // control IS the information. Every other field can be summarised in its own
+  // words — Blockout means blockout — but "White" is a word standing in for a
+  // colour, and a customer choosing between fourteen of them is choosing between
+  // the squares, not the names. Hiding those behind a press hides the only thing
+  // on the row worth looking at.
+  //
+  // That leaves Location as the one dropdown, and it earns it: eight rooms plus
+  // an Other is a list rather than a set to compare, and it is the only field
+  // whose answer the product cannot guess.
+  const listed = field.kind === 'swatches' || field.choices.length <= 4;
+
+  if (listed) {
+    return (
+      <div>
+        <div style={{ ...labelStyle, marginBottom: space.xxs }}>{field.label}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {field.choices.map(c =>
+            field.kind === 'swatches' ? (
+              <Swatch
+                key={c.id}
+                choice={c}
+                selected={c.id === value}
+                onSelect={() => onChange(c.id)}
+              />
+            ) : (
+              <Chip
+                key={c.id}
+                choice={c}
+                selected={c.id === value}
+                onSelect={() => onChange(c.id)}
+                compact
+              />
+            ),
+          )}
+        </div>
+        {divider && (
+          <div
+            aria-hidden="true"
+            style={{ height: 1.5, margin: '9px 0', background: tokens.accent, opacity: 0.32 }}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: space.sm, minWidth: 0 }}>

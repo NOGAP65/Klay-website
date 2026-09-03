@@ -468,7 +468,7 @@ export default function ProductsPage() {
                     // rail allows: three at 1440, four above 1600, two on a
                     // phone. No breakpoint has to know about the rail's width.
                     gridTemplateColumns: narrow
-                      ? 'repeat(2, 1fr)'
+                      ? 'repeat(1, 1fr)'
                       // 340, UP FROM 270, and the photograph is why. At 270 a
                     // 1440 viewport less the 200px rail fits four columns of
                     // about 290 — and a 4:5 picture 290 wide is smaller than
