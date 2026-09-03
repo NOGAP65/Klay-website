@@ -46,7 +46,7 @@ const INSTAGRAM = site.instagram;
 
 const SHOTS = [
   { image: '/images/room-4.png', to: '/products/dusk', objectPosition: 'center 40%' },
-  { image: '/images/Soleil%20Sunscreen%20product%20image.png', to: '/products/veil', objectPosition: 'center' },
+  { image: '/images/products/soleil-sunscreen.png', to: '/products/veil', objectPosition: 'center' },
   { image: '/images/room-3.png', to: '/products?category=sheer-curtains', objectPosition: '62% 45%' },
   { image: '/images/lifestyle/room-kitchen.png', to: '/products/dusk', objectPosition: 'center 36%' },
   // Cropped hard left, onto the dark timber wardrobe. Centred, this frame is a

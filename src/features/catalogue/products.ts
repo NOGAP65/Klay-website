@@ -16,9 +16,16 @@
 // the renderer, the store and Canvas2DBlindRenderer all key off it. The two
 // are mapped here, once, so nothing downstream has to hardcode the pairing.
 //
-// NOTE ON IMAGE PATHS: the files in public/images have spaces in their names,
-// so every path here is %20-encoded. Renaming the assets would be the better
-// fix; until then these are the paths that actually resolve.
+// NOTE ON IMAGE PATHS — RESOLVED. This used to read: "the files in
+// public/images have spaces in their names, so every path here is %20-encoded.
+// Renaming the assets would be the better fix; until then these are the paths
+// that actually resolve."
+//
+// The better fix was done at the asset phase. The three product photographs
+// moved into images/products/ alongside the nine .webp cut-outs and were
+// renamed to match them — phoenix-blockout, soleil-sunscreen,
+// eclipse-dual-roller. No path in this file is encoded any more, and a filename
+// with a space in it is now the exception rather than the rule in public/.
 // ---------------------------------------------------------------------------
 
 import { RYNAMIC_COLOURS } from '../../data/products'
@@ -39,9 +46,9 @@ export interface Product {
   image: string
 }
 
-const BLOCKOUT_IMAGE = '/images/Phoenix%20Blockout%20product%20image.png'
-const SUNSCREEN_IMAGE = '/images/Soleil%20Sunscreen%20product%20image.png'
-const DUAL_IMAGE = '/images/Eclipse%20Dual%20Roller%20product%20image.png'
+const BLOCKOUT_IMAGE = '/images/products/phoenix-blockout.png'
+const SUNSCREEN_IMAGE = '/images/products/soleil-sunscreen.png'
+const DUAL_IMAGE = '/images/products/eclipse-dual-roller.png'
 
 export const PRODUCTS: Product[] = [
   {
