@@ -24,7 +24,7 @@
 // particular frame.
 // ---------------------------------------------------------------------------
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
@@ -58,6 +58,18 @@ const PAGE_MAX = 1440;
 
 const RAIL_WIDTH = 200;
 
+/** THE GRID'S OWN TWO NUMBERS, named because two things have to agree on them:
+ * the stylesheet that lays the grid out, and the arithmetic that works out how
+ * wide one column came out. Written twice, they drift, and a card pinned to a
+ * column width that is not the column's is a card that jumps when it opens.
+ *
+ * 340 up from 270 because of the photograph — a 1440 viewport less the 200px
+ * rail fits four columns of about 290 at 270, and a 4:5 picture 290 wide is
+ * smaller than the homepage's on the page whose whole job is showing product.
+ * It also has to divide by two, since the open card spans two columns. */
+const COLUMN_MIN = 340;
+const COLUMN_GAP = 20;
+
 /** Below this the rail becomes a drawer behind a Filters button. It is not the
  * site's 768px phone breakpoint: a 200px rail plus a three-card grid needs
  * about 1100px before the cards get too small to carry a photograph, which
@@ -84,6 +96,59 @@ export default function ProductsPage() {
    * see both can make — and because a customer reading two sets of options at
    * once is reading neither. */
   const [openId, setOpenId] = useState<string | null>(null);
+
+  /** THE CLOSE REVERSES THE OPEN rather than the panel vanishing and the box
+   * then shrinking behind it. Clearing openId on the click would unmount the
+   * panel on the spot and leave the width animating against an empty box, so
+   * this holds the card open at full width while the panel fades, and only then
+   * is the id cleared. Switching straight from one card to another skips the
+   * wait: the outgoing panel has somewhere to go. */
+  const [isClosing, setClosing] = useState(false);
+
+  const toggle = (id: string) => {
+    if (openId !== id) {
+      setClosing(false);
+      setOpenId(id);
+      return;
+    }
+    setClosing(true);
+  };
+
+  useEffect(() => {
+    if (!isClosing) return;
+    const t = window.setTimeout(() => {
+      setOpenId(null);
+      setClosing(false);
+    }, 260);
+    return () => window.clearTimeout(t);
+  }, [isClosing]);
+
+  /** ONE GRID COLUMN, IN PIXELS, from the grid's own width.
+   *
+   * COMPUTED, NOT MEASURED, and that is the point: reading it off a sibling has
+   * a race in it, because opening a card changes which items sit where and a
+   * measurement taken mid-transition returns a number between one column and
+   * two. auto-fill's rule is deterministic — as many minmax(COLUMN_MIN, 1fr)
+   * tracks as fit with the gaps between them — so running the same arithmetic
+   * the browser runs gives the answer with no window to be wrong in.
+   *
+   * The grid's own width has no such window either: opening a card does not
+   * change how wide the grid is. */
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [colWidth, setColWidth] = useState<number | null>(null);
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const measure = () => {
+      const w = el.clientWidth;
+      const cols = Math.max(1, Math.floor((w + COLUMN_GAP) / (COLUMN_MIN + COLUMN_GAP)));
+      setColWidth((w - (cols - 1) * COLUMN_GAP) / cols);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [narrow]);
 
   /** EVERY CARD'S SELECTION, KEPT BY ID.
    *
@@ -460,6 +525,7 @@ export default function ProductsPage() {
 
               {items.length > 0 ? (
                 <div
+                  ref={gridRef}
                   style={{
                     display: 'grid',
                     // auto-fill rather than a fixed column count, so the grid
@@ -478,7 +544,7 @@ export default function ProductsPage() {
                     // It also has to divide by two: the open card spans two
                     // columns, so a row that fits three closed fits one open
                     // plus one closed with no orphan.
-                      : 'repeat(auto-fill, minmax(340px, 1fr))',
+                      : `repeat(auto-fill, minmax(${COLUMN_MIN}px, 1fr))`,
                     // Columns tight so adjacent photographs read as one wall;
                     // rows wide so the price of one product does not float
                     // midway to the picture below it.
@@ -487,8 +553,8 @@ export default function ProductsPage() {
                     // to stop one card's price floating toward the picture below
                     // it; with everything inside the tile there is nothing to
                     // separate, and an even gap reads as a wall of photographs.
-                    columnGap: narrow ? 12 : 20,
-                    rowGap: narrow ? 12 : 20,
+                    columnGap: narrow ? 12 : COLUMN_GAP,
+                    rowGap: narrow ? 12 : COLUMN_GAP,
                   }}
                 >
                   {items.map(item => (
@@ -496,7 +562,9 @@ export default function ProductsPage() {
                       key={item.id}
                       item={item}
                       isOpen={openId === item.id}
-                      onToggle={() => setOpenId(id => (id === item.id ? null : item.id))}
+                      onToggle={() => toggle(item.id)}
+                      colWidth={colWidth}
+                      isShown={openId === item.id && !isClosing}
                       sel={sel[item.id] ?? defaultSelection(item)}
                       onChange={(fieldId, choiceId) =>
                         setSel(prev => ({

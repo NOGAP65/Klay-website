@@ -33,6 +33,7 @@
 // a phone, for the same reason.
 // ---------------------------------------------------------------------------
 
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { radius, tokens, motion, shadow, space, type as typeScale } from '../theme';
@@ -53,6 +54,19 @@ export interface ShopCardProps {
   /** Two columns across rather than three or more — the panel goes underneath
    * instead of beside. */
   isNarrow: boolean;
+  /** THE WIDTH OF ONE GRID COLUMN, in pixels, computed by the page from the
+   * grid's own width — see COLUMN_MIN there.
+   *
+   * The card is pinned to it so that opening does not resize the card: the
+   * growth is the panel arriving beside something that has not moved. Null
+   * before the first measurement, when the card falls back to filling its
+   * slot. */
+  colWidth: number | null;
+  /** True while the panel should be at full width. Distinct from `isOpen`,
+   * which stays true through the closing transition so the box has something to
+   * shrink back into — clearing them together would unmount the panel and leave
+   * the width animating against nothing. */
+  isShown: boolean;
 }
 
 /** How far the card rises under the pointer. The row's number, so the two
@@ -66,10 +80,44 @@ const LIFT = 3;
 const VIGNETTE =
   'radial-gradient(118% 88% at 50% 42%, rgba(29,29,29,0) 42%, rgba(29,29,29,0.08) 70%, rgba(29,29,29,0.20) 100%)';
 
-export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow }: ShopCardProps) {
+export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colWidth, isShown }: ShopCardProps) {
   // main's useHover returns `hover`; the refactor branch renamed it isHovered.
   const { hover: isHovered, bind } = useHover();
   const lit = isHovered || isOpen;
+
+  /** MOUNTED SHUT, THEN OPENED — and without this the open does not animate at
+   * all while the close does, which is exactly what it looked like.
+   *
+   * A CSS transition needs two values to move between. The open branch is a
+   * different element from the closed card, so it MOUNTS with width already at
+   * the full span: there is no previous value, nothing transitions, and the box
+   * is 727px wide on the first frame. Measured frame by frame, opening sat at
+   * 727 from t=0 while closing eased 446 → 343 over 450ms — one direction
+   * animating and the other not.
+   *
+   * So it mounts at one column and is told to open on the next frame, which
+   * gives the transition its start value. Two frames rather than one: React
+   * can commit and the browser can paint within a single rAF, and a style
+   * applied in the same paint as the mount is still the initial value. */
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    if (!isOpen) {
+      setEntered(false);
+      return;
+    }
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => setEntered(true));
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
+  }, [isOpen]);
+
+  /** Full width only once it has both been told to open and had its first frame
+   * at one column. Closing clears isShown, which runs the same transition back. */
+  const wide = isShown && entered;
 
   // ONE OBJECT WHEN OPEN, and the card gives up its own chrome to make that
   // true. Open, the border, the radius, the shadow and the lift all belong to
@@ -238,30 +286,56 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow }: Sh
 
   if (!isOpen) return card;
 
+  // THE SLOT JUMPS; NOTHING VISIBLE DOES. The grid item takes its two columns
+  // on the tick the state changes — `grid-column` cannot be animated — but it
+  // carries no border, no background and no shadow, so there is nothing on it
+  // to be seen jumping. Everything visible is on the box inside it, which
+  // animates its own width across the space the span just made.
   return (
     <div
       style={{
-        // THE SPAN IS THE WHOLE MECHANISM. Two columns where there are columns
-        // to take, the full row where there are not.
         gridColumn: isNarrow ? '1 / -1' : 'span 2',
         display: 'flex',
-        flexDirection: isNarrow ? 'column' : 'row',
-        alignItems: 'stretch',
-        // NO GAP. The two halves meet; a channel between them would be the one
-        // thing saying they are two objects.
-        boxSizing: 'border-box',
-        padding: space.xxs,
-        background: tokens.card,
-        // THE WHOLE SHAPE WEARS THE ACCENT, enclosing the card and the panel
-        // together, so the edge grows with the card rather than being a second
-        // thing drawn around a second box.
-        border: `1px solid ${tokens.accent}`,
-        borderRadius: radius.lg,
-        boxShadow: shadow.lift,
-        overflow: 'hidden',
       }}
     >
-      <div style={{ flex: isNarrow ? '0 0 auto' : '1 1 0', minWidth: 0 }}>{card}</div>
+      <div
+        style={{
+          // ONE COLUMN TO THE FULL SPAN. Stacked, there is only ever one column
+          // to be, so it opens downward instead and the width holds still.
+          width: isNarrow || wide || colWidth === null ? '100%' : colWidth,
+          display: 'flex',
+          flexDirection: isNarrow ? 'column' : 'row',
+          alignItems: 'stretch',
+          // NO GAP. The two halves meet; a channel between them would be the one
+          // thing saying they are two objects.
+          boxSizing: 'border-box',
+          padding: space.xxs,
+          background: tokens.card,
+          // THE WHOLE SHAPE WEARS THE ACCENT, enclosing the card and the panel
+          // together, so the edge grows with the card rather than being a second
+          // thing drawn around a second box.
+          border: `1px solid ${tokens.accent}`,
+          borderRadius: radius.lg,
+          boxShadow: shadow.lift,
+          overflow: 'hidden',
+          // The row's own duration and easing, so the two surfaces move alike.
+          transition: 'width 0.45s cubic-bezier(0.22, 1, 0.36, 1)',
+        }}
+      >
+        {/* PINNED, so the card does not resize while the box grows around it.
+            Less the box's own frame and border, which the closed card carries
+            itself — the card's CONTENT is then exactly as wide open as shut,
+            which is the whole point of pinning it. */}
+        <div
+          style={{
+            flex: isNarrow || colWidth === null
+              ? '1 1 auto'
+              : `0 0 ${colWidth - 2 * space.xxs - 2}px`,
+            minWidth: 0,
+          }}
+        >
+          {card}
+        </div>
 
       {/* NO BORDER, AND SQUARE ON THE JOIN. A hairline all the way round drew
           the panel as its own box, and the inside edge in particular put a rule
@@ -271,16 +345,23 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow }: Sh
           It fades and slides out of the card rather than appearing: the row can
           animate its slot widening, a grid item cannot, so the panel does that
           work itself. klay-panel-in is the row's own keyframe. */}
-      <div
-        style={{
-          flex: '1 1 0',
-          minWidth: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          animation: 'klay-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both',
-        }}
-      >
-        <RangeConfigurator item={item} sel={sel} onChange={onChange} fill />
+        <div
+          style={{
+            flex: '1 1 0',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            // FADES IN BEHIND THE WIDTH, not with it. The box takes 450ms to
+            // open; a panel fading over the same 450ms is visible while the
+            // space it is in is still half made, which reads as two things
+            // happening at once. Held back until the width has nearly settled,
+            // it reads as one: the card opens, then the controls are there.
+            opacity: wide ? 1 : 0,
+            transition: 'opacity 0.2s ease 0.26s',
+          }}
+        >
+          <RangeConfigurator item={item} sel={sel} onChange={onChange} fill />
+        </div>
       </div>
     </div>
   );
