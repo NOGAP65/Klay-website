@@ -1,4 +1,4 @@
-﻿// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // THE WARDROBE RENDERER.
 //
 // BUILT-INS ARE MODELLED, NOT PHOTOGRAPHED. The carcass is built in
@@ -34,8 +34,8 @@
 // ---------------------------------------------------------------------------
 
 import { useEffect, useRef } from 'react';
-import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, wardrobeColour, wardrobeCutoutFor, FINISH_TEXTURE, FINISH_TILE_MM, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM } from './wardrobes';
-import { projectorFromQuad, columnsFor, sidePanelsFor, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
+import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, wardrobeColour, wardrobeCutoutFor, FINISH_TEXTURE, FINISH_TILE_MM, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM, wardrobeHeight, wardrobeDepth } from './wardrobes';
+import { projectorFromQuad, columnsFor, sidePanelsFor, hasFacePost, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
 import { buildSliceMap, sliceMapper, type SliceMap } from './wardrobeSlices';
 import { profilePhoto, relightCutout, applyGrain, makeGrainTile, isWoodFinish, sampleBoardColour } from './wardrobeComposite';
 import { DEFAULT_HANDLE_FINISH, hardwareSpec, type HardwareSpec } from './wardrobeHardware';
@@ -842,9 +842,19 @@ export function buildCarcass(
   /** The pull's profile and colour. Defaulted so the two callers that do not
    * care — and any test — need not know the hardware range exists. */
   hardware: HardwareSpec = hardwareSpec(DEFAULT_HANDLE_FINISH),
+  /** Built into an opening, or standing against a flat wall. Decides whether
+   * the run has end panels — see sidePanelsFor. */
+  recessed = true,
 ): { boxes: Box[]; compartments: Compartment[] } {
-  const D = WARDROBE_DEPTH_MM;
-  const H = WARDROBE_HEIGHT_MM;
+  // THE MODEL'S OWN HEIGHT AND DEPTH, not the robe range's constants.
+  //
+  // The three robes are 2016 x 500 and the linen shelving is 1650 x 447 — a
+  // different product in the same catalogue, and the one thing here that cannot
+  // read the range constant. Asked through the helpers so no call site has to
+  // know which family it is holding.
+  const model = wardrobeModelById(layoutId);
+  const D = wardrobeDepth(model);
+  const H = wardrobeHeight(model);
   const boxes: Box[] = [];
   const compartments: Compartment[] = [];
 
@@ -879,7 +889,7 @@ export function buildCarcass(
   // AND ONLY THE ENDS THAT HAVE ONE. These are internals fitted into an
   // opening, so the walls are the ends of the run — a panel is drawn at an end
   // only where a tower sits there. See sidePanelsFor.
-  const sides = sidePanelsFor(layoutId);
+  const sides = sidePanelsFor(layoutId, recessed);
   if (sides.left) boxes.push({ x: 0, y: 0, z: 0, w: BOARD_MM, h: H, d: D, plain: true });
   if (sides.right) boxes.push({ x: widthMm - BOARD_MM, y: 0, z: 0, w: BOARD_MM, h: H, d: D, plain: true });
   // AND NO BASE AT ALL. This is the correction that matters most, and the
@@ -965,6 +975,24 @@ export function buildCarcass(
     const sx = sides.left ? BOARD_MM : 0;
     const sw = widthMm - sx - (sides.right ? BOARD_MM : 0);
     shelf(sx, sw, H - BOARD_MM);
+
+    // AND SHELVING STANDS ON THE FLOOR. The robes are wall-hung — that is the
+    // correction the supplied renders forced — but linen shelving is a unit
+    // with a bottom shelf you put a basket on, and the deck's own photograph
+    // shows it closed at the base. Only this family gets one.
+    if (model.kind === 'shelving') shelf(sx, sw, 0);
+
+    // THE FACE POST, on the codes that have one. A front upright at mid-span,
+    // sitting on the FRONT edge rather than running the full depth: it is what
+    // lets a 3600 shelf span without dipping, and a full-depth divider would
+    // make two cupboards of what is meant to be one open run. See hasFacePost.
+    if (hasFacePost(layoutId)) {
+      boxes.push({
+        x: sx + sw / 2 - BOARD_MM / 2, y: 0, z: D - BOARD_MM,
+        w: BOARD_MM, h: H, d: BOARD_MM,
+        plain: true,
+      });
+    }
   }
 
   // WHAT HOLDS THE RUN UP WHERE THERE IS NO TOWER.
@@ -978,12 +1006,12 @@ export function buildCarcass(
   //
   // Tower layouts keep their real dividers — a tower has a carcass side, and
   // the board between it and the next bay is that side.
-  const towered = columnsFor(layoutId, widthMm).some(c => c.fill.kind !== 'hang' && c.fill.kind !== 'hang2');
+  const towered = columnsFor(layoutId, widthMm, recessed).some(c => c.fill.kind !== 'hang' && c.fill.kind !== 'hang2');
 
   // Resolved in millimetres, not as fractions of the cabinet: a drawer tower is
   // 507 wide in every layout in the range, and only the bays either side of it
   // take up the slack. See MODULE_WIDTH_MM.
-  const columns = columnsFor(layoutId, widthMm);
+  const columns = columnsFor(layoutId, widthMm, recessed);
   columns.forEach((column, i) => {
     const cw = column.widthMm;
     if (i < columns.length - 1) {

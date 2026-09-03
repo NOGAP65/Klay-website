@@ -4,8 +4,8 @@ import { radius, tokens, space, type as typeScale } from '../theme';
 import { formatAUD, isBlindType } from '../lib/pricing';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
 import {
-  WARDROBE_COLOURS, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM,
-  modelsOfKind, wardrobeModelById,
+  WARDROBE_COLOURS,
+  modelsOfKind, wardrobeModelById, wardrobeHeight, wardrobeDepth,
 } from './wardrobes';
 import { HANDLE_FINISHES, handleFinish } from './wardrobeHardware';
 import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
@@ -553,11 +553,19 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 from different viewpoints and placed by different rules, and the
                 layouts on offer depend on which you are buying. Asking in that
                 order is what makes the layout list mean something. */}
+            {/* SHELVING IS THE THIRD KIND, and it is a different product rather
+                than a third wardrobe: 1650 high and 447 deep against the robes'
+                2016 x 500, four codes of its own, and no hanging in it at all.
+                It sits under the same picker because the question a customer is
+                answering is the same one — what am I having built into this
+                space — and because everything below adapts to whichever they
+                pick. See the Lin Models table in the supplier's deck. */}
             <Field onDark={onDark} label="Type">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {([
                   ['built-in', 'Built-in'],
                   ['walk-in', 'Walk-in'],
+                  ['shelving', 'Shelving'],
                 ] as const).map(([id, label]) => (
                   <Pill
                     onDark={onDark}
@@ -570,7 +578,36 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               </div>
             </Field>
 
-            {/* COLOUR SITS SECOND, right under Type. It is the question people
+            {/* WHERE IT GOES, and it is the second question because it changes
+                the product rather than the picture: off a recess the run gains
+                a full side panel at each end, which is two more panels on the
+                quote. See sidePanelsFor.
+
+                VISUALISER ONLY. The range card does not ask it — the same SKU
+                goes in either way, and this is a fact about the customer's room
+                rather than a variant to shop for. */}
+            <Field
+              onDark={onDark}
+              label="Fitting"
+              caption={store.wardrobeRecessed ? 'Open to the walls' : 'Panels both ends'}
+            >
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+                {([
+                  [true, 'In a recess'],
+                  [false, 'Against a wall'],
+                ] as const).map(([id, label]) => (
+                  <Pill
+                    onDark={onDark}
+                    key={label}
+                    label={label}
+                    active={store.wardrobeRecessed === id}
+                    onClick={() => store.setWardrobeRecessed(id)}
+                  />
+                ))}
+              </div>
+            </Field>
+
+            {/* COLOUR SITS THIRD, under Type and Fitting. It is the question people
                 arrive with — a customer knows they want white or walnut long
                 before they know which internal arrangement they want — and
                 putting it after the model and the width made them scroll past
@@ -645,9 +682,13 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 onDark={onDark}
                 value={store.wardrobeWidthMm}
                 onChange={w => store.setWardrobeWidthMm(w)}
+                // THE MODEL'S OWN BOX. Shelving is 1650 x 447 and the robes are
+                // 2016 x 500, so the two fixed dimensions are read off the SKU
+                // rather than off the range constants — otherwise picking a
+                // linen code quoted it at a wardrobe's height.
                 options={wardrobeModelById(store.wardrobeModel).widths.map(w => ({
                   value: w,
-                  label: `${w} × ${WARDROBE_HEIGHT_MM} × ${WARDROBE_DEPTH_MM} mm`,
+                  label: `${w} × ${wardrobeHeight(wardrobeModelById(store.wardrobeModel))} × ${wardrobeDepth(wardrobeModelById(store.wardrobeModel))} mm`,
                 }))}
               />
             </Field>

@@ -42,6 +42,8 @@ export interface WardrobeRoomRendererProps {
   widthMm?: number;
   /** The metalwork's finish — see wardrobeHardware. */
   handleFinish?: string;
+  /** Built into an opening, or standing against a wall. */
+  recessed?: boolean;
 }
 
 /** How large the offscreen render may get.
@@ -212,6 +214,7 @@ export default function WardrobeRoomRenderer({
   colourName,
   widthMm,
   handleFinish,
+  recessed,
 }: WardrobeRoomRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -314,6 +317,7 @@ export default function WardrobeRoomRenderer({
         widthMm: drawWidthMm,
         forRoom: true,
         handleFinish,
+        recessed,
       });
       if (cancelled) {
         built.dispose();
@@ -391,7 +395,7 @@ export default function WardrobeRoomRenderer({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoUrl, modelId, colourName, widthMm, handleFinish, JSON.stringify(corners)]);
+  }, [photoUrl, modelId, colourName, widthMm, handleFinish, recessed, JSON.stringify(corners)]);
 
   return <canvas ref={canvasRef} style={{ width: '100%', height: 'auto', display: 'block' }} />;
 }

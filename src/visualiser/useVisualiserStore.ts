@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
 import { pricePerBlind, type BlindType } from '../lib/pricing';
-import { DEFAULT_WIDTH_MM, wardrobeModelById } from './wardrobes';
+import { DEFAULT_WIDTH_MM, wardrobeModelById, type WardrobeKind } from './wardrobes';
 import { DEFAULT_HANDLE_FINISH } from './wardrobeHardware';
 
 type Point = [number, number];
@@ -219,7 +219,7 @@ interface VisualiserStore {
   /** Built-in or walk-in. Chosen before the layout, because the two are
    * different products drawn from different viewpoints and placed by different
    * rules — see Canvas2DWardrobeRenderer. */
-  wardrobeKind: 'built-in' | 'walk-in';
+  wardrobeKind: WardrobeKind;
   /** Which Forma layout is shown. Always one belonging to wardrobeKind. */
   wardrobeModel: string;
   /** Finish name, resolved against WARDROBE_COLOURS in wardrobes.ts. Separate
@@ -227,6 +227,18 @@ interface VisualiserStore {
    * different cards, and sharing one field made switching category rewrite the
    * other product's choice. */
   wardrobeColour: string;
+
+  /** BUILT INTO AN OPENING, OR STANDING AGAINST A WALL.
+   *
+   * VISUALISER ONLY, and deliberately not a field on the range card. It is not
+   * a variant of the product — the same SKU goes in either way — it is a fact
+   * about the customer's room, and the only thing it settles is whether the run
+   * needs end panels. That is a question for someone looking at a picture of
+   * their own wall, not for someone picking a model off a card.
+   *
+   * Recessed is the default because it is what the range is designed for and
+   * what every photograph in the supplier's deck shows. */
+  wardrobeRecessed: boolean;
 
   /** The finish's NAME, matching HANDLE_FINISHES — the same convention
    * wardrobeColour uses, so what is stored is what gets written on the quote
@@ -283,9 +295,10 @@ interface VisualiserStore {
    * choice. */
   wardrobeWidthMm: number;
   setWardrobeWidthMm: (mm: number) => void;
-  setWardrobeKind: (kind: 'built-in' | 'walk-in') => void;
+  setWardrobeKind: (kind: WardrobeKind) => void;
   setWardrobeModel: (id: string) => void;
   setWardrobeColour: (name: string) => void;
+  setWardrobeRecessed: (on: boolean) => void;
   setWardrobeHandleFinish: (name: string) => void;
   setCurtainMount: (mount: CurtainMount) => void;
   setCurtainSize: (size: CurtainSize) => void;
@@ -312,6 +325,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   wardrobeKind: 'built-in',
   wardrobeModel: 'SRSTDH02',
   wardrobeColour: 'Matt Wardrobe White',
+  wardrobeRecessed: true,
   wardrobeHandleFinish: DEFAULT_HANDLE_FINISH,
   // 3.0's first width, matching wardrobeModel above.
   wardrobeWidthMm: DEFAULT_WIDTH_MM,
@@ -421,6 +435,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
       return { wardrobeModel: id, wardrobeWidthMm: nearest };
     }),
   setWardrobeColour: (name) => set({ wardrobeColour: name }),
+  setWardrobeRecessed: (on) => set({ wardrobeRecessed: on }),
   // Flat sets, like the rest of the wardrobe fields: a wardrobe is one piece of
   // joinery for the room rather than something each window carries, so these do
   // not writeThrough. See the note on setWardrobeKind.

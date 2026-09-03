@@ -47,7 +47,7 @@ import { cutoutFor, type WardrobeCutout } from './wardrobeCutouts';
 
 const DIR = '/images/Textures/wardrobes';
 
-export type WardrobeKind = 'built-in' | 'walk-in';
+export type WardrobeKind = 'built-in' | 'walk-in' | 'shelving';
 /** Which render to draw. Walk-ins have only the one. */
 export type WardrobeView = 'front' | 'angle' | 'interior';
 
@@ -68,6 +68,13 @@ export interface WardrobeModel {
    * quote, so it is carried rather than reconstructed from the name. */
   code?: string;
   kind: WardrobeKind;
+  /** HOW TALL THIS SKU IS, where it is not the robe range's 2016.
+   *
+   * The linen shelving is 1650 — a different product at a different height, and
+   * the one thing in here that cannot take the range constant. Optional so the
+   * three robes say nothing and keep reading as one height; defaulted through
+   * wardrobeHeight() so nothing has to remember which. */
+  heightMm?: number;
   /** Cabinet widths this SKU is made in, mm. Not shared across the range: a
    * tower is 507 of the cabinet, so the tower products start at 1500 where the
    * divider-only one starts at 1200. */
@@ -169,6 +176,62 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
     artworkId: '6.0',
     legacyFile: 'Forma Wardrobe 6.0 Sticker.png',
   },
+  // --- LINEN SHELVING ------------------------------------------------------
+  //
+  // A DIFFERENT PRODUCT AT A DIFFERENT HEIGHT, straight off the deck's Lin
+  // Models table: four codes, all "4 x 447mm Shelves", all 1650 high, each made
+  // in its own set of widths. Three of them carry a Face Post — a vertical
+  // upright on the front edge, which is what lets the wide ones span without
+  // the shelves dipping.
+  //
+  // The widths are the supplier's and they do not overlap by accident: LIN01 is
+  // the narrow pair, LIN02 the middle three, and LIN05 and LINBR02 the four
+  // wide ones. A 3600 shelf is not a scaled-up 900 — it is a different code.
+  {
+    id: 'LIN01',
+    name: 'Linen 1',
+    layout: '4 shelves',
+    code: 'LIN01',
+    kind: 'shelving',
+    heightMm: 1650,
+    widths: [900, 1200],
+    artworkId: null,
+    legacyFile: '',
+  },
+  {
+    id: 'LIN02',
+    name: 'Linen 2',
+    layout: '4 shelves + face post',
+    code: 'LIN02',
+    kind: 'shelving',
+    heightMm: 1650,
+    widths: [1500, 1800, 2400],
+    artworkId: null,
+    legacyFile: '',
+  },
+  {
+    id: 'LIN05',
+    name: 'Linen 5',
+    layout: '4 shelves + face post',
+    code: 'LIN05',
+    kind: 'shelving',
+    heightMm: 1650,
+    widths: [2700, 3000, 3300, 3600],
+    artworkId: null,
+    legacyFile: '',
+  },
+  {
+    id: 'LINBR02',
+    name: 'Linen BR2',
+    layout: '4 shelves + face post',
+    code: 'LINBR02',
+    kind: 'shelving',
+    heightMm: 1650,
+    widths: [2700, 3000, 3300, 3600],
+    artworkId: null,
+    legacyFile: '',
+  },
+
   // WALK-INS ARE A DIFFERENT FAMILY and are left as they were — the catalogue
   // above is the built-in robe range (BIR), and these are not in it.
   { id: '7.0L', name: 'Forma 7.0L', layout: 'L-shaped walk-in', kind: 'walk-in', widths: [2400, 3000], artworkId: '7.0L', legacyFile: 'Forma Wardrobe 7.0L Sticker.png' },
@@ -177,6 +240,18 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
 ];
 
 export const modelsOfKind = (kind: WardrobeKind) => WARDROBE_MODELS.filter(m => m.kind === kind);
+
+/** This SKU's height. The robe range is 2016 and says nothing; the linen
+ * shelving is 1650 and says so. One place to ask, so no call site has to know
+ * which family it is holding. */
+export const wardrobeHeight = (m: { heightMm?: number }): number =>
+  m.heightMm ?? WARDROBE_HEIGHT_MM;
+
+/** The shelving is 447 deep — the shelf itself, off the deck — against the
+ * robe's 500. Same reasoning as the height. */
+export const WARDROBE_SHELF_DEPTH_MM = 447;
+export const wardrobeDepth = (m: { kind: WardrobeKind }): number =>
+  m.kind === 'shelving' ? WARDROBE_SHELF_DEPTH_MM : WARDROBE_DEPTH_MM;
 
 /** EVERY WIDTH THE BUILT-IN RANGE IS MADE IN, deduplicated and in order.
  *
