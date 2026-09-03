@@ -30,6 +30,7 @@ import { buildSliceMap, sliceMapper } from './wardrobeSlices';
 import { sampleBoardColour } from './wardrobeComposite';
 import { makeWhiteBoardMaps, WHITE_TILE_MM } from './whiteBoardTexture';
 import { DEFAULT_HANDLE_FINISH, handleFinish, hardwareSpec } from './wardrobeHardware';
+import { DEFAULT_WALL_COLOUR } from './wallColours';
 
 /** Millimetres to metres, so the scene is in real units and a shadow camera
  * sized in metres means something. */
@@ -80,6 +81,9 @@ export interface WardrobeSceneOpts {
   /** Built into an opening, or standing against a flat wall. Changes the
    * joinery (see sidePanelsFor) and the room it is drawn in. */
   recessed?: boolean;
+  /** The room's wall colour, hex. Paints the surround and, shaded down, the
+   * back of the recess — see wallColours. */
+  wallColour?: string;
 }
 
 export interface WardrobeScene {
@@ -119,6 +123,7 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   const { renderer, modelId, colourName, widthMm } = opts;
   const handleFinishName = opts.handleFinish ?? DEFAULT_HANDLE_FINISH;
   const recessed = opts.recessed ?? true;
+  const wallHex = opts.wallColour ?? DEFAULT_WALL_COLOUR;
 
   const model = wardrobeModelById(modelId);
   // THE MODEL'S OWN BOX. The linen shelving is 1650 x 447 against the robes'
@@ -548,9 +553,10 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
 
   function buildSurround() {
   const surroundMat = new THREE.MeshStandardMaterial({
-    // Plasterboard, not board: a touch cooler and flatter than the cabinet so
-    // the joinery still reads as a different material inside its own opening.
-    color: new THREE.Color(0xf2f1ee),
+    // The customer's own wall. Plasterboard rather than board — flatter than
+    // the cabinet, so the joinery still reads as a different material inside
+    // its own opening whatever colour the wall is painted.
+    color: new THREE.Color(wallHex),
     roughness: 0.94,
     metalness: 0.0,
   });
@@ -618,8 +624,11 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // Set a hair behind the carcass so no shelf ever z-fights with it, and darker
   // than the wall face, because the back of a 500mm recess lit only from the
   // room in front of it IS darker. That falloff is most of what says depth.
+  // THE SAME PAINT, SHADED — a recess is the same wall seen with less light on
+  // it, not a different colour. Multiplied rather than mixed toward grey, so a
+  // deep green recess stays green instead of drifting to sludge.
   const backMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(0xdedbd6),
+    color: new THREE.Color(wallHex).multiplyScalar(0.88),
     roughness: 0.96,
     metalness: 0.0,
   });
@@ -651,7 +660,16 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   const floorGeo = new THREE.PlaneGeometry((widthMm + 2 * outX) * MM, floorD * MM);
   floorGeo.rotateX(-Math.PI / 2);
   floorGeo.translate((widthMm / 2) * MM, 0, (-D + floorD / 2) * MM);
-  const floor = new THREE.Mesh(floorGeo, backMat);
+  // THE FLOOR IS NOT PAINTED. It keeps its own neutral whatever the walls are
+  // — repainting it with the wall colour would say the customer's floor is the
+  // same as their wall, which is true in no house.
+  const floorMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(0xd8d4cd),
+    roughness: 0.96,
+    metalness: 0.0,
+  });
+  disposables.push(floorMat);
+  const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.receiveShadow = true;
   disposables.push(floorGeo);
   root.add(floor);

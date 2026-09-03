@@ -38,6 +38,8 @@ export interface Wardrobe3DProps {
   handleFinish?: string;
   /** Built into an opening, or standing against a wall. */
   recessed?: boolean;
+  /** The room's wall colour, hex. */
+  wallColour?: string;
 }
 
 /** How far the view may be turned off dead-ahead. Measured rather than picked:
@@ -52,6 +54,7 @@ export default function Wardrobe3D({
   background = '#EFEDE8',
   handleFinish,
   recessed,
+  wallColour,
 }: Wardrobe3DProps) {
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -79,13 +82,19 @@ export default function Wardrobe3D({
     let disposed = false;
     let cleanup = () => {};
 
-    buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm, handleFinish, recessed })
+    buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm, handleFinish, recessed, wallColour })
       .then(built => {
         if (disposed) {
           built.dispose();
           return;
         }
-        built.scene.background = new THREE.Color(background);
+    // THE PAGE BEHIND THE ROOM TAKES THE WALL COLOUR TOO. The scene's own
+    // background is what shows past the ends of the wall and above the ceiling
+    // line; left at the panel's off-white it framed a repainted room in a
+    // differently coloured void, which is the one thing that would make the
+    // comparison useless. `background` stays the fallback for a caller that
+    // has not been given a colour.
+        built.scene.background = new THREE.Color(wallColour ?? background);
 
         const resize = () => {
           const w = host.clientWidth || 800;
@@ -179,7 +188,7 @@ export default function Wardrobe3D({
     // once: left off, the picker wrote to the store, the store re-rendered this
     // component, and the effect declined to run — which looks exactly like a
     // control that does nothing.
-  }, [modelId, colourName, selectedWidthMm, background, handleFinish, recessed]);
+  }, [modelId, colourName, selectedWidthMm, background, handleFinish, recessed, wallColour]);
 
   return <div ref={hostRef} style={{ width: '100%', height: '100%', minHeight: 420 }} />;
 }

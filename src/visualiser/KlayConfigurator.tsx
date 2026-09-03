@@ -1501,6 +1501,7 @@ export default function KlayConfigurator({
               selectedWidthMm={store.wardrobeWidthMm}
               handleFinish={store.wardrobeHandleFinish}
               recessed={store.wardrobeRecessed}
+              wallColour={store.wardrobeWallColour}
             />
           ) : isJoinery(store.productCategory) && confirmedArea ? (
             <WardrobeRoomRenderer
@@ -1511,6 +1512,7 @@ export default function KlayConfigurator({
               widthMm={store.wardrobeWidthMm}
               handleFinish={store.wardrobeHandleFinish}
               recessed={store.wardrobeRecessed}
+              wallColour={store.wardrobeWallColour}
             />
           ) : store.productCategory === 'curtain' && confirmedArea ? (
             <Canvas2DCurtainRenderer
