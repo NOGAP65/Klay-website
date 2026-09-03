@@ -372,3 +372,53 @@ them for human comparison and are gitignored — 830 KB each and re-written on e
 
 **Five cases is a floor, not a ceiling.** It covers the blind path and the curtain path across
 four fabric types, which is what U1–U3 touch. **U4 needs the wardrobe cases first.**
+
+## EVERY `baseline:update` COMMIT STATES WHAT CHANGED AND WHY IT WAS INTENDED
+
+> **An update with no stated reason is reverted on sight.**
+
+`npm run baseline:update` makes red go away by agreeing with whatever is on screen. It is the one
+command in this project that can silence the only check able to see a wrong picture, and it takes
+four seconds.
+
+**So the commit message carries the justification, not the diff.** A changed signature file shows
+*that* the picture moved; it cannot show whether anyone meant it to. Required in the message:
+
+- **what visually changed** — "the fold pitch on sheers is tighter", "the bottom bar is 2px deeper";
+- **why it was intended** — the change that caused it, by name;
+- **which cases moved, and by how much** — the `n of 2304 cells (x%)` line the run printed.
+
+**A signature update in a commit that claims to be a move is a contradiction on its face.** Moving
+is not changing; if a file only moved, the render is identical and the baseline stays green. **A
+red during a move phase means the move was wrong**, and the fix is the code, never the baseline.
+
+The rule is deliberately blunt because the failure is silent and the temptation is highest exactly
+when the phase is nearly finished.
+
+## WARDROBE CASES ARE A GATE ON U4
+
+**U4 does not open until the render baseline covers wardrobes.**
+
+**Wardrobes currently have zero render coverage.** The five cases drive `/visualiser`, which
+offers BLINDS and CURTAINS only — the wardrobe entry point was `/visualizer`, deleted when E-07
+closed. Every wardrobe render in the codebase is presently unverifiable.
+
+**And U4 moves wardrobe assets** — 28 files, 27 MB, the largest asset group in the zone, reached
+through the constructed path in §3. **That is R1's exact condition in the one area with no
+baseline**: a mis-moved texture does not 404 loudly, it resolves `null` by design and silently
+substitutes the legacy sticker. The picture degrades and every check stays green.
+
+**Build them before U4, through the two surfaces that reach wardrobes:**
+
+| Surface | How |
+|---|---|
+| Homepage `VisualiserShowcase` | The **Wardrobes** tab — `productCategory === 'wardrobe'` |
+| Homepage `RangeRow` | The **"See in 3D"** action on a wardrobe card |
+
+**Cover at least: a built-in model, a walk-in model, and one non-white finish** — the last matters
+because `suppliedArtwork` returns `null` for anything but white, so a white-only baseline would
+not exercise the fallback path at all.
+
+**And prove the wardrobe cases can go red**, the same way the first five were: perturb one wardrobe
+constant, confirm red, revert, confirm green. A gate that has not been seen to fail is not a gate,
+and that applies to each new case, not just to the harness.
