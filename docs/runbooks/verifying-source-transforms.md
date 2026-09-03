@@ -95,6 +95,92 @@ seven checks that was green while seven of ten wardrobes pointed at files that h
 
 ---
 
+
+## THE HOST ANSWERS POLITELY — ASK THE FILE SYSTEM
+
+> ## Any check that asks a server whether a file exists is structurally incapable of failing in a single-page app.
+>
+> ### Unmatched paths return 200 with `index.html`. **Every asset check must read the file system.**
+
+**This is THE TEST's first row, and the first instance in this runbook found ALREADY BROKEN IN
+PRODUCTION rather than while building a tool.** Instances 1–9 were caught while writing or proving
+something. This one had been shipping.
+
+### What it looked like
+
+Three preset room photographs on `/visualiser` had been broken for the life of the feature:
+
+```
+/images/room-3.png      the files are at /images/rooms/room-N.png
+/images/room-4.png
+/images/room-5.png
+```
+
+| Check | Said | Because |
+|---|---|---|
+| Browser image check — count non-200s | **0** | Vite and Netlify both fall back to `index.html`, so each request returned **200 with 8,977 bytes of HTML** |
+| Console watch | clean | Nothing throws. `<img>` failing to decode is not an exception |
+| `tsc`, eslint | clean | The bug is the *value* of a string |
+| `audit:assets` | clean | It asks what references each file, never whether a referenced file exists |
+
+**The `<img>` had `naturalWidth === 0` and rendered an empty frame.** Every status code in the trace
+said success.
+
+### Why the shape guarantees it
+
+**A single-page app's whole design is that unknown paths return the app.** That is not a bug in the
+server, it is the routing contract — `/products/dusk` has no file behind it either. So the server
+*cannot* distinguish "asset that should exist and does not" from "client route", and a check built
+on its answer inherits that inability.
+
+> **The check was asking a question the deployment target answers "fine" to unconditionally.** It
+> reported zero for months and it was right to: it had nothing to report, because it could not have
+> anything to report.
+
+### The remedy, and the second version of the same mistake
+
+`npm run check:asset-paths` reads every literal asset path out of `src/` and `index.html` and asks
+the **file system**. It never starts a browser, so no fallback can flatter it. **It caught the three
+broken paths on its first run** — a better proof than any staged perturbation.
+
+**And its first implementation had the same disease in a different costume.** It used
+`fs.existsSync`, which is **case-insensitive on Windows and macOS**. On the machine it runs on it
+would answer "yes" to `/images/textures/blockout/…` when the directory is `Blockout` — so it could
+not fail here either, while production, being Linux, 404s.
+
+**Same shape, one layer down: a check whose environment makes success unconditional.** It now builds
+the set of real paths from `readdir`, which reports the case on disk, and distinguishes *wrong case*
+from *no such file* because they are different faults and the first one works locally. Proven: a
+one-character case change exits 1, reverted exits 0.
+
+### The audit of every other check, since one instance means look for more
+
+| Check | Shape | Verdict |
+|---|---|---|
+| `render-baseline.mjs` | Makes HTTP requests | **Safe.** It never inspects a status — it reads pixels. A route that falls back renders the 404 page, which has no canvas, which is now RED rather than skipped |
+| `asset-audit.mjs` | File system | Safe. Zero `fetch`/`http` in it |
+| `verify-wardrobe-manifest.mjs` | File system | Safe |
+| `verify-asset-paths.mjs` | File system, case-exact | Safe |
+| `netlify/lib/antispam.ts` | Real `fetch` to Cloudflare | Not an asset check. Its own fail-open behaviour is **S-1** in `FEATURE_FLAGS.md` |
+
+**Zero committed checks have the broken shape.**
+
+### And that result is the finding
+
+**The check that was broken was never in the repository.** It was an ad-hoc browser script, written
+fresh each session, that counted non-200 responses — never committed, never reviewed, never proven
+able to fail.
+
+> **The tool with no home in the repository is the one that stays broken longest**, because every
+> mechanism this project uses to catch an inert check — `verify:rules`, `verify:scope-guard`,
+> perturb-and-revert, THE TEST at review — operates on things that are checked in.
+
+An unversioned helper gets the benefit of the doubt every time it is rewritten, and it is rewritten
+often enough that nobody ever asks it the question. **If a check is worth running twice, commit it
+and prove it can fail.**
+
+---
+
 ## THE STANDING EXPECTATION, BEFORE ANY OF IT
 
 > ### Anything built to check something needs checking, and it will be inert the first time.
@@ -803,3 +889,56 @@ substitutions, which was true and told us nothing about whether they were the ri
 
 Ask what the tool would output if it were broken. If the answer is "the same thing", the output
 is not a check — and something that *can* fail has to be put underneath it.
+
+## ONE COMMITTER PER PHASE — A SHARED WORKTREE DOES NOT NEED CAREFUL STAGING, IT NEEDS NOBODY ELSE COMMITTING
+
+> ### V's rule, and V's to keep: **I do not commit while a U-phase is running.**
+
+### Why the first mitigation was not enough
+
+After the first sweep — four shim deletions absorbed into a commit about a card photograph — the
+agreement was **named paths only**: neither session uses `git add -A`, `git add .` or
+`git commit -a` while the other is working.
+
+**It happened again anyway.** `2bab6bb`, "Take the dip out, and let answering a row open the next
+one", swept up an entire in-progress asset move: 39 file renames, including four texture
+directories at a location they had already been decided *not* to move to.
+
+**And that one broke the site.** The four directories are named by `Canvas2DBlindRenderer.tsx`
+through a hardcoded `TEXTURE_ROOT`, which was untouched because it is protected. HEAD requested
+four texture directories that were not there.
+
+### The diagnosis, which is not "be more careful"
+
+**Named paths controls what a commit *takes*. It does not control *when* a commit happens.** And
+the exposure is not the staging command — it is the window:
+
+> **Any file that has been moved, deleted or created but not yet committed is in a state the
+> repository does not describe.** A concurrent commit does not have to name it to be affected by
+> it: `git mv` writes the index, and the index is one shared object.
+
+**A phase is not atomic until it is committed**, and a multi-step phase is *inherently* a period
+during which the tree is mid-flight. Careful staging cannot fix that, because the problem is that
+the other party is committing at all.
+
+### The rule
+
+**One committer per phase.** While a U-phase is running, the agent running it is the only session
+that commits. The other continues working — editing, testing, running the dev server — and commits
+when the phase reports.
+
+| | |
+|---|---|
+| **Still true** | Named paths only. It is cheap and it limits the blast radius when the rule is missed |
+| **New, and load-bearing** | No commits at all from the other session while a phase is in flight |
+| **The signal** | The phase reports. That is the handover — until then, hold the commit |
+
+### What makes this affordable
+
+**Phases report and stop.** Every one ends with a written report, so the wait is bounded and
+visible, and the other session is never blocked from *working* — only from committing. Uncommitted
+work is not lost work; it sits in the worktree exactly as it would have anyway.
+
+**And the cost of not doing it is asymmetric.** A held commit costs minutes. A swept commit costs
+the record of why four files were deleted, and once it broke the live texture paths in a commit
+whose message describes a form row.

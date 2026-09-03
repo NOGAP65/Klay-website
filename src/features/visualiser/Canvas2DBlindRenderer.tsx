@@ -140,17 +140,23 @@ const scaleToBlind = (px: number, avgW: number, min = 0.6, max = 3.2): number =>
   px * Math.max(min, Math.min(max, avgW / REFERENCE_BLIND_W));
 
 // ---------------------------------------------------------------------------
-// Textures — real fabric photos in public/textures/, tinted in the shader
+// Textures — real fabric photos in public/images/visualiser/textures/,
+// tinted in the shader
 // ---------------------------------------------------------------------------
 
 // CASE-SENSITIVE. These paths are served verbatim from public/ by a Linux
 // host, where /images/textures/... and /images/Textures/... are different
-// URLs. The directory on disk is `Textures` with a capital T, and
-// `Light-filter` with a capital L and a hyphen. A lowercase path resolves
-// fine on a Windows dev machine and 404s in production, which is the worst
-// possible failure shape — it only appears after deploy. Do not "tidy" the
-// capitalisation here without renaming the directories to match.
-const TEXTURE_ROOT = '/images/Textures';
+// URLs. The root directory on disk is now `textures`, lower case, under
+// `images/visualiser/` — but `Blockout`, `Sunscreen`, `Light-filter` and
+// `Bottom_bar` keep their capitals, so the segments below still have to match
+// exactly. A wrong case resolves fine on a Windows dev machine and 404s in
+// production, which is the worst possible failure shape: it only appears after
+// deploy. Do not "tidy" the capitalisation without renaming to match.
+//
+// npm run check:asset-paths now catches this. It builds the set of real paths
+// from readdir rather than calling fs.existsSync, which is case-insensitive on
+// this machine and would have said yes to either spelling.
+const TEXTURE_ROOT = '/images/visualiser/textures';
 
 const getTexturePath = (blindType: string): string => {
   switch (blindType) {

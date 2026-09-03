@@ -998,12 +998,47 @@ one page owned its own chrome. That statement stopped being true when the page s
 and a layout that wraps nothing is a name with no fact behind it.
 
 **E-01 to E-04 survive and are unaffected by this.** They are rule exemptions for four protected
-IP files — size and complexity limits only — not scope exclusions. Those files are now in scope
-for every other rule, **may be moved, and may have their imports rewritten. Their contents are
-still not edited.** That permission was exercised once, at U2: `Canvas2DBlindRenderer.tsx` had
-`from '../theme'` changed to `from '@/ds'` and nothing else — a one-line diff, recorded in the
-commit. Their review trigger fired with the unfreeze; the examination is recorded in
-UNFREEZE_MAP.md.
+IP files — size and complexity limits only — not scope exclusions.
+
+### THE TERMS, AMENDED 4 SEPTEMBER 2026 TO SAY WHAT THEY HAVE MEANT IN PRACTICE
+
+> ## PATH REFERENCES MAY BE UPDATED. BEHAVIOUR MAY NOT.
+>
+> A protected file may be moved, and the strings it uses to find things — imports, asset paths,
+> directory constants — may be changed to follow what moved. **Nothing that changes what the file
+> does may be touched.**
+
+**The previous wording was "may be moved and may have their imports rewritten", and it was too
+narrow to describe its own use.** Three edits have been authorised under it and **all three were
+path references**:
+
+| # | Phase | The edit |
+|---|---|---|
+| 1 | U2 | `from '../theme'` → `from '@/ds'` |
+| 2 | U5 | `from '../data/products'` → `from '../../data/products'` |
+| 3 | **U4** | `const TEXTURE_ROOT = '/images/Textures'` → `'/images/visualiser/textures'` |
+
+**The third is not an import, and under the old wording it was not permitted** — the edit was made,
+caught while reading the diff, reverted, and put to V as a decision. V authorised it and amended the
+terms rather than granting a one-off exception, which is the right order: *the rule was wrong, not
+the change.*
+
+**The distinction the amendment draws is the one that was always intended.** A path constant and an
+import specifier are the same kind of thing — **where something lives, not what the file does**.
+Neither can alter a rendered pixel; both must follow when the thing moves. Forbidding one while
+permitting the other protected nothing and made an asset move impossible.
+
+**What is still forbidden is unchanged and is the whole point:** logic, constants that affect
+output, structure, formatting, naming, "tidying". If an edit could change what the file draws, it
+is not permitted, and a one-line diff is not evidence that it could not.
+
+> **The test to apply: could this change what the file produces?** An import specifier and an asset
+> path cannot — they can only make it fail loudly to find something. A geometry constant, a
+> threshold, a colour, a branch can. **Loud failure is the boundary**: a path that is wrong breaks
+> visibly and is caught by `check:asset-paths`; behaviour that is wrong does not.
+
+Their review trigger fired with the unfreeze; the examination is recorded in UNFREEZE_MAP.md, and
+every authorised edit is listed above so the count stays checkable against the hashes.
 
 **And the counts move sharply because of this.** The in-scope lint total, the naming-convention
 count and the `shared/` denominator were all measured against a codebase two-thirds this size.

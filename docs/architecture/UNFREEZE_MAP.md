@@ -239,7 +239,7 @@ map** — it removes the last `%20` encoding in the codebase and the last z-spel
 | **U1** | **Delete `visualiser-lab/`. DONE, 3 Sep** | 18 files, 13,568 lines, nothing unique. Closed D-02 | **Very low** |
 | **U2** | **Retire the shims — Nav, BareLayout, `theme.ts`. DONE, 3 Sep** | Cleared all four demolition rows. One consequence worth knowing: `/visualiser` now has a footer and therefore scrolls | Low |
 | **U3** | **Fix the countdown tool; adopt the wardrobe manifest. DONE, 3 Sep — landed with U1** | Both were measurement corrections, and both were wrong in ways their own output could not show | Low |
-| **U4** | **Move assets. PARTIAL, 4 Sep** | Wardrobes, openings and Preview moved; R7 closed. The four blind/curtain texture dirs are **blocked by E-02** and need a decision — see the U4 section | **Medium — silent failure** |
+| **U4** | **Move assets. DONE, 4 Sep** | Everything the visualiser draws is under `images/visualiser/` now. R7 closed. E-02 unblocked by V amending its terms — path references may be updated, behaviour may not | **Medium — silent failure** |
 | **U5** | **Move files into `features/visualiser/`. DONE, 3 Sep** | 21 files, one barrel, 13 deep imports became 6 barrel imports. Cleared demolition row 7 as well | Medium |
 | **U6** | Split `data/products.ts` — decision H | Finally executable | Low |
 | **U7** | Decompose the renderers to §8 limits | The real work, and the only phase that changes code | **HIGH** |
@@ -855,3 +855,97 @@ visualiser upload state; zero broken images by `naturalWidth`.
 **And the moved wardrobe cut-outs were confirmed fetched at their new path** — itemised, not
 counted: `12.0U-white-interior.png`, `4.0-white-front.png`, `7.0L-white-interior.png`, all 200.
 That itemisation is what produced the correction above.
+
+---
+
+# U4 COMPLETE — 4 SEPTEMBER 2026
+
+**V authorised the `TEXTURE_ROOT` edit and the four remaining directories moved with it.**
+`public/images/Textures/` no longer exists; everything the visualiser draws is under
+`public/images/visualiser/`.
+
+| | |
+|---|---|
+| `textures/wardrobes/` | 27 MB, 22 files |
+| `textures/{Blockout, Sunscreen, Light-filter, curtains, Bottom_bar}` | Moved at the amendment |
+| `openings/` | 4 files, R7 closed |
+| `preview.png` | 2.1 MB |
+
+**`Bottom_bar/` moved with them and is unreferenced** — its only mention in code is a comment. It is
+not deleted: `public/` deletions are V's call. Flagged for the next asset pass.
+
+## R3 ARRIVED THREE PHASES EARLY, AND THE REASON IS GENERAL
+
+**The risk register put R3 at U7**, the decomposition phase — the one that changes code. It says:
+*"Any restructure that needs to touch `Canvas2DBlindRenderer.tsx` is blocked by E-02."*
+
+**It arrived at U4, an asset move, which the register classified as "moving, not changing".**
+
+> ### An asset move IS a restructure, from the perspective of a file that hardcodes a path.
+>
+> The distinction between *moving* and *changing* is drawn from the code's point of view. A file
+> that names a location in a string does not share that point of view: **to it, the world moving is
+> indistinguishable from being edited.** Both arrive as "this constant is now wrong."
+
+**That generalises past this file.** Any hardcoded reference — an asset path, a route string, a
+config key, a directory constant — converts a move somewhere else into an edit here. **The more
+paths a file hardcodes, the more of the project's "moving, not changing" work becomes "changing"
+for that file specifically.**
+
+**Which is why the amendment was the right response rather than a one-off exception.** The old terms
+made it impossible to move an asset that a protected file names — not hard, impossible — and that
+was never the intent of protecting the file. `TEXTURE_ROOT` is *where something lives*, not *what
+the file does*.
+
+**And it means R3 should be expected again**, at U6 and U7, in the same shape: some file that
+hardcodes something will make a move look like an edit. The question to ask each time is the
+amended one — *could this change what the file produces?*
+
+---
+
+# A STATED RESOLUTION LIMIT OF THE RENDER BASELINE
+
+> ## At 48×48 with a threshold of 12, a photographic white board and a modelled white carcass do not separate.
+>
+> ### The render check cannot see a failed wardrobe sticker at all. This is a property of the gate, not of the assets.
+
+**Measured, not supposed.** Hiding `12.0U-white-interior.png` and re-driving every wardrobe
+configuration moved **0 of 2304 cells** — on the case that uses that exact file.
+
+**The sticker is genuinely loaded and drawn.** `wardrobeScene.ts` projects it onto the carcass in
+`Wardrobe3D`, on the live surface, with `ROOM_VIEW_READY` still false. When it fails to load the
+renderer falls back to the modelled carcass — and both are white melamine, lit the same way, in the
+same place. **A coarse luminance grid is exactly the wrong instrument for that difference.**
+
+### Why the limit is correct rather than a bug to fix
+
+**Lowering the threshold or raising the grid would not fix it and would break something that works.**
+The 48×48 grid and threshold 12 were chosen so the gate survives GPU dithering and antialiasing —
+that is what makes it usable at all, and it is why it reports **0 cells** across ten cases run
+repeatedly rather than a flutter of one-cell noise that people learn to ignore. Chasing a
+white-on-white difference would trade a reliable gate for a flaky one.
+
+**And the difference it cannot see is real but small in luminance terms**, which is precisely the
+case a signature is designed to tolerate. The instrument is right; its range is what it is.
+
+### So this is the justification for `check:wardrobe-assets`
+
+> **The render check covers geometry, finishes, hardware and wall colour. It does not cover whether
+> the correct cut-out was found.** Nothing pixel-based can, at any resolution that stays stable.
+
+`npm run check:wardrobe-assets` reads the manifest and the model table and asserts every file they
+name is on disk. **It is not a weaker substitute for a render check — it is the only instrument that
+can answer this particular question**, and it answers it without needing the feature on, without a
+browser, and without a threshold to tune.
+
+**Two gates, two questions, neither redundant:**
+
+| | Question | Blind to |
+|---|---|---|
+| Render cases | Does it draw the same picture? | A sticker that silently fell back to the modelled carcass |
+| `check:wardrobe-assets` | Do the files it names exist? | Anything about how they are drawn |
+
+**And the correction that produced this is worth keeping visible.** The zero was first read as "the
+cut-outs are drawn by nothing" — dead weight waiting on a flag. It is the opposite: **live artwork,
+under-observed.** A mis-moved cut-out degrades a real picture that ten green cases would not
+notice.

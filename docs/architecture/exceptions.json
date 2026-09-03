@@ -12,7 +12,8 @@
       "excludesFromScope": false,
       "note": "PERMANENT, not deferred. These files may never unfreeze. \"On unfreeze\" was a word that sounded like a condition — it named no date, no trigger and no owner. A permanent exception is a documented decision; a temporary one that never ends is rot.",
       "permanent": true,
-      "reviewTrigger": "The file is modified for any reason, or the visualiser migrates."
+      "reviewTrigger": "The file is modified for any reason, or the visualiser migrates.",
+      "terms": "PATH REFERENCES MAY BE UPDATED. BEHAVIOUR MAY NOT. Amended 4 September 2026 — the file may be moved, and imports, asset paths and directory constants may follow what moved. Nothing that changes what the file does may be touched. See SPECIFICATION.md §12."
     },
     {
       "id": "E-02",
@@ -23,7 +24,8 @@
       "excludesFromScope": false,
       "permanent": true,
       "reviewTrigger": "The file is modified for any reason, or the visualiser migrates.",
-      "note": "PERMANENT, not deferred. These files may never unfreeze. \"On unfreeze\" was a word that sounded like a condition — it named no date, no trigger and no owner. A permanent exception is a documented decision; a temporary one that never ends is rot."
+      "note": "PERMANENT, not deferred. These files may never unfreeze. \"On unfreeze\" was a word that sounded like a condition — it named no date, no trigger and no owner. A permanent exception is a documented decision; a temporary one that never ends is rot.",
+      "terms": "PATH REFERENCES MAY BE UPDATED. BEHAVIOUR MAY NOT. Amended 4 September 2026 — the file may be moved, and imports, asset paths and directory constants may follow what moved. Nothing that changes what the file does may be touched. See SPECIFICATION.md §12."
     },
     {
       "id": "E-03",
@@ -34,7 +36,8 @@
       "excludesFromScope": false,
       "permanent": true,
       "reviewTrigger": "The file is modified for any reason, or the visualiser migrates.",
-      "note": "PERMANENT, not deferred. These files may never unfreeze. \"On unfreeze\" was a word that sounded like a condition — it named no date, no trigger and no owner. A permanent exception is a documented decision; a temporary one that never ends is rot."
+      "note": "PERMANENT, not deferred. These files may never unfreeze. \"On unfreeze\" was a word that sounded like a condition — it named no date, no trigger and no owner. A permanent exception is a documented decision; a temporary one that never ends is rot.",
+      "terms": "PATH REFERENCES MAY BE UPDATED. BEHAVIOUR MAY NOT. Amended 4 September 2026 — the file may be moved, and imports, asset paths and directory constants may follow what moved. Nothing that changes what the file does may be touched. See SPECIFICATION.md §12."
     },
     {
       "id": "E-04",
@@ -45,7 +48,8 @@
       "excludesFromScope": false,
       "permanent": true,
       "reviewTrigger": "The file is modified for any reason, or the visualiser migrates.",
-      "note": "PERMANENT, not deferred. These files may never unfreeze. \"On unfreeze\" was a word that sounded like a condition — it named no date, no trigger and no owner. A permanent exception is a documented decision; a temporary one that never ends is rot."
+      "note": "PERMANENT, not deferred. These files may never unfreeze. \"On unfreeze\" was a word that sounded like a condition — it named no date, no trigger and no owner. A permanent exception is a documented decision; a temporary one that never ends is rot.",
+      "terms": "PATH REFERENCES MAY BE UPDATED. BEHAVIOUR MAY NOT. Amended 4 September 2026 — the file may be moved, and imports, asset paths and directory constants may follow what moved. Nothing that changes what the file does may be touched. See SPECIFICATION.md §12."
     },
     {
       "id": "E-05",

@@ -48,6 +48,29 @@ process.chdir(ROOT);
 /** Everything served from public/ at the web root. */
 const PUBLIC = 'public';
 
+/** EVERY REAL PATH UNDER public/, AT ITS REAL CASE.
+ *
+ * fs.existsSync IS CASE-INSENSITIVE ON WINDOWS AND MACOS. It answers "yes" for
+ * /images/textures/blockout/... when the directory on disk is Blockout — so on
+ * the machine this runs on it cannot fail, which is the same shape as the SPA
+ * fallback this tool was written to get around. A check that returns success
+ * whatever it is asked is not a check.
+ *
+ * And the failure it would miss is the worst kind. Production is Linux and
+ * case-sensitive: a mismatched path resolves locally, passes every check, and
+ * 404s only after deploy. Canvas2DBlindRenderer carries a comment warning about
+ * precisely this, which is the reason to build a set from the directory entries
+ * — readdir reports the case on disk — rather than ask the file system a
+ * question it will answer politely. */
+function realPaths(dir, prefix = '', acc = new Set()) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefix + '/' + entry.name;
+    if (entry.isDirectory()) realPaths(path.join(dir, entry.name), rel, acc);
+    else acc.add(rel);
+  }
+  return acc;
+}
+
 function walk(dir, acc = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, entry.name);
@@ -58,6 +81,7 @@ function walk(dir, acc = []) {
 }
 
 const sources = [...walk('src'), 'index.html'].filter((f) => fs.existsSync(f));
+const REAL = realPaths(PUBLIC);
 
 /** A quoted string starting with a slash and ending in an asset extension. */
 const LITERAL = /['"`](\/[^'"`\n]*\.(?:png|jpe?g|gif|svg|webp|avif|mp4|webm|woff2?|ttf|otf|pdf|ico))['"`]/gi;
@@ -87,8 +111,12 @@ for (const file of sources) {
     let rel;
     try { rel = decodeURIComponent(raw); } catch { rel = raw; }
     checked++;
-    if (!fs.existsSync(path.join(PUBLIC, rel.replace(/^\//, '').split('?')[0].split('#')[0]))) {
-      missing.push({ file, raw, rel });
+    const clean = rel.split('?')[0].split('#')[0];
+    if (!REAL.has(clean)) {
+      // Wrong case and no such file are different faults with different fixes,
+      // and the first one works on this machine — so it has to be said out loud.
+      const ci = [...REAL].find((r) => r.toLowerCase() === clean.toLowerCase());
+      missing.push({ file, raw, rel: clean, wrongCase: ci });
     }
   }
 
@@ -101,7 +129,11 @@ for (const c of constructed) console.log(`    ${c.file}  ${c.expr.length > 70 ? 
 
 if (missing.length) {
   console.error(`\nFAIL: ${missing.length} path(s) name a file that is not in ${PUBLIC}/.`);
-  for (const m of missing) console.error(`    ${m.file}\n        ${m.rel}`);
+  for (const m of missing) {
+    console.error(`    ${m.file}`);
+    console.error(`        ${m.rel}`);
+    if (m.wrongCase) console.error(`        WRONG CASE — on disk it is ${m.wrongCase}`);
+  }
   console.error(`
 These do NOT 404. The dev server and Netlify both fall back to index.html, so
 the request returns 200 with HTML in it and the <img> renders broken while every
@@ -109,4 +141,4 @@ status code says success. That is why this check reads the file system instead
 of the network.`);
   process.exit(1);
 }
-console.log(`\nOK: every literal asset path resolves to a file in ${PUBLIC}/.`);
+console.log(`\nOK: every literal asset path resolves to a file in ${PUBLIC}/, at the case on disk.`);

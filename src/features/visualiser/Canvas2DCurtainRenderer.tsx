@@ -1502,8 +1502,8 @@ const FABRIC_SAMPLE: Record<'blockout' | 'sheer', string> = {
   // `curtains` is lowercase. A Linux host serves any other casing as a
   // different URL that 404s, which is the worst failure shape there is — it
   // only shows up after deploy. Match the filenames on disk exactly.
-  blockout: '/images/Textures/curtains/Blockout_produced.png',
-  sheer: '/images/Textures/curtains/sheer_produced.png',
+  blockout: '/images/visualiser/textures/curtains/Blockout_produced.png',
+  sheer: '/images/visualiser/textures/curtains/sheer_produced.png',
 };
 
 /** Working size of the extracted detail map. The swatches are 1254px square and
