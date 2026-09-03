@@ -135,12 +135,23 @@ export const LAYOUT_COLUMNS: Record<string, Column[]> = {
   // --- THE BUILT-IN RANGE, BY PRODUCT CODE -------------------------------
   // Three SKUs at 2016mm, and their names say exactly what is in them.
 
-  /** Divider Support + Double Hang Rail. No tower at all: a divider down the
-   * middle and a double-hung bay either side of it, which is why this is the
-   * one made as narrow as 1200 — there is no 507mm module eating the width. */
+  /** Divider Support + Double Hang Rail.
+   *
+   * TWO RAILS SIDE BY SIDE, NOT TWO STACKED, and that is what "Double Hang
+   * Rail" means here. The Divider Support splits the run in two and each half
+   * gets its own full-length rail — so the double is across the unit, not up
+   * it. Built as hang2, every bay came out with a second rail halfway down and
+   * the product had four.
+   *
+   * It is also the reading that makes the rest of the range consistent: the
+   * tower SKUs are "Tower Divider Double Hang Rail", the same two bays with a
+   * 507 module in front of them, and they are not four-rail cabinets either.
+   *
+   * No tower at all, which is why this is the one made as narrow as 1200 —
+   * there is no 507mm module eating the width. */
   SRDH: [
-    { share: 1, fill: { kind: 'hang2' } },
-    { share: 1, fill: { kind: 'hang2' } },
+    { share: 1, fill: { kind: 'hang' } },
+    { share: 1, fill: { kind: 'hang' } },
   ],
 
   /** Shelf Tower + Divider + Double Hang Rail. The tower is the fixed module;
