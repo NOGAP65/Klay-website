@@ -35,7 +35,7 @@
 
 import { useEffect, useRef } from 'react';
 import { wardrobeArtwork, wardrobeModelById, wardrobeColourHex, wardrobeColour, wardrobeCutoutFor, FINISH_TEXTURE, FINISH_TILE_MM, WARDROBE_HEIGHT_MM, WARDROBE_DEPTH_MM, wardrobeHeight, wardrobeDepth } from './wardrobes';
-import { projectorFromQuad, columnsFor, sidePanelsFor, hasFacePost, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
+import { projectorFromQuad, columnsFor, sidePanelsFor, facePostsFor, tracedWidthMm, BOARD_MM, RAIL_DROP_MM, type Projector } from './wardrobeGeometry';
 import { buildSliceMap, sliceMapper, type SliceMap } from './wardrobeSlices';
 import { profilePhoto, relightCutout, applyGrain, makeGrainTile, isWoodFinish, sampleBoardColour } from './wardrobeComposite';
 import { DEFAULT_HANDLE_FINISH, hardwareSpec, type HardwareSpec } from './wardrobeHardware';
@@ -970,6 +970,15 @@ export function buildCarcass(
     metal({ x: cx + (cw - hw) / 2, y: fy + fh * 0.5 - 7, z: D, w: hw, h: 14, d: 10 });
   };
 
+  // RESOLVED BEFORE ANYTHING IS DRAWN. The face posts need column 0's width and
+  // the loop below needs the same list; calling twice invites them to disagree.
+  const columns = columnsFor(layoutId, widthMm, recessed);
+  // Shelving is a real carcass, so a divider in it is a full-height board —
+  // LINBR02's broom bay is closed off from the shelf run rather than sharing an
+  // open span with it.
+  const towered = model.kind === 'shelving'
+    || columns.some(c => c.fill.kind !== 'hang' && c.fill.kind !== 'hang2');
+
   // The full-width shelf, spanning between whatever end panels exist.
   {
     const sx = sides.left ? BOARD_MM : 0;
@@ -982,13 +991,18 @@ export function buildCarcass(
     // shows it closed at the base. Only this family gets one.
     if (model.kind === 'shelving') shelf(sx, sw, 0);
 
-    // THE FACE POST, on the codes that have one. A front upright at mid-span,
-    // sitting on the FRONT edge rather than running the full depth: it is what
-    // lets a 3600 shelf span without dipping, and a full-depth divider would
-    // make two cupboards of what is meant to be one open run. See hasFacePost.
-    if (hasFacePost(layoutId)) {
+    // THE FACE POSTS — one on LIN02 and LINBR02, two on LIN05, none on LIN01.
+    // See facePostsFor.
+    //
+    // They stand in the SHELF RUN, which on LINBR02 is only the first column:
+    // the broom bay beyond it is a single open compartment and has nothing to
+    // hold up. Evenly spaced across whatever that run is, so a 3600 on two
+    // posts is three 1200 spans rather than two 1800s.
+    const posts = facePostsFor(layoutId);
+    const runW = posts > 0 ? columns[0].widthMm : 0;
+    for (let i = 1; i <= posts; i++) {
       boxes.push({
-        x: sx + sw / 2 - BOARD_MM / 2, y: 0, z: D - BOARD_MM,
+        x: sx + (runW / (posts + 1)) * i - BOARD_MM / 2, y: 0, z: D - BOARD_MM,
         w: BOARD_MM, h: H, d: BOARD_MM,
         plain: true,
       });
@@ -1006,12 +1020,9 @@ export function buildCarcass(
   //
   // Tower layouts keep their real dividers — a tower has a carcass side, and
   // the board between it and the next bay is that side.
-  const towered = columnsFor(layoutId, widthMm, recessed).some(c => c.fill.kind !== 'hang' && c.fill.kind !== 'hang2');
-
   // Resolved in millimetres, not as fractions of the cabinet: a drawer tower is
   // 507 wide in every layout in the range, and only the bays either side of it
   // take up the slack. See MODULE_WIDTH_MM.
-  const columns = columnsFor(layoutId, widthMm, recessed);
   columns.forEach((column, i) => {
     const cw = column.widthMm;
     if (i < columns.length - 1) {
@@ -1071,7 +1082,24 @@ export function buildCarcass(
       compartments.push({ x0: x, x1: x + cw, y0: upper - RAIL_DROP_MM, y1: upper - RAIL_DROP_MM, role: 'hang-short' });
       // The two open bays under those rails — see the note on 'bay' above.
       compartments.push({ x0: x, x1: x + cw, y0, y1: mid - RAIL_DROP_MM, role: 'bay' });
-      compartments.push({ x0: x, x1: x + cw, y0: mid + BOARD_MM, y1: upper - RAIL_DROP_MM, role: 'bay' });
+      // THE TWO BAYS HAVE TO MEET, and this is the "extra bar below the rail".
+      //
+      // The upper bay started at mid + BOARD_MM, which is the top face of the
+      // mid SHELF — right when every double hang had one. Forma 1 does not: it
+      // is a divider support and two rails, so there is no board at mid, and
+      // the shade left a 128mm strip between the lower bay's top (the mid rail)
+      // and the upper bay's bottom completely unshaded. A bright band across
+      // the full width, sitting just under the rail, reading as a second rail.
+      //
+      // Measured rather than guessed: the box dump shows four rail segments at
+      // exactly two heights, 889 and 1888, so the rails were never doubled —
+      // it was the shade underneath them.
+      compartments.push({
+        x0: x, x1: x + cw,
+        y0: towered ? mid + BOARD_MM : mid - RAIL_DROP_MM,
+        y1: upper - RAIL_DROP_MM,
+        role: 'bay',
+      });
     } else {
       // A TOWER, not a rail over drawers. The bank fills the lower half and
       // open shelving stacks above it, which is what every one of these towers

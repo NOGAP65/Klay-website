@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
 import { pricePerBlind, type BlindType } from '../lib/pricing';
-import { DEFAULT_WIDTH_MM, wardrobeModelById, type WardrobeKind } from './wardrobes';
+import { DEFAULT_WIDTH_MM, wardrobeModelById, WARDROBE_MODELS, type WardrobeKind } from './wardrobes';
 import { DEFAULT_HANDLE_FINISH } from './wardrobeHardware';
 
 type Point = [number, number];
@@ -22,7 +22,13 @@ interface TracedArea {
 // store keep working.
 export type { BlindType };
 export type HardwareColour = 'white' | 'black' | 'chrome';
-export type ProductCategory = 'blind' | 'curtain' | 'wardrobe';
+export type ProductCategory = 'blind' | 'curtain' | 'wardrobe' | 'shelving';
+
+/** Wardrobes and shelving are one renderer, one control panel and one store
+ * shape — they differ in which SKUs they offer and how tall those are. Every
+ * branch that used to test for 'wardrobe' asks this instead, so adding the
+ * shelving tab did not mean finding and widening a dozen equality checks. */
+export const isJoinery = (c: ProductCategory) => c === 'wardrobe' || c === 'shelving';
 export type CurtainType = 'blockout' | 'sheer';
 export type CurtainOperation = 'manual' | 'motorised';
 export type CurtainMount = 'ceiling' | 'window';
@@ -386,6 +392,26 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   // stored ones behind would mean selecting window 3 after the switch put a
   // blind colour back into a curtain configuration.
   setProductCategory: (cat) => set(s => {
+    // THE TAB IS THE FAMILY. Shelving and wardrobes share wardrobeKind, so
+    // switching tab has to move it — otherwise the shelving tab opened on a
+    // built-in robe and the Model row offered Forma 1, 2, 3. Carrying the model
+    // with it, for the same reason setWardrobeKind does: a robe id is not a
+    // shelving id and leaving the old one selected shows the wrong product.
+    if (isJoinery(cat)) {
+      const kind = cat === 'shelving' ? 'shelving' : 'built-in';
+      if (s.wardrobeKind !== kind) {
+        const first = WARDROBE_MODELS.filter(m => m.kind === kind)[0];
+        if (first) {
+          return {
+            productCategory: cat,
+            wardrobeKind: kind,
+            wardrobeModel: first.id,
+            wardrobeWidthMm: first.widths[0],
+          };
+        }
+      }
+      return { productCategory: cat };
+    }
     const palette = coloursFor(cat);
     const reconcile = (name: string) => (palette.some(c => c.name === name) ? name : palette[0].name);
     return {

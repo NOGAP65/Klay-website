@@ -21,7 +21,7 @@ export interface RenderedArea {
   controlType: string;
   showChain: boolean;
   // Curtain-specific
-  productCategory?: 'blind' | 'curtain' | 'wardrobe';
+  productCategory?: 'blind' | 'curtain' | 'wardrobe' | 'shelving';
   curtainType?: 'blockout' | 'sheer';
   curtainOperation?: 'manual' | 'motorised';
   curtainMount?: 'ceiling' | 'window';
@@ -1913,7 +1913,7 @@ interface AreaParams {
   baseRailShape?: string;
   chainSide?: string;
   // Curtain-specific
-  productCategory?: 'blind' | 'curtain' | 'wardrobe';
+  productCategory?: 'blind' | 'curtain' | 'wardrobe' | 'shelving';
   curtainType?: 'blockout' | 'sheer';
   curtainOperation?: 'manual' | 'motorised';
   curtainMount?: 'ceiling' | 'window';
