@@ -45,7 +45,7 @@
 
 import { cutoutFor, type WardrobeCutout } from './wardrobeCutouts';
 
-const DIR = '/images/Textures/wardrobes';
+const DIR = '/images/visualiser/textures/wardrobes';
 
 export type WardrobeKind = 'built-in' | 'walk-in' | 'shelving';
 /** Which render to draw. Walk-ins have only the one. */

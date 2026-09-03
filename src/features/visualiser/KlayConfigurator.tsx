@@ -727,16 +727,28 @@ export interface WardrobeRoom {
  * photograph says 2400mm, and the cabinet in it is the same width as the other
  * four-door shot. The file name is wrong and the artwork is right, so the
  * artwork wins. */
-/** PERCENT-ENCODED AT THE SOURCE. These filenames contain spaces, and a raw
- * space in an <img src> is not a URL the browser will fetch — the photo simply
- * never loaded and the visualiser sat on its upload prompt. Encoding here means
- * the same string is used to request the file and to match it back, which is
- * also what openingWidthFor needs. */
+/** NO ENCODING NEEDED ANY MORE, because the filenames no longer need it.
+ *
+ * They were `visualizer pictures/1500 .. opening.jpeg` — a directory spelled
+ * the American way the house style had already rejected, spaces in every name,
+ * and a literal `..` in one of them, which is a path-traversal shape some
+ * tooling normalises away. Every reference had to be percent-encoded by hand
+ * just to be fetchable, and the encoded string had to be carried around so
+ * openingWidthFor could match it back.
+ *
+ * Renamed at U4 to say what they are: the opening's width in millimetres.
+ *
+ * AND 2700mm.jpeg IS NOW opening-2400.jpeg, WHICH FIXES A NAME THAT WAS WRONG.
+ * The dimension drawn across the top of that photograph reads 2400, and the
+ * cabinet in it is the width of the other four-door shot. The supplier's
+ * filename disagreed with their own artwork; the artwork wins, and the file is
+ * now named for what it shows rather than needing a comment to explain that it
+ * is not. */
 const PRESET_ROOMS_WARDROBE: WardrobeRoom[] = [
-  { url: '/images/visualizer%20pictures/1500%20..%20opening.jpeg', openingMm: 1500 },
-  { url: '/images/visualizer%20pictures/1800%20mm%20opening.jpeg', openingMm: 1800 },
-  { url: '/images/visualizer%20pictures/2100%20mm.jpeg', openingMm: 2100 },
-  { url: '/images/visualizer%20pictures/2700mm.jpeg', openingMm: 2400 },
+  { url: '/images/visualiser/openings/opening-1500.jpeg', openingMm: 1500 },
+  { url: '/images/visualiser/openings/opening-1800.jpeg', openingMm: 1800 },
+  { url: '/images/visualiser/openings/opening-2100.jpeg', openingMm: 2100 },
+  { url: '/images/visualiser/openings/opening-2400.jpeg', openingMm: 2400 },
 ];
 
 const presetRoomsFor = (category: string): string[] =>
@@ -763,7 +775,7 @@ export const openingWidthFor = (url: string | null): number | null => {
 // upload prompt by default — the blind renders immediately against this
 // photo using a fixed set of corner pins (see DEFAULT_WINDOW_CORNERS_PCT),
 // with no CornerPinOverlay involved at all until the user replaces it.
-const DEFAULT_WINDOW_URL = '/images/Preview.png';
+const DEFAULT_WINDOW_URL = '/images/visualiser/preview.png';
 
 /** THE WARDROBE PREVIEW IS AN ALCOVE, not the window photograph.
  *
@@ -776,7 +788,7 @@ const DEFAULT_WINDOW_URL = '/images/Preview.png';
  * The 1500 alcove says the true thing instead — a built-in robe in an opening,
  * which is what these are — and it comes dimensioned, so the seeded trace can
  * be the real opening rather than a guess. */
-const DEFAULT_WARDROBE_URL = '/images/visualizer%20pictures/1500%20..%20opening.jpeg';
+const DEFAULT_WARDROBE_URL = '/images/visualiser/openings/opening-1500.jpeg';
 
 // Shelving takes the alcove too: it is joinery going into an opening, and the
 // window photograph would be as wrong for it as it is for a robe.

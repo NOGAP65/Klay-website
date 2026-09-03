@@ -293,7 +293,7 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // ONLY THE FINISH THAT WAS PHOTOGRAPHED. All ten renders are Matt Wardrobe
   // White, so projecting one under a walnut swatch would be the configurator
   // lying about the product.
-  const sticker = cut && isWhite ? await load(`/images/Textures/wardrobes/${cut.file}`) : null;
+  const sticker = cut && isWhite ? await load(`/images/visualiser/textures/wardrobes/${cut.file}`) : null;
   const flat = sticker ? flattenOntoBoard(sticker, base) : null;
   if (flat) {
     flat.colorSpace = THREE.SRGBColorSpace;

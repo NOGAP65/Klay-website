@@ -239,7 +239,7 @@ map** — it removes the last `%20` encoding in the codebase and the last z-spel
 | **U1** | **Delete `visualiser-lab/`. DONE, 3 Sep** | 18 files, 13,568 lines, nothing unique. Closed D-02 | **Very low** |
 | **U2** | **Retire the shims — Nav, BareLayout, `theme.ts`. DONE, 3 Sep** | Cleared all four demolition rows. One consequence worth knowing: `/visualiser` now has a footer and therefore scrolls | Low |
 | **U3** | **Fix the countdown tool; adopt the wardrobe manifest. DONE, 3 Sep — landed with U1** | Both were measurement corrections, and both were wrong in ways their own output could not show | Low |
-| **U4** | Move assets: `Textures/`, openings, `Preview.png` | **NEXT.** Gated on the wardrobe render cases AND `check:wardrobe-assets` — see the remaining plan below | **Medium — silent failure** |
+| **U4** | **Move assets. PARTIAL, 4 Sep** | Wardrobes, openings and Preview moved; R7 closed. The four blind/curtain texture dirs are **blocked by E-02** and need a decision — see the U4 section | **Medium — silent failure** |
 | **U5** | **Move files into `features/visualiser/`. DONE, 3 Sep** | 21 files, one barrel, 13 deep imports became 6 barrel imports. Cleared demolition row 7 as well | Medium |
 | **U6** | Split `data/products.ts` — decision H | Finally executable | Low |
 | **U7** | Decompose the renderers to §8 limits | The real work, and the only phase that changes code | **HIGH** |
@@ -542,6 +542,36 @@ keeps a way to be quietly inert. That is a fix to make before U4, not during it.
 
 ### 2. THE SUPPLIED CUT-OUTS ARE CURRENTLY DRAWN BY NOTHING
 
+
+### CORRECTION, 4 SEPTEMBER — "DRAWN BY NOTHING" WAS WRONG
+
+**The cut-outs are drawn. `wardrobeScene.ts` loads them for `Wardrobe3D`'s sticker**, on the live
+surface, with `ROOM_VIEW_READY` still false:
+
+```ts
+const sticker = cut && isWhite ? await load(`.../wardrobes/${cut.file}`) : null;
+```
+
+An itemised network trace over the wardrobe tab requests **three of them, all 200** —
+`12.0U-white-interior.png`, `4.0-white-front.png`, `7.0L-white-interior.png`.
+
+**What was actually observed, and what was wrongly inferred from it.** Hiding
+`12.0U-white-interior.png` moved **0 of 2304 cells**, and the earlier trace counted six wardrobe
+requests without listing them. From those two facts the conclusion drawn was "no cut-out is
+fetched". **The count was never itemised — the cut-outs were almost certainly among those six all
+along.**
+
+**The right explanation for the zero is different, and it is worse news, not better.** When the
+sticker fails to load the renderer falls back to the modelled white carcass — and for a *white*
+wardrobe a photographic white board and a modelled white board are close enough that a 48×48
+luminance grid at threshold 12 cannot separate them. **The cut-out path is live and
+under-observable, not dead.**
+
+**The gate is unchanged and the reasoning for it is unchanged**: render cases still cannot vouch
+for the cut-outs, so `check:wardrobe-assets` is still what covers them. But the 27 MB is **not**
+dormant artwork waiting on a flag — it is being drawn right now, and a mis-moved file degrades a
+live picture in a way the baseline cannot see.
+
 The ten cut-out PNGs, `wardrobeCutouts.ts`, `wardrobeArtwork`'s supplied branch and
 `wardrobeCutoutFor` are **not reached by any live surface**:
 
@@ -753,3 +783,75 @@ open and belongs to U8.
 collides by name with `@/ds`'s form `Field`. They are different components doing the same job in
 different contexts. Renaming is a Phase 7-shaped question, so it was left for U8 with a note at the
 barrel.
+
+---
+
+# U4 — ASSETS MOVED, AND WHAT E-02 BLOCKED
+
+**4 September 2026. Partially complete, deliberately.**
+
+## WHAT MOVED
+
+| From | To | Size |
+|---|---|---|
+| `images/Textures/wardrobes/` | `images/visualiser/textures/wardrobes/` | **27 MB, 22 files** |
+| `images/Preview.png` | `images/visualiser/preview.png` | 2.1 MB |
+| `images/visualizer pictures/` | `images/visualiser/openings/` | 920 KB, 4 files |
+
+**R7 is closed.** The opening photographs were `visualizer pictures/1500 .. opening.jpeg` — the
+American spelling the house style had already rejected, a space in every name, and a literal `..`
+in one, which is a path-traversal shape some tooling normalises. Every reference had to be
+percent-encoded by hand to be fetchable, and the encoded string carried around so `openingWidthFor`
+could match it back. They are now `opening-1500.jpeg` and so on, and **no reference needs encoding
+at all.**
+
+**And `2700mm.jpeg` is now `opening-2400.jpeg`, which fixes a name that was wrong.** The dimension
+drawn across the top of that photograph reads 2400 and the cabinet is the width of the other
+four-door shot. The supplier's filename disagreed with their own artwork. The file is now named for
+what it shows instead of carrying a comment explaining that it is not.
+
+## WHAT DID NOT MOVE, AND WHY — R3 ARRIVED EARLY
+
+> ### `Blockout/`, `Sunscreen/`, `Light-filter/`, `curtains/` stay at `public/images/Textures/`.
+
+**They are named by `Canvas2DBlindRenderer.tsx`, which is E-02.**
+
+```ts
+const TEXTURE_ROOT = '/images/Textures';
+```
+
+Moving them requires changing that constant, and **a string constant is neither a move nor an
+import rewrite** — it is a content edit, which §12 does not permit on a protected file. The edit
+was made, caught on review of the diff, and reverted; all four protected hashes are unchanged.
+
+**This is R3, and the register expected it at U7.** It says: *"Any restructure that needs to touch
+it is blocked by E-02… If U7 genuinely requires editing it, that needs a decision from V first."*
+It turns out **U4 needs it too** — an asset move is a restructure from the perspective of a file
+that hardcodes a path.
+
+### The decision this needs from V
+
+**Three options, and the third is the one I would take:**
+
+| | Option | Cost |
+|---|---|---|
+| **A** | Leave the split as it is | `Textures/` and `visualiser/textures/` both exist. Honest, and confusing to the next reader |
+| **B** | Authorise the one-line change to `TEXTURE_ROOT` | Same shape as the two import rewrites already authorised. One line, no logic |
+| **C** | Move the four directories and add a redirect | Adds indirection to avoid a one-line edit. Worse than B |
+
+**B is one line in a 3,496-line file, and it is a path constant, not logic.** But it is exactly the
+kind of edit E-02 exists to prevent being made casually, so it is recorded here rather than taken.
+
+**Until then the split is documented rather than tidy**, which is the correct trade: a confusing
+directory layout is recoverable, and an unauthorised edit to protected IP is a broken promise.
+
+## VERIFICATION
+
+**Baseline green either side, all ten cases** — including the five wardrobe cases built for exactly
+this move. `check:asset-paths` green over 46 literal paths. `check:wardrobe-assets` green.
+Protected IP: four hashes unchanged. Zero 4xx or 5xx across the homepage, the wardrobe tab and the
+visualiser upload state; zero broken images by `naturalWidth`.
+
+**And the moved wardrobe cut-outs were confirmed fetched at their new path** — itemised, not
+counted: `12.0U-white-interior.png`, `4.0-white-front.png`, `7.0L-white-interior.png`, all 200.
+That itemisation is what produced the correction above.

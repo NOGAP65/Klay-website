@@ -28,6 +28,36 @@ executed the code. Instance 9 in `docs/runbooks/verifying-source-transforms.md` 
 
 ## F-1 — `ROOM_VIEW_READY`, the one that caused the bug
 
+
+### CORRECTION, 4 SEPTEMBER — "DRAWN BY NOTHING" WAS WRONG
+
+**The cut-outs are drawn. `wardrobeScene.ts` loads them for `Wardrobe3D`'s sticker**, on the live
+surface, with `ROOM_VIEW_READY` still false:
+
+```ts
+const sticker = cut && isWhite ? await load(`.../wardrobes/${cut.file}`) : null;
+```
+
+An itemised network trace over the wardrobe tab requests **three of them, all 200** —
+`12.0U-white-interior.png`, `4.0-white-front.png`, `7.0L-white-interior.png`.
+
+**What was actually observed, and what was wrongly inferred from it.** Hiding
+`12.0U-white-interior.png` moved **0 of 2304 cells**, and the earlier trace counted six wardrobe
+requests without listing them. From those two facts the conclusion drawn was "no cut-out is
+fetched". **The count was never itemised — the cut-outs were almost certainly among those six all
+along.**
+
+**The right explanation for the zero is different, and it is worse news, not better.** When the
+sticker fails to load the renderer falls back to the modelled white carcass — and for a *white*
+wardrobe a photographic white board and a modelled white board are close enough that a 48×48
+luminance grid at threshold 12 cannot separate them. **The cut-out path is live and
+under-observable, not dead.**
+
+**The gate is unchanged and the reasoning for it is unchanged**: render cases still cannot vouch
+for the cut-outs, so `check:wardrobe-assets` is still what covers them. But the 27 MB is **not**
+dormant artwork waiting on a flag — it is being drawn right now, and a mis-moved file degrades a
+live picture in a way the baseline cannot see.
+
 ```js
 const ROOM_VIEW_READY = false;
 ```
