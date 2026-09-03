@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../data/products';
 import { pricePerBlind, type BlindType } from '../lib/pricing';
 import { DEFAULT_WIDTH_MM, wardrobeModelById, WARDROBE_MODELS, type WardrobeKind } from './wardrobes';
+import { DEFAULT_WALL_COLOUR } from './wallColours';
 import { DEFAULT_HANDLE_FINISH } from './wardrobeHardware';
 
 type Point = [number, number];
@@ -246,6 +247,18 @@ interface VisualiserStore {
    * what every photograph in the supplier's deck shows. */
   wardrobeRecessed: boolean;
 
+  /** THE CUSTOMER'S OWN WALL COLOUR, as a hex.
+   *
+   * VISUALISER ONLY, like wardrobeRecessed and for the same reason: it is a
+   * fact about their room rather than anything about the product, and it never
+   * reaches a quote. What it buys is the only comparison that matters — a white
+   * robe against an off-white wall and the same robe against a deep green one
+   * are two different pictures, and it is the second that decides the sale.
+   *
+   * Held as a hex rather than a name because the picker can return any colour;
+   * the name is looked up for display. See wallColours. */
+  wardrobeWallColour: string;
+
   /** The finish's NAME, matching HANDLE_FINISHES — the same convention
    * wardrobeColour uses, so what is stored is what gets written on the quote
    * rather than a hex nobody can read back. */
@@ -305,6 +318,7 @@ interface VisualiserStore {
   setWardrobeModel: (id: string) => void;
   setWardrobeColour: (name: string) => void;
   setWardrobeRecessed: (on: boolean) => void;
+  setWardrobeWallColour: (hex: string) => void;
   setWardrobeHandleFinish: (name: string) => void;
   setCurtainMount: (mount: CurtainMount) => void;
   setCurtainSize: (size: CurtainSize) => void;
@@ -332,6 +346,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   wardrobeModel: 'SRSTDH02',
   wardrobeColour: 'Matt Wardrobe White',
   wardrobeRecessed: true,
+  wardrobeWallColour: DEFAULT_WALL_COLOUR,
   wardrobeHandleFinish: DEFAULT_HANDLE_FINISH,
   // 3.0's first width, matching wardrobeModel above.
   wardrobeWidthMm: DEFAULT_WIDTH_MM,
@@ -462,6 +477,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
     }),
   setWardrobeColour: (name) => set({ wardrobeColour: name }),
   setWardrobeRecessed: (on) => set({ wardrobeRecessed: on }),
+  setWardrobeWallColour: (hex) => set({ wardrobeWallColour: hex }),
   // Flat sets, like the rest of the wardrobe fields: a wardrobe is one piece of
   // joinery for the room rather than something each window carries, so these do
   // not writeThrough. See the note on setWardrobeKind.

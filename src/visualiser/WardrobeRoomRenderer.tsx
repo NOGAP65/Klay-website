@@ -44,6 +44,8 @@ export interface WardrobeRoomRendererProps {
   handleFinish?: string;
   /** Built into an opening, or standing against a wall. */
   recessed?: boolean;
+  /** The room's wall colour, hex. */
+  wallColour?: string;
 }
 
 /** How large the offscreen render may get.
@@ -215,6 +217,7 @@ export default function WardrobeRoomRenderer({
   widthMm,
   handleFinish,
   recessed,
+  wallColour,
 }: WardrobeRoomRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -318,6 +321,7 @@ export default function WardrobeRoomRenderer({
         forRoom: true,
         handleFinish,
         recessed,
+        wallColour,
       });
       if (cancelled) {
         built.dispose();
@@ -395,7 +399,7 @@ export default function WardrobeRoomRenderer({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoUrl, modelId, colourName, widthMm, handleFinish, recessed, JSON.stringify(corners)]);
+  }, [photoUrl, modelId, colourName, widthMm, handleFinish, recessed, wallColour, JSON.stringify(corners)]);
 
   return <canvas ref={canvasRef} style={{ width: '100%', height: 'auto', display: 'block' }} />;
 }
