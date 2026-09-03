@@ -28,7 +28,16 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
-import { ShopCard, COLUMN_MIN, COLUMN_GAP, columnWidth } from '../components/ShopCard';
+import {
+  ShopCard,
+  CLOSE_MS,
+  COLUMN_GAP,
+  COLUMN_MIN,
+  STAGGER_MS,
+  STAGGER_SPAN_MS,
+  TRAVEL_MS,
+  columnWidth,
+} from '../components/ShopCard';
 import { defaultSelection, type Selection } from '../data/configOptions';
 import { useKlayStore } from '../store';
 import { radius, tokens } from '../theme';
@@ -141,7 +150,13 @@ export default function ProductsPage() {
     // arrangement without any of this.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const frames: number[] = [];
+    // Which way this is going. On the way back the id has already been
+    // cleared, so nothing is open.
+    const opening = openId !== null;
+
+    // Only the cards that actually moved. One that did not needs no help, and
+    // transforming it would put it on its own compositor layer for nothing.
+    const movers: { el: HTMLElement; dx: number; dy: number }[] = [];
     [...grid.children].forEach((node, i) => {
       const item = items[i];
       const before = item && prev.get(item.id);
@@ -150,20 +165,64 @@ export default function ProductsPage() {
       const after = el.getBoundingClientRect();
       const dx = before.left - after.left;
       const dy = before.top - after.top;
-      // A card that did not move needs no help, and transforming it would only
-      // put it on its own layer for nothing.
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-
-      el.style.transition = 'none';
-      el.style.transform = `translate(${dx}px, ${dy}px)`;
-      frames.push(requestAnimationFrame(() => {
-        // The box's own duration and easing, so the card opening and the cards
-        // moving aside read as one motion rather than two that overlap.
-        el.style.transition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)';
-        el.style.transform = '';
-      }));
+      movers.push({ el, dx, dy });
     });
-    return () => frames.forEach(cancelAnimationFrame);
+
+    // THE ORDER IS THE SNAKE. Grid order going out, so the displacement travels
+    // away from the card that opened; reversed coming back, so it retracts
+    // toward it. Same cards, same paths, and it reads as one motion with a
+    // direction rather than every card leaving on the same frame.
+    if (!opening) movers.reverse();
+
+    // THE WAVE CANNOT OUTRUN THE GRID. 45ms apiece is right for the handful of
+    // cards a customer can see at once, but the full range is thirteen movers,
+    // which puts the last one's delay at 540ms and had the thing running for
+    // near enough a second — and a filtered grid is a different length again, so
+    // the same click would feel different depending on how much happened to be
+    // on screen. The gap shrinks to fit instead: every card still leaves after
+    // the one before it, and the wave takes the same time to cross the grid
+    // whatever is in it.
+    const gap = Math.min(STAGGER_MS, STAGGER_SPAN_MS / Math.max(1, movers.length - 1));
+
+    const running = movers.map(({ el, dx, dy }, n) => {
+      // DOWN, THEN ACROSS. A card wrapping to the next row used to travel the
+      // straight line between its two positions, which is a diagonal cut across
+      // the middle of the grid past cards it has nothing to do with. It takes
+      // the corner instead: out of its row first, then along the new one — the
+      // path the grid itself implies.
+      //
+      // Opening, the waypoint is directly below where it started. Closing, it is
+      // directly beside where it lands, which is the same corner reached from
+      // the other side — so the way back retraces the way out exactly rather
+      // than being its own second path.
+      const wraps = Math.abs(dx) > 1 && Math.abs(dy) > 1;
+      const corner = opening ? `translate(${dx}px, 0px)` : `translate(0px, ${dy}px)`;
+      const path = wraps
+        ? [
+            { transform: `translate(${dx}px, ${dy}px)`, easing: 'cubic-bezier(0.4, 0, 0.5, 1)' },
+            { transform: corner, offset: 0.52, easing: 'cubic-bezier(0.3, 0, 0.2, 1)' },
+            { transform: 'translate(0px, 0px)' },
+          ]
+        : [
+            { transform: `translate(${dx}px, ${dy}px)` },
+            { transform: 'translate(0px, 0px)' },
+          ];
+
+      return el.animate(path, {
+        duration: wraps ? TRAVEL_MS : TRAVEL_MS * 0.7,
+        delay: n * gap,
+        easing: wraps ? 'linear' : 'cubic-bezier(0.22, 1, 0.36, 1)',
+        // WITHOUT THIS THE STAGGER IS BROKEN. A card waiting its turn has to sit
+        // at its OLD position for the length of its delay — 'backwards' applies
+        // the first keyframe during it. Left to fill 'none' each card would
+        // paint at its new place and then jump back to start when its turn came,
+        // which is the fault this whole effect exists to remove, reintroduced
+        // once per card.
+        fill: 'backwards',
+      });
+    });
+    return () => running.forEach(a => a.cancel());
     // items is deliberately absent: this must run for an open or a close, not
     // for a filter change, which replaces the cards rather than moving them.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -172,9 +231,16 @@ export default function ProductsPage() {
   useEffect(() => {
     if (!isClosing) return;
     const t = window.setTimeout(() => {
+      // SNAPSHOT AGAIN, HERE, and this is the whole reason the close never
+      // animated. A close does not reflow the grid at the click — the card keeps
+      // its span while the panel fades, and the grid only re-lays-out on the
+      // next line. The snapshot taken at the click was against an arrangement
+      // that had not moved yet, so the layout effect found every delta at zero
+      // and threw it away. This is the last moment the old positions exist.
+      snapshot();
       setOpenId(null);
       setClosing(false);
-    }, 260);
+    }, CLOSE_MS);
     return () => window.clearTimeout(t);
   }, [isClosing]);
 
