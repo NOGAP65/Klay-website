@@ -273,3 +273,101 @@ Phase 0. Everything before it is moving, not changing.
    one, and it is cheap now and expensive to retrofit.
 
 **Nothing moves until you have read this.**
+
+---
+
+# THE RENDER BASELINE — the gate for the unfreeze
+
+**Built 3 September 2026, before any move phase opened. `npm run baseline`.**
+
+**No move phase opens until this is green, and no phase closes until it is green again.**
+
+## Why the browser checks used in Phases 1–7 are not sufficient here
+
+Every check this migration has relied on asks a question about **loudness**:
+
+| Check | Catches |
+|---|---|
+| `tsc -b` | A reference that does not resolve |
+| `eslint` | A rule violation |
+| The route check | A page that fails to render |
+| The image check | An `<img>` that 404s, a `background-image` that does not fetch |
+| The console watch | An exception |
+
+**A renderer does not fail loudly.** It draws to a canvas. If a texture path is wrong, `loadAsset`
+resolves `null` **by design** and the legacy sticker is substituted. If a colour lookup misses,
+the blind draws in the wrong colour. If a geometry constant shifts, the fold pitch changes.
+
+**Nothing throws. Nothing 404s. The page renders perfectly and the picture is wrong.**
+
+That is a different failure mode and it needs a different check — one that reads the pixels.
+
+## What it does
+
+Five fixed configurations, driven through the real UI, captured from the canvas:
+
+```
+blind-blockout-medium-manual        blind-dual-medium-manual
+blind-sunscreen-large-motorised     curtain-default
+blind-lightfilter-small-manual
+```
+
+Each canvas is reduced to a **48×48 luminance grid** — 2,304 cells. A cell differing by more
+than 12/255 counts as changed, and **any changed cell is RED**.
+
+**A signature, not a hash, and the difference matters.** A hash of the pixel buffer goes red on
+one antialiased pixel and tells you nothing about what moved. The grid survives GPU dithering
+and still reports *how much* of the picture changed, which is the difference between a gate you
+can act on and one you learn to ignore.
+
+**Stability is polled, not assumed.** Textures load asynchronously and the curtain renderer
+animates on entry, so each case waits until two consecutive signatures agree before recording.
+
+## THE TEST, applied to the baseline itself
+
+**A gate that has never been seen to fail is not a gate.** So it was made to fail on purpose,
+before being trusted:
+
+| Step | Result |
+|---|---|
+| Record baselines, run unchanged | **Green** — 0 of 2,304 cells changed, on all five |
+| Change one fabric colour — Rynamic White `#F2F0EC` → `#3060C0` in `data/products.ts` | — |
+| Run the **image and console check** | **GREEN. Zero broken images, zero errors** |
+| Run the **baseline** | **RED — 4 of 5.** 191–214 cells changed, 8.3–9.3% |
+| Revert, confirm the file hash matches exactly | `ff7dae05…` before and after |
+| Run the baseline again | **Green** — 0 cells, all five |
+
+**Two things that demonstration proves.**
+
+**The loud checks stayed green while the render was wrong.** That is not a criticism of them —
+it is precisely the gap this gate exists to fill, demonstrated rather than asserted.
+
+**And the red was diagnostic.** `curtain-default` stayed **green** while all four blind cases went
+red, because curtains read `CURTAIN_COLOURS` and blinds read `RYNAMIC_COLOURS`. The gate did not
+just say "something changed" — it localised the fault to the blind path.
+
+## Using it
+
+```
+npm run baseline           compare — exit 1 on any drift
+npm run baseline:update    re-record, after an INTENDED visual change
+```
+
+**`baseline:update` is the dangerous command.** It makes red go away by agreeing with whatever is
+on screen. Run it only when a visual change was intended, and say so in the commit — an
+unexplained baseline update is the same act as deleting a failing test.
+
+The `.json` signatures are committed; they are the gate. The `.png` captures are written beside
+them for human comparison and are gitignored — 830 KB each and re-written on every update.
+
+## What it does not cover, stated so nobody assumes otherwise
+
+- **Wardrobes.** Not reachable from `/visualiser` — the entry point was `/visualizer`, deleted
+  when E-07 closed. Wardrobe cases have to be driven from the homepage showcase and **should be
+  added before any wardrobe asset moves**, which is U4.
+- **The customer's own photograph.** Every case uses the default `Preview.png` window; the
+  corner-pin path is untested.
+- **Non-white fabric colours**, and every hardware finish.
+
+**Five cases is a floor, not a ceiling.** It covers the blind path and the curtain path across
+four fabric types, which is what U1–U3 touch. **U4 needs the wardrobe cases first.**

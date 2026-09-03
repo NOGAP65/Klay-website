@@ -55,3 +55,7 @@ dist-ssr
 # public/ so they cannot be published by accident, and outside git because they are
 # tens of megabytes of binaries with no diff.
 /assets-source/
+
+# The render baseline PNGs are the human artefact, the JSON is the gate.
+# PNGs are ~830 KB each and change whenever a baseline is re-recorded.
+/tools/render-baseline/*.png

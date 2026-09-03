@@ -16,7 +16,10 @@
     "verify:rules": "node tools/verify-rules-fire.mjs",
     "check:scope": "node tools/lint-scope.mjs",
     "check:exceptions": "node tools/verify-exceptions.mjs",
-    "verify:scope-guard": "node tools/verify-scope-guard.mjs"
+    "verify:scope-guard": "node tools/verify-scope-guard.mjs",
+    "audit:assets": "node tools/asset-audit.mjs",
+    "baseline": "node tools/render-baseline.mjs",
+    "baseline:update": "node tools/render-baseline.mjs --update"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
