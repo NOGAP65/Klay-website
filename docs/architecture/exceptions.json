@@ -10,7 +10,9 @@
         "src/visualiser/homography.ts"
       ],
       "excludesFromScope": false,
-      "note": "Covered by E-08 for scope purposes; listed for completeness."
+      "note": "PERMANENT, not deferred. These files may never unfreeze. \"On unfreeze\" was a word that sounded like a condition — it named no date, no trigger and no owner. A permanent exception is a documented decision; a temporary one that never ends is rot.",
+      "permanent": true,
+      "reviewTrigger": "The file is modified for any reason, or the visualiser migrates."
     },
     {
       "id": "E-02",
@@ -18,7 +20,10 @@
       "paths": [
         "src/visualiser/Canvas2DBlindRenderer.tsx"
       ],
-      "excludesFromScope": false
+      "excludesFromScope": false,
+      "permanent": true,
+      "reviewTrigger": "The file is modified for any reason, or the visualiser migrates.",
+      "note": "PERMANENT, not deferred. These files may never unfreeze. \"On unfreeze\" was a word that sounded like a condition — it named no date, no trigger and no owner. A permanent exception is a documented decision; a temporary one that never ends is rot."
     },
     {
       "id": "E-03",
@@ -26,7 +31,10 @@
       "paths": [
         "src/visualiser/CornerPinOverlay.tsx"
       ],
-      "excludesFromScope": false
+      "excludesFromScope": false,
+      "permanent": true,
+      "reviewTrigger": "The file is modified for any reason, or the visualiser migrates.",
+      "note": "PERMANENT, not deferred. These files may never unfreeze. \"On unfreeze\" was a word that sounded like a condition — it named no date, no trigger and no owner. A permanent exception is a documented decision; a temporary one that never ends is rot."
     },
     {
       "id": "E-04",
@@ -34,7 +42,10 @@
       "paths": [
         "src/visualiser/usePhotoUpload.ts"
       ],
-      "excludesFromScope": false
+      "excludesFromScope": false,
+      "permanent": true,
+      "reviewTrigger": "The file is modified for any reason, or the visualiser migrates.",
+      "note": "PERMANENT, not deferred. These files may never unfreeze. \"On unfreeze\" was a word that sounded like a condition — it named no date, no trigger and no owner. A permanent exception is a documented decision; a temporary one that never ends is rot."
     },
     {
       "id": "E-05",
@@ -60,8 +71,9 @@
         "src/pages/VisualiserPage.tsx"
       ],
       "excludesFromScope": true,
-      "retiresWhen": "The visualiser migration is scheduled as its own project. ADR-020.",
-      "note": "VisualizerLabPage.tsx was removed at the asset phase — the route was deleted, closing E-07. src/visualiser-lab/ is untouched and stays."
+      "retiresWhen": "V calls it when the wardrobe work pauses. An owner who can be asked, not a milestone that can recede.",
+      "note": "VisualizerLabPage.tsx was removed at the asset phase — the route was deleted, closing E-07. src/visualiser-lab/ is untouched and stays.",
+      "owner": "V"
     },
     {
       "id": "E-09",
@@ -70,8 +82,9 @@
         "src/lib/pricing.ts"
       ],
       "excludesFromScope": true,
-      "retiresWhen": "With E-08 — the four E-08 files that import it by relative path can be edited.",
-      "note": "Not yet a shim. The path is excluded from the moment the exception is granted, so the count does not jump when Phase 6 creates it."
+      "retiresWhen": "With E-08 — V calls it when the wardrobe work pauses.",
+      "note": "Not yet a shim. The path is excluded from the moment the exception is granted, so the count does not jump when Phase 6 creates it.",
+      "owner": "V"
     },
     {
       "id": "E-10",
@@ -81,7 +94,8 @@
         "src/theme.ts"
       ],
       "excludesFromScope": true,
-      "retiresWhen": "With E-08."
+      "retiresWhen": "With E-08 — V calls it when the wardrobe work pauses.",
+      "owner": "V"
     },
     {
       "id": "E-11",
@@ -90,7 +104,8 @@
         "src/components/Nav.tsx"
       ],
       "excludesFromScope": true,
-      "retiresWhen": "With E-08 — VisualiserPage.tsx and VisualizerLabPage.tsx import it by relative path and may not be edited."
+      "retiresWhen": "With E-08 — V calls it when the wardrobe work pauses.",
+      "owner": "V"
     }
   ]
 }

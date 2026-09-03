@@ -1,3 +1,45 @@
+# THE TEST
+
+> ## What would this output if it were broken?
+>
+> ### If the answer is "the same thing", it is not a check.
+
+**This is the general test, and it applies to everything that reports.** Not to lint rules
+specifically, not as the lesson of any one incident. Ask it of anything whose output you are about
+to believe.
+
+| Signal | What it outputs when it works | What it outputs when it is broken | Same? |
+|---|---|---|---|
+| **A lint rule** | Zero findings | Zero findings | **Yes** |
+| **A grep** | No matches | No matches, because the thing is shaped differently | **Yes** |
+| **A guard's test** | Passes | Passes — the failure branch never ran | **Yes** |
+| **A typecheck over the wrong project** | No errors | No errors, having compiled nothing | **Yes** |
+| **A browser check on a route that 404s** | No console errors | No console errors, on a page that isn't the one you meant | **Yes** |
+| **A `git push`** | Silence, then a ref update | Silence, waiting on a prompt you cannot see | **Yes** |
+
+**Every row is a real occurrence in this project**, and every one was believed at the time.
+
+## What to do when the answer is "the same thing"
+
+**Make it fail on purpose, once.** That is the entire remedy and it is usually five minutes.
+
+- A rule gets a fixture that violates it — `npm run verify:rules`.
+- A guard gets a probe it must refuse — `npm run verify:scope-guard`.
+- A search gets run against a case you know exists, before you trust it finding nothing.
+- A typecheck gets checked for what it *covered*, not just its exit code.
+- A browser check asserts something positive — that the page rendered, that the image loaded —
+  not merely that nothing threw.
+
+**A signal you have never seen fail is not evidence. It is a habit.**
+
+## Why this is at the top of the runbook
+
+Seven separate incidents in one migration, each looking like a different bug, all reducible to
+this question going unasked. The remainder of this file is those seven in detail — worth reading
+as a set, because the individual bugs are all obvious in hindsight and the pattern is not.
+
+---
+
 # Verification — one shape, three faces
 
 > **ADR-022's standard was applied to everything except the thing applying it.**
@@ -14,11 +56,8 @@ observed.**
 | **A search whose empty result means nothing** | A `grep` for three contact details that missed a fourth, because the fourth was a named constant rather than an inline literal | An empty result reads as "none exist" when it means "none matched how I asked" |
 | **A check never shown to behave correctly when it FAILS** | The scope-guard verifier, whose write test used a real protected file — so the day the guard let it through, the test wrote to disk | Every run had been a passing run. The destructive line had never executed |
 
-**The test for all three is the same question**, and it is the only one that separates a real
-check from a green tick:
-
-> **What would this output if it were broken? If the answer is "the same thing", it is not a
-> check.**
+**All three fail THE TEST at the top of this file** — each outputs the same thing broken as
+working:
 
 `import/no-cycle` outputs zero whether it works or not. A grep outputs nothing whether the thing
 is absent or merely differently shaped. A guard's test passes whether the guard holds or the test

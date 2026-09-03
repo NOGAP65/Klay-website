@@ -1,8 +1,8 @@
 # Klay Interiors — Architecture Specification
 
-**Version:** 1.9
-**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3–v1.8), 3 Sep 2026 (v1.9)
-**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2), ADR-020 (§12), ADR-022 (§11), ADR-023 (§11, §12), ADR-024 (§5), ADR-025 (§3, §9), ADR-026 (records only)
+**Version:** 2.0
+**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3–v1.8), 3 Sep 2026 (v1.9, v2.0)
+**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2), ADR-020 (§12), ADR-022 (§11), ADR-023 (§11, §12), ADR-024 (§5), ADR-025 (§3, §9), ADR-026 (records only). v2.0: §2 denominator, §12 permanence and owners, §11 the test
 **Status:** Standing document. This is the constitution, not a work order.
 **Owner:** V
 **Applies to:** NOGAP65/Klay-website-new. Ella adopts it after Klay proves it.
@@ -30,16 +30,16 @@ therefore not an appendix — it is the part that makes the rest real.
 1. **Organise by what it does for the business, not by what kind of file it is.** A folder
    called `components` holding forty unrelated components tells you nothing. A folder called
    `checkout` tells you everything.
-> **WORKED EXAMPLE, AND IT IS ABOUT A FOLDER OF IMAGES.** `public/images/lifestyle/` held six
-> photographs of finished rooms and four diagrams of how buying works. It was named for what its
-> contents were **not** — neither was a product cut-out — which is the same failure as a
-> `components/` folder holding forty unrelated components, one level down and in a directory
-> nobody thought of as code.
->
-> It became `rooms/` and `process/` at the asset phase. **Nobody had applied this rule to it
-> because the folder predated the rule**, and because §1 reads as being about source. It is not:
-> it is about how a reader finds a thing, and a reader looking for the install diagram was
-> looking in a folder that could not tell them whether it was there.
+   > **WORKED EXAMPLE, AND IT IS ABOUT A FOLDER OF IMAGES.** `public/images/lifestyle/` held six
+   > photographs of finished rooms and four diagrams of how buying works. It was named for what its
+   > contents were **not** — neither was a product cut-out — which is the same failure as a
+   > `components/` folder holding forty unrelated components, one level down and in a directory
+   > nobody thought of as code.
+   >
+   > It became `rooms/` and `process/` at the asset phase. **Nobody had applied this rule to it
+   > because the folder predated the rule**, and because §1 reads as being about source. It is not:
+   > it is about how a reader finds a thing, and a reader looking for the install diagram was
+   > looking in a folder that could not tell them whether it was there.
 
 2. **Dependencies flow one way: app → features → shared.** Never upward. Never sideways
    between features. A feature that needs another feature's internals is a design error, not
@@ -70,7 +70,36 @@ therefore not an appendix — it is the part that makes the rest real.
 **The test for "is this shared?"** Could this be lifted into an unrelated project without
 modification? A date formatter, yes. A `formatBlindWidth` function, no.
 
-If `shared/` exceeds roughly **15% of `src/`** by line count, something has been misfiled.
+**If `shared/` exceeds roughly 15% of IN-SCOPE `src/` by line count, something has been misfiled.**
+
+**In-scope, not all of `src/` — and the difference is 3.2×.** The denominator is the set ADR-023
+computes from the exception register: every file under `src/` minus the paths any exception
+removes from scope. `tools/scope.mjs` already produces it; no second definition is introduced
+here.
+
+| Denominator | `src/` lines | `shared/` as a share |
+|---|---:|---:|
+| All of `src/` | 42,084 | 0.88% |
+| **In-scope `src/`** | **13,082** | **2.84%** |
+
+**69% of `src/` by line count is code this specification does not govern.** Measuring a rule about
+`shared/` against it produces a number that moves for reasons the rule has no opinion on:
+
+- **Adding out-of-scope code LOWERS the ratio.** Five thousand lines into `visualiser-lab/` and
+  `shared/` looks proportionally smaller, having not changed.
+- **Deleting out-of-scope code RAISES it.** Retiring E-08 would move `shared/` from 0.88% toward
+  2.84% overnight, with not one line added to `shared/`.
+
+**So the rule as written rewarded adding code elsewhere and punished cleanup** — the exact
+inversion of what §13 asks for, in a sentence meant to enforce it.
+
+**Harmless at 0.88%, and wrong in a direction that only surfaces when it matters.** The ceiling is
+nowhere near either number today. The day it bites is the day someone deletes seventeen thousand
+lines of visualiser and finds a rule complaining about a folder they did not touch — which is
+precisely the moment a specification most needs to be measuring what it says it measures.
+
+**15% remains a ceiling and not a target.** §2's other paragraph on this stands: a thin `shared/`
+is what a codebase looks like when almost everything genuinely belongs to a feature.
 
 **Cross-feature communication has exactly three legal answers:** B exports it from its
 `index.ts` and A imports that; the thing isn't really either feature's and moves to `shared/`;
@@ -609,6 +638,25 @@ So the bypass is closed rather than discouraged.
 does.** The list is now one import and no arguments; the ad-hoc version is the longer one to
 write.
 
+### AND THE TEST THAT DECIDES WHETHER ANY OF THIS IS WORKING
+
+> **What would this output if it were broken?**
+> **If the answer is "the same thing", it is not a check.**
+
+**The general test, and it is not about lint rules.** It applies to every signal this document
+relies on — a rule's count, a `grep`'s empty result, a guard's passing test, `tsc -b`'s exit code,
+a browser check that only watches for thrown errors, a `git push` that returns silently.
+
+Each of those has, in this project, output exactly what it outputs when working while being
+wrong. **Every one was believed at the time.**
+
+**The remedy is to make it fail on purpose, once** — which is what `npm run verify:rules` and
+`npm run verify:scope-guard` are, and why §11 requires them before a rule may be promoted. A
+signal nobody has seen fail is not evidence; it is a habit.
+
+`docs/runbooks/verifying-source-transforms.md` carries the seven instances and the three shapes
+they take.
+
 ### AN EXIT CONDITION MUST NOT BE WRITTEN OVER SOMETHING THE PHASE DOES NOT CONTROL
 
 > **Ask of every condition phrased "when X reaches Y": who can change Y?**
@@ -636,19 +684,23 @@ that cannot be distinguished from a real one by reading it, only by watching it 
 ### THE AUDIT OF THIS DOCUMENT'S OWN CONDITIONS
 
 **Run 3 September 2026.** Every condition in this specification phrased as a threshold or a
-milestone, asked *who can change Y*. **Seven fail. Two more are weak and are named rather than
-excused.**
+milestone, asked *who can change Y*. **Seven failed. Two more were weak.**
+
+**All nine are now resolved, and none by rewording.** Four became permanent exceptions with a
+review trigger; four gained an owner who can be asked; one — §2's ceiling — was measured against
+the wrong denominator and is now measured against the right one. The verdict column below records
+what each became.
 
 | Condition | Where | Who can change Y | Verdict |
 |---|---|---|---|
-| *"On unfreeze"* | **E-01 – E-04** | Whoever decides the visualiser is unfrozen — not this project | **FAILS.** Four exceptions whose review date is another team's decision. Same shape as E-07 exactly |
-| *"When that work is scheduled on its own, with its own plan"* | **E-08** | Whoever schedules the visualiser migration | **FAILS**, and it is the root: four other exceptions inherit from it |
-| *"With E-08"* | **E-09, E-10, E-11** | Same as E-08 | **FAILS by inheritance.** E-11's case is now known to be separable — see ADR-020's audit |
-| *"If `shared/` exceeds roughly 15% of `src/` by line count"* | **§2** | **Anyone writing ANY code in `src/`, including out-of-scope code** | **FAILS, and this one is worse than it looks** — see below |
-| *"The visualiser migration being scheduled as its own project"* | **§3**, the `features/visualiser/` trigger | Same as E-08 | **FAILS** |
+| *"On unfreeze"* | **E-01 – E-04** | Whoever decides the visualiser is unfrozen — not this project | **RESOLVED: now PERMANENT with a review trigger.** These files may never unfreeze. A permanent exception is a documented decision; a temporary one that never ends is rot |
+| *"When that work is scheduled on its own, with its own plan"* | **E-08** | Whoever schedules the visualiser migration | **RESOLVED: owner V**, called when the wardrobe work pauses. A person can be asked; a milestone cannot |
+| *"With E-08"* | **E-09, E-10, E-11** | Same as E-08 | **RESOLVED: owner V**, by inheritance. E-11 is separately known to be closeable early — ADR-020's audit |
+| *"If `shared/` exceeds roughly 15% of `src/`"* | **§2** | Anyone writing ANY code in `src/`, including out-of-scope code | **RESOLVED: measured against IN-SCOPE `src/`** — ADR-023's computed set. 0.88% -> 2.84%, a 3.2× correction, because 69% of `src/` was code the rule has no opinion on |
+| *"The visualiser migration being scheduled as its own project"* | **§3**, the `features/visualiser/` trigger | Same as E-08 | **RESOLVED: owner V**, with E-08 |
 | *"If styling approach changes"* | **E-05** | Whoever changes the styling approach | **WEAK.** It is a review trigger rather than an expiry, so nothing is blocked by it — but nothing will ever fire it either |
 | *"At zero it flips to `error` permanently"* | **§11** | Anyone who writes a violation before the flip happens | **WEAK.** The consequence is only "wait longer", not a phase that cannot close. Named because it is the same shape |
-| *"Phase 6 closes when `CLEARABLE` reaches zero"* | PHASE_6_SCOPE | **Mostly the phase — but not exclusively.** A parallel session adding a `feature → legacy` import raises it | **WEAK, AND IT IS MY OWN REPLACEMENT.** Better than the floor it replaced, not airtight. Recorded rather than claimed as solved |
+| *"Phase 6 closes when `CLEARABLE` reaches zero"* | PHASE_6_SCOPE | Mostly the phase — a second session adding a `feature → legacy` import raises it too | **ACCEPTED WITH AN OWNER.** No condition survives another session writing code, and inventing one that claimed to would be theatre. It moves, it is reported, **V decides** |
 | *"Klay-only until proven"* | **§14** | Undefined — nobody owns "proven" | **WEAK.** Not a gate on anything, so it costs nothing today |
 
 ### §2's 15% ceiling is the interesting failure
@@ -830,18 +882,18 @@ invokes it.
 
 ## 12. EXCEPTIONS REGISTER
 
-| # | Exception | Reason | Review |
+| # | Exception | Reason | Permanent? / Review |
 |---|---|---|---|
-| E-01 | `homography.ts` exempt from size and complexity limits | Protected IP, mathematically dense, splitting risks correctness | On unfreeze |
-| E-02 | `Canvas2DBlindRenderer.tsx` exempt from size limits | Protected IP, rendering pipeline | On unfreeze |
-| E-03 | `CornerPinOverlay.tsx` exempt from size limits | Protected IP | On unfreeze |
-| E-04 | `usePhotoUpload.ts` exempt from size limits | Protected IP | On unfreeze |
+| E-01 | `homography.ts` exempt from size and complexity limits | Protected IP, mathematically dense, splitting risks correctness | **PERMANENT.** Review if the file is modified, or when the visualiser migrates |
+| E-02 | `Canvas2DBlindRenderer.tsx` exempt from size limits | Protected IP, rendering pipeline | **PERMANENT.** Review if the file is modified, or when the visualiser migrates |
+| E-03 | `CornerPinOverlay.tsx` exempt from size limits | Protected IP | **PERMANENT.** Review if the file is modified, or when the visualiser migrates |
+| E-04 | `usePhotoUpload.ts` exempt from size limits | Protected IP | **PERMANENT.** Review if the file is modified, or when the visualiser migrates |
 | E-05 | `style-src 'unsafe-inline'` in CSP | Inline-styles-only is a brand-level decision; runtime-computed styles cannot be nonced | If styling approach changes |
 | E-06 | `design-system/tokens/*` exempt from the no-literal-values rule | It is the source of the values | Permanent |
-| E-08 | `src/visualiser/`, `src/visualiser-lab/` and `VisualiserPage.tsx` are outside the migration and outside every rule in this document | ADR-020. Under active development; the slot for them receded at every phase. They are not moved, not renamed, not re-aliased, not lint-fixed | When that work is scheduled on its own, with its own plan |
-| E-09 | A permanent re-export shim at `src/lib/pricing.ts` after the module moves to `shared-core/pricing/` | ADR-020. Four E-08 files import it by relative path and may not be edited. One table, two paths — a re-export cannot diverge from what it re-exports | With E-08 |
-| E-10 | `src/data/products.ts` and `src/theme.ts` stay where they are | ADR-020. Imported by E-08 files. `products.ts` additionally cannot be split by consumer, which was decision H | With E-08 |
-| E-11 | A permanent re-export shim at `src/components/Nav.tsx` after `Nav` moves to `app/layouts/` | Phase 5, decision D. `VisualiserPage.tsx` imports it by relative path and is E-08 (it was two files until `VisualizerLabPage.tsx` was deleted) — an import rewrite is still an edit. One component, two paths; a re-export cannot diverge from what it re-exports | With E-08 |
+| E-08 | `src/visualiser/`, `src/visualiser-lab/` and `VisualiserPage.tsx` are outside the migration and outside every rule in this document | ADR-020. Under active development; the slot for them receded at every phase. They are not moved, not renamed, not re-aliased, not lint-fixed | **Owner: V** — called when the wardrobe work pauses |
+| E-09 | A permanent re-export shim at `src/lib/pricing.ts` after the module moves to `shared-core/pricing/` | ADR-020. Four E-08 files import it by relative path and may not be edited. One table, two paths — a re-export cannot diverge from what it re-exports | With E-08 — **owner: V** |
+| E-10 | `src/data/products.ts` and `src/theme.ts` stay where they are | ADR-020. Imported by E-08 files. `products.ts` additionally cannot be split by consumer, which was decision H | With E-08 — **owner: V** |
+| E-11 | A permanent re-export shim at `src/components/Nav.tsx` after `Nav` moves to `app/layouts/` | Phase 5, decision D. `VisualiserPage.tsx` imports it by relative path and is E-08 (it was two files until `VisualizerLabPage.tsx` was deleted) — an import rewrite is still an edit. One component, two paths; a re-export cannot diverge from what it re-exports | With E-08 — **owner: V** |
 
 **RETIRED — E-07**, the `visualiser`/`visualizer` spelling split, on 3 September 2026. The
 z-spelled route and its page were deleted rather than the two spellings unified, so the exception
@@ -877,6 +929,41 @@ typechecker for a string path**, and a *constructed* string path cannot be read 
 asset directory addressed by expression is outside every mechanism in this document and has to
 be handled by knowing about it. Naming it here is the only enforcement available.
 
+### A REVIEW COLUMN, NOT AN EXIT COLUMN — AND EVERY ROW EITHER IS PERMANENT OR HAS AN OWNER
+
+The right-hand column above used to hold exit conditions. **Five of them failed §11's test** —
+they were written over things nobody in this project controls. Both halves of the register are now
+explicit about which kind of row each is.
+
+**PERMANENT — E-01, E-02, E-03, E-04.** The four protected IP files. Their review column read
+*"on unfreeze"*, which named no date, no trigger and no owner: **a word that sounds like a
+condition.** These files may never unfreeze, and an exception waiting for an event that may not
+happen is not deferred, it is rotting.
+
+They are now **permanent exceptions with a review trigger**, which is a different thing:
+
+> **Review when the file is modified for any reason, or when the visualiser migrates.**
+
+A trigger fires on an observable event and asks a question. An exit condition promises an ending.
+**These have no ending, and saying so is more honest than implying one** — a permanent exception
+is a documented decision, and the decision is that `homography.ts` is mathematically dense enough
+that splitting it risks correctness. That reasoning does not expire.
+
+**OWNED — E-08, and E-09, E-10, E-11 by inheritance.** E-08's condition was *"when that work is
+scheduled on its own"* — someone else's decision on someone else's timing, and the root that four
+other exceptions inherit.
+
+> **Owner: V. Called when the wardrobe work pauses.**
+
+**An owner is a real condition because there is someone who can be asked.** A milestone can
+recede indefinitely and nobody is answerable for it; a person can say "not yet" and be asked
+again next month. That is the difference §11's rule is pointing at, and it is why this is a fix
+rather than a rewording.
+
+**`exceptions.json` carries `permanent` and `owner` as fields**, so the distinction is
+machine-readable rather than a shade of prose, and `npm run check:exceptions` keeps both halves
+in agreement.
+
 **Adding to this table requires an ADR. An exception without an ADR is a violation.**
 
 **AND A ROW IN `docs/architecture/exceptions.json` — ADR-023.** That file is this table's
@@ -904,7 +991,7 @@ implementations, and three hardware colour maps. Not one was carelessness: D-03'
 regexes are identical because three competent people independently reached the same correct
 answer. The failure mode is not bad code, it is code that cannot see other code.
 
-**The Junk Drawer.** `utils.ts`, `helpers.ts`, or a `shared/` past 15% of the codebase.
+**The Junk Drawer.** `utils.ts`, `helpers.ts`, or a `shared/` past 15% of the IN-SCOPE codebase — §2. Measured against the set this document governs, not against everything on disk.
 
 **The God Component.** Fetches, calculates, holds state and renders. Caught by the size limit,
 but the size limit is the symptom.

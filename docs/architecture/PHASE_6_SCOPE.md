@@ -173,6 +173,19 @@ out-of-scope zone — it says the visualiser is growing new surface that feature
 worth knowing when its own migration is eventually scheduled. It is not a reason to hold a phase
 open.
 
+**THE RESIDUAL RISK, NAMED, AND ITS OWNER.** `CLEARABLE` is mostly the phase's to control — but
+a second session adding a `feature → legacy` import raises it too. **No condition survives another
+session writing code, and inventing one that claimed to would be theatre.**
+
+So the condition is not "a number nobody can move". It is:
+
+> **Phase 6 closes when `CLEARABLE` reaches zero. If it moves during the phase, that is REPORTED,
+> and V decides.**
+
+**An owner is what §11's rule actually asks for.** A milestone recedes and nobody is answerable; a
+number anyone can move is not a gate. A person who is told when it moves and decides what that
+means is neither — and it is the same fix E-08's chain just received.
+
 **The general form, since this is the second exit condition to fail this way.** E-07's condition
 was another team's milestone and could not be met; this one was a number another team could move.
 **An exit condition must be written over something the phase itself controls** — otherwise it is
