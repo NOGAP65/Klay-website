@@ -127,7 +127,7 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // The one priced product. Its variant ids are the four pricing blind types
   // verbatim, which is what lets the panel show a live price — see priceFor.
   'roller-blinds': {
-    variantLabel: 'Light control',
+    variantLabel: 'Fabric type',
     variants: [
       v('blockout', 'Blockout'),
       v('lightfilter', 'Light filter'),
@@ -140,13 +140,13 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     colourLabel: 'Fabric colour',
   },
   'roman-blinds': {
-    variantLabel: 'Light control',
+    variantLabel: 'Fabric type',
     variants: [v('blockout', 'Blockout'), v('lightfilter', 'Light filter')],
     size: true,
     operation: true,
   },
   'honeycomb-blinds': {
-    variantLabel: 'Light control',
+    variantLabel: 'Fabric type',
     variants: [v('blockout', 'Blockout'), v('lightfilter', 'Light filter')],
     size: true,
     operation: true,
@@ -163,7 +163,7 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     size: true,
   },
   'vertical-blinds': {
-    variantLabel: 'Light control',
+    variantLabel: 'Fabric type',
     variants: [
       v('blockout', 'Blockout'),
       v('lightfilter', 'Light filter'),
