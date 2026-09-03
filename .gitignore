@@ -59,3 +59,24 @@ dist-ssr
 # The render baseline PNGs are the human artefact, the JSON is the gate.
 # PNGs are ~830 KB each and change whenever a baseline is re-recorded.
 /tools/render-baseline/*.png
+
+# SUPPLIER DOCUMENTS DO NOT LIVE IN THIS REPOSITORY. Catalogues, pitch decks,
+# price lists, spec sheets — legitimate reference material that we use, and that
+# still does not belong here.
+#
+# SUPPLIER PRICING IN A GIT REPOSITORY IS A COMMERCIAL EXPOSURE THE MOMENT THE
+# REPOSITORY IS SHARED, and it is exposed in a way a deleted file is not: git
+# keeps every version, so removing it later does not remove it. A contractor
+# cloning to fix a button gets the trade terms with it.
+#
+# These patterns are broad on purpose. The failure they prevent is somebody
+# dropping a PDF in the working directory and a wide `git add` taking it, which
+# is exactly how a telco form carrying personal information reached public/ and
+# how a settings file spent months inside the web root.
+#
+# Keep them in the shared drive. See docs/runbooks/what-does-not-go-in-the-repo.md.
+/*.pdf
+/*.PDF
+/*.xlsx
+/*.docx
+/*.pptx

@@ -236,10 +236,10 @@ map** — it removes the last `%20` encoding in the codebase and the last z-spel
 | # | Phase | Why here | Risk |
 |---:|---|---|---|
 | **U0** | **THE RENDER BASELINE** | **DONE, 3 Sep — and proven able to go red before being trusted.** No move phase opens without it; see the section at the end of this file | — |
-| **U1** | **Delete `visualiser-lab/`** | Removes 44% of the zone before anything is restructured. Nothing imports it | **Very low** |
+| **U1** | **Delete `visualiser-lab/`. DONE, 3 Sep** | 18 files, 13,568 lines, nothing unique. Closed D-02 | **Very low** |
 | **U2** | **Retire the shims — Nav, BareLayout, `theme.ts`. DONE, 3 Sep** | Cleared all four demolition rows. One consequence worth knowing: `/visualiser` now has a footer and therefore scrolls | Low |
 | **U3** | **Fix the countdown tool; adopt the wardrobe manifest. DONE, 3 Sep — landed with U1** | Both were measurement corrections, and both were wrong in ways their own output could not show | Low |
-| **U4** | Move assets: `Textures/`, openings, `Preview.png` | Depends on U3's manifest for the wardrobe set | **Medium — silent failure** |
+| **U4** | Move assets: `Textures/`, openings, `Preview.png` | **NEXT.** Gated on the wardrobe render cases AND `check:wardrobe-assets` — see the remaining plan below | **Medium — silent failure** |
 | **U5** | **Move files into `features/visualiser/`. DONE, 3 Sep** | 21 files, one barrel, 13 deep imports became 6 barrel imports. Cleared demolition row 7 as well | Medium |
 | **U6** | Split `data/products.ts` — decision H | Finally executable | Low |
 | **U7** | Decompose the renderers to §8 limits | The real work, and the only phase that changes code | **HIGH** |
@@ -558,3 +558,142 @@ disappeared in a commit about a card photograph, and the explanation for those d
 shared resource, and `git add -A` is a claim over all of it. **The staging area is the only place in
 git where two agents can silently take each other's work**, because it is the one piece of state
 that is neither committed nor owned.
+
+---
+
+# MILESTONE — ADR-020's DEMOLITION LOG IS FULLY DISCHARGED
+
+**3 September 2026, at U5.** Every artefact the freeze created has been removed, and the boundary
+element type that existed to describe it is gone with it.
+
+| # | Artefact | Cleared |
+|---|---|---|
+| 1 | `src/components/Nav.tsx` re-export shim | U2 |
+| 2 | `BareLayout` | U2 |
+| 3 | `src/components/` as a directory | U2 |
+| 4 | `src/theme.ts` shim | U2 |
+| 7 | `legacy-visualiser` boundary element type | U5 |
+| 8 | The countdown's clearable/permanent split | U1 |
+
+**Rows 5 and 6 are not on this list and never were the freeze's doing.** `data/products.ts` at its
+legacy path (U6) and `lib/pricing.ts` into `shared-core/` (Phase 6) are ordinary migration steps
+that would have been due whether or not the visualiser was ever frozen. The log conflated them
+with the shims because they appeared in the same document; they are separate work.
+
+## THE TOTAL COST OF THE FREEZE
+
+> ### Four import changes and four deletions.
+
+| The four deletions | The four import changes |
+|---|---|
+| `src/theme.ts` | `Canvas2DBlindRenderer.tsx` → `@/ds` |
+| `src/components/Nav.tsx` | `KlayConfigurator.tsx` → `@/ds` |
+| `src/components/FormField.tsx` | `VisualiserControls.tsx` → `@/ds` |
+| `src/app/layouts/BareLayout.tsx` | `BookInstallPage.tsx` → `@/ds` |
+
+**That is the whole bill, and it is worth writing down because the number is so much smaller than
+the freeze felt.** For months these were load-bearing: `theme.ts` was described in its own header
+as the thing that let the migrated half of the codebase move while the frozen half kept working,
+and it was true. Retiring it took one afternoon and four lines.
+
+## WHAT THAT DOES AND DOES NOT SAY
+
+**It does not say the freeze was wrong.** The shims were cheap *because* they were shims — each was
+a re-export that could not diverge from what it re-exported, which is precisely why unwinding them
+was mechanical. §13's warning is about a *second copy*; a re-export is not one, and this is the
+evidence for that distinction rather than an argument against it.
+
+**What it does say is that the cost was in the constraint, not the code.** The four files were
+trivial. What was expensive was everything the freeze made impossible while it stood: `theme.ts`
+could not be split, decision H could not run, `products.ts` could not move, the countdown could not
+reach zero, and — the one nobody priced — **a defect sat behind `ROOM_VIEW_READY` for months
+because no check could reach the code and no one was allowed to.**
+
+> **A freeze is not paid for in the scaffolding it erects. It is paid for in the work that queues
+> behind it, and that bill is invisible until it is lifted.**
+
+**The queue is what U6 onward now clears.** Four import changes bought back the ability to do all
+of it.
+
+---
+
+# THE REMAINING PLAN, STATED — 3 SEPTEMBER 2026
+
+**The sequence did not run in order, so it is written out here rather than inferred from the table
+above.** U1, U2, U3 and U5 are done; U4 is next.
+
+## WHAT U3 WAS, AND WHAT BECAME OF IT
+
+> ### U3 is COMPLETE. It was ABSORBED into U1 — not deferred, not skipped.
+
+**U3 was two measurement corrections**, and it was placed before U4 because nothing could be
+verified properly until both landed:
+
+| | What it was | Where it actually landed |
+|---|---|---|
+| **Fix the countdown** | `legacy-countdown.mjs` hardcoded ADR-020 and reported 13 permanent edges that had all become clearable | Its own commit, immediately after U1's deletion |
+| **Adopt the wardrobe manifest** | `wardrobeAssetPath` built filenames instead of reading the generated manifest | Its own commit, immediately after U1's deletion |
+
+**It was absorbed because you asked for both in the same instruction as U1**, and both were
+prerequisites for trusting anything measured afterwards. They kept their own commits, so the record
+is not lost — only the phase number is, which is why it is written down here.
+
+**And absorbing it changed what U4 needs.** U3's whole purpose was to make U4's asset move
+verifiable, and it did: `check:wardrobe-assets` exists because of it. But adopting the manifest is
+also what uncovered the seven-of-ten defect and the fact that the wardrobe surface is WebGL —
+**both of which added conditions to U4 that the original table did not know about.**
+
+## THE REMAINING PHASES
+
+| # | Phase | State | What it depends on |
+|---:|---|---|---|
+| **U4** | **Move assets** — `Textures/`, openings, `Preview.png` | **NEXT** | The wardrobe baseline cases, and `check:wardrobe-assets` |
+| **U6** | Split `data/products.ts` — decision H | Ready | Nothing. Executable since the unfreeze |
+| **U7** | Decompose the renderers to §8 limits | **Not scheduled** | Its own Phase 0 — see below |
+| **U8** | Phase 7 re-run over the zone | Last | U7, or an explicit decision to run it without |
+
+**There is no U9.** U8 closes the unfreeze.
+
+### U4 — what it moves and what gates it
+
+**28 wardrobe files, 27 MB**, plus the window openings and `Preview.png`. Reached through a
+constructed path, which is R1 in the one area the render baseline could not see.
+
+**Two gates, and neither substitutes for the other:**
+
+1. **The wardrobe render cases** — over the `Wardrobe3D` path, using the screenshot-decode capture,
+   because `getContext('2d')` returns `null` on that canvas and the U0 harness would have skipped
+   rather than failed.
+2. **`check:wardrobe-assets`** — over the cut-out path, which **no render check can reach**, because
+   nothing draws the cut-outs while `ROOM_VIEW_READY` is false.
+
+**Also in U4: R7.** `visualizer pictures/` filenames contain spaces *and* `..` — `1500 .. opening.jpeg`
+is a path-traversal shape some tooling normalises. Rename them here, and verify in a real browser
+rather than with a HEAD request.
+
+### U6 — the one with no blockers
+
+Decision H has been executable since the unfreeze and is waiting only on its turn. `products.ts` is
+imported by three visualiser files, all in scope now, so the split can finally run by consumer.
+
+### U7 — should not run as a phase of this project
+
+**It is the only phase that changes code rather than moving it**, it touches the four protected-IP
+files, and E-02 forbids editing inside `Canvas2DBlindRenderer.tsx` — 3,496 lines that can currently
+only be moved. **If U7 genuinely requires editing it, that needs a decision from V before U7 opens,
+not during it.**
+
+> **Recommendation: U7 is its own project with its own Phase 0.** Everything before it is moving,
+> not changing, and that distinction is what has kept every phase so far verifiable.
+
+### U8 — and what it inherits
+
+The naming pass over the zone: 81 `naming-convention` and 70 `no-banned-abbreviations` findings.
+**Phase 0 predicted the second group would be mostly single-letter graphics maths** — `x`, `y`, `r`,
+`g`, `b`, `uv` — and that §6 should arguably exempt them rather than rename them. That call is still
+open and belongs to U8.
+
+**U8 also inherits one deliberate deferral from U5:** the visualiser barrel exports `Field`, which
+collides by name with `@/ds`'s form `Field`. They are different components doing the same job in
+different contexts. Renaming is a Phase 7-shaped question, so it was left for U8 with a note at the
+barrel.

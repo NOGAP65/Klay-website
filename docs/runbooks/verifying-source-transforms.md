@@ -19,6 +19,82 @@ to believe.
 
 **Every row is a real occurrence in this project**, and every one was believed at the time.
 
+
+## THE COMPANION PRINCIPLE — OPACITY IS NOT NEUTRAL
+
+> ## An unauditable thing conceals precisely the class of defect its audit would detect.
+>
+> ### It does not hide a random sample of problems. It hides the ones that were its own to catch.
+
+**THE TEST is about checks that cannot fail. This is about things that cannot be examined**, and
+they are the same shape one level down.
+
+| | Failure | What follows |
+|---|---|---|
+| **THE TEST** | A check that cannot fail | **It concurs.** Silence is read as a pass |
+| **This** | A path that cannot be enumerated | **It hides mismatches.** Absence of a report is read as absence of a fault |
+
+## The case that produced it
+
+`wardrobeAssetPath` built `` `${DIR}/${model.id}-${slug}-${view}.png` ``. Nothing could list what
+that expression produces, so nothing could compare it to what is on disk.
+
+**And it was wrong.** The cut-outs are named by `artworkId`; models carry the supplier's code.
+Seven of ten could only ever have requested a file that has never existed.
+
+**The two facts are not a coincidence, and that is the whole finding.** The constructed path was
+not neutrally opaque — **it was the reason the filenames could diverge and nothing noticed.** Had
+the names been a list, adding a model or renaming a file would have produced a visible mismatch the
+moment it happened. The construction is what allowed one half to move without the other, *and* what
+made the resulting gap invisible. **It created the defect's opportunity and destroyed its evidence
+in the same line.**
+
+## Why this generalises past filenames
+
+**Anything that computes a name or a reference at runtime removes it from every static check** —
+and the class of defect it removes is *exactly* "the two ends disagree":
+
+| Constructed | What can no longer be checked |
+|---|---|
+| An asset path from state | Does the file exist |
+| A translation key from a variable | Does the string exist |
+| A route from a slug | Does the route exist |
+| A column name from a field | Does the column exist |
+| A CSS class from a token | Does the class exist |
+| A dynamic `import()` from a variable | Does the module exist |
+
+**In every row, the check that becomes impossible is the one that would have caught the thing
+construction makes likely.** That is not bad luck. Construction couples two things through a
+string, and the string is the only place they meet — so it is the only place the mismatch can be
+seen, and it is the place that has been made unreadable.
+
+## The remedy, which is not "never construct a path"
+
+**Sometimes construction is right.** Three choices producing one filename is a reasonable design,
+and the alternative — 120 hardcoded strings — is worse.
+
+> ### Enumerate the set the construction can produce, and check that set against reality.
+
+That is what `wardrobeCutouts.ts` and `npm run check:wardrobe-assets` are: a generated manifest
+carrying each file's own name, and a script asserting that every name it holds is on disk. **The
+path is still assembled — from the manifest's own string rather than from three choices — so it
+cannot drift from what exists.**
+
+**It is cheap.** Fifty lines and one npm script, against a defect that had been live for the length
+of the project and could not be seen by seven separate checks.
+
+## The rule
+
+**When you write something that cannot be examined, you have not merely lost visibility — you have
+taken on the specific risk that visibility would have covered.** Write down what that risk is at
+the time, and build the enumeration then, while you still remember what the construction can
+produce.
+
+**`npm run audit:assets` finding nothing is not the same as nothing being wrong.** It is one of the
+seven checks that was green while seven of ten wardrobes pointed at files that have never existed.
+
+---
+
 ## THE STANDING EXPECTATION, BEFORE ANY OF IT
 
 > ### Anything built to check something needs checking, and it will be inert the first time.
