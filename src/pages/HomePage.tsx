@@ -107,7 +107,6 @@ import { StepsBar } from '../components/home/StepsBar';
 import { RangeRow } from '../components/home/RangeRow';
 import { RecommendationBanner } from '../components/home/RecommendationBanner';
 import { VisualiserShowcase } from '../components/home/VisualiserShowcase';
-import { AboutPanel } from '../components/home/AboutPanel';
 import { SocialProof } from '../components/home/SocialProof';
 import { Testimonials } from '../components/home/Testimonials';
 
@@ -183,11 +182,16 @@ export default function HomePage() {
             sections after the question was asked. */}
         <SocialProof />
 
-        {/* 9 — Who turns up at the house — the only section about Klay rather than
-            about a product. Nobody arrives wanting to read about a window
-            furnishings business; they read it once they have decided they
-            might buy, which is after the tool and the photographs above. */}
-        <AboutPanel />
+        {/* 9 IS GONE — the About panel, "who turns up at the house", and it is on
+            the About page now.
+
+            Its own note called it "the only section that talks about Klay rather
+            than about a product", which on a page whose job is to get somebody to
+            a product is the one section not doing that job. It was a full 50/50
+            panel with a photograph, so the reader paid for it in scroll
+            immediately before the reviews — the last thing they read, and the
+            thing most worth reaching. On About it is not an interruption, it is
+            the subject. */}
 
         {/* THE FINAL CTA IS GONE — it sat here, charcoal, "Ready to complete your
             home?" over a Start Designing button.
