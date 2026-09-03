@@ -55,3 +55,39 @@ export const DEFAULT_WALL_COLOUR = '#f2efe6';
  * lower case and the table is written in whatever case reads best. */
 export const wallColourName = (hex: string): string =>
   WALL_COLOURS.find(c => c.hex.toLowerCase() === hex.toLowerCase())?.name ?? 'Custom';
+
+// ---------------------------------------------------------------------------
+// THE LIVE CHANNEL, and it exists because React is too expensive to put in a
+// drag loop.
+//
+// Dragging the wheel fires a colour on every pointer move. Sent through the
+// store, each one re-renders every component that reads it — and the visualiser
+// components subscribe to the whole store rather than to a slice, so that is
+// the configurator, the control panel and every pill and swatch in them.
+// Measured at 4x CPU throttle: 97ms per colour, against a 16ms frame. The scene
+// was not rebuilding by then; the cost was entirely React.
+//
+// So the drag does not go through React at all. The chip publishes here, the
+// turntable subscribes and repaints the materials imperatively, and the store
+// is written once when the drag settles — which is the only write anything
+// needs to re-render for, because it is the only one that changes what is
+// remembered.
+//
+// A Set of callbacks rather than an event target or a store: this is one value
+// with one publisher, and anything more would be scaffolding around a
+// three-line problem.
+// ---------------------------------------------------------------------------
+
+type WallColourListener = (hex: string) => void;
+const listeners = new Set<WallColourListener>();
+
+/** Push a colour straight at whatever is rendering, bypassing React. */
+export const publishWallColour = (hex: string) => {
+  for (const l of listeners) l(hex);
+};
+
+/** Listen for those. Returns its own unsubscribe, for an effect's cleanup. */
+export const onWallColour = (l: WallColourListener) => {
+  listeners.add(l);
+  return () => { listeners.delete(l); };
+};

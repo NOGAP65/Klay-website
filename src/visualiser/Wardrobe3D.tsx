@@ -24,7 +24,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { wardrobeModelById, DEFAULT_WIDTH_MM } from './wardrobes';
-import { buildWardrobeScene, MM, OPENING_HEIGHT_MM } from './wardrobeScene';
+import { buildWardrobeScene, MM, OPENING_HEIGHT_MM, type WardrobeScene } from './wardrobeScene';
+import { onWallColour } from './wallColours';
 
 export interface Wardrobe3DProps {
   modelId: string;
@@ -57,6 +58,13 @@ export default function Wardrobe3D({
   wallColour,
 }: Wardrobe3DProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  // The live scene, so the two cheap changes below can reach it without the
+  // effect that built it having to re-run. See WardrobeScene.setWallColour.
+  const builtRef = useRef<WardrobeScene | null>(null);
+  // Asks the loop for one frame. Held in a ref because the loop is created
+  // inside the effect that builds the scene, and the repaint below has to reach
+  // it without being a dependency of that effect.
+  const invalidateRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -94,6 +102,7 @@ export default function Wardrobe3D({
     // differently coloured void, which is the one thing that would make the
     // comparison useless. `background` stays the fallback for a caller that
     // has not been given a colour.
+        builtRef.current = built;
         built.scene.background = new THREE.Color(wallColour ?? background);
 
         const resize = () => {
@@ -102,6 +111,7 @@ export default function Wardrobe3D({
           renderer.setSize(w, h, false);
           camera.aspect = w / h;
           camera.updateProjectionMatrix();
+          invalidateRef.current?.();
         };
         resize();
         const ro = new ResizeObserver(resize);
@@ -159,15 +169,42 @@ export default function Wardrobe3D({
         controls.rotateSpeed = 0.55;
         controls.update();
 
+        // RENDERED ON DEMAND, NOT SIXTY TIMES A SECOND.
+        //
+        // The loop used to render every frame for the life of the component,
+        // whether anything had moved or not. Measured at 4x CPU throttle a
+        // frame costs 96ms — so the turntable was pinning a core to draw the
+        // identical picture over and over, on a page where it is usually just
+        // sitting there being looked at. That is the whole of "it lags", and it
+        // is why it lagged even when nothing was being dragged.
+        //
+        // Nothing here animates on its own. The picture changes when the
+        // customer turns it, when the box is resized, or when a colour is
+        // repainted, and every one of those can say so. Idle now costs nothing,
+        // which is what makes it run on a laptop.
+        let dirty = true;
+        const invalidate = () => { dirty = true; };
+        invalidateRef.current = invalidate;
+        // Fires while the pointer drags AND while the damping settles after it
+        // is let go, so the easing runs to a stop rather than freezing mid-way.
+        controls.addEventListener('change', invalidate);
+
         let raf = 0;
         const tick = () => {
           raf = requestAnimationFrame(tick);
+          // update() drives the damping and emits 'change' while it has work,
+          // so it has to run every frame even when nothing is drawn.
           controls.update();
+          if (!dirty) return;
+          dirty = false;
           renderer.render(built.scene, camera);
         };
         tick();
 
         cleanup = () => {
+          builtRef.current = null;
+          invalidateRef.current = null;
+          controls.removeEventListener('change', invalidate);
           cancelAnimationFrame(raf);
           ro.disconnect();
           controls.dispose();
@@ -188,7 +225,36 @@ export default function Wardrobe3D({
     // once: left off, the picker wrote to the store, the store re-rendered this
     // component, and the effect declined to run — which looks exactly like a
     // control that does nothing.
-  }, [modelId, colourName, selectedWidthMm, background, handleFinish, recessed, wallColour]);
+    // NOT wallColour OR handleFinish — those repaint in place, below. Leaving
+    // them here rebuilt the entire scene on every click of a swatch.
+  }, [modelId, colourName, selectedWidthMm, background, recessed]);
+
+  /** Repaint the room. Two materials and a background — no geometry, no
+   * textures, no environment. */
+  const paint = (hex: string) => {
+    const built = builtRef.current;
+    if (!built) return;
+    built.setWallColour(hex);
+    built.scene.background = new THREE.Color(hex);
+    invalidateRef.current?.();
+  };
+
+  // The committed colour, and the one a freshly-built scene has to catch up to.
+  useEffect(() => {
+    if (wallColour) paint(wallColour);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wallColour, modelId, colourName, selectedWidthMm, recessed]);
+
+  // AND THE DRAG, which never reaches React at all — see publishWallColour.
+  // Subscribed once for the life of the component, because the callback reads
+  // the scene out of a ref rather than closing over it.
+  useEffect(() => onWallColour(paint), []);
+
+  useEffect(() => {
+    if (!handleFinish) return;
+    builtRef.current?.setHandleFinish(handleFinish);
+    invalidateRef.current?.();
+  }, [handleFinish]);
 
   return <div ref={hostRef} style={{ width: '100%', height: '100%', minHeight: 420 }} />;
 }

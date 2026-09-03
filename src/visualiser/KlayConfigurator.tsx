@@ -7,6 +7,7 @@ import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
 import WardrobeRoomRenderer from './WardrobeRoomRenderer';
 import Wardrobe3D from './Wardrobe3D';
+import WallColourChip from './WallColourChip';
 
 // One radius for every surface in the visualiser. The three files used to
 // disagree (0 here, 12px on the homepage wrapper, 4px on the thumbnails),
@@ -1489,6 +1490,20 @@ export default function KlayConfigurator({
       ) : (
         /* STATE 3 — area traced and confirmed */
         <div ref={rendererContainerRef} style={{ position: 'absolute', inset: 0 }}>
+          {/* ON THE PICTURE, NOT IN THE FORM. The wall colour is judged by eye
+              against the render, so it belongs over the thing it changes —
+              a column away meant looking left to click and right to see. It is
+              also not a configuration: nothing about it reaches a quote. See
+              WallColourChip.
+
+              Joinery only. A blind or a curtain is composited onto the
+              customer's own photograph, which already has their wall in it. */}
+          {isJoinery(store.productCategory) && (
+            <WallColourChip
+              value={store.wardrobeWallColour}
+              onChange={store.setWardrobeWallColour}
+            />
+          )}
           {isJoinery(store.productCategory) && wardrobe3D ? (
             /* TURN IT. The sticker projected onto the real carcass, orbitable
                — see Wardrobe3D. It stands on its own rather than in the room

@@ -114,7 +114,34 @@ export interface WhiteBoardMaps {
  *
  * `base` is the finish's own measured colour — this varies it, it does not
  * replace it, so Matt Wardrobe White stays the white on the quote. */
+/** THE MAPS ARE THE EXPENSIVE PART OF BUILDING A SCENE, so they are built
+ * once per colour and kept.
+ *
+ * Three 512x512 maps, each pixel several octaves of value noise: 786,432 pixels
+ * with a dozen lattice reads apiece, plus a second full pass for the normals.
+ * That is most of the cost of buildWardrobeScene, and it was being paid again
+ * on every rebuild — every width, every model, every handle finish — to produce
+ * byte-for-byte the same three canvases, because the generator is deterministic
+ * and takes one argument.
+ *
+ * Keyed on that argument. Never evicted: there are four board colours in the
+ * range and only white has maps at all, so the cache holds exactly one entry.
+ *
+ * WHICH IS WHY THESE ARE NEVER DISPOSED. A cached texture outlives the scene
+ * that first asked for it, so the scene must not dispose it — see the note
+ * where WhiteBoardMaps.dispose is called. */
+const mapCache = new Map<string, WhiteBoardMaps | null>();
+
 export function makeWhiteBoardMaps(base: THREE.Color): WhiteBoardMaps | null {
+  const key = base.getHexString();
+  const hit = mapCache.get(key);
+  if (hit !== undefined) return hit;
+  const made = buildWhiteBoardMaps(base);
+  mapCache.set(key, made);
+  return made;
+}
+
+function buildWhiteBoardMaps(base: THREE.Color): WhiteBoardMaps | null {
   const mk = () => {
     const c = document.createElement('canvas');
     c.width = SIZE;
