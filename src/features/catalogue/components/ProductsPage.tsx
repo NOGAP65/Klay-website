@@ -454,9 +454,19 @@ export default function ProductsPage() {
                     // simply takes as many ~270px cards as the space left by the
                     // rail allows: three at 1440, four above 1600, two on a
                     // phone. No breakpoint has to know about the rail's width.
+                    // 340, UP FROM 270, and the photograph is why. At 270 a
+                    // 1440 viewport less the 200px rail fits four columns of
+                    // about 290 — and a 4:5 picture 290 wide is smaller than
+                    // the homepage's, on the page whose whole job is showing
+                    // the product. At 340 the same width takes three of about
+                    // 390, which is bigger than the row's own cards.
+                    //
+                    // It also has to divide by two: the open card spans two
+                    // columns, so a row that fits three closed fits one open
+                    // plus one closed with no orphan.
                     gridTemplateColumns: isNarrow
                       ? 'repeat(2, 1fr)'
-                      : 'repeat(auto-fill, minmax(270px, 1fr))',
+                      : 'repeat(auto-fill, minmax(340px, 1fr))',
                     // Columns tight so adjacent photographs read as one wall;
                     // rows wide so the price of one product does not float
                     // midway to the picture below it.
