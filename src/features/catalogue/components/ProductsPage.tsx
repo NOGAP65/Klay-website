@@ -55,7 +55,6 @@ import {
   COLUMN_GAP,
   COLUMN_MIN,
   STAGGER_MS,
-  LANE_DIP_PX,
   STAGGER_SPAN_MS,
   TRAVEL_MS,
   columnWidth,
@@ -193,21 +192,18 @@ export default function ProductsPage() {
     const gap = Math.min(STAGGER_MS, STAGGER_SPAN_MS / Math.max(1, movers.length - 1));
 
     const running = movers.map(({ el, dx, dy }, n) => {
-      // EVERY CARD GOES DOWN FIRST, and nothing slides straight sideways.
+      // A CARD GOES WHERE IT IS GOING, AND NOWHERE ELSE FIRST.
       //
-      // The grid moves each card one place along, which means two cards in three
-      // change column WITHOUT changing row — and animated literally, that was a
-      // card sliding horizontally through the one beside it, three or four at a
-      // time, in both directions at once. Cards moving right and left is the
-      // busiest thing this page can do.
+      // There was a dip here: every card dropped 26px out of its row, travelled
+      // in the gutter and rose back into place. It was a misreading of "move
+      // everything down" — a card moving one column to the right is not going
+      // anywhere near another row, so the drop was decoration in front of the
+      // real move, and decoration in front of a move reads as a twitch before it
+      // starts. It went.
       //
-      // So they drop out of the row first, travel in the gutter between rows
-      // where there is nothing to slide through, and rise into place. The card
-      // in the last column is already going down a whole row: it makes the same
-      // first move and simply keeps going, along to the leftmost.
-      //
-      // One shape for all of them — down, along, and up if there is anywhere to
-      // come up to.
+      // The card that WRAPS still goes down and then across, and that is not the
+      // same thing: it really is changing rows, so the corner is the shape of
+      // the journey rather than a flourish before one.
       const wraps = Math.abs(dx) > 1 && Math.abs(dy) > 1;
 
       const path = wraps
@@ -224,31 +220,21 @@ export default function ProductsPage() {
             { transform: 'translate(0px, 0px)' },
           ]
         : [
-            // Down into the gutter, along it, and back up. The dip is short and
-            // the travel is most of the time, so it reads as one move with a sag
-            // in it rather than three.
-            { transform: `translate(${dx}px, ${dy}px)`, easing: 'cubic-bezier(0.4, 0, 0.6, 1)' },
-            {
-              transform: `translate(${dx}px, ${dy + LANE_DIP_PX}px)`,
-              offset: 0.24,
-              easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-            },
-            {
-              transform: `translate(0px, ${LANE_DIP_PX}px)`,
-              offset: 0.78,
-              easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-            },
+            // Straight there. One property, one curve, no waypoint.
+            { transform: `translate(${dx}px, ${dy}px)` },
             { transform: 'translate(0px, 0px)' },
           ];
 
       return el.animate(path, {
-        // Two more legs than a straight slide had, so a little longer to walk
-        // them. The wrapping card still has the furthest to go.
-        duration: wraps ? TRAVEL_MS : TRAVEL_MS * 0.8,
+        // The wrapping card has two legs and most of the grid's width to cross;
+        // one sliding along its row travels a third of that and would crawl at
+        // the same duration.
+        duration: wraps ? TRAVEL_MS : TRAVEL_MS * 0.7,
         delay: n * gap,
-        // Every leg carries its own easing, so the outer curve must be linear or
-        // it would be applied on top of them.
-        easing: 'linear',
+        // The wrapping card's legs carry their own easing, so its outer curve
+        // has to be linear or it would be applied twice. A straight move has no
+        // legs and takes the curve here.
+        easing: wraps ? 'linear' : 'cubic-bezier(0.22, 1, 0.36, 1)',
         // WITHOUT THIS THE STAGGER IS BROKEN. A card waiting its turn has to sit
         // at its OLD position for the length of its delay — 'backwards' applies
         // the first keyframe during it. Left to fill 'none' each card would

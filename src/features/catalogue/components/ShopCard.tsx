@@ -102,16 +102,12 @@ export const STAGGER_MS = 30;
  * range is thirteen movers and a filtered grid is a different length again — so
  * left alone, the same click would run for near enough a second on the full shop
  * and a third of that on a narrowed one. The gap shrinks to fit this instead:
- * the order is kept, the duration is not the grid's length. */
-export const STAGGER_SPAN_MS = 170;
-
-/** How far a card drops out of its row before it travels along.
+ * the order is kept, the duration is not the grid's length.
  *
- * A little more than the gap between rows, so the card clears its own row and
- * is unmistakably travelling BELOW the grid rather than through it — the whole
- * point of the dip is that the lane it moves along is empty. Much more than this
- * and the cards in the row beneath start disappearing behind it. */
-export const LANE_DIP_PX = 26;
+ * 90, down from 170. At 170 the grid was still rearranging after the box had
+ * finished opening, which is two events; at 90 it is one motion with a lead,
+ * which is what a stagger is for. */
+export const STAGGER_SPAN_MS = 90;
 
 /** THE GRID'S OWN TWO NUMBERS, and they live here rather than on the page
  * because the card does arithmetic with them: it pins itself to one column and

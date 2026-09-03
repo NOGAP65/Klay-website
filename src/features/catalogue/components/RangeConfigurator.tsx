@@ -289,11 +289,26 @@ function Field({
           cursor: 'pointer',
           textAlign: 'left',
           ...labelStyle,
+          // THE QUESTION BEING ASKED IS IN INK; the ones that are not are in
+          // soft ink. Six rows at one weight left a 4px triangle as the only
+          // thing saying which was open — and now that answering a row opens the
+          // next one on its own, the customer is not the one choosing where they
+          // are, so the panel has to say it.
+          //
+          // Colour only. Weight and size stay, because a row that grew when it
+          // opened would reflow its neighbours every time the answer moved on.
+          color: open ? tokens.ink : labelStyle.color,
           marginBottom: open ? labelStyle.marginBottom : 0,
         }}
       >
         {field.label}
-        <span style={{ color: tokens.inkSoft, letterSpacing: '0.3em', marginLeft: 'auto' }}>
+        <span
+          style={{
+            color: open ? tokens.ink : tokens.inkSoft,
+            letterSpacing: '0.3em',
+            marginLeft: 'auto',
+          }}
+        >
           {chosen}
         </span>
         <span
@@ -303,7 +318,7 @@ function Field({
             marginLeft: chosen ? 0 : 'auto',
             borderLeft: '3.5px solid transparent',
             borderRight: '3.5px solid transparent',
-            borderTop: `4px solid ${tokens.inkSoft}`,
+            borderTop: `4px solid ${open ? tokens.ink : tokens.inkSoft}`,
             transform: open ? 'rotate(180deg)' : 'none',
             transition: 'transform 0.18s ease',
           }}
@@ -445,7 +460,30 @@ export function RangeConfigurator({
   const fields = fieldsFor(item);
   const price = priceFor(item, sel);
 
-  const choose = (fieldId: string) => (choiceId: string) => onChange(fieldId, choiceId);
+  /** The rows this panel actually shows, in the order it asks them. Computed
+   * once because two things need the same order: the list below, and the
+   * advance. */
+  const shown = fields.filter(f => f.id !== leadFieldId);
+
+  /** ANSWERING A QUESTION OPENS THE NEXT ONE.
+   *
+   * Every row used to be a thing to click twice — once to open, once to answer,
+   * then again to open the next. Five fields, fifteen clicks, and the customer
+   * keeping the running order in their own head. Answering IS the signal to move
+   * on: it is what a form does with tab and a wizard does with next, and the
+   * accordion already knows what order the questions come in.
+   *
+   * Two exceptions. The last row closes rather than wrapping to the top — the
+   * panel is finished and the next thing is the button, not the first question
+   * again. And an Other never advances, because Other is not an answer yet: the
+   * text box has just appeared underneath and moving on would hide it before it
+   * could be typed in. */
+  const choose = (fieldId: string) => (choiceId: string) => {
+    onChange(fieldId, choiceId);
+    if (choiceId === 'other') return;
+    const i = shown.findIndex(f => f.id === fieldId);
+    setOpenField(i < 0 ? null : shown[i + 1]?.id ?? null);
+  };
 
   /** ADDS, AND STAYS PUT.
    *
@@ -534,9 +572,8 @@ export function RangeConfigurator({
             under the photograph, because they are the one field whose effect is
             visible in the picture — see the note on RangeCard. This panel keeps
             the fields that are decisions rather than appearances. */}
-        {fields
-          .filter(f => f.id !== leadFieldId)
-          .map((f, i, shown) => (
+        {shown
+          .map((f, i) => (
             <Field
               key={f.id}
               field={f}
