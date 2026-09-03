@@ -8,7 +8,7 @@ import {
   modelsOfKind, wardrobeModelById, wardrobeHeight, wardrobeDepth,
 } from './wardrobes';
 import { HANDLE_FINISHES, handleFinish } from './wardrobeHardware';
-import { coloursFor, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
+import { coloursFor, isJoinery, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
   lockedRange?: string; // if passed, hides the blind type row — customer can only configure this type
@@ -542,41 +542,48 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
   // to drive, it is built to an opening rather than sold in small/medium/large,
   // and it is quoted on measure — so a price box here would be inventing a
   // number the business has not set.
-  if (store.productCategory === 'wardrobe') {
+  if (isJoinery(store.productCategory)) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: groupGap }}>
         <section>
-          <GroupHeading onDark={onDark}>Your wardrobe</GroupHeading>
+          <GroupHeading onDark={onDark}>
+            {store.productCategory === 'shelving' ? 'Your shelving' : 'Your wardrobe'}
+          </GroupHeading>
           <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
             {/* TYPE FIRST, THEN LAYOUT. A built-in and a walk-in are not two
                 options within one product — they are different products, drawn
                 from different viewpoints and placed by different rules, and the
                 layouts on offer depend on which you are buying. Asking in that
                 order is what makes the layout list mean something. */}
-            {/* SHELVING IS THE THIRD KIND, and it is a different product rather
-                than a third wardrobe: 1650 high and 447 deep against the robes'
-                2016 x 500, four codes of its own, and no hanging in it at all.
-                It sits under the same picker because the question a customer is
-                answering is the same one — what am I having built into this
-                space — and because everything below adapts to whichever they
-                pick. See the Lin Models table in the supplier's deck. */}
-            <Field onDark={onDark} label="Type">
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
-                {([
-                  ['built-in', 'Built-in'],
-                  ['walk-in', 'Walk-in'],
-                  ['shelving', 'Shelving'],
-                ] as const).map(([id, label]) => (
-                  <Pill
-                    onDark={onDark}
-                    key={id}
-                    label={label}
-                    active={store.wardrobeKind === id}
-                    onClick={() => store.setWardrobeKind(id)}
-                  />
-                ))}
-              </div>
-            </Field>
+            {/* TYPE IS A WARDROBE QUESTION ONLY. Shelving was briefly a third
+                option in this row, which put it a level too deep: it is not a
+                kind of wardrobe, it is a different product — 1650 x 447 against
+                the robes' 2016 x 500, four codes of its own and no hanging in
+                it at all. It is a tab beside Blinds, Curtains and Wardrobes
+                now, and this row asks the one question it was always for.
+
+                Built-in or walk-in are two different products drawn from
+                different viewpoints, and the models on offer depend on which,
+                so asking in this order is what makes the Model row mean
+                something. */}
+            {store.productCategory === 'wardrobe' && (
+              <Field onDark={onDark} label="Type">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+                  {([
+                    ['built-in', 'Built-in'],
+                    ['walk-in', 'Walk-in'],
+                  ] as const).map(([id, label]) => (
+                    <Pill
+                      onDark={onDark}
+                      key={id}
+                      label={label}
+                      active={store.wardrobeKind === id}
+                      onClick={() => store.setWardrobeKind(id)}
+                    />
+                  ))}
+                </div>
+              </Field>
+            )}
 
             {/* WHERE IT GOES, and it is the second question because it changes
                 the product rather than the picture: off a recess the run gains
@@ -706,6 +713,10 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             "Width" as though a colour and a dimension were the same sort of
             answer. Splitting them is also what makes room for the hardware
             without the panel reading as a list of seven things. */}
+        {/* NOT ON SHELVING, which has no metalwork on it at all — no rail, no
+            drawer, no pull. Four shelves and a post. */}
+        {store.productCategory !== 'shelving' && (
+        <>
         {/* ONE HARDWARE QUESTION, AND IT IS ASKED ON ALL THREE.
             The profile picker is gone. Bar or knob was a choice the range does
             not offer — the pull on the drawer tower is the pull, and asking
@@ -747,6 +758,8 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             </Field>
           </div>
         </section>
+        </>
+        )}
       </div>
     );
   }

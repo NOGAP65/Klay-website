@@ -116,7 +116,21 @@ export const LAYOUT_COLUMNS: Record<string, Column[]> = {
   LIN01: [{ share: 1, fill: { kind: 'shelves', count: 4 } }],
   LIN02: [{ share: 1, fill: { kind: 'shelves', count: 4 } }],
   LIN05: [{ share: 1, fill: { kind: 'shelves', count: 4 } }],
-  LINBR02: [{ share: 1, fill: { kind: 'shelves', count: 4 } }],
+  // BR IS A BROOM CUPBOARD, and it is the whole difference between this and
+  // LIN05 — the two were built identically here because the deck's spec TABLE
+  // describes them identically ("4 x 447mm Shelves Face Post", same four
+  // widths). The elevation drawings on the same page do not: LIN05 is one run
+  // of four shelves on two posts, and LINBR02 stops that run short and puts a
+  // full-height open bay at the end with only the top shelf carried over it.
+  // That bay is for brooms and a vacuum, which is what a linen cupboard has at
+  // one end and what BR stands for.
+  //
+  // A count of 1 is one compartment and therefore no internal shelf boards —
+  // the bay is open floor to head.
+  LINBR02: [
+    { share: 3, fill: { kind: 'shelves', count: 4 } },
+    { share: 1, fill: { kind: 'shelves', count: 1 } },
+  ],
 
   // --- THE BUILT-IN RANGE, BY PRODUCT CODE -------------------------------
   // Three SKUs at 2016mm, and their names say exactly what is in them.
@@ -232,15 +246,21 @@ export const LAYOUT_COLUMNS: Record<string, Column[]> = {
  * is the wrong product: it put a white panel between the run and the wall it is
  * fixed to, and on Forma 1 — which is a rail, a shelf and a divider — it
  * invented a carcass the customer is not buying. */
-/** THE FACE POST — a front upright at mid-span, on the wider shelving codes.
+/** HOW MANY FACE POSTS, which is not the same question as whether there is one.
  *
- * LIN02, LIN05 and LINBR02 are all "4 x 447mm Shelves Face Post" in the deck;
- * LIN01, which is only made at 900 and 1200, is not. It is what lets a 3600
- * shelf span without dipping, and it sits on the FRONT edge rather than running
- * the full depth — a divider would make two cupboards of it, which is not what
- * open linen shelving is. */
-export const hasFacePost = (id: string): boolean =>
-  id === 'LIN02' || id === 'LIN05' || id === 'LINBR02';
+ * A face post is a front upright carrying the shelves at mid-span. It sits on
+ * the FRONT edge rather than running the full depth — a full-depth board would
+ * make two cupboards of what is meant to be one open run.
+ *
+ * Counted off the deck's own elevations rather than its spec table, because the
+ * table cannot tell these apart: it calls LIN02, LIN05 and LINBR02 all "4 x
+ * 447mm Shelves Face Post", singular, and the drawings show one, two and one.
+ * LIN01 is made at 900 and 1200 only and spans without help.
+ *
+ * The count is what the width needs: a 3600 run on a single post is two 1800
+ * spans, which is a shelf that dips. */
+export const facePostsFor = (id: string): number =>
+  id === 'LIN05' ? 2 : id === 'LIN02' || id === 'LINBR02' ? 1 : 0;
 
 export function sidePanelsFor(
   id: string,

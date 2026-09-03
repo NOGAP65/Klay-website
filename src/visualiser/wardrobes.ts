@@ -212,7 +212,7 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
   {
     id: 'LIN05',
     name: 'Linen 5',
-    layout: '4 shelves + face post',
+    layout: '4 shelves + two posts',
     code: 'LIN05',
     kind: 'shelving',
     heightMm: 1650,
@@ -222,8 +222,8 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
   },
   {
     id: 'LINBR02',
-    name: 'Linen BR2',
-    layout: '4 shelves + face post',
+    name: 'Linen Broom',
+    layout: '4 shelves + broom bay',
     code: 'LINBR02',
     kind: 'shelving',
     heightMm: 1650,

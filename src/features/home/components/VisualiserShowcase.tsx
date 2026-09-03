@@ -50,6 +50,7 @@ import {
   type JobWindow,
   priceWindow,
   useVisualiserStore,
+  isJoinery,
   type ProductCategory,
 } from '../../../visualiser/useVisualiserStore';
 import VisualiserControls, { Field, GroupHeading, PriceBox } from '../../../visualiser/VisualiserControls';
@@ -109,6 +110,7 @@ function CategoryTabs() {
     { id: 'blind', label: 'Blinds' },
     { id: 'curtain', label: 'Curtains' },
     { id: 'wardrobe', label: 'Wardrobes' },
+    { id: 'shelving', label: 'Shelving' },
   ];
 
   return (
@@ -390,7 +392,9 @@ export function VisualiserShowcase() {
   } = useVisualiserStore();
 
   const isCurtain = productCategory === 'curtain';
-  const isWardrobe = productCategory === 'wardrobe';
+  // Shelving is joinery too: no price, no window count, an enquiry rather than
+  // a Buy Now. See isJoinery.
+  const isWardrobe = isJoinery(productCategory);
   const count = windows.length;
   // The whole job, each window on its own configuration and its own category's
   // pricing axis. It was unitPrice * windows, which is only the same number

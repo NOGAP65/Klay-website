@@ -202,7 +202,19 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048);
-  key.shadow.radius = 3;
+  // SOFT, and this is the "extra bar under the rail".
+  //
+  // A hanging rail stands 210mm off the back wall, so it casts a shadow there —
+  // correct, and at radius 3 the edge was as hard as the rail itself. Two thin
+  // parallel bars, one bright and one dark, with nothing hanging between them
+  // to break them up: Forma 1 is nothing but rails and it read as having twice
+  // as many as it has. Verified by dumping the box list — four rail segments at
+  // exactly two heights, so the geometry was never doubled.
+  //
+  // 9 is also what the shadow should be. The light in a bedroom is a window and
+  // a ceiling fitting, both large sources, and a 16mm rod two hundred
+  // millimetres off a wall casts nothing like a sharp line under either.
+  key.shadow.radius = 9;
   key.shadow.bias = -0.0006;
   const sc = key.shadow.camera;
   sc.near = 0.1;
@@ -455,7 +467,23 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
       geo,
       projected && plain ? [plain, plain, plain, plain, material, material] : material,
     );
-    mesh.castShadow = true;
+    // THE METALWORK CASTS NOTHING, and this is the "extra bar under the rail".
+    //
+    // A hanging rail stands 210mm off the back wall, so a shadow map draws its
+    // shadow there as a hard dark line — a second thin bar parallel to the
+    // bright one, with nothing hanging between them to break the pair up. On
+    // Forma 1, which is nothing but rails, it read as twice as many rails as
+    // the product has. Verified by dumping the box list: four rail segments at
+    // exactly two heights, so the geometry was never doubled.
+    //
+    // Softening the map helped and did not fix it, because the fault is not the
+    // edge — it is that a shadow map is binary. A 16mm rod occludes the key
+    // completely along its line, where in a real room the window and the
+    // ceiling fitting are both large sources and light wraps round it almost
+    // entirely. Not casting is closer to true than casting a full shadow, and
+    // it costs nothing: a rod's shadow is not what sells this render, and the
+    // BOARD still casts, which is where the depth actually comes from.
+    mesh.castShadow = !box.metal;
     mesh.receiveShadow = true;
     disposables.push(geo);
     return mesh;

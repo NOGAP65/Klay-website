@@ -1,6 +1,6 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { radius, tokens, space, type as typeScale } from '../theme';
-import { useVisualiserStore, BlindType } from './useVisualiserStore';
+import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from './useVisualiserStore';
 import { usePhotoUpload } from './usePhotoUpload';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
@@ -766,8 +766,10 @@ const DEFAULT_WINDOW_URL = '/images/Preview.png';
  * be the real opening rather than a guess. */
 const DEFAULT_WARDROBE_URL = '/images/visualizer%20pictures/1500%20..%20opening.jpeg';
 
-const defaultPhotoFor = (category: string) =>
-  category === 'wardrobe' ? DEFAULT_WARDROBE_URL : DEFAULT_WINDOW_URL;
+// Shelving takes the alcove too: it is joinery going into an opening, and the
+// window photograph would be as wrong for it as it is for a robe.
+const defaultPhotoFor = (category: ProductCategory) =>
+  isJoinery(category) ? DEFAULT_WARDROBE_URL : DEFAULT_WINDOW_URL;
 // The glass aperture of the double window in Preview.png (1254 x 1254).
 //
 // These pins are paired to this photo and only this photo. Swapping
@@ -1003,7 +1005,7 @@ export default function KlayConfigurator({
       const seed =
         openingMm !== null
           ? alcoveCornersPct(openingMm)
-          : useVisualiserStore.getState().productCategory === 'wardrobe'
+          : isJoinery(useVisualiserStore.getState().productCategory)
             ? DEFAULT_WARDROBE_CORNERS_PCT
             : DEFAULT_WINDOW_CORNERS_PCT;
       const corners: Point[] = seed.map(([px, py]) => [
@@ -1187,9 +1189,9 @@ export default function KlayConfigurator({
   // ONLY WHILE THE DEFAULT PHOTO IS SHOWING. Once the customer has uploaded a
   // room and traced it, that trace is theirs; throwing it away because they
   // looked at a different product would be destroying work they did.
-  const seededForWardrobeRef = useRef(store.productCategory === 'wardrobe');
+  const seededForWardrobeRef = useRef(isJoinery(store.productCategory));
   useEffect(() => {
-    const isWardrobe = store.productCategory === 'wardrobe';
+    const isWardrobe = isJoinery(store.productCategory);
     if (isWardrobe === seededForWardrobeRef.current) return;
     seededForWardrobeRef.current = isWardrobe;
     if (!store.defaultWindowActive) return;
@@ -1255,7 +1257,7 @@ export default function KlayConfigurator({
    * So this is `true` for a wardrobe and there is nothing to toggle. Blinds and
    * curtains never had a 3D view and are untouched. Flip ROOM_VIEW_READY when
    * the trace is trustworthy and both views come back with their toggle. */
-  const isWardrobe = store.productCategory === 'wardrobe';
+  const isWardrobe = isJoinery(store.productCategory);
   const wardrobe3D = isWardrobe && !ROOM_VIEW_READY;
 
   // Footer sits BELOW the canvas rather than floating over it, so "Visualise
@@ -1363,7 +1365,7 @@ export default function KlayConfigurator({
   // They mount differently because they ARE different things. The chain belongs
   // to the blind and is placed against it. The handset is held, so it sits off
   // to the side of the frame where a hand would be, unattached to anything.
-  const sideControl = !showRenderState || store.productCategory === 'wardrobe' ? null : activeOperation === 'motorised' ? (
+  const sideControl = !showRenderState || isJoinery(store.productCategory) ? null : activeOperation === 'motorised' ? (
     <div style={SIDE_CONTROL_POSITION}>
       <MotorRemote
         autoRunning={autoRunning}
@@ -1487,7 +1489,7 @@ export default function KlayConfigurator({
       ) : (
         /* STATE 3 — area traced and confirmed */
         <div ref={rendererContainerRef} style={{ position: 'absolute', inset: 0 }}>
-          {store.productCategory === 'wardrobe' && wardrobe3D ? (
+          {isJoinery(store.productCategory) && wardrobe3D ? (
             /* TURN IT. The sticker projected onto the real carcass, orbitable
                — see Wardrobe3D. It stands on its own rather than in the room
                photo, because the cabinet is what is being examined here; the
@@ -1500,7 +1502,7 @@ export default function KlayConfigurator({
               handleFinish={store.wardrobeHandleFinish}
               recessed={store.wardrobeRecessed}
             />
-          ) : store.productCategory === 'wardrobe' && confirmedArea ? (
+          ) : isJoinery(store.productCategory) && confirmedArea ? (
             <WardrobeRoomRenderer
               photoUrl={store.photoUrl!}
               corners={confirmedArea.corners as [number, number][]}
