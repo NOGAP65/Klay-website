@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { radius, tokens, space, type as typeScale } from '../theme';
 import { formatAUD, isBlindType } from '../lib/pricing';
@@ -8,7 +8,6 @@ import {
   modelsOfKind, wardrobeModelById, wardrobeHeight, wardrobeDepth,
 } from './wardrobes';
 import { HANDLE_FINISHES, handleFinish } from './wardrobeHardware';
-import { WALL_COLOURS, wallColourName } from './wallColours';
 import { coloursFor, isJoinery, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
@@ -269,122 +268,6 @@ function Select<T extends string | number>({
         </option>
       ))}
     </select>
-  );
-}
-
-/** THE CUSTOMER'S OWN WALL, AND IT STAYS OUT OF THE WAY UNTIL ASKED FOR.
- *
- * This is the control that answers "what does it look like in MY room", which
- * is a different and better question than "what does it look like" — and it is
- * still the least important row in the panel, because it changes nothing about
- * what is being bought. So it is one line at rest: a swatch, the colour's name,
- * and a chevron. Everything else is behind it.
- *
- * SHUT BY DEFAULT for the same reason. Eight swatches and a picker permanently
- * open would be the largest block in a panel about a wardrobe, and a customer
- * who has not thought about their wall colour should not have to scroll past it
- * to reach the width.
- *
- * TWO WAYS IN. Most people know their wall is "one of the whites" and want the
- * nearest; some know exactly, because they have the tin. The swatches are the
- * first and the native colour input is the second — native because it IS the
- * wheel, it is the picker the customer's own platform gives them, and it is
- * keyboard- and screen-reader-correct for free. Drawing one here would be worse
- * in every way that matters.
- *
- * Live on input rather than on commit, so dragging round the wheel repaints the
- * room under the pointer. That is the whole point of it. */
-function WallColourField({ onDark }: { onDark: boolean }) {
-  const store = useVisualiserStore();
-  const [open, setOpen] = useState(false);
-  const sk = skin(onDark);
-  const hex = store.wardrobeWallColour;
-
-  return (
-    <div>
-      <button
-        onClick={() => setOpen(o => !o)}
-        aria-expanded={open}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: space.xs,
-          width: '100%',
-          padding: 0,
-          border: 'none',
-          background: 'none',
-          cursor: 'pointer',
-          textAlign: 'left',
-        }}
-      >
-        <span
-          aria-hidden="true"
-          style={{
-            width: 14, height: 14, flex: '0 0 auto',
-            borderRadius: 2,
-            background: hex,
-            border: `1px solid ${sk.edge}`,
-          }}
-        />
-        <span style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', color: sk.label }}>
-          Wall colour
-        </span>
-        <span style={{ ...typeScale.label, letterSpacing: 'normal', textTransform: 'none', fontWeight: 400, color: sk.caption, marginLeft: 'auto' }}>
-          {wallColourName(hex)}
-        </span>
-        {/* A chevron, rotated rather than swapped, so the control says which way
-            it is going as well as which state it is in. */}
-        <span
-          aria-hidden="true"
-          style={{
-            width: 0, height: 0, flex: '0 0 auto',
-            borderLeft: '4px solid transparent',
-            borderRight: '4px solid transparent',
-            borderTop: `5px solid ${sk.quiet}`,
-            transform: open ? 'rotate(180deg)' : 'none',
-            transition: 'transform 0.2s ease',
-          }}
-        />
-      </button>
-
-      {open && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: space.xs, marginTop: space.xs }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
-            {WALL_COLOURS.map(c => (
-              <Swatch
-                onDark={onDark}
-                key={c.hex}
-                hex={c.hex}
-                label={c.name}
-                active={hex.toLowerCase() === c.hex.toLowerCase()}
-                onClick={() => store.setWardrobeWallColour(c.hex)}
-              />
-            ))}
-          </div>
-          <label
-            style={{
-              display: 'flex', alignItems: 'center', gap: space.xs,
-              ...typeScale.label, letterSpacing: 'normal', textTransform: 'none',
-              fontWeight: 400, color: sk.caption, cursor: 'pointer',
-            }}
-          >
-            <input
-              type="color"
-              value={hex}
-              onChange={e => store.setWardrobeWallColour(e.target.value)}
-              style={{
-                width: 26, height: 26, padding: 0,
-                border: `1px solid ${sk.edge}`,
-                borderRadius: 2,
-                background: 'none',
-                cursor: 'pointer',
-              }}
-            />
-            Match your own
-          </label>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -755,12 +638,6 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 ))}
               </div>
             </Field>
-
-            {/* LAST IN THE GROUP, because it is the only row that changes
-                nothing about the product — it repaints the room the render is
-                set in so the customer can judge the joinery against their own
-                wall. Shut by default; see WallColourField. */}
-            <WallColourField onDark={onDark} />
 
             {/* THE NAME ALONE. It carried its internal arrangement underneath —
                 "Divider + double hang" — which is trade description in a place

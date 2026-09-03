@@ -91,6 +91,18 @@ export interface WardrobeScene {
   root: THREE.Group;
   /** Centre of the cabinet, metres — what a turntable orbits. */
   centre: THREE.Vector3;
+  /** REPAINT WITHOUT REBUILDING.
+   *
+   * Wall colour and handle finish change a material and nothing else — no
+   * geometry, no textures, no environment. Rebuilding the whole scene for them
+   * meant tearing down the renderer, remaking every box, regenerating the board
+   * maps and re-baking the PMREM to end up with the same cabinet in a different
+   * paint, which is why dragging the colour picker was unusable.
+   *
+   * Width, model and fitting still rebuild, because those really are different
+   * geometry. */
+  setWallColour(hex: string): void;
+  setHandleFinish(name: string): void;
   dispose(): void;
 }
 
@@ -316,9 +328,11 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // roughness map for the way a real sheet scatters unevenly, and a very faint
   // albedo mottle. The colour is still the measured #F1EFEB — this varies it,
   // it does not replace it.
+  // NOT DISPOSED WITH THE SCENE. These are cached and shared across every
+  // scene built at this colour, so disposing them here would pull the textures
+  // out from under the next one — see the note on mapCache.
   const whiteMaps = isWhite ? makeWhiteBoardMaps(base) : null;
   if (whiteMaps) {
-    disposables.push(whiteMaps);
     // ANISOTROPY, because these maps are minified hard. A 180mm tile on a
     // 507mm drawer front is nearly three repeats inside 150 screen pixels, and
     // the shelves and returns are seen at a glancing angle where the default
@@ -544,6 +558,31 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // built into it, so the return comes free and casts and receives shadow like
   // anything else; punching a hole would mean a shape geometry, a triangulated
   // face, and no reveal at all without building these four anyway.
+  // THE PAINTED SURFACES, HOISTED. Both live out here rather than inside
+  // buildSurround because setWallColour has to reach them: a repaint must not
+  // depend on whether the wall happened to be built, and a closure over a
+  // conditionally-called function is not something a setter can hold.
+  //
+  // The customer's own wall. Plasterboard rather than board — flatter than the
+  // cabinet, so the joinery still reads as a different material inside its own
+  // opening whatever colour the wall is painted.
+  const surroundMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(wallHex),
+    roughness: 0.94,
+    metalness: 0.0,
+  });
+  disposables.push(surroundMat);
+
+  // THE SAME PAINT, SHADED — a recess is the same wall seen with less light on
+  // it, not a different colour. Multiplied rather than mixed toward grey, so a
+  // deep green recess stays green instead of drifting to sludge.
+  const backMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(wallHex).multiplyScalar(0.88),
+    roughness: 0.96,
+    metalness: 0.0,
+  });
+  disposables.push(backMat);
+
   // ONLY WHERE THERE IS NOT ALREADY A WALL. The room composite is drawn onto a
   // photograph that has the customer's own wall in it, and the recess shade is
   // painted into the traced opening — putting a modelled wall in front of that
@@ -552,15 +591,6 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   if (!opts.forRoom) buildSurround();
 
   function buildSurround() {
-  const surroundMat = new THREE.MeshStandardMaterial({
-    // The customer's own wall. Plasterboard rather than board — flatter than
-    // the cabinet, so the joinery still reads as a different material inside
-    // its own opening whatever colour the wall is painted.
-    color: new THREE.Color(wallHex),
-    roughness: 0.94,
-    metalness: 0.0,
-  });
-  disposables.push(surroundMat);
 
   const wall = (x: number, y: number, w: number, h: number) => {
     const geo = new THREE.BoxGeometry(w * MM, h * MM, WALL_THICKNESS_MM * MM);
@@ -624,15 +654,6 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // Set a hair behind the carcass so no shelf ever z-fights with it, and darker
   // than the wall face, because the back of a 500mm recess lit only from the
   // room in front of it IS darker. That falloff is most of what says depth.
-  // THE SAME PAINT, SHADED — a recess is the same wall seen with less light on
-  // it, not a different colour. Multiplied rather than mixed toward grey, so a
-  // deep green recess stays green instead of drifting to sludge.
-  const backMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(wallHex).multiplyScalar(0.88),
-    roughness: 0.96,
-    metalness: 0.0,
-  });
-  disposables.push(backMat);
   const backGeo = new THREE.PlaneGeometry(
     (widthMm + 2 * outX) * MM,
     (OPENING_HEIGHT_MM + outTop) * MM,
@@ -719,6 +740,19 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // carcass already casts on itself.
 
   return {
+    setWallColour(hex: string) {
+      surroundMat.color.set(hex);
+      // The recess is the same paint with less light on it — see the note where
+      // backMat is built.
+      backMat.color.set(hex).multiplyScalar(0.88);
+    },
+    setHandleFinish(name: string) {
+      const f = handleFinish(name);
+      metalMat.color.set(f.hex);
+      metalMat.roughness = f.roughness;
+      metalMat.metalness = f.metalness;
+      metalMat.envMapIntensity = f.metalness > 0.5 ? 1.15 : 0.35;
+    },
     scene,
     root,
     centre,
