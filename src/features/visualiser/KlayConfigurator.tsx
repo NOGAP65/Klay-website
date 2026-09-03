@@ -702,7 +702,18 @@ function MotorRemote({
  * They are supplied with doors on. The doors are not the product here — the
  * opening behind them is — so the trace goes on the opening and the visualiser
  * draws an open carcass into it. */
-const PRESET_ROOMS_WINDOW = ['/images/room-3.png', '/images/room-4.png', '/images/room-5.png'];
+/** THE PATHS WERE WRONG AND HAD ALWAYS BEEN. They named `/images/room-N.png`;
+ * the files are in `/images/rooms/`. Three empty frames on "visualise in your
+ * own room", live, for as long as this list has existed.
+ *
+ * IT DID NOT 404, WHICH IS WHY NOTHING SAW IT. Vite and Netlify both fall back
+ * to index.html for an unmatched path, so each request returned 200 with 9 KB
+ * of HTML and the <img> quietly failed to decode it. The browser image check
+ * counted non-200 responses and there were none to count.
+ *
+ * Caught by npm run check:asset-paths, which reads the file system instead of
+ * the network for exactly this reason. */
+const PRESET_ROOMS_WINDOW = ['/images/rooms/room-3.png', '/images/rooms/room-4.png', '/images/rooms/room-5.png'];
 
 export interface WardrobeRoom {
   url: string;
