@@ -239,6 +239,8 @@ function Field({
   value,
   open,
   divider,
+  otherValue,
+  onOtherChange,
   onToggle,
   onChange,
 }: {
@@ -250,10 +252,20 @@ function Field({
   /** A bronze rule under this row. Every row but the last gets one — under the
    * final row it would be a divider with nothing beneath it to divide. */
   divider: boolean;
+  /** What the customer typed behind an Other choice, and where to put it.
+   *
+   * Passed for any field that HAS an Other — the parent decides by looking for
+   * the choice, not by naming the field — so a second one would work the same
+   * way without touching this. */
+  otherValue?: string;
+  onOtherChange?: (value: string) => void;
 }) {
   // The label of what is chosen, not its id — a row reading "variant · pet" is
-  // no summary at all.
-  const chosen = field.choices.find(c => c.id === value)?.label;
+  // no summary at all. What they TYPED beats the word Other, which summarises
+  // nothing; and a row nobody has answered says Select rather than sitting
+  // blank, so the gap reads as a question rather than as a bug.
+  const typed = value === 'other' ? otherValue?.trim() : undefined;
+  const chosen = typed || field.choices.find(c => c.id === value)?.label || 'Select';
 
   return (
     <div>
@@ -275,11 +287,9 @@ function Field({
         }}
       >
         {field.label}
-        {chosen && (
-          <span style={{ color: tokens.inkSoft, letterSpacing: '0.3em', marginLeft: 'auto' }}>
-            {chosen}
-          </span>
-        )}
+        <span style={{ color: tokens.inkSoft, letterSpacing: '0.3em', marginLeft: 'auto' }}>
+          {chosen}
+        </span>
         <span
           aria-hidden="true"
           style={{
@@ -325,6 +335,42 @@ function Field({
           )}
         </div>
       ))}
+
+      {/* BEHIND OTHER. It extends the row that is already open rather than
+          opening a second thing, and because it sits inside the region the
+          accordion animates, it unfolds with the row for free.
+
+          Only where the parent passed a handler, which it does for any field
+          with an Other among its choices — this component is not told that
+          locations exist. */}
+      {value === 'other' && onOtherChange && (
+        <input
+          type="text"
+          value={otherValue ?? ''}
+          onChange={e => onOtherChange(e.target.value)}
+          placeholder="Which room?"
+          aria-label={`${field.label} — please specify`}
+          style={{
+            marginTop: space.xs,
+            width: '100%',
+            height: 32,
+            boxSizing: 'border-box',
+            padding: `0 ${space.xs}px`,
+            fontFamily: tokens.body,
+            fontSize: 12,
+            color: tokens.ink,
+            // A CHIP'S SHAPE, UNFILLED. It is the same height and radius as the
+            // options above it and sits in the same row of the panel, so it
+            // reads as one more answer rather than as a form appearing inside a
+            // card. Unfilled because it is empty until it is answered, where a
+            // selected chip is filled because it has been.
+            background: 'transparent',
+            border: `1px solid ${tokens.line}`,
+            borderRadius: radius.md,
+            outlineColor: tokens.accent,
+          }}
+        />
+      )}
         </div>
       </div>
 
@@ -476,6 +522,16 @@ export function RangeConfigurator({
               value={sel[f.id]}
               open={openField === f.id}
               divider={i < shown.length - 1}
+              // BY THE CHOICE, NOT BY THE NAME. Any field offering an Other gets
+              // the text box and somewhere to put what is typed; Field never
+              // learns that this one is about rooms, and a second such field
+              // would need no change here or there.
+              {...(f.choices.some(c => c.id === 'other')
+                ? {
+                    otherValue: sel.locationOther,
+                    onOtherChange: (t: string) => onChange('locationOther', t),
+                  }
+                : null)}
               onToggle={() => setOpenField(id => (id === f.id ? null : f.id))}
               onChange={choose(f.id)}
             />
