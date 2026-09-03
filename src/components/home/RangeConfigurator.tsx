@@ -233,6 +233,121 @@ function Swatch({
  *
  * The chevron rotates rather than swapping glyph, so the row says which way it
  * is going as well as which state it is in. */
+/** ONE QUESTION, ONE LINE, ALWAYS OPEN.
+ *
+ * The same row the accordion shows when shut — name at the left, answer at the
+ * right, bronze rule underneath — except the answer is the control rather than a
+ * label of one. Pressing it opens the platform's own picker over the top of the
+ * card; nothing on the page expands, so a panel of six questions is six lines
+ * tall no matter what is being answered.
+ *
+ * That is the click this exists to save. It was open the row, read, pick, watch
+ * it fold; it is now press, pick.
+ *
+ * The select wears the row's own typography rather than the system's —
+ * appearance:none, the same caps and tracking the label had, and the same 4px
+ * triangle drawn as a background image because a select cannot have children. */
+function DenseField({
+  field,
+  value,
+  divider,
+  otherValue,
+  onOtherChange,
+  onChange,
+}: {
+  field: ConfigField;
+  value: string | undefined;
+  divider: boolean;
+  otherValue?: string;
+  onOtherChange?: (value: string) => void;
+  onChange: (choiceId: string) => void;
+}) {
+  const caret = encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="7" height="4" viewBox="0 0 7 4"><path d="M0 0l3.5 4L7 0z" fill="${tokens.inkSoft}"/></svg>`,
+  );
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: space.sm, minWidth: 0 }}>
+        <span style={{ ...labelStyle, marginBottom: 0, flex: '0 0 auto', whiteSpace: 'nowrap' }}>
+          {field.label}
+        </span>
+        <select
+          value={value ?? ''}
+          onChange={e => onChange(e.target.value)}
+          aria-label={field.label}
+          style={{
+            // THE ROW'S OWN TYPE, not the system's. This has to be
+            // indistinguishable from the label it replaced, or six of them read
+            // as a form bolted into a product card.
+            ...typeScale.micro,
+            color: tokens.inkSoft,
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            // Right up against the caret, and the whole control right-aligned,
+            // because the answer belongs at the end of the line where it was.
+            textAlign: 'right',
+            direction: 'rtl',
+            flex: '1 1 auto',
+            minWidth: 0,
+            border: 'none',
+            background: 'transparent',
+            appearance: 'none',
+            WebkitAppearance: 'none',
+            cursor: 'pointer',
+            padding: `2px ${space.sm}px 2px 0`,
+            backgroundImage: `url("data:image/svg+xml,${caret}")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right center',
+            outlineColor: tokens.accent,
+          }}
+        >
+          {/* Unanswered reads Select, the same word the accordion used, so a
+              row nobody has touched is a question rather than a blank. */}
+          {value === undefined && <option value="">Select</option>}
+          {field.choices.map(c => (
+            // Left-to-right again inside the list: the parent is rtl so the
+            // closed value sits right, and without this the options inherit it
+            // and punctuation lands on the wrong end.
+            <option key={c.id} value={c.id} style={{ direction: 'ltr' }}>{c.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Only where an Other has been chosen — see the note in Field. */}
+      {value === 'other' && onOtherChange && (
+        <input
+          type="text"
+          value={otherValue ?? ''}
+          onChange={e => onOtherChange(e.target.value)}
+          placeholder="Which room?"
+          aria-label={`${field.label} — please specify`}
+          style={{
+            marginTop: space.xxs,
+            width: '100%',
+            height: 28,
+            boxSizing: 'border-box',
+            padding: `0 ${space.xs}px`,
+            fontFamily: tokens.body,
+            fontSize: 12,
+            color: tokens.ink,
+            background: 'transparent',
+            border: `1px solid ${tokens.line}`,
+            borderRadius: radius.sm,
+            outlineColor: tokens.accent,
+          }}
+        />
+      )}
+
+      {divider && (
+        <div
+          aria-hidden="true"
+          style={{ height: 1.5, margin: '9px 0', background: tokens.accent, opacity: 0.32 }}
+        />
+      )}
+    </div>
+  );
+}
+
 function Field({
   field,
   value,
@@ -417,6 +532,7 @@ export function RangeConfigurator({
   onChange,
   leadFieldId,
   fill = false,
+  dense = false,
   onInteract,
 }: {
   item: CatalogueItem;
@@ -441,6 +557,14 @@ export function RangeConfigurator({
    * one thing that would make this panel unusable, so the carousel stops for
    * good once anyone starts specifying something. */
   onInteract?: () => void;
+  /** EVERY QUESTION OPEN, ONE LINE EACH — the shop grid's mode.
+   *
+   * The accordion is right where the panel is one card the customer has chosen
+   * to open: it keeps a tall configurator short. On a grid of fourteen cards
+   * that are ALL open there is nothing to keep short and a lot to keep even, so
+   * every row is a fixed line and the card's height is the same whatever is
+   * being asked. See DenseField. */
+  dense?: boolean;
 }) {
   const addItem = useCartStore(s => s.addItem);
   const { hover, bind } = useHover();
@@ -518,13 +642,26 @@ export function RangeConfigurator({
         // briefly content-sized, for a version where the panel opened as a drawer
         // underneath the card and had no height to match; the panel is back beside
         // the card and so is this.
-        ...(fill ? { flex: '1 1 auto' } : { height: CONFIG_H, flex: '0 0 auto' }),
+        // DENSE SIZES TO ITS CONTENT. The cap is what makes every button in a
+        // row land on one line when the panel is the short half of a fixed card
+        // — and here it would hide a field instead, since the roller asks six
+        // questions and the box fits five. The grid does that job on this page:
+        // rows stretch to the tallest card and the button sits at the bottom of
+        // each.
+        ...(dense
+          ? { flex: '1 1 auto', width: '100%' }
+          : fill
+          ? { flex: '1 1 auto' }
+          : { height: CONFIG_H, flex: '0 0 auto' }),
         minHeight: 0,
         boxSizing: 'border-box',
-        background: tokens.cream,
+        // NOTHING, in dense. The shop card has no background and no border of
+        // its own on purpose — see the note on the photograph being the card —
+        // so a white box under the name would be a second object stapled to it.
+        background: dense ? 'transparent' : tokens.cream,
         // Hairline on three sides. The top edge is where the name block ends,
         // and a rule there would read as a divider inside one object.
-        ...(fill ? null : {
+        ...(fill || dense ? null : {
           borderLeft: `1px solid ${tokens.lineFaint}`,
           borderRight: `1px solid ${tokens.lineFaint}`,
           borderBottom: `1px solid ${tokens.lineFaint}`,
@@ -533,7 +670,9 @@ export function RangeConfigurator({
         // inside, so the action button can reach the panel's own edges — see the
         // note on it. Padded here, it sat inset on all four sides and read as a
         // button placed in a box rather than as the bar the card's Shop Now is.
-        padding: fill ? 0 : `${space.md}px`,
+        // The card already insets itself; a second inset here would put the
+        // rows out of line with the name above them.
+        padding: fill || dense ? 0 : `${space.md}px`,
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -549,7 +688,9 @@ export function RangeConfigurator({
           // height again, so the one product with a seventeen-colour row and five
           // fields can exceed it — and there the scrollbar is the only thing
           // saying there is more to choose from.
-          overflowY: 'auto',
+          // No scroll in dense: there is no cap to overflow, and a scrollbar
+          // that can hide a question is the thing this mode exists to remove.
+          overflowY: dense ? 'visible' : 'auto',
           display: 'flex',
           flexDirection: 'column',
           // NO GAP. The rows are spaced by the rule between them, which has to
@@ -564,7 +705,23 @@ export function RangeConfigurator({
             under the photograph, because they are the one field whose effect is
             visible in the picture — see the note on RangeCard. This panel keeps
             the fields that are decisions rather than appearances. */}
-        {shown
+        {dense
+          ? shown.map((f, i) => (
+              <DenseField
+                key={f.id}
+                field={f}
+                value={sel[f.id]}
+                divider={i < shown.length - 1}
+                {...(f.choices.some(c => c.id === 'other')
+                  ? {
+                      otherValue: sel.locationOther,
+                      onOtherChange: (t: string) => onChange('locationOther', t),
+                    }
+                  : null)}
+                onChange={choose(f.id)}
+              />
+            ))
+          : shown
           .map((f, i) => (
             <Field
               key={f.id}
