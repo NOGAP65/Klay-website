@@ -21,8 +21,9 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 
 import { buildCarcass } from './Canvas2DWardrobeRenderer';
 import {
-  WARDROBE_DEPTH_MM, WARDROBE_HEIGHT_MM, FINISH_TEXTURE, FINISH_TILE_MM,
+  FINISH_TEXTURE, FINISH_TILE_MM,
   wardrobeColour, wardrobeColourHex, wardrobeModelById, DEFAULT_WIDTH_MM,
+  wardrobeHeight, wardrobeDepth,
 } from './wardrobes';
 import { cutoutFor } from './wardrobeCutouts';
 import { buildSliceMap, sliceMapper } from './wardrobeSlices';
@@ -76,6 +77,9 @@ export interface WardrobeSceneOpts {
   /** The finish's name, matching HANDLE_FINISHES. Every piece of visible
    * metalwork in the cabinet takes it — the pulls and the hanging rails. */
   handleFinish?: string;
+  /** Built into an opening, or standing against a flat wall. Changes the
+   * joinery (see sidePanelsFor) and the room it is drawn in. */
+  recessed?: boolean;
 }
 
 export interface WardrobeScene {
@@ -114,8 +118,14 @@ function flattenOntoBoard(tex: THREE.Texture, board: THREE.Color): THREE.Texture
 export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<WardrobeScene> {
   const { renderer, modelId, colourName, widthMm } = opts;
   const handleFinishName = opts.handleFinish ?? DEFAULT_HANDLE_FINISH;
+  const recessed = opts.recessed ?? true;
 
   const model = wardrobeModelById(modelId);
+  // THE MODEL'S OWN BOX. The linen shelving is 1650 x 447 against the robes'
+  // 2016 x 500, so every height and depth below is asked of the model rather
+  // than read off the range constant — see wardrobeHeight.
+  const H = wardrobeHeight(model);
+  const D = wardrobeDepth(model);
   // The width the artwork was SHOT at, which is not widths[0] any more now that
   // every layout offers the whole range starting at 1500. The slice boundaries
   // are measured off the artwork in any case; this is the fallback for the one
@@ -150,8 +160,8 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // The interior came out evenly lit and flat.
   const centre = new THREE.Vector3(
     (widthMm / 2) * MM,
-    (WARDROBE_HEIGHT_MM / 2) * MM,
-    (-WARDROBE_DEPTH_MM / 2) * MM,
+    (H / 2) * MM,
+    (-D / 2) * MM,
   );
 
   // AND NOW THE ONLY THING LIGHTING THE BOARD, which is why these numbers look
@@ -233,7 +243,7 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   disposables.push(env.texture, pmrem);
 
   // --- the carcass ---------------------------------------------------------
-  const { boxes } = buildCarcass(model.id, widthMm, hardwareSpec(handleFinishName));
+  const { boxes } = buildCarcass(model.id, widthMm, hardwareSpec(handleFinishName), recessed);
   const base = new THREE.Color(wardrobeColourHex(colourName));
 
   /** Model millimetres to sticker UV — piecewise across the width, so a fixed
@@ -241,7 +251,7 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   const uvFor = (x: number, y: number): [number, number] => {
     if (!cut) return [0, 0];
     const u = mapU ? mapU(x) : cut.x0 + (x / widthMm) * (cut.x1 - cut.x0);
-    const v = (1 - cut.y1) + (y / WARDROBE_HEIGHT_MM) * (cut.y1 - cut.y0);
+    const v = (1 - cut.y1) + (y / H) * (cut.y1 - cut.y0);
     return [u, v];
   };
 
@@ -550,15 +560,22 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // sized off the height rather than the cabinet: whatever the layout's width,
   // the surround reaches past the edge of the picture.
   const outX = Math.max(OPENING_HEIGHT_MM * 1.1, widthMm * 1.4);
-  // Above the head, likewise — enough that the ceiling line is off the top of
-  // the frame rather than drawn across it.
+  // THE OPENING ONLY EXISTS IN A RECESS. Off one, the unit stands against a
+  // flat wall — so the room keeps its back wall and its floor and loses the
+  // returns and the head, which are the opening. Drawing a reveal round a
+  // free-standing cabinet would be showing a hole that is not there.
+  // Above the head — enough that the ceiling line is off the top of the frame
+  // rather than drawn across it. Declared out here because the back wall is
+  // sized to it too, and the back wall exists either way.
   const outTop = 700;
-  // The reveal runs to the ceiling and the unit stands inside it, so the returns
-  // are the full opening height rather than the cabinet's — see
-  // OPENING_HEIGHT_MM for why those are different numbers.
-  wall(-outX, 0, outX, OPENING_HEIGHT_MM);                         // left return
-  wall(widthMm, 0, outX, OPENING_HEIGHT_MM);                       // right return
-  wall(-outX, OPENING_HEIGHT_MM, widthMm + 2 * outX, outTop);      // head
+  if (recessed) {
+    // The reveal runs to the ceiling and the unit stands inside it, so the
+    // returns are the full opening height rather than the cabinet's — see
+    // OPENING_HEIGHT_MM for why those are different numbers.
+    wall(-outX, 0, outX, OPENING_HEIGHT_MM);                       // left return
+    wall(widthMm, 0, outX, OPENING_HEIGHT_MM);                     // right return
+    wall(-outX, OPENING_HEIGHT_MM, widthMm + 2 * outX, outTop);    // head
+  }
   // No sill: the opening runs to the floor, which is what a robe does.
 
   // THE BACK OF THE RECESS, and it is the room's wall rather than the product's.
@@ -586,7 +603,7 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   backGeo.translate(
     (widthMm / 2) * MM,
     ((OPENING_HEIGHT_MM + outTop) / 2) * MM,
-    (-WARDROBE_DEPTH_MM - 6) * MM,
+    (-D - 6) * MM,
   );
   const back = new THREE.Mesh(backGeo, backMat);
   back.receiveShadow = true;
@@ -602,10 +619,10 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // on the background — the same fault the wall's own edges had, and a floor
   // with a visible far edge is not a floor either. The camera stands about four
   // metres back, so this runs past it.
-  const floorD = WARDROBE_DEPTH_MM + 7000;
+  const floorD = D + 7000;
   const floorGeo = new THREE.PlaneGeometry((widthMm + 2 * outX) * MM, floorD * MM);
   floorGeo.rotateX(-Math.PI / 2);
-  floorGeo.translate((widthMm / 2) * MM, 0, (-WARDROBE_DEPTH_MM + floorD / 2) * MM);
+  floorGeo.translate((widthMm / 2) * MM, 0, (-D + floorD / 2) * MM);
   const floor = new THREE.Mesh(floorGeo, backMat);
   floor.receiveShadow = true;
   disposables.push(floorGeo);

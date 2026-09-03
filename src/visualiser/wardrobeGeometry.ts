@@ -108,6 +108,16 @@ export interface ResolvedColumn {
  * geometry still has to agree with it, or the modelled dividers land in the
  * middle of a photographed hanging bay. */
 export const LAYOUT_COLUMNS: Record<string, Column[]> = {
+  // --- LINEN SHELVING ------------------------------------------------------
+  // One bay of four shelves, the deck's "4 x 447mm Shelves". The face post on
+  // the wider three is a front upright rather than a divider, so it does not
+  // split the run into columns — it is drawn in buildCarcass, where it can sit
+  // on the front edge instead of going the full depth.
+  LIN01: [{ share: 1, fill: { kind: 'shelves', count: 4 } }],
+  LIN02: [{ share: 1, fill: { kind: 'shelves', count: 4 } }],
+  LIN05: [{ share: 1, fill: { kind: 'shelves', count: 4 } }],
+  LINBR02: [{ share: 1, fill: { kind: 'shelves', count: 4 } }],
+
   // --- THE BUILT-IN RANGE, BY PRODUCT CODE -------------------------------
   // Three SKUs at 2016mm, and their names say exactly what is in them.
 
@@ -131,7 +141,10 @@ export const LAYOUT_COLUMNS: Record<string, Column[]> = {
   /** Drawer Tower + Divider + Double Hang Rail. Same arrangement with a bank of
    * four drawers under the tower's shelving, as 6.0's render shows. */
   SRDTDH01: [
-    { fixed: true, fill: { kind: 'drawers', count: 4, shelves: 2 } },
+    // THREE OPENINGS ABOVE THE BANK, counted off 6.0's render — it was 2. The
+    // tower is four drawers with three shelf compartments over them, and at 2
+    // the openings came out half as tall again as the product's.
+    { fixed: true, fill: { kind: 'drawers', count: 4, shelves: 3 } },
     { share: 1.4, fill: { kind: 'hang2' } },
     { share: 1, fill: { kind: 'hang' } },
   ],
@@ -219,8 +232,35 @@ export const LAYOUT_COLUMNS: Record<string, Column[]> = {
  * is the wrong product: it put a white panel between the run and the wall it is
  * fixed to, and on Forma 1 — which is a rail, a shelf and a divider — it
  * invented a carcass the customer is not buying. */
-export function sidePanelsFor(id: string): { left: boolean; right: boolean } {
+/** THE FACE POST — a front upright at mid-span, on the wider shelving codes.
+ *
+ * LIN02, LIN05 and LINBR02 are all "4 x 447mm Shelves Face Post" in the deck;
+ * LIN01, which is only made at 900 and 1200, is not. It is what lets a 3600
+ * shelf span without dipping, and it sits on the FRONT edge rather than running
+ * the full depth — a divider would make two cupboards of it, which is not what
+ * open linen shelving is. */
+export const hasFacePost = (id: string): boolean =>
+  id === 'LIN02' || id === 'LIN05' || id === 'LINBR02';
+
+export function sidePanelsFor(
+  id: string,
+  /** True where the unit is built into an opening. See the note below. */
+  recessed = true,
+): { left: boolean; right: boolean } {
   const columns = LAYOUT_COLUMNS[id] ?? LAYOUT_COLUMNS.SRSTDH02;
+  // OUT OF A RECESS IT IS A CABINET, and it needs both ends.
+  //
+  // Everything above describes a unit fitted INTO an opening, where the walls
+  // are the ends of the run. Stand the same internals against a flat wall and
+  // that is no longer true: there is nothing at either end, and a shelf running
+  // to open air is not a product — it is a run of board with its edges showing.
+  // So off a recess the unit gains a full side panel at each end and becomes
+  // the free-standing carcass the alcove was doing the job of.
+  //
+  // This is the one thing the recess switch changes about the joinery, and it
+  // is a real change: a customer ordering out of an alcove is buying two more
+  // panels.
+  if (!recessed) return { left: true, right: true };
   return {
     left: !!columns[0]?.fixed,
     right: !!columns[columns.length - 1]?.fixed,
@@ -234,9 +274,9 @@ export function sidePanelsFor(id: string): { left: boolean; right: boolean } {
 // they come from the same range in the same finish as the pulls. So the finish
 // is asked on all three and there is nothing to gate.
 
-export function columnsFor(id: string, widthMm: number): ResolvedColumn[] {
+export function columnsFor(id: string, widthMm: number, recessed = true): ResolvedColumn[] {
   const columns = LAYOUT_COLUMNS[id] ?? LAYOUT_COLUMNS.SRSTDH02;
-  const sides = sidePanelsFor(id);
+  const sides = sidePanelsFor(id, recessed);
   // Only the panels that exist come off the width — see sidePanelsFor. With
   // both subtracted unconditionally, a unit with no end panels lost 36mm of
   // opening to board that is not there, and every column inside it was drawn
@@ -284,8 +324,18 @@ export function columnsFor(id: string, widthMm: number): ResolvedColumn[] {
  * and at this scale it is the difference between joinery and a cardboard box —
  * every shelf shows its edge. */
 export const BOARD_MM = 18;
-/** How far the rail sits below the top of a hanging section. */
-export const RAIL_DROP_MM = 60;
+/** How far the rail sits below the shelf it hangs from.
+ *
+ * 110, up from 60, and the old number was what made Forma 1 look like it had
+ * two boards at the top and two at the middle. A rail is 26mm through and the
+ * shelf above it is 18: at a 60mm drop there are 16mm of daylight between them,
+ * which on screen is under a pixel — so the shelf and the rail merged into one
+ * thick doubled bar, and the layout that is mostly rails was the one it ruined.
+ *
+ * 110 is also just where a rail goes. It has to clear a hanger's hook and the
+ * shoulder of what is on it, which is why no joiner fixes one an inch under a
+ * shelf. The gap now reads as the gap it is. */
+export const RAIL_DROP_MM = 110;
 export const RAIL_RADIUS_MM = 13;
 
 /** WHAT THE TRACED REGION IS, IN MILLIMETRES, WORKED FROM ITS OWN SHAPE.

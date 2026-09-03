@@ -36,6 +36,8 @@ export interface Wardrobe3DProps {
   /** The metalwork's finish. Optional so a caller that has not been given the
    * choice yet still renders the range's default. */
   handleFinish?: string;
+  /** Built into an opening, or standing against a wall. */
+  recessed?: boolean;
 }
 
 /** How far the view may be turned off dead-ahead. Measured rather than picked:
@@ -49,6 +51,7 @@ export default function Wardrobe3D({
   selectedWidthMm,
   background = '#EFEDE8',
   handleFinish,
+  recessed,
 }: Wardrobe3DProps) {
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -76,7 +79,7 @@ export default function Wardrobe3D({
     let disposed = false;
     let cleanup = () => {};
 
-    buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm, handleFinish })
+    buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm, handleFinish, recessed })
       .then(built => {
         if (disposed) {
           built.dispose();
@@ -176,7 +179,7 @@ export default function Wardrobe3D({
     // once: left off, the picker wrote to the store, the store re-rendered this
     // component, and the effect declined to run — which looks exactly like a
     // control that does nothing.
-  }, [modelId, colourName, selectedWidthMm, background, handleFinish]);
+  }, [modelId, colourName, selectedWidthMm, background, handleFinish, recessed]);
 
   return <div ref={hostRef} style={{ width: '100%', height: '100%', minHeight: 420 }} />;
 }

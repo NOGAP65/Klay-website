@@ -1498,6 +1498,7 @@ export default function KlayConfigurator({
               colourName={store.wardrobeColour}
               selectedWidthMm={store.wardrobeWidthMm}
               handleFinish={store.wardrobeHandleFinish}
+              recessed={store.wardrobeRecessed}
             />
           ) : store.productCategory === 'wardrobe' && confirmedArea ? (
             <WardrobeRoomRenderer
@@ -1507,6 +1508,7 @@ export default function KlayConfigurator({
               colourName={store.wardrobeColour}
               widthMm={store.wardrobeWidthMm}
               handleFinish={store.wardrobeHandleFinish}
+              recessed={store.wardrobeRecessed}
             />
           ) : store.productCategory === 'curtain' && confirmedArea ? (
             <Canvas2DCurtainRenderer
