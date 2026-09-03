@@ -33,10 +33,9 @@
 // a phone, for the same reason.
 // ---------------------------------------------------------------------------
 
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { radius, tokens, motion, shadow, space, type as typeScale, useHover } from '@/ds';
+import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 
 import { type Selection } from '../configOptions';
 import type { CatalogueItem } from '../constants';
@@ -46,26 +45,9 @@ import { RangeConfigurator } from './RangeConfigurator';
 
 export interface ShopCardProps {
   item: CatalogueItem;
-  isOpen: boolean;
-  onToggle: () => void;
   sel: Selection;
   onChange: (fieldId: string, choiceId: string) => void;
-  /** Two columns across rather than three or more — the panel goes underneath
-   * instead of beside. */
-  isNarrow: boolean;
-  /** THE WIDTH OF ONE GRID COLUMN, in pixels, computed by the page from the
-   * grid's own width — see COLUMN_MIN there.
-   *
-   * The card is pinned to it so that opening does not resize the card: the
-   * growth is the panel arriving beside something that has not moved. Null
-   * before the first measurement, when the card falls back to filling its
-   * slot. */
-  colWidth: number | null;
-  /** True while the panel should be at full width. Distinct from `isOpen`,
-   * which stays true through the closing transition so the box has something to
-   * shrink back into — clearing them together would unmount the panel and leave
-   * the width animating against nothing. */
-  isShown: boolean;
+
 }
 
 /** How long the box takes to open, and to shut.
@@ -143,63 +125,18 @@ export const columnWidth = (gridWidth: number): number => {
   return (gridWidth - (cols - 1) * COLUMN_GAP) / cols;
 };
 
-export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colWidth, isShown }: ShopCardProps) {
+export function ShopCard({ item, sel, onChange }: ShopCardProps) {
   const { isHovered, bind } = useHover();
-  const lit = isHovered || isOpen;
+  const lit = isHovered;
 
-  /** MOUNTED SHUT, THEN OPENED — and without this the open does not animate at
-   * all while the close does, which is exactly what it looked like.
-   *
-   * A CSS transition needs two values to move between. The open branch is a
-   * different element from the closed card, so it MOUNTS with width already at
-   * the full span: there is no previous value, nothing transitions, and the box
-   * is 727px wide on the first frame. Measured frame by frame, opening sat at
-   * 727 from t=0 while closing eased 446 → 343 over 450ms — one direction
-   * animating and the other not.
-   *
-   * So it mounts at one column and is told to open on the next frame, which
-   * gives the transition its start value. Two frames rather than one: React
-   * can commit and the browser can paint within a single rAF, and a style
-   * applied in the same paint as the mount is still the initial value. */
-  const [entered, setEntered] = useState(false);
-  useEffect(() => {
-    if (!isOpen) {
-      setEntered(false);
-      return;
-    }
-    let second = 0;
-    const first = requestAnimationFrame(() => {
-      second = requestAnimationFrame(() => setEntered(true));
-    });
-    return () => {
-      cancelAnimationFrame(first);
-      cancelAnimationFrame(second);
-    };
-  }, [isOpen]);
-
-  /** Full width only once it has both been told to open and had its first frame
-   * at one column. Closing clears isShown, which runs the same transition back. */
-  const wide = isShown && entered;
-
-  // ONE OBJECT WHEN OPEN, and the card gives up its own chrome to make that
-  // true. Open, the border, the radius, the shadow and the lift all belong to
-  // the wrapper below, which encloses the card AND the panel; the card keeps
-  // only its padding. Left carrying its own set, the open state was a bounded
-  // box beside another bounded box with a gap down the middle — three separate
-  // statements that they are separate things.
-  const card = (
-    <div
+  return (
+    <article
       {...bind}
       style={{
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
         boxSizing: 'border-box',
-        // NO PADDING OF ITS OWN WHEN OPEN. The wrapper already holds the frame,
-        // and a second inset here was doing two visible things: it left a
-        // channel between Close and Add & Checkout, and it pushed the card's
-        // button down by its own bottom padding so the two halves of what
-        // should be one bar sat at different heights.
         // NO CARD AT ALL WHEN CLOSED — no background, no border, no radius, no
         // padding, no shadow. That is not a stylistic preference, it is what
         // both reference sites measure: mondayhaircare and kookai both report
@@ -326,137 +263,22 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colW
         </h3>
       </Link>
 
-      <button
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        style={{
-          marginTop: 'auto',
-          width: '100%',
-          height: 52,
-          boxSizing: 'border-box',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          // SQUARE ON THE JOIN. Open, this button and the panel's Add &
-          // Checkout are flush against each other at the same 52px, so a radius
-          // on the inside edge would put a notch in what has to read as one bar
-          // across the whole card.
-          borderRadius: isOpen ? `${radius.md}px 0 0 ${radius.md}px` : radius.md,
-          cursor: 'pointer',
-          border: 'none',
-          // FILLED BRONZE, and it was briefly not.
-          //
-          // The reference analysis argued the fill away: fourteen solid bars
-          // were the highest-contrast thing on the page, and neither monday nor
-          // kookai fills a button at all. That was a fair reading of the OLD
-          // card, where the picture was 275px of 434 and the button really was
-          // the loudest thing in it. It stopped being true the moment the
-          // photograph went portrait — 433 of 587, three quarters of the card,
-          // which outweighs a 52px bar underneath without any help.
-          //
-          // The bar is also the only thing on a resting card that says the
-          // configurator exists. An underline says "link", and this opens a
-          // panel in place.
-          background: isOpen || isHovered ? tokens.accentHover : tokens.accent,
-          color: tokens.onAccent,
-          ...typeScale.label,
-          lineHeight: 1,
-          transition: motion.button,
-        }}
-      >
-        {isOpen ? 'Close' : 'Shop Now'}
-      </button>
-    </div>
-  );
+      {/* THE CONFIGURATION, UNDER THE PICTURE AND ALWAYS THERE.
+          Dense mode: every question one line, answerable where it stands, no
+          row that opens and nothing that changes height. See DenseField.
 
-  if (!isOpen) return card;
-
-  // THE SLOT JUMPS; NOTHING VISIBLE DOES. The grid item takes its two columns
-  // on the tick the state changes — `grid-column` cannot be animated — but it
-  // carries no border, no background and no shadow, so there is nothing on it
-  // to be seen jumping. Everything visible is on the box inside it, which
-  // animates its own width across the space the span just made.
-  return (
-    <div
-      style={{
-        gridColumn: isNarrow ? '1 / -1' : 'span 2',
-        display: 'flex',
-      }}
-    >
-      <div
-        style={{
-          // ONE COLUMN TO THE FULL SPAN. Stacked, there is only ever one column
-          // to be, so it opens downward instead and the width holds still.
-          width: isNarrow || wide || colWidth === null ? '100%' : colWidth,
-          display: 'flex',
-          flexDirection: isNarrow ? 'column' : 'row',
-          alignItems: 'stretch',
-          // NO GAP. The two halves meet; a channel between them would be the one
-          // thing saying they are two objects.
-          boxSizing: 'border-box',
-          padding: space.hairline,
-          background: tokens.card,
-          // THE WHOLE SHAPE WEARS THE ACCENT, enclosing the card and the panel
-          // together, so the edge grows with the card rather than being a second
-          // thing drawn around a second box.
-          border: `1px solid ${tokens.accent}`,
-          borderRadius: radius.lg,
-          boxShadow: shadow.lift,
-          overflow: 'hidden',
-          // Shutting is quicker than opening — see CLOSE_MS — and the
-          // property changes along with the width, so each direction gets its
-          // own duration out of the same declaration.
-          transition: `width ${wide ? OPEN_MS : CLOSE_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
-        }}
-      >
-        {/* PINNED, so the card does not resize while the box grows around it.
-            Less the box's own frame and border, which the closed card carries
-            itself — the card's CONTENT is then exactly as wide open as shut,
-            which is the whole point of pinning it. */}
-        <div
-          style={{
-            flex: isNarrow || colWidth === null
-              ? '1 1 auto'
-              : `0 0 ${colWidth - 2 * space.hairline - 2}px`,
-            minWidth: 0,
-          }}
-        >
-          {card}
-        </div>
-
-      {/* NO BORDER, AND SQUARE ON THE JOIN. A hairline all the way round drew
-          the panel as its own box, and the inside edge in particular put a rule
-          down the join it is meant to be crossing. Radius on the outer corners
-          only, so the shape ends where the card ends.
-
-          It fades and slides out of the card rather than appearing: the row can
-          animate its slot widening, a grid item cannot, so the panel does that
-          work itself. klay-panel-in is the row's own keyframe. */}
-        <div
-          style={{
-            // PINNED TO WHERE IT ENDS, so nothing inside is laid out twice.
-            // At `1 1 0` the panel's width animated along with the box, and the
-            // configurator's rows — label left, value right — wrapped, unwrapped
-            // and re-settled on every frame of the 450ms. The box clips; the
-            // growth uncovers type that has not moved.
-            flex: isNarrow || colWidth === null
-              ? '1 1 auto'
-              : `0 0 ${colWidth + COLUMN_GAP}px`,
-            minWidth: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            // FADES IN BEHIND THE WIDTH, not with it. The box takes 450ms to
-            // open; a panel fading over the same 450ms is visible while the
-            // space it is in is still half made, which reads as two things
-            // happening at once. Held back until the width has nearly settled,
-            // it reads as one: the card opens, then the controls are there.
-            opacity: wide ? 1 : 0,
-            transition: 'opacity 0.18s ease 0.16s',
-          }}
-        >
-          <RangeConfigurator item={item} sel={sel} onChange={onChange} fill />
-        </div>
+          It carries its own Add to cart, so the card needs no button of its
+          own — the thing that used to say Shop Now was only ever a door to
+          this. */}
+      {/* FILLS WHAT IS LEFT, so every Add to cart in a row lands on one line.
+          The grid stretches each card to the tallest in its row; without this
+          the configurator sized to its own questions and a five-row product put
+          its button 40px above a six-row neighbour's. The panel pushes its own
+          action bar to the bottom once it has the height — see the flex on the
+          field column there. */}
+      <div style={{ marginTop: space.item, flex: '1 1 auto', display: 'flex', minHeight: 0 }}>
+        <RangeConfigurator item={item} sel={sel} onChange={onChange} dense />
       </div>
-    </div>
+    </article>
   );
 }

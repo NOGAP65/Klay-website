@@ -202,6 +202,62 @@ const HEADING_SINK = 1.12;
 // automatically paced by the user: a slow drag leans a little and settles almost
 // invisibly, a fast one leans hard and swings twice before it stops. Nothing here
 // is keyed to a fixed animation duration.
+/** --- GRAVITY IN THE HANGING CLOTH ---------------------------------------
+ *
+ * Everything above describes the wave as seen from ABOVE — one cross-section,
+ * correct at the track. What follows is what the same cloth does on its way
+ * down, and it is the difference between a curtain and a sheet of corrugated
+ * plastic.
+ *
+ * The old surface had none of it. z was a function of x alone, evaluated once
+ * per column and reused for every row, which is why the render came out as
+ * vertical stripes of exactly constant tone: every fold cue in the shader reads
+ * the normal, the normal never changed down the drop, so neither could the
+ * shading. ROWS was 8 for the same reason, and the comment defending that
+ * number stated the assumption out loud — nothing in the surface varied quickly
+ * down the drop. Nothing did, because nothing was allowed to.
+ */
+
+/** THE CARRIER PINCHES, THE HEM DOES NOT.
+ *
+ * At the heading the cloth is clamped every 80mm by a snap, so the wave is
+ * pinched hard at each carrier and the lobe between them is pushed round and
+ * full — a squarer wave than a sine. Below the tape nothing holds it, and the
+ * section relaxes toward the plain sinusoid the fabric would take on its own.
+ *
+ * Applied as the exponent on |sin| with the sign kept: below 1 flattens the
+ * lobe and steepens the crossing, which is what a pinched carrier does; at 1 it
+ * IS the sine. The heading value is what the render was missing entirely.
+ */
+const FOLD_PINCH_HEADING = 0.72;
+const FOLD_PINCH_HEM = 0.97;
+
+/** HOW FAR A FOLD'S CENTRELINE WANDERS BY THE HEM, in fractions of one wave.
+ *
+ * A fold is a hinge, not a rail. The top is fixed to a carrier and the bottom
+ * is free, so every fold leans a little — never the same amount twice, and the
+ * lean is what stops nine folds reading as nine printed lines. Seeded from the
+ * same waveJitter that already varies the widths, so a fold that hangs wider
+ * also leans further and the two irregularities agree instead of fighting.
+ *
+ * Superlinear in depth: the tape holds the top third almost straight and the
+ * lean accumulates below it. Same shape, and the same reason, as
+ * SWAY_SHAPE_POWER.
+ */
+const FOLD_WANDER = 0.17;
+const FOLD_WANDER_POWER = 1.35;
+
+/** THE WEIGHTED HEM BAND, which is stiffer than the cloth above it.
+ *
+ * A made curtain has a doubled hem with a weight in it. It cannot take the full
+ * fold depth the free cloth above does, so the section pulls in over the last
+ * few percent of the drop. This is what rounds the bottom edge off. Without it
+ * the hem was a sawtooth — the sine at full amplitude cut straight across — and
+ * a sawtooth hem is a paper fan, not a curtain.
+ */
+const HEM_STIFFEN = 0.22;
+const HEM_STIFFEN_SPAN = 0.08;
+
 // ---------------------------------------------------------------------------
 
 const GRAVITY = 9.81; // m/s²
@@ -434,12 +490,21 @@ const swaySettled = (state: SwayState): boolean =>
 /** Mesh resolution. Columns are per wave rather than per panel, so a wide
  * curtain gets more geometry instead of coarser waves.
  *
- * ROWS is 8, down from 26. Nothing in this surface varies quickly down the drop:
- * the only vertical terms are the hem splay and hem deepening, both quadratic in
- * height, which 8 rows carry to within a pixel. The other 18 rows were paying
- * full vertex and fragment cost to interpolate a parabola. */
+ * ROWS IS 36, BACK UP FROM 8.
+ *
+ * Eight was right for the surface as it was: the only vertical terms were the
+ * hem splay and hem deepening, both quadratic, and eight rows carried a parabola
+ * to within a pixel. That is no longer what is down there. The section changes
+ * shape as it falls now — the carrier's pinch relaxing out of it, each fold's
+ * centreline leaning, the hem band pulling in — and every one of those is a
+ * curve eight rows cannot hold without faceting.
+ *
+ * The cost is real and it is bounded: vertex work goes up 4.5x on a mesh of a
+ * few thousand vertices, and the fragment cost — which is what actually decides
+ * the frame rate — does not move at all, because the panel covers the same
+ * pixels either way. */
 const COLS_PER_WAVE = 10;
-const ROWS = 8;
+const ROWS = 36;
 
 /** Ceiling on the render buffer's width in pixels.
  *
@@ -743,11 +808,13 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
   const spanForLag = Math.max(1e-6, span);
   const billow = SWAY_BILLOW * Math.min(1, Math.abs(sway) / Math.max(1e-6, widths[0]));
 
-  // Per-column values, computed once and reused down every row.
+  // Per-column values that do NOT depend on height, computed once and reused
+  // down every row. What is no longer in here is z and the normal: both are
+  // functions of the row now, which is the whole of this change.
   const colX = new Float64Array(cols + 1);
-  const colZ = new Float64Array(cols + 1);
-  const colNx = new Float64Array(cols + 1);
-  const colNz = new Float64Array(cols + 1);
+  const colPhase = new Float64Array(cols + 1);
+  const colAmp = new Float64Array(cols + 1);
+  const colWander = new Float64Array(cols + 1);
   const colComp = new Float64Array(cols + 1);
   /** Extra arrival delay for this column, seconds. Interpolated between waves
    *  rather than stepped, or the panel creases where two neighbours are reading
@@ -772,40 +839,59 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     const t = p - 0.5;
     const i0 = Math.floor(t);
     const f = t - i0;
-    const d0 = depths[i0 < 0 ? 0 : i0 > count - 1 ? count - 1 : i0];
-    const d1 = depths[i0 + 1 < 0 ? 0 : i0 + 1 > count - 1 ? count - 1 : i0 + 1];
-    const amp = d0 + (d1 - d0) * f;
+    const lo = i0 < 0 ? 0 : i0 > count - 1 ? count - 1 : i0;
+    const hi = i0 + 1 < 0 ? 0 : i0 + 1 > count - 1 ? count - 1 : i0 + 1;
+    colAmp[c] = depths[lo] + (depths[hi] - depths[lo]) * f;
 
-    const phase = p * TAU;
-    colZ[c] = amp * Math.sin(phase);
+    colPhase[c] = p * TAU;
     // Measured from the WALL end so the hem splay reaches further toward the
     // room while the heading stays pinned to its end carrier.
     colX[c] = span - offset;
     colComp[c] = compressions[wave];
+
+    // The lean this fold takes by the hem, in radians of its own cycle. Same
+    // interpolation as the depth so it varies smoothly along the panel, and
+    // seeded from the same jitter, so the fold that hangs deeper is the one
+    // that also leans further. See FOLD_WANDER.
+    const w0 = waveJitter(lo, 8.7);
+    const w1 = waveJitter(hi, 8.7);
+    colWander[c] = FOLD_WANDER * TAU * (w0 + (w1 - w0) * f);
 
     // Per-fold arrival offset, interpolated between wave centres on the same
     // t/i0/f the depth uses — so it varies smoothly along the panel instead of
     // stepping at every wave boundary. Reuses the deterministic wave jitter, so
     // the fold that hangs a little deeper is also the one that arrives a little
     // late, which is what an irregular curtain actually does.
-    const s0 = waveJitter(i0 < 0 ? 0 : i0 > count - 1 ? count - 1 : i0, 5.3);
-    const s1 = waveJitter(i0 + 1 < 0 ? 0 : i0 + 1 > count - 1 ? count - 1 : i0 + 1, 5.3);
+    const s0 = waveJitter(lo, 5.3);
+    const s1 = waveJitter(hi, 5.3);
     colStagger[c] = staggerScale * (s0 + (s1 - s0) * f);
-
-    // Slope: dz/dp over dx/dp. dx/dp is -width (offset grows with p, distance
-    // from the wall shrinks), and the dominant dz/dp term is the sine's own
-    // derivative — the amplitude ramp between neighbours is an order down and
-    // contributes nothing visible.
-    const dzdp = amp * TAU * Math.cos(phase);
-    const dxdp = -width * towardCentre;
-    // Normal perpendicular to (dxdp, dzdp) in the x-z plane; the shader forces
-    // it to face the camera, so the sign here is free.
-    const nx = -dzdp;
-    const nz = dxdp;
-    const len = Math.hypot(nx, nz) || 1;
-    colNx[c] = nx / len;
-    colNz[c] = nz / len;
   }
+
+  /** THE SECTION AT ONE HEIGHT.
+   *
+   * Three things happen to it on the way down and all three are gravity:
+   *   the carrier's pinch relaxes out    — FOLD_PINCH_*
+   *   the fold leans off vertical        — FOLD_WANDER
+   *   the weighted hem pulls the fold in — HEM_STIFFEN
+   *
+   * `sign(sin)·|sin|^e` rather than a plain sine: at e below 1 the lobe flattens
+   * and the crossing steepens, which is the shape a snap carrier forces on the
+   * cloth it is holding. At e = 1 it is exactly the sine it always was, which is
+   * what the free cloth near the hem relaxes back to.
+   */
+  const sectionZ = (c: number, vy: number): number => {
+    const pinch = FOLD_PINCH_HEADING + (FOLD_PINCH_HEM - FOLD_PINCH_HEADING) * vy;
+    const phase = colPhase[c] + colWander[c] * Math.pow(vy, FOLD_WANDER_POWER);
+    const s = Math.sin(phase);
+    const shaped = s < 0 ? -Math.pow(-s, pinch) : Math.pow(s, pinch);
+    // The hem band, over the last HEM_STIFFEN_SPAN of the drop only.
+    const intoHem = smoothstep01((vy - (1 - HEM_STIFFEN_SPAN)) / HEM_STIFFEN_SPAN);
+    return colAmp[c] * shaped * (1 - HEM_STIFFEN * intoHem);
+  };
+
+  // One row's z values, so the normal at a column can be taken from its
+  // neighbours in the SAME row rather than from a slope that ignores height.
+  const rowZ = new Float64Array(cols + 1);
 
   let v = 0;
   for (let r = 0; r <= ROWS; r++) {
@@ -840,9 +926,11 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     const rowSway = swayAgo ? swayAgo(rowDelay) : sway;
     const lagAtRow = rowSway * Math.pow(vy, SWAY_SHAPE_POWER);
 
+    for (let c = 0; c <= cols; c++) rowZ[c] = sectionZ(c, vy) * deepen;
+
     for (let c = 0; c <= cols; c++, v++) {
       const i3 = v * 3;
-      const z = colZ[c] * deepen;
+      const z = rowZ[c];
       // Folds are coupled by the heading tape but not welded to each other, so
       // each one arrives a fraction early or late. Without it the panel ripples
       // as a single rigid sheet. See SWAY_FOLD_STAGGER.
@@ -853,14 +941,31 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
       // much it is actually being moved: the wall end is stacked and stationary
       // however hard the leading edge is pulled, so it has nothing to lag behind.
       const lag = colLag * (colX[c] / spanForLag);
+
       positions[i3] = wallX + towardCentre * (colX[c] * splay + lag);
       positions[i3 + 1] = y - z * swing - sink;
       positions[i3 + 2] = z;
-      normals[i3] = colNx[c];
+
+      // THE NORMAL, FROM THIS ROW'S OWN NEIGHBOURS. It used to be computed once
+      // per column from the analytic slope of a sine and copied down the whole
+      // drop, on the grounds that the slope did not change with height. It does
+      // now — that is the entire change — so a central difference across the two
+      // adjacent columns is taken instead, one-sided at the two edges. The
+      // surface is smooth in x, so this is the answer the derivative would give,
+      // and it stays right whatever sectionZ is made to do next.
+      const cLo = c > 0 ? c - 1 : c;
+      const cHi = c < cols ? c + 1 : c;
+      const dz = rowZ[cHi] - rowZ[cLo];
+      const dx = (colX[cHi] - colX[cLo]) * splay * towardCentre;
+      const nx = -dz;
+      const nz = dx;
+      const len = Math.hypot(nx, nz) || 1;
+
+      normals[i3] = nx / len;
       normals[i3 + 1] = 0;
-      normals[i3 + 2] = colNz[c];
+      normals[i3 + 2] = nz / len;
       compression[v] = colComp[c];
-      depth[v] = colZ[c] / maxDepth;
+      depth[v] = z / maxDepth;
       // The y shear tilts the surface slightly out of the x-z plane. Left out of
       // the normal on purpose: at this magnitude it is a fraction of a degree,
       // and carrying it would cost a normalise per vertex to change nothing.

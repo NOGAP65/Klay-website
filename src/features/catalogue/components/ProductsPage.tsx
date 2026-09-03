@@ -26,9 +26,7 @@
 
 import {
   useEffect,
-  useLayoutEffect,
   useMemo,
-  useRef,
   useState } from 'react';
 import { Link,
   useSearchParams } from 'react-router-dom';
@@ -49,16 +47,7 @@ import {
 import { SORT_OPTIONS, sortProducts, type SortOption } from '../lib/sortProducts';
 
 import { FilterRail } from './FilterRail';
-import {
-  ShopCard,
-  CLOSE_MS,
-  COLUMN_GAP,
-  COLUMN_MIN,
-  STAGGER_MS,
-  STAGGER_SPAN_MS,
-  TRAVEL_MS,
-  columnWidth,
-} from './ShopCard';
+import { ShopCard, COLUMN_GAP, COLUMN_MIN } from './ShopCard';
 import { defaultSelection, type Selection } from '../configOptions';
 
 /** Wider than the 1240 the rest of the site uses, because the rail eats 200 of
@@ -96,198 +85,7 @@ export default function ProductsPage() {
   const [shouldShowSortDropdown, setShowSortDropdown] = useState(false);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
 
-  /** WHICH CARD IS OPEN, and it is one at a time. Held here rather than in the
-   * card because "close the other one" is a decision only something that can
-   * see both can make — and because a customer reading two sets of options at
-   * once is reading neither. */
-  const [openId, setOpenId] = useState<string | null>(null);
 
-  /** THE CLOSE REVERSES THE OPEN rather than the panel vanishing and the box
-   * then shrinking behind it. Clearing openId on the click would unmount the
-   * panel on the spot and leave the width animating against an empty box, so
-   * this holds the card open at full width while the panel fades, and only then
-   * is the id cleared. Switching straight from one card to another skips the
-   * wait: the outgoing panel has somewhere to go. */
-  const [isClosing, setClosing] = useState(false);
-
-  /** WHERE EVERY CARD WAS BEFORE THE CLICK — the F in FLIP. Captured on the
-   * click rather than in an effect, because by the time an effect runs the
-   * browser has already laid the new arrangement out and the old positions are
-   * gone. */
-  const prevRects = useRef<Map<string, DOMRect>>(new Map());
-  const snapshot = () => {
-    const grid = gridRef.current;
-    if (!grid) return;
-    const m = new Map<string, DOMRect>();
-    [...grid.children].forEach((el, i) => {
-      const item = items[i];
-      if (item) m.set(item.id, el.getBoundingClientRect());
-    });
-    prevRects.current = m;
-  };
-
-  const toggle = (id: string) => {
-    snapshot();
-    if (openId !== id) {
-      setClosing(false);
-      setOpenId(id);
-      return;
-    }
-    setClosing(true);
-  };
-
-  /** INVERT AND PLAY, in a layout effect so it runs after the browser has
-   * placed everything and before it paints — a useEffect here would let one
-   * frame of the new arrangement through, which is the jump this exists to
-   * remove.
-   *
-   * The layout is correct throughout; only a transform moves, so nothing
-   * reflows and the cards that shift cost almost nothing to animate.
-   *
-   * IT RUNS IN BOTH DIRECTIONS, and each card takes a corner rather than a
-   * diagonal, one after the next — see the three notes inside. */
-  useLayoutEffect(() => {
-    const grid = gridRef.current;
-    const prev = prevRects.current;
-    if (!grid || prev.size === 0) return;
-    prevRects.current = new Map();
-
-    // Somebody who has asked their machine not to animate things gets the new
-    // arrangement without any of this.
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    // Which way this is going. On the way back the id has already been
-    // cleared, so nothing is open.
-    const opening = openId !== null;
-
-    // Only the cards that actually moved. One that did not needs no help, and
-    // transforming it would put it on its own compositor layer for nothing.
-    const movers: { el: HTMLElement; dx: number; dy: number }[] = [];
-    [...grid.children].forEach((node, i) => {
-      const item = items[i];
-      const before = item && prev.get(item.id);
-      if (!before) return;
-      const el = node as HTMLElement;
-      const after = el.getBoundingClientRect();
-      const dx = before.left - after.left;
-      const dy = before.top - after.top;
-      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
-      movers.push({ el, dx, dy });
-    });
-
-    // THE ORDER IS THE SNAKE. Grid order going out, so the displacement travels
-    // away from the card that opened; reversed coming back, so it retracts
-    // toward it. Same cards, same paths, and it reads as one motion with a
-    // direction rather than every card leaving on the same frame.
-    if (!opening) movers.reverse();
-
-    // THE WAVE CANNOT OUTRUN THE GRID. 45ms apiece is right for the handful of
-    // cards a customer can see at once, but the full range is thirteen movers,
-    // which puts the last one's delay at 540ms and had the thing running for
-    // near enough a second — and a filtered grid is a different length again, so
-    // the same click would feel different depending on how much happened to be
-    // on screen. The gap shrinks to fit instead: every card still leaves after
-    // the one before it, and the wave takes the same time to cross the grid
-    // whatever is in it.
-    const gap = Math.min(STAGGER_MS, STAGGER_SPAN_MS / Math.max(1, movers.length - 1));
-
-    const running = movers.map(({ el, dx, dy }, n) => {
-      // A CARD GOES WHERE IT IS GOING, AND NOWHERE ELSE FIRST.
-      //
-      // There was a dip here: every card dropped 26px out of its row, travelled
-      // in the gutter and rose back into place. It was a misreading of "move
-      // everything down" — a card moving one column to the right is not going
-      // anywhere near another row, so the drop was decoration in front of the
-      // real move, and decoration in front of a move reads as a twitch before it
-      // starts. It went.
-      //
-      // The card that WRAPS still goes down and then across, and that is not the
-      // same thing: it really is changing rows, so the corner is the shape of
-      // the journey rather than a flourish before one.
-      const wraps = Math.abs(dx) > 1 && Math.abs(dy) > 1;
-
-      const path = wraps
-        ? [
-            // Down the full row, then along to the leftmost. The close retraces
-            // it: the waypoint is that same corner reached from the other side,
-            // so the way back is the way out and not a second path of its own.
-            { transform: `translate(${dx}px, ${dy}px)`, easing: 'cubic-bezier(0.4, 0, 0.5, 1)' },
-            {
-              transform: opening ? `translate(${dx}px, 0px)` : `translate(0px, ${dy}px)`,
-              offset: 0.52,
-              easing: 'cubic-bezier(0.3, 0, 0.2, 1)',
-            },
-            { transform: 'translate(0px, 0px)' },
-          ]
-        : [
-            // Straight there. One property, one curve, no waypoint.
-            { transform: `translate(${dx}px, ${dy}px)` },
-            { transform: 'translate(0px, 0px)' },
-          ];
-
-      return el.animate(path, {
-        // The wrapping card has two legs and most of the grid's width to cross;
-        // one sliding along its row travels a third of that and would crawl at
-        // the same duration.
-        duration: wraps ? TRAVEL_MS : TRAVEL_MS * 0.7,
-        delay: n * gap,
-        // The wrapping card's legs carry their own easing, so its outer curve
-        // has to be linear or it would be applied twice. A straight move has no
-        // legs and takes the curve here.
-        easing: wraps ? 'linear' : 'cubic-bezier(0.22, 1, 0.36, 1)',
-        // WITHOUT THIS THE STAGGER IS BROKEN. A card waiting its turn has to sit
-        // at its OLD position for the length of its delay — 'backwards' applies
-        // the first keyframe during it. Left to fill 'none' each card would
-        // paint at its new place and then jump back to start when its turn came,
-        // which is the fault this whole effect exists to remove, reintroduced
-        // once per card.
-        fill: 'backwards',
-      });
-    });
-    return () => running.forEach(a => a.cancel());
-    // items is deliberately absent: this must run for an open or a close, not
-    // for a filter change, which replaces the cards rather than moving them.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openId, isClosing]);
-
-  useEffect(() => {
-    if (!isClosing) return;
-    const t = window.setTimeout(() => {
-      // SNAPSHOT AGAIN, HERE, and this is the whole reason the close never
-      // animated. A close does not reflow the grid at the click — the card keeps
-      // its span while the panel fades, and the grid only re-lays-out on the
-      // next line. The snapshot taken at the click was against an arrangement
-      // that had not moved yet, so the layout effect found every delta at zero
-      // and threw it away. This is the last moment the old positions exist.
-      snapshot();
-      setOpenId(null);
-      setClosing(false);
-    }, CLOSE_MS);
-    return () => window.clearTimeout(t);
-  }, [isClosing]);
-
-  /** ONE GRID COLUMN, IN PIXELS, from the grid's own width.
-   *
-   * COMPUTED, NOT MEASURED, and that is the point: reading it off a sibling has
-   * a race in it, because opening a card changes which items sit where and a
-   * measurement taken mid-transition returns a number between one column and
-   * two. auto-fill's rule is deterministic — as many minmax(COLUMN_MIN, 1fr)
-   * tracks as fit with the gaps between them — so running the same arithmetic
-   * the browser runs gives the answer with no window to be wrong in.
-   *
-   * The grid's own width has no such window either: opening a card does not
-   * change how wide the grid is. */
-  const gridRef = useRef<HTMLDivElement>(null);
-  const [colWidth, setColWidth] = useState<number | null>(null);
-  useEffect(() => {
-    const el = gridRef.current;
-    if (!el) return;
-    const measure = () => setColWidth(columnWidth(el.clientWidth));
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [isNarrow]);
 
   /** EVERY CARD'S SELECTION, KEPT BY ID.
    *
@@ -651,7 +449,6 @@ export default function ProductsPage() {
 
               {items.length > 0 ? (
                 <div
-                  ref={gridRef}
                   style={{
                     display: 'grid',
                     // auto-fill rather than a fixed column count, so the grid
@@ -665,9 +462,10 @@ export default function ProductsPage() {
                     // the product. At 340 the same width takes three of about
                     // 390, which is bigger than the row's own cards.
                     //
-                    // It also has to divide by two: the open card spans two
-                    // columns, so a row that fits three closed fits one open
-                    // plus one closed with no orphan.
+                    // Nothing spans two columns any more — no card opens — so
+                    // this no longer has to divide by two. It stays at 340
+                    // because that is what makes the picture bigger than the
+                    // homepage row's, which was the reason for it.
                     gridTemplateColumns: isNarrow
                       ? 'repeat(2, 1fr)'
                       : `repeat(auto-fill, minmax(${COLUMN_MIN}px, 1fr))`,
@@ -687,10 +485,6 @@ export default function ProductsPage() {
                     <ShopCard
                       key={item.id}
                       item={item}
-                      isOpen={openId === item.id}
-                      onToggle={() => toggle(item.id)}
-                      colWidth={colWidth}
-                      isShown={openId === item.id && !isClosing}
                       sel={sel[item.id] ?? defaultSelection(item)}
                       onChange={(fieldId, choiceId) =>
                         setSel(s => ({
@@ -698,7 +492,6 @@ export default function ProductsPage() {
                           [item.id]: { ...(s[item.id] ?? defaultSelection(item)), [fieldId]: choiceId },
                         }))
                       }
-                      isNarrow={isNarrow}
                     />
                   ))}
                 </div>
