@@ -61,51 +61,7 @@
       ],
       "excludesFromScope": false,
       "note": "A rule-level exemption, not a scope exclusion. These files are in scope for every other rule."
-    },
-    {
-      "id": "E-08",
-      "summary": "The visualiser is outside this migration and outside every rule in the specification",
-      "paths": [
-        "src/visualiser/**",
-        "src/visualiser-lab/**",
-        "src/pages/VisualiserPage.tsx"
-      ],
-      "excludesFromScope": true,
-      "retiresWhen": "V calls it when the wardrobe work pauses. An owner who can be asked, not a milestone that can recede.",
-      "note": "VisualizerLabPage.tsx was removed at the asset phase — the route was deleted, closing E-07. src/visualiser-lab/ is untouched and stays.",
-      "owner": "V"
-    },
-    {
-      "id": "E-09",
-      "summary": "Permanent re-export shim at src/lib/pricing.ts after the module moves to shared-core",
-      "paths": [
-        "src/lib/pricing.ts"
-      ],
-      "excludesFromScope": true,
-      "retiresWhen": "With E-08 — V calls it when the wardrobe work pauses.",
-      "note": "Not yet a shim. The path is excluded from the moment the exception is granted, so the count does not jump when Phase 6 creates it.",
-      "owner": "V"
-    },
-    {
-      "id": "E-10",
-      "summary": "src/data/products.ts and src/theme.ts stay where they are",
-      "paths": [
-        "src/data/products.ts",
-        "src/theme.ts"
-      ],
-      "excludesFromScope": true,
-      "retiresWhen": "With E-08 — V calls it when the wardrobe work pauses.",
-      "owner": "V"
-    },
-    {
-      "id": "E-11",
-      "summary": "Permanent re-export shim at src/components/Nav.tsx after Nav moves to app/layouts/",
-      "paths": [
-        "src/components/Nav.tsx"
-      ],
-      "excludesFromScope": true,
-      "retiresWhen": "With E-08 — V calls it when the wardrobe work pauses.",
-      "owner": "V"
     }
-  ]
+  ],
+  "//unfreeze": "E-08, E-09, E-10 and E-11 were RETIRED on 3 September 2026 when V approved the unfreeze. The zone they protected is now in scope and governed by the specification. E-01 to E-04 remain: they are rule exemptions for four protected IP files, not scope exclusions, and their contents are still not edited."
 }

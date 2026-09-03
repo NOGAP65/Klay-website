@@ -17,27 +17,39 @@ import fs from 'node:fs';
 import { assertInScope, inScopeFiles } from './scope.mjs';
 import { renameInFile, writeInScope } from './codemod.mjs';
 
-/** Every path shape that must be refused, and why it is the interesting one. */
+/** Every path shape that must be refused, and why it is the interesting one.
+ *
+ * REWRITTEN AT THE UNFREEZE, 3 September 2026. Until then this list was mostly
+ * exception paths — both visualiser directories, the two shims, the theme, the
+ * products table. E-08 through E-11 are retired and every one of those is now
+ * IN SCOPE, so asserting they are refused would assert the opposite of the
+ * truth.
+ *
+ * What is left out of scope is the four flat exclusions, which were never
+ * exceptions: other runtimes and build-time trees. */
 const MUST_REFUSE = [
-  ['src/visualiser/homography.ts', 'E-08 directory — protected IP'],
-  ['src/visualiser-lab/wardrobes.ts', 'E-08 directory — the active fork'],
-  ['src/pages/VisualiserPage.tsx', 'E-08 FILE, not a directory'],
-  // VisualizerLabPage.tsx was here until the route was deleted and E-07 retired.
-  // It is not listed because the file no longer exists and its E-08 path was
-  // removed with it — a guard case for a path that cannot occur proves nothing.
-  ['src/lib/pricing.ts', 'E-09 — the pricing shim'],
-  ['src/data/products.ts', 'E-10'],
-  ['src/theme.ts', 'E-10'],
-  ['src/components/Nav.tsx', 'E-11 — the Nav shim'],
-  ['netlify/functions/create-checkout-session.ts', 'a different runtime'],
-  ['scripts/cut-wardrobe-stickers.mjs', 'parallel wardrobe tooling'],
+  ['netlify/functions/create-checkout-session.ts', 'a different runtime, on its own tsconfig'],
+  ['netlify/lib/db.ts', 'same'],
+  ['scripts/cut-wardrobe-stickers.mjs', 'build-time tooling, not shipped'],
   ['tools/codemod.mjs', 'the toolchain itself'],
+  ['assets-source/README.md', 'not served, not code'],
 ];
 
-/** Sanity: the guard must not refuse everything, or it proves nothing. */
+/** Sanity: the guard must not refuse everything, or it proves nothing.
+ *
+ * THE FIRST FOUR ARE THE UNFREEZE. They were refused until E-08 retired, and
+ * asserting they are now allowed is what proves the register actually drives
+ * the guard rather than a hardcoded list somewhere. */
 const MUST_ALLOW = [
+  'src/visualiser/Canvas2DBlindRenderer.tsx',
+  'src/visualiser/homography.ts',
+  'src/visualiser-lab/wardrobes.ts',
+  'src/pages/VisualiserPage.tsx',
+  'src/lib/pricing.ts',
+  'src/data/products.ts',
+  'src/theme.ts',
+  'src/components/Nav.tsx',
   'src/features/cart/components/CartPage.tsx',
-  'src/app/layouts/Nav.tsx',
   'src/design-system/primitives/useHover.ts',
 ];
 
@@ -81,7 +93,7 @@ for (const path of MUST_ALLOW) {
 // testing. So the probe is a path nothing has ever occupied, and if the write
 // gets through, the test cleans up after itself and says so.
 console.log('\n=== the WRITE path refuses too ===');
-const PROBE = 'src/visualiser/__scope_guard_probe__.ts';
+const PROBE = 'netlify/__scope_guard_probe__.ts';
 for (const [fn, label] of [
   [() => writeInScope(PROBE, '// scope guard probe — must never reach disk\n'), 'writeInScope'],
   [() => renameInFile(PROBE, 'a', 'b'), 'renameInFile'],

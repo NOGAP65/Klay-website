@@ -890,10 +890,6 @@ invokes it.
 | E-04 | `usePhotoUpload.ts` exempt from size limits | Protected IP | **PERMANENT.** Review if the file is modified, or when the visualiser migrates |
 | E-05 | `style-src 'unsafe-inline'` in CSP | Inline-styles-only is a brand-level decision; runtime-computed styles cannot be nonced | If styling approach changes |
 | E-06 | `design-system/tokens/*` exempt from the no-literal-values rule | It is the source of the values | Permanent |
-| E-08 | `src/visualiser/`, `src/visualiser-lab/` and `VisualiserPage.tsx` are outside the migration and outside every rule in this document | ADR-020. Under active development; the slot for them receded at every phase. They are not moved, not renamed, not re-aliased, not lint-fixed | **Owner: V** — called when the wardrobe work pauses |
-| E-09 | A permanent re-export shim at `src/lib/pricing.ts` after the module moves to `shared-core/pricing/` | ADR-020. Four E-08 files import it by relative path and may not be edited. One table, two paths — a re-export cannot diverge from what it re-exports | With E-08 — **owner: V** |
-| E-10 | `src/data/products.ts` and `src/theme.ts` stay where they are | ADR-020. Imported by E-08 files. `products.ts` additionally cannot be split by consumer, which was decision H | With E-08 — **owner: V** |
-| E-11 | A permanent re-export shim at `src/components/Nav.tsx` after `Nav` moves to `app/layouts/` | Phase 5, decision D. `VisualiserPage.tsx` imports it by relative path and is E-08 (it was two files until `VisualizerLabPage.tsx` was deleted) — an import rewrite is still an edit. One component, two paths; a re-export cannot diverge from what it re-exports | With E-08 — **owner: V** |
 
 **RETIRED — E-07**, the `visualiser`/`visualizer` spelling split, on 3 September 2026. The
 z-spelled route and its page were deleted rather than the two spellings unified, so the exception
@@ -963,6 +959,30 @@ rather than a rewording.
 **`exceptions.json` carries `permanent` and `owner` as fields**, so the distinction is
 machine-readable rather than a shade of prose, and `npm run check:exceptions` keeps both halves
 in agreement.
+
+**RETIRED — E-08, E-09, E-10, E-11**, on 3 September 2026, when V approved the unfreeze.
+
+They existed for one reason: the visualiser was outside this migration and could not be edited.
+**It is inside it now.** `src/visualiser/`, `src/visualiser-lab/`, `VisualiserPage.tsx`,
+`src/lib/pricing.ts`, `src/data/products.ts`, `src/theme.ts` and `src/components/Nav.tsx` are all
+in scope and governed by every rule in this document.
+
+**The three shims those exceptions authorised are no longer authorised.** They will exist for as
+long as the unfreeze phases take, but they are now **debt with a plan** rather than exceptions
+with a reason. ADR-020's demolition log is the order they come out in;
+`docs/architecture/UNFREEZE_MAP.md` is the plan.
+
+**E-01 to E-04 survive and are unaffected by this.** They are rule exemptions for four protected
+IP files — size and complexity limits only — not scope exclusions. Those files are now in scope
+for every other rule, **may be moved, and may have their imports rewritten. Their contents are
+still not edited.** Their review trigger fired with the unfreeze; the examination is recorded in
+UNFREEZE_MAP.md.
+
+**And the counts move sharply because of this.** The in-scope lint total, the naming-convention
+count and the `shared/` denominator were all measured against a codebase two-thirds this size.
+Every number recorded before 3 September 2026 used the smaller set and is not comparable to one
+recorded after it.
+
 
 **Adding to this table requires an ADR. An exception without an ADR is a violation.**
 
