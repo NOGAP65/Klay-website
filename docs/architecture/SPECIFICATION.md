@@ -1,8 +1,8 @@
 # Klay Interiors — Architecture Specification
 
-**Version:** 1.8
-**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3–v1.8)
-**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2), ADR-020 (§12), ADR-022 (§11), ADR-023 (§11, §12), ADR-024 (§5), ADR-025 (§3, §9)
+**Version:** 1.9
+**Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3–v1.8), 3 Sep 2026 (v1.9)
+**Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2), ADR-020 (§12), ADR-022 (§11), ADR-023 (§11, §12), ADR-024 (§5), ADR-025 (§3, §9), ADR-026 (records only)
 **Status:** Standing document. This is the constitution, not a work order.
 **Owner:** V
 **Applies to:** NOGAP65/Klay-website-new. Ella adopts it after Klay proves it.
@@ -30,6 +30,17 @@ therefore not an appendix — it is the part that makes the rest real.
 1. **Organise by what it does for the business, not by what kind of file it is.** A folder
    called `components` holding forty unrelated components tells you nothing. A folder called
    `checkout` tells you everything.
+> **WORKED EXAMPLE, AND IT IS ABOUT A FOLDER OF IMAGES.** `public/images/lifestyle/` held six
+> photographs of finished rooms and four diagrams of how buying works. It was named for what its
+> contents were **not** — neither was a product cut-out — which is the same failure as a
+> `components/` folder holding forty unrelated components, one level down and in a directory
+> nobody thought of as code.
+>
+> It became `rooms/` and `process/` at the asset phase. **Nobody had applied this rule to it
+> because the folder predated the rule**, and because §1 reads as being about source. It is not:
+> it is about how a reader finds a thing, and a reader looking for the install diagram was
+> looking in a folder that could not tell them whether it was there.
+
 2. **Dependencies flow one way: app → features → shared.** Never upward. Never sideways
    between features. A feature that needs another feature's internals is a design error, not
    an import problem.
@@ -597,6 +608,82 @@ So the bypass is closed rather than discouraged.
 **Making the correct path mandatory does not fix an asymmetry of effort. Making it shorter
 does.** The list is now one import and no arguments; the ad-hoc version is the longer one to
 write.
+
+### AN EXIT CONDITION MUST NOT BE WRITTEN OVER SOMETHING THE PHASE DOES NOT CONTROL
+
+> **Ask of every condition phrased "when X reaches Y": who can change Y?**
+>
+> If the answer is anyone other than the work the condition governs, it is not an exit condition.
+> It is a dependency wearing one's clothes.
+
+**Two failed in practice before this was written down.**
+
+**E-07** deferred the `visualiser`/`visualizer` spelling split until *"wardrobes ship and the fork
+resolves"* — someone else's milestone, on someone else's timing. It waited eight weeks and then
+closed in an afternoon, by a route being deleted. The condition had never been reachable by the
+work it governed.
+
+**The countdown floor** was to be frozen at Phase 6's opening and gate its closing. It moved four
+times — 7 → 6 → 10 → 13 — and the last rise came from wardrobe work adding two modules that
+catalogue imports. Freezing it would have made Phase 6's completion depend on whether anyone
+shipped wardrobe code during it.
+
+**Both looked like exit conditions until something moved them.** That is the tell: a condition
+that cannot be distinguished from a real one by reading it, only by watching it move.
+
+---
+
+### THE AUDIT OF THIS DOCUMENT'S OWN CONDITIONS
+
+**Run 3 September 2026.** Every condition in this specification phrased as a threshold or a
+milestone, asked *who can change Y*. **Seven fail. Two more are weak and are named rather than
+excused.**
+
+| Condition | Where | Who can change Y | Verdict |
+|---|---|---|---|
+| *"On unfreeze"* | **E-01 – E-04** | Whoever decides the visualiser is unfrozen — not this project | **FAILS.** Four exceptions whose review date is another team's decision. Same shape as E-07 exactly |
+| *"When that work is scheduled on its own, with its own plan"* | **E-08** | Whoever schedules the visualiser migration | **FAILS**, and it is the root: four other exceptions inherit from it |
+| *"With E-08"* | **E-09, E-10, E-11** | Same as E-08 | **FAILS by inheritance.** E-11's case is now known to be separable — see ADR-020's audit |
+| *"If `shared/` exceeds roughly 15% of `src/` by line count"* | **§2** | **Anyone writing ANY code in `src/`, including out-of-scope code** | **FAILS, and this one is worse than it looks** — see below |
+| *"The visualiser migration being scheduled as its own project"* | **§3**, the `features/visualiser/` trigger | Same as E-08 | **FAILS** |
+| *"If styling approach changes"* | **E-05** | Whoever changes the styling approach | **WEAK.** It is a review trigger rather than an expiry, so nothing is blocked by it — but nothing will ever fire it either |
+| *"At zero it flips to `error` permanently"* | **§11** | Anyone who writes a violation before the flip happens | **WEAK.** The consequence is only "wait longer", not a phase that cannot close. Named because it is the same shape |
+| *"Phase 6 closes when `CLEARABLE` reaches zero"* | PHASE_6_SCOPE | **Mostly the phase — but not exclusively.** A parallel session adding a `feature → legacy` import raises it | **WEAK, AND IT IS MY OWN REPLACEMENT.** Better than the floor it replaced, not airtight. Recorded rather than claimed as solved |
+| *"Klay-only until proven"* | **§14** | Undefined — nobody owns "proven" | **WEAK.** Not a gate on anything, so it costs nothing today |
+
+### §2's 15% ceiling is the interesting failure
+
+*"If `shared/` exceeds roughly 15% of `src/` by line count, something has been misfiled."*
+
+**The denominator includes code the rule is not about.** `src/` is 128 files, 42 of them
+out-of-scope. So:
+
+- A parallel session adding 5,000 lines to `visualiser-lab/` **lowers** `shared/`'s percentage.
+  The rule relaxes because of code it has no opinion on.
+- Deleting out-of-scope code **raises** it. Retiring E-08 could push `shared/` toward the ceiling
+  without a single line being added to `shared/`.
+
+**Today it is harmless — `shared/` is at 0.93%, two orders of magnitude below the ceiling.** It is
+recorded because the number is not measuring what the sentence says it measures, and the day it
+matters is the day someone deletes 17,000 lines of visualiser.
+
+**The fix is not to change the ratio.** It is to state the denominator: the ceiling is over the
+code this specification governs, which is the in-scope set ADR-023 already defines. Left as a
+finding rather than an amendment, because changing a rule nobody is near is how a specification
+accumulates edits nobody needed.
+
+### What the four "On unfreeze" exceptions actually need
+
+**They are not wrong to depend on the visualiser — they are exemptions FOR the visualiser.**
+E-01 to E-04 exempt four protected IP files from size and complexity limits, and those files
+genuinely cannot be reviewed until someone works on them.
+
+**The failure is that "on unfreeze" is not a date, a trigger or an owner.** It is a word that
+sounds like a condition. ADR-020's audit asks the better question of every such row — *could the
+excepted thing stop existing rather than wait* — and that is the form to use whenever one of
+these is revisited.
+
+---
 
 ### HOW CHANGE IS VERIFIED — THE STANDING RULE
 

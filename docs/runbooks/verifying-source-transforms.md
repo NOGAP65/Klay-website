@@ -1,3 +1,40 @@
+# Verification — one shape, three faces
+
+> **ADR-022's standard was applied to everything except the thing applying it.**
+>
+> **The verifier is the last place anyone looks, because it is the thing that looks.**
+
+Seven times in one migration a tool reported success while being wrong. They arrived as seven
+different-looking bugs and they are one shape: **a signal whose failure state had never been
+observed.**
+
+| Face | What it looks like | Why it is invisible |
+|---|---|---|
+| **A rule never shown to fire** | `import/no-cycle` — configured, loaded, schema-validated, reporting zero for two phases while a real cycle shipped | A zero from a working rule and a zero from an inert one are the same zero |
+| **A search whose empty result means nothing** | A `grep` for three contact details that missed a fourth, because the fourth was a named constant rather than an inline literal | An empty result reads as "none exist" when it means "none matched how I asked" |
+| **A check never shown to behave correctly when it FAILS** | The scope-guard verifier, whose write test used a real protected file — so the day the guard let it through, the test wrote to disk | Every run had been a passing run. The destructive line had never executed |
+
+**The test for all three is the same question**, and it is the only one that separates a real
+check from a green tick:
+
+> **What would this output if it were broken? If the answer is "the same thing", it is not a
+> check.**
+
+`import/no-cycle` outputs zero whether it works or not. A grep outputs nothing whether the thing
+is absent or merely differently shaped. A guard's test passes whether the guard holds or the test
+never reaches its assertion.
+
+**And the third face is the one that catches everyone**, because a verifier is what you reach for
+when you distrust something else. Nothing sits behind it. ADR-022 exists to say that a rule is not
+enforcement until it has been shown to fail — and the tool written to apply that standard had
+never had it applied to itself, because applying it would have meant distrusting the thing whose
+job is distrust.
+
+**The seven instances are listed in full below.** They are worth reading as a set rather than
+individually: the individual bugs are all avoidable in hindsight, and the pattern is not.
+
+---
+
 # A tool that transforms source is verified per operation, not per batch
 
 **Symptom class:** a tool reports success and is structurally wrong. Nothing errors. The output
@@ -262,6 +299,8 @@ correctly allowed it. **And the test wrote its payload to disk** — a one-byte 
 which was accurate, and the file was on disk, which was the failure it was describing.
 
 ### Why it belongs in this list rather than being a silly bug
+
+**It is the third face of the shape at the top of this file**, and the one that catches everyone.
 
 **It is the same family as instances 1 and 4, and the family is what matters:**
 

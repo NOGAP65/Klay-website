@@ -218,3 +218,57 @@ Asked of E-08 itself: its condition is *"the visualiser migration is scheduled a
 project"* — someone else's decision, on someone else's timing. **That is the right condition for
 the renderers and the wrong one for everything the boundary caught by accident.** The audit above
 is what asking the question yields; it should be re-run whenever this log grows a row.
+
+---
+
+# THE E-08 NARROWING — APPROVED IN PRINCIPLE, READY TO EXECUTE, **NOT EXECUTED**
+
+**Status: awaiting V's go-ahead. Do not run this without it.**
+
+Approved in principle on 3 September 2026. **Held because it requires editing a file E-08
+protects, and wardrobe work is live in that zone.** V calls it when that work pauses.
+
+## What it is
+
+**Narrow E-08 to exclude `src/pages/VisualiserPage.tsx`.** One 126-line file leaves the
+out-of-scope set. Nothing else about E-08 changes: `src/visualiser/`, `src/visualiser-lab/`, the
+renderers, the store, the four protected IP files are all untouched.
+
+**The file is not protected IP.** E-01 to E-04 name the four that are — `homography.ts`,
+`Canvas2DBlindRenderer.tsx`, `CornerPinOverlay.tsx`, `usePhotoUpload.ts`. `VisualiserPage.tsx` is
+a route shell: it reads two query params, mounts `KlayConfigurator` and `VisualiserControls`, and
+renders a booking link. It was caught by a boundary drawn around a directory.
+
+## The full cascade
+
+| Step | Effect |
+|---|---|
+| 1. Narrow E-08's paths in `exceptions.json` and §12 | The file becomes in-scope. `verify-scope-guard` must be updated: it currently asserts this exact path is refused |
+| 2. Repoint its `Nav` import to `@/app/layouts` | **E-11 RETIRES.** The `src/components/Nav.tsx` re-export shim has no consumer left and is deleted |
+| 3. `src/components/` **empties** | Only `FormField.tsx` remains after step 2 — itself a Phase 2.4 shim awaiting its two consumers. When it goes, the directory goes |
+| 4. Mount the page under `RootLayout` and strip its own `<Nav />` | **`BareLayout` RETIRES.** It exists solely so this page does not render two navs. Delete it unless a genuine no-chrome route has appeared |
+| 5. Its three `src/visualiser/*` imports stay | Already permanent, already allowed, already counted as `feature → legacy-visualiser` |
+
+**Four artefacts close: E-11, the Nav shim, `BareLayout`, and `src/components/` as a directory.**
+Two rows leave ADR-020's demolition log — rows 4 and 5 — and the exception count drops from ten
+to nine.
+
+## What it costs, stated plainly
+
+**It edits a currently protected file**, which is not something to do as a side effect of another
+phase. That is the whole reason it is held rather than done.
+
+**It requires an ADR**, exactly as E-07's close did — narrowing an exception is amending §12, and
+§12 says amendments need one.
+
+**It touches the live `/visualiser` route**, which two marketing pages link to. The page renders
+the real configurator; a mistake here is visible to customers rather than to a lint count.
+
+## What it is not
+
+**It is not the visualiser migration arriving early.** No renderer moves. No protected IP is
+touched. `visualiser-lab/` and the wardrobe work stay exactly where they are and E-08 continues
+to cover them.
+
+It is one page leaving a boundary that was drawn around a directory and swept up a route shell
+with it — which is what the E-07 audit was for.
