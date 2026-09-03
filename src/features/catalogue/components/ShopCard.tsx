@@ -68,16 +68,6 @@ export interface ShopCardProps {
   isShown: boolean;
 }
 
-/** THE GRID'S OWN TWO NUMBERS, and they live here rather than on the page
- * because the card does arithmetic with them: it pins itself to one column and
- * its panel to the other plus the gap the span swallows. The page lays the grid
- * out from the same two, so the tracks the browser draws and the widths the
- * card pins to cannot disagree.
- *
- * 340 up from 270 because of the photograph — a 1440 viewport less the 200px
- * rail fits four columns of about 290 at 270, and a 4:5 picture 290 wide is
- * smaller than the homepage's on the page whose whole job is showing product.
- * It also has to divide by two, since the open card spans two columns. */
 /** How long the box takes to open, and to shut.
  *
  * SHUTTING IS FASTER, and it has to be: the page holds the card open for
@@ -88,23 +78,23 @@ export interface ShopCardProps {
  *
  * It is also how it should feel. An opening is something you are waiting to see;
  * a closing is something you have finished with. */
-export const OPEN_MS = 450;
-export const CLOSE_MS = 260;
+export const OPEN_MS = 360;
+export const CLOSE_MS = 210;
 
 /** What the cards moving out of the way get, which is longer than the box.
  *
  * They are not racing the box — they are getting out of its way, and a card that
  * wraps to the next row travels two legs and most of the grid's width to do it.
- * At the box's own 450 that read as a snap. */
-export const TRAVEL_MS = 620;
+ * At the box's own duration that read as a snap. */
+export const TRAVEL_MS = 440;
 
 /** The gap between one card leaving and the next.
  *
  * This is the whole difference between a row of cards rearranging and a row of
  * cards flowing. Every card leaving on the same frame is a single event with no
- * direction in it; 45ms apart and the displacement travels through the grid,
+ * direction in it; a beat apart and the displacement travels through the grid,
  * away from the card that opened and back toward it when it shuts. */
-export const STAGGER_MS = 45;
+export const STAGGER_MS = 30;
 
 /** The longest the wave may take to cross the whole grid.
  *
@@ -113,8 +103,26 @@ export const STAGGER_MS = 45;
  * left alone, the same click would run for near enough a second on the full shop
  * and a third of that on a narrowed one. The gap shrinks to fit this instead:
  * the order is kept, the duration is not the grid's length. */
-export const STAGGER_SPAN_MS = 270;
+export const STAGGER_SPAN_MS = 170;
 
+/** How far a card drops out of its row before it travels along.
+ *
+ * A little more than the gap between rows, so the card clears its own row and
+ * is unmistakably travelling BELOW the grid rather than through it — the whole
+ * point of the dip is that the lane it moves along is empty. Much more than this
+ * and the cards in the row beneath start disappearing behind it. */
+export const LANE_DIP_PX = 26;
+
+/** THE GRID'S OWN TWO NUMBERS, and they live here rather than on the page
+ * because the card does arithmetic with them: it pins itself to one column and
+ * its panel to the other plus the gap the span swallows. The page lays the grid
+ * out from the same two, so the tracks the browser draws and the widths the
+ * card pins to cannot disagree.
+ *
+ * 340 up from 270 because of the photograph — a 1440 viewport less the 200px
+ * rail fits four columns of about 290 at 270, and a 4:5 picture 290 wide is
+ * smaller than the homepage's on the page whose whole job is showing product.
+ * It also has to divide by two, since the open card spans two columns. */
 export const COLUMN_MIN = 340;
 export const COLUMN_GAP = 20;
 
@@ -428,7 +436,7 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colW
             // happening at once. Held back until the width has nearly settled,
             // it reads as one: the card opens, then the controls are there.
             opacity: wide ? 1 : 0,
-            transition: 'opacity 0.2s ease 0.26s',
+            transition: 'opacity 0.18s ease 0.16s',
           }}
         >
           <RangeConfigurator item={item} sel={sel} onChange={onChange} fill />
