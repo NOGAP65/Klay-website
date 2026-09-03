@@ -262,7 +262,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             `klay-logo-light.png` is the same artwork with its greyscale part in
             #F8F8F8. The tan leg of the k is untouched in both, so it is the one
             thing that does not change with the ground. Both are generated from
-            public/images/logo_full.png.
+            public/images/brand/logo_full.png.
 
             HEIGHT-ONLY, NO EXPLICIT WIDTH, AND NO object-fit. The comment this
             replaced set both axes to chase the old gold wordmark's 2.536 ratio
@@ -271,7 +271,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             92% of it empty field — so its ratio is 2.074, and letting width be
             `auto` means there is no ratio to match and nothing to letterbox. */}
         <img
-          src={isOnDarkGround ? '/images/klay-logo-light.png' : '/images/klay-logo.png'}
+          src={isOnDarkGround ? '/images/brand/klay-logo-light.png' : '/images/brand/klay-logo.png'}
           alt="Klay Interiors"
           style={{ height: isMobile ? NAV_LOGO.mobile : NAV_LOGO.rest, width: 'auto', display: 'block' }}
         />

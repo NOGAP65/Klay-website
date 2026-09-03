@@ -132,12 +132,12 @@ export function Footer() {
               from the footer and not a row of grey social glyphs. */}
           <div style={{ gridColumn: isMobile ? 'span 2' : undefined }}>
             <img
-              src="/images/klay-logo-light.png"
+              src="/images/brand/klay-logo-light.png"
               alt="Klay Interiors"
               // The light variant, because the footer ground is tokens.ink.
               // Height-only: the asset is cropped to its own bounding box, so
               // there is no ratio to match and object-fit has nothing to do.
-              // This was pointing at /images/klay-logo.png, which does not exist
+              // This was pointing at /images/brand/klay-logo.png, which does not exist
               // in public/ — the slot rendered a broken-image icon. See Nav.
               style={{ height: 44, width: 'auto', display: 'block' }}
             />

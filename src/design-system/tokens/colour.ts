@@ -155,7 +155,7 @@ export const tokens = {
   // ground. Everything else on the site stays grey.
   //
   // IT IS SAMPLED FROM THE ARTWORK, not chosen to go with it. #A08058 is the
-  // leg of the k in public/images/logo_full.png, measured off the PNG. The mark
+  // leg of the k in public/images/brand/logo_full.png, measured off the PNG. The mark
   // was already the only chroma in the product; the interface now uses that same
   // value rather than a colour picked to sit near it. Two attempts preceded this
   // and both were approximations of it — a royal blue at hue 226°, opposite the
