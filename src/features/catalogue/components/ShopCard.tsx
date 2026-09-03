@@ -68,6 +68,33 @@ export interface ShopCardProps {
   isShown: boolean;
 }
 
+/** THE GRID'S OWN TWO NUMBERS, and they live here rather than on the page
+ * because the card does arithmetic with them: it pins itself to one column and
+ * its panel to the other plus the gap the span swallows. The page lays the grid
+ * out from the same two, so the tracks the browser draws and the widths the
+ * card pins to cannot disagree.
+ *
+ * 340 up from 270 because of the photograph — a 1440 viewport less the 200px
+ * rail fits four columns of about 290 at 270, and a 4:5 picture 290 wide is
+ * smaller than the homepage's on the page whose whole job is showing product.
+ * It also has to divide by two, since the open card spans two columns. */
+export const COLUMN_MIN = 340;
+export const COLUMN_GAP = 20;
+
+/** One grid column in pixels, from the grid's own width.
+ *
+ * COMPUTED, NOT MEASURED. Reading it off a sibling has a race in it: opening a
+ * card changes which items sit where, and a measurement taken mid-transition
+ * returns a number between one column and two. auto-fill's rule is
+ * deterministic — as many minmax(COLUMN_MIN, 1fr) tracks as fit with the gaps
+ * between them — so running the same arithmetic the browser runs gives the
+ * answer with no window to be wrong in. Verified against the live grid: this
+ * returns 353.33 where the browser's tracks measure 353.328px. */
+export const columnWidth = (gridWidth: number): number => {
+  const cols = Math.max(1, Math.floor((gridWidth + COLUMN_GAP) / (COLUMN_MIN + COLUMN_GAP)));
+  return (gridWidth - (cols - 1) * COLUMN_GAP) / cols;
+};
+
 /** How far the card rises under the pointer. The row's number, so the two
  * surfaces feel like the same object. */
 const LIFT = 3;
@@ -345,7 +372,14 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colW
           work itself. klay-panel-in is the row's own keyframe. */}
         <div
           style={{
-            flex: '1 1 0',
+            // PINNED TO WHERE IT ENDS, so nothing inside is laid out twice.
+            // At `1 1 0` the panel's width animated along with the box, and the
+            // configurator's rows — label left, value right — wrapped, unwrapped
+            // and re-settled on every frame of the 450ms. The box clips; the
+            // growth uncovers type that has not moved.
+            flex: isNarrow || colWidth === null
+              ? '1 1 auto'
+              : `0 0 ${colWidth + COLUMN_GAP}px`,
             minWidth: 0,
             display: 'flex',
             flexDirection: 'column',

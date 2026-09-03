@@ -48,7 +48,7 @@ import {
 import { SORT_OPTIONS, sortProducts, type SortOption } from '../lib/sortProducts';
 
 import { FilterRail } from './FilterRail';
-import { ShopCard } from './ShopCard';
+import { ShopCard, COLUMN_MIN, COLUMN_GAP, columnWidth } from './ShopCard';
 import { defaultSelection, type Selection } from '../configOptions';
 
 /** Wider than the 1240 the rest of the site uses, because the rail eats 200 of
@@ -58,17 +58,10 @@ const PAGE_MAX = 1440;
 
 const RAIL_WIDTH = 200;
 
-/** THE GRID'S OWN TWO NUMBERS, named because two things have to agree on them:
- * the stylesheet that lays the grid out, and the arithmetic that works out how
- * wide one column came out. Written twice, they drift, and a card pinned to a
- * column width that is not the column's is a card that jumps when it opens.
- *
- * 340 up from 270 because of the photograph — a 1440 viewport less the 200px
- * rail fits four columns of about 290 at 270, and a 4:5 picture 290 wide is
- * smaller than the homepage's on the page whose whole job is showing product.
- * It also has to divide by two, since the open card spans two columns. */
-const COLUMN_MIN = 340;
-const COLUMN_GAP = 20;
+// COLUMN_MIN, COLUMN_GAP and columnWidth come from the card, which is the
+// thing that pins itself to them — see ShopCard. The grid is laid out from the
+// same two numbers, so the tracks the browser draws and the widths the card
+// pins to cannot disagree.
 
 /** Below this the rail becomes a drawer behind a Filters button. It is not the
  * site's 768px phone breakpoint: a 200px rail plus a three-card grid needs
@@ -141,11 +134,7 @@ export default function ProductsPage() {
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
-    const measure = () => {
-      const w = el.clientWidth;
-      const cols = Math.max(1, Math.floor((w + COLUMN_GAP) / (COLUMN_MIN + COLUMN_GAP)));
-      setColWidth((w - (cols - 1) * COLUMN_GAP) / cols);
-    };
+    const measure = () => setColWidth(columnWidth(el.clientWidth));
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
