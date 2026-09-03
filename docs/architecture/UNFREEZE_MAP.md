@@ -362,9 +362,10 @@ them for human comparison and are gitignored — 830 KB each and re-written on e
 
 ## What it does not cover, stated so nobody assumes otherwise
 
-- **Wardrobes.** Not reachable from `/visualiser` — the entry point was `/visualizer`, deleted
-  when E-07 closed. Wardrobe cases have to be driven from the homepage showcase and **should be
-  added before any wardrobe asset moves**, which is U4.
+- **Wardrobes — COVERED AS OF 3 SEPTEMBER.** Five cases, driven from the homepage showcase and
+  from RangeRow’s "See in 3D", using the screenshot-decode capture because the surface is WebGL.
+  This entry stays because the reason they were missing still matters: they are not reachable from
+  `/visualiser`, whose wardrobe entry point was `/visualizer` and went when E-07 closed.
 - **The customer's own photograph.** Every case uses the default `Preview.png` window; the
   corner-pin path is untested.
 - **Non-white fabric colours**, and every hardware finish.
@@ -431,7 +432,62 @@ red during a move phase means the move was wrong**, and the fix is the code, nev
 The rule is deliberately blunt because the failure is silent and the temptation is highest exactly
 when the phase is nearly finished.
 
-## WARDROBE CASES ARE A GATE ON U4
+## WARDROBE CASES ARE A GATE ON U4 — **SATISFIED, 3 SEPTEMBER**
+
+> ### The gate is met. Five wardrobe cases exist, and all five were made to fail before being trusted.
+>
+> `npm run baseline` now runs **ten** cases: the original five over blinds and curtains, and five
+> over wardrobes.
+
+| Case | Surface | Covers |
+|---|---|---|
+| `wardrobe-builtin-forma1-white` | Showcase → WARDROBES | Built-in, white |
+| `wardrobe-builtin-forma2-walnut` | Showcase → WARDROBES | Built-in, **non-white** — a textured finish |
+| `wardrobe-walkin-12u-white` | Showcase → WARDROBES | Walk-in, white |
+| `wardrobe-walkin-9l-oak` | Showcase → WARDROBES | Walk-in, **a second non-white** finish |
+| `wardrobe-see-in-3d` | **RangeRow → "SEE IN 3D"** | The other entry path into the same panel |
+
+**Both surfaces that reach wardrobes are driven**, and the two non-white cases matter most:
+`suppliedAssetPath` returns `null` for anything but white, so a white-only set would never
+exercise the fallback, and the finishes are the only part drawn from a texture file rather than
+from geometry.
+
+### AND THEY WERE PROVEN TO FAIL FIRST, TWICE
+
+**A gate nobody has seen fail is not a gate**, and that applies to each new case rather than to the
+harness alone. Two perturbations, both reverted with the file hash identical either side:
+
+| Perturbation | Result |
+|---|---|
+| `WARDROBE_HEIGHT_MM` 2016 → 1600 | **All 5 wardrobe cases RED** — 162 to 340 cells, 7.0% to 14.8%. **All 5 blind and curtain cases green** |
+| `notaio-walnut.jpg` → `natural-oak.jpg` | **Only `wardrobe-builtin-forma2-walnut` RED** — 94 cells, 4.1%. The other **nine green** |
+
+**The second is the more important demonstration.** The first proves the cases can go red at all;
+the second proves the report is *diagnostic* — it localised a one-texture change to the single case
+that uses that texture, and left the white and oak wardrobes alone. A gate that says only
+"something moved" is one people learn to ignore.
+
+### The capture path is different, and it had to be
+
+**`getContext('2d')` returns `null` on the wardrobe canvas** — the surface is WebGL, so the read
+the original five use sees nothing there. The wardrobe cases screenshot the canvas element and
+decode the PNG back into a fresh 2D context inside the page, then grid it identically: same 48×48,
+same threshold, same comparison. Only the read changed.
+
+**And the harness now fails rather than skips when a canvas cannot be read**, which is what stops a
+future case being added, recording `null`, and passing. That was a real hole: added before this
+fix, a wardrobe case would have been silently inert.
+
+### What the update did NOT do, checked rather than assumed
+
+`baseline:update` re-records **every** case, including the five that already existed — so it could
+have masked drift in them. The five original signature files were hashed before and after: **byte
+identical**. The re-record was a no-op on them, and the ten-case green that follows is therefore a
+real comparison, not a fresh recording of whatever was on screen.
+
+---
+
+**The original text of this gate follows, for the record.**
 
 **U4 does not open until the render baseline covers wardrobes.**
 

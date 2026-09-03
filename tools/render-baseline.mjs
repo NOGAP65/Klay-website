@@ -44,13 +44,43 @@ const GRID = 48;        // signature resolution
 const THRESHOLD = 12;   // 0-255 luminance delta before a cell counts as changed
 const TOLERANCE = 0;    // cells allowed to differ before a case is RED
 
-/** Each case drives the tool to one fixed configuration. */
+/** Each case drives the tool to one fixed configuration.
+ *
+ * `capture` says HOW to read the picture, and it is not a preference:
+ *
+ *   'canvas'      getImageData off the canvas. Blinds and curtains draw in 2D.
+ *   'screenshot'  screenshot the canvas element and decode it back into a fresh
+ *                 2D context. THE WARDROBE SURFACE IS WEBGL — getContext('2d')
+ *                 returns null on it, so the 2D read sees nothing at all.
+ *
+ * `finish` clicks a swatch by its title attribute, because the finish controls
+ * are colour chips with no text to match on. */
 const CASES = [
-  { name: 'blind-blockout-medium-manual', route: '/visualiser', clicks: ['BLINDS', 'Blockout', 'Medium to 2m', 'Manual'] },
-  { name: 'blind-sunscreen-large-motorised', route: '/visualiser', clicks: ['BLINDS', 'Sunscreen', 'Large to 3m', 'Motorised +$150'] },
-  { name: 'blind-lightfilter-small-manual', route: '/visualiser', clicks: ['BLINDS', 'Light Filter', 'Small to 1m', 'Manual'] },
-  { name: 'blind-dual-medium-manual', route: '/visualiser', clicks: ['BLINDS', 'Dual', 'Medium to 2m', 'Manual'] },
-  { name: 'curtain-default', route: '/visualiser', clicks: ['CURTAINS'] },
+  { name: 'blind-blockout-medium-manual', route: '/visualiser', capture: 'canvas', clicks: ['BLINDS', 'Blockout', 'Medium to 2m', 'Manual'] },
+  { name: 'blind-sunscreen-large-motorised', route: '/visualiser', capture: 'canvas', clicks: ['BLINDS', 'Sunscreen', 'Large to 3m', 'Motorised +$150'] },
+  { name: 'blind-lightfilter-small-manual', route: '/visualiser', capture: 'canvas', clicks: ['BLINDS', 'Light Filter', 'Small to 1m', 'Manual'] },
+  { name: 'blind-dual-medium-manual', route: '/visualiser', capture: 'canvas', clicks: ['BLINDS', 'Dual', 'Medium to 2m', 'Manual'] },
+  { name: 'curtain-default', route: '/visualiser', capture: 'canvas', clicks: ['CURTAINS'] },
+
+  // WARDROBES — added before U4, which moves 27 MB of wardrobe assets through a
+  // constructed path. R1 in the one area that had no coverage.
+  //
+  // They are driven from the HOMEPAGE, because /visualiser offers blinds and
+  // curtains only: the wardrobe entry point was /visualizer, deleted when E-07
+  // closed. Both surfaces that reach wardrobes are exercised — the showcase's
+  // own WARDROBES tab, and RangeRow's "SEE IN 3D", which selects that tab from
+  // a range card and is a second entry path worth its own case.
+  //
+  // COVERAGE IS DELIBERATE, not a sample: a built-in and a walk-in, white and
+  // two different non-white finishes. The non-white cases matter most —
+  // suppliedAssetPath returns null for anything but white, so a white-only set
+  // would never exercise the fallback, and the finishes are the only part drawn
+  // from a texture file rather than geometry.
+  { name: 'wardrobe-builtin-forma1-white', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Built-in', 'Forma 1'], finish: 'Matt Wardrobe White' },
+  { name: 'wardrobe-builtin-forma2-walnut', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Built-in', 'Forma 2'], finish: 'Woodmatt Notaio Walnut' },
+  { name: 'wardrobe-walkin-12u-white', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Walk-in', 'Forma 12.0U'], finish: 'Matt Wardrobe White' },
+  { name: 'wardrobe-walkin-9l-oak', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Walk-in', 'Forma 9.0L'], finish: 'Matt Natural Oak' },
+  { name: 'wardrobe-see-in-3d', route: '/', capture: 'screenshot', clicks: ['SEE IN 3D'] },
 ];
 
 /** Read the canvas as a coarse luminance grid, in the page. */
@@ -86,11 +116,58 @@ const SIGNATURE = (grid) => {
   return out;
 };
 
-async function stableSignature(page) {
+/** Grid a PNG by decoding it back into a 2D context inside the page.
+ *
+ * The only way to read a WebGL canvas here. toDataURL comes back blank without
+ * preserveDrawingBuffer, and getImageData needs a 2D context that does not
+ * exist — but the compositor will screenshot it, and once it is a PNG it can be
+ * drawn into a canvas we own and read normally. */
+const DECODE = async ({ b64, grid }) => {
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = 'data:image/png;base64,' + b64; });
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth;
+  c.height = img.naturalHeight;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0);
+  const data = ctx.getImageData(0, 0, c.width, c.height).data;
+  const out = [];
+  const cw = c.width / grid;
+  const ch = c.height / grid;
+  for (let gy = 0; gy < grid; gy++) {
+    for (let gx = 0; gx < grid; gx++) {
+      let sum = 0;
+      let n = 0;
+      const x0 = Math.floor(gx * cw), x1 = Math.floor((gx + 1) * cw);
+      const y0 = Math.floor(gy * ch), y1 = Math.floor((gy + 1) * ch);
+      for (let y = y0; y < y1; y += 3) {
+        for (let x = x0; x < x1; x += 3) {
+          const i = (y * c.width + x) * 4;
+          sum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          n++;
+        }
+      }
+      out.push(n ? Math.round(sum / n) : 0);
+    }
+  }
+  return out;
+};
+
+async function readSignature(page, capture) {
+  if (capture === 'screenshot') {
+    const canvas = page.locator('canvas').first();
+    if (!(await canvas.count())) return null;
+    const shot = await canvas.screenshot();
+    return page.evaluate(DECODE, { b64: shot.toString('base64'), grid: GRID });
+  }
+  return page.evaluate(SIGNATURE, GRID);
+}
+
+async function stableSignature(page, capture) {
   let previous = null;
   for (let attempt = 0; attempt < 20; attempt++) {
     await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));
-    const current = await page.evaluate(SIGNATURE, GRID);
+    const current = await readSignature(page, capture);
     if (!current) continue;
     if (previous && current.every((v, i) => Math.abs(v - previous[i]) <= 2)) return current;
     previous = current;
@@ -122,6 +199,13 @@ for (const testCase of CASES) {
   await page.goto(BASE + testCase.route, { waitUntil: 'networkidle', timeout: 60000 });
   await page.evaluate(() => new Promise((r) => setTimeout(r, 1200)));
 
+  // The homepage cases need the showcase on screen before its controls are
+  // clickable, and the screenshot capture needs the canvas actually painted.
+  if (testCase.route === '/') {
+    await page.evaluate(() => document.querySelector('canvas')?.scrollIntoView({ block: 'center' }));
+    await page.evaluate(() => new Promise((r) => setTimeout(r, 600)));
+  }
+
   for (const label of testCase.clicks) {
     const clicked = await page.evaluate((text) => {
       const norm = (v) => v.replace(/\s+/g, ' ').trim();
@@ -134,24 +218,33 @@ for (const testCase of CASES) {
     await page.evaluate(() => new Promise((r) => setTimeout(r, 350)));
   }
 
-  const signature = await stableSignature(page);
+  if (testCase.finish) {
+    const picked = await page.evaluate((title) => {
+      const el = [...document.querySelectorAll('button')].find((b) => b.getAttribute('title') === title);
+      if (!el) return false;
+      el.click();
+      return true;
+    }, testCase.finish);
+    if (!picked) problems.push(`${testCase.name}: finish "${testCase.finish}" not found`);
+    await page.evaluate(() => new Promise((r) => setTimeout(r, 500)));
+  }
+
+  const signature = await stableSignature(page, testCase.capture);
   // A CASE THAT CANNOT BE READ IS RED, NEVER SKIPPED. getContext('2d') returns
   // null on a WebGL canvas, so a signature of null is not "no picture yet" — it
   // is a case this harness structurally cannot see. Counting it as red is what
   // stops a wardrobe case from being added, recording nothing, and passing.
   if (!signature) {
-    problems.push(`${testCase.name}: NO READABLE CANVAS — 2D read failed. If this surface is
-    WebGL it needs the screenshot-and-decode capture, not getImageData; see UNFREEZE_MAP.md.`);
+    problems.push(`${testCase.name}: NO READABLE CANVAS via '${testCase.capture}'. A WebGL
+    surface must use capture: 'screenshot' — getContext('2d') returns null on it and the 2D read
+    sees nothing. See UNFREEZE_MAP.md.`);
     console.log(`  RED    ${testCase.name.padEnd(36)} no readable canvas`);
     red++;
     continue;
   }
 
   const file = path.join(DIR, `${testCase.name}.json`);
-  await page.screenshot({ path: path.join(DIR, `${testCase.name}.png`), clip: await page.evaluate(() => {
-    const c = document.querySelector('canvas').getBoundingClientRect();
-    return { x: Math.max(0, c.x), y: Math.max(0, c.y), width: Math.min(c.width, 1400), height: Math.min(c.height, 1000) };
-  }) });
+  await page.locator('canvas').first().screenshot({ path: path.join(DIR, `${testCase.name}.png`) });
 
   if (update) {
     fs.writeFileSync(file, JSON.stringify({ grid: GRID, signature }) + '\n');
