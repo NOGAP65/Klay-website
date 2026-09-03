@@ -319,13 +319,56 @@ export const wardrobeColour = (name: string) =>
 
 export const wardrobeColourHex = (name: string): string => wardrobeColour(name).hex;
 
-/** Where a finished render lives: `<layout>-<finish>-<view>.png`.
+/** THE SUPPLIED CUT-OUT FOR A CONFIGURATION, or null where there is not one.
  *
- * Flat, lower-case and hyphenated rather than the supplier's own spaced
- * filenames, because these are addressed by three separate choices and a name
- * built out of those choices cannot drift from them. */
-export const wardrobeAssetPath = (model: WardrobeModel, colourName: string, view: WardrobeView) =>
-  `${DIR}/${model.id}-${wardrobeColour(colourName).slug}-${view}.png`;
+ * ASKS THE MANIFEST. It does not build a filename out of the three choices and
+ * hope. wardrobeCutouts.ts is generated from the files themselves and carries
+ * each one's own `file` string, so a name that is never reconstructed is a name
+ * that cannot drift from what is on disk.
+ *
+ * IT USED TO BUILD `<model.id>-<finish>-<view>.png`, AND THAT WAS WRONG. The
+ * cut-outs are named by ARTWORK id -- the layout that was photographed, `4.0`
+ * -- while a model carries the supplier's own code, `SRSTDH02`. The two agree
+ * for the three walk-ins and for nothing else, so seven of the ten models could
+ * only ever have asked for a file that has never existed, taken the null that
+ * loadAsset returns BY DESIGN, and drawn the legacy sticker. No throw, no
+ * console error, a wrong-looking wardrobe and every check green.
+ *
+ * IT HAS NOT BEEN COSTING ANYTHING YET, AND THAT IS THE UNCOMFORTABLE PART.
+ * Nothing on the live site reaches this. ROOM_VIEW_READY is false, so the
+ * wardrobe tab renders Wardrobe3D, and Canvas2DWardrobeRenderer is not mounted
+ * anywhere -- its only importer takes buildCarcass off it. Measured, not
+ * assumed: driving all twelve wardrobe configurations makes six requests under
+ * /Textures/wardrobes/ and every one returns 200, before this change and after
+ * it. The bug was waiting for whoever flips ROOM_VIEW_READY, which is exactly
+ * when nobody would be looking for it.
+ *
+ * THE PICTURE DOES NOT MOVE, and the two halves of that are evidenced
+ * differently. On the live surface it is pixels: twelve configurations, six
+ * models across both kinds and two finishes, identical to the cell either side
+ * of this change -- and the probe that says so was shown able to fail first, by
+ * swapping the walnut texture, which moved exactly the six walnut cases and
+ * left the six white ones still. On the unreachable surface it is enumeration,
+ * because no probe can reach it: ten models x three views x four finishes
+ * against the ten files on disk, the same three pairs resolving (7.0L, 9.0L,
+ * 12.0U -- interior, white) and the same 117 falling back.
+ *
+ * VIEW AND FINISH ARE MATCHED STRICTLY, not coerced. A model whose artwork was
+ * shot front-on has no interior cut-out, and the manifest saying so is the
+ * whole point; and only Matt Wardrobe White was photographed, for the reason
+ * set out at wardrobeCutoutFor. Serving a front render as an interior, or a
+ * white carcass as walnut, would be worse than the honest fallback. */
+export function suppliedAssetPath(
+  model: WardrobeModel,
+  colourName: string,
+  view: WardrobeView,
+): string | null {
+  if (!model.artworkId) return null;
+  if (wardrobeColour(colourName).slug !== 'white') return null;
+  const entry = cutoutFor(model.artworkId);
+  if (!entry || entry.view !== view) return null;
+  return `${DIR}/${entry.file}`;
+}
 
 /** How far out of square a trace has to be before it counts as an angled wall.
  * Enough that a hand traced rectangle with a wobble in it still reads as
@@ -411,7 +454,8 @@ export async function wardrobeArtwork(
   colourName: string,
   view: WardrobeView,
 ): Promise<WardrobeArtwork> {
-  const supplied = await loadAsset(wardrobeAssetPath(model, colourName, view));
+  const path = suppliedAssetPath(model, colourName, view);
+  const supplied = path ? await loadAsset(path) : null;
   if (supplied) {
     return { image: supplied, width: supplied.naturalWidth, height: supplied.naturalHeight, legacy: false };
   }
@@ -448,13 +492,18 @@ export async function wardrobeCutoutFor(
   return { image, carcass: entry, view: entry.view };
 }
 
-/** Is the finished set in place for this configuration? */
-export async function hasSuppliedArtwork(
+/** IS THE FINISHED SET IN PLACE FOR THIS CONFIGURATION?
+ *
+ * SYNCHRONOUS, because the manifest already knows. It used to request the file
+ * and report whether the request succeeded, which made a question about what
+ * exists into a question about the network -- so it could not be asked during a
+ * render, and asking it cost a round trip and, usually, a 404. */
+export function hasSuppliedArtwork(
   model: WardrobeModel,
   colourName: string,
   view: WardrobeView,
-): Promise<boolean> {
-  return (await loadAsset(wardrobeAssetPath(model, colourName, view))) !== null;
+): boolean {
+  return suppliedAssetPath(model, colourName, view) !== null;
 }
 
 // --- Legacy fallback -------------------------------------------------------

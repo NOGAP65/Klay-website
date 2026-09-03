@@ -422,3 +422,61 @@ not exercise the fallback path at all.
 **And prove the wardrobe cases can go red**, the same way the first five were: perturb one wardrobe
 constant, confirm red, revert, confirm green. A gate that has not been seen to fail is not a gate,
 and that applies to each new case, not just to the harness.
+
+---
+
+## WHAT ADOPTING THE MANIFEST FOUND — TWO AMENDMENTS TO THE U4 GATE
+
+**Both found by trying to prove the manifest change moved nothing, and failing to prove it the
+easy way.** Recorded here because each changes what the U4 gate has to be.
+
+### 1. THE WARDROBE SURFACE IS WEBGL. THE BASELINE CANNOT READ IT.
+
+`tools/render-baseline.mjs` signatures a canvas with `getContext('2d')` and `getImageData`. On the
+wardrobe surface **`getContext('2d')` returns `null`** — the canvas already holds a WebGL context,
+because the live wardrobe view is `Wardrobe3D`. The five existing cases are all Canvas2D, which is
+why this never came up.
+
+**A wardrobe case added to the current harness would not go red. It would record `null` and pass.**
+That is worse than no coverage, and it is the shape the harness already had: `stableSignature`
+returns `null` and the case is skipped rather than failed.
+
+**So the wardrobe cases need a different capture path**, proven working here: screenshot the canvas
+element, decode the PNG back into a fresh 2D context in the page, then grid it as before. Same
+48×48 signature, same threshold, same comparison — only the read changes.
+
+**And `render-baseline.mjs` must fail on a null signature rather than skip it**, or the harness
+keeps a way to be quietly inert. That is a fix to make before U4, not during it.
+
+### 2. THE SUPPLIED CUT-OUTS ARE CURRENTLY DRAWN BY NOTHING
+
+The ten cut-out PNGs, `wardrobeCutouts.ts`, `wardrobeArtwork`'s supplied branch and
+`wardrobeCutoutFor` are **not reached by any live surface**:
+
+| | |
+|---|---|
+| `WardrobeRoomRenderer` | Behind `ROOM_VIEW_READY = false` — the wardrobe tab renders `Wardrobe3D` instead |
+| `Canvas2DWardrobeRenderer` | Not mounted anywhere. Its one importer takes `buildCarcass` off it |
+
+**Measured twice, not inferred.** Hiding `12.0U-white-interior.png` and re-driving all twelve
+configurations moved **0 of 2304 cells** on every one. A network trace over the same twelve makes
+**six requests** under `/Textures/wardrobes/`, **all 200** — no cut-out is fetched at all.
+
+**What this means for U4.** The wardrobe baseline cases can cover the `Wardrobe3D` path — geometry,
+the three finish textures, hardware, wall colour — and **they cannot cover the cut-out path**,
+because there is no surface to drive it through. A mis-moved cut-out would move nothing, pass every
+check, and surface only when someone flips `ROOM_VIEW_READY`.
+
+**So the cut-outs get a different kind of gate**, which is what `npm run check:wardrobe-assets`
+is: it reads the manifest and the model table and asserts every file they name is on disk. Not a
+render check — an existence check, for the assets a render check structurally cannot reach.
+
+> **U4's gate is therefore both:** wardrobe render cases over the `Wardrobe3D` path, **and**
+> `check:wardrobe-assets` green over the cut-out path. Neither substitutes for the other.
+
+**A decision worth taking separately from the migration:** 27 MB of cut-out artwork and the
+machinery around it currently render nothing. That is not a reason to delete it — it is finished
+work waiting on `ROOM_VIEW_READY`, which is a different thing from `/cart` or the five primitives.
+Asked the D-02 question, *what does this contain that nothing else does*, the answer is a real
+list: photographic renders of ten layouts that nothing else in the repo has. **It stays.** But it
+should be moved in U4 knowing that nothing will tell you if it breaks except the existence check.

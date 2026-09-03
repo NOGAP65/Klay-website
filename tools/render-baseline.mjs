@@ -135,7 +135,17 @@ for (const testCase of CASES) {
   }
 
   const signature = await stableSignature(page);
-  if (!signature) { problems.push(`${testCase.name}: no readable canvas`); red++; continue; }
+  // A CASE THAT CANNOT BE READ IS RED, NEVER SKIPPED. getContext('2d') returns
+  // null on a WebGL canvas, so a signature of null is not "no picture yet" — it
+  // is a case this harness structurally cannot see. Counting it as red is what
+  // stops a wardrobe case from being added, recording nothing, and passing.
+  if (!signature) {
+    problems.push(`${testCase.name}: NO READABLE CANVAS — 2D read failed. If this surface is
+    WebGL it needs the screenshot-and-decode capture, not getImageData; see UNFREEZE_MAP.md.`);
+    console.log(`  RED    ${testCase.name.padEnd(36)} no readable canvas`);
+    red++;
+    continue;
+  }
 
   const file = path.join(DIR, `${testCase.name}.json`);
   await page.screenshot({ path: path.join(DIR, `${testCase.name}.png`), clip: await page.evaluate(() => {
