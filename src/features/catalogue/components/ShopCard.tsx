@@ -340,49 +340,29 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colW
           boxSizing: 'border-box',
           display: 'inline-flex',
           alignItems: 'center',
-          // HARD LEFT UNDER THE NAME, in the same column as it and the kicker.
-          // Centred, the action floated in the middle of its own line and the
-          // card read as a text block with something else underneath. Open, it
-          // centres again — by then it is the left half of a real bar with Add &
-          // Checkout, not a link under a picture.
-          justifyContent: isOpen ? 'center' : 'flex-start',
+          justifyContent: 'center',
           // SQUARE ON THE JOIN. Open, this button and the panel's Add &
           // Checkout are flush against each other at the same 52px, so a radius
           // on the inside edge would put a notch in what has to read as one bar
           // across the whole card.
           borderRadius: isOpen ? `${radius.md}px 0 0 ${radius.md}px` : radius.md,
           cursor: 'pointer',
-          // QUIET AT REST, BRONZE ON APPROACH. Fourteen solid bronze bars, one
-          // per card, were the highest-contrast thing on the page — so a
-          // customer scanning the range saw a column of buttons rather than the
-          // products. Neither reference fills a button at all: monday uses two
-          // underlined text links, kookai has none.
+          border: 'none',
+          // FILLED BRONZE, and it was briefly not.
           //
-          // It does not disappear, though. Hiding the action until hover would
-          // cost every touch device the thing the card is for, so it keeps its
-          // full width and height and gives up only the fill: a hairline and
-          // ink at rest, the bronze arriving under the pointer and staying
-          // while it is open.
-          // NO FILL UNLESS IT IS OPEN. The photograph already scales and warms
-          // under the pointer; a bronze bar arriving beneath it at the same
-          // moment was a second and louder answer to the same question. The
-          // label takes the bronze instead and keeps its underline, so the card
-          // lights up in one place — the picture.
-          background: isOpen ? tokens.accentHover : 'transparent',
-          // NO BOX AT REST. A hairline rectangle under every card is still
-          // fourteen rectangles, and with the card's own frame gone they were
-          // the only ones left on the page. Monday gives its actions as
-          // underlined text at 14px and no box; the underline is what says this
-          // is a thing you press.
+          // The reference analysis argued the fill away: fourteen solid bars
+          // were the highest-contrast thing on the page, and neither monday nor
+          // kookai fills a button at all. That was a fair reading of the OLD
+          // card, where the picture was 275px of 434 and the button really was
+          // the loudest thing in it. It stopped being true the moment the
+          // photograph went portrait — 433 of 587, three quarters of the card,
+          // which outweighs a 52px bar underneath without any help.
           //
-          // The width and the 52px stay. That is the touch target, and shrinking
-          // the action to the width of two words would cost every phone the
-          // thing the card exists for. What goes is the outline, not the size.
-          border: '1px solid transparent',
-          color: isOpen ? tokens.onAccent : isHovered ? tokens.accent : tokens.ink,
-          textDecoration: isOpen ? 'none' : 'underline',
-          textUnderlineOffset: 5,
-          textDecorationThickness: 1,
+          // The bar is also the only thing on a resting card that says the
+          // configurator exists. An underline says "link", and this opens a
+          // panel in place.
+          background: isOpen || isHovered ? tokens.accentHover : tokens.accent,
+          color: tokens.onAccent,
           ...typeScale.label,
           lineHeight: 1,
           transition: motion.button,
