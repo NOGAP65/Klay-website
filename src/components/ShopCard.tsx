@@ -105,15 +105,7 @@ export const STAGGER_MS = 30;
  * and a third of that on a narrowed one. The gap shrinks to fit this instead:
  * the order is kept, and the duration stops being a function of how many
  * products there happen to be. */
-export const STAGGER_SPAN_MS = 170;
-
-/** How far a card drops out of its row before it travels along.
- *
- * A little more than the gap between rows, so the card clears its own row and
- * is unmistakably travelling BELOW the grid rather than through it — the whole
- * point of the dip is that the lane it moves along is empty. Much more than this
- * and the cards in the row beneath start disappearing behind it. */
-export const LANE_DIP_PX = 26;
+export const STAGGER_SPAN_MS = 90;
 
 /** THE GRID'S OWN TWO NUMBERS, and they live here rather than on the page
  * because the card does arithmetic with them: it pins itself to one column and
