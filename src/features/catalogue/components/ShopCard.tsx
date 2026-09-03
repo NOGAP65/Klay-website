@@ -106,6 +106,15 @@ export const TRAVEL_MS = 620;
  * away from the card that opened and back toward it when it shuts. */
 export const STAGGER_MS = 45;
 
+/** The longest the wave may take to cross the whole grid.
+ *
+ * STAGGER_MS is right for the few cards a customer can see at once, but the
+ * range is thirteen movers and a filtered grid is a different length again — so
+ * left alone, the same click would run for near enough a second on the full shop
+ * and a third of that on a narrowed one. The gap shrinks to fit this instead:
+ * the order is kept, the duration is not the grid's length. */
+export const STAGGER_SPAN_MS = 270;
+
 export const COLUMN_MIN = 340;
 export const COLUMN_GAP = 20;
 

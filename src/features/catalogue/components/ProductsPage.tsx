@@ -55,6 +55,7 @@ import {
   COLUMN_GAP,
   COLUMN_MIN,
   STAGGER_MS,
+  STAGGER_SPAN_MS,
   TRAVEL_MS,
   columnWidth,
 } from './ShopCard';
@@ -141,7 +142,10 @@ export default function ProductsPage() {
    * remove.
    *
    * The layout is correct throughout; only a transform moves, so nothing
-   * reflows and the cards that shift cost almost nothing to animate. */
+   * reflows and the cards that shift cost almost nothing to animate.
+   *
+   * IT RUNS IN BOTH DIRECTIONS, and each card takes a corner rather than a
+   * diagonal, one after the next — see the three notes inside. */
   useLayoutEffect(() => {
     const grid = gridRef.current;
     const prev = prevRects.current;
@@ -177,6 +181,16 @@ export default function ProductsPage() {
     // direction rather than every card leaving on the same frame.
     if (!opening) movers.reverse();
 
+    // THE WAVE CANNOT OUTRUN THE GRID. 45ms apiece is right for the handful of
+    // cards a customer can see at once, but the full range is thirteen movers,
+    // which puts the last one's delay at 540ms and had the thing running for
+    // near enough a second — and a filtered grid is a different length again, so
+    // the same click would feel different depending on how much happened to be
+    // on screen. The gap shrinks to fit instead: every card still leaves after
+    // the one before it, and the wave takes the same time to cross the grid
+    // whatever is in it.
+    const gap = Math.min(STAGGER_MS, STAGGER_SPAN_MS / Math.max(1, movers.length - 1));
+
     const running = movers.map(({ el, dx, dy }, n) => {
       // DOWN, THEN ACROSS. A card wrapping to the next row used to travel the
       // straight line between its two positions, which is a diagonal cut across
@@ -203,7 +217,7 @@ export default function ProductsPage() {
 
       return el.animate(path, {
         duration: wraps ? TRAVEL_MS : TRAVEL_MS * 0.7,
-        delay: n * STAGGER_MS,
+        delay: n * gap,
         easing: wraps ? 'linear' : 'cubic-bezier(0.22, 1, 0.36, 1)',
         // WITHOUT THIS THE STAGGER IS BROKEN. A card waiting its turn has to sit
         // at its OLD position for the length of its delay — 'backwards' applies
