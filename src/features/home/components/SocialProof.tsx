@@ -45,14 +45,14 @@ import { TILE_GAP } from '../furniture';
 const INSTAGRAM = site.instagram;
 
 const SHOTS = [
-  { image: '/images/room-4.png', to: '/products/dusk', objectPosition: 'center 40%' },
+  { image: '/images/rooms/room-4.png', to: '/products/dusk', objectPosition: 'center 40%' },
   { image: '/images/products/soleil-sunscreen.png', to: '/products/veil', objectPosition: 'center' },
-  { image: '/images/room-3.png', to: '/products?category=sheer-curtains', objectPosition: '62% 45%' },
-  { image: '/images/lifestyle/room-kitchen.png', to: '/products/dusk', objectPosition: 'center 36%' },
+  { image: '/images/rooms/room-3.png', to: '/products?category=sheer-curtains', objectPosition: '62% 45%' },
+  { image: '/images/rooms/room-kitchen.png', to: '/products/dusk', objectPosition: 'center 36%' },
   // Cropped hard left, onto the dark timber wardrobe. Centred, this frame is a
   // yellow armchair with no window covering anywhere in it — which is the one
   // thing a strip of installations cannot show.
-  { image: '/images/hero-room.jpg', to: '/products?category=wardrobes', objectPosition: '14% center' },
+  { image: '/images/rooms/hero-room.jpg', to: '/products?category=wardrobes', objectPosition: '14% center' },
 ];
 
 function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: boolean }) {

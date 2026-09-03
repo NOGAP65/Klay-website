@@ -136,7 +136,7 @@ export const CATALOGUE: CatalogueItem[] = [
     // productLink.
     to: productLink('dusk'),
     priceFrom: ROLLER_FROM,
-    image: '/images/lifestyle/room-kitchen.png',
+    image: '/images/rooms/room-kitchen.png',
     imagePosition: 'center 34%',
     glyph: 'roller-blinds',
     colours: RYNAMIC_COLOURS,

@@ -39,7 +39,7 @@ export default function AboutPage() {
           sentence with nothing to place it. */}
       <section style={{ position: 'relative', minHeight: '62vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: tokens.charcoal, padding: `${space.focal}px ${space.band}px ${space.focal}px` }}>
         <img
-          src="/images/room-5.png"
+          src="/images/rooms/room-5.png"
           alt="A Klay-fitted living room"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
         />

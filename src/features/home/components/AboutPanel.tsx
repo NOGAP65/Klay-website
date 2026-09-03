@@ -25,7 +25,7 @@
  * the glazing is the product this company makes, which is the right picture
  * beside copy about making it. Also the hero's still fallback, which is a reuse,
  * but they are eight sections apart. */
-const IMAGE = '/images/lifestyle/room-living.png';
+const IMAGE = '/images/rooms/room-living.png';
 
 const BODY = [
   'Every blind and curtain is cut to your window in Melbourne and fitted by our own technicians — the people who came to measure are the people who come back to install. Nothing is handed to whichever contractor happens to be free that week.',

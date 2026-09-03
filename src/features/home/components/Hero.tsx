@@ -43,7 +43,7 @@ const HERO_VIDEO = '/hero_video.mp4';
  * used as the video's `poster` besides. Without a poster the hero's first paint
  * — this page's LCP element — is whatever the browser decides to show, usually
  * nothing, and the first frame then arrives as a visible jump. */
-const HERO_STILL = '/images/lifestyle/room-living.png';
+const HERO_STILL = '/images/rooms/room-living.png';
 
 /** Shared by the video and its still fallback, so the two fill the section
  * identically and swapping between them cannot shift the framing.
