@@ -280,27 +280,45 @@ function DenseField({
   // A ROW SHOWS ITS CHOICES UNLESS THERE ARE TOO MANY TO SHOW. Two, three or
   // four answers fit on a line or two and are more use laid out than hidden —
   // "Blockout Light filter Sunscreen Dual" is not longer than a select reading
-  // "Blockout" with a chevron, it just says more. Past five the row would wrap
-  // into a paragraph of buttons and the dropdown wins.
+  // "Blockout" with a chevron, it just says more.
   //
-  // Which puts Location and the colour cards behind a press, and both earn it:
-  // eight rooms and fourteen Rynamic colours are lists, not choices you scan.
-  const listed = field.kind !== 'swatches' && field.choices.length <= 4;
+  // A COLOUR CARD IS ALWAYS SHOWN, however many colours it has, because the
+  // control IS the information. Every other field can be summarised in its own
+  // words — Blockout means blockout — but "White" is a word standing in for a
+  // colour, and a customer choosing between fourteen of them is choosing between
+  // the squares, not the names. Hiding those behind a press hides the only thing
+  // on the row worth looking at. Fourteen swatches at 22px wrap to two rows,
+  // which is less height than the row of chips above it.
+  //
+  // That leaves Location as the one dropdown, and it earns it: eight rooms plus
+  // an Other is a list rather than a set to compare, and it is the only field
+  // whose answer the product cannot guess — every other row opens on a sensible
+  // default, so its options are a correction rather than a decision.
+  const listed = field.kind === 'swatches' || field.choices.length <= 4;
 
   if (listed) {
     return (
       <div>
         <div style={{ ...labelStyle, marginBottom: space.hairline }}>{field.label}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {field.choices.map(c => (
-            <Chip
-              key={c.id}
-              choice={c}
-              selected={c.id === value}
-              onSelect={() => onChange(c.id)}
-              compact
-            />
-          ))}
+          {field.choices.map(c =>
+            field.kind === 'swatches' ? (
+              <Swatch
+                key={c.id}
+                choice={c}
+                selected={c.id === value}
+                onSelect={() => onChange(c.id)}
+              />
+            ) : (
+              <Chip
+                key={c.id}
+                choice={c}
+                selected={c.id === value}
+                onSelect={() => onChange(c.id)}
+                compact
+              />
+            ),
+          )}
         </div>
         {divider && (
           <div
