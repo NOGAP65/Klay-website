@@ -469,6 +469,7 @@ function TileSwatches({ colours }: { colours: { name: string; hex: string }[] })
 
 export function PhotoTile({
   to,
+  onActivate,
   label,
   image,
   objectPosition = 'center',
@@ -484,6 +485,16 @@ export function PhotoTile({
   colours,
 }: {
   to: string;
+  /** ACT INSTEAD OF NAVIGATING. Given, the tile renders as a button and calls
+   * this; `to` is then unused.
+   *
+   * It exists because the shop's cards open a configurator in place rather than
+   * leaving for a detail page — the same move the homepage's range row makes,
+   * and for the same reason: a photograph is the most clickable thing on a card
+   * and what it promises is "show me this one". A tile that navigates with an
+   * expander underneath it would be two controls disagreeing about what the
+   * card is for. */
+  onActivate?: () => void;
   label: string;
   /** Omit when no photograph of this thing exists. The tile then renders as
    * charcoal with its label and note on it, which is how the range grid handles
@@ -547,11 +558,29 @@ export function PhotoTile({
   const { hover, bind } = useHover();
   const isMobile = useIsMobile();
 
+  // A <button> where there is no destination, an <a> where there is. Widened to
+  // ElementType because Link and 'button' take genuinely different props and
+  // TypeScript cannot narrow a union of components by the value of a variable;
+  // the pairing is right by construction on the next line.
+  const Tag = (onActivate ? 'button' : Link) as React.ElementType;
+  const nav: Record<string, unknown> = onActivate
+    ? { onClick: onActivate, type: 'button' }
+    : { to };
+
   return (
-    <Link
+    <Tag
       {...bind}
-      to={to}
+      {...nav}
       style={{
+        // Reset, so a button lays out identically to the link — the styles
+        // below are the tile.
+        ...(onActivate
+          ? {
+              padding: 0, border: 'none', background: 'none', font: 'inherit',
+              color: 'inherit', textAlign: 'left' as const, width: '100%',
+              cursor: 'pointer',
+            }
+          : null),
         position: 'relative',
         display: 'block',
         overflow: 'hidden',
@@ -782,7 +811,7 @@ export function PhotoTile({
           </span>
         )}
       </div>
-    </Link>
+    </Tag>
   );
 }
 
