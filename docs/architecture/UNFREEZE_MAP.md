@@ -372,6 +372,43 @@ them for human comparison and are gitignored — 830 KB each and re-written on e
 **Five cases is a floor, not a ceiling.** It covers the blind path and the curtain path across
 four fabric types, which is what U1–U3 touch. **U4 needs the wardrobe cases first.**
 
+
+## WHAT A GREEN BASELINE DOES AND DOES NOT MEAN — KEEP THIS VISIBLE
+
+> ### A green baseline reads the canvas backing store. It would report exactly the same with no nav on the page at all.
+>
+> **It covers renders. Chrome and routing need the DOM check.**
+
+**This is calibration, not a caveat.** The baseline is the only check in the project that can see a
+wrong picture, and that specificity is the point — but a check trusted past its range is worse than
+no check, because it is trusted.
+
+`getImageData` reads the canvas's own pixel buffer. Nothing outside the canvas element reaches it:
+
+| Change | Baseline | What actually sees it |
+|---|---|---|
+| A blind draws in the wrong colour | **RED** | Only the baseline |
+| A texture fails to load and falls back | **RED** | Only the baseline |
+| A geometry constant shifts | **RED** | Only the baseline |
+| **The page loses its nav** | **green** | DOM check |
+| **The page renders two navs** | **green** | DOM check |
+| **The footer disappears** | **green** | DOM check |
+| **A route mounts under the wrong layout** | **green** | DOM check |
+| **The page 404s and the canvas is the old one** | green, or "no readable canvas" | DOM check |
+
+**U2 is the worked example.** Retiring `BareLayout` moved `/visualiser` under `RootLayout`, removed
+one `<Nav />` and added a `<Footer />`. The baseline was **0 of 2304 on all five cases, before and
+after** — correctly, because the canvas did not change. Every visible thing that changed was
+invisible to it.
+
+**What discriminated was counting the DOM**: `/visualiser`, `/` and `/book` each reporting exactly
+1 nav, 1 footer, 0 console errors, and `/book` rendering its 10 fields. That check would have gone
+red on zero navs, on two navs, or on a missing footer, which is the whole of what makes it a check.
+
+> **So a move phase needs both, and neither substitutes.** The baseline answers *"is the picture the
+> same?"* The DOM check answers *"is the page the same?"* U2 changed the second deliberately and
+> not the first, and only running both could tell those apart.
+
 ## EVERY `baseline:update` COMMIT STATES WHAT CHANGED AND WHY IT WAS INTENDED
 
 > **An update with no stated reason is reverted on sight.**
@@ -479,3 +516,45 @@ work waiting on `ROOM_VIEW_READY`, which is a different thing from `/cart` or th
 Asked the D-02 question, *what does this contain that nothing else does*, the answer is a real
 list: photographic renders of ten layouts that nothing else in the repo has. **It stays.** But it
 should be moved in U4 knowing that nothing will tell you if it breaks except the existence check.
+
+---
+
+# DECISIONS TAKEN AT U2, 3 SEPTEMBER 2026
+
+## `/visualiser` KEEPS THE FOOTER AND KEEPS SCROLLING
+
+> **V: "Leave `/visualiser` scrolling. Gaining the site footer is more correct than a
+> viewport-locked pane. Not a regression."**
+
+The page was exactly `100vh` with no scroll while it composed its own chrome. Under `RootLayout` it
+gains a `<Footer />` below the tool, so the document is 1530px against an 1100px viewport.
+
+**Recorded because it would otherwise read as a defect to the next person who measured it** — a
+tool page that used to fit the viewport and now does not looks like a layout regression, and the
+scroll is the visible trace of a decision rather than an accident. The tool itself is unchanged;
+the footer is appended below it, as on every other page.
+
+## WORKING AGREEMENT WITH THE PARALLEL SESSION: NAMED PATHS ONLY
+
+> **V: "The commit sweep is my error. I committed with a broad `git add` while your `git rm`s were
+> staged. From here I use named paths only while you are running."**
+
+`8703253 "Let the photograph be the card"` contains four deletions it does not mention —
+`theme.ts`, `Nav.tsx`, `FormField.tsx`, `BareLayout.tsx` — because a broad `git add` swept up work
+that was staged and not yet committed.
+
+**Nothing was lost and the tree was correct.** What was lost was the *reason*: four files
+disappeared in a commit about a card photograph, and the explanation for those deletions lives in
+`b6b548f` instead, one commit later.
+
+**Both halves of the mitigation stand:**
+
+| | |
+|---|---|
+| **Named paths only** | Neither session uses `git add -A`, `git add .` or `git commit -a` while the other is running |
+| **Smaller commits** | Staged-but-uncommitted work is exposed for as long as it sits there. The window is the risk, so keep it short |
+
+**The general form is worth keeping past this project.** A shared working tree makes the index a
+shared resource, and `git add -A` is a claim over all of it. **The staging area is the only place in
+git where two agents can silently take each other's work**, because it is the one piece of state
+that is neither committed nor owned.
