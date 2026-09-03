@@ -467,7 +467,7 @@ export default function ProductsPage() {
                     // because that is what makes the picture bigger than the
                     // homepage row's, which was the reason for it.
                     gridTemplateColumns: isNarrow
-                      ? 'repeat(2, 1fr)'
+                      ? 'repeat(1, 1fr)'
                       : `repeat(auto-fill, minmax(${COLUMN_MIN}px, 1fr))`,
                     // Columns tight so adjacent photographs read as one wall;
                     // rows wide so the price of one product does not float

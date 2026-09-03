@@ -243,8 +243,14 @@ const FOLD_PINCH_HEM = 0.97;
  * Superlinear in depth: the tape holds the top third almost straight and the
  * lean accumulates below it. Same shape, and the same reason, as
  * SWAY_SHAPE_POWER.
+ *
+ * 0.45 IS MEASURED OFF A PHOTOGRAPH, not chosen. In a backlit sheer at a window
+ * the folds lean several degrees over the drop and no two lean alike — some
+ * cross. The first pass used 0.17 and it still read as ruled lines, because a
+ * sixth of a wave over two metres is under a degree and the eye does not see it.
+ * Nearly half a wave does.
  */
-const FOLD_WANDER = 0.17;
+const FOLD_WANDER = 0.45;
 const FOLD_WANDER_POWER = 1.35;
 
 /** THE WEIGHTED HEM BAND, which is stiffer than the cloth above it.
@@ -257,6 +263,46 @@ const FOLD_WANDER_POWER = 1.35;
  */
 const HEM_STIFFEN = 0.22;
 const HEM_STIFFEN_SPAN = 0.08;
+
+/** HOW UNEVEN THE HEM IS, as a fraction of the drop.
+ *
+ * A hem is a straight line only on a drawing. On a made curtain every fold
+ * finishes a millimetre or two off its neighbour — the cloth is cut and sewn
+ * flat and then asked to hang in waves, and the two do not reconcile exactly —
+ * so the bottom edge is a soft irregular curve. The photograph shows it plainly:
+ * the hem wanders by something like a centimetre across a panel, and no two
+ * folds end level.
+ *
+ * Applied by shortening each COLUMN'S drop rather than by moving the bottom row
+ * around, which is what makes it grow smoothly out of nothing: at the heading
+ * the term is zero however uneven the hem, because the tape holds the top and
+ * only the free end can wander.
+ */
+const HEM_UNEVEN = 0.014;
+
+/** The doubled hem band, as a fraction of the drop, and how much darker it is.
+ *
+ * The bottom of a made curtain is folded twice and often weighted, so it is two
+ * or three layers where the rest is one. On a sheer that is unmissable: a
+ * distinctly denser strip along the bottom edge, which is exactly what the
+ * backlit reference shows. Without it the cloth just stops. */
+const HEM_BAND = 0.035;
+const HEM_BAND_DENSITY = 0.30;
+
+/** THE SHADOW THE CURTAIN THROWS ON THE SILL.
+ *
+ * Panels were being composited onto the photograph with nothing underneath
+ * them, so they read as pasted on — the single biggest tell left after the
+ * folds were fixed. In the reference the sill under the cloth goes markedly
+ * dark, and the darkening is deepest right at the hem and gone within a few
+ * centimetres.
+ *
+ * Drawn as its own quad in the same warped space as the track, behind the
+ * cloth, rather than painted into the background canvas: it has to move with
+ * the panel as the curtain is drawn back, and the background is composited
+ * once. */
+const SILL_SHADOW_DROP = 0.055;
+const SILL_SHADOW_ALPHA = 0.34;
 
 // ---------------------------------------------------------------------------
 
@@ -893,10 +939,26 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
   // neighbours in the SAME row rather than from a slope that ignores height.
   const rowZ = new Float64Array(cols + 1);
 
+  // How much shorter each column hangs than its neighbours, in px. Seeded from
+  // the same jitter as the widths and the lean, so one fold is consistently the
+  // odd one out rather than three unrelated irregularities landing on different
+  // folds. See HEM_UNEVEN.
+  const colShort = new Float64Array(cols + 1);
+  for (let c = 0; c <= cols; c++) {
+    const p = (c / cols) * count;
+    const t = p - 0.5;
+    const i0 = Math.floor(t);
+    const f = t - i0;
+    const lo = i0 < 0 ? 0 : i0 > count - 1 ? count - 1 : i0;
+    const hi = i0 + 1 < 0 ? 0 : i0 + 1 > count - 1 ? count - 1 : i0 + 1;
+    const j0 = waveJitter(lo, 2.9);
+    const j1 = waveJitter(hi, 2.9);
+    colShort[c] = HEM_UNEVEN * height * (j0 + (j1 - j0) * f);
+  }
+
   let v = 0;
   for (let r = 0; r <= ROWS; r++) {
     const vy = r / ROWS; // 0 at the heading, 1 at the hem
-    const y = topY - height * vy;
     // Only a compressed panel splays: at openness 0 this is 1 and the two panels
     // meet cleanly at the centre instead of overlapping.
     const splay = 1 + HEM_SPLAY * vy * vy * overall;
@@ -941,6 +1003,11 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
       // much it is actually being moved: the wall end is stacked and stationary
       // however hard the leading edge is pulled, so it has nothing to lag behind.
       const lag = colLag * (colX[c] / spanForLag);
+
+      // The drop, per column. Zero deviation at the heading and the full
+      // deviation at the hem, so the tape stays straight and only the free end
+      // wanders. See HEM_UNEVEN.
+      const y = topY - (height - colShort[c] * vy) * vy;
 
       positions[i3] = wallX + towardCentre * (colX[c] * splay + lag);
       positions[i3 + 1] = y - z * swing - sink;
@@ -1014,6 +1081,8 @@ precision mediump float;
 uniform vec3 uColour;
 uniform float uOpacity;
 uniform float uIsSheer;
+uniform float uHemBand;
+uniform float uHemDensity;
 uniform sampler2D uTexture;
 uniform vec2 uTexRepeat;
 uniform float uTexAmount;
@@ -1097,12 +1166,24 @@ void main() {
   // actually describes the fold, so it survives while the broad ramp above gives
   // way. Stronger once the waves pack together and start shading each other.
   float cavity = max(0.0, -vDepth);
-  // Weighted toward the bottom of the trough rather than ramping straight out of
-  // the crest. Ambient light falls off with how much of the room a point can
-  // still see, and that closes up quickly once you are down inside a fold —
-  // linear in depth spread the same darkening evenly and flattened the fold.
-  float cavityShaped = mix(cavity, cavity * cavity, 0.55);
-  shade *= 1.0 - cavityShaped * mix(0.07, 0.20, vCompression);
+
+  // NARROW AND DARK, NOT WIDE AND GREY — and getting that backwards is what made
+  // the old render read as painted shading rather than as cloth.
+  //
+  // In a photograph of hanging sheer the tone is not a symmetric wave at all: it
+  // is a WIDE soft bright lobe separated from the next one by a NARROW crease
+  // that goes genuinely dark, nearly black against a lit window. The previous
+  // constants had it the other way round, spreading a gentle 7–20% darkening
+  // across half of every wave. That reads as grey paint because no real fold is
+  // shaded that way.
+  //
+  // The exponent is what makes it narrow: at 2.2 the term is still near zero
+  // over most of the lobe and only bites in the last of the trough, so the dark
+  // arrives as a line. The coefficient is then free to be several times what it
+  // was without the panel going muddy, because it is only ever applied to a
+  // sliver.
+  float cavityShaped = pow(cavity, 2.2);
+  shade *= 1.0 - cavityShaped * mix(0.34, 0.48, vCompression);
 
   // And the crest is the part that sees the most room, so it lifts slightly.
   // Cheaper on contrast than pushing the troughs further down, and it is the
@@ -1129,6 +1210,13 @@ void main() {
   float drop = 1.0 - vUv.y;
   shade *= 1.0 - drop * drop * 0.05;
 
+  // THE DOUBLED HEM. Two or three layers where the rest of the panel is one, so
+  // it is both darker and — below, in the alpha — denser. On a sheer against a
+  // window this strip is one of the most recognisable things about the product,
+  // and the cloth simply stopped without it.
+  float hemBand = 1.0 - smoothstep(0.0, uHemBand, vUv.y);
+  shade *= 1.0 - hemBand * 0.13;
+
   colour *= shade;
 
   float alpha = uOpacity;
@@ -1138,9 +1226,15 @@ void main() {
   // shortest and it glows, and where it turns edge-on the path is long and it goes
   // dense. That contrast is the whole character of a sheer.
   if (uIsSheer > 0.5) {
-    float facing = pow(max(geoN.z, 0.0), 1.5);
+    // 2.4, up from 1.5, and the floor drops from 0.90 to 0.74. Same reading off
+    // the same photograph: on a backlit sheer the glow is confined to the part
+    // of the lobe square to the camera, and the cloth goes dense fast as it
+    // turns away — the light path through the weave lengthens as 1/cos and the
+    // fabric stacks up behind itself. A wide gentle glow is the tell of a
+    // surface being lit rather than a cloth being seen through.
+    float facing = pow(max(geoN.z, 0.0), 2.4);
     vec3 glow = colour + vec3(0.13, 0.11, 0.06);
-    colour = mix(colour * 0.90, glow, facing * (1.0 - vCompression * 0.4));
+    colour = mix(colour * 0.74, glow, facing * (1.0 - vCompression * 0.4));
 
     // TRANSPARENCY FROM THE WEAVE ITSELF, which is the honest way to draw a sheer:
     // it is not a uniformly hazy sheet, it is an open cloth, and what you see
@@ -1152,6 +1246,10 @@ void main() {
 
     // Packed fabric is layer upon layer, and stacks up nearly solid at the ends.
     alpha = mix(alpha, min(1.0, alpha + 0.14), vCompression);
+
+    // And the doubled hem is the same effect in a strip: three layers of a sheer
+    // read almost as a solid band. See HEM_BAND_DENSITY.
+    alpha = mix(alpha, min(1.0, alpha + uHemDensity), hemBand);
   }
 
   gl_FragColor = vec4(colour, clamp(alpha, 0.0, 1.0));
@@ -1228,7 +1326,31 @@ void main() {
 }
 `;
 
+/** THE SILL SHADOW.
+ *
+ * Black, with an alpha that is strongest at the hem and gone within
+ * SILL_SHADOW_DROP of the drop below it. Squared rather than linear, because
+ * contact shadow is an occlusion term and occlusion closes up fast: a linear
+ * ramp spreads the same darkness evenly and reads as a painted grey band, which
+ * is the same mistake the fold shading was making before the references.
+ *
+ * u carries a taper at the two ends, so the shadow does not stop dead where the
+ * panel does — the cloth is not a wall and its shadow has soft ends.
+ */
+const SHADOW_FRAGMENT_SHADER = `
+precision mediump float;
+uniform float uAlpha;
+varying vec2 vUv;
+void main() {
+  // v is 1 at the hem and 0 at the bottom of the quad.
+  float fall = vUv.y * vUv.y;
+  float ends = smoothstep(0.0, 0.10, vUv.x) * smoothstep(0.0, 0.10, 1.0 - vUv.x);
+  gl_FragColor = vec4(0.0, 0.0, 0.0, fall * ends * uAlpha);
+}
+`;
+
 const TRACK_FRAGMENT_SHADER = `
+
 precision mediump float;
 
 uniform vec3 uColour;
@@ -1628,6 +1750,9 @@ export default function Canvas2DCurtainRenderer({
   const leftMeshRef = useRef<PanelMesh | null>(null);
   const rightMeshRef = useRef<PanelMesh | null>(null);
   const materialsRef = useRef<THREE.ShaderMaterial[]>([]);
+  /** One sill shadow per panel. See SILL_SHADOW_ALPHA. */
+  const shadowMeshesRef = useRef<THREE.Mesh[]>([]);
+  const shadowDropRef = useRef(0);
   const layoutRef = useRef<Layout | null>(null);
 
   // Openness animates at 60fps; everything else changes on a click. Keeping the
@@ -1682,6 +1807,19 @@ export default function Canvas2DCurtainRenderer({
 
     writePanelMesh(left, { ...common, wallX: windowLeft, towardCentre: 1 });
     writePanelMesh(right, { ...common, wallX: windowRight, towardCentre: -1 });
+
+    // The sill shadow follows the cloth that casts it. A unit plane scaled to
+    // this openness's span, sat immediately under the hem and behind the panel.
+    const shadows = shadowMeshesRef.current;
+    if (shadows.length === 2) {
+      const drop = shadowDropRef.current;
+      const span = Math.max(1, shaped.span);
+      const top = windowBottom - drop / 2;
+      shadows[0].scale.x = span;
+      shadows[0].position.set(windowLeft + span / 2, top, -1);
+      shadows[1].scale.x = span;
+      shadows[1].position.set(windowRight - span / 2, top, -1);
+    }
 
     renderer.render(scene, camera);
   };
@@ -1959,6 +2097,8 @@ export default function Canvas2DCurtainRenderer({
             uColour: { value: colourVec },
             uOpacity: { value: isSheer ? sheerOpacity(colour) : 1.0 },
             uIsSheer: { value: isSheer ? 1.0 : 0.0 },
+            uHemBand: { value: HEM_BAND },
+            uHemDensity: { value: HEM_BAND_DENSITY },
             uTexture: { value: fabric.texture },
             uTexRepeat: { value: repeat },
             // Albedo variation stays modest: the relief now carries the surface
@@ -1998,6 +2138,31 @@ export default function Canvas2DCurtainRenderer({
       scene.add(leftPanel, rightPanel);
       leftMeshRef.current = leftMesh;
       rightMeshRef.current = rightMesh;
+
+      // --- SILL SHADOW ----------------------------------------------------
+      // One per panel, because each one has to follow its own leading edge as
+      // the curtain is drawn back. A unit plane, scaled and placed in draw()
+      // where the span for this openness is known.
+      //
+      // renderOrder -1 and no depth write: it is composited under the cloth and
+      // over the photograph, and it must never occlude the panel that casts it.
+      const shadowMaterial = new THREE.ShaderMaterial({
+        uniforms: { uQuadH: { value: quadMatrix }, uAlpha: { value: SILL_SHADOW_ALPHA } },
+        vertexShader: TRACK_VERTEX_SHADER,
+        fragmentShader: SHADOW_FRAGMENT_SHADER,
+        transparent: true,
+        depthWrite: false,
+      });
+      const shadowDrop = (windowTop - windowBottom) * SILL_SHADOW_DROP;
+      const shadows: THREE.Mesh[] = [];
+      for (let i = 0; i < 2; i++) {
+        const s = new THREE.Mesh(new THREE.PlaneGeometry(1, shadowDrop), shadowMaterial);
+        s.renderOrder = -1;
+        scene.add(s);
+        shadows.push(s);
+      }
+      shadowMeshesRef.current = shadows;
+      shadowDropRef.current = shadowDrop;
 
       // --- TRACK ASSEMBLY -------------------------------------------------
       // The panels hang from something, and it has to look like the thing they
