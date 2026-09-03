@@ -69,6 +69,12 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow }: Sh
   const { isHovered, bind } = useHover();
   const lit = isHovered || isOpen;
 
+  // ONE OBJECT WHEN OPEN, and the card gives up its own chrome to make that
+  // true. Open, the border, the radius, the shadow and the lift all belong to
+  // the wrapper below, which encloses the card AND the panel; the card keeps
+  // only its padding. Left carrying its own set, the open state was a bounded
+  // box beside another bounded box with a gap down the middle — three separate
+  // statements that they are separate things.
   const card = (
     <div
       {...bind}
@@ -77,12 +83,21 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow }: Sh
         flexDirection: 'column',
         height: '100%',
         boxSizing: 'border-box',
-        padding: space.hairline,
-        background: tokens.card,
-        border: `1px solid ${isOpen ? tokens.accent : lit ? tokens.lineStrong : tokens.lineFaint}`,
-        borderRadius: radius.lg,
-        boxShadow: lit ? shadow.lift : shadow.rest,
-        transform: lit ? `translateY(-${LIFT}px)` : 'translateY(0)',
+        // NO PADDING OF ITS OWN WHEN OPEN. The wrapper already holds the frame,
+        // and a second inset here was doing two visible things: it left a
+        // channel between Close and Add & Checkout, and it pushed the card's
+        // button down by its own bottom padding so the two halves of what
+        // should be one bar sat at different heights.
+        padding: isOpen ? 0 : space.hairline,
+        ...(isOpen
+          ? null
+          : {
+              background: tokens.card,
+              border: `1px solid ${lit ? tokens.lineStrong : tokens.lineFaint}`,
+              borderRadius: radius.lg,
+              boxShadow: lit ? shadow.lift : shadow.rest,
+              transform: lit ? `translateY(-${LIFT}px)` : 'translateY(0)',
+            }),
         transition: `${motion.card}, border-color 0.3s ease`,
       }}
     >
@@ -96,8 +111,19 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow }: Sh
             position: 'relative',
             overflow: 'hidden',
             borderRadius: radius.md,
-            // 4:5 — the site's one portrait ratio, and the row's.
-            aspectRatio: '4 / 5',
+            // 5:4 RATHER THAN 4:5, and the shop is the one place that should
+            // differ from the row. The row shows four cards side by side across
+            // a full-width band, where a portrait tile is what stops them
+            // reading as one long strip. The shop stacks fourteen down a page
+            // beside a filter rail: at 4:5 a 390-wide card ran near 700 tall,
+            // so barely two rows cleared the fold and scrolling the range meant
+            // scrolling past the same card four times.
+            //
+            // Landscape is also truer to the photographs. Every one of them is
+            // a room — a kitchen, a bed, a patio — and a room is wider than it
+            // is tall; the portrait crop was cutting the sides off the very
+            // thing the picture is of.
+            aspectRatio: '5 / 4',
             background: item.image ? tokens.band : tokens.charcoal,
           }}
         >
@@ -189,7 +215,11 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow }: Sh
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: radius.md,
+          // SQUARE ON THE JOIN. Open, this button and the panel's Add &
+          // Checkout are flush against each other at the same 52px, so a radius
+          // on the inside edge would put a notch in what has to read as one bar
+          // across the whole card.
+          borderRadius: isOpen ? `${radius.md}px 0 0 ${radius.md}px` : radius.md,
           border: 'none',
           cursor: 'pointer',
           background: isOpen || isHovered ? tokens.accentHover : tokens.accent,
@@ -215,26 +245,36 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow }: Sh
         display: 'flex',
         flexDirection: isNarrow ? 'column' : 'row',
         alignItems: 'stretch',
-        gap: space.hairline,
+        // NO GAP. The two halves meet; a channel between them would be the one
+        // thing saying they are two objects.
+        boxSizing: 'border-box',
+        padding: space.hairline,
+        background: tokens.card,
+        // THE WHOLE SHAPE WEARS THE ACCENT, enclosing the card and the panel
+        // together, so the edge grows with the card rather than being a second
+        // thing drawn around a second box.
+        border: `1px solid ${tokens.accent}`,
+        borderRadius: radius.lg,
+        boxShadow: shadow.lift,
+        overflow: 'hidden',
       }}
     >
       <div style={{ flex: isNarrow ? '0 0 auto' : '1 1 0', minWidth: 0 }}>{card}</div>
 
-      {/* ARRIVES RATHER THAN APPEARING. The row animates its slot; a grid item
-          cannot, so the panel does the work itself — a short rise and a fade,
-          which is enough to say "this came from the card" instead of "the page
-          reflowed". */}
+      {/* NO BORDER, AND SQUARE ON THE JOIN. A hairline all the way round drew
+          the panel as its own box, and the inside edge in particular put a rule
+          down the join it is meant to be crossing. Radius on the outer corners
+          only, so the shape ends where the card ends.
+
+          It fades and slides out of the card rather than appearing: the row can
+          animate its slot widening, a grid item cannot, so the panel does that
+          work itself. klay-panel-in is the row's own keyframe. */}
       <div
         style={{
           flex: '1 1 0',
           minWidth: 0,
           display: 'flex',
           flexDirection: 'column',
-          background: tokens.card,
-          border: `1px solid ${tokens.accent}`,
-          borderRadius: radius.lg,
-          boxShadow: shadow.rest,
-          overflow: 'hidden',
           animation: 'klay-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both',
         }}
       >
