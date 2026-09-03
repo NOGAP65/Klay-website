@@ -222,8 +222,8 @@ function Swatch({
  * the opposite of what the row is for: what sells is the picture, and the
  * controls should be the smaller half of the card.
  *
- * SHUT, A ROW STATES ITS ANSWER — the name at the left, a bronze rule, the
- * answer at the right — so the closed
+ * SHUT, A ROW STATES ITS ANSWER — the name at the left, the answer at the
+ * right, and a bronze rule under it — so the closed
  * panel is a readable summary of the configuration rather than a stack of
  * questions. That is worth as much as the space: a customer scanning six
  * collapsed rows can see what they have chosen without opening one.
@@ -238,6 +238,7 @@ function Field({
   field,
   value,
   open,
+  divider,
   onToggle,
   onChange,
 }: {
@@ -246,6 +247,9 @@ function Field({
   open: boolean;
   onToggle: () => void;
   onChange: (choiceId: string) => void;
+  /** A bronze rule under this row. Every row but the last gets one — under the
+   * final row it would be a divider with nothing beneath it to divide. */
+  divider: boolean;
 }) {
   // The label of what is chosen, not its id — a row reading "variant · pet" is
   // no summary at all.
@@ -259,7 +263,7 @@ function Field({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 9,
+          gap: 6,
           width: '100%',
           padding: 0,
           border: 'none',
@@ -271,30 +275,8 @@ function Field({
         }}
       >
         {field.label}
-        {/* THE RULE DOES THE PUSHING, so nothing needs margin-left:auto any
-            more — it takes the space between the name and the answer and shows
-            it instead of leaving it blank. */}
-        <span
-          aria-hidden="true"
-          style={{
-            flex: '1 1 auto',
-            // A hair over a pixel so it survives a non-integer device ratio;
-            // at exactly 1 it drops out on some zoom levels.
-            height: 1.5,
-            minWidth: 10,
-            background: tokens.accent,
-            // Bronze at full strength, six rows of it, would be the loudest
-            // thing in the panel. Held back this far it is a texture the name
-            // and the answer sit at either end of.
-            opacity: 0.32,
-            // The row is centre-aligned but the type is not, so the rule wants
-            // to sit a touch below the middle to read as being ON the baseline.
-            alignSelf: 'center',
-            marginTop: 1,
-          }}
-        />
         {chosen && (
-          <span style={{ color: tokens.inkSoft, letterSpacing: '0.3em' }}>
+          <span style={{ color: tokens.inkSoft, letterSpacing: '0.3em', marginLeft: 'auto' }}>
             {chosen}
           </span>
         )}
@@ -302,6 +284,7 @@ function Field({
           aria-hidden="true"
           style={{
             width: 0, height: 0, flex: '0 0 auto',
+            marginLeft: chosen ? 0 : 'auto',
             borderLeft: '3.5px solid transparent',
             borderRight: '3.5px solid transparent',
             borderTop: `4px solid ${tokens.inkSoft}`,
@@ -344,6 +327,26 @@ function Field({
       ))}
         </div>
       </div>
+
+      {/* IN THE MIDDLE OF THE SPACE, not tight under the row above — which is
+          the whole difference between a divider and an underline. The rows used
+          to be spaced by the parent's flex gap and a gap cannot have anything in
+          the middle of it, so the space lives on this instead: ten above, ten
+          below, and the parent's gap is nothing. */}
+      {divider && (
+        <div
+          aria-hidden="true"
+          style={{
+            height: 1.5,
+            margin: '10px 0',
+            background: tokens.accent,
+            // Bronze at full strength, five rows of it, would be the loudest
+            // thing in the panel. Held back this far it is a texture the rows
+            // sit between rather than a set of bars across them.
+            opacity: 0.32,
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -452,7 +455,9 @@ export function RangeConfigurator({
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: space.sm,
+          // NO GAP. The rows are spaced by the rule between them, which has to
+          // sit in the middle of that space — see the divider in Field.
+          gap: 0,
           // The padding the outer box gave up, so this region owns its own inset
           // and the action bar below can be flush.
           ...(fill ? { padding: `${space.md}px ${space.md}px 0` } : null),
@@ -464,12 +469,13 @@ export function RangeConfigurator({
             the fields that are decisions rather than appearances. */}
         {fields
           .filter(f => f.id !== leadFieldId)
-          .map(f => (
+          .map((f, i, shown) => (
             <Field
               key={f.id}
               field={f}
               value={sel[f.id]}
               open={openField === f.id}
+              divider={i < shown.length - 1}
               onToggle={() => setOpenField(id => (id === f.id ? null : f.id))}
               onChange={choose(f.id)}
             />
