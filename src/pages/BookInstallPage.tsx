@@ -4,7 +4,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { radius, tokens, eyebrow, headline, motion, layout } from '@/ds';
 import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
 
-import { FormField, DANGER } from '../components/FormField';
+import { Field, DANGER } from '@/ds';
 import { createCheckoutSession, requestQuote, type BookingPayload, type FieldErrors } from '../lib/api';
 import {
   MAX_QUANTITY,
@@ -252,7 +252,7 @@ export default function BookInstallPage() {
               <h2 style={sectionHeading}>Your details</h2>
 
               <form onSubmit={(e) => e.preventDefault()} noValidate>
-                <FormField
+                <Field
                   label="Name"
                   value={form.name}
                   onChange={set('name')}
@@ -261,7 +261,7 @@ export default function BookInstallPage() {
                   error={fieldErrors.name}
                   maxLength={120}
                 />
-                <FormField
+                <Field
                   label="Email"
                   type="email"
                   value={form.email}
@@ -272,7 +272,7 @@ export default function BookInstallPage() {
                   error={fieldErrors.email}
                   maxLength={200}
                 />
-                <FormField
+                <Field
                   label="Phone"
                   type="tel"
                   value={form.phone}
@@ -282,7 +282,7 @@ export default function BookInstallPage() {
                   error={fieldErrors.phone}
                   maxLength={40}
                 />
-                <FormField
+                <Field
                   label="Street address"
                   value={form.address}
                   onChange={set('address')}
@@ -293,7 +293,7 @@ export default function BookInstallPage() {
 
                 <div style={{ display: 'flex', gap: 16 }}>
                   <div style={{ flex: '2 1 0' }}>
-                    <FormField
+                    <Field
                       label="Suburb"
                       value={form.suburb}
                       onChange={set('suburb')}
@@ -303,7 +303,7 @@ export default function BookInstallPage() {
                     />
                   </div>
                   <div style={{ flex: '1 1 0' }}>
-                    <FormField
+                    <Field
                       label="Postcode"
                       value={form.postcode}
                       onChange={set('postcode')}
@@ -315,7 +315,7 @@ export default function BookInstallPage() {
                   </div>
                 </div>
 
-                <FormField
+                <Field
                   label="Preferred date"
                   type="date"
                   value={form.preferredDate}
@@ -323,7 +323,7 @@ export default function BookInstallPage() {
                   min={tomorrowISO()}
                   error={fieldErrors.preferredDate}
                 />
-                <FormField
+                <Field
                   label="Anything we should know?"
                   value={form.notes}
                   onChange={set('notes')}

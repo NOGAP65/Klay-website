@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { computeHomography, toColumnMajor, Point } from './homography';
 import { HARDWARE_HEX } from '../data/products';
-import { tokens } from '../theme';
+import { tokens } from '@/ds';
 
 /** One traced, confirmed window area to render — the shape VisualizerConfigurator
  * maps its (store-owned) TracedArea + linked WindowCard into before passing it

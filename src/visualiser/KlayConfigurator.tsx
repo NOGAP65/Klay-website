@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { radius, tokens, space, type as typeScale } from '../theme';
+import { radius, tokens, space, type as typeScale } from '@/ds';
 import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from './useVisualiserStore';
 import { usePhotoUpload } from './usePhotoUpload';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';

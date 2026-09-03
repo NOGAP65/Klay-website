@@ -170,21 +170,20 @@ difference between an asset set that can be verified and one that can only be pr
 
 From ADR-020's demolition log, now actionable:
 
-| # | Artefact | Retired by | Order |
+| # | Artefact | Retired by | Status |
 |---|---|---|---|
-| 1 | `src/components/Nav.tsx` re-export shim (E-11) | Repoint `VisualiserPage.tsx` to `@/app/layouts` | **First — one line** |
-| 2 | `BareLayout` | Mount `VisualiserPage` under `RootLayout`, strip its own `<Nav />` | With 1 |
-| 3 | `src/components/` as a directory | 1 and 2, plus `FormField.tsx` reaching its two consumers | After 1, 2 |
-| 4 | `src/theme.ts` shim + `@deprecated` aliases | Repoint 6 zone files from `../theme` to `@/ds` | Early — mechanical |
-| 5 | `src/data/products.ts` at its legacy path | Split by consumer — decision H, finally executable | Mid |
+| 1 | `src/components/Nav.tsx` re-export shim (E-11) | The page stopped composing chrome, so the import went rather than moved | **DONE — U2** |
+| 2 | `BareLayout` | `/visualiser` mounted under `RootLayout onLight`; the layout wrapped nothing else | **DONE — U2** |
+| 3 | `src/components/` as a directory | 1 and 2, plus `FormField` repointed to `@/ds` in `BookInstallPage` | **DONE — U2** |
+| 4 | `src/theme.ts` shim + `@deprecated` aliases | **Three** zone files repointed to `@/ds`, not the six recorded here — `visualiser-lab/` held the others and went at U1 | **DONE — U2** |
+| 5 | `src/data/products.ts` at its legacy path | Split by consumer — decision H, finally executable | U6 |
 | 6 | `src/lib/pricing.ts` shim | Never created. **Move it straight to `shared-core/` with no shim** | Phase 6 |
-| 7 | `legacy-visualiser` boundary element type | Delete when the zone is inside `features/` | Last |
-| 8 | The countdown's clearable/permanent split | **See the note below** | Immediately |
+| 7 | `legacy-visualiser` boundary element type | Delete when the zone is inside `features/` | U5 |
+| 8 | The countdown's clearable/permanent split | Rewritten to read the register. **13 permanent became 0** | **DONE — U1** |
 
-**`tools/legacy-countdown.mjs` is now measuring a world that no longer exists.** It hardcodes
-`isOutOfScope` and a `PERMANENT` map from ADR-020, so it still reports **13 permanent edges that
-are now all clearable**. It is a measurement instrument reporting a stale fact — exactly what THE
-TEST is for — and it should be corrected before any phase uses its number.
+**Every shim the freeze created is gone.** Rows 1–4 were the whole of it, and they came out in one
+phase because each was one import specifier plus a deletion. The freeze's structural residue is
+now only rows 5–7, which are moves rather than shims.
 
 ---
 
@@ -238,8 +237,8 @@ map** — it removes the last `%20` encoding in the codebase and the last z-spel
 |---:|---|---|---|
 | **U0** | **THE RENDER BASELINE** | **DONE, 3 Sep — and proven able to go red before being trusted.** No move phase opens without it; see the section at the end of this file | — |
 | **U1** | **Delete `visualiser-lab/`** | Removes 44% of the zone before anything is restructured. Nothing imports it | **Very low** |
-| **U2** | Retire the shims — Nav, BareLayout, `theme.ts` | Mechanical import rewrites, no logic touched. Clears four demolition rows | Low |
-| **U3** | Fix the countdown tool; adopt the wardrobe manifest | Both are measurement corrections. Nothing can be verified properly until they land | Low |
+| **U2** | **Retire the shims — Nav, BareLayout, `theme.ts`. DONE, 3 Sep** | Cleared all four demolition rows. One consequence worth knowing: `/visualiser` now has a footer and therefore scrolls | Low |
+| **U3** | **Fix the countdown tool; adopt the wardrobe manifest. DONE, 3 Sep — landed with U1** | Both were measurement corrections, and both were wrong in ways their own output could not show | Low |
 | **U4** | Move assets: `Textures/`, openings, `Preview.png` | Depends on U3's manifest for the wardrobe set | **Medium — silent failure** |
 | **U5** | Move files into `features/visualiser/` | The move itself. Paths only, no decomposition | Medium |
 | **U6** | Split `data/products.ts` — decision H | Finally executable | Low |

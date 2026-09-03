@@ -41,7 +41,6 @@ import BookingConfirmedPage from '../pages/BookingConfirmedPage';
 import BookInstallPage from '../pages/BookInstallPage';
 import VisualiserPage from '../pages/VisualiserPage';
 
-import { BareLayout } from './layouts/BareLayout';
 import { RootLayout } from './layouts/RootLayout';
 import { LegacyBlindTypeRedirect, LegacyCategoryRedirect, LEGACY_CATEGORY_SLUGS } from './routes/legacyRedirects';
 import NotFoundPage from './routes/NotFoundPage';
@@ -84,19 +83,23 @@ export function AppRoutes() {
         <Route path="/cart" element={<CartPage />} />
       </Route>
 
-      {/* IT OWNS ITS OWN CHROME AND MUST. VisualiserPage mounts its own <Nav />
-          and is E-08 — out of this migration, not editable for any reason, an
-          import rewrite included. Under RootLayout it would render two navs.
-          BareLayout is the honest way to say so in the table.
+      {/* IT MOUNTS UNDER ROOT CHROME LIKE EVERY OTHER PAGE, as of U2.
+
+          It used to sit under BareLayout because it composed its own <Nav />
+          and, being E-08, could not be edited to stop. Both halves of that are
+          gone: the exception retired at the unfreeze, and the page no longer
+          renders chrome. BareLayout went with it — it existed for this route
+          and no other.
 
           /visualizer — the z-spelled wardrobe review page — WAS HERE AND IS
           GONE. Deleting it closed E-07, the visualiser/visualizer spelling
           split, earlier than ADR-013's stated condition: the route was removed
           rather than the two spellings unified. `visualiser` is the house
           spelling and now the only one on a route. */}
-      <Route element={<BareLayout />}>
+      <Route element={<RootLayout onLight />}>
         <Route path="/visualiser" element={<VisualiserPage />} />
       </Route>
+
 
       {/* --- retired URLs ------------------------------------------------- */}
       {/* Declared after every real route so none of them can be shadowed, and

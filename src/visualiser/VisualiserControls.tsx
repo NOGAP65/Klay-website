@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { radius, tokens, space, type as typeScale } from '../theme';
+import { radius, tokens, space, type as typeScale } from '@/ds';
 import { formatAUD, isBlindType } from '../lib/pricing';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../data/products';
 import {

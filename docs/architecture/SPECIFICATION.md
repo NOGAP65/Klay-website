@@ -127,8 +127,9 @@ src/
 │   ├── router.tsx
 │   ├── providers.tsx
 │   └── layouts/
-│       ├── RootLayout.tsx
-│       └── BareLayout.tsx
+│       ├── RootLayout.tsx      the site chrome — nav, footer
+│       ├── Nav.tsx
+│       └── Footer.tsx
 ├── config/
 │   ├── env.ts          THE ONLY file that reads import.meta.env
 │   ├── site.ts
@@ -963,19 +964,28 @@ in agreement.
 **RETIRED — E-08, E-09, E-10, E-11**, on 3 September 2026, when V approved the unfreeze.
 
 They existed for one reason: the visualiser was outside this migration and could not be edited.
-**It is inside it now.** `src/visualiser/`, `src/visualiser-lab/`, `VisualiserPage.tsx`,
-`src/lib/pricing.ts`, `src/data/products.ts`, `src/theme.ts` and `src/components/Nav.tsx` are all
-in scope and governed by every rule in this document.
+**It is inside it now.** `src/visualiser/`, `VisualiserPage.tsx`, `src/lib/pricing.ts`,
+`src/data/products.ts` and what were `src/theme.ts` and `src/components/Nav.tsx` are all in scope
+and governed by every rule in this document. `src/visualiser-lab/` was deleted at U1.
 
-**The three shims those exceptions authorised are no longer authorised.** They will exist for as
-long as the unfreeze phases take, but they are now **debt with a plan** rather than exceptions
-with a reason. ADR-020's demolition log is the order they come out in;
-`docs/architecture/UNFREEZE_MAP.md` is the plan.
+**THE THREE SHIMS THOSE EXCEPTIONS AUTHORISED ARE GONE**, at U2 on the same day:
+
+| Shim | What retired it |
+|---|---|
+| `src/theme.ts` | Three `../theme` importers repointed to `@/ds`. **Its own stated exit condition was zero hits, and it was met** |
+| `src/components/Nav.tsx` | `VisualiserPage` no longer composes chrome, so it no longer imports Nav at all |
+| `src/components/FormField.tsx` | Its last consumer repointed to `@/ds`, taking `src/components/` with it |
+
+**`BareLayout` went too.** It was never a shim — it was an honest statement in the route table that
+one page owned its own chrome. That statement stopped being true when the page stopped owning it,
+and a layout that wraps nothing is a name with no fact behind it.
 
 **E-01 to E-04 survive and are unaffected by this.** They are rule exemptions for four protected
 IP files — size and complexity limits only — not scope exclusions. Those files are now in scope
 for every other rule, **may be moved, and may have their imports rewritten. Their contents are
-still not edited.** Their review trigger fired with the unfreeze; the examination is recorded in
+still not edited.** That permission was exercised once, at U2: `Canvas2DBlindRenderer.tsx` had
+`from '../theme'` changed to `from '@/ds'` and nothing else — a one-line diff, recorded in the
+commit. Their review trigger fired with the unfreeze; the examination is recorded in
 UNFREEZE_MAP.md.
 
 **And the counts move sharply because of this.** The in-scope lint total, the naming-convention

@@ -2,7 +2,6 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 import { radius, tokens } from '@/ds';
 
-import { Nav } from '../components/Nav';
 import { bookingLink } from '../lib/bookingLink';
 import KlayConfigurator from '../visualiser/KlayConfigurator';
 import { useVisualiserStore, ProductCategory } from '../visualiser/useVisualiserStore';
@@ -74,9 +73,8 @@ export default function VisualiserPage() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Nav />
-      {/* Nav is position:fixed (out of flow) — paddingTop reserves its height
-          so it doesn't overlap the controls/canvas row below. */}
+      {/* RootLayout owns the nav — decision D. It is position:fixed and out of
+          flow, so paddingTop below reserves its height rather than a spacer. */}
       <div style={{ flex: 1, overflow: 'hidden', paddingTop: 80, display: 'flex', background: tokens.paper }}>
         {/* Matches VisualiserSection's rhythm so the same panel doesn't read
             differently on the homepage and here. */}
