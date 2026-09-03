@@ -289,7 +289,25 @@ function Field({
         />
       </button>
 
-      {open && (field.kind === 'select' ? (
+      {/* ANIMATED OPEN. A row that appears instantly reads as the panel
+          jumping rather than as a thing unfolding, and with one row closing as
+          another opens the whole panel used to snap twice per click.
+
+          Grid-rows rather than max-height: a max-height transition has to guess
+          a number bigger than any content, which then makes the easing wrong
+          for everything shorter than the guess — a two-chip row eases as slowly
+          as a seventeen-swatch one. `1fr` from `0fr` animates to the content's
+          own height, so every row takes the same time whatever is in it. */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: open ? '1fr' : '0fr',
+          opacity: open ? 1 : 0,
+          transition: 'grid-template-rows 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease',
+        }}
+      >
+        <div style={{ overflow: 'hidden', minHeight: 0 }}>
+      {(field.kind === 'select' ? (
         <FieldSelect field={field} value={value} onChange={onChange} />
       ) : (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
@@ -302,6 +320,8 @@ function Field({
           )}
         </div>
       ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -483,8 +503,16 @@ export function RangeConfigurator({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: hover ? tokens.accentHover : tokens.accent,
-            color: tokens.onAccent,
+            // INK, NOT BRONZE, and for the same reason the selected chips are
+            // ink — see the note on Chip. Bronze is the site's action colour and
+            // it is right on a photograph, where it is a small lozenge against a
+            // scene. Here it was a full-width slab of #8A6C46 at the foot of a
+            // tall white panel: the largest object in the configurator, louder
+            // than the product it is selling, and the one thing in the panel
+            // that is neither the picture nor a choice. Ink puts the weight back
+            // on what has been chosen.
+            background: hover ? tokens.ink : tokens.fillStrong,
+            color: tokens.onFillStrong,
             ...typeScale.label,
             lineHeight: 1,
             border: 'none',
