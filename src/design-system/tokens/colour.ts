@@ -102,9 +102,15 @@ export const tokens = {
   // `parchment` was #EAE5DC when it earned the name. The new names describe a
   // ROLE, which is SPECIFICATION.md §9.
   //
-  // TEN CALL SITES REMAIN, all inside src/visualiser/ and src/visualiser-lab/,
-  // which are frozen and must not be edited: `warmWhite` × 8, `cream` × 2.
-  // These three exports exist for those ten and nothing else.
+  // CALL SITES REMAIN inside src/visualiser/: `warmWhite` and `cream`. These
+  // three exports exist for them and nothing else.
+  //
+  // It said TEN, across src/visualiser/ and src/visualiser-lab/, "which are
+  // frozen and must not be edited". Neither clause is true after 3 September
+  // 2026: E-08 retired and the lab was deleted, so roughly half those call sites
+  // went with it and the rest are editable. Re-count before relying on a number
+  // here — this comment is now about which exports exist and why, not how many
+  // callers they have.
   //
   // DELETE THEM AT P4-7, with the shim, once the visualiser unfreezes. The
   // condition is `grep -rn "tokens\.\(warmWhite\|parchment\|cream\)" src/`

@@ -43,7 +43,7 @@ const MUST_REFUSE = [
 const MUST_ALLOW = [
   'src/visualiser/Canvas2DBlindRenderer.tsx',
   'src/visualiser/homography.ts',
-  'src/visualiser-lab/wardrobes.ts',
+  'src/visualiser/wardrobes.ts',
   'src/pages/VisualiserPage.tsx',
   'src/lib/pricing.ts',
   'src/data/products.ts',

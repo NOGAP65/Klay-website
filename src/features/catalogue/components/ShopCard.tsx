@@ -78,6 +78,34 @@ export interface ShopCardProps {
  * rail fits four columns of about 290 at 270, and a 4:5 picture 290 wide is
  * smaller than the homepage's on the page whose whole job is showing product.
  * It also has to divide by two, since the open card spans two columns. */
+/** How long the box takes to open, and to shut.
+ *
+ * SHUTTING IS FASTER, and it has to be: the page holds the card open for
+ * CLOSE_MS while the panel fades and then unmounts it, so a shrink longer than
+ * that gets cut off partway through and replaced by a card already at its closed
+ * width — a jump, in the middle of the animation that exists to remove one. The
+ * two numbers are the same number because they have to be.
+ *
+ * It is also how it should feel. An opening is something you are waiting to see;
+ * a closing is something you have finished with. */
+export const OPEN_MS = 450;
+export const CLOSE_MS = 260;
+
+/** What the cards moving out of the way get, which is longer than the box.
+ *
+ * They are not racing the box — they are getting out of its way, and a card that
+ * wraps to the next row travels two legs and most of the grid's width to do it.
+ * At the box's own 450 that read as a snap. */
+export const TRAVEL_MS = 620;
+
+/** The gap between one card leaving and the next.
+ *
+ * This is the whole difference between a row of cards rearranging and a row of
+ * cards flowing. Every card leaving on the same frame is a single event with no
+ * direction in it; 45ms apart and the displacement travels through the grid,
+ * away from the card that opened and back toward it when it shuts. */
+export const STAGGER_MS = 45;
+
 export const COLUMN_MIN = 340;
 export const COLUMN_GAP = 20;
 
@@ -343,8 +371,10 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow, colW
           borderRadius: radius.lg,
           boxShadow: shadow.lift,
           overflow: 'hidden',
-          // The row's own duration and easing, so the two surfaces move alike.
-          transition: 'width 0.45s cubic-bezier(0.22, 1, 0.36, 1)',
+          // Shutting is quicker than opening — see CLOSE_MS — and the
+          // property changes along with the width, so each direction gets its
+          // own duration out of the same declaration.
+          transition: `width ${wide ? OPEN_MS : CLOSE_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
         }}
       >
         {/* PINNED, so the card does not resize while the box grows around it.

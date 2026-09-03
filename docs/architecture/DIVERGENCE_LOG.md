@@ -7,12 +7,12 @@ machine, because *"a rule that relies on someone remembering it is not a rule, i
 The entries below are what happens without that enforcement — and every one of them was
 written by someone competent, in code that was individually good.
 
-**Running total: 12 confirmed. 5 resolved, 1 partially resolved, 2 deliberate, 4 open.**
+**Running total: 12 confirmed. 6 resolved, 1 partially resolved, 1 deliberate, 4 open.**
 
 | | Status |
 |---|---|
 | **D-01** two checkouts | **RESOLVED at P4-5** — the second one is deleted |
-| D-02 visualiser fork | Deliberate. Out of this migration's reach — ADR-020 |
+| D-02 visualiser fork | **RESOLVED 3 Sep** — deleted. 13,568 lines, nothing unique |
 | D-03 email regex ×3 | Partially resolved — 2 of 3 share a module; the third needs `shared-core`, Phase 6 |
 | D-04 postcode regex ×2 | Deliberate non-extraction, waiting for the same home |
 | D-05 three curtain implementations | Open. **Not resolvable by this migration** — ADR-020 |
@@ -98,7 +98,7 @@ deliberate is a different thing from one nobody has noticed, and only this log r
 
 ## D-02 — The visualiser fork
 
-**Type:** The Second Implementation · **Status:** DELIBERATE, with an exit condition
+**Type:** The Second Implementation · **Status:** **RESOLVED — 3 Sep 2026, closed by deletion**
 **Found:** 31 Aug 2026, mid-audit — it appeared while the audit was running
 
 `src/visualiser-lab/` began as a byte-identical copy of `src/visualiser/` — 8 files, 7,819
@@ -115,6 +115,65 @@ same condition.
 
 **The thing to watch:** every change to the shared eight files is currently applied to both
 copies by hand. Four commits did exactly that on 31 Aug.
+
+---
+
+## RESOLVED 3 September 2026 — CLOSED BY DELETION
+
+`src/visualiser-lab/` is gone. **18 files, 13,568 lines.**
+
+**Its own exit condition, written at Phase 0, was exactly this**: *"diff the two, move across what
+is wanted, delete the page, its route and the directory together."* The page and route went when
+E-07 closed. The directory was the last step.
+
+**The diff decided it.** All 18 files compared against their live counterparts:
+
+| | Files |
+|---|---:|
+| Byte-identical to `src/visualiser/` | 8 |
+| Differ — **and the LIVE file is newer in every case** | 10 |
+| **Unique to the lab** | **0** |
+| Present only in `src/visualiser/` | 3 |
+
+The lines that looked lab-only were the *older* version of lines the live file had since changed —
+missing `'shelving'` from the product category, missing the current model widths, missing three
+files entirely. **A fork that has fallen behind on every axis is not a fork. It is a copy.**
+
+---
+
+## THE PATTERN THIS SHARES WITH `/cart` AND THE FIVE PRIMITIVES
+
+**Three findings, three phases apart, one shape.**
+
+| | What it was | Why it survived |
+|---|---|---|
+| **D-01** — `/cart` | 473 lines of finished-looking checkout whose submit was `alert()` | It looked like the cart *might* be wired up |
+| **D-11** — `Box`, `Stack`, `Text`, `Heading`, `Button`, `SectionHead` | 471 lines of design-system primitives with zero consumers | They looked like the vocabulary the codebase *might* converge on |
+| **D-02** — `visualiser-lab/` | 13,568 lines of stale fork | It looked like it *might* still hold wardrobe work |
+
+**Each survived on a "might".** Nobody defended any of them; nobody could rule them out either,
+and the cost of looking was always higher than the cost of leaving them one more week. That is how
+14,512 lines stayed in a repository that three separate audits walked past.
+
+**And each was settled by one question:**
+
+> ### What does this contain that nothing else does?
+
+It is answerable in an afternoon and it does not require judgement, taste, or knowing what anyone
+intended. `/cart` contained no working submit. The five primitives contained no consumer. The lab
+contained no line the live copy lacked.
+
+**The question works because it inverts the burden.** "Is this still needed?" invites speculation
+about the future and has no evidence that could settle it. "What does it contain that nothing else
+does?" is a fact about the present, and the answer is either a list or it is nothing.
+
+**Where it did not apply, it correctly said so.** `usePrefersReducedMotion` (D-10) and the
+`useHover` sites (D-08) were duplicates too — but the question returns *"the fourth copy of a
+snapshot"* rather than *"nothing"*, and the answer was extraction, not deletion. **The question
+distinguishes dead from duplicated**, which is why it is worth having as a question rather than a
+rule of thumb about size.
+
+**Ask it of anything that has survived two audits without being defended.**
 
 ---
 

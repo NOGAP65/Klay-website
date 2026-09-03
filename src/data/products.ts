@@ -10,13 +10,19 @@
 // them. What is below could not move, and the reason is not architectural
 // preference — it is ADR-020.
 //
-// SIX FILES IMPORT THESE FOUR SYMBOLS, AND ALL SIX ARE OUT OF SCOPE:
+// THREE FILES IMPORT THESE FOUR SYMBOLS, AND THEY ARE ALL IN SCOPE NOW:
 //
-//   RYNAMIC_COLOURS    visualiser/useVisualiserStore.ts, visualiser-lab/ ditto
-//   CURTAIN_COLOURS    visualiser/useVisualiserStore.ts, visualiser-lab/ ditto
+//   RYNAMIC_COLOURS    visualiser/useVisualiserStore.ts
+//   CURTAIN_COLOURS    visualiser/useVisualiserStore.ts
 //   HARDWARE_HEX       visualiser/Canvas2DBlindRenderer.tsx, useVisualiserStore.ts,
-//                      VisualiserControls.tsx, and all three visualiser-lab twins
-//   HARDWARE_OPTIONS   visualiser/VisualiserControls.tsx, visualiser-lab/ ditto
+//                      VisualiserControls.tsx
+//   HARDWARE_OPTIONS   visualiser/VisualiserControls.tsx
+//
+// It said SIX files and out of scope until 3 September 2026. Both halves of that
+// changed on the same day: E-08 retired, so the visualiser is governed by the
+// specification again, and src/visualiser-lab/ was deleted, which is where the
+// other three importers lived. Decision H — splitting this file by consumer —
+// is finally executable, at U6.
 //
 // ADR-020 removed the visualiser from this migration and withdrew permission to
 // edit those files FOR ANY REASON — an import rewrite included. Moving this
