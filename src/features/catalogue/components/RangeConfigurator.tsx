@@ -21,6 +21,7 @@
 // rather than to a component.
 // ---------------------------------------------------------------------------
 
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import * as routes from '@/config/routes';
@@ -219,27 +220,85 @@ function Swatch({
   );
 }
 
+/** ONE LINE PER QUESTION, OPENED ONE AT A TIME.
+ *
+ * Every field used to be a label with its whole choice list under it, all of
+ * them at once. On the roller — light control, seventeen colours, three sizes,
+ * two operations — that is a panel taller than the photograph beside it, and on
+ * the shop grid it set the height of the entire row it opened in.
+ *
+ * It also read as a form to fill in rather than a thing to configure, which is
+ * the opposite of what the row is for: what sells is the picture, and the
+ * controls should be the smaller half of the card.
+ *
+ * SHUT, A ROW STATES ITS ANSWER — "Light control · Blockout" — so the closed
+ * panel is a readable summary of the configuration rather than a stack of
+ * questions. That is worth as much as the space: a customer scanning six
+ * collapsed rows can see what they have chosen without opening one.
+ *
+ * ONE AT A TIME, because the point is the panel staying short; two open rows on
+ * the roller is most of the height back. Which one is the parent's business —
+ * see the accordion state in RangeConfigurator.
+ *
+ * The chevron rotates rather than swapping glyph, so the row says which way it
+ * is going as well as which state it is in. */
 function Field({
   field,
   value,
+  open,
+  onToggle,
   onChange,
 }: {
   field: ConfigField;
   value: string | undefined;
+  open: boolean;
+  onToggle: () => void;
   onChange: (choiceId: string) => void;
 }) {
+  // The label of what is chosen, not its id — a row reading "variant · pet" is
+  // no summary at all.
+  const chosen = field.choices.find(c => c.id === value)?.label;
+
   return (
     <div>
-      <div style={labelStyle}>
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          width: '100%',
+          padding: 0,
+          border: 'none',
+          background: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+          ...labelStyle,
+          marginBottom: open ? labelStyle.marginBottom : 0,
+        }}
+      >
         {field.label}
-        {/* The chosen colour is named beside its label — a grid of squares is
-            unreadable without it, and "Fabric colour · Woodland Grey" is what
-            the customer will repeat back on the phone. */}
-        {field.kind === 'swatches' && value && (
-          <span style={{ color: tokens.inkSoft, letterSpacing: '0.3em' }}> · {value}</span>
+        {chosen && (
+          <span style={{ color: tokens.inkSoft, letterSpacing: '0.3em', marginLeft: 'auto' }}>
+            {chosen}
+          </span>
         )}
-      </div>
-      {field.kind === 'select' ? (
+        <span
+          aria-hidden="true"
+          style={{
+            width: 0, height: 0, flex: '0 0 auto',
+            marginLeft: chosen ? 0 : 'auto',
+            borderLeft: '3.5px solid transparent',
+            borderRight: '3.5px solid transparent',
+            borderTop: `4px solid ${tokens.inkSoft}`,
+            transform: open ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.18s ease',
+          }}
+        />
+      </button>
+
+      {open && (field.kind === 'select' ? (
         <FieldSelect field={field} value={value} onChange={onChange} />
       ) : (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.tight }}>
@@ -251,7 +310,7 @@ function Field({
             ),
           )}
         </div>
-      )}
+      ))}
     </div>
   );
 }
@@ -290,6 +349,11 @@ export function RangeConfigurator({
   const navigate = useNavigate();
   const addItem = useCartStore(s => s.addItem);
   const { isHovered, bind } = useHover();
+  /** WHICH QUESTION IS OPEN. Null — every row shut — is the resting state,
+   * because a panel that opens with one field expanded is a panel that is
+   * taller than it needs to be before anyone has touched it. See Field. */
+  const [openField, setOpenField] = useState<string | null>(null);
+
 
   const fields = fieldsFor(item);
   const price = priceFor(item, sel);
@@ -369,7 +433,14 @@ export function RangeConfigurator({
         {fields
           .filter(f => f.id !== leadFieldId)
           .map(f => (
-            <Field key={f.id} field={f} value={sel[f.id]} onChange={choose(f.id)} />
+            <Field
+              key={f.id}
+              field={f}
+              value={sel[f.id]}
+              open={openField === f.id}
+              onToggle={() => setOpenField(id => (id === f.id ? null : f.id))}
+              onChange={choose(f.id)}
+            />
           ))}
       </div>
 

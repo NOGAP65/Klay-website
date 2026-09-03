@@ -66,7 +66,15 @@ export function ShopCard({ item, isOpen, onToggle, sel, onChange, isNarrow }: Sh
       image={item.image}
       imagePosition={item.imagePosition}
       glyph={item.glyph}
-      colours={item.colours}
+      // NO SWATCH ROW ON THE SHOP TILE. It was the most useful thing a tile
+      // could say back when a tile was all there was — but the card opens into
+      // a configurator with the same colours in it now, at a size you can
+      // actually judge, so the row was the same information twice and the
+      // second copy was taking picture off the top of every card.
+      //
+      // The homepage's cards keep theirs: those four do not all open, and the
+      // row is what tells you a product comes in a range at all.
+      minHeight={520}
     />
   );
 
