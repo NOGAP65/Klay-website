@@ -483,6 +483,81 @@ it.
 sentinel, a placeholder, a debug marker, a test fixture's magic number — **if it renders as
 nothing, it is working against the only situation it exists for.**
 
+## Instance 8 — the countdown that kept reporting a floor that had been demolished
+
+**The first one on this list found by asking THE TEST of a tool that had not misled anyone yet.**
+Every instance above was written after being caught out. This one was written before.
+
+`tools/legacy-countdown.mjs` answers the question the whole migration is measured by: how many
+imports still reach out of `src/features/` into a file with no layer. On the morning of the
+unfreeze it said:
+
+```
+  of which CLEARABLE          : 10   <- this is the countdown
+  of which PERMANENT          : 13   <- ADR-020, will not fall
+```
+
+**All thirteen had become clearable hours earlier.** The visualiser was in scope; the thing holding
+them down no longer existed. The correct output was `23 clearable, 0 permanent`.
+
+### The shape, which is the same shape as instance 6
+
+The tool held **its own copy of a fact the register owns**:
+
+```js
+const isOutOfScope = (p) => p.startsWith('src/visualiser/') || ...
+const PERMANENT = {
+  'src/data/products.ts': 'six visualiser files import it; decision H lost its slot',
+  'src/theme.ts': 'the visualiser imports the deprecated aliases',
+};
+```
+
+Instance 6 was `codemod.mjs` filtering by directory instead of asking `isInScope`, and it edited a
+protected file. This is the same bypass with a slower fuse: **the codemod acted on the stale copy,
+the countdown only reported from it.** A wrong number does no damage the day it appears, which is
+precisely why it survives — nobody reverts a report.
+
+### And the hardcoded table was wrong in both directions, not merely stale
+
+Deriving the answer instead of remembering it showed the remembered version had never been right.
+Re-excluding the visualiser as a probe, the tool now reports:
+
+```
+  3  src/data/products.ts   [PERMANENT — held by 3: src/visualiser/Canvas2DBlindRenderer.tsx +2]
+  3  src/lib/pricing.ts     [PERMANENT — held by 2: src/visualiser/useVisualiserStore.ts +1]
+```
+
+**`products.ts` was held by three importers, not the six the comment claimed.** And `lib/pricing.ts`
+was held by two and **was not in the table at all**. A hand-written list of consequences was
+overstating one entry and missing another, and had been for the length of the project.
+
+### The fix is not a better list. It is no list.
+
+Scope is defined once, in `exceptions.json`, and `tools/scope.mjs` is the only thing that reads it.
+`PERMANENT` is now **derived**: a legacy module is unmovable exactly when something out of scope
+imports it — a question you can ask the file system every time, rather than answer once in a
+comment and never revisit.
+
+### Proving the rewrite, since a tool that always prints zero also prints zero
+
+`0 permanent` is the right answer today and is indistinguishable from a tool that has stopped
+looking. So the register was perturbed — one temporary exception excluding `src/visualiser/**` —
+and the countdown moved to `7 clearable, 16 permanent`, naming the importers holding each module
+down. Reverted; `exceptions.json` hashed identical either side; `verify-exceptions` green.
+
+**The output that mattered was not the zero. It was that the zero moved when the fact under it
+moved.**
+
+### The rule
+
+**A tool that reports on policy must read the policy, not a copy of it.** If a fact has an owner —
+a register, a config, a single source file — then every other place that states it is a cache with
+no invalidation. The countdown had one, the codemod had one, and `lint:fix`'s ignore list had one.
+
+**And a derived zero must be shown to be capable of being non-zero.** Otherwise "the floor is gone"
+and "the tool stopped measuring the floor" produce identical output, and one of those is the thing
+you were trying to detect.
+
 ## The general lesson, which is not about renames
 
 **A tool's own report is not evidence that it worked.** `import/no-cycle` reported zero because
