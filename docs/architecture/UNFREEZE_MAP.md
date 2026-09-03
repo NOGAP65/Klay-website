@@ -236,6 +236,7 @@ map** — it removes the last `%20` encoding in the codebase and the last z-spel
 
 | # | Phase | Why here | Risk |
 |---:|---|---|---|
+| **U0** | **THE RENDER BASELINE** | **DONE, 3 Sep — and proven able to go red before being trusted.** No move phase opens without it; see the section at the end of this file | — |
 | **U1** | **Delete `visualiser-lab/`** | Removes 44% of the zone before anything is restructured. Nothing imports it | **Very low** |
 | **U2** | Retire the shims — Nav, BareLayout, `theme.ts` | Mechanical import rewrites, no logic touched. Clears four demolition rows | Low |
 | **U3** | Fix the countdown tool; adopt the wardrobe manifest | Both are measurement corrections. Nothing can be verified properly until they land | Low |
