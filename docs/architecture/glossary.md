@@ -126,3 +126,38 @@ Listed separately because these are the likeliest disagreements, and §6 says th
 | `lightfilter` | A blind type | One word in code, two in the shop (`Light filter`). Both exist |
 | `dual` | A blind type | Sold as "Eclipse Dual Roller"; whether "dual" alone is the trade term is unclear |
 | `sunscreen` | A blind type | Also a consumer product for skin. Fine in context, ambiguous in a search |
+
+---
+
+# CONTENT GAPS — for Bobby, not for the codebase
+
+**Recorded and deliberately not fixed.** These are decisions about what the site should *show*,
+which is not the migration's to make. No code change follows from this section.
+
+## Two catalogue items are the odd ones out on photography
+
+Found while auditing `public/` — the asset phase asked why one product image was unreferenced,
+and the answer turned out to be about content rather than files.
+
+| Item | What it shows today | Why it stands out |
+|---|---|---|
+| **Roller Blinds** | A **lifestyle room photograph** — `lifestyle/room-kitchen.png` | Its nine siblings use product cut-outs on a plain ground. Its own cut-out, `products/roller-blinds.webp`, exists and is unused — now in `assets-source/product-images/` |
+| **Venetian Blinds** | **No photograph at all** — a drawn product glyph in a framed rectangle | The only one of fourteen with no image. `CatalogueItem.image` is optional and `PhotoTile` has a designed no-photo state, so it renders deliberately rather than breaking |
+
+**Neither is a defect.** Nothing is broken, no image 404s, and the venetian card is a designed
+state rather than an accident — the glyph is drawn, framed, and brightens on hover so the tile
+still answers the pointer. Verified in a browser rather than inferred from the types.
+
+**Both are choices somebody made and nobody has revisited**, and they are visible side by side on
+`/products`: one card is a room, twelve are cut-outs, one is a line drawing.
+
+### The questions, which are Bobby's
+
+1. **Should Roller Blinds use its cut-out like the others?** It is the flagship — the only
+   buy-online product — and it is the one card that does not match the grid. The file is kept and
+   named, so this is a one-line change whenever it is answered.
+2. **Should Venetian Blinds have a photograph?** There is no venetian product shot anywhere in
+   the repository, so this is a photography question, not a wiring one.
+
+**Left exactly as they are.** Changing what a product looks like on the shop page is a content
+decision, and the migration has no standing to make one.

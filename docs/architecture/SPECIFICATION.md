@@ -763,6 +763,33 @@ had nothing left to except. **It closed earlier than ADR-013's stated condition*
 condition could be met. ADR-013 records the difference. Kept as prose rather than a table row so
 that `npm run check:exceptions` sees a retired exception in neither half.
 
+### A RUNTIME-ASSEMBLED ASSET PATH IS UNAUDITABLE, AND THAT IS PERMANENT
+
+**An asset whose path is built at runtime may not be moved by any automated pass.**
+
+`src/visualiser/wardrobes.ts` builds every wardrobe render's URL as:
+
+```ts
+`${DIR}/${model.id}-${wardrobeColour(colourName).slug}-${view}.png`
+```
+
+**Twenty-eight files load through that expression and appear in no source file at all.** A
+static reference check — `grep`, an import graph, `npm run audit:assets` — cannot see them,
+because the string that names them does not exist until the moment it is used.
+
+**This is a permanent class, not a gap in the tool.** No better audit closes it: the information
+is not in the source. A checker that guessed would be worse than one that abstains, because it
+would report a confident answer about files it cannot observe.
+
+**The only safe treatment is to leave them.** `audit:assets` reports the directory as
+**UNSAFE TO CLASSIFY** rather than as referenced or unreferenced, and nothing under it is moved,
+renamed or deleted on the strength of a count.
+
+**The general rule this is an instance of.** §11 can enforce what a tool can see. **There is no
+typechecker for a string path**, and a *constructed* string path cannot be read either — so an
+asset directory addressed by expression is outside every mechanism in this document and has to
+be handled by knowing about it. Naming it here is the only enforcement available.
+
 **Adding to this table requires an ADR. An exception without an ADR is a violation.**
 
 **AND A ROW IN `docs/architecture/exceptions.json` — ADR-023.** That file is this table's

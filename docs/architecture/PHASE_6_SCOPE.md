@@ -142,23 +142,68 @@ after P4-6, because `VisualiserShowcase` came into `feature:home` carrying three
 feature absorbs a file that talks to the out-of-scope zone, and P4-6 was the last such
 absorption.
 
-### THE FLOOR FREEZES WHEN PHASE 6 OPENS
+### THE FLOOR IS NOT A GATE — PHASE 6 CLOSES WHEN `CLEARABLE` REACHES ZERO
 
-**Whatever `PERMANENT` reads on the day Phase 6 opens is recorded here, and that number gates
-Phase 6 closing.**
+**Superseding the freeze this section used to describe.** The plan was to record whatever
+`PERMANENT` read on the day Phase 6 opened and hold the phase to it. **That was wrong, and the
+reason is simple: a gate that a parallel session can move is not a gate.**
 
-Up to that point the floor is a live measurement and moving is normal — it has moved three
-times already (7 → 6 → 10). From that point it is a constant, and the reason is that an exit
-condition which recalculates itself is not an exit condition. A floor free to rise during
-Phase 6 would let the phase close by growing its own target.
-
-**If the floor moves after the freeze, PHASE 6 DOES NOT CLOSE, and it is reported rather than
-re-baselined.** A rise means a feature gained a new permanent edge into the out-of-scope zone
-during the phase that was supposed to be removing scaffolding — which is a scope change and a
-decision for V, not an arithmetic adjustment.
-
-| | |
+| Exit condition | |
 |---|---|
+| **Phase 6 closes when `CLEARABLE` reaches ZERO** | The blanket `feature → legacy` allowance comes out, leaving only `feature → legacy-visualiser` |
+| **`PERMANENT` is reported at close as a FACT** | Not a target, not a threshold. It is the size of the out-of-scope surface on that day |
+
+**The floor has moved four times: 7 → 6 → 10 → 13.** Not one of those movements was a Phase 6
+decision. It rose to 13 because wardrobe work added `src/visualiser/wardrobes.ts` and
+`wardrobeHardware.ts`, which catalogue's `configOptions.ts` and `constants.ts` now import —
+three new feature → E-08 edges, created by someone building a product, correctly, in a zone this
+migration is not permitted to touch.
+
+**Freezing that number would have made Phase 6's completion depend on whether anyone shipped
+wardrobe code during it.** The phase would fail for reasons entirely outside its own work, and
+the only ways to pass would be to stop the wardrobe work or to re-baseline the gate — the second
+of which is admitting it was never a gate.
+
+**`CLEARABLE` is the number this phase controls.** It counts edges from a feature to legacy code
+that a phase can actually move. It is at **10**, and every one has a line already written in this
+document: `store.ts` (3), `lib/pricing.ts` (3), `lib/api.ts` (2), `lib/bookingLink.ts` (2).
+
+**Report `PERMANENT` at close, and record what moved it.** A rise is information about the
+out-of-scope zone — it says the visualiser is growing new surface that features consume, which is
+worth knowing when its own migration is eventually scheduled. It is not a reason to hold a phase
+open.
+
+**The general form, since this is the second exit condition to fail this way.** E-07's condition
+was another team's milestone and could not be met; this one was a number another team could move.
+**An exit condition must be written over something the phase itself controls** — otherwise it is
+not an exit condition, it is a dependency wearing one's clothes.
+
+---|---|
+| **Phase 6 closes when  reaches ZERO** | The blanket  allowance comes out, leaving only  |
+| ** is reported at close as a FACT** | Not a target, not a threshold. It is the size of the out-of-scope surface on that day |
+
+**The floor has moved four times: 7 → 6 → 10 → 13.** Not one of those movements was a Phase 6
+decision. It rose to 13 because wardrobe work added  and
+, which catalogue's  and  now import —
+three new feature → E-08 edges created by someone building a product, correctly, in a zone this
+migration is not permitted to touch.
+
+**Freezing that number would have made Phase 6's completion depend on whether anyone shipped
+wardrobe code during it.** The phase would fail for reasons entirely outside its own work, and
+the only ways to pass would be to stop the wardrobe work or to re-baseline the gate — the second
+of which is admitting it was never a gate.
+
+** is the number this phase controls.** It counts edges from a feature to legacy
+code that a phase can actually move, it is at 10, and every one of those ten has a line already
+written in this document:  (3),  (3),  (2),
+ (2).
+
+**Report  at close and record what moved it.** A rise is information about the
+out-of-scope zone — it says the visualiser is growing new surface that features consume, which
+is worth knowing when its own migration is eventually scheduled. It is not a reason to hold a
+phase open.
+
+---|---|
 | **Floor at Phase 6 open** | *(record it here on the day — do not pre-fill it)* |
 | **Measured by** | `npm run check:countdown`, the `PERMANENT` line |
 | **If it rises** | Phase 6 does not close. Report to V |

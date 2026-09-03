@@ -148,7 +148,7 @@ A tool reporting its own success is evidence of neither.
 > **A write that passes through a shell is verified by reading the file, not by the command
 > exiting zero.**
 
-**SIX instances in one migration. That is a property of the environment, not six accidents.**
+**SEVEN instances in one migration. That is a property of the environment, not seven accidents.**
 
 | # | What reported success | What was actually true |
 |---|---|---|
@@ -158,6 +158,7 @@ A tool reporting its own success is evidence of neither.
 | 4 | **`git commit` with a heredoc body** | Backticks inside the shell string were **executed as command substitution** and their content silently deleted from the document |
 | 5 | A codemod's directory filter | Skipped directories named `visualiser` and edited `src/pages/VisualizerLabPage.tsx` — a **file**, spelled with a z, protected by E-08 |
 | 6 | `String.replace(anchor, add + anchor)` while writing THIS SECTION | The replacement string contained a `$` before a backtick — a special pattern meaning "everything before the match" — and duplicated 130 lines of this file into itself |
+| 7 | **The scope-guard verifier** | Its write test used a REAL protected path. When a retired exception made the guard correctly allow it, the test WROTE to disk — reporting the failure and causing it in the same breath. The verifier had never been exercised in its own failure case |
 
 **Four, five and six are the ones this section is about, and they are the same shape as one to
 three: the operation completed, reported success, and did something other than what was asked.**
@@ -239,6 +240,62 @@ return value is used verbatim.
 **Six instances now.** Five were tools reporting success while wrong; this one was a document
 being written *about* tools reporting success while wrong, corrupted by the same class of fault
 it describes, and caught by the rule it was introducing.
+
+## Instance 7 — the verifier was itself unverified
+
+**A test that proves refusal must not perform the act it is testing.**
+
+`tools/verify-scope-guard.mjs` proves the scope guard refuses out-of-scope writes. Its write test
+was:
+
+```js
+writeInScope('src/pages/VisualizerLabPage.tsx', 'x')   // expect: throws
+```
+
+A **real protected file**, with real content, expecting to be stopped.
+
+On 3 September, retiring E-07 correctly removed that path from the exception register. The guard
+correctly allowed it. **And the test wrote its payload to disk** — a one-byte file called
+`VisualizerLabPage.tsx`, recreated seconds after the real one had been deleted.
+
+**It reported the failure and caused it in the same breath.** The console said `WROTE — FAIL`,
+which was accurate, and the file was on disk, which was the failure it was describing.
+
+### Why it belongs in this list rather than being a silly bug
+
+**It is the same family as instances 1 and 4, and the family is what matters:**
+
+| | The mechanism | What made it invisible |
+|---|---|---|
+| **1** | `import/no-cycle` | A rule that had never been shown to fire |
+| **4** | Backticks in a shell heredoc | A search whose empty result meant nothing |
+| **7** | **The verifier** | **A check that had never been shown to behave correctly when it fails** |
+
+ADR-022 says a rule is not enforcement until it has been shown to fail. **The verifier existed
+to apply that standard to the scope guard — and had never had it applied to itself.** It was
+exercised only in the passing case, where the guard refuses and the destructive line never runs.
+Its failure path had never executed once, in any test, ever.
+
+**A check written to catch unverified things is not exempt from being unverified.** That is the
+whole finding, and it generalises past this file: the last thing anyone tests is the test.
+
+### The fix
+
+The probe now names a path that has never existed:
+
+```js
+const PROBE = 'src/visualiser/__scope_guard_probe__.ts';
+```
+
+Out of scope, so it must be refused; nonexistent, so a write that gets through creates something
+identifiable rather than overwriting something real. And the test cleans up after itself:
+
+```js
+if (fs.existsSync(PROBE)) { fs.unlinkSync(PROBE); failures++; }
+```
+
+**Design a destructive test so that its failure is survivable**, because the failure case is
+exactly the one nobody rehearsed.
 
 ## The rule
 

@@ -143,3 +143,78 @@ and it should be paid down deliberately rather than discovered.
 
 **The measure of whether this log worked:** when the visualiser migrates, nothing on this list
 is found by accident.
+
+---
+
+# THE E-07 AUDIT — could any of these stop existing rather than wait?
+
+**Run 3 September 2026**, applying the lesson E-07 taught. That exception waited eight weeks for
+*"when wardrobes ship and the fork resolves"* and closed in an afternoon when someone asked a
+different question: **not "when is the milestone" but "could the excepted thing simply stop
+existing".** The z-spelled route was deleted and the exception had nothing left to except.
+
+Every row of the demolition log above, asked that question. **One pair can close early.**
+
+| # | Artefact | Could it stop existing before the visualiser migrates? |
+|---|---|---|
+| 1 | `data/products.ts` at its legacy path | **No.** Six E-08 files import four symbols from it. The exception exists because they cannot be edited, and nothing makes those imports go away except editing them |
+| 2 | `theme.ts` shim and its deprecated aliases | **No.** Six E-08 files import `../theme` directly. Same shape |
+| 3 | `pricing.ts` re-export shim | **No.** Four E-08 files import it by relative path |
+| **4** | **`components/Nav.tsx` re-export shim — E-11** | **YES. See below** |
+| **5** | **`BareLayout`** | **YES, with row 4 — they close together** |
+| 6 | `legacy-visualiser` element type | **No.** Needed for as long as any feature imports the visualiser, which is every phase from here |
+| 7 | The countdown's permanent floor | **Not an artefact.** It is a measurement, and it stopped being a gate — see PHASE_6_SCOPE item 5 |
+| 8 | Scope exclusions E-08/E-09/E-10/E-11 | **E-11 only**, with row 4 |
+| 9 | Naming rules at zero in scope | **No.** A consequence of the boundary, not a thing that can be removed |
+| 10 | The two naming rules' narrowness | **No.** Same |
+
+## Rows 4 and 5 — the early close, and its cost
+
+**E-11's Nav shim now has exactly one consumer.** It had two until `VisualizerLabPage.tsx` was
+deleted; what remains is:
+
+```
+src/pages/VisualiserPage.tsx:5   import { Nav } from '../components/Nav';
+```
+
+`BareLayout` has the same single consumer — it exists so that page, which mounts its own `<Nav />`
+and cannot be edited, does not render two.
+
+**Both artefacts exist for one 126-line file.** And that file is not protected IP. E-01 to E-04
+name the four files that are — `homography.ts`, `Canvas2DBlindRenderer.tsx`,
+`CornerPinOverlay.tsx`, `usePhotoUpload.ts` — and `VisualiserPage.tsx` is none of them. It is a
+route shell: it reads two query params, mounts `KlayConfigurator` and `VisualiserControls`, and
+renders a booking link.
+
+**So the question E-07 taught is answerable here: E-08 does not have to cover it.**
+
+Narrowing E-08 to exclude `VisualiserPage.tsx` would let that page:
+
+- import `Nav` from `@/app/layouts` — **E-11 retires, and `src/components/` disappears entirely
+  once `FormField` goes**;
+- mount under `RootLayout` like every other page — **`BareLayout` retires**;
+- keep its three `src/visualiser/*` imports, which are already permanent, already allowed, and
+  already counted.
+
+**The cost, stated honestly.** It requires an ADR narrowing E-08, exactly as E-07's close
+required retiring an exception — and it means editing a file currently protected, which is not a
+thing to do casually or as a side effect of an asset phase. **It is a real candidate, not a
+recommendation**, and it belongs to whoever opens the next phase.
+
+**What it is not:** it is not the visualiser migration arriving early. The renderers, the store,
+the lab and the protected IP are untouched by it. It is one page leaving a boundary that was
+drawn around a directory and swept up a route shell with it.
+
+## And the general form, now that two exceptions have shown it
+
+**E-07 could not close because its condition named someone else's milestone. The countdown floor
+could not gate because its number was someone else's to move.** Both were written over things
+outside the writer's control.
+
+> **An exception's exit condition, and a phase's, must be written over something the writer
+> controls. Otherwise it is a dependency wearing an exit condition's clothes.**
+
+Asked of E-08 itself: its condition is *"the visualiser migration is scheduled as its own
+project"* — someone else's decision, on someone else's timing. **That is the right condition for
+the renderers and the wrong one for everything the boundary caught by accident.** The audit above
+is what asking the question yields; it should be re-run whenever this log grows a row.
