@@ -47,7 +47,8 @@ import {
 import { SORT_OPTIONS, sortProducts, type SortOption } from '../lib/sortProducts';
 
 import { FilterRail } from './FilterRail';
-import { ProductCard } from './ProductCard';
+import { ShopCard } from './ShopCard';
+import { defaultSelection, type Selection } from '../configOptions';
 
 /** Wider than the 1240 the rest of the site uses, because the rail eats 200 of
  * it. At 1240 the grid would drop to three cards on a 1600 screen that has the
@@ -78,6 +79,23 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [shouldShowSortDropdown, setShowSortDropdown] = useState(false);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
+
+  /** WHICH CARD IS OPEN, and it is one at a time. Held here rather than in the
+   * card because "close the other one" is a decision only something that can
+   * see both can make — and because a customer reading two sets of options at
+   * once is reading neither. */
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  /** EVERY CARD'S SELECTION, KEPT BY ID.
+   *
+   * Lifted out of the cards for the same reason the homepage lifts it: closing
+   * a card unmounts its panel, and a configuration that evaporates when you
+   * close it is one the customer has to make twice. Keyed by product so opening
+   * a second card cannot inherit the first one's answers.
+   *
+   * Sparse — a product gets an entry the first time it is touched, and
+   * defaultSelection fills in for everything else. */
+  const [sel, setSel] = useState<Record<string, Selection>>({});
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -452,17 +470,19 @@ export default function ProductsPage() {
                   }}
                 >
                   {items.map(item => (
-                    <ProductCard
+                    <ShopCard
                       key={item.id}
-                      to={item.to}
-                      name={item.name}
-                      eyebrow={item.group}
-                      tagline={item.tagline}
-                      priceFrom={item.priceFrom}
-                      image={item.image}
-                      imagePosition={item.imagePosition}
-                      glyph={item.glyph}
-                      colours={item.colours}
+                      item={item}
+                      isOpen={openId === item.id}
+                      onToggle={() => setOpenId(id => (id === item.id ? null : item.id))}
+                      sel={sel[item.id] ?? defaultSelection(item)}
+                      onChange={(fieldId, choiceId) =>
+                        setSel(s => ({
+                          ...s,
+                          [item.id]: { ...(s[item.id] ?? defaultSelection(item)), [fieldId]: choiceId },
+                        }))
+                      }
+                      isNarrow={isNarrow}
                     />
                   ))}
                 </div>

@@ -62,6 +62,10 @@ export {
 
 // --- consumed by feature:home (P4-6) ----------------------------------------
 export { ProductGlyph } from './components/ProductGlyph';
+// The card configurator, which moved here from features/home when the shop grid
+// needed it too. Public because the homepage's range row is outside this
+// feature; see the component's own header for why this is its home.
+export { RangeConfigurator } from './components/RangeConfigurator';
 export { CATALOGUE, GROUPS, LIGHT_VALUES, type CatalogueItem, type Group } from './constants';
 export {
   defaultSelection,

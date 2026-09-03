@@ -118,7 +118,7 @@ import { useIsMobile, useMediaQuery, scrollToId } from '@/shared';
 import { useVisualiserStore } from '../../../visualiser/useVisualiserStore';
 import { TILE_GAP } from '../furniture';
 
-import { RangeConfigurator } from './RangeConfigurator';
+import { RangeConfigurator } from '@/features/catalogue';
 
 /** THE FOUR, AND THE ONE RULE THAT DECIDES THEM: no two may be the same kind of
  * object. A roller blind stands for every blind, a curtain for every soft

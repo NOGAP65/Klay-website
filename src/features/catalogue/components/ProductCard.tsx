@@ -55,6 +55,10 @@ export interface ProductCardProps {
   /** Tile height. The shop and the blind pages run different column counts, so
    * the height comes from the caller rather than being fixed here. */
   minHeight?: number;
+  /** Open something here rather than navigating — see PhotoTile.onActivate. */
+  onActivate?: () => void;
+  /** Overrides the chip's wording, so an open card can say Close. */
+  cta?: string;
 }
 
 export function ProductCard({
@@ -68,6 +72,8 @@ export function ProductCard({
   glyph,
   colours,
   minHeight = 420,
+  onActivate,
+  cta = 'Shop Now',
 }: ProductCardProps) {
   return (
     <PhotoTile
@@ -89,7 +95,8 @@ export function ProductCard({
       // is no price) was tried and overruled in favour of one consistent
       // action; sixteen of these still resolve to the enquiry form, and the fix
       // for that is price grids and product pages rather than a softer label.
-      cta="Shop Now"
+      cta={cta}
+      onActivate={onActivate}
       // Stacked under the label rather than beside it: these columns are narrow
       // enough that a chip taking its share off the right puts a name like
       // "Straight Drop Awnings" onto three lines.

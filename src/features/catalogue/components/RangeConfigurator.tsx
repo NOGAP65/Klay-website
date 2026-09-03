@@ -27,17 +27,24 @@ import * as routes from '@/config/routes';
 
 import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
+// MOVED HERE FROM features/home, and this is where it belonged all along: it
+// is built from the catalogue's own configOptions, priced by the catalogue's
+// priceFor, and turns into a catalogue cart line. It lived in home only because
+// the range row was the first thing to need it, and the shop page needing it
+// too made a cross-feature import out of what was really a misfiled component.
+//
+// Inside its own feature it reads the modules rather than the barrel — a
+// feature importing its own barrel is a cycle waiting to happen.
 import {
   configuredLine,
-
   fieldsFor,
   priceFor,
   type ConfigChoice,
   type ConfigField,
   type Selection,
-} from '@/features/catalogue';
+} from '../configOptions';
 
-import type { CatalogueItem } from '@/features/catalogue';
+import type { CatalogueItem } from '../constants';
 
 /** The panel's height, shared by all fourteen so every gold button lands on one
  * line. Derived: TWO fields at 52 plus their gap, the price row, the 52px button
