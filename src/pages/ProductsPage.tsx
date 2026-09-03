@@ -24,7 +24,7 @@
 // particular frame.
 // ---------------------------------------------------------------------------
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Nav } from '../components/Nav';
 import { Footer } from '../components/Footer';
@@ -98,7 +98,24 @@ export default function ProductsPage() {
    * wait: the outgoing panel has somewhere to go. */
   const [isClosing, setClosing] = useState(false);
 
+  /** WHERE EVERY CARD WAS BEFORE THE CLICK — the F in FLIP. Captured on the
+   * click rather than in an effect, because by the time an effect runs the
+   * browser has already laid the new arrangement out and the old positions are
+   * gone. */
+  const prevRects = useRef<Map<string, DOMRect>>(new Map());
+  const snapshot = () => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    const m = new Map<string, DOMRect>();
+    [...grid.children].forEach((el, i) => {
+      const item = items[i];
+      if (item) m.set(item.id, el.getBoundingClientRect());
+    });
+    prevRects.current = m;
+  };
+
   const toggle = (id: string) => {
+    snapshot();
     if (openId !== id) {
       setClosing(false);
       setOpenId(id);
@@ -106,6 +123,51 @@ export default function ProductsPage() {
     }
     setClosing(true);
   };
+
+  /** INVERT AND PLAY, in a layout effect so it runs after the browser has
+   * placed everything and before it paints — a useEffect here would let one
+   * frame of the new arrangement through, which is the jump this exists to
+   * remove.
+   *
+   * The layout is correct throughout; only a transform moves, so nothing
+   * reflows and the cards that shift cost almost nothing to animate. */
+  useLayoutEffect(() => {
+    const grid = gridRef.current;
+    const prev = prevRects.current;
+    if (!grid || prev.size === 0) return;
+    prevRects.current = new Map();
+
+    // Somebody who has asked their machine not to animate things gets the new
+    // arrangement without any of this.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const frames: number[] = [];
+    [...grid.children].forEach((node, i) => {
+      const item = items[i];
+      const before = item && prev.get(item.id);
+      if (!before) return;
+      const el = node as HTMLElement;
+      const after = el.getBoundingClientRect();
+      const dx = before.left - after.left;
+      const dy = before.top - after.top;
+      // A card that did not move needs no help, and transforming it would only
+      // put it on its own layer for nothing.
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+
+      el.style.transition = 'none';
+      el.style.transform = `translate(${dx}px, ${dy}px)`;
+      frames.push(requestAnimationFrame(() => {
+        // The box's own duration and easing, so the card opening and the cards
+        // moving aside read as one motion rather than two that overlap.
+        el.style.transition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)';
+        el.style.transform = '';
+      }));
+    });
+    return () => frames.forEach(cancelAnimationFrame);
+    // items is deliberately absent: this must run for an open or a close, not
+    // for a filter change, which replaces the cards rather than moving them.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openId, isClosing]);
 
   useEffect(() => {
     if (!isClosing) return;
