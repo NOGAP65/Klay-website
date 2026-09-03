@@ -58,6 +58,11 @@ import type { CartItem } from '@/features/cart'
 export type FieldId =
   | 'variant' | 'colour' | 'hardware' | 'size' | 'operation'
   | 'width'
+  // Where the thing is going. Not a property of the product — a property of the
+  // job — and 'locationOther' is the free text behind the Other choice, which is
+  // a stored answer rather than a field: fieldsFor never emits it, and it rides
+  // in options and the line id like the two above.
+  | 'location' | 'locationOther'
 
 export interface ConfigChoice {
   /** Stable id. For the roller's variant these ARE the pricing blind types, so
@@ -87,6 +92,26 @@ const SIZE_CHOICES: ConfigChoice[] = [
   { id: 'small', label: 'Small' },
   { id: 'medium', label: 'Medium' },
   { id: 'large', label: 'Large' },
+]
+
+/** WHERE IT IS GOING. One list for the whole range, because the question is
+ * about the room and not the product: a roller, a shutter and a wardrobe are all
+ * going into somebody's bedroom or somebody's garage.
+ *
+ * Seven and an Other. The list covers nine cases in ten and is quicker than
+ * typing for all of them; the tenth is why Other exists, since a list that
+ * cannot say "garage", "caravan" or "shopfront" would push that customer into
+ * picking the nearest wrong room — worse than no answer, because it reads as
+ * one. Other opens a text box; see the note in RangeConfigurator's Field. */
+const LOCATION_CHOICES: ConfigChoice[] = [
+  { id: 'living', label: 'Living room' },
+  { id: 'bedroom', label: 'Bedroom' },
+  { id: 'kitchen', label: 'Kitchen' },
+  { id: 'dining', label: 'Dining' },
+  { id: 'bathroom', label: 'Bathroom' },
+  { id: 'study', label: 'Study' },
+  { id: 'outdoor', label: 'Outdoor' },
+  { id: 'other', label: 'Other' },
 ]
 
 const OPERATION_CHOICES: ConfigChoice[] = [
@@ -285,6 +310,11 @@ export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
   if (options.operation) {
     fields.push({ id: 'operation', label: 'Operation', kind: 'chips', choices: OPERATION_CHOICES })
   }
+  // LAST, AND ON EVERYTHING. Everything above is a property of the product;
+  // this is a property of the job, so it comes after the thing has been
+  // specified rather than interrupting the specifying. No product opts out —
+  // every one of them goes somewhere.
+  fields.push({ id: 'location', label: 'Location', kind: 'chips', choices: LOCATION_CHOICES })
   return fields
 }
 
@@ -295,7 +325,15 @@ export type Selection = Partial<Record<FieldId, string>>
  * answer five questions to find out what something costs. */
 export const defaultSelection = (item: CatalogueItem): Selection => {
   const sel: Selection = {}
-  for (const f of fieldsFor(item)) sel[f.id] = f.choices[0]?.id
+  for (const f of fieldsFor(item)) {
+    // LOCATION IS THE ONE EXCEPTION, and it is deliberate. Defaulting it would
+    // have the card claim the customer had said "Living room" when they had said
+    // nothing — and unlike a fabric or a size, which have a sensible house
+    // choice, a room has no default that is true more often than it is false.
+    // The row shows "Select" until it is answered.
+    if (f.id === 'location') continue
+    sel[f.id] = f.choices[0]?.id
+  }
   return sel
 }
 
@@ -350,7 +388,10 @@ export const configuredLine = (item: CatalogueItem, sel: Selection): ConfiguredL
     // The whole selection, not just the product — it is what the cart builds
     // its line id from, so two different configurations of one product have to
     // produce two different strings or they collapse into one line.
-    blindType: [item.id, ...fields.map(f => sel[f.id] ?? '')].join(':'),
+    // locationOther rides along: two lines that differ only by "garage" and
+    // "shed" behind the same Other choice are two different jobs, and without
+    // it they would collapse into one line in the cart.
+    blindType: [item.id, ...fields.map(f => sel[f.id] ?? ''), sel.locationOther ?? ''].join(':'),
     fabricColour: labelOf(fields, 'colour', sel) ?? AT_MEASURE,
     hardwareColour: labelOf(fields, 'hardware', sel) ?? AT_MEASURE,
     windowSize: isWindowSize(sel.size) ? sel.size : 'medium',
@@ -359,7 +400,11 @@ export const configuredLine = (item: CatalogueItem, sel: Selection): ConfiguredL
     priceOnMeasure: price === null,
     options: fields.map(f => ({
       label: f.label,
-      value: f.choices.find(c => c.id === sel[f.id])?.label ?? AT_MEASURE,
+      // What the customer typed beats the word Other, which tells the workshop
+      // nothing. Falls back to Other where they chose it and typed nothing.
+      value: f.id === 'location' && sel.location === 'other' && sel.locationOther?.trim()
+        ? sel.locationOther.trim()
+        : f.choices.find(c => c.id === sel[f.id])?.label ?? AT_MEASURE,
     })),
   }
 }
