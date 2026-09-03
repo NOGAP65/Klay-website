@@ -137,7 +137,10 @@ const HERO_IDS = [
   'roller-blinds',
   'curtains',
   'wardrobes',
-  'folding-arm-awnings',
+  // ZIP SCREENS RATHER THAN THE AWNING, and the rule above is untouched by the
+  // swap: both are the outdoor card, so the row still holds no two of the same
+  // kind of object. It is the business's call about which one leads outdoor.
+  'zip-guide-systems',
 ];
 
 const RANGE: CatalogueItem[] = HERO_IDS.map(id => CATALOGUE.find(i => i.id === id)).filter(
