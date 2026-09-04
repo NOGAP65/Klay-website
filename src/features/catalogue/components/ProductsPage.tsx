@@ -50,10 +50,14 @@ import { FilterRail } from './FilterRail';
 import { ShopCard, COLUMN_GAP, COLUMN_MIN } from './ShopCard';
 import { defaultSelection, type Selection } from '../configOptions';
 
-/** Wider than the 1240 the rest of the site uses, because the rail eats 200 of
- * it. At 1240 the grid would drop to three cards on a 1600 screen that has the
- * room for four. */
-const PAGE_MAX = 1440;
+/** Wider than the 1240 the rest of the site uses, and now wider again.
+ *
+ * The rail eats 200 of it before a card is drawn, and the card is a photograph
+ * beside a column of questions. At 1440 the grid was 1200, two cards were 586
+ * each, and the photograph came out 320 square. At 1600 the grid is 1360, the
+ * cards are 666, and the photograph is 360 — half again the area, on a screen
+ * that had the room all along. */
+const PAGE_MAX = 1600;
 
 const RAIL_WIDTH = 200;
 

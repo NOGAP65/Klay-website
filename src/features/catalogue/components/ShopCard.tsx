@@ -265,7 +265,10 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             textDecoration: 'none',
             // Half the card each on a desktop. Stacked, the picture takes the
             // full width and its own ratio decides its height.
-            flex: stacked ? '0 0 auto' : '1 1 50%',
+            // More of the card than the questions get. A square frame is as
+            // tall as it is wide, so width is the only way to give the
+            // photograph height — and the picture is the thing being judged.
+            flex: stacked ? '0 0 auto' : '1 1 56%',
             minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
@@ -327,7 +330,16 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             // deeper crop.
             width: '100%',
             flex: '0 0 auto',
-            aspectRatio: stacked ? '4 / 3' : '3 / 4',
+            // SQUARE, BECAUSE THE PHOTOGRAPHS ARE SQUARE. They are shot 900x900
+            // with the product centred and clear space on all four sides; a 3:4
+            // frame and `object-fit: cover` threw a quarter of the width away,
+            // which took a slice off each end of a blind and cut into both
+            // curtain panels. 1:1 against a 1:1 source crops nothing.
+            //
+            // Stacked it stays landscape: on a phone the picture is a band
+            // across the full width, and a square one there would push the
+            // questions most of a screen down.
+            aspectRatio: stacked ? '4 / 3' : '1 / 1',
             // KEEPS THE MULTIPLY INSIDE THE FRAME. Without it the dye layer
             // composites against whatever is painted beneath — the card, the
             // grid, the page — and one blind would tint the card beside it.
@@ -518,7 +530,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             photograph set, and pushes its own price and Add to cart to the
             bottom of it — so every card in a row ends on one line whatever it
             asks. */}
-        <div style={{ flex: stacked ? '1 1 auto' : '1 1 50%', minWidth: 0, display: 'flex', minHeight: 0 }}>
+        <div style={{ flex: stacked ? '1 1 auto' : '1 1 44%', minWidth: 0, display: 'flex', minHeight: 0 }}>
           <RangeConfigurator item={item} sel={sel} onChange={onChange} dense />
         </div>
       </div>

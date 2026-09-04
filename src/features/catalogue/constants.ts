@@ -27,7 +27,7 @@
 
 import * as routes from '@/config/routes';
 
-import { RYNAMIC_COLOURS, CURTAIN_COLOURS } from '../../data/products'
+import { RYNAMIC_COLOURS, CURTAIN_COLOURS, SLAT_COLOURS } from '../../data/products'
 import { WARDROBE_COLOURS } from '@/features/visualiser'
 
 import { PRODUCTS } from './products'
@@ -188,6 +188,9 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Horizontal slats that tilt. Aluminium, timber or faux.',
     to: enquire('Venetian Blinds'),
     glyph: 'venetian-blinds',
+    // SOLD BY COLOUR. The slat material is a specification, not something a
+    // customer browses — see SLAT_COLOURS.
+    colours: SLAT_COLOURS,
     light: ['Blockout', 'Light filter'],
   },
   {
@@ -197,6 +200,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Louvred joinery, fitted to the opening and built to last.',
     to: enquire('Plantation Shutters'),
     glyph: 'shutters',
+    colours: SLAT_COLOURS,
     image: '/images/products/plantation-shutters.webp',
     light: ['Blockout', 'Light filter'],
   },

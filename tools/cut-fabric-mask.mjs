@@ -71,6 +71,9 @@ import { chromium } from '../node_modules/playwright-core/index.mjs';
 // ---------------------------------------------------------------------------
 const argv = process.argv.slice(2);
 const CURTAIN = argv.includes('--curtain');
+/** A louvred blind — venetian or plantation shutter. Only the slats take
+ * colour; the gaps between them are the view. */
+const SLATS = argv.includes('--slats');
 /** `--box top,bottom,left,right` as fractions of the frame — the drop, read off
  * the photograph. See the note in the curtain branch on why it is given rather
  * than found. */
@@ -100,7 +103,7 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage();
 
-const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, BOX }) => {
+const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX }) => {
   const im = new Image();
   im.src = 'data:image/png;base64,' + b64;
   await im.decode();
@@ -124,6 +127,89 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, BOX }) => {
     const mn = Math.min(px[i], px[i + 1], px[i + 2]);
     return mx === 0 ? 0 : (mx - mn) / mx;
   };
+
+  // --- SLATS: a venetian or a shutter, and an early return ----------------
+  //
+  // A LOUVRED BLIND IS NOT A SHEET OF CLOTH, and treating it as one is wrong in
+  // a way the roller cutter cannot see. Between every slat is a GAP showing the
+  // garden, and dyeing the blind's rectangle tints the view through it — run
+  // against this photograph, the flood fill took slats and gaps together and
+  // turned the trees pink.
+  //
+  // The slats are what takes colour, and they are horizontal bars spanning the
+  // blind — which is the same shape test the roller's headrail already uses,
+  // applied forty times instead of twice. A row counts as slat if most of its
+  // width is bright and near-neutral; a row through a gap is the garden, which
+  // is neither.
+  //
+  // The box is given rather than found, for the reason the curtains give: the
+  // white architrave round this window is the same tone as the slats, so no
+  // threshold separates them, and the top slats are blown out brighter than any
+  // upper bound that keeps the view out.
+  if (SLATS) {
+    const [T0, B0, L0, R0] = BOX ?? [0.11, 0.70, 0.17, 0.82];
+    const bT = Math.round(H * T0), bB = Math.round(H * B0);
+    const bL = Math.round(W * L0), bR = Math.round(W * R0);
+
+    // A SLAT IS NEUTRAL; A GAP IS NOT. Through the gaps is garden — green, and
+    // measurably more saturated than a painted slat — or sky, which is brighter
+    // than one. At sat < 0.22 and no upper bound the first pass took both and
+    // the whole blind went pink, view included, which on Charcoal would have
+    // lost the one thing a tilted venetian is for.
+    const slatPx = (x, y) => S_(x, y) < 0.11 && L_(x, y) > 150 && L_(x, y) < 236;
+    const m = new Uint8Array(W * H);
+    let rows = 0;
+    for (let y = bT; y <= bB; y++) {
+      let n = 0;
+      for (let x = bL; x <= bR; x++) if (slatPx(x, y)) n++;
+      if (n / (bR - bL) < 0.45) continue;     // a gap: the garden shows through
+      rows++;
+      // THE WHOLE ROW, NOT THE PIXELS THAT PASSED. A slat has a lit top face
+      // and a shadowed leading edge, and the edge fails any test the face
+      // passes — so marking only the qualifying pixels dyed half of each slat
+      // and left the other half cream, which reads as a fault rather than a
+      // colour. The row-level decision is the honest one: this row IS a slat,
+      // across its width, because most of its width says so.
+      for (let x = bL; x <= bR; x++) m[y * W + x] = 1;
+    }
+
+    let n = 0, x0 = W, y0 = H, x1 = 0, y1 = 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (m[y * W + x]) {
+      n++;
+      if (x < x0) x0 = x; if (x > x1) x1 = x;
+      if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    const png = (paint) => {
+      const cc = document.createElement('canvas');
+      cc.width = W; cc.height = H;
+      paint(cc.getContext('2d'));
+      return cc.toDataURL('image/png');
+    };
+    const maskUrl = png((ctx) => {
+      const d = ctx.createImageData(W, H);
+      for (let p = 0; p < W * H; p++) {
+        d.data[p * 4] = d.data[p * 4 + 1] = d.data[p * 4 + 2] = 255;
+        d.data[p * 4 + 3] = m[p] ? 255 : 0;
+      }
+      ctx.putImageData(d, 0, 0);
+    });
+    const overlayUrl = png((ctx) => {
+      ctx.drawImage(im, 0, 0, W, H);
+      const d = ctx.getImageData(0, 0, W, H);
+      for (let p = 0; p < W * H; p++) {
+        if (!m[p]) continue;
+        d.data[p * 4]     = Math.round(d.data[p * 4] * 0.35 + 166);
+        d.data[p * 4 + 1] = Math.round(d.data[p * 4 + 1] * 0.35);
+        d.data[p * 4 + 2] = Math.round(d.data[p * 4 + 2] * 0.35 + 91);
+      }
+      ctx.putImageData(d, 0, 0);
+    });
+    return {
+      W, H, box: { L: x0, R: x1, T: y0, B: y1 },
+      raw: 0, cloth: n, metal: 0, bars: rows, barBands: `${rows} slat rows`,
+      grew: 0, mask: maskUrl, hardware: null, overlay: overlayUrl,
+    };
+  }
 
   // --- CURTAINS: their own geometry, and an early return ------------------
   if (CURTAIN) {
@@ -446,7 +532,7 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, BOX }) => {
     hardware: alphaPng(hw),
     overlay: oc.toDataURL('image/png'),
   };
-}, { b64, SIZE, CURTAIN, BOX });
+}, { b64, SIZE, CURTAIN, SLATS, BOX });
 
 if (res.error) { console.error('  ' + res.error); await browser.close(); process.exit(1); }
 const save = (u, p) => writeFileSync(p, Buffer.from(u.split(',')[1], 'base64'));
