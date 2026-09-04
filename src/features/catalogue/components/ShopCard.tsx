@@ -35,6 +35,8 @@
 
 import { Link } from 'react-router-dom';
 
+import { useIsMobile } from '@/shared';
+
 import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 
 import { type Selection } from '../configOptions';
@@ -128,7 +130,27 @@ export const columnWidth = (gridWidth: number): number => {
   return (gridWidth - (cols - 1) * COLUMN_GAP) / cols;
 };
 
+/** THE THREE THINGS TRUE OF EVERY PRODUCT, and they fill the space capping the
+ * picture at 3:4 leaves under it.
+ *
+ * Not filler: each is already claimed elsewhere on the site — the warranty on
+ * How It Works, the installation in the pricing breakdown, the coverage in
+ * config/site — and together they answer what a customer wonders while looking
+ * at a price. Who fits it, what happens if it breaks, where it is made.
+ *
+ * Ella puts the same three in the same place, which is what suggested it. */
+const ASSURANCES = [
+  'Professional installation included',
+  '5-year warranty',
+  'Made to measure in Melbourne',
+];
+
 export function ShopCard({ item, sel, onChange }: ShopCardProps) {
+  // SIDE BY SIDE IS A DESKTOP IDEA. At 375px the row gave the photograph 190px
+  // and the questions 190px and neither worked — chips wrapped one per line and
+  // the picture was a postage stamp. Under the phone breakpoint the two columns
+  // become two rows.
+  const stacked = useIsMobile();
   const { isHovered, bind } = useHover();
   const lit = isHovered;
 
@@ -202,12 +224,23 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
       </Link>
 
       {/* THE TWO COLUMNS. */}
-      <div style={{ display: 'flex', gap: space.item, flex: '1 1 auto', minHeight: 0, alignItems: 'stretch' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: stacked ? 'column' : 'row',
+          gap: space.item,
+          flex: '1 1 auto',
+          minHeight: 0,
+          alignItems: 'stretch',
+        }}
+      >
         <Link
           to={item.to}
           style={{
             textDecoration: 'none',
-            flex: '1 1 46%',
+            // Half the card each on a desktop. Stacked, the picture takes the
+            // full width and its own ratio decides its height.
+            flex: stacked ? '0 0 auto' : '1 1 50%',
             minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
@@ -246,8 +279,30 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             //
             // The crop rules do the rest: cover, anchored high, so a room stays
             // a room whatever shape the column turns out to be.
-            flex: '1 1 auto',
-            minHeight: 200,
+            // IT FILLS THE COLUMN BUT MAY NOT BECOME A SLIVER. Filling alone
+            // meant the height came from the questions beside it, and six of
+            // them make a column 500px tall — so a photograph 217 wide came out
+            // at 0.41, a letterbox stood on its end. A kitchen does not survive
+            // that: the blind ends up a strip at the top with a metre of
+            // benchtop under it.
+            //
+            // 3:4 is the tallest it may go. Past that the height goes to white
+            // space under the picture instead of into the crop — which is what
+            // Ella does, its picture 400x290 in a 478 card with the column below
+            // it simply empty. A photograph that fits badly is worse than a card
+            // with room in it.
+            //
+            // Stacked, it is a landscape band across the full width instead.
+            // `flex: 1 1 auto` AND an aspect ratio is a contradiction, and flex
+            // wins: the picture stretched to the column and the ratio was
+            // ignored, which is how it came out at 0.51 with the cap supposedly
+            // applied. It is `0 0 auto` and a ratio, full stop — the height
+            // comes from the width, and whatever the questions beside it need
+            // beyond that is white space under the photograph rather than a
+            // deeper crop.
+            width: '100%',
+            flex: '0 0 auto',
+            aspectRatio: stacked ? '4 / 3' : '3 / 4',
             // A MISSING PHOTOGRAPH IS AN EMPTY FRAME, NOT A BLACK ONE. On the
             // old landscape tile the charcoal fallback was a smallish dark
             // rectangle; at 4:5 it is 435px tall and was out-shouting every
@@ -304,14 +359,42 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
         {/* THE NAME IS NOT HERE ANY MORE — it moved to the head of the card,
             above both columns. Under the picture it read as a caption on the
             photograph; across the top it says which product the whole card is
-            about, which is a name's job. */}
+            about, which is a name's job.
+
+            WHAT IS HERE INSTEAD fills the space the 3:4 cap leaves under the
+            photograph — see ASSURANCES. Stacked there is no such space, so they
+            run as one line under the picture rather than a stack beside the
+            questions. */}
+          <div
+            style={{
+              marginTop: space.snug,
+              display: 'flex',
+              flexDirection: stacked ? 'row' : 'column',
+              flexWrap: 'wrap',
+              gap: stacked ? `0 ${space.snug}px` : space.hairline,
+            }}
+          >
+            {ASSURANCES.map(a => (
+              <span
+                key={a}
+                style={{
+                  ...typeScale.micro,
+                  letterSpacing: 'normal',
+                  textTransform: 'none',
+                  color: tokens.inkSoft,
+                }}
+              >
+                {a}
+              </span>
+            ))}
+          </div>
         </Link>
 
         {/* THE QUESTIONS, in the other column. It fills the height the
             photograph set, and pushes its own price and Add to cart to the
             bottom of it — so every card in a row ends on one line whatever it
             asks. */}
-        <div style={{ flex: '1 1 54%', minWidth: 0, display: 'flex', minHeight: 0 }}>
+        <div style={{ flex: stacked ? '1 1 auto' : '1 1 50%', minWidth: 0, display: 'flex', minHeight: 0 }}>
           <RangeConfigurator item={item} sel={sel} onChange={onChange} dense />
         </div>
       </div>

@@ -323,7 +323,7 @@ function DenseField({
         {divider && (
           <div
             aria-hidden="true"
-            style={{ height: 1.5, margin: '9px 0', background: tokens.accent, opacity: 0.32 }}
+            style={{ height: 1.5, margin: '6px 0', background: tokens.accent, opacity: 0.32 }}
           />
         )}
       </div>
@@ -406,7 +406,7 @@ function DenseField({
       {divider && (
         <div
           aria-hidden="true"
-          style={{ height: 1.5, margin: '9px 0', background: tokens.accent, opacity: 0.32 }}
+          style={{ height: 1.5, margin: '6px 0', background: tokens.accent, opacity: 0.32 }}
         />
       )}
     </div>
