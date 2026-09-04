@@ -41,6 +41,9 @@ import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds
 
 import { type Selection } from '../configOptions';
 import { fabricShot, FABRIC_SHOT_DIR } from '../fabricShots';
+// Relative, like the feature's other three importers of this file — see the
+// note at its head on why it has not moved.
+import { HARDWARE_HEX } from '../../../data/products';
 import type { CatalogueItem } from '../constants';
 
 import { ProductGlyph } from './ProductGlyph';
@@ -153,6 +156,13 @@ const ASSURANCES = [
  * where nothing is chosen, which is a no-op and leaves the fabric as shot. */
 const dyeColour = (item: CatalogueItem, sel: Selection): string =>
   item.colours?.find(c => c.name === sel.colour)?.hex ?? '#FFFFFF';
+
+/** THE COLOUR THE HEADRAIL AND BOTTOM BAR ARE PAINTED. The same three the
+ * visualiser uses, so a blind specified here and a blind specified there are the
+ * same blind. Chrome where nothing is chosen, which is what the photographs were
+ * taken with. */
+const hardwareColour = (sel: Selection): string =>
+  HARDWARE_HEX[sel.hardware as keyof typeof HARDWARE_HEX] ?? HARDWARE_HEX.chrome;
 
 export function ShopCard({ item, sel, onChange }: ShopCardProps) {
   // SIDE BY SIDE IS A DESKTOP IDEA. At 375px the row gave the photograph 190px
@@ -398,6 +408,63 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                 transition: 'transform 0.7s ease, background 0.25s ease',
               }}
             />
+          )}
+
+          {/* THE HARDWARE, PAINTED RATHER THAN DYED — and the distinction is
+              real. Cloth is dyed, so the colour goes through the weave and
+              multiply is right. Metal is anodised or powder-coated: the surface
+              IS the colour, and a highlight on chrome is not a lighter chrome,
+              it is a reflection. So this paints the swatch at full strength and
+              a soft-light pass puts the original's specular back over it, which
+              keeps the tube reading as a tube. */}
+          {shot?.hardware && (
+            <>
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: hardwareColour(sel),
+                  WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.hardware})`,
+                  maskImage: `url(${FABRIC_SHOT_DIR}/${shot.hardware})`,
+                  WebkitMaskSize: 'cover',
+                  maskSize: 'cover',
+                  WebkitMaskPosition: item.imagePosition ?? '50% 45%',
+                  maskPosition: item.imagePosition ?? '50% 45%',
+                  pointerEvents: 'none',
+                  transform: lit ? 'scale(1.04)' : 'scale(1)',
+                  transition: 'transform 0.7s ease, background 0.25s ease',
+                }}
+              />
+              {/* The specular, back on top. Without it a chrome tube is a flat
+                  grey rectangle and the blind stops looking photographed. */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundImage: `url(${FABRIC_SHOT_DIR}/${shot.file})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: item.imagePosition ?? '50% 45%',
+                  mixBlendMode: 'soft-light',
+                  // 0.4, NOT 0.85. The headrail photographs as bright chrome, so
+                  // soft-lighting it over a dark swatch lifts the dark badly:
+                  // at 0.85, Black (#303030, rgb 48) rendered at rgb 99 — grey,
+                  // not black, and barely separable from chrome. This is enough
+                  // to keep the tube's roundness without the colour losing.
+                  opacity: 0.4,
+                  WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.hardware})`,
+                  maskImage: `url(${FABRIC_SHOT_DIR}/${shot.hardware})`,
+                  WebkitMaskSize: 'cover',
+                  maskSize: 'cover',
+                  WebkitMaskPosition: item.imagePosition ?? '50% 45%',
+                  maskPosition: item.imagePosition ?? '50% 45%',
+                  pointerEvents: 'none',
+                  transform: lit ? 'scale(1.04)' : 'scale(1)',
+                  transition: 'transform 0.7s ease',
+                }}
+              />
+            </>
           )}
 
           {/* NO SCRIM. The vignette existed to give the photograph an edge
