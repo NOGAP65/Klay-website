@@ -25,10 +25,10 @@ if (!existsSync(MANIFEST)) {
 
 const src = readFileSync(MANIFEST, 'utf8');
 const entries = [...src.matchAll(
-  /\{ product: '([^']+)', fabric: '([^']+)', file: '([^']+)', mask: (null|'[^']+'), hardware: (null|'[^']+') \},/g,
+  /\{ product: '([^']+)', fabric: (null|'[^']+'), file: '([^']+)', mask: (null|'[^']+'), hardware: (null|'[^']+'), dye: [\d.]+ \},/g,
 )].map(m => ({
   product: m[1],
-  fabric: m[2],
+  fabric: m[2] === 'null' ? null : m[2].slice(1, -1),
   file: m[3],
   mask: m[4] === 'null' ? null : m[4].slice(1, -1),
   hardware: m[5] === 'null' ? null : m[5].slice(1, -1),

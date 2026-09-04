@@ -122,9 +122,15 @@ const OPERATION_CHOICES: ConfigChoice[] = [
 const HARDWARE_CHOICES: ConfigChoice[] = HARDWARE_OPTIONS.map(o => ({ id: o.id, label: o.label }))
 
 interface ProductOptions {
-  /** The first real question about this product, and what to call it. */
-  variantLabel: string
-  variants: ConfigChoice[]
+  /** The first real question about this product, and what to call it.
+   *
+   * BOTH OPTIONAL, because some products do not have one. A venetian is a
+   * venetian: the slat material was a question the photography could not answer
+   * and the product does not actually pose. A question whose answer changes
+   * nothing is worse than no question — it asks the customer to decide and then
+   * ignores them. */
+  variantLabel?: string
+  variants?: ConfigChoice[]
   /** Offered only where there is visible metalwork to choose — a track, a
    * headrail, a frame. A wardrobe's hinges are not a decision made on a card. */
   hardware?: boolean
@@ -177,15 +183,13 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     size: true,
     operation: true,
   },
+  // ONE PHOTOGRAPH, SO NO SLAT QUESTION. It offered Aluminium / Timber / Faux
+  // and the product does not come that way — see the note on variants.
   'venetian-blinds': {
-    variantLabel: 'Slat',
-    variants: [v('aluminium', 'Aluminium'), v('timber', 'Timber'), v('faux', 'Faux timber')],
     size: true,
     operation: true,
   },
   'plantation-shutters': {
-    variantLabel: 'Material',
-    variants: [v('pvc', 'PVC'), v('timber', 'Timber'), v('aluminium', 'Aluminium')],
     size: true,
   },
   'vertical-blinds': {
@@ -200,7 +204,9 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   },
   curtains: {
     variantLabel: 'Fabric',
-    variants: [v('sheer', 'Sheer'), v('lightfilter', 'Light filter'), v('blockout', 'Blockout')],
+    // Two, not three. There is a photograph of a sheer and a photograph of a
+    // blockout; there is no light filter, so it is not offered.
+    variants: [v('sheer', 'Sheer'), v('blockout', 'Blockout')],
     hardware: true,
     size: true,
     operation: true,
@@ -215,14 +221,10 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     operation: true,
   },
   'zip-guide-systems': {
-    variantLabel: 'Screen',
-    variants: [v('mesh', 'Sunscreen mesh'), v('blockout', 'Blockout PVC')],
     size: true,
     operation: true,
   },
   'roller-shutters': {
-    variantLabel: 'Slat',
-    variants: [v('aluminium', 'Aluminium'), v('insulated', 'Insulated')],
     size: true,
     operation: true,
   },
@@ -273,9 +275,15 @@ const FALLBACK: ProductOptions = {
  * the question that changes what everything below it means. */
 export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
   const options = PRODUCT_OPTIONS[item.id] ?? FALLBACK
-  const fields: ConfigField[] = [
-    { id: 'variant', label: options.variantLabel, kind: 'chips', choices: options.variants },
-  ]
+  const fields: ConfigField[] = []
+  if (options.variants?.length) {
+    fields.push({
+      id: 'variant',
+      label: options.variantLabel ?? 'Type',
+      kind: 'chips',
+      choices: options.variants,
+    })
+  }
   if (item.colours) {
     fields.push({
       id: 'colour',
@@ -325,15 +333,16 @@ export type Selection = Partial<Record<FieldId, string>>
  * answer five questions to find out what something costs. */
 export const defaultSelection = (item: CatalogueItem): Selection => {
   const sel: Selection = {}
-  for (const f of fieldsFor(item)) {
-    // LOCATION IS THE ONE EXCEPTION, and it is deliberate. Defaulting it would
-    // have the card claim the customer had said "Living room" when they had said
-    // nothing — and unlike a fabric or a size, which have a sensible house
-    // choice, a room has no default that is true more often than it is false.
-    // The row shows "Select" until it is answered.
-    if (f.id === 'location') continue
-    sel[f.id] = f.choices[0]?.id
-  }
+  // EVERY FIELD ARRIVES ANSWERED, LOCATION INCLUDED — and that reverses an
+  // earlier call worth recording. Location was left blank on the reasoning that
+  // defaulting it makes the card claim the customer said "Living room" when they
+  // said nothing, which is true. What it missed is the setting: fourteen cards
+  // each showing one unanswered row reads as fourteen incomplete forms, and the
+  // customer cannot tell which of them is waiting on them.
+  //
+  // Every other field makes the same bargain — a sensible default, changed by
+  // anyone who cares — and the measure appointment confirms the room anyway.
+  for (const f of fieldsFor(item)) sel[f.id] = f.choices[0]?.id
   return sel
 }
 

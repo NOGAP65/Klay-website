@@ -19,8 +19,9 @@
 export interface FabricShot {
   /** Catalogue item id. */
   product: string;
-  /** Variant id within that product -- its 'Fabric type' or equivalent. */
-  fabric: string;
+  /** Variant id within that product -- its 'Fabric type' or equivalent. Null
+   * where the product has no fabric type and this is its one photograph. */
+  fabric: string | null;
   /** File name within /images/fabrics. */
   file: string;
   /** Mask file name, or null where the variant IS the material and there is
@@ -30,20 +31,34 @@ export interface FabricShot {
    * paint them. Metal must not take the fabric's dye, and it has a colour card
    * of its own. */
   hardware: string | null;
+  /** How fully this fabric takes its dye, 0..1. A blockout is opaque so its
+   * colour is the colour; a sheer is mostly air with daylight through it, so
+   * the same dye lands pale. Without this, Black blockout and Black sheer
+   * render identically and the fabric row appears to do nothing on exactly the
+   * colours where it matters most. */
+  dye: number;
 }
 
 export const FABRIC_SHOT_DIR = '/images/fabrics';
 
 export const FABRIC_SHOTS: FabricShot[] = [
-  { product: 'roller-blinds', fabric: 'blockout', file: 'roller-blinds-blockout.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png' },
-  { product: 'roller-blinds', fabric: 'dual', file: 'roller-blinds-dual.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png' },
-  { product: 'roller-blinds', fabric: 'lightfilter', file: 'roller-blinds-lightfilter.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png' },
-  { product: 'roller-blinds', fabric: 'sunscreen', file: 'roller-blinds-sunscreen.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png' },
+  { product: 'curtains', fabric: 'blockout', file: 'curtains-blockout.webp', mask: null, hardware: null, dye: 1 },
+  { product: 'curtains', fabric: 'sheer', file: 'curtains-sheer.webp', mask: null, hardware: null, dye: 0.38 },
+  { product: 'plantation-shutters', fabric: null, file: 'plantation-shutters.webp', mask: null, hardware: null, dye: 1 },
+  { product: 'roller-blinds', fabric: 'blockout', file: 'roller-blinds-blockout.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 1 },
+  { product: 'roller-blinds', fabric: 'dual', file: 'roller-blinds-dual.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.88 },
+  { product: 'roller-blinds', fabric: 'lightfilter', file: 'roller-blinds-lightfilter.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.7 },
+  { product: 'roller-blinds', fabric: 'sunscreen', file: 'roller-blinds-sunscreen.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.55 },
+  { product: 'roller-shutters', fabric: null, file: 'roller-shutters.webp', mask: null, hardware: null, dye: 1 },
+  { product: 'venetian-blinds', fabric: null, file: 'venetian-blinds.webp', mask: null, hardware: null, dye: 1 },
+  { product: 'zip-guide-systems', fabric: null, file: 'zip-guide-systems.webp', mask: null, hardware: null, dye: 1 },
 ];
 
 /** The shot for a configuration, or undefined where none has been photographed
- * yet -- the card falls back to the product's own hero image. */
+ * yet -- the card falls back to the product's own hero image.
+ *
+ * Falls back to the product's single photograph where it has one, so a product
+ * with no fabric type still gets its picture. */
 export const fabricShot = (product: string, fabric: string | undefined): FabricShot | undefined =>
-  fabric === undefined
-    ? undefined
-    : FABRIC_SHOTS.find(s => s.product === product && s.fabric === fabric);
+  FABRIC_SHOTS.find(s => s.product === product && s.fabric === fabric)
+  ?? FABRIC_SHOTS.find(s => s.product === product && s.fabric === null);
