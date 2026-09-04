@@ -25,12 +25,13 @@ if (!existsSync(MANIFEST)) {
 
 const src = readFileSync(MANIFEST, 'utf8');
 const entries = [...src.matchAll(
-  /\{ product: '([^']+)', fabric: '([^']+)', file: '([^']+)', mask: (null|'[^']+') \},/g,
+  /\{ product: '([^']+)', fabric: '([^']+)', file: '([^']+)', mask: (null|'[^']+'), hardware: (null|'[^']+') \},/g,
 )].map(m => ({
   product: m[1],
   fabric: m[2],
   file: m[3],
   mask: m[4] === 'null' ? null : m[4].slice(1, -1),
+  hardware: m[5] === 'null' ? null : m[5].slice(1, -1),
 }));
 
 if (!entries.length) {
@@ -43,9 +44,10 @@ const named = new Set();
 for (const e of entries) {
   named.add(e.file);
   if (!existsSync(join(DIR, e.file))) missing.push(`${e.file}  (${e.product} / ${e.fabric})`);
-  if (e.mask) {
-    named.add(e.mask);
-    if (!existsSync(join(DIR, e.mask))) missing.push(`${e.mask}  (mask for ${e.product})`);
+  for (const [kind, f] of [['mask', e.mask], ['hardware', e.hardware]]) {
+    if (!f) continue;
+    named.add(f);
+    if (!existsSync(join(DIR, f))) missing.push(`${f}  (${kind} for ${e.product})`);
   }
 }
 
