@@ -47,6 +47,9 @@ interface Canvas2DCurtainRendererProps {
   hardwareColour: 'white' | 'black' | 'chrome';
   mount: 'ceiling' | 'window';
   colour: string;
+  /** Ordered track width — 'small' | 'medium' | 'large' | 'xl'. Sets how many
+   *  waves the heading carries. See wavesForTrack. */
+  size?: string;
   /** 0 = shut (panels meet at the centre), 1 = fully drawn back. */
   openness: number;
   canvasWidth: number;
@@ -56,32 +59,55 @@ interface Canvas2DCurtainRendererProps {
 
 // --- The physical spec -----------------------------------------------------
 
-/** Waves per panel. FIXED, on every window.
+/** WAVES PER PANEL, FROM THE WIDTH THAT WAS ORDERED.
  *
- * This used to be derived from the ordered track width — a table of mm per size
- * pill, divided by the heading tape's snap spacing — which is how a real curtain
- * is quoted and gave a small window fewer waves than a large one. Correct on
- * paper, wrong on screen: at four waves a small window read as two bulges rather
- * than as a wave curtain, and the whole point of the visualiser is that the
- * customer recognises the product. Nine is the count the largest size produced,
- * it looks right at every window, so every window gets it.
+ * This was fixed at nine on every window. The reasoning was that nine is what
+ * the largest size produces and it "looks right at every window" — but it does
+ * not, and a wide window is where it fails hardest: nine waves stretched across
+ * three metres is nine fat bulges, and the customer sees a curtain that is not
+ * the one they are buying. A wave fold curtain has one wave per 160mm of track
+ * and that is the whole character of the heading. More track, more waves.
+ *
+ * So it is derived again — from the SIZE THAT WAS ORDERED, not from the pixels
+ * of the trace. Pixels cannot give millimetres on their own, and the size pill
+ * is the real number: it is what gets quoted, made and installed. It also means
+ * moving that control visibly changes the curtain, which is the correct
+ * relationship between a spec and a picture of it.
+ *
+ * The floor is what the old comment was really protecting against, and it is
+ * kept: below about five the panel reads as a few bulges rather than as a wave
+ * curtain. A 1.2m track is 3.75 waves a panel on the arithmetic, and it is drawn
+ * with five. That is the one place this lies, and it lies in the direction of
+ * the product being recognisable.
  *
  * A whole number, always, and the mesh spans exactly this many full sine periods
  * — so a panel opens and closes on a complete wave and never on half of one.
  * There is no path here that can produce a fractional wave: the compression front
  * moves the wave WIDTHS and never the count. */
-const WAVES_PER_PANEL = 9;
+const MIN_WAVES_PER_PANEL = 5;
+
+/** Ordered track width per size pill, mm. The labels the customer reads are
+ *  "up to 1.2m" and so on, and these are those numbers. */
+const TRACK_WIDTH_MM: Record<string, number> = {
+  small: 1200,
+  medium: 1800,
+  large: 2400,
+  xl: 3000,
+};
+
+/** Two panels split the track, so each covers half of it when shut. */
+const wavesForTrack = (trackMm: number): number =>
+  Math.max(MIN_WAVES_PER_PANEL, Math.round(trackMm / WAVE_PITCH_MM / 2));
 
 /** One wave per 160mm of track: heading tape carries a snap every 80mm at the
  * standard 80% fullness, and one wave — a crest and the trough beside it — spans
  * two snaps.
  *
- * No longer sets the wave count. It is now the renderer's only link to real-world
- * scale, working the other way round: the panel shows WAVES_PER_PANEL waves, each
- * wave is 160mm of track, so the panel is 9 x 160mm of cloth however many pixels
- * wide it happens to be, and one pixel is therefore a known number of
- * millimetres. The cloth physics needs that — a pendulum's period depends on its
- * length in metres, not in pixels. */
+ * It sets the wave count again — see wavesForTrack — and it remains the
+ * renderer's link to real-world scale in the other direction: the panel shows
+ * that many waves, each wave is 160mm of track, so one pixel is a known number
+ * of millimetres. The cloth physics needs that, because a pendulum's period
+ * depends on its length in metres and not in pixels. */
 const WAVE_PITCH_MM = 160;
 
 /** Stacked, both panels together occupy a third of the track. A shut panel is
@@ -1760,6 +1786,7 @@ export default function Canvas2DCurtainRenderer({
   hardwareColour,
   mount,
   colour,
+  size,
   openness,
   canvasWidth,
   canvasHeight,
@@ -2011,8 +2038,8 @@ export default function Canvas2DCurtainRenderer({
         }
       })();
 
-      // WAVE COUNT — the same on every window. See WAVES_PER_PANEL.
-      const waveCount = WAVES_PER_PANEL;
+      // WAVE COUNT — from the ordered track width. See wavesForTrack.
+      const waveCount = wavesForTrack(TRACK_WIDTH_MM[size ?? 'medium'] ?? TRACK_WIDTH_MM.medium);
 
       // Panels meet at the centre with a hairline between them, so a shut pair
       // reads as two panels rather than one sheet.
@@ -2285,7 +2312,12 @@ export default function Canvas2DCurtainRenderer({
   }, [
     photoUrl, canvasWidth, canvasHeight,
     tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y,
-    mount, fabricType, hardwareColour,
+    // `size` is in here because it decides the WAVE COUNT, and the count is
+    // baked into the mesh at build time — createPanelMesh allocates for it.
+    // Left out, changing the size pill repriced the curtain and redrew
+    // nothing, which is the worst of both: the control looks broken and the
+    // picture quietly disagrees with the order.
+    mount, fabricType, hardwareColour, size,
   ]);
 
   // Openness kicks the solver rather than drawing. The solver reads the live

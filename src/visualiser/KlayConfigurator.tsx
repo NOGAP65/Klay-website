@@ -1539,6 +1539,10 @@ export default function KlayConfigurator({
               hardwareColour={store.hardwareColour}
               mount={store.curtainMount}
               colour={store.getFabricColor()}
+              // The ordered width, which is what decides how many waves the
+              // heading carries — a 3m track is not a 1.2m track with fatter
+              // folds. See wavesForTrack.
+              size={store.curtainSize}
               openness={1 - store.rollPosition}
               canvasWidth={photoBitmap?.width ?? 1}
               canvasHeight={photoBitmap?.height ?? 1}
