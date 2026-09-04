@@ -47,9 +47,6 @@ interface Canvas2DCurtainRendererProps {
   hardwareColour: 'white' | 'black' | 'chrome';
   mount: 'ceiling' | 'window';
   colour: string;
-  /** Ordered track width — 'small' | 'medium' | 'large' | 'xl'. Sets how many
-   *  waves the heading carries. See wavesForTrack. */
-  size?: string;
   /** 0 = shut (panels meet at the centre), 1 = fully drawn back. */
   openness: number;
   canvasWidth: number;
@@ -85,29 +82,51 @@ interface Canvas2DCurtainRendererProps {
  * There is no path here that can produce a fractional wave: the compression front
  * moves the wave WIDTHS and never the count. */
 const MIN_WAVES_PER_PANEL = 5;
+const MAX_WAVES_PER_PANEL = 20;
 
-/** Ordered track width per size pill, mm. The labels the customer reads are
- *  "up to 1.2m" and so on, and these are those numbers. */
-const TRACK_WIDTH_MM: Record<string, number> = {
-  small: 1200,
-  medium: 1800,
-  large: 2400,
-  xl: 3000,
+/** Waves a panel would carry if the traced window ran the full width of the
+ *  photograph. Everything narrower gets its share of this.
+ *
+ *  CALIBRATED, not picked: the sample room's window covers about 40% of its
+ *  frame and nine waves a panel is what looked right on it, so full frame is
+ *  nine over 0.4. Anything that changes the sample room should be checked
+ *  against this number rather than the number being nudged to suit it. */
+const WAVES_AT_FULL_FRAME = 22;
+
+/** WAVES FROM THE SIZE OF THE TRACE, which is the thing on screen.
+ *
+ * This was briefly taken from the ordered size pill instead — the millimetres
+ * that get quoted and made. Correct on paper and wrong to look at: the picture
+ * stopped agreeing with the window in it. A big opening drawn with the same few
+ * folds as a small one is the fault being fixed, and the opening is what the
+ * customer traced, not what they picked in a list.
+ *
+ * Measured as a FRACTION OF THE PHOTOGRAPH, never in raw pixels. The same window
+ * shot on a phone and on a compact is the same window, and the trace is in image
+ * coordinates — so a 4000px photo would otherwise get three times the folds of a
+ * 1254px one for no reason a customer could ever see. The fraction is stable
+ * across both, and it is also what "bigger" means when you are looking at a
+ * picture: bigger IN THE FRAME.
+ *
+ * Floored at five, because below that a panel reads as a few bulges rather than
+ * as a wave curtain, and capped at sixteen so a wall of glass does not turn into
+ * corduroy.
+ */
+const wavesForTrace = (tracedWidthPx: number, framePx: number): number => {
+  const fraction = framePx > 0 ? tracedWidthPx / framePx : 0.5;
+  const waves = Math.round(fraction * WAVES_AT_FULL_FRAME);
+  return Math.min(MAX_WAVES_PER_PANEL, Math.max(MIN_WAVES_PER_PANEL, waves));
 };
-
-/** Two panels split the track, so each covers half of it when shut. */
-const wavesForTrack = (trackMm: number): number =>
-  Math.max(MIN_WAVES_PER_PANEL, Math.round(trackMm / WAVE_PITCH_MM / 2));
 
 /** One wave per 160mm of track: heading tape carries a snap every 80mm at the
  * standard 80% fullness, and one wave — a crest and the trough beside it — spans
  * two snaps.
  *
- * It sets the wave count again — see wavesForTrack — and it remains the
+ * It does not set the wave count — the trace does, see wavesForTrace. It is the
  * renderer's link to real-world scale in the other direction: the panel shows
- * that many waves, each wave is 160mm of track, so one pixel is a known number
- * of millimetres. The cloth physics needs that, because a pendulum's period
- * depends on its length in metres and not in pixels. */
+ * however many waves the trace earned, each wave is 160mm of track, so one
+ * pixel is a known number of millimetres. The cloth physics needs that, because
+ * a pendulum's period depends on its length in metres and not in pixels. */
 const WAVE_PITCH_MM = 160;
 
 /** Stacked, both panels together occupy a third of the track. A shut panel is
@@ -1786,7 +1805,6 @@ export default function Canvas2DCurtainRenderer({
   hardwareColour,
   mount,
   colour,
-  size,
   openness,
   canvasWidth,
   canvasHeight,
@@ -2038,8 +2056,9 @@ export default function Canvas2DCurtainRenderer({
         }
       })();
 
-      // WAVE COUNT — from the ordered track width. See wavesForTrack.
-      const waveCount = wavesForTrack(TRACK_WIDTH_MM[size ?? 'medium'] ?? TRACK_WIDTH_MM.medium);
+      // WAVE COUNT — from how much of the frame the trace covers. See
+      // wavesForTrace.
+      const waveCount = wavesForTrace(windowWidth, W);
 
       // Panels meet at the centre with a hairline between them, so a shut pair
       // reads as two panels rather than one sheet.
@@ -2312,12 +2331,7 @@ export default function Canvas2DCurtainRenderer({
   }, [
     photoUrl, canvasWidth, canvasHeight,
     tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y,
-    // `size` is in here because it decides the WAVE COUNT, and the count is
-    // baked into the mesh at build time — createPanelMesh allocates for it.
-    // Left out, changing the size pill repriced the curtain and redrew
-    // nothing, which is the worst of both: the control looks broken and the
-    // picture quietly disagrees with the order.
-    mount, fabricType, hardwareColour, size,
+    mount, fabricType, hardwareColour,
   ]);
 
   // Openness kicks the solver rather than drawing. The solver reads the live
