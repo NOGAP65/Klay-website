@@ -44,10 +44,43 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { chromium } from '../node_modules/playwright-core/index.mjs';
 
-const SRC = process.argv[2];
-const ID = process.argv[3];
+// ---------------------------------------------------------------------------
+// TWO GEOMETRIES, AND A CURTAIN IS NOT A BLIND IN A RECESS.
+//
+// The blind cutter keys off the halo of light leaking round a window frame: it
+// gives a hard box, it walls the flood fill in, and it is the brightest thing in
+// the frame. A curtain photograph has none of that. It hangs from a ceiling
+// track across nearly the whole wall, its cloth measures 150-190 at 0.11-0.20
+// saturation where the plaster wall behind it measures much the same, and the
+// brightest thing in the frame is the WINDOW showing through the gap between
+// two panels -- which is the one region that must not be dyed.
+//
+// So `--curtain` finds the cloth differently:
+//
+//   TOP AND BOTTOM FROM THE CLOTH ITSELF. A curtain runs track to floor, and
+//   the floor is timber: saturation above 0.3 where the cloth never is. Scanning
+//   each column for that transition finds the hem without needing a halo.
+//
+//   THE WINDOW GAP IS EXCLUDED BY BRIGHTNESS. Daylight through the panel gap
+//   reads 218-254; the cloth tops out around 200. An upper bound drops it.
+//
+//   TWO SEEDS, ONE PER PANEL, because the gap between them means the cloth is
+//   not one connected region -- which is exactly why the blind cutter's single
+//   centre seed failed with "seed is not cloth": the middle of a curtain
+//   photograph is the window.
+// ---------------------------------------------------------------------------
+const argv = process.argv.slice(2);
+const CURTAIN = argv.includes('--curtain');
+/** `--box top,bottom,left,right` as fractions of the frame — the drop, read off
+ * the photograph. See the note in the curtain branch on why it is given rather
+ * than found. */
+const boxArg = argv.find(a => a.startsWith('--box='));
+const BOX = boxArg ? boxArg.slice(6).split(',').map(Number) : null;
+const args = argv.filter(a => !a.startsWith('--'));
+const SRC = args[0];
+const ID = args[1];
 if (!SRC || !ID) {
-  console.error('  usage: node tools/cut-fabric-mask.mjs <photo> <product-id>');
+  console.error('  usage: node tools/cut-fabric-mask.mjs <photo> <product-id> [--curtain]');
   process.exit(1);
 }
 const DIR = 'public/images/fabrics';
@@ -58,7 +91,7 @@ const DIR = 'public/images/fabrics';
 const REVIEW = 'docs/fabric-overlays';
 for (const d of [DIR, REVIEW]) if (!existsSync(d)) mkdirSync(d, { recursive: true });
 
-const SIZE = Number(process.argv[4] ?? 900);
+const SIZE = Number(args[2] ?? 900);
 const b64 = readFileSync(SRC).toString('base64');
 
 const browser = await chromium.launch({
@@ -67,7 +100,7 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage();
 
-const res = await page.evaluate(async ({ b64, SIZE }) => {
+const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, BOX }) => {
   const im = new Image();
   im.src = 'data:image/png;base64,' + b64;
   await im.decode();
@@ -91,6 +124,139 @@ const res = await page.evaluate(async ({ b64, SIZE }) => {
     const mn = Math.min(px[i], px[i + 1], px[i + 2]);
     return mx === 0 ? 0 : (mx - mn) / mx;
   };
+
+  // --- CURTAINS: their own geometry, and an early return ------------------
+  if (CURTAIN) {
+    // THE BOX IS GIVEN, NOT FOUND, AND THAT IS THE HONEST ANSWER HERE.
+    //
+    // A blind's box comes free: the halo of light round the window frame is the
+    // brightest thing in the shot and walls the fill in on all four sides. A
+    // curtain has no such edge, and measuring this photograph says why no
+    // colour test can replace one — the cloth runs 155-195 at 0.11-0.20
+    // saturation and the plaster wall behind it runs 165-187 at 0.12-0.17. They
+    // overlap almost exactly, because a curtain in shadow and a wall in daylight
+    // ARE the same colour. Two passes were spent trying to separate them before
+    // measuring proved they cannot be.
+    //
+    // So the drop is four numbers read off the photograph once: track, hem, and
+    // the outside edge of each panel. It is a minute of work per shot, it is
+    // exact, and it cannot drift — where a heuristic that half-works would fail
+    // silently on the next photograph.
+    const [T0, B0, L0, R0] = BOX ?? [0.05, 0.79, 0.065, 0.935];
+    const bT = Math.round(H * T0), bB = Math.round(H * B0);
+    const bL = Math.round(W * L0), bR = Math.round(W * R0);
+    const inDrop = (y) => y >= bT && y <= bB;
+
+    // Inside the box the only thing that is not cloth is the window in the gap
+    // between the panels, which is the brightest thing in the frame at 218-254.
+    const cloth = (x, y) => x >= bL && x <= bR && L_(x, y) < 214;
+    const firstRow = bT, hem = bB;
+
+    // The hem, per column: walking up from the bottom, the first row that is
+    // cloth after a run of floor. Timber and rug both break the test, so this
+    // finds where the fabric ends without needing to recognise a floor.
+    // TWO SEEDS PER PANEL, because the gap between the panels means the cloth
+    // is not one connected region — which is exactly why the blind cutter's
+    // single centre seed failed here: the middle of a curtain photograph is the
+    // window.
+    const inCloth = (x, y) => inDrop(y) && cloth(x, y);
+    const seeds = [];
+    for (const fx of [0.18, 0.3, 0.7, 0.82]) {
+      const x = Math.round(W * fx);
+      for (let y = firstRow; y <= hem; y += 2) {
+        if (inCloth(x, y)) { seeds.push(y * W + x); break; }
+      }
+    }
+    if (!seeds.length) return { error: 'found no curtain cloth to seed from' };
+
+    const m = new Uint8Array(W * H);
+    const stack = [];
+    for (const s0 of seeds) if (!m[s0]) { m[s0] = 1; stack.push(s0); }
+    while (stack.length) {
+      const p = stack.pop();
+      const x = p % W, y = (p / W) | 0;
+      if (x > 0     && !m[p - 1] && inCloth(x - 1, y)) { m[p - 1] = 1; stack.push(p - 1); }
+      if (x < W - 1 && !m[p + 1] && inCloth(x + 1, y)) { m[p + 1] = 1; stack.push(p + 1); }
+      if (y > 0     && !m[p - W] && inCloth(x, y - 1)) { m[p - W] = 1; stack.push(p - W); }
+      if (y < H - 1 && !m[p + W] && inCloth(x, y + 1)) { m[p + W] = 1; stack.push(p + W); }
+    }
+
+    // Close, then intersect — same reasoning as the blind: topology from the
+    // close, boundary from the photograph, so the outline cannot grow onto the
+    // wall or into the window.
+    const morphC = (src, r, dilate) => {
+      const tmp = new Uint8Array(W * H), out = new Uint8Array(W * H);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        let hit = dilate ? 0 : 1;
+        for (let k = -r; k <= r; k++) {
+          const v = src[y * W + Math.min(W - 1, Math.max(0, x + k))];
+          if (dilate) { if (v) { hit = 1; break; } } else if (!v) { hit = 0; break; }
+        }
+        tmp[y * W + x] = hit;
+      }
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        let hit = dilate ? 0 : 1;
+        for (let k = -r; k <= r; k++) {
+          const v = tmp[Math.min(H - 1, Math.max(0, y + k)) * W + x];
+          if (dilate) { if (v) { hit = 1; break; } } else if (!v) { hit = 0; break; }
+        }
+        out[y * W + x] = hit;
+      }
+      return out;
+    };
+    const rC = Math.max(3, Math.round(W / 110));
+    let cl = morphC(morphC(m, rC, true), rC, false);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const p = y * W + x;
+      if (cl[p] && !m[p] && !cloth(x, y)) cl[p] = 0;
+    }
+
+    let n = 0, cx0 = W, cy0 = H, cx1 = 0, cy1 = 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (cl[y * W + x]) {
+      n++;
+      if (x < cx0) cx0 = x; if (x > cx1) cx1 = x;
+      if (y < cy0) cy0 = y; if (y > cy1) cy1 = y;
+    }
+
+    const png = (paint) => {
+      const cc = document.createElement('canvas');
+      cc.width = W; cc.height = H;
+      paint(cc.getContext('2d'));
+      return cc.toDataURL('image/png');
+    };
+    const maskUrl = png((ctx) => {
+      const d = ctx.createImageData(W, H);
+      for (let p = 0; p < W * H; p++) {
+        let a = cl[p] ? 255 : 0;
+        if (!a) {
+          const x = p % W, y = (p / W) | 0;
+          if (x > 0 && x < W - 1 && y > 0 && y < H - 1 &&
+              (cl[p - 1] + cl[p + 1] + cl[p - W] + cl[p + W]) > 0) a = 120;
+        }
+        d.data[p * 4] = d.data[p * 4 + 1] = d.data[p * 4 + 2] = 255;
+        d.data[p * 4 + 3] = a;
+      }
+      ctx.putImageData(d, 0, 0);
+    });
+    const overlayUrl = png((ctx) => {
+      ctx.drawImage(im, 0, 0, W, H);
+      const d = ctx.getImageData(0, 0, W, H);
+      for (let p = 0; p < W * H; p++) {
+        if (!cl[p]) continue;
+        d.data[p * 4]     = Math.round(d.data[p * 4] * 0.35 + 166);
+        d.data[p * 4 + 1] = Math.round(d.data[p * 4 + 1] * 0.35);
+        d.data[p * 4 + 2] = Math.round(d.data[p * 4 + 2] * 0.35 + 91);
+      }
+      ctx.putImageData(d, 0, 0);
+    });
+
+    return {
+      W, H, curtain: true,
+      box: { L: cx0, R: cx1, T: cy0, B: cy1 },
+      raw: 0, cloth: n, metal: 0, bars: 0, barBands: 'n/a', grew: 0,
+      mask: maskUrl, hardware: null, overlay: overlayUrl,
+    };
+  }
 
   // --- the halo box -------------------------------------------------------
   const cy = Math.round(H * 0.42), cx = Math.round(W * 0.5);
@@ -280,12 +446,14 @@ const res = await page.evaluate(async ({ b64, SIZE }) => {
     hardware: alphaPng(hw),
     overlay: oc.toDataURL('image/png'),
   };
-}, { b64, SIZE });
+}, { b64, SIZE, CURTAIN, BOX });
 
 if (res.error) { console.error('  ' + res.error); await browser.close(); process.exit(1); }
 const save = (u, p) => writeFileSync(p, Buffer.from(u.split(',')[1], 'base64'));
 save(res.mask, `${DIR}/${ID}.mask.png`);
-save(res.hardware, `${DIR}/${ID}.hardware.png`);
+// A curtain has no metal to cut: it hangs from a track that is not part of the
+// product being coloured.
+if (res.hardware) save(res.hardware, `${DIR}/${ID}.hardware.png`);
 save(res.overlay, `${REVIEW}/${ID}.overlay.png`);
 
 console.log(`  ${res.W}x${res.H}   halo L${res.box.L} R${res.box.R} T${res.box.T} B${res.box.B}`);

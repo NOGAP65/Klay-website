@@ -183,13 +183,20 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     size: true,
     operation: true,
   },
-  // ONE PHOTOGRAPH, SO NO SLAT QUESTION. It offered Aluminium / Timber / Faux
-  // and the product does not come that way — see the note on variants.
+  // THE SLAT IS THE COLOUR HERE. A venetian carries no colour card, so this
+  // row is the only thing a customer specifies about how it looks — which is
+  // why it survives the one-photograph rule that took the fabric types off the
+  // shutters. The photography not yet distinguishing timber from aluminium is a
+  // gap in the photography, not evidence the product comes one way.
   'venetian-blinds': {
+    variantLabel: 'Slat',
+    variants: [v('aluminium', 'Aluminium'), v('timber', 'Timber'), v('faux', 'Faux timber')],
     size: true,
     operation: true,
   },
   'plantation-shutters': {
+    variantLabel: 'Material',
+    variants: [v('pvc', 'PVC'), v('timber', 'Timber'), v('aluminium', 'Aluminium')],
     size: true,
   },
   'vertical-blinds': {
@@ -221,10 +228,14 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     operation: true,
   },
   'zip-guide-systems': {
+    variantLabel: 'Screen',
+    variants: [v('mesh', 'Sunscreen mesh'), v('blockout', 'Blockout PVC')],
     size: true,
     operation: true,
   },
   'roller-shutters': {
+    variantLabel: 'Slat',
+    variants: [v('aluminium', 'Aluminium'), v('insulated', 'Insulated')],
     size: true,
     operation: true,
   },
