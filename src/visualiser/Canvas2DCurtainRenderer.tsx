@@ -358,6 +358,38 @@ const HEM_BAND_DENSITY = 0.30;
  * survives, which is exactly the line a real sheer draws. */
 const SHEER_DIFFUSION = 1 / 12;
 
+/** TRANSMISSION AND SCATTER, and the two of them ADD.
+ *
+ * A backlit sheer is the brightest thing in the room — brighter than the wall
+ * beside it, often clipping to white where the window is directly behind. Every
+ * photograph of one shows this and the render was doing the opposite: it sat
+ * DARKER than the wall, because the cloth was being blended OVER the window as
+ * a mix. A mix can only ever land between the two things it mixes, so putting
+ * cloth over glass could only darken the glass. That is a grey film, and it is
+ * what it looked like.
+ *
+ * What actually reaches the eye is two separate paths summed:
+ *
+ *   TRANSMITTED  the window's own light, having come through the weave. Soft,
+ *                because the threads scattered it on the way (see
+ *                SHEER_DIFFUSION), and NOT shaded by the folds — light that has
+ *                passed through the cloth does not care which way the surface
+ *                was facing.
+ *   SCATTERED    the room's light bouncing off the near face. This one IS shaded
+ *                by the folds, and it is the only thing that is.
+ *
+ * Summing them produces the whole behaviour for free, including two things that
+ * were being chased separately before. Over the bright window the transmitted
+ * term dominates and the folds WASH OUT — which is exactly what the reference
+ * shows, the folds nearly vanishing into the glow and reappearing at the edges.
+ * And the total can exceed the wall's brightness, so the cloth glows instead of
+ * greying.
+ *
+ * Both are scaled by the fabric's own opacity, so a charcoal sheer transmits
+ * little and scatters dark while a white one does the opposite. */
+const SHEER_TRANSMIT_GAIN = 1.25;
+const SHEER_SCATTER_GAIN = 1.0;
+
 const SILL_SHADOW_DROP = 0.055;
 const SILL_SHADOW_ALPHA = 0.34;
 
@@ -1146,6 +1178,8 @@ uniform float uOpacity;
 uniform float uIsSheer;
 uniform sampler2D uBackdrop;
 uniform float uHasBackdrop;
+uniform float uTransmitGain;
+uniform float uScatterGain;
 varying vec2 vBackdrop;
 uniform float uHemBand;
 uniform float uHemDensity;
@@ -1300,12 +1334,7 @@ void main() {
     // surface being lit rather than a cloth being seen through.
     float facing = pow(max(geoN.z, 0.0), 2.4);
     vec3 glow = colour + vec3(0.13, 0.11, 0.06);
-    // 0.82, back up from 0.74. That floor was set when the cloth was being read
-    // against a sharp background and needed the contrast to say "dense"; with
-    // the backdrop properly diffused the density reads on its own, and 0.74 was
-    // only making a white sheer against a bright window look grey — which is the
-    // one thing it never is.
-    colour = mix(colour * 0.82, glow, facing * (1.0 - vCompression * 0.4));
+    colour = mix(colour, glow, facing * (1.0 - vCompression * 0.4));
 
     // TRANSPARENCY FROM THE WEAVE ITSELF, which is the honest way to draw a sheer:
     // it is not a uniformly hazy sheet, it is an open cloth, and what you see
@@ -1333,8 +1362,26 @@ void main() {
     // have carried, and the fragment then draws opaque — the same visual
     // weight of cloth, over a backdrop that has been through the weave.
     if (uHasBackdrop > 0.5) {
+      // The window's light, already softened by the weave. See SHEER_DIFFUSION.
       vec3 behind = texture2D(uBackdrop, vBackdrop).rgb;
-      colour = mix(behind, colour, clamp(alpha, 0.0, 1.0));
+
+      // How much gets through. Less where the cloth is stacked several layers
+      // deep, less again through the doubled hem, and a little less where the
+      // surface has turned away from the camera and the path through the weave
+      // is longer than the sheet is thick.
+      float transmit = (1.0 - uOpacity) * uTransmitGain;
+      transmit *= 1.0 - vCompression * 0.55;
+      transmit *= 1.0 - hemBand * 0.45;
+      transmit *= mix(0.72, 1.0, facing);
+
+      // The near face, lit by the room. This carries the fold shading — and it
+      // is the ONLY term that does, which is why the folds fade out against the
+      // bright window and come back against the wall.
+      vec3 scattered = colour * uOpacity * uScatterGain;
+
+      colour = behind * transmit + scattered;
+      // Composited here, so it draws opaque: the blend has already happened and
+      // the framebuffer must not do it a second time against the sharp original.
       alpha = 1.0;
     }
 
@@ -2252,6 +2299,8 @@ export default function Canvas2DCurtainRenderer({
             // behind it to diffuse, so it never samples this.
             uBackdrop: { value: backdrop },
             uHasBackdrop: { value: isSheer && blurCtx ? 1.0 : 0.0 },
+            uTransmitGain: { value: SHEER_TRANSMIT_GAIN },
+            uScatterGain: { value: SHEER_SCATTER_GAIN },
             uFrame: { value: new THREE.Vector2(W, H) },
             uHemBand: { value: HEM_BAND },
             uHemDensity: { value: HEM_BAND_DENSITY },
