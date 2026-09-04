@@ -8,7 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "check:fabric-shots": "node tools/verify-fabric-shots.mjs",
+    "gen:fabric-shots": "node tools/generate-fabric-shots.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

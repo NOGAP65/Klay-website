@@ -41,6 +41,7 @@ import { radius, tokens, motion, space, type as typeScale } from '../theme';
 import { useHover } from './home/primitives';
 
 import { type Selection } from '../data/configOptions';
+import { fabricShot, FABRIC_SHOT_DIR } from '../data/fabricShots';
 import type { CatalogueItem } from '../data/catalogue';
 
 import { ProductGlyph } from './ProductGlyph';
@@ -143,6 +144,14 @@ const ASSURANCES = [
   'Made to measure in Melbourne',
 ];
 
+/** THE COLOUR A DYED SHOT IS MULTIPLIED BY.
+ *
+ * The swatch's own hex, straight from the catalogue — the photograph has already
+ * been normalised so that multiplying by it lands on the right cloth. White
+ * where nothing is chosen, which is a no-op and leaves the fabric as shot. */
+const dyeColour = (item: CatalogueItem, sel: Selection): string =>
+  item.colours?.find(c => c.name === sel.colour)?.hex ?? '#FFFFFF';
+
 export function ShopCard({ item, sel, onChange }: ShopCardProps) {
   // SIDE BY SIDE IS A DESKTOP IDEA. At 375px the row gave the photograph 190px
   // and the questions 190px and neither worked — chips wrapped one per line and
@@ -151,6 +160,12 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
   const stacked = useIsMobile();
   // main's useHover returns `hover`; the refactor branch renamed it isHovered.
   const { hover: isHovered, bind } = useHover();
+
+  /** THE PHOTOGRAPH FOR THIS CONFIGURATION, where one has been taken. Looked up
+   * in the generated manifest rather than assembled from a template — see
+   * fabricShots.ts, and the specification''s note on why a constructed asset
+   * path is unauditable. */
+  const shot = fabricShot(item.id, sel.variant);
   const lit = isHovered;
 
   return (
@@ -302,6 +317,10 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             width: '100%',
             flex: '0 0 auto',
             aspectRatio: stacked ? '4 / 3' : '3 / 4',
+            // KEEPS THE MULTIPLY INSIDE THE FRAME. Without it the dye layer
+            // composites against whatever is painted beneath — the card, the
+            // grid, the page — and one blind would tint the card beside it.
+            isolation: 'isolate',
             // A MISSING PHOTOGRAPH IS AN EMPTY FRAME, NOT A BLACK ONE. On the
             // old landscape tile the charcoal fallback was a smallish dark
             // rectangle; at 4:5 it is 435px tall and was out-shouting every
@@ -310,9 +329,9 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             background: tokens.band,
           }}
         >
-          {item.image ? (
+          {shot || item.image ? (
             <img
-              src={item.image}
+              src={shot ? `${FABRIC_SHOT_DIR}/${shot.file}` : item.image}
               alt={`${item.name} — ${item.group}`}
               style={{
                 width: '100%',
@@ -349,6 +368,37 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
               <ProductGlyph type={item.glyph ?? ''} size={140} color={tokens.inkSoft} ground={tokens.band} opacity={lit ? 0.75 : 0.55} />
             </div>
           )}
+          {/* THE DYE. A flat colour multiplied through the blind's own mask,
+              over a photograph whose fabric has been normalised to white — which
+              between them ARE dyed cloth, because multiplying is what dyeing
+              does. The weave, the folds and the falloff all survive as
+              proportions of the colour.
+
+              Only where the shot carries a mask: timber is timber-coloured and
+              has nothing to dye. */}
+          {shot?.mask && (
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: dyeColour(item, sel),
+                mixBlendMode: 'multiply',
+                WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
+                maskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
+                WebkitMaskSize: 'cover',
+                maskSize: 'cover',
+                WebkitMaskPosition: item.imagePosition ?? '50% 45%',
+                maskPosition: item.imagePosition ?? '50% 45%',
+                pointerEvents: 'none',
+                // The picture scales under the pointer; the dye has to scale
+                // with it or the colour slides off the cloth.
+                transform: lit ? 'scale(1.04)' : 'scale(1)',
+                transition: 'transform 0.7s ease, background 0.25s ease',
+              }}
+            />
+          )}
+
           {/* NO SCRIM. The vignette existed to give the photograph an edge
               against the white card behind it; there is no card behind it now,
               so all it did was put up to a fifth of ink over the product. Both
