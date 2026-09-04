@@ -1689,12 +1689,37 @@ function buildDetailTexture(path: string): Promise<FabricTexture> {
     // that does not happen.
     texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
-    // No mipmaps: the map is magnified, not minified, so a mip chain would never
-    // be sampled and generating it only costs memory and upload time. Without
-    // POT dimensions WebGL1 would refuse them anyway.
-    texture.minFilter = THREE.LinearFilter;
+    // MIPMAPPED, AND THIS IS WHY THE CLOTH LOOKED LIKE A HONEYCOMB.
+    //
+    // The old reasoning was that the map is magnified rather than minified, so a
+    // mip chain would never be sampled. That is true of exactly one case: a
+    // fully-drawn panel across a wide window on a full-size buffer. It is false
+    // everywhere else, and the cases where it is false are the ones on screen
+    // most of the time.
+    //
+    // u runs along the FABRIC, not along x, so the whole 640-texel map is
+    // carried across whatever width the panel currently occupies. Draw the
+    // curtain back and that width collapses to a third — the same map crushed
+    // into a third of the pixels, a minification of three or four times. And the
+    // map's content is an open-weave linen: a REGULAR SQUARE GRID. A regular grid
+    // sampled below its own Nyquist limit does not go soft, it beats against the
+    // pixel lattice and produces a second, coarser grid that is not in the cloth
+    // at all. That interference is the honeycomb, and it was worst exactly where
+    // the fabric stacks — which is where the panel is narrowest.
+    //
+    // Trilinear plus anisotropy fixes it properly rather than by blurring the
+    // texture: the mip chain supplies a correctly band-limited sample for
+    // whatever minification this frame is asking for, and the anisotropic taps
+    // keep the weave sharp along the fold while it is being averaged across it.
+    //
+    // The WebGL1 note the old comment carried no longer applies: three's renderer
+    // is WebGL2 here, where NPOT textures take mipmaps and repeat wrapping like
+    // any other.
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
-    texture.generateMipmaps = false;
+    texture.generateMipmaps = true;
+    // Anisotropy is set once the renderer exists and can be asked for its
+    // limit — the textures are built before it. See the init below.
     texture.needsUpdate = true;
 
     return { texture };
@@ -2076,6 +2101,13 @@ export default function Canvas2DCurtainRenderer({
       renderer.setClearColor(0x000000, 0);
       rendererRef.current = renderer;
 
+      // The weave is minified hard whenever the panel stacks, and it is a
+      // regular grid, so it needs every anisotropic tap the device will give
+      // it. Set here rather than in buildDetailTexture because that runs
+      // before there is a renderer to ask.
+      fabric.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      fabric.texture.needsUpdate = true;
+
       const scene = new THREE.Scene();
       sceneRef.current = scene;
 
@@ -2113,7 +2145,15 @@ export default function Canvas2DCurtainRenderer({
             // again despite the more pronounced weave, because a backlit veil is
             // mostly transmitted light and relief on top of that reads as
             // glitter rather than as thread.
-            uBump: { value: isSheer ? 0.45 : 0.6 },
+            // 0.30 for the sheer, down from 0.45. The bump turns the weave map
+            // into relief that catches the room light, and on an open-weave
+            // linen every hole in the mesh becomes its own lit cell. Correct in
+            // principle — that IS what the cloth does — but at this viewing
+            // distance a real sheer reads as a translucent haze with the odd
+            // slub catching, not as a resolved egg-crate. The blockout's sateen
+            // has no open grid to light up and keeps its 0.6.
+            uBump: { value: isSheer ? 0.30 : 0.6 },
+
           },
           vertexShader: VERTEX_SHADER,
           fragmentShader: FRAGMENT_SHADER,
