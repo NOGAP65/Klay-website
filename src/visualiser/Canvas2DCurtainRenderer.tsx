@@ -1641,7 +1641,22 @@ const FABRIC_SAMPLE: Record<'blockout' | 'sheer', string> = {
   // different URL that 404s, which is the worst failure shape there is — it
   // only shows up after deploy. Match the filenames on disk exactly.
   blockout: '/images/Textures/curtains/Blockout_produced.png',
-  sheer: '/images/Textures/curtains/sheer_produced.png',
+  // DRAWN, NOT PHOTOGRAPHED, and it has to be. The map covers one panel —
+  // roughly 900mm of cloth across 1024 texels, so a texel is about 0.9mm and a
+  // voile thread is about 0.2mm. A real weave is SUB-TEXEL at this scale, which
+  // means any regular grid in the source must alias against the pixel lattice,
+  // and that aliasing is what the honeycomb was. A photograph of real cloth
+  // always carries that grid; this one is value noise all the way down, so
+  // there is no repeating frequency for anything to beat against.
+  //
+  // Warp striation running down the drop, a weaker weft, fine irregular tooth
+  // and sparse slubs elongated along the warp. Deterministic, so it is the same
+  // cloth every build, and flat mid-grey with no gradient anywhere —
+  // buildDetailTexture reads brightness as HEIGHT, so any baked lighting would
+  // come back as bumps that are not in the fabric.
+  //
+  // sheer_produced.png, the supplier swatch, is kept in the repo beside it.
+  sheer: '/images/Textures/curtains/sheer_weave.png',
 };
 
 /** Working size of the extracted detail map. The swatches are 1254px square and
@@ -2176,9 +2191,22 @@ export default function Canvas2DCurtainRenderer({
         }
       })();
 
-      // WAVE COUNT — from how much of the frame the trace covers. See
-      // wavesForTrace.
-      const waveCount = wavesForTrace(windowWidth, W);
+      // WAVE COUNT — from the trace itself. See wavesForTrace.
+      //
+      // Measured across the QUAD'S OWN EDGES rather than its bounding box. A
+      // window photographed at an angle has a top edge and a bottom edge of
+      // different lengths, and the box around it is wider than either — so the
+      // box overstates a slanted trace and would hand it folds it has not
+      // earned. The mean of the two edges is the track the curtain actually runs
+      // along.
+      //
+      // WIDTH AND NOT AREA, deliberately. A taller window does not get more
+      // folds: the waves are spaced along the track, so a 3m opening carries the
+      // same heading whether it is a metre tall or three. Bigger trace, more
+      // folds — but bigger ACROSS.
+      const topEdge = Math.hypot(trPx.x - tlPx.x, trPx.y - tlPx.y);
+      const bottomEdge = Math.hypot(brPx.x - blPx.x, brPx.y - blPx.y);
+      const waveCount = wavesForTrace((topEdge + bottomEdge) / 2, W);
 
       // Panels meet at the centre with a hairline between them, so a shut pair
       // reads as two panels rather than one sheet.
@@ -2325,7 +2353,13 @@ export default function Canvas2DCurtainRenderer({
             // distance a real sheer reads as a translucent haze with the odd
             // slub catching, not as a resolved egg-crate. The blockout's sateen
             // has no open grid to light up and keeps its 0.6.
-            uBump: { value: isSheer ? 0.30 : 0.6 },
+            // 0.42 for the sheer, back up from the 0.30 the old sample had to be
+            // held down to. That number was defensive: the photographed weave was
+            // an open square mesh, and lighting it turned every hole into its own
+            // cell. The drawn weave has no cells to light — it is striation and
+            // slub — so it can carry proper relief and finally read as cloth
+            // rather than as a tint.
+            uBump: { value: isSheer ? 0.42 : 0.6 },
 
           },
           vertexShader: VERTEX_SHADER,
