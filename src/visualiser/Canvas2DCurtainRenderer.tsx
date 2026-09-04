@@ -346,6 +346,18 @@ const HEM_BAND_DENSITY = 0.30;
  * cloth, rather than painted into the background canvas: it has to move with
  * the panel as the curtain is drawn back, and the background is composited
  * once. */
+/** HOW HARD THE SHEER SCATTERS WHAT IS BEHIND IT.
+ *
+ * The backdrop is redrawn at this fraction of the photograph's width and
+ * sampled back up, which is a blur by resampling — cheap, and the softness
+ * scales with the image rather than being a fixed pixel radius that would mean
+ * one thing on a 1254px room and another on a 4000px phone photo.
+ *
+ * A twelfth is a sheer, not frosted glass: at this radius a garden behind the
+ * cloth stays a garden — you can see it is green and leafy — but no single leaf
+ * survives, which is exactly the line a real sheer draws. */
+const SHEER_DIFFUSION = 1 / 12;
+
 const SILL_SHADOW_DROP = 0.055;
 const SILL_SHADOW_ALPHA = 0.34;
 
@@ -1098,10 +1110,15 @@ uniform mat3 uQuadH;
 attribute float aCompression;
 attribute float aDepth;
 
+uniform vec2 uFrame;
+
 varying vec3 vNormal;
 varying vec2 vUv;
 varying float vCompression;
 varying float vDepth;
+/** Where this fragment lands on the photograph, 0..1. The camera is an ortho
+ *  box over the image, so warped world coordinates ARE image pixels. */
+varying vec2 vBackdrop;
 
 void main() {
   vNormal = normalMatrix * normal;
@@ -1116,6 +1133,7 @@ void main() {
     vec4 world = modelMatrix * vec4(position, 1.0);
     vec3 warped = uQuadH * vec3(world.xy, 1.0);
     world.xy = warped.xy / warped.z;
+    vBackdrop = world.xy / uFrame;
     gl_Position = projectionMatrix * viewMatrix * world;
 }
 `;
@@ -1126,6 +1144,9 @@ precision mediump float;
 uniform vec3 uColour;
 uniform float uOpacity;
 uniform float uIsSheer;
+uniform sampler2D uBackdrop;
+uniform float uHasBackdrop;
+varying vec2 vBackdrop;
 uniform float uHemBand;
 uniform float uHemDensity;
 uniform sampler2D uTexture;
@@ -1279,7 +1300,12 @@ void main() {
     // surface being lit rather than a cloth being seen through.
     float facing = pow(max(geoN.z, 0.0), 2.4);
     vec3 glow = colour + vec3(0.13, 0.11, 0.06);
-    colour = mix(colour * 0.74, glow, facing * (1.0 - vCompression * 0.4));
+    // 0.82, back up from 0.74. That floor was set when the cloth was being read
+    // against a sharp background and needed the contrast to say "dense"; with
+    // the backdrop properly diffused the density reads on its own, and 0.74 was
+    // only making a white sheer against a bright window look grey — which is the
+    // one thing it never is.
+    colour = mix(colour * 0.82, glow, facing * (1.0 - vCompression * 0.4));
 
     // TRANSPARENCY FROM THE WEAVE ITSELF, which is the honest way to draw a sheer:
     // it is not a uniformly hazy sheet, it is an open cloth, and what you see
@@ -1291,6 +1317,26 @@ void main() {
 
     // Packed fabric is layer upon layer, and stacks up nearly solid at the ends.
     alpha = mix(alpha, min(1.0, alpha + 0.14), vCompression);
+
+    // THE CLOTH SCATTERS, IT DOES NOT JUST LET LIGHT PAST.
+    //
+    // Left to ordinary alpha blending, everything behind a sheer arrives at the
+    // eye SHARP — the garden through the window was legible leaf by leaf under a
+    // veil, which is what glass does, or a tinted film. It is not what cloth
+    // does. A sheer is an open weave in front of a bright field: light entering
+    // it is scattered by every thread it passes, so the image behind survives
+    // only as tone and colour, never as detail.
+    //
+    // The blend has to be done here rather than by the compositor, because the
+// compositor only has the sharp original to blend with. So the diffused
+    // backdrop is sampled and mixed in at exactly the weight the alpha would
+    // have carried, and the fragment then draws opaque — the same visual
+    // weight of cloth, over a backdrop that has been through the weave.
+    if (uHasBackdrop > 0.5) {
+      vec3 behind = texture2D(uBackdrop, vBackdrop).rgb;
+      colour = mix(behind, colour, clamp(alpha, 0.0, 1.0));
+      alpha = 1.0;
+    }
 
     // And the doubled hem is the same effect in a strip: three layers of a sheer
     // read almost as a solid band. See HEM_BAND_DENSITY.
@@ -2002,6 +2048,33 @@ export default function Canvas2DCurtainRenderer({
       const bgCtx = bgCanvas.getContext('2d');
       if (bgCtx) bgCtx.drawImage(photo, 0, 0);
 
+      // THE DIFFUSED BACKDROP the sheer looks through. Redrawn small and
+      // sampled back up, which is a blur by resampling: the browser's own
+      // downscale does the averaging, and reading it at full size with a linear
+      // filter does the rest. Cheap enough to build once per photo, and the
+      // radius scales with the image rather than being a fixed number of pixels
+      // that would mean different things on a 1254px room and a 4000px phone
+      // shot. See SHEER_DIFFUSION.
+      const blurW = Math.max(8, Math.round(W * SHEER_DIFFUSION));
+      const blurH = Math.max(8, Math.round(H * SHEER_DIFFUSION));
+      const blurCanvas = document.createElement('canvas');
+      blurCanvas.width = blurW;
+      blurCanvas.height = blurH;
+      const blurCtx = blurCanvas.getContext('2d');
+      if (blurCtx) {
+        blurCtx.imageSmoothingEnabled = true;
+        blurCtx.imageSmoothingQuality = 'high';
+        blurCtx.drawImage(photo, 0, 0, blurW, blurH);
+      }
+      const backdrop = new THREE.CanvasTexture(blurCanvas);
+      backdrop.colorSpace = THREE.SRGBColorSpace;
+      backdrop.wrapS = THREE.ClampToEdgeWrapping;
+      backdrop.wrapT = THREE.ClampToEdgeWrapping;
+      backdrop.minFilter = THREE.LinearFilter;
+      backdrop.magFilter = THREE.LinearFilter;
+      backdrop.generateMipmaps = false;
+      backdrop.needsUpdate = true;
+
       // Three's y runs up, the photo's runs down.
       const flip = (p: Point) => ({ x: p.x, y: H - p.y });
       const tlPx = flip(tl);
@@ -2175,6 +2248,11 @@ export default function Canvas2DCurtainRenderer({
             uColour: { value: colourVec },
             uOpacity: { value: isSheer ? sheerOpacity(colour) : 1.0 },
             uIsSheer: { value: isSheer ? 1.0 : 0.0 },
+            // Only the sheer looks through anything. A blockout has nothing
+            // behind it to diffuse, so it never samples this.
+            uBackdrop: { value: backdrop },
+            uHasBackdrop: { value: isSheer && blurCtx ? 1.0 : 0.0 },
+            uFrame: { value: new THREE.Vector2(W, H) },
             uHemBand: { value: HEM_BAND },
             uHemDensity: { value: HEM_BAND_DENSITY },
             uTexture: { value: fabric.texture },
