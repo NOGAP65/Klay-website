@@ -51,7 +51,7 @@ export const FABRIC_SHOTS: FabricShot[] = [
   { product: 'roller-blinds', fabric: 'lightfilter', file: 'roller-blinds-lightfilter.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.7 },
   { product: 'roller-blinds', fabric: 'sunscreen', file: 'roller-blinds-sunscreen.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.55 },
   { product: 'roller-shutters', fabric: 'aluminium', file: 'roller-shutters-aluminium.webp', mask: null, hardware: null, dye: 1 },
-  { product: 'venetian-blinds', fabric: null, file: 'venetian-blinds.webp', mask: 'venetian-blinds.mask.png', hardware: 'venetian-blinds.hardware.png', dye: 1 },
+  { product: 'venetian-blinds', fabric: null, file: 'venetian-blinds.webp', mask: 'venetian-blinds.mask.png', hardware: null, dye: 1 },
   { product: 'zip-guide-systems', fabric: 'mesh', file: 'zip-guide-systems-mesh.webp', mask: null, hardware: null, dye: 1 },
 ];
 
