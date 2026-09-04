@@ -13,8 +13,10 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
+// Both layouts — see the note in generate-fabric-shots.mjs.
 const DIR = 'public/images/fabrics';
-const MANIFEST = 'src/features/catalogue/fabricShots.ts';
+const MANIFEST = ['src/features/catalogue/fabricShots.ts', 'src/data/fabricShots.ts']
+  .find(p => existsSync(p)) ?? 'src/features/catalogue/fabricShots.ts';
 
 if (!existsSync(MANIFEST)) {
   console.log('  no fabricShots.ts yet — nothing to verify.');

@@ -24,9 +24,21 @@
 import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+// TWO LAYOUTS, ONE TOOL. This repository is mid-migration: `main` still keeps
+// the catalogue in src/data, the refactor branch has it in a feature. Detecting
+// which is present beats maintaining two copies of a generator that would
+// otherwise drift apart silently.
 const DIR = 'public/images/fabrics';
-const OUT = 'src/features/catalogue/fabricShots.ts';
-const OPTS = 'src/features/catalogue/configOptions.ts';
+const LAYOUTS = [
+  { opts: 'src/features/catalogue/configOptions.ts', out: 'src/features/catalogue/fabricShots.ts' },
+  { opts: 'src/data/configOptions.ts', out: 'src/data/fabricShots.ts' },
+];
+const layout = LAYOUTS.find(l => existsSync(l.opts));
+if (!layout) {
+  console.error('  found neither configOptions.ts — is this the right directory?');
+  process.exit(1);
+}
+const { opts: OPTS, out: OUT } = layout;
 
 if (!existsSync(DIR)) {
   console.error(`  ${DIR} does not exist — nothing to generate.`);
