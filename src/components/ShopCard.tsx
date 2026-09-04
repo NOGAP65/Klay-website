@@ -392,6 +392,13 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                 inset: 0,
                 background: dyeColour(item, sel),
                 mixBlendMode: 'multiply',
+                // A SHEER TAKES LESS DYE THAN A BLOCKOUT, and at full strength
+                // the fabric row appeared to do nothing on exactly the colours
+                // where it matters most: Black blockout and Black sheer landed
+                // on the same near-black, when in a real window one is opaque
+                // and the other is mostly daylight. The photograph underneath
+                // shows through in proportion — see `dye` in fabricShots.
+                opacity: shot.dye,
                 WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
                 maskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
                 WebkitMaskSize: 'cover',
