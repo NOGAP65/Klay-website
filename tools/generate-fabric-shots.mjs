@@ -185,11 +185,16 @@ ${body}
 /** The shot for a configuration, or undefined where none has been photographed
  * yet -- the card falls back to the product's own hero image.
  *
- * Falls back to the product's single photograph where it has one, so a product
- * with no fabric type still gets its picture. */
+ * THREE STEPS DOWN. The exact fabric first. Then the product's fabric-less
+ * photograph, for a product that has no fabric type. Then ANY shot of that
+ * product -- because a venetian photographed in aluminium is still a photograph
+ * of a venetian, and showing it when someone picks Timber beats falling back to
+ * a hero image of a different room. What it costs is that the picture does not
+ * follow that one choice; what it buys is that the card keeps its product. */
 export const fabricShot = (product: string, fabric: string | undefined): FabricShot | undefined =>
   FABRIC_SHOTS.find(s => s.product === product && s.fabric === fabric)
-  ?? FABRIC_SHOTS.find(s => s.product === product && s.fabric === null);
+  ?? FABRIC_SHOTS.find(s => s.product === product && s.fabric === null)
+  ?? FABRIC_SHOTS.find(s => s.product === product);
 `);
 
 console.log(`  ${shots.length} shot${shots.length === 1 ? '' : 's'} -> ${OUT}`);

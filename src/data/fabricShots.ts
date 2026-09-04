@@ -42,23 +42,29 @@ export interface FabricShot {
 export const FABRIC_SHOT_DIR = '/images/fabrics';
 
 export const FABRIC_SHOTS: FabricShot[] = [
-  { product: 'curtains', fabric: 'blockout', file: 'curtains-blockout.webp', mask: null, hardware: null, dye: 1 },
-  { product: 'curtains', fabric: 'sheer', file: 'curtains-sheer.webp', mask: null, hardware: null, dye: 0.38 },
-  { product: 'plantation-shutters', fabric: null, file: 'plantation-shutters.webp', mask: null, hardware: null, dye: 1 },
+  { product: 'curtains', fabric: 'blockout', file: 'curtains-blockout.webp', mask: 'curtains.mask.png', hardware: null, dye: 1 },
+  { product: 'curtains', fabric: 'sheer', file: 'curtains-sheer.webp', mask: 'curtains.mask.png', hardware: null, dye: 0.38 },
+  { product: 'folding-arm-awnings', fabric: 'acrylic', file: 'folding-arm-awnings-acrylic.webp', mask: null, hardware: null, dye: 1 },
+  { product: 'plantation-shutters', fabric: 'pvc', file: 'plantation-shutters-pvc.webp', mask: null, hardware: null, dye: 1 },
   { product: 'roller-blinds', fabric: 'blockout', file: 'roller-blinds-blockout.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 1 },
   { product: 'roller-blinds', fabric: 'dual', file: 'roller-blinds-dual.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.88 },
   { product: 'roller-blinds', fabric: 'lightfilter', file: 'roller-blinds-lightfilter.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.7 },
   { product: 'roller-blinds', fabric: 'sunscreen', file: 'roller-blinds-sunscreen.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.55 },
-  { product: 'roller-shutters', fabric: null, file: 'roller-shutters.webp', mask: null, hardware: null, dye: 1 },
-  { product: 'venetian-blinds', fabric: null, file: 'venetian-blinds.webp', mask: null, hardware: null, dye: 1 },
-  { product: 'zip-guide-systems', fabric: null, file: 'zip-guide-systems.webp', mask: null, hardware: null, dye: 1 },
+  { product: 'roller-shutters', fabric: 'aluminium', file: 'roller-shutters-aluminium.webp', mask: null, hardware: null, dye: 1 },
+  { product: 'venetian-blinds', fabric: 'aluminium', file: 'venetian-blinds-aluminium.webp', mask: null, hardware: null, dye: 1 },
+  { product: 'zip-guide-systems', fabric: 'mesh', file: 'zip-guide-systems-mesh.webp', mask: null, hardware: null, dye: 1 },
 ];
 
 /** The shot for a configuration, or undefined where none has been photographed
  * yet -- the card falls back to the product's own hero image.
  *
- * Falls back to the product's single photograph where it has one, so a product
- * with no fabric type still gets its picture. */
+ * THREE STEPS DOWN. The exact fabric first. Then the product's fabric-less
+ * photograph, for a product that has no fabric type. Then ANY shot of that
+ * product -- because a venetian photographed in aluminium is still a photograph
+ * of a venetian, and showing it when someone picks Timber beats falling back to
+ * a hero image of a different room. What it costs is that the picture does not
+ * follow that one choice; what it buys is that the card keeps its product. */
 export const fabricShot = (product: string, fabric: string | undefined): FabricShot | undefined =>
   FABRIC_SHOTS.find(s => s.product === product && s.fabric === fabric)
-  ?? FABRIC_SHOTS.find(s => s.product === product && s.fabric === null);
+  ?? FABRIC_SHOTS.find(s => s.product === product && s.fabric === null)
+  ?? FABRIC_SHOTS.find(s => s.product === product);
