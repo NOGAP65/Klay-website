@@ -263,7 +263,30 @@ const HEADING_SINK = 1.12;
  * down the drop. Nothing did, because nothing was allowed to.
  */
 
-/** THE CARRIER PINCHES, THE HEM DOES NOT.
+/** THE CARRIER PINCHES, THE HEM DOES NOT — AND NEITHER OF THEM CREASES.
+ *
+ * THIS WAS A CUSP AND IT LOOKED LIKE ONE. `sign(sin)·|sin|^e` with e below 1 has
+ * an infinite derivative wherever the sine crosses zero: dz/dθ goes as
+ * |θ|^(e-1), which at e = 0.72 diverges. That is not a tight radius, it is a
+ * mathematical crease — a point of zero radius — and the normal swings through
+ * it in the width of a single pixel. Hence the sharp edges on a stacked panel,
+ * worst exactly there because that is where the folds crowd together and the
+ * creases land next to each other.
+ *
+ * Cloth cannot do that. Fabric has bending stiffness, so there is a minimum
+ * radius it can be folded to and it is never zero — a sheer creases softly, a
+ * blockout more softly still, and neither comes to a point. The carrier pulls
+ * the cloth in tight, but tight is a small radius, not no radius.
+ *
+ * So the exponent floors at 1, where the section is exactly the sine it should
+ * have been all along: smooth everywhere, no derivative discontinuity anywhere
+ * on the surface. The pinch idea was mine and it was wrong — reasoning from
+ * "the carrier holds it" to "therefore it comes to a point" skipped the fact
+ * that the thing being held is cloth.
+ *
+ * Kept as constants rather than deleted so the section stays one expression, and
+ * so anything that wants to shape it later has the hook — but at or above 1,
+ * always. Below 1 puts the crease back.
  *
  * At the heading the cloth is clamped every 80mm by a snap, so the wave is
  * pinched hard at each carrier and the lobe between them is pushed round and
@@ -274,8 +297,8 @@ const HEADING_SINK = 1.12;
  * lobe and steepens the crossing, which is what a pinched carrier does; at 1 it
  * IS the sine. The heading value is what the render was missing entirely.
  */
-const FOLD_PINCH_HEADING = 0.72;
-const FOLD_PINCH_HEM = 0.97;
+const FOLD_PINCH_HEADING = 1.0;
+const FOLD_PINCH_HEM = 1.0;
 
 /** HOW FAR A FOLD'S CENTRELINE WANDERS BY THE HEM, in fractions of one wave.
  *
@@ -1282,8 +1305,17 @@ void main() {
   // arrives as a line. The coefficient is then free to be several times what it
   // was without the panel going muddy, because it is only ever applied to a
   // sliver.
-  float cavityShaped = pow(cavity, 2.2);
-  shade *= 1.0 - cavityShaped * mix(0.34, 0.48, vCompression);
+  // 1.8 and 0.30-0.38, softened from 2.2 and 0.34-0.48.
+  //
+  // Those were set against a surface that had a geometric cusp in it, and they
+  // were sharpening a line that was already infinitely sharp — the two compounded
+  // into a hard black edge, and the strongest coefficient was reserved for the
+  // compressed cloth, which is precisely where the folds crowd and the edges were
+  // most visible. With the section smooth the shading no longer has to be that
+  // narrow to read as a crease, and a stacked panel goes back to looking like
+  // gathered cloth rather than like folded card.
+  float cavityShaped = pow(cavity, 1.8);
+  shade *= 1.0 - cavityShaped * mix(0.30, 0.38, vCompression);
 
   // And the crest is the part that sees the most room, so it lifts slightly.
   // Cheaper on contrast than pushing the troughs further down, and it is the
