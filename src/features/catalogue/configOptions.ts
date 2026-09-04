@@ -283,7 +283,18 @@ const FALLBACK: ProductOptions = {
  * the question that changes what everything below it means. */
 export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
   const options = PRODUCT_OPTIONS[item.id] ?? FALLBACK
-  const fields: ConfigField[] = []
+  // WHERE IT IS GOING, FIRST. It used to come last, on the reasoning that
+  // everything above it specifies the product and this specifies the job — so
+  // it should not interrupt the specifying. In a panel of six rows that reads
+  // as an afterthought, and it is the opposite: the room is the one thing a
+  // customer already knows when they arrive. They came to do the bedroom; the
+  // fabric and the size are what they work out once they are here.
+  //
+  // It also changes what the rows below it mean. "Window size: small" reads
+  // differently under "Location: bathroom" than under nothing at all.
+  const fields: ConfigField[] = [
+    { id: 'location', label: 'Location', kind: 'chips', choices: LOCATION_CHOICES },
+  ]
   if (options.variants?.length) {
     fields.push({
       id: 'variant',
@@ -326,11 +337,6 @@ export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
   if (options.operation) {
     fields.push({ id: 'operation', label: 'Operation', kind: 'chips', choices: OPERATION_CHOICES })
   }
-  // LAST, AND ON EVERYTHING. Everything above is a property of the product;
-  // this is a property of the job, so it comes after the thing has been
-  // specified rather than interrupting the specifying. No product opts out —
-  // every one of them goes somewhere.
-  fields.push({ id: 'location', label: 'Location', kind: 'chips', choices: LOCATION_CHOICES })
   return fields
 }
 

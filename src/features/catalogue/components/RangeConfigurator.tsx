@@ -123,6 +123,53 @@ function FieldSelect({
   );
 }
 
+/** One end of the quantity stepper. Square, quiet, and the same height as a
+ * compact chip so the row it sits in keeps the panel's rhythm. */
+function Step({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled: boolean;
+  children: React.ReactNode;
+}) {
+  const { isHovered, bind } = useHover();
+  return (
+    <button
+      {...bind}
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      style={{
+        width: 26,
+        height: 26,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxSizing: 'border-box',
+        padding: 0,
+        borderRadius: radius.sm,
+        border: `1px solid ${tokens.line}`,
+        background: 'transparent',
+        // Dimmed rather than hidden at the ends of the range: a control that
+        // vanishes at one is a control the customer has to rediscover.
+        color: disabled ? tokens.inkFaint : isHovered ? tokens.ink : tokens.inkSoft,
+        cursor: disabled ? 'default' : 'pointer',
+        fontFamily: tokens.body,
+        fontSize: 15,
+        lineHeight: 1,
+        transition: motion.button,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 function Chip({
   choice,
   selected,
@@ -684,9 +731,33 @@ export function RangeConfigurator({
    * did nothing. Then it reverts: two of the same window is a real order, so the
    * row has to stay addable. */
   const [justAdded, setJustAdded] = useState(false);
+
+  /** HOW MANY OF THIS EXACT CONFIGURATION.
+   *
+   * Nobody buys one blind. A house has four windows on the same side and they
+   * take the same blind in the same fabric at the same size — one line and a
+   * quantity, not four trips through the same six questions.
+   *
+   * It resets to one after adding, because the next thing somebody specifies is
+   * a different window, not another four of the last one. */
+  const [qty, setQty] = useState(1);
+
+  /** WHAT THE CONFIRMATION SAYS, which is not what the stepper says. The
+   * stepper resets to one on add, so by the time "Added" is on screen the
+   * number that was added is gone — and "Added" alone after choosing four is a
+   * button that under-reports what it just did. */
+  const [qtyAdded, setQtyAdded] = useState(1);
+
   const addToCart = () => {
     onInteract?.();
-    addItem(configuredLine(item, sel));
+    // The cart keys a line by its configuration and increments when it sees the
+    // same one again, so adding n is adding once, n times. That keeps the
+    // quantity where it belongs — in the cart — rather than teaching this panel
+    // a second way to say the same thing.
+    const line = configuredLine(item, sel);
+    for (let i = 0; i < qty; i++) addItem(line);
+    setQtyAdded(qty);
+    setQty(1);
     setJustAdded(true);
     window.setTimeout(() => setJustAdded(false), 2000);
   };
@@ -849,6 +920,48 @@ export function RangeConfigurator({
             </span>
           )}
         </div>
+        {/* THE COUNT, between the price and the action, which is where the
+            decision actually happens: you read what one costs, you decide how
+            many, you add them.
+
+            It is a stepper rather than a number field because the numbers are
+            small — a house has four windows on a side, not forty — and because
+            a text input on a card invites a keyboard on a phone for something
+            two taps can do. */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: space.tight,
+            marginBottom: space.tight,
+            ...(fill ? { padding: `0 ${space.item}px` } : null),
+          }}
+        >
+          <span style={{ ...labelStyle, marginBottom: 0 }}>Quantity</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Step label="Remove one" onClick={() => setQty(q => Math.max(1, q - 1))} disabled={qty <= 1}>
+              &minus;
+            </Step>
+            <span
+              aria-live="polite"
+              style={{
+                ...typeScale.label,
+                letterSpacing: 'normal',
+                color: tokens.ink,
+                minWidth: 26,
+                textAlign: 'center',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {qty}
+            </span>
+            <Step label="Add one" onClick={() => setQty(q => Math.min(20, q + 1))} disabled={qty >= 20}>
+              +
+            </Step>
+          </div>
+        </div>
+
         <button
           {...bind}
           onClick={addToCart}
@@ -890,7 +1003,11 @@ export function RangeConfigurator({
               The quote wording survives because the distinction survives: an
               unpriced line goes into the same cart but leaves with a request
               rather than a total. */}
-          {justAdded ? 'Added' : price !== null ? 'Add to cart' : 'Add for quote'}
+          {justAdded
+            ? `Added${qtyAdded > 1 ? ` ${qtyAdded}` : ''}`
+            : price !== null
+            ? `Add ${qty > 1 ? `${qty} ` : ''}to cart`
+            : `Add ${qty > 1 ? `${qty} ` : ''}for quote`}
         </button>
       </div>
     </div>
