@@ -18,6 +18,8 @@
     "check:exceptions": "node tools/verify-exceptions.mjs",
     "verify:scope-guard": "node tools/verify-scope-guard.mjs",
     "check:wardrobe-assets": "node tools/verify-wardrobe-manifest.mjs",
+    "check:fabric-shots": "node tools/verify-fabric-shots.mjs",
+    "gen:fabric-shots": "node tools/generate-fabric-shots.mjs",
     "check:asset-paths": "node tools/verify-asset-paths.mjs",
     "audit:assets": "node tools/asset-audit.mjs",
     "baseline": "node tools/render-baseline.mjs",

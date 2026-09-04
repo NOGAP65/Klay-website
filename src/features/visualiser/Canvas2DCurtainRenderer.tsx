@@ -47,6 +47,9 @@ interface Canvas2DCurtainRendererProps {
   hardwareColour: 'white' | 'black' | 'chrome';
   mount: 'ceiling' | 'window';
   colour: string;
+  /** Ordered track width — 'small' | 'medium' | 'large' | 'xl'. Sets how many
+   *  waves the heading carries. See wavesForTrack. */
+  size?: string;
   /** 0 = shut (panels meet at the centre), 1 = fully drawn back. */
   openness: number;
   canvasWidth: number;
@@ -56,32 +59,55 @@ interface Canvas2DCurtainRendererProps {
 
 // --- The physical spec -----------------------------------------------------
 
-/** Waves per panel. FIXED, on every window.
+/** WAVES PER PANEL, FROM THE WIDTH THAT WAS ORDERED.
  *
- * This used to be derived from the ordered track width — a table of mm per size
- * pill, divided by the heading tape's snap spacing — which is how a real curtain
- * is quoted and gave a small window fewer waves than a large one. Correct on
- * paper, wrong on screen: at four waves a small window read as two bulges rather
- * than as a wave curtain, and the whole point of the visualiser is that the
- * customer recognises the product. Nine is the count the largest size produced,
- * it looks right at every window, so every window gets it.
+ * This was fixed at nine on every window. The reasoning was that nine is what
+ * the largest size produces and it "looks right at every window" — but it does
+ * not, and a wide window is where it fails hardest: nine waves stretched across
+ * three metres is nine fat bulges, and the customer sees a curtain that is not
+ * the one they are buying. A wave fold curtain has one wave per 160mm of track
+ * and that is the whole character of the heading. More track, more waves.
+ *
+ * So it is derived again — from the SIZE THAT WAS ORDERED, not from the pixels
+ * of the trace. Pixels cannot give millimetres on their own, and the size pill
+ * is the real number: it is what gets quoted, made and installed. It also means
+ * moving that control visibly changes the curtain, which is the correct
+ * relationship between a spec and a picture of it.
+ *
+ * The floor is what the old comment was really protecting against, and it is
+ * kept: below about five the panel reads as a few bulges rather than as a wave
+ * curtain. A 1.2m track is 3.75 waves a panel on the arithmetic, and it is drawn
+ * with five. That is the one place this lies, and it lies in the direction of
+ * the product being recognisable.
  *
  * A whole number, always, and the mesh spans exactly this many full sine periods
  * — so a panel opens and closes on a complete wave and never on half of one.
  * There is no path here that can produce a fractional wave: the compression front
  * moves the wave WIDTHS and never the count. */
-const WAVES_PER_PANEL = 9;
+const MIN_WAVES_PER_PANEL = 5;
+
+/** Ordered track width per size pill, mm. The labels the customer reads are
+ *  "up to 1.2m" and so on, and these are those numbers. */
+const TRACK_WIDTH_MM: Record<string, number> = {
+  small: 1200,
+  medium: 1800,
+  large: 2400,
+  xl: 3000,
+};
+
+/** Two panels split the track, so each covers half of it when shut. */
+const wavesForTrack = (trackMm: number): number =>
+  Math.max(MIN_WAVES_PER_PANEL, Math.round(trackMm / WAVE_PITCH_MM / 2));
 
 /** One wave per 160mm of track: heading tape carries a snap every 80mm at the
  * standard 80% fullness, and one wave — a crest and the trough beside it — spans
  * two snaps.
  *
- * No longer sets the wave count. It is now the renderer's only link to real-world
- * scale, working the other way round: the panel shows WAVES_PER_PANEL waves, each
- * wave is 160mm of track, so the panel is 9 x 160mm of cloth however many pixels
- * wide it happens to be, and one pixel is therefore a known number of
- * millimetres. The cloth physics needs that — a pendulum's period depends on its
- * length in metres, not in pixels. */
+ * It sets the wave count again — see wavesForTrack — and it remains the
+ * renderer's link to real-world scale in the other direction: the panel shows
+ * that many waves, each wave is 160mm of track, so one pixel is a known number
+ * of millimetres. The cloth physics needs that, because a pendulum's period
+ * depends on its length in metres and not in pixels. */
 const WAVE_PITCH_MM = 160;
 
 /** Stacked, both panels together occupy a third of the track. A shut panel is
@@ -301,6 +327,50 @@ const HEM_BAND_DENSITY = 0.30;
  * cloth, rather than painted into the background canvas: it has to move with
  * the panel as the curtain is drawn back, and the background is composited
  * once. */
+/** HOW HARD THE SHEER SCATTERS WHAT IS BEHIND IT.
+ *
+ * The backdrop is redrawn at this fraction of the photograph's width and
+ * sampled back up, which is a blur by resampling — cheap, and the softness
+ * scales with the image rather than being a fixed pixel radius that would mean
+ * one thing on a 1254px room and another on a 4000px phone photo.
+ *
+ * A twelfth is a sheer, not frosted glass: at this radius a garden behind the
+ * cloth stays a garden — you can see it is green and leafy — but no single leaf
+ * survives, which is exactly the line a real sheer draws. */
+const SHEER_DIFFUSION = 1 / 12;
+
+/** TRANSMISSION AND SCATTER, and the two of them ADD.
+ *
+ * A backlit sheer is the brightest thing in the room — brighter than the wall
+ * beside it, often clipping to white where the window is directly behind. Every
+ * photograph of one shows this and the render was doing the opposite: it sat
+ * DARKER than the wall, because the cloth was being blended OVER the window as
+ * a mix. A mix can only ever land between the two things it mixes, so putting
+ * cloth over glass could only darken the glass. That is a grey film, and it is
+ * what it looked like.
+ *
+ * What actually reaches the eye is two separate paths summed:
+ *
+ *   TRANSMITTED  the window's own light, having come through the weave. Soft,
+ *                because the threads scattered it on the way (see
+ *                SHEER_DIFFUSION), and NOT shaded by the folds — light that has
+ *                passed through the cloth does not care which way the surface
+ *                was facing.
+ *   SCATTERED    the room's light bouncing off the near face. This one IS shaded
+ *                by the folds, and it is the only thing that is.
+ *
+ * Summing them produces the whole behaviour for free, including two things that
+ * were being chased separately before. Over the bright window the transmitted
+ * term dominates and the folds WASH OUT — which is exactly what the reference
+ * shows, the folds nearly vanishing into the glow and reappearing at the edges.
+ * And the total can exceed the wall's brightness, so the cloth glows instead of
+ * greying.
+ *
+ * Both are scaled by the fabric's own opacity, so a charcoal sheer transmits
+ * little and scatters dark while a white one does the opposite. */
+const SHEER_TRANSMIT_GAIN = 1.25;
+const SHEER_SCATTER_GAIN = 1.0;
+
 const SILL_SHADOW_DROP = 0.055;
 const SILL_SHADOW_ALPHA = 0.34;
 
@@ -1053,10 +1123,15 @@ uniform mat3 uQuadH;
 attribute float aCompression;
 attribute float aDepth;
 
+uniform vec2 uFrame;
+
 varying vec3 vNormal;
 varying vec2 vUv;
 varying float vCompression;
 varying float vDepth;
+/** Where this fragment lands on the photograph, 0..1. The camera is an ortho
+ *  box over the image, so warped world coordinates ARE image pixels. */
+varying vec2 vBackdrop;
 
 void main() {
   vNormal = normalMatrix * normal;
@@ -1071,6 +1146,7 @@ void main() {
     vec4 world = modelMatrix * vec4(position, 1.0);
     vec3 warped = uQuadH * vec3(world.xy, 1.0);
     world.xy = warped.xy / warped.z;
+    vBackdrop = world.xy / uFrame;
     gl_Position = projectionMatrix * viewMatrix * world;
 }
 `;
@@ -1081,6 +1157,11 @@ precision mediump float;
 uniform vec3 uColour;
 uniform float uOpacity;
 uniform float uIsSheer;
+uniform sampler2D uBackdrop;
+uniform float uHasBackdrop;
+uniform float uTransmitGain;
+uniform float uScatterGain;
+varying vec2 vBackdrop;
 uniform float uHemBand;
 uniform float uHemDensity;
 uniform sampler2D uTexture;
@@ -1234,7 +1315,7 @@ void main() {
     // surface being lit rather than a cloth being seen through.
     float facing = pow(max(geoN.z, 0.0), 2.4);
     vec3 glow = colour + vec3(0.13, 0.11, 0.06);
-    colour = mix(colour * 0.74, glow, facing * (1.0 - vCompression * 0.4));
+    colour = mix(colour, glow, facing * (1.0 - vCompression * 0.4));
 
     // TRANSPARENCY FROM THE WEAVE ITSELF, which is the honest way to draw a sheer:
     // it is not a uniformly hazy sheet, it is an open cloth, and what you see
@@ -1246,6 +1327,44 @@ void main() {
 
     // Packed fabric is layer upon layer, and stacks up nearly solid at the ends.
     alpha = mix(alpha, min(1.0, alpha + 0.14), vCompression);
+
+    // THE CLOTH SCATTERS, IT DOES NOT JUST LET LIGHT PAST.
+    //
+    // Left to ordinary alpha blending, everything behind a sheer arrives at the
+    // eye SHARP — the garden through the window was legible leaf by leaf under a
+    // veil, which is what glass does, or a tinted film. It is not what cloth
+    // does. A sheer is an open weave in front of a bright field: light entering
+    // it is scattered by every thread it passes, so the image behind survives
+    // only as tone and colour, never as detail.
+    //
+    // The blend has to be done here rather than by the compositor, because the
+// compositor only has the sharp original to blend with. So the diffused
+    // backdrop is sampled and mixed in at exactly the weight the alpha would
+    // have carried, and the fragment then draws opaque — the same visual
+    // weight of cloth, over a backdrop that has been through the weave.
+    if (uHasBackdrop > 0.5) {
+      // The window's light, already softened by the weave. See SHEER_DIFFUSION.
+      vec3 behind = texture2D(uBackdrop, vBackdrop).rgb;
+
+      // How much gets through. Less where the cloth is stacked several layers
+      // deep, less again through the doubled hem, and a little less where the
+      // surface has turned away from the camera and the path through the weave
+      // is longer than the sheet is thick.
+      float transmit = (1.0 - uOpacity) * uTransmitGain;
+      transmit *= 1.0 - vCompression * 0.55;
+      transmit *= 1.0 - hemBand * 0.45;
+      transmit *= mix(0.72, 1.0, facing);
+
+      // The near face, lit by the room. This carries the fold shading — and it
+      // is the ONLY term that does, which is why the folds fade out against the
+      // bright window and come back against the wall.
+      vec3 scattered = colour * uOpacity * uScatterGain;
+
+      colour = behind * transmit + scattered;
+      // Composited here, so it draws opaque: the blend has already happened and
+      // the framebuffer must not do it a second time against the sharp original.
+      alpha = 1.0;
+    }
 
     // And the doubled hem is the same effect in a strip: three layers of a sheer
     // read almost as a solid band. See HEM_BAND_DENSITY.
@@ -1689,12 +1808,37 @@ function buildDetailTexture(path: string): Promise<FabricTexture> {
     // that does not happen.
     texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
-    // No mipmaps: the map is magnified, not minified, so a mip chain would never
-    // be sampled and generating it only costs memory and upload time. Without
-    // POT dimensions WebGL1 would refuse them anyway.
-    texture.minFilter = THREE.LinearFilter;
+    // MIPMAPPED, AND THIS IS WHY THE CLOTH LOOKED LIKE A HONEYCOMB.
+    //
+    // The old reasoning was that the map is magnified rather than minified, so a
+    // mip chain would never be sampled. That is true of exactly one case: a
+    // fully-drawn panel across a wide window on a full-size buffer. It is false
+    // everywhere else, and the cases where it is false are the ones on screen
+    // most of the time.
+    //
+    // u runs along the FABRIC, not along x, so the whole 640-texel map is
+    // carried across whatever width the panel currently occupies. Draw the
+    // curtain back and that width collapses to a third — the same map crushed
+    // into a third of the pixels, a minification of three or four times. And the
+    // map's content is an open-weave linen: a REGULAR SQUARE GRID. A regular grid
+    // sampled below its own Nyquist limit does not go soft, it beats against the
+    // pixel lattice and produces a second, coarser grid that is not in the cloth
+    // at all. That interference is the honeycomb, and it was worst exactly where
+    // the fabric stacks — which is where the panel is narrowest.
+    //
+    // Trilinear plus anisotropy fixes it properly rather than by blurring the
+    // texture: the mip chain supplies a correctly band-limited sample for
+    // whatever minification this frame is asking for, and the anisotropic taps
+    // keep the weave sharp along the fold while it is being averaged across it.
+    //
+    // The WebGL1 note the old comment carried no longer applies: three's renderer
+    // is WebGL2 here, where NPOT textures take mipmaps and repeat wrapping like
+    // any other.
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
-    texture.generateMipmaps = false;
+    texture.generateMipmaps = true;
+    // Anisotropy is set once the renderer exists and can be asked for its
+    // limit — the textures are built before it. See the init below.
     texture.needsUpdate = true;
 
     return { texture };
@@ -1735,6 +1879,7 @@ export default function Canvas2DCurtainRenderer({
   hardwareColour,
   mount,
   colour,
+  size,
   openness,
   canvasWidth,
   canvasHeight,
@@ -1932,6 +2077,33 @@ export default function Canvas2DCurtainRenderer({
       const bgCtx = bgCanvas.getContext('2d');
       if (bgCtx) bgCtx.drawImage(photo, 0, 0);
 
+      // THE DIFFUSED BACKDROP the sheer looks through. Redrawn small and
+      // sampled back up, which is a blur by resampling: the browser's own
+      // downscale does the averaging, and reading it at full size with a linear
+      // filter does the rest. Cheap enough to build once per photo, and the
+      // radius scales with the image rather than being a fixed number of pixels
+      // that would mean different things on a 1254px room and a 4000px phone
+      // shot. See SHEER_DIFFUSION.
+      const blurW = Math.max(8, Math.round(W * SHEER_DIFFUSION));
+      const blurH = Math.max(8, Math.round(H * SHEER_DIFFUSION));
+      const blurCanvas = document.createElement('canvas');
+      blurCanvas.width = blurW;
+      blurCanvas.height = blurH;
+      const blurCtx = blurCanvas.getContext('2d');
+      if (blurCtx) {
+        blurCtx.imageSmoothingEnabled = true;
+        blurCtx.imageSmoothingQuality = 'high';
+        blurCtx.drawImage(photo, 0, 0, blurW, blurH);
+      }
+      const backdrop = new THREE.CanvasTexture(blurCanvas);
+      backdrop.colorSpace = THREE.SRGBColorSpace;
+      backdrop.wrapS = THREE.ClampToEdgeWrapping;
+      backdrop.wrapT = THREE.ClampToEdgeWrapping;
+      backdrop.minFilter = THREE.LinearFilter;
+      backdrop.magFilter = THREE.LinearFilter;
+      backdrop.generateMipmaps = false;
+      backdrop.needsUpdate = true;
+
       // Three's y runs up, the photo's runs down.
       const flip = (p: Point) => ({ x: p.x, y: H - p.y });
       const tlPx = flip(tl);
@@ -1986,8 +2158,8 @@ export default function Canvas2DCurtainRenderer({
         }
       })();
 
-      // WAVE COUNT — the same on every window. See WAVES_PER_PANEL.
-      const waveCount = WAVES_PER_PANEL;
+      // WAVE COUNT — from the ordered track width. See wavesForTrack.
+      const waveCount = wavesForTrack(TRACK_WIDTH_MM[size ?? 'medium'] ?? TRACK_WIDTH_MM.medium);
 
       // Panels meet at the centre with a hairline between them, so a shut pair
       // reads as two panels rather than one sheet.
@@ -2076,6 +2248,13 @@ export default function Canvas2DCurtainRenderer({
       renderer.setClearColor(0x000000, 0);
       rendererRef.current = renderer;
 
+      // The weave is minified hard whenever the panel stacks, and it is a
+      // regular grid, so it needs every anisotropic tap the device will give
+      // it. Set here rather than in buildDetailTexture because that runs
+      // before there is a renderer to ask.
+      fabric.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      fabric.texture.needsUpdate = true;
+
       const scene = new THREE.Scene();
       sceneRef.current = scene;
 
@@ -2097,6 +2276,13 @@ export default function Canvas2DCurtainRenderer({
             uColour: { value: colourVec },
             uOpacity: { value: isSheer ? sheerOpacity(colour) : 1.0 },
             uIsSheer: { value: isSheer ? 1.0 : 0.0 },
+            // Only the sheer looks through anything. A blockout has nothing
+            // behind it to diffuse, so it never samples this.
+            uBackdrop: { value: backdrop },
+            uHasBackdrop: { value: isSheer && blurCtx ? 1.0 : 0.0 },
+            uTransmitGain: { value: SHEER_TRANSMIT_GAIN },
+            uScatterGain: { value: SHEER_SCATTER_GAIN },
+            uFrame: { value: new THREE.Vector2(W, H) },
             uHemBand: { value: HEM_BAND },
             uHemDensity: { value: HEM_BAND_DENSITY },
             uTexture: { value: fabric.texture },
@@ -2113,7 +2299,15 @@ export default function Canvas2DCurtainRenderer({
             // again despite the more pronounced weave, because a backlit veil is
             // mostly transmitted light and relief on top of that reads as
             // glitter rather than as thread.
-            uBump: { value: isSheer ? 0.45 : 0.6 },
+            // 0.30 for the sheer, down from 0.45. The bump turns the weave map
+            // into relief that catches the room light, and on an open-weave
+            // linen every hole in the mesh becomes its own lit cell. Correct in
+            // principle — that IS what the cloth does — but at this viewing
+            // distance a real sheer reads as a translucent haze with the odd
+            // slub catching, not as a resolved egg-crate. The blockout's sateen
+            // has no open grid to light up and keeps its 0.6.
+            uBump: { value: isSheer ? 0.30 : 0.6 },
+
           },
           vertexShader: VERTEX_SHADER,
           fragmentShader: FRAGMENT_SHADER,
@@ -2245,7 +2439,12 @@ export default function Canvas2DCurtainRenderer({
   }, [
     photoUrl, canvasWidth, canvasHeight,
     tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y,
-    mount, fabricType, hardwareColour,
+    // `size` is in here because it decides the WAVE COUNT, and the count is
+    // baked into the mesh at build time — createPanelMesh allocates for it.
+    // Left out, changing the size pill repriced the curtain and redrew
+    // nothing, which is the worst of both: the control looks broken and the
+    // picture quietly disagrees with the order.
+    mount, fabricType, hardwareColour, size,
   ]);
 
   // Openness kicks the solver rather than drawing. The solver reads the live
