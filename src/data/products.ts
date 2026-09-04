@@ -195,6 +195,29 @@ export const RYNAMIC_COLOURS = [
 // Flint, Charcoal and so on. Deliberately none of the distinctive product names
 // a particular range uses for its own patterns, which are its branding rather
 // than descriptions of a colour.
+/** SLAT AND LOUVRE COLOURS — venetians and plantation shutters.
+ *
+ * A different range from the fabrics, because these are painted or stained
+ * boards rather than woven cloth: the neutrals run cooler and the timbers are
+ * real timber rather than a print of one. Seven, which is what a slat range
+ * usually is — a fabric book runs to dozens because cloth is cheap to dye and a
+ * powder-coat line is not.
+ *
+ * NEEDS A COMMERCIAL CHECK. These are the colours the range plainly ought to
+ * carry, not a list read off a supplier's card, and the two timbers in
+ * particular are named rather than matched. A wrong hex here is a customer
+ * choosing a colour Klay does not sell.
+ */
+export const SLAT_COLOURS = [
+  { name: 'White', hex: '#F4F3F0' },
+  { name: 'Ivory', hex: '#E9E4D9' },
+  { name: 'Stone', hex: '#CFCCC6' },
+  { name: 'Silver', hex: '#AFAFAD' },
+  { name: 'Charcoal', hex: '#4A4A48' },
+  { name: 'Light Oak', hex: '#C0A075' },
+  { name: 'Walnut', hex: '#7A5638' },
+]
+
 export const CURTAIN_COLOURS = [
   { name: 'White', hex: '#E7E7E6' },     // 0.905
   { name: 'Whisper', hex: '#DEDFDD' },   // 0.872 · cool

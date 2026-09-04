@@ -182,21 +182,18 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     size: true,
     operation: true,
   },
-  // THE SLAT IS THE COLOUR HERE. A venetian carries no colour card, so this
-  // row is the only thing a customer specifies about how it looks — which is
-  // why it survives the one-photograph rule that took the fabric types off the
-  // shutters. The photography not yet distinguishing timber from aluminium is a
-  // gap in the photography, not evidence the product comes one way.
+  // NO MATERIAL ROW: A VENETIAN IS SOLD BY COLOUR. It carried
+  // Aluminium / Timber / Faux, which is a substrate rather than a choice a
+  // customer browses — and it was standing in for the colour card the product
+  // should always have had. It has one now; see SLAT_COLOURS.
   'venetian-blinds': {
-    variantLabel: 'Slat',
-    variants: [v('aluminium', 'Aluminium'), v('timber', 'Timber'), v('faux', 'Faux timber')],
     size: true,
     operation: true,
+    colourLabel: 'Slat colour',
   },
   'plantation-shutters': {
-    variantLabel: 'Material',
-    variants: [v('pvc', 'PVC'), v('timber', 'Timber'), v('aluminium', 'Aluminium')],
     size: true,
+    colourLabel: 'Louvre colour',
   },
   'vertical-blinds': {
     variantLabel: 'Fabric type',

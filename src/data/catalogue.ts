@@ -28,7 +28,7 @@
 // main's own paths: this file is src/data/catalogue.ts here, one level
 // shallower than the refactor branch's src/features/catalogue/constants.ts, and
 // there is no @/config/routes barrel on this branch either.
-import { PRODUCTS, RYNAMIC_COLOURS, CURTAIN_COLOURS } from './products'
+import { PRODUCTS, RYNAMIC_COLOURS, CURTAIN_COLOURS, SLAT_COLOURS } from './products'
 import { WARDROBE_COLOURS } from '../visualiser/wardrobes'
 import type { BlindType } from '../lib/pricing'
 
@@ -186,6 +186,9 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Horizontal slats that tilt. Aluminium, timber or faux.',
     to: enquire('Venetian Blinds'),
     glyph: 'venetian-blinds',
+    // SOLD BY COLOUR. The slat material is a specification, not something a
+    // customer browses — see SLAT_COLOURS.
+    colours: SLAT_COLOURS,
     light: ['Blockout', 'Light filter'],
   },
   {
@@ -195,6 +198,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Louvred joinery, fitted to the opening and built to last.',
     to: enquire('Plantation Shutters'),
     glyph: 'shutters',
+    colours: SLAT_COLOURS,
     image: '/images/products/plantation-shutters.webp',
     light: ['Blockout', 'Light filter'],
   },
