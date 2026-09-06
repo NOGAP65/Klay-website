@@ -4,7 +4,7 @@
 // The homepage's Bestsellers row does this for four products and it is the best
 // thing on the site: click Shop Now and the card widens, the configurator
 // arrives BESIDE the photograph, and you specify the thing while looking at it.
-// The shop page listed all fourteen and did none of it — every card was a link
+// The shop page listed all twelve and did none of it — every card was a link
 // out to a detail page or a contact form, so the one place a customer goes to
 // choose was the one place they could not.
 //
@@ -87,7 +87,7 @@ export const STAGGER_MS = 30;
 /** The longest the wave may take to cross the whole grid.
  *
  * STAGGER_MS is right for the few cards a customer can see at once, but the
- * range is thirteen movers and a filtered grid is a different length again — so
+ * range is eleven movers and a filtered grid is a different length again — so
  * left alone, the same click would run for near enough a second on the full shop
  * and a third of that on a narrowed one. The gap shrinks to fit this instead:
  * the order is kept, the duration is not the grid's length.

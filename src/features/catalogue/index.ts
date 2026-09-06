@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // CATALOGUE — what Klay sells, and the pages that show it.
 //
-// The fourteen products, the facet model the shop filters on, the per-product
+// The twelve products, the facet model the shop filters on, the per-product
 // configuration options, and the product pages themselves.
 //
 // This feature's ONLY public entrance. §1 rule 3, ADR-019: other features may

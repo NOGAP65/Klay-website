@@ -108,7 +108,7 @@ import { radius, tokens, motion, shadow, space, supporting, eyebrow, headline, l
 import { CATALOGUE, type CatalogueItem } from '@/features/catalogue';
 import { defaultSelection, fieldsFor, type Selection } from '@/features/catalogue';
 
-// The cards read data/catalogue.ts — the same fourteen products the shop lists,
+// The cards read data/catalogue.ts — the same twelve products the shop lists,
 // rendered by the same tile. Four of them, named below; nothing about the range
 // is written down in this file.
 
@@ -1018,7 +1018,7 @@ export function RangeRow() {
       >
         <div>
           {/* THIS WAS "The collection" / "Our Range" AND THAT WAS THE PROBLEM.
-              The section is four products and the catalogue is fourteen, so a
+              The section is four products and the catalogue is twelve, so a
               heading claiming to be THE RANGE was competing with the section
               that actually is it: "Our Range" over four cards, then "The full
               range" over ten more, in that order down the page. Naming these as

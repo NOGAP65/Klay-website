@@ -44,7 +44,7 @@ import {
 
 import type { CatalogueItem } from '../constants';
 
-/** The panel's height, shared by all fourteen so every gold button lands on one
+/** The panel's height, shared by all twelve so every gold button lands on one
  * line. Derived: TWO fields at 52 plus their gap, the price row, the 52px button
  * and the panel's own padding.
  *
@@ -332,7 +332,7 @@ function DenseField({
   // A COLOUR CARD IS ALWAYS SHOWN, however many colours it has, because the
   // control IS the information. Every other field can be summarised in its own
   // words — Blockout means blockout — but "White" is a word standing in for a
-  // colour, and a customer choosing between fourteen of them is choosing between
+  // colour, and a customer choosing between twelve of them is choosing between
   // the squares, not the names. Hiding those behind a press hides the only thing
   // on the row worth looking at. Fourteen swatches at 22px wrap to two rows,
   // which is less height than the row of chips above it.
@@ -672,7 +672,7 @@ export function RangeConfigurator({
   /** EVERY QUESTION OPEN, ONE LINE EACH — the shop grid's mode.
    *
    * The accordion is right where the panel is one card the customer has chosen
-   * to open: it keeps a tall configurator short. On a grid of fourteen cards
+   * to open: it keeps a tall configurator short. On a grid of twelve cards
    * that are ALL open there is nothing to keep short and a lot to keep even, so
    * every row is a fixed line and the card's height is the same whatever is
    * being asked. See DenseField. */
@@ -720,7 +720,7 @@ export function RangeConfigurator({
    * top, which between them made a basket impossible to build: somebody doing a
    * whole house has four or five windows to specify, and each one ended the
    * session on the cart and sent them back to find their place in a
-   * fourteen-card grid.
+   * twelve-card grid.
    *
    * Nothing else was missing. The nav already counts the cart and already links
    * to it, and the cart already ends in the one checkout — see the note in
@@ -769,7 +769,7 @@ export function RangeConfigurator({
         // 470 — which is what made the card 940. This is sized to the median
         // card instead: three fields, a price and a button. The roller, which
         // asks five, scrolls the last one into view inside its own panel rather
-        // than making all fourteen cards tall enough for the worst case.
+        // than making all twelve cards tall enough for the worst case.
         // A CAP, NOT A MATCH. It used to be handed the photograph's own height —
         // 470 — which is what made the card 940. The non-fill variant is sized to
         // the median card instead: three fields, a price and a button.

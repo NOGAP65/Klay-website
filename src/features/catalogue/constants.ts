@@ -1,8 +1,8 @@
 // ---------------------------------------------------------------------------
-// THE CATALOGUE — the fourteen products Klay sells, as supplied by the business.
+// THE CATALOGUE — the twelve products Klay sells, as supplied by the business.
 //
-//   Indoor    Roller Blinds, Roman Blinds, Honeycomb Blinds, Venetian Blinds,
-//             Plantation Shutters, Vertical Blinds, Curtains
+//   Indoor    Roller Blinds, Honeycomb Blinds, Venetian Blinds,
+//             Plantation Shutters, Curtains
 //   Outdoor   Folding Arm Awnings, Zip Guide Systems, Roller Shutters,
 //             Pleated Flyscreens
 //   Other     Wardrobes, Shelving, Frameless Shower Screens
@@ -20,6 +20,13 @@
 // alongside product types, which mixed two grains in one grid. Roller Blinds is
 // one card now, and its four fabrics are a choice on the product page itself —
 // which is where a fabric belongs, next to the price it changes.
+//
+// ROMAN BLINDS AND VERTICAL BLINDS ARE WITHDRAWN, and this is a range decision
+// rather than a tidy-up: the business does not sell them, so the site must not
+// offer them. Everything that stood behind those two cards went with them — the
+// config panels, the mechanism glyphs, the product photographs and the AI
+// renders they were cut from. What is left is twelve products, and Indoor is
+// five.
 //
 // GROUPS ARE THE BUSINESS'S OWN — Indoor, Outdoor, Other. The shop's filter rail
 // is built from them directly rather than from an invented family layer.
@@ -62,8 +69,8 @@ export interface CatalogueItem {
   glyph?: string
   colours?: { name: string; hex: string }[]
   /** MULTI-VALUED, and that is what makes the filter work at this grain. One
-   * card covers a whole product type, and a roman blind is made in blockout AND
-   * light-filter fabrics — it carries both and matches if either is ticked.
+   * card covers a whole product type, and a honeycomb blind is made in blockout
+   * AND light-filter fabrics — it carries both and matches if either is ticked.
    * Products that are not about light carry none and drop out when a light
    * filter is on, which is correct.
    *
@@ -145,31 +152,6 @@ export const CATALOGUE: CatalogueItem[] = [
     visualise: { category: 'blind', blindType: 'blockout' },
   },
   {
-    id: 'roman-blinds',
-    name: 'Roman Blinds',
-    group: 'Indoor',
-    tagline: 'Soft folds that stack flat at the head of the window.',
-    to: enquire('Roman Blinds'),
-    glyph: 'roman-blinds',
-    image: '/images/products/roman-blinds.webp',
-    // THE FABRIC BLINDS SHARE THE RYNAMIC CARD, and this is an editorial claim
-    // in the same class as LIGHT_OVERRIDES above — worth a commercial check.
-    //
-    // The reasoning: Rynamic is the fabric range Klay already sells rollers in,
-    // and a roman, a honeycomb and a vertical are all fabric products cut from
-    // the same kind of cloth. Saying they come in nothing was the less accurate
-    // of the two available claims.
-    //
-    // It also makes the range row work. The card's lead control is a colour
-    // swatch where a colour card exists, and repainting the tile's ground with
-    // the chosen colour is the one way a photoless product can SHOW a selection
-    // rather than just record it — see the note on the glyph fallback in RangeGrid.
-    // With colours on rollers and curtains alone, both of which have
-    // photographs, that never fired once.
-    colours: RYNAMIC_COLOURS,
-    light: ['Blockout', 'Light filter'],
-  },
-  {
     id: 'honeycomb-blinds',
     name: 'Honeycomb Blinds',
     group: 'Indoor',
@@ -177,7 +159,20 @@ export const CATALOGUE: CatalogueItem[] = [
     to: enquire('Honeycomb Blinds'),
     glyph: 'honeycomb-blinds',
     image: '/images/products/honeycomb-blinds.webp',
-    // See the note on Roman Blinds — the fabric blinds share the Rynamic card.
+    // THE FABRIC BLINDS SHARE THE RYNAMIC CARD, and this is an editorial claim
+    // in the same class as the light values above — worth a commercial check.
+    //
+    // The reasoning: Rynamic is the fabric range Klay already sells rollers in,
+    // and a honeycomb is a fabric product cut from the same kind of cloth.
+    // Saying it comes in nothing was the less accurate of the two available
+    // claims.
+    //
+    // It also makes the range row work. The card's lead control is a colour
+    // swatch where a colour card exists, and repainting the tile's ground with
+    // the chosen colour is the one way a photoless product can SHOW a selection
+    // rather than just record it — see the note on the glyph fallback in RangeGrid.
+    // With colours on rollers and curtains alone, both of which have
+    // photographs, that never fired once.
     colours: RYNAMIC_COLOURS,
     light: ['Blockout', 'Light filter'],
   },
@@ -203,18 +198,6 @@ export const CATALOGUE: CatalogueItem[] = [
     colours: SLAT_COLOURS,
     image: '/images/products/plantation-shutters.webp',
     light: ['Blockout', 'Light filter'],
-  },
-  {
-    id: 'vertical-blinds',
-    name: 'Vertical Blinds',
-    group: 'Indoor',
-    tagline: 'Louvres that draw aside. Made for sliding doors.',
-    to: enquire('Vertical Blinds'),
-    glyph: 'vertical-blinds',
-    image: '/images/products/vertical-blinds.webp',
-    // See the note on Roman Blinds — the fabric blinds share the Rynamic card.
-    colours: RYNAMIC_COLOURS,
-    light: ['Blockout', 'Light filter', 'Sunscreen'],
   },
   {
     id: 'curtains',

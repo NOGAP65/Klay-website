@@ -23,7 +23,11 @@
 //   /blinds/<other type>    the shop, pre-narrowed by ?category=<slug>. The
 //                           slugs are catalogue item ids, which is exactly what
 //                           groupForCategoryParam already resolves, so a
-//                           roman-blinds link opens the shop filtered to Indoor.
+//                           venetian-blinds link opens the shop filtered to
+//                           Indoor. A slug it no longer knows — roman-blinds and
+//                           vertical-blinds, withdrawn from the range — resolves
+//                           to nothing and lands on the unfiltered shop, which is
+//                           the right answer for a product that is gone.
 //
 //   /indoor|/outdoor|       the shop pre-narrowed to that group. Same parameter,
 //   /wardrobes              same resolver — it has understood these three since

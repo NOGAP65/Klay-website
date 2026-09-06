@@ -3,7 +3,7 @@
 //
 // Split out of constants.ts in Phase 4.3.3. §4: "lib/ is pure and testable
 // with no React and no network." What was left behind in constants.ts is the
-// fourteen-product table and its types; this is everything that reasons about
+// twelve-product table and its types; this is everything that reasons about
 // them.
 //
 // The file did two jobs and was 395 lines. Neither half changed — this is a
