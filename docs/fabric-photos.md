@@ -24,6 +24,38 @@ that is bone-against-bone and invisible on White is a bright fringe on Black.
 Masks are per product, not per fabric — the fabrics of one product are the same
 window in the same room, so the blind occupies the same pixels in all of them.
 
+## The louvred two, and the numbers they were cut with
+
+A venetian and a plantation shutter go through `--slats`, which takes three
+kinds of rectangle in fractions of the frame: `--box` is the whole unit, frame
+to frame; `--glass` is each opening the blind covers, and only there does the
+slat-versus-daylight test get asked; `--front` is anything standing between the
+camera and the blind. Everything in the box that is not glass is product — which
+is how the frame, the stiles, the rails and the tilt rods take colour, none of
+which can be found by looking at their pixels.
+
+**These numbers are read off the photograph by eye and cannot be recovered from
+it**, so they live here. Re-cutting either mask without them silently produces
+the old louvres-only cut.
+
+```
+node tools/cut-fabric-mask.mjs public/images/fabrics/plantation-shutters.webp plantation-shutters --slats \
+  --box=0.11,0.6467,0.1933,0.84 \
+  --glass=0.1456,0.6067,0.2278,0.3522 --glass=0.1456,0.6067,0.36,0.4878 \
+  --glass=0.1456,0.6067,0.5433,0.6711 --glass=0.1456,0.6067,0.68,0.8044
+
+node tools/cut-fabric-mask.mjs public/images/fabrics/venetian-blinds.webp venetian-blinds --slats \
+  --box=0.0911,0.6978,0.1689,0.8289 \
+  --glass=0.1189,0.6622,0.1711,0.8267 \
+  --front=0.6111,0.6444,0.8067,0.8311 --front=0.6444,0.7111,0.7833,0.8311
+```
+
+Four openings for a two-panel shutter rather than two, because the tilt rod
+stands in front of the view and splits its panel: given the panel whole, the rod
+would be daylight and lose its colour. The venetian's two `--front` rectangles
+are the lamp shade crossing the bottom corner, stepped to follow the dome —
+without them the bottom bar paints a charcoal band across the lamp.
+
 ## What the photographs have to do
 
 - **Off-white cloth, never pure white and never blown out.** Colour is applied by
