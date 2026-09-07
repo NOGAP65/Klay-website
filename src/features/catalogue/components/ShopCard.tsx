@@ -157,6 +157,40 @@ const ASSURANCES = [
 const dyeColour = (item: CatalogueItem, sel: Selection): string =>
   item.colours?.find(c => c.name === sel.colour)?.hex ?? '#FFFFFF';
 
+/** HOW MUCH OF THE CLOTH'S OWN MODELLING HAS TO GO BACK ON TOP, 0..1.
+ *
+ * MULTIPLYING BY A DARK COLOUR DOES NOT DARKEN A PHOTOGRAPH, IT FLATTENS IT.
+ * The curtain's folds run 157 to 225 in the shot. Multiply by Black — 19, 20, 21
+ * — and they come out 12 to 17: a five-level range, which is a black rectangle
+ * with a curtain's outline. Every fold, every pleat and the whole hang of the
+ * cloth is gone, and the darker the colour the more of the product disappears
+ * with it. That is wrong about the fabric and wrong about the photograph.
+ *
+ * What is missing is sheen. A black curtain in that room still catches the light
+ * off the window, and the highlight it catches is a reflection off the surface —
+ * it is not the dye, so nothing should have multiplied it away. Painting the
+ * shot back over itself in soft-light restores it: bright where the cloth was
+ * bright, dark where it was dark, in the cloth's own shape.
+ *
+ * SCALED BY HOW DARK THE COLOUR IS, because that is exactly how much was lost.
+ * White multiplies to 0.9 of the original and needs nothing back; Black
+ * multiplies to 0.08 and needs nearly all of it. So the strength is the shot's
+ * own `sheen` times one minus the swatch's luminance — which leaves the pale end
+ * of every colour card exactly as it renders today.
+ *
+ * PER SHOT RATHER THAN EVERYWHERE, and the venetian is why. Its slats photograph
+ * at a median of 227 against the curtain's 200, and soft-light lifts everything
+ * above mid-grey — so the same pass that gives a black curtain its folds turns a
+ * charcoal venetian into a mid-grey one. A cloth that is already near-white has
+ * little modelling in the shadows to restore and a great deal of lift to gain,
+ * which is the wrong trade. See SHEEN in tools/generate-fabric-shots.mjs. */
+const sheenStrength = (shot: { sheen: number } | undefined, hex: string): number => {
+  if (!shot?.sheen) return 0;
+  const v = (i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
+  const luma = 0.2126 * v(0) + 0.7152 * v(1) + 0.0722 * v(2);
+  return shot.sheen * (1 - luma);
+};
+
 /** THE COLOUR THE HEADRAIL AND BOTTOM BAR ARE PAINTED. The same three the
  * visualiser uses, so a blind specified here and a blind specified there are the
  * same blind. Chrome where nothing is chosen, which is what the photographs were
@@ -425,6 +459,36 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                 // with it or the colour slides off the cloth.
                 transform: lit ? 'scale(1.04)' : 'scale(1)',
                 transition: 'transform 0.7s ease, background 0.25s ease',
+              }}
+            />
+          )}
+
+          {/* THE SHEEN, PUT BACK. The dye above flattens the cloth in proportion
+              to how dark the colour is, and this returns the same proportion of
+              the photograph's own modelling — see sheenStrength for why a black
+              curtain without it is a black rectangle. Nothing is drawn where the
+              shot has no sheen or the colour is pale enough not to have lost
+              any. */}
+          {shot?.mask && sheenStrength(shot, dyeColour(item, sel)) > 0.01 && (
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: `url(${FABRIC_SHOT_DIR}/${shot.file})`,
+                backgroundSize: 'cover',
+                backgroundPosition: item.imagePosition ?? '50% 45%',
+                mixBlendMode: 'soft-light',
+                opacity: sheenStrength(shot, dyeColour(item, sel)),
+                WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
+                maskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
+                WebkitMaskSize: 'cover',
+                maskSize: 'cover',
+                WebkitMaskPosition: item.imagePosition ?? '50% 45%',
+                maskPosition: item.imagePosition ?? '50% 45%',
+                pointerEvents: 'none',
+                transform: lit ? 'scale(1.04)' : 'scale(1)',
+                transition: 'transform 0.7s ease, opacity 0.25s ease',
               }}
             />
           )}

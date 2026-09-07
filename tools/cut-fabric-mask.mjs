@@ -469,15 +469,39 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, 
       paint(cc.getContext('2d'));
       return cc.toDataURL('image/png');
     };
+    // A GIVEN EDGE HAS TO BE FEATHERED OR IT READS AS A CUT-OUT.
+    //
+    // The boundary the fill finds is already soft — it wanders with the cloth and
+    // carries a half-alpha fringe. A rectangle typed in by hand has neither, and
+    // against a sheer that is glaringly obvious: the gap between the panels stops
+    // being a gap and becomes a white column with two ruled sides, wider and
+    // harder than anything in the photograph. "The dye is like a square" is
+    // exactly right, and it is the cost of trading the ragged edge for a straight
+    // one without also trading hard for soft.
+    //
+    // So alpha ramps to nothing over FEATHER pixels approaching a given
+    // rectangle. Eight, which is about what the sheer's own edge diffuses over
+    // where it crosses the daylight. The fill's own boundary keeps the fringe it
+    // always had.
+    const FEATHER = Math.max(4, Math.round(W / 110));
+    const softness = (x, y) => {
+      let a = 1;
+      for (const r of [...GLASS, ...FRONT].map(rect)) {
+        const d = Math.max(r.L - x, x - r.R, r.T - y, y - r.B);
+        a = Math.min(a, Math.max(0, Math.min(1, d / FEATHER)));
+      }
+      return a;
+    };
     const maskUrl = png((ctx) => {
       const d = ctx.createImageData(W, H);
       for (let p = 0; p < W * H; p++) {
+        const x = p % W, y = (p / W) | 0;
         let a = cl[p] ? 255 : 0;
         if (!a) {
-          const x = p % W, y = (p / W) | 0;
           if (x > 0 && x < W - 1 && y > 0 && y < H - 1 &&
               (cl[p - 1] + cl[p + 1] + cl[p - W] + cl[p + W]) > 0) a = 120;
         }
+        if (a) a = Math.round(a * softness(x, y));
         d.data[p * 4] = d.data[p * 4 + 1] = d.data[p * 4 + 2] = 255;
         d.data[p * 4 + 3] = a;
       }

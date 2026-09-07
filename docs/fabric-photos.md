@@ -63,11 +63,11 @@ recoverable from the file, so re-cutting without them undoes all of it.
 
 ```
 node tools/cut-fabric-mask.mjs public/images/fabrics/curtains-blockout.webp curtains --curtain \
-  --box=0.05,0.79,0.065,0.935 \
+  --box=0.0589,0.79,0.065,0.935 \
   --glass=0.1044,0.79,0.4844,0.52 \
   --lit=0.1044,0.79,0.52,0.5422 \
   --front=0.6422,0.79,0.0644,0.0956 \
-  --track=0.0544,0.0633,0.0644,0.9367
+  --track=0.0522,0.0589,0.0644,0.9367
 ```
 
 - `--glass` is the window between the two panels. The flood fill used to find it
@@ -82,12 +82,21 @@ node tools/cut-fabric-mask.mjs public/images/fabrics/curtains-blockout.webp curt
   other.
 - `--track` is the ceiling track, which is what the hardware colour paints. It is
   seven pixels and that is all this photograph holds — the curtain is
-  ceiling-mounted, so the track is most of the way into the recess.
+  ceiling-mounted, so the track is most of the way into the recess. The box's top
+  starts where the track ends, so the dye stops at the heading and no colour
+  spills onto the ceiling above it.
+
+Every given rectangle is feathered by eight pixels where it meets the cloth. A
+hand-typed edge is perfectly straight and perfectly hard, and against a sheer
+that reads as a cut-out rather than a gap — the fill's own boundary has always
+been soft, and a given one has to be too.
 
 Both curtain fabrics share this mask and this track; only `dye` differs, and the
 sheer's is 0.62 rather than the 0.38 the visualiser uses for the same cloth. See
 the note on `DYE_STRENGTH` in tools/generate-fabric-shots.mjs for why a number
-read off a flat swatch is the wrong number for a photograph of a bright window.
+read off a flat swatch is the wrong number for a photograph of a bright window,
+and the note on `SHEEN` beside it for why the card paints the cloth's own
+modelling back over a dark dye.
 
 ## What the photographs have to do
 

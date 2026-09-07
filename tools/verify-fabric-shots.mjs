@@ -25,7 +25,10 @@ if (!existsSync(MANIFEST)) {
 
 const src = readFileSync(MANIFEST, 'utf8');
 const entries = [...src.matchAll(
-  /\{ product: '([^']+)', fabric: (null|'[^']+'), file: '([^']+)', mask: (null|'[^']+'), hardware: (null|'[^']+'), dye: [\d.]+ \},/g,
+  // The trailing numbers are matched loosely on purpose: this check is about
+  // whether every file the manifest names is still on disk, and it should not
+  // fail because a per-shot number was added beside `dye`.
+  /\{ product: '([^']+)', fabric: (null|'[^']+'), file: '([^']+)', mask: (null|'[^']+'), hardware: (null|'[^']+'), [^}]*\},/g,
 )].map(m => ({
   product: m[1],
   fabric: m[2] === 'null' ? null : m[2].slice(1, -1),
