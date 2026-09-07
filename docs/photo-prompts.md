@@ -69,39 +69,57 @@ first, not a fresh generation** — same room, same window, same camera, same
 light, same framing to the pixel. Only the blind changes. Generate the blockout
 first, get it right, then ask for the edit.
 
+**Copy the roller-blind shot's composition.** `roller-blinds-blockout.webp` is
+the one in this set that works, and it works because of its geometry, not its
+styling. Measured on the 900×900 file: the blind spans 17%–83% of the width and
+17%–64% of the height, dead centred left to right, with the sill at about
+two-thirds down and cabinetry filling the bottom third. Every edge of the
+product is clear of the frame by a sixth of it. The numbers below say the same
+thing in words — keep them.
+
 **1 — Blockout**
 
-> Photorealistic interior photograph of a contemporary Australian living room,
-> square 1:1 composition, camera perfectly straight-on and perpendicular to a
-> single large window — no angle, no perspective distortion, the window frame
-> reading as a true rectangle.
+> Photorealistic interior photograph of a contemporary Australian home, square
+> 1:1 composition, camera perfectly straight-on and perpendicular to a single
+> large window — no angle, no perspective distortion, the window reading as a
+> true rectangle with vertical sides exactly vertical.
+>
+> COMPOSITION: the window is centred left to right and fills about two-thirds of
+> the frame width, with roughly a sixth of the frame as clear wall on the left
+> and the same on the right. Its head sits about a sixth down from the top of the
+> frame and its sill about two-thirds down, so the whole window is comfortably
+> inside the picture with clear space above and below. Below the sill, a stone
+> ledge and low timber joinery fill the bottom third. The whole window is visible;
+> nothing is cropped.
 >
 > A honeycomb cellular blind is fitted inside the window reveal and is FULLY
-> LOWERED, covering the entire glass from the head down to the sill. Its fabric
-> is a plain oatmeal off-white — clearly light, but not pure white and not blown
-> out anywhere. The horizontal cellular pleats are crisp and evenly spaced across
-> the whole drop, with the honeycomb cell structure just readable at the edges. A
-> slim white headrail sits at the top and a matching slim bottom rail at the sill.
-> The fabric is opaque: no view through it, no bright glow, only a soft even
-> luminance across the cloth.
+> LOWERED, covering the entire glass from the head down to the sill in one
+> unbroken sheet. Its fabric is a plain oatmeal off-white — clearly light, but not
+> pure white and not blown out anywhere. The horizontal cellular pleats are crisp
+> and evenly spaced across the whole drop, the honeycomb cell structure just
+> readable at the edges. A slim aluminium headrail runs across the top; a matching
+> slim bottom rail sits at the sill. The fabric is opaque — no view through it,
+> no scene visible behind it.
+>
+> A soft halo of daylight leaks around all four edges of the blind where it meets
+> the reveal, so the outline of the blind is unmistakable against the frame.
 >
 > The wall around the window is warm plaster, noticeably warmer and darker than
-> the blind fabric so the blind's edges read clearly against it. The window is
-> centred with generous clear space on all four sides.
+> the blind fabric so the blind's edges read clearly against it.
 >
 > Nothing overlaps or stands in front of the blind — no plants, no lamps, no
-> curtains beside it, no furniture crossing the window. Any furniture is low and
-> well clear, in the lower corners only.
+> curtains beside it, no furniture crossing the window. Anything on the ledge is
+> low, small and well away from the blind's edges.
 >
 > Soft, even, diffuse daylight. No part of the fabric is clipped to pure white.
-> Warm neutral palette, oak floor, off-white walls. No people, no text, no logos,
-> no watermark.
+> Warm neutral palette: off-white plaster, pale stone, oak. No people, no text, no
+> logos, no watermark.
 
 **2 — Day & Night** (run as an edit of image 1)
 
 > Keep this photograph exactly as it is — same room, same window, same camera
-> position, same framing, same lighting, same furniture, same wall. Change only
-> the blind.
+> position, same framing, same lighting, same joinery, same wall. Change only the
+> blind.
 >
 > Make it a DAY & NIGHT honeycomb: one headrail carrying two cellular fabrics,
 > still FULLY LOWERED and still covering the entire glass. The upper half of the
@@ -111,14 +129,17 @@ first, get it right, then ask for the edit.
 > intermediate rail separates the two, matching the headrail and bottom rail.
 >
 > Both halves keep the crisp evenly spaced horizontal pleats. The outline of the
-> blind, the window frame and every edge stay in exactly the same place as the
-> original. No part of the fabric is clipped to pure white, and no view through
-> the glass is visible.
+> blind, the window frame, the sill and every edge stay in exactly the same place
+> as the original. No part of the fabric is clipped to pure white, and no scene is
+> visible through the glass.
 
 The intermediate rail is what makes it read as a day-and-night rather than as a
 badly lit blockout, so insist on it. If the model moves the window or changes the
 crop, throw the edit away and try again — a shifted frame means two masks, and
 the pipeline only carries one per product.
+
+**Do not reuse the roller blind's kitchen.** Copy its geometry, not its room:
+two products in the same room read as one product photographed twice.
 
 ### Zip guide systems — exterior
 
