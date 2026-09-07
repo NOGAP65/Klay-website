@@ -38,7 +38,7 @@ import { HANDLE_FINISHES, modelsOfKind, WARDROBE_WIDTHS } from '@/features/visua
 import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '../../lib/pricing'
 
 
-import type { CatalogueItem } from './constants'
+import { CASSETTE_COLOURS, type CatalogueItem } from './constants'
 import type { CartItem } from '@/features/cart'
 
 // SEVEN SLOTS NOW, AND THE TWO NEW ONES ARE NOT WINDOW FIELDS.
@@ -146,6 +146,11 @@ interface ProductOptions {
    * chrome headrail. */
   hardwareLabel?: string
   hardwareChoices?: ConfigChoice[]
+  /** Asks for the metalwork BEFORE the cloth, which is the order an awning is
+   * decided in: the cassette is bolted to the house and the fabric goes inside
+   * it. Everywhere else the cloth is the product and its frame is a trim on it,
+   * so the cloth leads. */
+  hardwareFirst?: boolean
   /** Real widths in millimetres, for a product built to an opening rather than
    * sold in bands. Mutually exclusive with `size` in practice: a thing has one
    * or the other, never both. */
@@ -202,11 +207,20 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   },
 
   // --- OUTDOOR -------------------------------------------------------------
+  // TWO QUESTIONS, AND BOTH ARE COLOURS. It carried "Cover: Acrylic canvas /
+  // Shade mesh" over a window size and an operation, and only the first of those
+  // was wrong in an interesting way: the awning comes in acrylic, full stop, so
+  // the row was offering a range Klay does not make. The size and the operation
+  // went with it because an awning is measured to the opening on the visit and
+  // every one of them is motorised — neither is a decision taken on a card.
+  //
+  // Cassette before cloth: the cassette is bolted to the house and the fabric
+  // goes inside it. See AWNING_COLOURS.
   'folding-arm-awnings': {
-    variantLabel: 'Cover',
-    variants: [v('acrylic', 'Acrylic canvas'), v('mesh', 'Shade mesh')],
-    size: true,
-    operation: true,
+    hardwareLabel: 'Cassette colour',
+    hardwareChoices: CASSETTE_COLOURS.map(c => ({ id: c.name, label: c.name, hex: c.hex })),
+    hardwareFirst: true,
+    colourLabel: 'Fabric colour',
   },
   'zip-guide-systems': {
     variantLabel: 'Screen',
@@ -287,7 +301,12 @@ export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
       choices: options.variants,
     })
   }
-  if (item.colours) {
+  // THE CLOTH AND ITS METALWORK, in whichever order the product is decided in.
+  // The cloth leads almost everywhere, because the cloth IS the product and its
+  // frame is a trim on it. An awning is the exception and says so — see
+  // hardwareFirst.
+  const colourField = () => {
+    if (!item.colours) return
     fields.push({
       id: 'colour',
       label: options.colourLabel ?? 'Colour',
@@ -295,6 +314,22 @@ export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
       choices: item.colours.map(c => ({ id: c.name, label: c.name, hex: c.hex })),
     })
   }
+  // A product supplies its own metalwork list where its metalwork is not a
+  // blind's. `hardware: true` still means the blind headrail colours.
+  const hardwareField = () => {
+    if (options.hardwareChoices) {
+      fields.push({
+        id: 'hardware',
+        label: options.hardwareLabel ?? 'Hardware',
+        kind: 'swatches',
+        choices: options.hardwareChoices,
+      })
+    } else if (options.hardware) {
+      fields.push({ id: 'hardware', label: 'Hardware', kind: 'chips', choices: HARDWARE_CHOICES })
+    }
+  }
+  if (options.hardwareFirst) hardwareField()
+  colourField()
   if (options.widths) {
     fields.push({
       id: 'width',
@@ -303,18 +338,7 @@ export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
       choices: options.widths.map(w => v(String(w), `${w}mm`)),
     })
   }
-  // A product supplies its own metalwork list where its metalwork is not a
-  // blind's. `hardware: true` still means the blind headrail colours.
-  if (options.hardwareChoices) {
-    fields.push({
-      id: 'hardware',
-      label: options.hardwareLabel ?? 'Hardware',
-      kind: 'swatches',
-      choices: options.hardwareChoices,
-    })
-  } else if (options.hardware) {
-    fields.push({ id: 'hardware', label: 'Hardware', kind: 'chips', choices: HARDWARE_CHOICES })
-  }
+  if (!options.hardwareFirst) hardwareField()
   if (options.size) {
     fields.push({ id: 'size', label: 'Window size', kind: 'chips', choices: SIZE_CHOICES })
   }

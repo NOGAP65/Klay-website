@@ -58,7 +58,7 @@ export const FABRIC_SHOT_DIR = '/images/fabrics';
 export const FABRIC_SHOTS: FabricShot[] = [
   { product: 'curtains', fabric: 'blockout', file: 'curtains-blockout.webp', mask: 'curtains.mask.png', hardware: 'curtains.hardware.png', dye: 1, tint: 0, sheen: 0.5 },
   { product: 'curtains', fabric: 'sheer', file: 'curtains-sheer.webp', mask: 'curtains.mask.png', hardware: 'curtains.hardware.png', dye: 0.5, tint: 0.9, sheen: 0.5 },
-  { product: 'folding-arm-awnings', fabric: 'acrylic', file: 'folding-arm-awnings-acrylic.webp', mask: null, hardware: null, dye: 1, tint: 0, sheen: 0 },
+  { product: 'folding-arm-awnings', fabric: null, file: 'folding-arm-awnings.webp', mask: null, hardware: null, dye: 1, tint: 0, sheen: 0 },
   { product: 'plantation-shutters', fabric: null, file: 'plantation-shutters.webp', mask: 'plantation-shutters.mask.png', hardware: null, dye: 1, tint: 0, sheen: 0 },
   { product: 'roller-blinds', fabric: 'blockout', file: 'roller-blinds-blockout.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 1, tint: 0, sheen: 0 },
   { product: 'roller-blinds', fabric: 'dual', file: 'roller-blinds-dual.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.88, tint: 0, sheen: 0 },

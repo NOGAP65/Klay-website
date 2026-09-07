@@ -132,6 +132,44 @@ const ROLLER_FROM = Math.min(...PRODUCTS.map(p => p.priceFrom))
  * on the fabric the from-price refers to. */
 const productLink = (slug: string) => routes.product(slug)
 
+/** THE ACRYLIC A FOLDING ARM AWNING IS COVERED IN, and the cassette it folds
+ * into. Two cards, because they are two different manufactured things: the cloth
+ * is woven and solution-dyed, the cassette is extruded aluminium and powder
+ * coated, and no supplier offers them in the same list.
+ *
+ * THE AWNING IS SOLD IN ONE FABRIC. It carried "Cover: Acrylic canvas / Shade
+ * mesh", which was a range Klay does not make — the awning comes in acrylic, and
+ * what a customer actually chooses is what colour. So the material row goes and
+ * these two arrive in its place, cassette first: the cassette is bolted to the
+ * house and the fabric goes inside it, which is also the order they are decided
+ * in.
+ *
+ * BOTH NEED A COMMERCIAL CHECK, in the same class as SLAT_COLOURS. They are the
+ * colours an acrylic awning range plainly ought to carry rather than a list read
+ * off a supplier's book, and a wrong hex is a customer choosing a colour Klay
+ * does not sell. Eight cloths, because a solution-dyed acrylic book runs to
+ * dozens and a card is not a book; four cassettes, because a powder-coat line is
+ * not a fabric book either — white, off-white, and the two darks every extruder
+ * carries. */
+export const AWNING_COLOURS = [
+  { name: 'Natural', hex: '#E6DFCF' },
+  { name: 'Ivory', hex: '#EFE9DC' },
+  { name: 'Sand', hex: '#D9CDB4' },
+  { name: 'Taupe', hex: '#B5A895' },
+  { name: 'Olive', hex: '#7C7E63' },
+  { name: 'Slate', hex: '#6C7581' },
+  { name: 'Charcoal', hex: '#4A4A48' },
+  { name: 'Navy', hex: '#2F3A4B' },
+]
+
+/** See AWNING_COLOURS. The housing, not the cloth. */
+export const CASSETTE_COLOURS = [
+  { name: 'White', hex: '#F2F1EE' },
+  { name: 'Ivory', hex: '#E6E1D6' },
+  { name: 'Charcoal', hex: '#45474A' },
+  { name: 'Black', hex: '#232527' },
+]
+
 export const CATALOGUE: CatalogueItem[] = [
   // --- INDOOR --------------------------------------------------------------
   {
@@ -233,6 +271,8 @@ export const CATALOGUE: CatalogueItem[] = [
     to: enquire('Folding Arm Awnings'),
     glyph: 'awning-folding',
     image: '/images/products/folding-arm-awnings.webp',
+    // SOLD IN ONE FABRIC, IN A CHOICE OF COLOURS — see AWNING_COLOURS.
+    colours: AWNING_COLOURS,
     light: ['Sunscreen'],
   },
   {
