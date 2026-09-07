@@ -154,6 +154,37 @@ only, never on the seam between cloth and metal** — two masks partition one
 object here, and a fringe on both sides of their shared border paints it 47%
 fabric plus 47% cassette over undyed cream, a pale seam down every arm.
 
+## The zip screen, and why it barely needs cutting
+
+A zip screen is one taut rectangle of mesh in a track, so it goes through
+`--panel` — the mask IS the polygon, and there is no colour test at all. There
+cannot be one: the mesh is SEEN THROUGH, so at any point it is the colour of
+whatever is behind it, garden or sky or fence. Every other mode in this file
+keys off the product having a colour of its own, and this one has none.
+
+```
+node tools/square-shot.mjs public/images/fabrics/zip-guide-systems.webp --top=132
+node tools/cut-fabric-mask.mjs public/images/fabrics/zip-guide-systems.webp zip-guide-systems --panel \
+  --cloth=0.0833,0.2611,0.9167,0.2611,0.9167,0.8144,0.0833,0.8144
+```
+
+**The squaring comes first and is not optional — and it is run once.** This shot
+was 900x768 where most are 900x900, and the card's 1:1 frame crops with `cover`,
+which takes 7.5% off each side and cuts both tracked edges off the product: the
+two things that make it a zip screen rather than a blind. `square-shot` extends
+the plain ceiling at the top so nothing is cropped. See the note in that file on
+why replicating four rows of unbroken cream is allowed where doing the same to
+the bottom, which has the coffee table in it, would not be. It rewrites the file
+in place, so running it twice gives 900x1032 and every fraction below is then
+wrong — check the dimensions before re-cutting.
+
+The mesh takes `dye: 0.5` and `tint: 0.9`: the sheer's split, for the sheer's
+reason. It photographs at a median of 164, darker than a sheer's 234 because the
+garden behind it is part of it, so a full multiply takes Charcoal to 48 and the
+view goes out along with the light. A mesh is bought to be looked through — a
+render that closes the view is not a darker version of the product, it is a
+different product.
+
 ## What the photographs have to do
 
 - **Off-white cloth, never pure white and never blown out.** Colour is applied by

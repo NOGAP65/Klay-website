@@ -191,8 +191,14 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     operation: true,
     colourLabel: 'Slat colour',
   },
+  // OPERATION IS BACK ON THE SHUTTER. It came off with the material row, on the
+  // reasoning that a shutter is joinery and joinery has no operation. But a
+  // louvre either tilts by hand or it tilts on a motor, and that is a real
+  // question with a real price behind it. The card now asks the same three
+  // things a venetian does, less the material a shutter never posed.
   'plantation-shutters': {
     size: true,
+    operation: true,
     colourLabel: 'Louvre colour',
   },
   curtains: {
@@ -222,11 +228,13 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     hardwareFirst: true,
     colourLabel: 'Fabric colour',
   },
+  // NO SCREEN ROW: A ZIP SYSTEM IS SOLD IN ONE MESH. It carried "Sunscreen mesh
+  // / Blockout PVC", which is two products behind one name, and Klay makes the
+  // first. The colour is the choice — see MESH_COLOURS.
   'zip-guide-systems': {
-    variantLabel: 'Screen',
-    variants: [v('mesh', 'Sunscreen mesh'), v('blockout', 'Blockout PVC')],
     size: true,
     operation: true,
+    colourLabel: 'Mesh colour',
   },
   'roller-shutters': {
     variantLabel: 'Slat',

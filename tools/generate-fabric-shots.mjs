@@ -162,6 +162,32 @@ const TINT_STRENGTH = {
   sheer: 0.9,
 };
 
+// THE SAME TWO NUMBERS, KEYED BY PRODUCT, and they win where they are given.
+//
+// DYE_STRENGTH and TINT_STRENGTH are keyed by FABRIC, which is the right grain
+// for a product sold in several: a roller's blockout and its sunscreen take
+// their colour differently and both are rollers. A product sold in one fabric
+// has no fabric id to key on -- its shot records `fabric: null` -- so its
+// numbers go here.
+//
+// THE ZIP SCREEN IS THE CASE, and it needs the sheer's treatment for the same
+// reason: it is a cloth you look THROUGH. Its mesh photographs at a median of
+// 164, darker than a sheer's 234 because the garden behind it is in it, so a
+// full multiply takes Charcoal to 48 and the view goes out with the light. At
+// 0.5 the value still separates Bone from Black, and `tint` at 0.9 carries the
+// colour without costing any more of the view -- which is the whole argument
+// for splitting them, made once for the sheer and holding here.
+//
+// It matters more on a screen than anywhere else in the range. A mesh is bought
+// to be seen through: a render that closes the view is not a darker version of
+// the product, it is a different product.
+const PRODUCT_DYE = {
+  'zip-guide-systems': 0.5,
+};
+const PRODUCT_TINT = {
+  'zip-guide-systems': 0.9,
+};
+
 // HOW MUCH OF THE CLOTH'S OWN MODELLING THE CARD HAS TO PAINT BACK, by product.
 //
 // Multiplying by a dark colour does not darken a photograph, it flattens it. The
@@ -226,8 +252,8 @@ const body = shots.map(s =>
   `  { product: '${s.product}', fabric: ${s.fabric ? `'${s.fabric}'` : 'null'}, file: '${s.file}', ` +
   `mask: ${s.mask ? `'${s.mask}'` : 'null'}, ` +
   `hardware: ${s.hardware ? `'${s.hardware}'` : 'null'}, ` +
-  `dye: ${DYE_STRENGTH[s.fabric] ?? 1}, ` +
-  `tint: ${TINT_STRENGTH[s.fabric] ?? 0}, ` +
+  `dye: ${PRODUCT_DYE[s.product] ?? DYE_STRENGTH[s.fabric] ?? 1}, ` +
+  `tint: ${PRODUCT_TINT[s.product] ?? TINT_STRENGTH[s.fabric] ?? 0}, ` +
   `sheen: ${SHEEN[s.product] ?? 0}, ` +
   `spec: ${SPECULAR[s.product] ?? 0.4} },`).join('\n');
 

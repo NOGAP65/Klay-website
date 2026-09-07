@@ -72,7 +72,7 @@ export const FABRIC_SHOTS: FabricShot[] = [
   { product: 'roller-blinds', fabric: 'sunscreen', file: 'roller-blinds-sunscreen.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.55, tint: 0, sheen: 0, spec: 0.4 },
   { product: 'roller-shutters', fabric: 'aluminium', file: 'roller-shutters-aluminium.webp', mask: null, hardware: null, dye: 1, tint: 0, sheen: 0, spec: 0.4 },
   { product: 'venetian-blinds', fabric: null, file: 'venetian-blinds.webp', mask: 'venetian-blinds.mask.png', hardware: null, dye: 1, tint: 0, sheen: 0, spec: 0.4 },
-  { product: 'zip-guide-systems', fabric: 'mesh', file: 'zip-guide-systems-mesh.webp', mask: null, hardware: null, dye: 1, tint: 0, sheen: 0, spec: 0.4 },
+  { product: 'zip-guide-systems', fabric: null, file: 'zip-guide-systems.webp', mask: 'zip-guide-systems.mask.png', hardware: null, dye: 0.5, tint: 0.9, sheen: 0, spec: 0.4 },
 ];
 
 /** The shot for a configuration, or undefined where none has been photographed

@@ -125,6 +125,9 @@ const METAL_POLY = poly('--metal=');
  * cassette, so the fill walks straight down the wall and out along the bottom of
  * the box into the garden. Run without this, that is exactly what it did. */
 const KEEP_POLY = poly('--keep=');
+/** A flat panel — a zip screen, and any product that is one taut rectangle held
+ * in a frame. Its mask IS the `--cloth` polygons, feathered; see its branch. */
+const PANEL = argv.includes('--panel');
 const args = argv.filter(a => !a.startsWith('--'));
 const SRC = args[0];
 const ID = args[1];
@@ -149,7 +152,7 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage();
 
-const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, AWNING, BOX, GLASS, FRONT, LIT, TRACK, CLOTH_POLY, METAL_POLY, KEEP_POLY }) => {
+const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, AWNING, PANEL, BOX, GLASS, FRONT, LIT, TRACK, CLOTH_POLY, METAL_POLY, KEEP_POLY }) => {
   const im = new Image();
   im.src = 'data:image/png;base64,' + b64;
   await im.decode();
@@ -351,6 +354,108 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, AWNING, BOX,
       raw: 0, cloth: n, metal: 0, bars: rows,
       barBands: `${rows} covered, ${frameRows} open`,
       grew: 0, mask: maskUrl, hardware: null, overlay: overlayUrl,
+    };
+  }
+
+  // --- PANELS: the simplest case, and it earns its own branch by not
+  // --- pretending to be one of the others -----------------------------------
+  //
+  // A ZIP SCREEN IS ONE TAUT RECTANGLE OF MESH IN A TRACK. There is no fold to
+  // follow, no slat to find, no arm to separate — the product is a quadrilateral
+  // whose corners can be read off the photograph in under a minute and cannot be
+  // read out of the pixels at all, because the mesh is SEEN THROUGH: at any
+  // point it is the colour of whatever is behind it, garden or sky or fence.
+  // Every test in this file keys off the product having a colour of its own, and
+  // this one does not have one.
+  //
+  // So there is no test. The mask is the polygon, and the only thing the branch
+  // adds is the feather — which matters more here than anywhere, because a hard
+  // rectangle over a photograph is the most obviously fake shape there is.
+  if (PANEL) {
+    const rect = ([t, b, l, r]) => ({
+      T: Math.round(H * t), B: Math.round(H * b),
+      L: Math.round(W * l), R: Math.round(W * r),
+    });
+    const asPoly = (nums) => {
+      const pts = [];
+      for (let i = 0; i + 1 < nums.length; i += 2) pts.push([nums[i] * W, nums[i + 1] * H]);
+      return pts;
+    };
+    const inPoly = (pts, x, y) => {
+      let inside = false;
+      for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        const [xi, yi] = pts[i], [xj, yj] = pts[j];
+        if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+      }
+      return inside;
+    };
+    const cloths = CLOTH_POLY.map(asPoly);
+    const metals = METAL_POLY.map(asPoly);
+    const fronts = FRONT.map(rect);
+    if (!cloths.length) return { error: '--panel needs at least one --cloth polygon' };
+    const inAnyPoly = (ps, x, y) => ps.some(p => inPoly(p, x, y));
+    const behind = (x, y) => fronts.some(r => x >= r.L && x <= r.R && y >= r.T && y <= r.B);
+
+    // Distance to the nearest edge of the polygon the pixel is in, capped at
+    // FEATHER. Sampled rather than solved: the polygons here have four or five
+    // sides, so walking out from the pixel is cheap and exact enough for an
+    // alpha ramp.
+    const FEATHER = Math.max(3, Math.round(W / 300));
+    const softness = (ps, x, y) => {
+      if (!inAnyPoly(ps, x, y)) return 0;
+      for (let d = 1; d <= FEATHER; d++) {
+        if (!inAnyPoly(ps, x - d, y) || !inAnyPoly(ps, x + d, y) ||
+            !inAnyPoly(ps, x, y - d) || !inAnyPoly(ps, x, y + d)) return d / FEATHER;
+      }
+      return 1;
+    };
+
+    const png = (paint) => {
+      const cc = document.createElement('canvas');
+      cc.width = W; cc.height = H;
+      paint(cc.getContext('2d'));
+      return cc.toDataURL('image/png');
+    };
+    const alphaOf = (ps) => png((ctx) => {
+      const d = ctx.createImageData(W, H);
+      for (let p = 0; p < W * H; p++) {
+        const x = p % W, y = (p / W) | 0;
+        const a = behind(x, y) ? 0 : Math.round(255 * softness(ps, x, y));
+        d.data[p * 4] = d.data[p * 4 + 1] = d.data[p * 4 + 2] = 255;
+        d.data[p * 4 + 3] = a;
+      }
+      ctx.putImageData(d, 0, 0);
+    });
+    const count = (ps) => {
+      let n = 0;
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++)
+        if (!behind(x, y) && inAnyPoly(ps, x, y)) n++;
+      return n;
+    };
+    const overlayUrl = png((ctx) => {
+      ctx.drawImage(im, 0, 0, W, H);
+      const d = ctx.getImageData(0, 0, W, H);
+      for (let p = 0; p < W * H; p++) {
+        const x = p % W, y = (p / W) | 0;
+        if (behind(x, y)) continue;
+        if (inAnyPoly(cloths, x, y)) {
+          d.data[p * 4]     = Math.round(d.data[p * 4] * 0.35 + 166);
+          d.data[p * 4 + 1] = Math.round(d.data[p * 4 + 1] * 0.35);
+          d.data[p * 4 + 2] = Math.round(d.data[p * 4 + 2] * 0.35 + 91);
+        } else if (inAnyPoly(metals, x, y)) {
+          d.data[p * 4]     = Math.round(d.data[p * 4] * 0.3);
+          d.data[p * 4 + 1] = Math.round(d.data[p * 4 + 1] * 0.3 + 150);
+          d.data[p * 4 + 2] = Math.round(d.data[p * 4 + 2] * 0.3 + 175);
+        }
+      }
+      ctx.putImageData(d, 0, 0);
+    });
+    return {
+      W, H, box: { L: 0, R: W - 1, T: 0, B: H - 1 },
+      raw: 0, cloth: count(cloths), metal: metals.length ? count(metals) : 0,
+      bars: 0, barBands: `${cloths.length} panel(s)`, grew: 0,
+      mask: alphaOf(cloths), hardware: metals.length ? alphaOf(metals) : null,
+      overlay: overlayUrl,
     };
   }
 
@@ -953,7 +1058,7 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, AWNING, BOX,
     hardware: alphaPng(hw),
     overlay: oc.toDataURL('image/png'),
   };
-}, { b64, SIZE, CURTAIN, SLATS, AWNING, BOX, GLASS, FRONT, LIT, TRACK, CLOTH_POLY, METAL_POLY, KEEP_POLY });
+}, { b64, SIZE, CURTAIN, SLATS, AWNING, PANEL, BOX, GLASS, FRONT, LIT, TRACK, CLOTH_POLY, METAL_POLY, KEEP_POLY });
 
 if (res.error) { console.error('  ' + res.error); await browser.close(); process.exit(1); }
 const save = (u, p) => writeFileSync(p, Buffer.from(u.split(',')[1], 'base64'));

@@ -162,6 +162,31 @@ export const AWNING_COLOURS = [
   { name: 'Navy', hex: '#2F3A4B' },
 ]
 
+/** THE MESH A ZIP SCREEN IS MADE OF.
+ *
+ * IT IS SOLD IN ONE MESH, IN A CHOICE OF COLOURS. The card carried "Screen:
+ * Sunscreen mesh / Blockout PVC", which is two different products behind one
+ * name, and Klay makes the first. What a customer chooses is the colour — and on
+ * a screen that choice does more work than anywhere else in the range, because
+ * the mesh is the thing you look THROUGH. A dark mesh sees out better than a
+ * pale one: it absorbs the daylight falling on it instead of scattering it back
+ * at you. That is the opposite of what most people expect, and it is why the
+ * range runs dark.
+ *
+ * NEEDS A COMMERCIAL CHECK, like SLAT_COLOURS and AWNING_COLOURS. These are the
+ * colours an outdoor screen mesh plainly ought to carry rather than a list read
+ * off a supplier's card, and a wrong hex is a customer choosing a colour Klay
+ * does not sell. Six, because a woven outdoor mesh is an extruded-yarn product
+ * and does not come in a fabric book's worth of shades. */
+export const MESH_COLOURS = [
+  { name: 'Bone', hex: '#DCD7CC' },
+  { name: 'Dune', hex: '#B9AE9B' },
+  { name: 'Gunmetal', hex: '#6E7276' },
+  { name: 'Charcoal', hex: '#4A4C4E' },
+  { name: 'Bracken', hex: '#4B4A3E' },
+  { name: 'Black', hex: '#26282A' },
+]
+
 /** See AWNING_COLOURS. The housing, not the cloth. */
 export const CASSETTE_COLOURS = [
   { name: 'White', hex: '#F2F1EE' },
@@ -283,7 +308,9 @@ export const CATALOGUE: CatalogueItem[] = [
     to: enquire('Zip Guide Systems'),
     glyph: 'screens',
     image: '/images/products/zip-guide-systems.webp',
-    light: ['Sunscreen', 'Blockout'],
+    // ONE MESH, IN A CHOICE OF COLOURS — see MESH_COLOURS.
+    colours: MESH_COLOURS,
+    light: ['Sunscreen'],
   },
   {
     id: 'roller-shutters',
