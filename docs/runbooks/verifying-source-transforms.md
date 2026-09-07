@@ -158,7 +158,7 @@ one-character case change exits 1, reverted exits 0.
 | Check | Shape | Verdict |
 |---|---|---|
 | `render-baseline.mjs` | Makes HTTP requests | **Safe.** It never inspects a status — it reads pixels. A route that falls back renders the 404 page, which has no canvas, which is now RED rather than skipped |
-| `asset-audit.mjs` | File system | Safe. Zero `fetch`/`http` in it |
+| `asset-audit.mjs` | File system | Safe *for this question* — zero `fetch`/`http` in it. It later failed a **different** one: its constructed-path guard was scoped to a directory U4 had moved, and matched nothing. See the path-scoped-guard rule below |
 | `verify-wardrobe-manifest.mjs` | File system | Safe |
 | `verify-asset-paths.mjs` | File system, case-exact | Safe |
 | `netlify/lib/antispam.ts` | Real `fetch` to Cloudflare | Not an asset check. Its own fail-open behaviour is **S-1** in `FEATURE_FLAGS.md` |
@@ -178,6 +178,81 @@ able to fail.
 An unversioned helper gets the benefit of the doubt every time it is rewritten, and it is rewritten
 often enough that nobody ever asks it the question. **If a check is worth running twice, commit it
 and prove it can fail.**
+
+---
+
+## THE RULE FOR PATH-SCOPED GUARDS — A SELECTOR THAT MATCHES NOTHING IS A FAILURE
+
+> ### A guard scoped by a path prefix must assert the prefix matches at least one file, or fail.
+
+**A zero from a filter is ambiguous.** It means either *"nothing qualifies"* or *"the question was
+malformed"*, and those two readings demand opposite responses. A bare count cannot tell them
+apart, so a tool must not be allowed to print one without having established which it is.
+
+### The case that produced it
+
+`tools/asset-audit.mjs` decides which assets are too dangerous to classify statically — the ones
+reached by a constructed path, where a file can be loaded at runtime while appearing in no source
+file at all. The guard was:
+
+```js
+const constructedPath = rel.startsWith('/images/Textures/wardrobes/');
+```
+
+**U4 moved those files to `/images/visualiser/textures/wardrobes/` and did not move the guard.**
+The prefix matched nothing. The tool then reported:
+
+```
+UNSAFE TO CLASSIFY (constructed paths)  : 0  0.0 MB
+unreferenced                            : 4  5.3 MB
+```
+
+Both numbers were wrong, and the second was wrong in the dangerous direction: **28 files and
+26.8 MB were being classified by static reference count** — precisely what the guard exists to
+prevent, and what its own header warns about in capital letters — and four of them were being
+offered up for deletion. The corrected run reports 28 unsafe and **zero** unreferenced.
+
+**Nobody had to make a mistake for this to happen.** The move was correct, the guard was correct
+when written, and no diff contained both.
+
+### Why it belongs beside the other instances
+
+It is the same shape as the empty-result findings already in this file — a check whose *input*
+went stale while it kept reporting success — and it is the second one found in two days. The
+render baseline was reading `document.querySelector('canvas')` on a view with two canvases and
+reporting green across a complete renderer replacement. **Both passed by looking at nothing.**
+
+The difference is that a wrong selector cannot be caught by reading the code, because the code is
+correct. It can only be caught by asking whether the selector still selects.
+
+### The fix, in two parts, because repointing the literal is not enough
+
+1. **Derive it, do not type it.** The tool now reads `DIR` out of `wardrobes.ts` and exits if it
+   cannot find it. `verify-wardrobe-manifest.mjs` has always done this and is exactly why that
+   tool survived U4 untouched while this one did not — **same technique, same reason.**
+2. **Assert the prefix matches.** `assertPrefixMatches()` is applied to every prefix the tool
+   scopes by, not just the one that broke.
+
+Proven able to fail before being trusted, per ADR-022: pointing the derived value back at the old
+directory produces `FAIL: the constructed-path guard is scoped to '/images/Textures/wardrobes/',
+which matches no file.` and exit 1.
+
+### The audit of every other path-scoped selector, since one instance means look for more
+
+Seventeen selectors across `tools/` and `exceptions.json` — the scope exclusions, the layer list,
+the fabric and asset directories, and every registered exception path:
+
+| Selector | Matches |
+|---|---:|
+| `netlify/`, `scripts/`, `tools/`, `assets-source/` — `scope.mjs:27` | 11, 1, 64, 51 |
+| `src/{app,config,design-system,features,shared}/` — `legacy-countdown.mjs:39` | 10, 4, 20, 59, 8 |
+| `public/images/fabrics` — `verify-fabric-shots.mjs:17` | 17 |
+| `public` — `verify-asset-paths.mjs:49` | 86 |
+| `/images/visualiser/textures/wardrobes/` — `asset-audit.mjs`, derived | 28 |
+| The five paths registered in `exceptions.json` | all present |
+
+**Zero other false zeros.** `asset-audit.mjs` was the only one — but the audit is the point, not
+the result: the result is only reassuring because the question was asked.
 
 ---
 

@@ -40,7 +40,64 @@ const sources = [
 const text = new Map();
 for (const f of sources) text.set(f, fs.readFileSync(f, 'utf8'));
 
+/** ASSERT THAT A PATH-SCOPED PREFIX STILL MATCHES SOMETHING.
+ *
+ * THE RULE, and it is general: a guard scoped by a path prefix must assert the
+ * prefix matches at least one file, or fail. A selector that matches nothing is
+ * a failing check, not a passing one.
+ *
+ * This exists because the constructed-path guard below silently stopped working.
+ * It tested `/images/Textures/wardrobes/`; U4 moved those files to
+ * `/images/visualiser/textures/wardrobes/` and did not move the guard. The
+ * prefix matched nothing, so every wardrobe asset addressed by expression was
+ * classified by static reference count — the exact failure the guard exists to
+ * prevent — and the tool reported "UNSAFE TO CLASSIFY: 0" as though that were
+ * good news.
+ *
+ * A zero from a filter is ambiguous: it means either "nothing qualifies" or
+ * "the question was malformed". Those two readings need different responses and
+ * a bare count cannot tell them apart, so the tool must not be allowed to print
+ * one without having checked which it is.
+ */
+function assertPrefixMatches(prefix, paths, what) {
+  if (paths.some((p) => p.startsWith(prefix))) return;
+  console.error(`\nFAIL: ${what} is scoped to '${prefix}', which matches no file.`);
+  console.error('A prefix that matches nothing is a guard that has stopped guarding.');
+  console.error('Either the files moved and the scope did not follow, or the scope is a typo.');
+  process.exit(1);
+}
+
+/** WHERE THE CONSTRUCTED WARDROBE PATHS POINT — read from the source, not typed
+ * here.
+ *
+ * The literal is what went stale. verify-wardrobe-manifest.mjs has always read
+ * this same constant out of wardrobes.ts and fails loudly when it cannot find
+ * it, which is exactly why that tool survived U4 untouched while this one did
+ * not. Same technique, same reason.
+ */
+const WARDROBE_DIR = (() => {
+  const models = fs.readFileSync('src/features/visualiser/wardrobes.ts', 'utf8');
+  const dir = models.match(/^const DIR = '([^']+)';/m)?.[1];
+  if (!dir) {
+    console.error("FAIL: could not read DIR from wardrobes.ts. The constant moved or was renamed.");
+    console.error('This tool cannot identify constructed asset paths without it, and guessing');
+    console.error('is what put it in this state before. Fix the read rather than hardcoding.');
+    process.exit(1);
+  }
+  return dir.endsWith('/') ? dir : dir + '/';
+})();
+
 const assets = walk('public');
+
+// THE RULE, APPLIED TO EVERY PREFIX THIS TOOL SCOPES BY. Each of these silently
+// changes the tool's answer if it stops matching, and none of them would say so.
+const assetPaths = assets.map((f) => f.replace(/^public/, ''));
+const sourcePaths = [...text.keys()];
+assertPrefixMatches(WARDROBE_DIR, assetPaths, 'the constructed-path guard');
+assertPrefixMatches('src/', sourcePaths, 'the in-scope reference filter');
+assertPrefixMatches('netlify/', sourcePaths, 'the build-input reference filter');
+assertPrefixMatches('scripts/', sourcePaths, 'the build-input reference filter');
+
 const rows = [];
 
 for (const file of assets) {
@@ -71,7 +128,7 @@ for (const file of assets) {
   // runtime while appearing in no source file at all. Anything under this
   // directory is therefore UNSAFE TO CLASSIFY and must not be moved on the
   // strength of a static count.
-  const constructedPath = rel.startsWith('/images/Textures/wardrobes/');
+  const constructedPath = rel.startsWith(WARDROBE_DIR);
 
   rows.push({ file, rel, size, referencedBy, frozenRefs, buildRefs, liveRefs, constructedPath });
 }
