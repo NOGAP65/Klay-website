@@ -42,7 +42,6 @@
 
 // --- routed pages (mounted by the app layer) --------------------------------
 export { default as ProductsPage } from './components/ProductsPage';
-export { default as ProductDetailPage } from './components/ProductDetailPage';
 
 // --- the four roller products, split out of data/products at P4-5 -----------
 // PRODUCTS is read by Footer (app chrome, Phase 5) to build its product column;

@@ -46,9 +46,6 @@ export const book = '/book';
  * giving it a constant would invite something to link to it. ADR-013, E-07. */
 export const visualiser = '/visualiser';
 
-/** One product page. */
-export const product = (slug: string) => `/products/${slug}`;
-
 /** The shop, pre-narrowed. The parameter is a catalogue item id or a group
  * slug — whatever `groupForCategoryParam` resolves, which is the same set the
  * legacy redirects hand over. */

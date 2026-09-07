@@ -32,8 +32,6 @@
 // is built from them directly rather than from an invented family layer.
 // ---------------------------------------------------------------------------
 
-import * as routes from '@/config/routes';
-
 import { RYNAMIC_COLOURS, CURTAIN_COLOURS, SLAT_COLOURS } from '../../data/products'
 import { WARDROBE_COLOURS } from '@/features/visualiser'
 
@@ -115,22 +113,22 @@ const enquire = (name: string) => `/contact?product=${encodeURIComponent(name)}`
  * catalogue does rather than being typed here. */
 const ROLLER_FROM = Math.min(...PRODUCTS.map(p => p.priceFrom))
 
-/** Straight to a product's own page — the one screen that carries the visualiser,
- * the configuration and Add to Cart together.
+/* NO productLink, AND NO PRODUCT PAGE FOR IT TO POINT AT.
  *
- * WHY ROLLERS HAVE NO LISTING PAGE. Clicking Roller Blinds used to land on
- * /blinds/roller-blinds, which asked which of four fabrics and then forwarded to
- * exactly this page. But the four rollers are one product in four fabrics — Dusk
- * is the blockout, Veil the sunscreen, Duo the dual, Haze the light filter — and
- * the product page offers that choice itself, becoming whichever one is picked.
- * So the listing page was asking a question its own destination could answer,
- * one click earlier and with nothing to show for it. It is gone; the URL
- * redirects here. See routes/legacyRedirects.
+ * It read: const productLink = (slug: string) => routes.product(slug)
  *
- * Dusk because it is the blockout: the cheapest of the four, the one ROLLER_FROM
- * already quotes above, and the visualiser's own default type — so the page opens
- * on the fabric the from-price refers to. */
-const productLink = (slug: string) => routes.product(slug)
+ * The note here used to explain why the roller range had a page and no listing
+ * above it — the four rollers are one product in four fabrics, so a listing page
+ * asking "which fabric?" was posing a question its own destination answered. All
+ * of that is now true one tier further down: the SHOP CARD asks the fabric,
+ * prices it and adds it to the cart, so the page it forwarded to had nothing
+ * left to do either. Removed 7 September 2026.
+ *
+ * AND THE FOUR SKU NAMES GO WITH IT. Dusk, Veil, Duo and Haze do not appear
+ * anywhere on the site any more. The shop presents one Roller Blinds card with a
+ * Fabric type row — blockout, light filter, sunscreen, dual — which is
+ * functionally the same choice and prices identically. It is a commercial
+ * change, not a technical one, and it is flagged for V to raise with Bobby. */
 
 /** THE ACRYLIC A FOLDING ARM AWNING IS COVERED IN, and the cassette it folds
  * into. Two cards, because they are two different manufactured things: the cloth
@@ -202,9 +200,14 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Roller Blinds',
     group: 'Indoor',
     tagline: 'Clean lines. Blockout, sunscreen, light filter and dual.',
-    // Straight to the product page, which configures and adds to cart — see
-    // productLink.
-    to: productLink('dusk'),
+    // THE ENQUIRY FORM, like every other card. It went to /products/dusk, the
+    // one product page in the range — and that page is gone, because this card
+    // now carries the configurator, the live price and Add to cart itself.
+    //
+    // Nothing is lost by pointing the picture at the enquiry form instead: the
+    // buying path is the panel beside it, not this link, and the other eleven
+    // cards have always worked exactly this way.
+    to: enquire('Roller Blinds'),
     priceFrom: ROLLER_FROM,
     image: '/images/rooms/room-kitchen.png',
     imagePosition: 'center 34%',

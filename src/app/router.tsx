@@ -33,7 +33,7 @@
 import { Route, Routes } from 'react-router-dom';
 
 import { CartPage } from '@/features/cart';
-import { ProductDetailPage, ProductsPage } from '@/features/catalogue';
+import { ProductsPage } from '@/features/catalogue';
 import { HomePage, TrustTicker, TICKER_HEIGHT } from '@/features/home';
 import { AboutPage, ContactPage, HowItWorksPage } from '@/features/marketing';
 
@@ -70,10 +70,13 @@ export function AppRoutes() {
           set of pages needing it is exactly the set that opens on a pale
           ground — which is easier to keep true here than in nine files. */}
       <Route element={<RootLayout onLight />}>
-        {/* One page per product, carrying the whole configurator. Every tier
-            that used to sit above it — the category pages, the blind-type
-            listings, the old per-SKU URLs — now redirects here or to the shop. */}
-        <Route path="/products/:slug" element={<ProductDetailPage />} />
+        {/* NO /products/:slug. There is no page below the shop any more: the
+            shop card carries the configurator, the price and Add to cart, so a
+            second screen per product had nothing left to do that the first
+            screen was not already doing better. The flow is home -> /products ->
+            cart -> /book, and every tier that used to sit above a product — the
+            category pages, the blind-type listings, the per-SKU URLs — now
+            resolves to the shop. See routes/legacyRedirects. */}
         <Route path="/contact" element={<ContactPage />} />
         {/* Booking. /book takes the configuration as query params (type, size,
             op, qty, fabric, hw) so a refreshed or shared link still quotes for
