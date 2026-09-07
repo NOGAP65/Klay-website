@@ -1,14 +1,14 @@
 // ---------------------------------------------------------------------------
-// A LINE DRAWING OF EACH PRODUCT MECHANISM — the five blind types, plus
-// curtains, awnings, screens, shutters, wardrobes and shelving.
+// A LINE DRAWING OF EACH PRODUCT MECHANISM — the blind types, plus curtains,
+// awnings, screens, shutters, wardrobes and shelving.
 //
 // It was BlindGlyph and covered five things. The single products page needs an
 // image for every one of the twenty-two items Klay sells, and public/images has
 // photographs of about six of them, so the set grew to cover the range.
 //
-// There is not one photograph of a venetian, roman, vertical or panel blind
-// anywhere in public/images, nor of an awning, a zip screen, a café blind, a
-// louvre roof or a shutter. Every frame in the repository is a roller, a
+// There is not one photograph of a venetian or a panel blind anywhere in
+// public/images, nor of an awning, a zip screen, a café blind, a louvre roof or
+// a shutter. Every frame in the repository is a roller, a
 // curtain or a wardrobe. So most of a grid of the full range has nothing to put
 // in it.
 //
@@ -37,7 +37,7 @@
 import { tokens } from '../theme';
 
 /** Evenly spaced horizontal rules between two y values — the slats of a
- * venetian and, at a different rhythm, the folds of a roman. */
+ * venetian. */
 const rows = (count: number, from: number, to: number) =>
   Array.from({ length: count }, (_, i) => from + ((to - from) * i) / (count - 1));
 
@@ -59,8 +59,8 @@ function Paths({ type, ground }: { type: string; ground: string }) {
       );
 
     // Slats, tilted. The tilt is the point of a venetian and a stack of level
-    // rules would read as a roman, so every slat is drawn on a slight rake with
-    // the ladder cords down either side.
+    // rules would read as a flat sheet, so every slat is drawn on a slight rake
+    // with the ladder cords down either side.
     case 'venetian-blinds':
       return (
         <>
@@ -73,38 +73,9 @@ function Paths({ type, ground }: { type: string; ground: string }) {
         </>
       );
 
-    // Folds bunched into the top third, flat cloth below. A roman is one sheet
-    // that gathers, so the rules crowd where it stacks and stop where it hangs.
-    case 'roman-blinds':
-      return (
-        <>
-          <path d="M16 16 H84" strokeWidth="4" />
-          {[24, 31, 38, 45].map(y => (
-            <path key={y} d={`M20 ${y} Q50 ${y + 6} 80 ${y}`} />
-          ))}
-          <path d="M20 45 V80" />
-          <path d="M80 45 V80" />
-          <path d="M20 80 H80" strokeWidth="3" />
-        </>
-      );
-
-    // Louvres hanging from a track, one rotated out of plane at the left to show
-    // that they turn rather than merely part.
-    case 'vertical-blinds':
-      return (
-        <>
-          <path d="M14 18 H86" strokeWidth="4" />
-          {[24, 36, 48, 60, 72].map(x => (
-            <path key={x} d={`M${x} 22 V84`} />
-          ))}
-          <path d="M24 22 L30 26 V84 L24 80 Z" />
-          <path d="M84 22 V84" />
-        </>
-      );
-
     // Wide panels stacked in depth, each offset from the last — the drawing has
     // to say "sliding past one another", which is the only thing that separates
-    // a panel glide from a very wide vertical.
+    // a panel glide from a wall of hanging cloth.
     //
     // FILLED WITH THE GROUND, and that is the whole trick. Drawn as three
     // outlines with fill:none, the overlapping edges all stay visible and the

@@ -37,7 +37,7 @@
 //
 // The history is worth keeping, because it is a loop this page has been round
 // twice. Every version BEFORE the split put selling and listing in one section
-// and lost one of them — a fourteen-card scroller whose visible four were all
+// and lost one of them — a twelve-card scroller whose visible four were all
 // indoor blinds, then a six-up grid that showed the shape of the range and ran
 // to 1,649px doing it. The split fixed that by giving each job its own section.
 // Removing the listing side is NOT a return to those: nothing was merged back

@@ -4,7 +4,7 @@
 // The homepage's Bestsellers row does this for four products and it is the best
 // thing on the site: click Shop Now and the card widens, the configurator
 // arrives BESIDE the photograph, and you specify the thing while looking at it.
-// The shop page listed all fourteen and did none of it — every card was a link
+// The shop page listed all twelve and did none of it — every card was a link
 // out to a detail page or a contact form, so the one place a customer goes to
 // choose was the one place they could not.
 //

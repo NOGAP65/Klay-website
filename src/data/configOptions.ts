@@ -3,7 +3,7 @@
 //
 // Every product in the catalogue gets a panel of choices sitting directly under
 // its photograph in the homepage range row, and this file is what that panel is
-// built from. One table, so the fourteen panels cannot drift into fourteen
+// built from. One table, so the twelve panels cannot drift into twelve
 // different vocabularies.
 //
 // FIVE SLOTS, AND NO MORE. A configured line has to survive as a cart line, and
@@ -170,12 +170,6 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     operation: true,
     colourLabel: 'Fabric colour',
   },
-  'roman-blinds': {
-    variantLabel: 'Fabric type',
-    variants: [v('blockout', 'Blockout'), v('lightfilter', 'Light filter')],
-    size: true,
-    operation: true,
-  },
   'honeycomb-blinds': {
     variantLabel: 'Fabric type',
     variants: [v('blockout', 'Blockout'), v('lightfilter', 'Light filter')],
@@ -194,16 +188,6 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   'plantation-shutters': {
     size: true,
     colourLabel: 'Louvre colour',
-  },
-  'vertical-blinds': {
-    variantLabel: 'Fabric type',
-    variants: [
-      v('blockout', 'Blockout'),
-      v('lightfilter', 'Light filter'),
-      v('sunscreen', 'Sunscreen'),
-    ],
-    size: true,
-    operation: true,
   },
   curtains: {
     variantLabel: 'Fabric',
@@ -344,8 +328,8 @@ export const defaultSelection = (item: CatalogueItem): Selection => {
   // EVERY FIELD ARRIVES ANSWERED, LOCATION INCLUDED — and that reverses an
   // earlier call worth recording. Location was left blank on the reasoning that
   // defaulting it makes the card claim the customer said "Living room" when they
-  // said nothing, which is true. What it missed is the setting: fourteen cards
-  // each showing one unanswered row reads as fourteen incomplete forms, and the
+  // said nothing, which is true. What it missed is the setting: twelve cards
+  // each showing one unanswered row reads as twelve incomplete forms, and the
   // customer cannot tell which of them is waiting on them.
   //
   // Every other field makes the same bargain — a sensible default, changed by
