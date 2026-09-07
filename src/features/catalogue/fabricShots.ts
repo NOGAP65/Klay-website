@@ -51,22 +51,28 @@ export interface FabricShot {
    * 0 where the cloth was photographed near-white and a soft-light pass would
    * lift more than it restores. */
   sheen: number;
+  /** How much of the metal's own highlight is soft-lit back over the painted
+   * hardware, 0..1. 0.4 suits a roller's chrome headrail -- a small bright
+   * cylinder that lifts a dark swatch badly if given more. An awning's cassette
+   * and arms are large matte extrusions and need 0.7, or they render as flat
+   * cut-out shapes rather than parts of the machine. */
+  spec: number;
 }
 
 export const FABRIC_SHOT_DIR = '/images/fabrics';
 
 export const FABRIC_SHOTS: FabricShot[] = [
-  { product: 'curtains', fabric: 'blockout', file: 'curtains-blockout.webp', mask: 'curtains.mask.png', hardware: 'curtains.hardware.png', dye: 1, tint: 0, sheen: 0.5 },
-  { product: 'curtains', fabric: 'sheer', file: 'curtains-sheer.webp', mask: 'curtains.mask.png', hardware: 'curtains.hardware.png', dye: 0.5, tint: 0.9, sheen: 0.5 },
-  { product: 'folding-arm-awnings', fabric: null, file: 'folding-arm-awnings.webp', mask: 'folding-arm-awnings.mask.png', hardware: 'folding-arm-awnings.hardware.png', dye: 1, tint: 0, sheen: 0 },
-  { product: 'plantation-shutters', fabric: null, file: 'plantation-shutters.webp', mask: 'plantation-shutters.mask.png', hardware: null, dye: 1, tint: 0, sheen: 0 },
-  { product: 'roller-blinds', fabric: 'blockout', file: 'roller-blinds-blockout.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 1, tint: 0, sheen: 0 },
-  { product: 'roller-blinds', fabric: 'dual', file: 'roller-blinds-dual.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.88, tint: 0, sheen: 0 },
-  { product: 'roller-blinds', fabric: 'lightfilter', file: 'roller-blinds-lightfilter.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.7, tint: 0, sheen: 0 },
-  { product: 'roller-blinds', fabric: 'sunscreen', file: 'roller-blinds-sunscreen.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.55, tint: 0, sheen: 0 },
-  { product: 'roller-shutters', fabric: 'aluminium', file: 'roller-shutters-aluminium.webp', mask: null, hardware: null, dye: 1, tint: 0, sheen: 0 },
-  { product: 'venetian-blinds', fabric: null, file: 'venetian-blinds.webp', mask: 'venetian-blinds.mask.png', hardware: null, dye: 1, tint: 0, sheen: 0 },
-  { product: 'zip-guide-systems', fabric: 'mesh', file: 'zip-guide-systems-mesh.webp', mask: null, hardware: null, dye: 1, tint: 0, sheen: 0 },
+  { product: 'curtains', fabric: 'blockout', file: 'curtains-blockout.webp', mask: 'curtains.mask.png', hardware: 'curtains.hardware.png', dye: 1, tint: 0, sheen: 0.5, spec: 0.4 },
+  { product: 'curtains', fabric: 'sheer', file: 'curtains-sheer.webp', mask: 'curtains.mask.png', hardware: 'curtains.hardware.png', dye: 0.5, tint: 0.9, sheen: 0.5, spec: 0.4 },
+  { product: 'folding-arm-awnings', fabric: null, file: 'folding-arm-awnings.webp', mask: 'folding-arm-awnings.mask.png', hardware: 'folding-arm-awnings.hardware.png', dye: 1, tint: 0, sheen: 0.7, spec: 0.7 },
+  { product: 'plantation-shutters', fabric: null, file: 'plantation-shutters.webp', mask: 'plantation-shutters.mask.png', hardware: null, dye: 1, tint: 0, sheen: 0, spec: 0.4 },
+  { product: 'roller-blinds', fabric: 'blockout', file: 'roller-blinds-blockout.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 1, tint: 0, sheen: 0, spec: 0.4 },
+  { product: 'roller-blinds', fabric: 'dual', file: 'roller-blinds-dual.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.88, tint: 0, sheen: 0, spec: 0.4 },
+  { product: 'roller-blinds', fabric: 'lightfilter', file: 'roller-blinds-lightfilter.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.7, tint: 0, sheen: 0, spec: 0.4 },
+  { product: 'roller-blinds', fabric: 'sunscreen', file: 'roller-blinds-sunscreen.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.55, tint: 0, sheen: 0, spec: 0.4 },
+  { product: 'roller-shutters', fabric: 'aluminium', file: 'roller-shutters-aluminium.webp', mask: null, hardware: null, dye: 1, tint: 0, sheen: 0, spec: 0.4 },
+  { product: 'venetian-blinds', fabric: null, file: 'venetian-blinds.webp', mask: 'venetian-blinds.mask.png', hardware: null, dye: 1, tint: 0, sheen: 0, spec: 0.4 },
+  { product: 'zip-guide-systems', fabric: 'mesh', file: 'zip-guide-systems-mesh.webp', mask: null, hardware: null, dye: 1, tint: 0, sheen: 0, spec: 0.4 },
 ];
 
 /** The shot for a configuration, or undefined where none has been photographed

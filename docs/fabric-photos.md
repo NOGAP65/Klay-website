@@ -136,6 +136,14 @@ node tools/cut-fabric-mask.mjs public/images/fabrics/folding-arm-awnings.webp fo
 - `--cloth` is the valance hanging off the front bar, which is in shade and reads
   at arm brightness while being cloth.
 
+**Cutting it right is only half of it.** Multiplying a colour through this mask
+lands the awning in the right place and takes all the life out of it: the cloth
+photographs across 208-229, Navy takes it to 46-50, and a four-level range reads
+as a navy shape pasted onto a photograph with the arms swallowed into it. The
+awning carries `sheen: 0.7` and `spec: 0.7` for that reason — higher than
+anything else here, because it has more to lose. See the notes on `SHEEN` and
+`SPECULAR` in tools/generate-fabric-shots.mjs.
+
 Two edge rules are in the branch rather than the arguments, and both exist for
 the same reason a mask cannot be judged on White. Gaps in the fill are **closed
 at radius 8 then intersected with `--keep`** — the near arm is a lit rail whose

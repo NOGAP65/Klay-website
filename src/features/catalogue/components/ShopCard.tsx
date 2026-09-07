@@ -576,12 +576,15 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                   backgroundSize: 'cover',
                   backgroundPosition: item.imagePosition ?? '50% 45%',
                   mixBlendMode: 'soft-light',
-                  // 0.4, NOT 0.85. The headrail photographs as bright chrome, so
-                  // soft-lighting it over a dark swatch lifts the dark badly:
-                  // at 0.85, Black (#303030, rgb 48) rendered at rgb 99 — grey,
-                  // not black, and barely separable from chrome. This is enough
-                  // to keep the tube's roundness without the colour losing.
-                  opacity: 0.4,
+                  // PER SHOT, BECAUSE IT IS ABOUT WHAT THE METAL IS. 0.4 is the
+                  // roller's, and it is about a chrome tube: a headrail
+                  // photographs bright, so soft-lighting it over a dark swatch
+                  // lifts the dark badly — at 0.85, Black (#303030, rgb 48) came
+                  // out rgb 99, grey and barely separable from chrome. An
+                  // awning's cassette and arms are large matte extrusions and
+                  // need most of their shading back or they read as cut-out
+                  // shapes. See `spec` in fabricShots.
+                  opacity: shot.spec,
                   WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.hardware})`,
                   maskImage: `url(${FABRIC_SHOT_DIR}/${shot.hardware})`,
                   WebkitMaskSize: 'cover',
