@@ -48,10 +48,15 @@ const TOLERANCE = 0;    // cells allowed to differ before a case is RED
  *
  * `capture` says HOW to read the picture, and it is not a preference:
  *
- *   'canvas'      getImageData off the canvas. Blinds and curtains draw in 2D.
+ *   'canvas'      getImageData off the canvas. The blind surface draws in 2D.
  *   'screenshot'  screenshot the canvas element and decode it back into a fresh
- *                 2D context. THE WARDROBE SURFACE IS WEBGL — getContext('2d')
- *                 returns null on it, so the 2D read sees nothing at all.
+ *                 2D context. THE WARDROBE AND CURTAIN SURFACES ARE WEBGL —
+ *                 getContext('2d') returns null on them, so the 2D read sees
+ *                 nothing at all.
+ *
+ * `surface` NAMES WHICH CANVAS, and it is required wherever a view has more
+ * than one. It matches a `data-render-surface` attribute the renderer sets on
+ * its own canvas — see the note on resolveSurface, and the reason it exists.
  *
  * `finish` clicks a swatch by its title attribute, because the finish controls
  * are colour chips with no text to match on. */
@@ -60,7 +65,12 @@ const CASES = [
   { name: 'blind-sunscreen-large-motorised', route: '/visualiser', capture: 'canvas', clicks: ['BLINDS', 'Sunscreen', 'Large to 3m', 'Motorised +$150'] },
   { name: 'blind-lightfilter-small-manual', route: '/visualiser', capture: 'canvas', clicks: ['BLINDS', 'Light Filter', 'Small to 1m', 'Manual'] },
   { name: 'blind-dual-medium-manual', route: '/visualiser', capture: 'canvas', clicks: ['BLINDS', 'Dual', 'Medium to 2m', 'Manual'] },
-  { name: 'curtain-default', route: '/visualiser', capture: 'canvas', clicks: ['CURTAINS'] },
+  // SCREENSHOT, AND NAMED. The curtain view stacks a WebGL cloth over a 2D
+  // photograph of the room, so both halves of this line were wrong: the 2D read
+  // could not see a WebGL surface, and the unnamed canvas resolved to the
+  // backdrop, which no curtain change can move. It reported green for two weeks
+  // across a renderer replacement. See D-13.
+  { name: 'curtain-default', route: '/visualiser', capture: 'screenshot', surface: 'curtain', clicks: ['CURTAINS'] },
 
   // WARDROBES — added before U4, which moves 27 MB of wardrobe assets through a
   // constructed path. R1 in the one area that had no coverage.
@@ -83,9 +93,12 @@ const CASES = [
   { name: 'wardrobe-see-in-3d', route: '/', capture: 'screenshot', clicks: ['SEE IN 3D'] },
 ];
 
-/** Read the canvas as a coarse luminance grid, in the page. */
-const SIGNATURE = (grid) => {
-  const canvas = document.querySelector('canvas');
+/** Read the canvas as a coarse luminance grid, in the page.
+ *
+ * TAKES THE SELECTOR rather than assuming the first canvas is the one. See
+ * resolveSurface. */
+const SIGNATURE = ({ grid, selector }) => {
+  const canvas = document.querySelector(selector);
   if (!canvas) return null;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   let data;
@@ -153,21 +166,50 @@ const DECODE = async ({ b64, grid }) => {
   return out;
 };
 
-async function readSignature(page, capture) {
+/** WHICH CANVAS THIS CASE IS ABOUT — a CSS selector, resolved once and used by
+ * every read.
+ *
+ * THE HARNESS USED TO SAY `document.querySelector('canvas')` AND
+ * `locator('canvas').first()`, which is a guess dressed as a selector: it means
+ * "whichever canvas the DOM happens to put first". That is fine for a view with
+ * one canvas and silently wrong for a view with two — and the curtain view has
+ * two, a WebGL cloth over a 2D photograph of the room. The baseline read the
+ * photograph. It reported GREEN, at TOLERANCE = 0, across a complete
+ * replacement of the renderer it was supposed to be watching. See D-13.
+ *
+ * So the renderers label their own surfaces and the case names the one it
+ * wants. The rule enforced below is: EXACTLY ONE CANVAS, OR SAY WHICH. A view
+ * that grows a second canvas fails loudly on the next run instead of quietly
+ * reading the wrong one — which is the only property that actually matters
+ * here, since the failure this replaces was invisible by construction. */
+async function resolveSurface(page, testCase) {
+  if (testCase.surface) {
+    const selector = `canvas[data-render-surface="${testCase.surface}"]`;
+    const n = await page.locator(selector).count();
+    if (n !== 1) return { error: `surface '${testCase.surface}' matched ${n} canvases, expected exactly 1` };
+    return { selector };
+  }
+  const n = await page.locator('canvas').count();
+  if (n === 0) return { error: 'no canvas on the page' };
+  if (n > 1) return { error: `${n} canvases on the page and no \`surface\` named — add one, see resolveSurface` };
+  return { selector: 'canvas' };
+}
+
+async function readSignature(page, capture, selector) {
   if (capture === 'screenshot') {
-    const canvas = page.locator('canvas').first();
+    const canvas = page.locator(selector);
     if (!(await canvas.count())) return null;
     const shot = await canvas.screenshot();
     return page.evaluate(DECODE, { b64: shot.toString('base64'), grid: GRID });
   }
-  return page.evaluate(SIGNATURE, GRID);
+  return page.evaluate(SIGNATURE, { grid: GRID, selector });
 }
 
-async function stableSignature(page, capture) {
+async function stableSignature(page, capture, selector) {
   let previous = null;
   for (let attempt = 0; attempt < 20; attempt++) {
     await page.evaluate(() => new Promise((r) => setTimeout(r, 400)));
-    const current = await readSignature(page, capture);
+    const current = await readSignature(page, capture, selector);
     if (!current) continue;
     if (previous && current.every((v, i) => Math.abs(v - previous[i]) <= 2)) return current;
     previous = current;
@@ -229,7 +271,18 @@ for (const testCase of CASES) {
     await page.evaluate(() => new Promise((r) => setTimeout(r, 500)));
   }
 
-  const signature = await stableSignature(page, testCase.capture);
+  // WHICH SURFACE, DECIDED BEFORE ANYTHING IS READ. A case that cannot name one
+  // canvas is RED here rather than reading whatever came first — see
+  // resolveSurface.
+  const { selector, error } = await resolveSurface(page, testCase);
+  if (error) {
+    problems.push(`${testCase.name}: ${error}`);
+    console.log(`  RED    ${testCase.name.padEnd(36)} ${error}`);
+    red++;
+    continue;
+  }
+
+  const signature = await stableSignature(page, testCase.capture, selector);
   // A CASE THAT CANNOT BE READ IS RED, NEVER SKIPPED. getContext('2d') returns
   // null on a WebGL canvas, so a signature of null is not "no picture yet" — it
   // is a case this harness structurally cannot see. Counting it as red is what
@@ -244,7 +297,7 @@ for (const testCase of CASES) {
   }
 
   const file = path.join(DIR, `${testCase.name}.json`);
-  await page.locator('canvas').first().screenshot({ path: path.join(DIR, `${testCase.name}.png`) });
+  await page.locator(selector).screenshot({ path: path.join(DIR, `${testCase.name}.png`) });
 
   if (update) {
     fs.writeFileSync(file, JSON.stringify({ grid: GRID, signature }) + '\n');

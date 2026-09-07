@@ -401,5 +401,5 @@ export default function WardrobeRoomRenderer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photoUrl, modelId, colourName, widthMm, handleFinish, recessed, wallColour, JSON.stringify(corners)]);
 
-  return <canvas ref={canvasRef} style={{ width: '100%', height: 'auto', display: 'block' }} />;
+  return <canvas ref={canvasRef} data-render-surface="wardrobe-room" style={{ width: '100%', height: 'auto', display: 'block' }} />;
 }

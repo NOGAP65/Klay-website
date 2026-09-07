@@ -3490,6 +3490,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
   return (
     <canvas
       ref={canvasRef}
+      data-render-surface="blind"
       style={{
         width: '100%',
         height: 'auto',

@@ -2594,12 +2594,19 @@ export default function Canvas2DCurtainRenderer({
 
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+      {/* TWO CANVASES, AND THEY ARE LABELLED — see data-render-surface.
+          The room photograph is drawn in 2D underneath; the cloth is WebGL on
+          top of it. Anything looking for "the curtain" wants the second one,
+          and for two weeks the render baseline took the first — silently, and
+          reported green while the renderer underneath it was replaced. */}
       <canvas
         ref={bgRef}
+        data-render-surface="curtain-backdrop"
         style={{ width: '100%', height: 'auto', display: 'block' }}
       />
       <canvas
         ref={threeRef}
+        data-render-surface="curtain"
         style={{
           position: 'absolute',
           top: 0,

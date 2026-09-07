@@ -160,7 +160,7 @@ export default function Canvas2DWardrobeRenderer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [photoUrl, modelId, colourName, widthMm, JSON.stringify(corners)]);
 
-  return <canvas ref={canvasRef} style={{ width: '100%', height: 'auto', display: 'block' }} />;
+  return <canvas ref={canvasRef} data-render-surface="wardrobe" style={{ width: '100%', height: 'auto', display: 'block' }} />;
 }
 
 /** The supplied render, plus where the carcass sits inside it — everything the
