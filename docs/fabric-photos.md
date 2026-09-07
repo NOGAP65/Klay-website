@@ -56,6 +56,39 @@ would be daylight and lose its colour. The venetian's two `--front` rectangles
 are the lamp shade crossing the bottom corner, stepped to follow the dome —
 without them the bottom bar paints a charcoal band across the lamp.
 
+## The curtains, and the numbers they were cut with
+
+The same idea, one more rectangle, and the same warning: read by eye, not
+recoverable from the file, so re-cutting without them undoes all of it.
+
+```
+node tools/cut-fabric-mask.mjs public/images/fabrics/curtains-blockout.webp curtains --curtain \
+  --box=0.05,0.79,0.065,0.935 \
+  --glass=0.1044,0.79,0.4844,0.52 \
+  --lit=0.1044,0.79,0.52,0.5422 \
+  --front=0.6422,0.79,0.0644,0.0956 \
+  --track=0.0544,0.0633,0.0644,0.9367
+```
+
+- `--glass` is the window between the two panels. The flood fill used to find it
+  by brightness and could not: the leading edge of the right-hand panel faces the
+  window and reads 243-255 against a shaded fold's 155-195, so the bound that
+  kept daylight out kept that edge out too and left a ragged bright strip down
+  the middle of the picture.
+- `--lit` is that edge, handed back. Inside it the brightness test is not asked —
+  a structural claim, like the roller's bridge up to the headrail.
+- `--front` is the sofa back crossing the bottom-left corner. Cream sofa, cream
+  curtain: no colour test separates them and the fill walks from one to the
+  other.
+- `--track` is the ceiling track, which is what the hardware colour paints. It is
+  seven pixels and that is all this photograph holds — the curtain is
+  ceiling-mounted, so the track is most of the way into the recess.
+
+Both curtain fabrics share this mask and this track; only `dye` differs, and the
+sheer's is 0.62 rather than the 0.38 the visualiser uses for the same cloth. See
+the note on `DYE_STRENGTH` in tools/generate-fabric-shots.mjs for why a number
+read off a flat swatch is the wrong number for a photograph of a bright window.
+
 ## What the photographs have to do
 
 - **Off-white cloth, never pure white and never blown out.** Colour is applied by

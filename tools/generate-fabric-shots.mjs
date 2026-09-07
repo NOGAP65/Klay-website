@@ -121,12 +121,26 @@ if (problems.length) {
 // the same fabrics — blockout 1, lightfilter 0.82, sunscreen 0.65, sheer 0.38 —
 // pulled toward the light end, because a photograph of a lit window shows more
 // transmission than a flat swatch does.
+//
+// EXCEPT THE SHEER, WHICH WENT BACK UP TO 0.62. Openness is the right idea and
+// 0.38 was the wrong number for it, because it was read off a renderer that
+// composites against a flat swatch rather than against a photograph of a bright
+// window. Multiplying at 0.38 lands White at 0.96 of the original and Truffle at
+// 0.88 — an eight per cent spread across half the colour card, over cloth that
+// already reads 230-245. On the rendered card White, Ivory, Sand and Truffle
+// were four names for the same picture, which is the exact failure the dye
+// number exists to prevent, arriving at the pale end instead of the dark one.
+//
+// 0.62 separates them and still keeps a sheer a sheer: Charcoal comes out a
+// grey with the window glowing through it, against the blockout's near-black.
+// 0.75 was tried and is too much — the dark end starts reading as a blockout,
+// which is the failure in the other direction.
 const DYE_STRENGTH = {
   blockout: 1,
   dual: 0.88,
   lightfilter: 0.7,
   sunscreen: 0.55,
-  sheer: 0.38,
+  sheer: 0.62,
 };
 
 const body = shots.map(s =>

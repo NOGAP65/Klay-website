@@ -93,6 +93,16 @@ const GLASS = argv.filter(a => a.startsWith('--glass=')).map(a => a.slice(8).spl
  * simply ends where the lamp begins, which loses a little colour in a corner
  * rather than putting it somewhere it cannot be. */
 const FRONT = argv.filter(a => a.startsWith('--front=')).map(a => a.slice(8).split(',').map(Number));
+/** `--lit top,bottom,left,right`, repeatable — cloth the brightness test cannot
+ * admit. A curtain's leading edge faces the window and is lit through it: it
+ * measures 243-255 where a shaded fold reads 155-195, so any bound set to keep
+ * daylight out keeps that edge out too. Inside these rectangles the test is not
+ * asked. See the note in the curtain branch. */
+const LIT = argv.filter(a => a.startsWith('--lit=')).map(a => a.slice(6).split(',').map(Number));
+/** `--track top,bottom,left,right`, repeatable — the curtain track, so the
+ * hardware colour has something to paint. See the note in the curtain branch
+ * on why it is given and on how little of it this photograph holds. */
+const TRACK = argv.filter(a => a.startsWith('--track=')).map(a => a.slice(8).split(',').map(Number));
 const args = argv.filter(a => !a.startsWith('--'));
 const SRC = args[0];
 const ID = args[1];
@@ -117,7 +127,7 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage();
 
-const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, FRONT }) => {
+const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, FRONT, LIT, TRACK }) => {
   const im = new Image();
   im.src = 'data:image/png;base64,' + b64;
   await im.decode();
@@ -344,9 +354,47 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, 
     const bL = Math.round(W * L0), bR = Math.round(W * R0);
     const inDrop = (y) => y >= bT && y <= bB;
 
-    // Inside the box the only thing that is not cloth is the window in the gap
-    // between the panels, which is the brightest thing in the frame at 218-254.
-    const cloth = (x, y) => x >= bL && x <= bR && L_(x, y) < 214;
+    // THE WINDOW IS GIVEN NOW, AND THE UPPER BOUND CAME OFF WITH IT.
+    //
+    // The bound used to be 214 and it was doing two jobs: keeping the window out
+    // of the fill, and keeping the fill on cloth. It could not do the first
+    // without failing the second. The leading edge of the right-hand panel faces
+    // the window and is lit through — it measures 229-245 against a shaded fold's
+    // 155-195 — so a threshold set to exclude daylight excluded the brightest
+    // cloth in the photograph too. What that left was a ragged bright strip a
+    // dozen pixels wide running the full drop, a jagged line between dyed and
+    // undyed down the middle of the picture, which reads as a fault rather than
+    // as a gap.
+    //
+    // A straight edge in the right place is the whole fix, and geometry gives
+    // one where a threshold cannot. `--glass` is the opening between the panels
+    // and `--lit` is the strip of cloth beside it that faces the window, both
+    // read off the photograph like the box. Inside `--lit` the brightness test is
+    // not asked at all — the claim is structural, the way the roller's bridge up
+    // to the headrail is: a curtain runs to its own leading edge, and no reading
+    // of that edge's pixels is going to say so.
+    //
+    // The bound stays, at 248, because it is still doing the job it is good at:
+    // keeping the fill off the floor between the waves of the hem. That hem is
+    // the one edge in this photograph worth finding rather than giving.
+    //
+    // `--front` is what stands between the camera and the cloth — the sofa back
+    // that crosses the bottom-left corner. Same reasoning as the venetian's lamp:
+    // a cream sofa in front of a cream curtain is not a colour away from it, so
+    // nothing in the pixels says which is which, and the fill walks straight from
+    // one onto the other.
+    const rect = ([t, b, l, r]) => ({
+      T: Math.round(H * t), B: Math.round(H * b),
+      L: Math.round(W * l), R: Math.round(W * r),
+    });
+    const inAny = (rs) => (x, y) => rs.some(g => x >= g.L && x <= g.R && y >= g.T && y <= g.B);
+    const isGlass = inAny(GLASS.map(rect));
+    const behind = inAny(FRONT.map(rect));
+    const isLit = inAny(LIT.map(rect));
+
+    const cloth = (x, y) =>
+      x >= bL && x <= bR && !isGlass(x, y) && !behind(x, y)
+      && (isLit(x, y) || L_(x, y) < 248);
     const firstRow = bT, hem = bB;
 
     // The hem, per column: walking up from the bottom, the first row that is
@@ -435,6 +483,31 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, 
       }
       ctx.putImageData(d, 0, 0);
     });
+
+    // THE TRACK, WHICH IS THE ONLY HARDWARE A CURTAIN HAS. It is given rather
+    // than found for a reason peculiar to it: the blind cutter finds metal by
+    // looking for a bright neutral bar spanning the frame, and this track is
+    // neither bright nor neutral — it is a face in shadow under a ceiling, the
+    // same tone as the cornice above it and the curtain heading below.
+    //
+    // It is a seven-pixel band at this size and it will never be much more: the
+    // master runs 1254 and the track is nine pixels there, because the curtain
+    // is ceiling-mounted and the track sits most of the way into the recess.
+    // Painting it black puts a line across the top of the picture; painting it
+    // white takes the line away. That is the whole of what this photograph can
+    // say about a track — and it is more than the hardware row on a curtain card
+    // was saying before, which was nothing at all.
+    const trackUrl = TRACK.length ? png((ctx) => {
+      const d = ctx.createImageData(W, H);
+      const rs = TRACK.map(rect);
+      for (let p = 0; p < W * H; p++) {
+        const x = p % W, y = (p / W) | 0;
+        d.data[p * 4] = d.data[p * 4 + 1] = d.data[p * 4 + 2] = 255;
+        d.data[p * 4 + 3] = rs.some(t => x >= t.L && x <= t.R && y >= t.T && y <= t.B) ? 255 : 0;
+      }
+      ctx.putImageData(d, 0, 0);
+    }) : null;
+
     const overlayUrl = png((ctx) => {
       ctx.drawImage(im, 0, 0, W, H);
       const d = ctx.getImageData(0, 0, W, H);
@@ -450,8 +523,8 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, 
     return {
       W, H, curtain: true,
       box: { L: cx0, R: cx1, T: cy0, B: cy1 },
-      raw: 0, cloth: n, metal: 0, bars: 0, barBands: 'n/a', grew: 0,
-      mask: maskUrl, hardware: null, overlay: overlayUrl,
+      raw: 0, cloth: n, metal: 0, bars: 0, barBands: TRACK.length ? 'track' : 'n/a', grew: 0,
+      mask: maskUrl, hardware: trackUrl, overlay: overlayUrl,
     };
   }
 
@@ -643,7 +716,7 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, 
     hardware: alphaPng(hw),
     overlay: oc.toDataURL('image/png'),
   };
-}, { b64, SIZE, CURTAIN, SLATS, BOX, GLASS, FRONT });
+}, { b64, SIZE, CURTAIN, SLATS, BOX, GLASS, FRONT, LIT, TRACK });
 
 if (res.error) { console.error('  ' + res.error); await browser.close(); process.exit(1); }
 const save = (u, p) => writeFileSync(p, Buffer.from(u.split(',')[1], 'base64'));
