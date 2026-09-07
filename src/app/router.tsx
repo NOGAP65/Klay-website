@@ -30,16 +30,34 @@
 // closes nothing.
 // ---------------------------------------------------------------------------
 
+import { lazy } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
-import { CartPage } from '@/features/cart';
-import { ProductsPage } from '@/features/catalogue';
 import { HomePage, TrustTicker, TICKER_HEIGHT } from '@/features/home';
-import { AboutPage, ContactPage, HowItWorksPage } from '@/features/marketing';
 
-import BookingConfirmedPage from '../pages/BookingConfirmedPage';
-import BookInstallPage from '../pages/BookInstallPage';
-import VisualiserPage from '../pages/VisualiserPage';
+// EVERY PAGE BUT THE HOMEPAGE IS FETCHED ON DEMAND.
+//
+// The build was one 1,009KB chunk: every visitor downloaded every page, plus
+// three.js, to look at whichever one they asked for. Splitting per route means
+// a visitor pays for the page they are on.
+//
+// THE HOMEPAGE STAYS EAGER, and that is the one exception worth stating. It is
+// where most visits start, so splitting it would add a round trip to the most
+// common path — spending the entry page's speed to save bytes on pages that
+// visitor may never open. TrustTicker and TICKER_HEIGHT come with it because
+// the layout above the outlet needs them to size itself.
+//
+// VisualiserPage matters most of the four. It imports KlayConfigurator eagerly
+// — correctly, it IS the page — so while this import was eager, three.js sat
+// in the main bundle no matter what the homepage did about it.
+const ProductsPage = lazy(() => import('@/features/catalogue/components/ProductsPage'));
+const CartPage = lazy(() => import('@/features/cart/components/CartPage'));
+const AboutPage = lazy(() => import('@/features/marketing/components/AboutPage'));
+const ContactPage = lazy(() => import('@/features/marketing/components/ContactPage'));
+const HowItWorksPage = lazy(() => import('@/features/marketing/components/HowItWorksPage'));
+const BookingConfirmedPage = lazy(() => import('../pages/BookingConfirmedPage'));
+const BookInstallPage = lazy(() => import('../pages/BookInstallPage'));
+const VisualiserPage = lazy(() => import('../pages/VisualiserPage'));
 
 import { RootLayout } from './layouts/RootLayout';
 import { LegacyBlindTypeRedirect, LegacyCategoryRedirect, LEGACY_CATEGORY_SLUGS } from './routes/legacyRedirects';

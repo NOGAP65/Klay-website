@@ -24,6 +24,7 @@
 // composition is written down.
 // ---------------------------------------------------------------------------
 
+import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 
 import { Footer } from './Footer';
@@ -50,7 +51,17 @@ export function RootLayout({ banner, ...navProps }: RootLayoutProps) {
     <>
       {banner}
       <Nav {...navProps} />
-      <Outlet />
+      {/* Pages are code-split — see router.tsx. The boundary is here rather
+          than above the layout so the nav and footer stay mounted while a page
+          chunk arrives; only the page region waits.
+
+          THE FALLBACK IS DELIBERATELY EMPTY. A spinner that appears for the
+          ~50ms a local chunk takes reads as a flicker, and every one of these
+          chunks is small enough to land inside a single frame budget on a warm
+          connection. An empty region is calmer than a flashed spinner. */}
+      <Suspense fallback={null}>
+        <Outlet />
+      </Suspense>
       <Footer />
     </>
   );

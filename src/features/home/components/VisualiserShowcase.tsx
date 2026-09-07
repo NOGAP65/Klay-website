@@ -33,6 +33,7 @@
 // could put them.
 // ---------------------------------------------------------------------------
 
+import { lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import * as routes from '@/config/routes';
@@ -40,12 +41,11 @@ import * as routes from '@/config/routes';
 import { radius, tokens, layout, motion, space, type as typeScale, shadow, CtaButton, CtaLink, SectionBand, TextLink, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
 import { productByBlindType } from '@/features/catalogue';
-import { useIsMobile } from '@/shared';
+import { useIsMobile, useInView } from '@/shared';
 
 import { bookingLink } from '../../../lib/bookingLink';
 import { formatAUD } from '../../../lib/pricing';
 import {
-  KlayConfigurator,
   VisualiserControls,
   Field,
   GroupHeading,
@@ -371,8 +371,40 @@ function WindowPicker({
   );
 }
 
+/** THE 3D ENGINE, FETCHED ON DEMAND — see the mount site below for why.
+ *
+ * lazy() is here rather than in the visualiser's barrel for two reasons: §4
+ * makes barrels re-exports only, and the strategy is per-consumer.
+ * VisualiserPage imports the eager export, because there the configurator IS
+ * the page and deferring it would buy a spinner and nothing else. */
+const KlayConfiguratorLazy = lazy(() => import('@/features/visualiser/KlayConfigurator'));
+
+/** What stands in the configurator's place until its chunk lands.
+ *
+ * IT RESERVES HEIGHT RATHER THAN SPINNING. The section is a fixed two-column
+ * card; letting the column collapse to nothing and then jump open when ~380KB
+ * finishes parsing is a layout shift on the homepage — making the thing this
+ * deferral exists to speed up visibly worse. Square, because the configurator's
+ * own media is 1:1 capped at 84vh. */
+function ConfiguratorPlaceholder() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: '100%',
+        aspectRatio: '1 / 1',
+        maxHeight: '84vh',
+        borderRadius: radius.md,
+        background: tokens.fillFaint,
+      }}
+    />
+  );
+}
+
 export function VisualiserShowcase() {
   const isMobile = useIsMobile();
+  // Deferred until scrolled to — see the mount site at the foot of this file.
+  const { ref: configuratorRef, hasBeenInView } = useInView<HTMLDivElement>();
   const navigate = useNavigate();
 
   const addItem = useCartStore(s => s.addItem);
@@ -744,7 +776,24 @@ export function VisualiserShowcase() {
                 aspect ratio. Its 72vh default was tuned for a full-height page
                 and leaves the render floating inside the column here; 84 fills
                 the 70% column now that the card's padding has taken some of it. */}
-            <KlayConfigurator mediaMaxVh={84} />
+            {/* FETCHED ON SCROLL, NOT ON LOAD. This component reaches
+                three.js — ~380KB minified — and this section sits below the
+                hero, the categories and the range row. Every visitor was
+                paying for the 3D engine to look at a homepage, whether they
+                scrolled this far or not.
+
+                The gate is useInView rather than lazy() alone, because lazy()
+                fetches when a component RENDERS and this one renders on page
+                load. See shared/hooks/useInView. */}
+            <div ref={configuratorRef} style={{ width: '100%', minWidth: 0 }}>
+              {hasBeenInView ? (
+                <Suspense fallback={<ConfiguratorPlaceholder />}>
+                  <KlayConfiguratorLazy mediaMaxVh={84} />
+                </Suspense>
+              ) : (
+                <ConfiguratorPlaceholder />
+              )}
+            </div>
           </div>
         </div>
 

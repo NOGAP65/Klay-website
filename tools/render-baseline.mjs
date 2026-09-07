@@ -243,8 +243,39 @@ for (const testCase of CASES) {
 
   // The homepage cases need the showcase on screen before its controls are
   // clickable, and the screenshot capture needs the canvas actually painted.
+  //
+  // SCROLLS TO THE SECTION, NOT TO THE CANVAS, and that distinction became
+  // load-bearing when the visualiser was code-split. This read:
+  //
+  //     document.querySelector('canvas')?.scrollIntoView(...)
+  //
+  // which assumed the canvas was already in the DOM and only needed bringing
+  // into view. It is not any more: the homepage defers the ~660KB configurator
+  // chunk until its section is scrolled to, so on load there is no canvas to
+  // scroll to, the optional chain quietly did nothing, and all four wardrobe
+  // cases failed with "no canvas on the page".
+  //
+  // The section id is the stable anchor — <section id="visualiser"> — and
+  // waiting for the canvas to APPEAR afterwards is what makes this correct
+  // rather than merely longer: the wait is for a real event instead of a fixed
+  // guess at how long a chunk takes to arrive.
+  //
+  // This also makes the case exercise the real user path. Nobody arrives with
+  // the 3D engine already parsed; they scroll, it loads, then they click.
   if (testCase.route === '/') {
-    await page.evaluate(() => document.querySelector('canvas')?.scrollIntoView({ block: 'center' }));
+    const scrolled = await page.evaluate(() => {
+      const section = document.getElementById('visualiser');
+      if (!section) return false;
+      section.scrollIntoView({ block: 'center' });
+      return true;
+    });
+    if (!scrolled) problems.push(`${testCase.name}: no #visualiser section to scroll to`);
+
+    // Up to 12s for the chunk to land and mount its canvas. A fixed sleep would
+    // be either flaky on a cold cache or wasteful on a warm one.
+    await page
+      .waitForFunction(() => document.querySelector('canvas') !== null, { timeout: 12000 })
+      .catch(() => problems.push(`${testCase.name}: canvas never appeared after scrolling to #visualiser`));
     await page.evaluate(() => new Promise((r) => setTimeout(r, 600)));
   }
 
