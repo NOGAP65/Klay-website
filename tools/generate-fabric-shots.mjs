@@ -137,6 +137,14 @@ if (problems.length) {
 // itself, and costs no light at all.
 const DYE_STRENGTH = {
   blockout: 1,
+  // A DAY & NIGHT IS TWO CELLS ON ONE HEADRAIL, one light-filtering and one
+  // blockout, so a single number has to stand for both. 0.85 rather than the
+  // 0.7 a light filter takes alone: most of the drop a customer is looking at
+  // is the blockout half, and the colour has to be the colour on it. The
+  // filtering half comes out slightly stronger than it strictly should, which
+  // is the right way round — a day-and-night that looked like two products in
+  // two colours would be worse than one that reads a shade solid.
+  daynight: 0.85,
   dual: 0.88,
   lightfilter: 0.7,
   sunscreen: 0.55,

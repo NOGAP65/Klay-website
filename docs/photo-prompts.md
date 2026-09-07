@@ -61,7 +61,15 @@ needs or the cutter cannot recover from.
 
 ## The prompts
 
-### Honeycomb blinds — interior
+### Honeycomb blinds — interior, TWO shots
+
+Honeycomb is sold in two fabrics, so it needs two photographs: `blockout` and
+`daynight`. They share one mask, which means **the second must be an edit of the
+first, not a fresh generation** — same room, same window, same camera, same
+light, same framing to the pixel. Only the blind changes. Generate the blockout
+first, get it right, then ask for the edit.
+
+**1 — Blockout**
 
 > Photorealistic interior photograph of a contemporary Australian living room,
 > square 1:1 composition, camera perfectly straight-on and perpendicular to a
@@ -74,6 +82,8 @@ needs or the cutter cannot recover from.
 > out anywhere. The horizontal cellular pleats are crisp and evenly spaced across
 > the whole drop, with the honeycomb cell structure just readable at the edges. A
 > slim white headrail sits at the top and a matching slim bottom rail at the sill.
+> The fabric is opaque: no view through it, no bright glow, only a soft even
+> luminance across the cloth.
 >
 > The wall around the window is warm plaster, noticeably warmer and darker than
 > the blind fabric so the blind's edges read clearly against it. The window is
@@ -83,9 +93,32 @@ needs or the cutter cannot recover from.
 > curtains beside it, no furniture crossing the window. Any furniture is low and
 > well clear, in the lower corners only.
 >
-> Soft, even, diffuse daylight from behind the blind so the fabric glows gently.
-> No part of the fabric is clipped to pure white. Warm neutral palette, oak
-> floor, off-white walls. No people, no text, no logos, no watermark.
+> Soft, even, diffuse daylight. No part of the fabric is clipped to pure white.
+> Warm neutral palette, oak floor, off-white walls. No people, no text, no logos,
+> no watermark.
+
+**2 — Day & Night** (run as an edit of image 1)
+
+> Keep this photograph exactly as it is — same room, same window, same camera
+> position, same framing, same lighting, same furniture, same wall. Change only
+> the blind.
+>
+> Make it a DAY & NIGHT honeycomb: one headrail carrying two cellular fabrics,
+> still FULLY LOWERED and still covering the entire glass. The upper half of the
+> drop is a light-filtering cell — the same oatmeal off-white, but translucent, so
+> daylight glows softly through it. The lower half is the blockout cell, the same
+> colour but opaque and very slightly deeper in tone. A slim horizontal
+> intermediate rail separates the two, matching the headrail and bottom rail.
+>
+> Both halves keep the crisp evenly spaced horizontal pleats. The outline of the
+> blind, the window frame and every edge stay in exactly the same place as the
+> original. No part of the fabric is clipped to pure white, and no view through
+> the glass is visible.
+
+The intermediate rail is what makes it read as a day-and-night rather than as a
+badly lit blockout, so insist on it. If the model moves the window or changes the
+crop, throw the edit away and try again — a shifted frame means two masks, and
+the pipeline only carries one per product.
 
 ### Zip guide systems — exterior
 

@@ -176,9 +176,15 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     operation: true,
     colourLabel: 'Fabric colour',
   },
+  // TWO FABRICS, AND THE SECOND IS A DIFFERENT KIND OF THING FROM THE FIRST. It
+  // carried "Blockout / Light filter", which is one cell in two densities. What
+  // Klay sells is a blockout, and a DAY & NIGHT — one headrail carrying both a
+  // light-filtering cell and a blockout cell, so the same window can be softened
+  // in the afternoon and closed at night without a second blind. That is the
+  // product a customer is choosing between, not a shade of translucency.
   'honeycomb-blinds': {
     variantLabel: 'Fabric type',
-    variants: [v('blockout', 'Blockout'), v('lightfilter', 'Light filter')],
+    variants: [v('blockout', 'Blockout'), v('daynight', 'Day & Night')],
     size: true,
     operation: true,
   },
