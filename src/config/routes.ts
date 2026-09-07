@@ -23,14 +23,23 @@
 // consumer is not a constant, it is a route definition.
 // ---------------------------------------------------------------------------
 
-export const home = '/';
 export const products = '/products';
 export const about = '/about';
 export const contact = '/contact';
 export const howItWorks = '/how-it-works';
 export const cart = '/cart';
 export const book = '/book';
-export const bookingConfirmed = '/booking/confirmed';
+
+// NO `bookingConfirmed` CONSTANT. /booking/confirmed is reached exactly once, by
+// Stripe's success_url in netlify/functions/create-checkout-session.ts, and
+// nothing in the browser bundle ever links to it. The constant existed here and
+// that function wrote the path out by hand anyway — so this file held a second
+// copy of a string it did not own. Removed 7 Sep 2026: the function is now the
+// one place the path is written, which is where it is actually used.
+//
+// If a client-side link to it is ever needed, note that src/config cannot be
+// imported from netlify/ under §2 — the single source would have to be
+// shared-core, not this file. See D-03 on why that layer exists.
 
 /** The standalone visualiser. `/visualizer` — the z-spelled sandbox — is
  * deliberately absent: it is unlinked, reachable only by typing the URL, and

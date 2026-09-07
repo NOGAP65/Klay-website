@@ -2,6 +2,4 @@
 export {
   turnstileSiteKey,
   isTurnstileEnabled,
-  isDevelopment,
-  isProduction,
 } from './env';

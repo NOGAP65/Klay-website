@@ -81,7 +81,3 @@ export const turnstileSiteKey: string | undefined = optionalEnv('VITE_TURNSTILE_
  *  "is this string non-empty", and the two only happen to coincide. */
 export const isTurnstileEnabled: boolean = turnstileSiteKey !== undefined;
 
-/** Vite's own mode flags, re-exported so that nothing else needs to reach for
- *  `import.meta.env` to ask what environment it is running in. */
-export const isDevelopment: boolean = import.meta.env.DEV;
-export const isProduction: boolean = import.meta.env.PROD;
