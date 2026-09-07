@@ -154,9 +154,8 @@ const RANGE: CatalogueItem[] = HERO_IDS.map(id => CATALOGUE.find(i => i.id === i
 
 /** A viewfinder, 14px, drawn here rather than imported.
  *
- * lucide-react is in package.json and nothing in src imports it; the site draws
- * its own marks (ProductGlyph, Nav, FilterRail), and four corner brackets are
- * fewer bytes than the first icon off a library. Corners plus a centre dot,
+ * The site draws its own marks (ProductGlyph, Nav, FilterRail), and four corner
+ * brackets are fewer bytes than the first icon off a library. Corners plus a centre dot,
  * because the badge means "see it framed on your own window" — an eye would say
  * "look at this picture", which is the opposite of the offer. */
 function ViewfinderIcon() {

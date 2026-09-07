@@ -27,7 +27,4 @@ const alias = {
 export default defineConfig({
   plugins: [react()],
   resolve: { alias },
-  optimizeDeps: {
-    exclude: ['lucide-react'],
-  },
 });
