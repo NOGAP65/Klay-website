@@ -463,6 +463,45 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             />
           )}
 
+          {/* THE TINT — THE PART OF A COLOUR THAT COSTS NO LIGHT, and only a
+              sheer has one.
+
+              Nearly everything you see in a sheer is daylight coming THROUGH it,
+              and the multiply above dims that as hard as it dims the cloth. Its
+              fabric photographs at a median of 234, so any dye heavy enough to
+              tell Ivory from Truffle also drags the whole window down and turns
+              a lit sheer into a murky linen with the garden going out behind it.
+              No single multiply is both, which is what two passes on `dye`
+              established the slow way.
+
+              A `color` blend takes the swatch's hue and chroma and leaves the
+              luminosity underneath alone. So the colour arrives in two parts:
+              `dye`, small, for the value a real sheer does lose, and this for
+              the colour itself. An opaque cloth takes none of it — a blockout's
+              colour IS its value, and Black should be black rather than a
+              black-hued photograph. See `tint` in fabricShots. */}
+          {shot?.mask && shot.tint > 0 && (
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: dyeColour(item, sel),
+                mixBlendMode: 'color',
+                opacity: shot.tint,
+                WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
+                maskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
+                WebkitMaskSize: 'cover',
+                maskSize: 'cover',
+                WebkitMaskPosition: item.imagePosition ?? '50% 45%',
+                maskPosition: item.imagePosition ?? '50% 45%',
+                pointerEvents: 'none',
+                transform: lit ? 'scale(1.04)' : 'scale(1)',
+                transition: 'transform 0.7s ease, background 0.25s ease',
+              }}
+            />
+          )}
+
           {/* THE SHEEN, PUT BACK. The dye above flattens the cloth in proportion
               to how dark the colour is, and this returns the same proportion of
               the photograph's own modelling — see sheenStrength for why a black
