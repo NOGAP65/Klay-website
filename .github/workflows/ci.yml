@@ -54,6 +54,29 @@ jobs:
         run: npm ci
 
       # ---- BLOCKING ----------------------------------------------------
+      # SUPPLY CHAIN FIRST, BECAUSE NOTHING WAS WATCHING IT.
+      #
+      # OWASP promoted this to A03:2025 — Software Supply Chain Failures — and
+      # this workflow gated typecheck, build and lint while a HIGH-severity CSRF
+      # advisory sat in react-router (GHSA-qwww-vcr4-c8h2) for as long as it took
+      # somebody to run `npm audit` by hand. A dependency is code you ship
+      # without reading it.
+      #
+      # WHY --omit=dev, WHICH IS THE WHOLE DESIGN OF THIS GATE. Auditing
+      # everything at --audit-level=high fails today, and not on anything that
+      # reaches a customer: the two open advisories are vite and esbuild, both
+      # devDependencies, and both are DEV-SERVER vulnerabilities — a malicious
+      # site reading from localhost:5173, path traversal in the optimised-deps
+      # handler, an NTLM disclosure on Windows. None of it exists in the
+      # deployed artifact, which is static files on a CDN with no vite in them.
+      #
+      # So the blocking gate is what actually ships, and it is clean at zero.
+      # Gating on --audit-level=critical instead would have been the wrong fix:
+      # the advisory that prompted this was HIGH, so critical would have let
+      # exactly the thing this exists to catch straight through.
+      - name: Audit production dependencies (high and above)
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Typecheck (app + node + netlify functions)
         run: npm run typecheck
 
@@ -80,3 +103,17 @@ jobs:
       # contract is enforced by reading the diff, not by this job.
       - name: Lint
         run: npm run lint
+
+      # ---- VISIBLE, NOT BLOCKING ---------------------------------------
+      # The dev-server advisories the gate above deliberately excludes. They are
+      # real and they are the developer's machine, not the customer's browser —
+      # so they get printed on every run and are never allowed to fail the
+      # build. If this list ever contains something that is NOT dev-only, the
+      # blocking gate above will have caught it first.
+      #
+      # Clearing these needs vite 5 -> 8, a major bump across the build, the
+      # React plugin and the postcss/tailwind chain. That is its own piece of
+      # work with its own verification, not a line in a security batch.
+      - name: Audit everything, including dev (advisory only)
+        run: npm audit || true
+        continue-on-error: true
