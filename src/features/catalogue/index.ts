@@ -6,7 +6,7 @@
 //
 // This feature's ONLY public entrance. §1 rule 3, ADR-019: other features may
 // import this barrel and nothing behind it. `@/features/catalogue` resolves;
-// `@/features/catalogue/components/ProductCard` does not.
+// `@/features/catalogue/components/ShopCard` does not.
 //
 // ---------------------------------------------------------------------------
 // WHAT IS PUBLIC, AND WHY EACH ONE HAD TO BE.

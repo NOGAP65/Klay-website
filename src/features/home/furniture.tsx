@@ -4,7 +4,9 @@
 // Decision F split that file four ways at P4-6. The CTA family, useHover and
 // TextLink went to design-system/primitives; SectionHead and SectionBand to
 // design-system/patterns; scrollToId to shared/utils; PhotoTile to catalogue,
-// which was its only consumer.
+// which was its only consumer — and which deleted it on 7 September 2026 when
+// ShopCard replaced the card it drew. The split was still right; the destination
+// simply did not outlive the move.
 //
 // These two had nowhere else to be. TILE_GAP is the homepage's own grid rhythm
 // and is read by two home sections. ArrowLink is read by NOTHING — it is a dead
