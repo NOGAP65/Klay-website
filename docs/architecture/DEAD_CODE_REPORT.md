@@ -554,3 +554,111 @@ exists. Both are checks that pass by looking at nothing.
 
 That is enforceable, it is cheap, and it would have fired on `asset-audit.mjs:74` the day U4 moved
 the textures.
+
+---
+
+# ADDENDUM — 7 September 2026, after the CERTAIN batches
+
+The CERTAIN list is applied (`098d32b`, `c3263be`, `c1e8b25`, `bb98967`). `knip` re-run against
+the current tree reports **84 unused exports**, down from 86.
+
+## THE 84, SPLIT THREE WAYS
+
+Only bucket **C** is proposed for deletion. A and B are reported so the number is accounted for,
+not so it is acted on.
+
+| Bucket | Count | What it means | Proposed |
+|---|---:|---|---|
+| **A** — unnecessary `export` keyword | **49** | The symbol IS used, inside its own file. Only the keyword is surplus | **No.** Deletes nothing |
+| **B** — barrel surface | **12** | A feature's public entrance under §1 rule 3 | **No.** Architecture, not dead code |
+| **C** — genuinely unreachable | **23** | Nothing anywhere reads it | **22 of 23** |
+
+### A — 49 unnecessary export keywords
+
+Each was verified to have at least one non-comment use elsewhere in its own file; the count is in
+brackets. **De-exporting these removes no code and changes no behaviour, and it is not worth a
+batch on its own** — the value is that they are now known not to be dead.
+
+`BASE_PRICE`(2) · `MOTORISED_ADDON`(2) · `INSTALL_PER_BLIND`(2) · `INSTALL_CALLOUT_MINIMUM`(1) ·
+`GST_RATE`(1) · `normaliseQuantity`(2) · `SKU_CATALOGUE`(2) · `FABRIC_SHOTS`(3) ·
+`WARDROBE_SHELF_DEPTH_MM`(1) · `suppliedAssetPath`(2) · `openingWidthFor`(3) ·
+`WARDROBE_CUTOUTS`(1) · `availabilityOf`(1) · `matches`(2) · `ValidationResult`(1) ·
+`ServerEnv`(2) · `RootLayoutProps`(1) · `BookingLinkConfig`(1) · `ConfiguredLine`(1) ·
+`ProductSlug`(1) · `Product`(3) · `FabricShot`(2) · `WardrobeView`(5) · `WardrobeModel`(8) ·
+`WardrobeArtwork`(1) · `ColumnFill`(2) · `Column`(1) · `ResolvedColumn`(1) · `QuadCamera`(1) ·
+`CarcassBox`(1) · `PlannedSegment`(2) · `PhotoProfile`(2) · `HandleFinish`(2) ·
+`WardrobeRendererProps`(1) · `WardrobeSkin`(4) · `Box`(3) · `Compartment`(2) · `WardrobeRoom`(1) ·
+`HardwareColour`(3) · `WindowConfig`(8) · `UsePhotoUploadResult`(1) ·
+`WardrobeRoomRendererProps`(1) · `Wardrobe3DProps`(1) · `WallColourChipProps`(1) · `WallColour`(1) ·
+`WardrobeSceneOpts`(1) · `WhiteBoardMaps`(3) · `ShopCardProps`(1) · `EnquiryInput`(1)
+
+**Note `src/shared/index.ts:18` documents `BASE_PRICE`, `INSTALL_PER_BLIND` and `GST_RATE` as
+pricing's public vocabulary.** De-exporting them contradicts a written statement; either the
+statement or the export should go, and that is a decision rather than a cleanup.
+
+### B — 12 barrel exports
+
+`src/features/catalogue/index.ts` — `productBySlug`, `GROUPS`, `LIGHT_VALUES`, `priceFor`,
+`configuredLine`, and the types `Product`, `ProductSlug`, `ProductBlindType`, `Group`,
+`ConfigChoice`, `ConfigField`. Plus `Step` from `src/features/marketing/index.ts:43`.
+
+**A feature barrel is a door, and a door with nobody currently walking through it is still the
+door.** §1 rule 3 requires other features to enter this way. Removing these narrows the feature's
+public API — a design decision, not a tidy-up.
+
+### C — 23 genuinely unreachable, 22 proposed
+
+| Symbol | Location | Note |
+|---|---|---|
+| `MOTORISED_ADDON` | `data/products.ts:179` | A re-export chain — **this is D-07's resolution artefact.** Annotate that log entry if it goes |
+| `productsInCategory` | `config/routes.ts:55` | **See correction below** |
+| `contactAbout` | `config/routes.ts:59` | **See correction below** |
+| `RANGES` | `catalogue/products.ts:132` | |
+| `SKU_COUNT` | `catalogue/products.ts:146` | |
+| `PRICING_NOTE` | `catalogue/products.ts:160` | |
+| `ArrowLink` | `home/furniture.tsx:41` | |
+| `wardrobeDimensions` | `visualiser/wardrobes.ts:272` | |
+| `viewForTrace` | `visualiser/wardrobes.ts:395` | |
+| `tracedRecedesLeft` | `visualiser/wardrobes.ts:414` | |
+| `hasSuppliedArtwork` | `visualiser/wardrobes.ts:501` | |
+| `RAIL_RADIUS_MM` | `visualiser/wardrobeGeometry.ts:370` | |
+| `resolvedWidthMm` | `visualiser/wardrobeSlices.ts:200` | |
+| `renderPlan` | `visualiser/wardrobeSlices.ts:226` | |
+| `drawSeatingShadow` | `visualiser/wardrobeComposite.ts:289` | |
+| `default` | `visualiser/Canvas2DWardrobeRenderer.tsx:55` | The React component. Its **named** exports `drawWalkIn` and `buildCarcass` are imported and stay; only the default is dead. `wardrobes.ts:339` already says it: *"the wardrobe tab renders Wardrobe3D, and Canvas2DWardrobeRenderer is not mounted"* |
+| `OPEN_MS`, `CLOSE_MS`, `TRAVEL_MS`, `STAGGER_MS`, `STAGGER_SPAN_MS`, `columnWidth` | `catalogue/components/ShopCard.tsx:69–132` | Six. **They carry measured design decisions in their comments** — `STAGGER_SPAN_MS` records *"90, down from 170… at 90 it is one motion with a lead."* Deleting the constant deletes the finding. Keep the prose, or accept losing it |
+
+**NOT PROPOSED — 1 of the 23:**
+
+| `applyHomography` | `visualiser/homography.ts:64` | **E-01, a protected IP file.** Reported and stopped, as instructed |
+
+## TWO CORRECTIONS TO THE ORIGINAL REPORT
+
+Both are places the first pass was wrong, recorded because the report is what batches get approved
+from.
+
+**1. `productsInCategory` and `contactAbout` are NOT false positives.** The report claimed both
+were "called through local wrappers" and said *do not delete*. That was wrong. `enquire()` in
+`catalogue/constants.ts` builds `/contact?product=…` **by hand**, and the legacy redirects build
+`/products?category=…` by hand too. Neither calls the constant. Both are dead, and both are the
+same shape as the `bookingConfirmed` finding: a constant that exists so one value has one home,
+beside code that writes the value out anyway.
+
+**2. `src/app/layouts/index.ts` had no specification caveat.** The report called it "a
+specification question" on the assumption that §4 requires a barrel per layer. §4 says the
+opposite for internal barrels — *"Within a feature, import directly — internal barrels create
+circular-import risk for no benefit."* Deleted in `bb98967`.
+
+## DUPLICATION — D-09 IS THE CLONE, AND IT SHOULD NOT BE FIXED AS ONE
+
+`BookInstallPage.tsx:254` ↔ `ContactPage.tsx:163`. Measured at **34 lines / 188 tokens** by jscpd
+(reported as 40 — the tool's two overlapping clone records are 34 and 33 lines).
+
+**Recorded as a divergence candidate, not a refactor.** Both are forms; one of them moves in
+Phase 6. Extracting a shared component now would mean extracting it, moving it, and then
+discovering what the moved form actually needs — three edits to reach the same place one edit
+reaches after the move. The measurement is the useful output: **D-09 was logged as "an identical
+helper in two forms", and the shared shape is 34 lines, not a helper.** That is a bigger overlap
+than the entry records, and it is worth knowing before Phase 6 rather than after.
+
+jscpd baseline accepted at **1.22%** (20 clones, 358 lines). Healthy.

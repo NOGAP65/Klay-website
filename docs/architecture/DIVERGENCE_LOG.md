@@ -347,6 +347,31 @@ Character-identical in `src/features/marketing/components/ContactPage.tsx:51` an
 `src/pages/BookInstallPage.tsx:86`. Both sit above a near-identical
 `busy` / `fieldErrors` / `formError` state trio.
 
+### MEASURED, 7 September 2026 — it is 34 lines, not a helper
+
+`jscpd` was baselined for the first time on this date (1.22% overall, 20 clones) and the largest
+**cross-file** clone in the entire codebase is this pair:
+
+| | |
+|---|---|
+| `src/pages/BookInstallPage.tsx:254` | `src/features/marketing/components/ContactPage.tsx:163` |
+| **34 lines, 188 tokens** | the only clone spanning two features |
+
+**This entry called it "an identical helper". The shared shape is a good deal larger than that** —
+the setter was the visible part, and the render block underneath it is the rest. Recorded because
+a divergence measured smaller than it is gets scheduled smaller than it should be.
+
+### AND IT IS DELIBERATELY NOT BEING FIXED AS A CLONE
+
+**V's call, 7 September: a divergence candidate rather than a refactor.** Both files are forms and
+one of them moves in Phase 6. Extracting a shared component now means extracting it, moving it,
+and then finding out what the moved form actually needs — three edits to arrive where one edit
+arrives after the move.
+
+**That is not the same as deferring it.** The measurement is the deliverable: whoever does the
+Phase 6 move now knows they are reconciling 34 lines of shared shape, not lifting a two-line
+setter, and can plan the extraction as part of the move instead of discovering it during one.
+
 **Two forms, written independently, that reached the same correct answer** — which is D-03's
 shape exactly, and D-03 is the entry that argued `shared-core` into existence.
 
