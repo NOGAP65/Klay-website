@@ -44,11 +44,20 @@ import { TILE_GAP } from '../furniture';
 
 const INSTAGRAM = site.instagram;
 
+// EVERY TILE GOES TO THE SHOP. Three of these pointed at product pages that no
+// longer exist, and the two category links are left as they are because a
+// filtered shop is still the shop.
+//
+// The second tile also changed its PICTURE. It was soleil-sunscreen.png — a
+// product cut-out among four room photographs, which never belonged in a strip
+// of installations — and that file is deleted with the product pages it served.
+// room-5.png replaces it: the same 1920x1072 set as the two frames either side
+// of it, and a window room, which is what the slot was showing.
 const SHOTS = [
-  { image: '/images/rooms/room-4.png', to: '/products/dusk', objectPosition: 'center 40%' },
-  { image: '/images/products/soleil-sunscreen.png', to: '/products/veil', objectPosition: 'center' },
+  { image: '/images/rooms/room-4.png', to: '/products', objectPosition: 'center 40%' },
+  { image: '/images/rooms/room-5.png', to: '/products', objectPosition: 'center 40%' },
   { image: '/images/rooms/room-3.png', to: '/products?category=sheer-curtains', objectPosition: '62% 45%' },
-  { image: '/images/rooms/room-kitchen.png', to: '/products/dusk', objectPosition: 'center 36%' },
+  { image: '/images/rooms/room-kitchen.png', to: '/products', objectPosition: 'center 36%' },
   // Cropped hard left, onto the dark timber wardrobe. Centred, this frame is a
   // yellow armchair with no window covering anywhere in it — which is the one
   // thing a strip of installations cannot show.
@@ -115,7 +124,7 @@ function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: bool
             padding: `${space.snug}px ${space.item}px`,
           }}
         >
-          See Product
+          Shop the range
         </span>
       </div>
     </Link>

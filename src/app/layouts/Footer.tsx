@@ -26,7 +26,6 @@ import * as routes from '@/config/routes';
 import * as site from '@/config/site';
 
 import { tokens, eyebrow, layout, motion, space, type as typeScale } from '@/ds';
-import { PRODUCTS } from '@/features/catalogue';
 import { useIsMobile } from '@/shared';
 
 
@@ -75,14 +74,15 @@ function FooterLink({ to, children }: { to: string; children: React.ReactNode })
 const COLUMNS: { heading: string; links: { label: string; to: string }[] }[] = [
   {
     heading: 'Products',
-    links: [
-      // Derived, so a renamed or retired product can't leave a dead link here.
-      ...PRODUCTS.map(p => ({ label: `${p.name} ${p.type}`, to: routes.product(p.slug) })),
-      // Curtains and wardrobes have no listing page yet — the /products
-      // resolver sends both to the enquiry form rather than to a 404.
-      { label: 'Curtains', to: '/products?category=curtains' },
-      { label: 'Wardrobes', to: '/products?category=wardrobes' },
-    ],
+    // ONE LINK, NOT A CATALOGUE. This column listed the four roller SKUs by
+    // name — each a link to its own product page — plus Curtains and Wardrobes
+    // as category filters. Six links reproducing a navigation the shop already
+    // does better, and four of them pointed at pages that no longer exist.
+    //
+    // The shop is one screen with the whole range and a filter rail on it, so a
+    // footer column enumerating parts of it is a second, worse copy of that
+    // screen that has to be maintained in step with it. It is one door now.
+    links: [{ label: 'Shop the range', to: routes.products }],
   },
   {
     heading: 'Company',

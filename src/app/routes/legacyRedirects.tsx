@@ -43,11 +43,16 @@
 
 import { Navigate, useParams } from 'react-router-dom';
 
-/** The blind type that has a real product behind it, and where it goes. Every
- * other type is a made-to-measure enquiry with no page of its own. */
-const TYPE_WITH_PRODUCT: Record<string, string> = {
-  'roller-blinds': '/products/dusk',
-};
+/** NOTHING HAS A PAGE OF ITS OWN ANY MORE, so this table is empty and the map
+ * below always falls through to the shop.
+ *
+ * It held one entry — 'roller-blinds' -> '/products/dusk' — because the roller
+ * range was the one type with a product page behind it. That page is gone: the
+ * shop configures and adds to cart on the card itself, so there is no second
+ * screen to send anyone to. Kept as an empty table rather than deleted because
+ * the fall-through below reads from it, and a future product page would want
+ * exactly this hook back. */
+const TYPE_WITH_PRODUCT: Record<string, string> = {};
 
 /** /blinds/<slug>. Reads the slug off the route rather than taking a prop so one
  * element covers all the old type pages. */
