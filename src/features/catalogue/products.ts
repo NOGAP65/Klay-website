@@ -16,16 +16,15 @@
 // the renderer, the store and Canvas2DBlindRenderer all key off it. The two
 // are mapped here, once, so nothing downstream has to hardcode the pairing.
 //
-// NOTE ON IMAGE PATHS — RESOLVED. This used to read: "the files in
-// public/images have spaces in their names, so every path here is %20-encoded.
-// Renaming the assets would be the better fix; until then these are the paths
-// that actually resolve."
+// NO IMAGE PATHS AT ALL NOW, and the note that used to be here went with them.
+// It tracked two rounds of work on three product photographs — %20-encoding
+// them, then renaming them to phoenix-blockout, soleil-sunscreen and
+// eclipse-dual-roller so they sat beside the .webp cut-outs.
 //
-// The better fix was done at the asset phase. The three product photographs
-// moved into images/products/ alongside the nine .webp cut-outs and were
-// renamed to match them — phoenix-blockout, soleil-sunscreen,
-// eclipse-dual-roller. No path in this file is encoded any more, and a filename
-// with a space in it is now the exception rather than the rule in public/.
+// ProductDetailPage was the only thing that ever rendered them. With it gone the
+// `image` field was dead data on sixteen entries, so the field and the three
+// 6.3 MB photographs went together on 7 September 2026. A path in a data file
+// that nothing renders is worse than no path: it looks maintained.
 // ---------------------------------------------------------------------------
 
 import { RYNAMIC_COLOURS } from '../../data/products'
@@ -43,12 +42,7 @@ export interface Product {
   tagline: string
   description: string
   priceFrom: number
-  image: string
 }
-
-const BLOCKOUT_IMAGE = '/images/products/phoenix-blockout.png'
-const SUNSCREEN_IMAGE = '/images/products/soleil-sunscreen.png'
-const DUAL_IMAGE = '/images/products/eclipse-dual-roller.png'
 
 export const PRODUCTS: Product[] = [
   {
@@ -59,7 +53,6 @@ export const PRODUCTS: Product[] = [
     tagline: 'Complete darkness. Total privacy.',
     description: 'Fully opaque fabric that stops light penetration completely — the standard choice for bedrooms, nurseries and home theatres.',
     priceFrom: 220,
-    image: BLOCKOUT_IMAGE,
   },
   {
     slug: 'veil',
@@ -69,7 +62,6 @@ export const PRODUCTS: Product[] = [
     tagline: 'Soften the light. Keep the view.',
     description: 'An open-weave mesh that cuts glare and UV while keeping your view to the outside intact.',
     priceFrom: 220,
-    image: SUNSCREEN_IMAGE,
   },
   {
     slug: 'duo',
@@ -79,7 +71,6 @@ export const PRODUCTS: Product[] = [
     tagline: 'Day and night in one blind.',
     description: 'A sunscreen layer and a blockout layer on the same roller system, so one window can do both jobs.',
     priceFrom: 320,
-    image: DUAL_IMAGE,
   },
   {
     // PLACEHOLDER IMAGERY — there is no light-filter photograph in
@@ -92,7 +83,6 @@ export const PRODUCTS: Product[] = [
     tagline: 'Daylight, quietly diffused.',
     description: 'Softens harsh sun to an even glow while keeping the room bright and the privacy intact.',
     priceFrom: 220,
-    image: SUNSCREEN_IMAGE,
   },
 ]
 
@@ -107,22 +97,22 @@ export const productByBlindType = (blindType: string | undefined): Product | und
   PRODUCTS.find(p => p.blindType === blindType)
 
 export const SKU_CATALOGUE = [
-  { sku: 'BR-01', name: 'Dusk White', type: 'BLOCKOUT ROLLER', hardware: 'White', price: { small: 220, medium: 260, large: 330 }, slug: 'dusk-white', image: BLOCKOUT_IMAGE },
-  { sku: 'BR-02', name: 'Dusk Noir', type: 'BLOCKOUT ROLLER', hardware: 'Black', price: { small: 220, medium: 260, large: 330 }, slug: 'dusk-noir', image: BLOCKOUT_IMAGE },
-  { sku: 'BR-03', name: 'Dusk Chrome', type: 'BLOCKOUT ROLLER', hardware: 'Chrome', price: { small: 220, medium: 260, large: 330 }, slug: 'dusk-chrome', image: BLOCKOUT_IMAGE },
-  { sku: 'SR-01', name: 'Veil White', type: 'SUNSCREEN ROLLER', hardware: 'White', price: { small: 220, medium: 260, large: 330 }, slug: 'veil-white', image: SUNSCREEN_IMAGE },
-  { sku: 'SR-02', name: 'Veil Noir', type: 'SUNSCREEN ROLLER', hardware: 'Black', price: { small: 220, medium: 260, large: 330 }, slug: 'veil-noir', image: SUNSCREEN_IMAGE },
-  { sku: 'SR-03', name: 'Veil Chrome', type: 'SUNSCREEN ROLLER', hardware: 'Chrome', price: { small: 220, medium: 260, large: 330 }, slug: 'veil-chrome', image: SUNSCREEN_IMAGE },
-  { sku: 'DR-01', name: 'Duo White', type: 'DUAL ROLLER', hardware: 'White', price: { small: 320, medium: 380, large: 480 }, slug: 'duo-white', image: DUAL_IMAGE },
-  { sku: 'DR-02', name: 'Duo Black', type: 'DUAL ROLLER', hardware: 'Black', price: { small: 320, medium: 380, large: 480 }, slug: 'duo-black', image: DUAL_IMAGE },
-  { sku: 'DR-03', name: 'Duo Chrome', type: 'DUAL ROLLER', hardware: 'Chrome', price: { small: 320, medium: 380, large: 480 }, slug: 'duo-chrome', image: DUAL_IMAGE },
+  { sku: 'BR-01', name: 'Dusk White', type: 'BLOCKOUT ROLLER', hardware: 'White', price: { small: 220, medium: 260, large: 330 }, slug: 'dusk-white' },
+  { sku: 'BR-02', name: 'Dusk Noir', type: 'BLOCKOUT ROLLER', hardware: 'Black', price: { small: 220, medium: 260, large: 330 }, slug: 'dusk-noir' },
+  { sku: 'BR-03', name: 'Dusk Chrome', type: 'BLOCKOUT ROLLER', hardware: 'Chrome', price: { small: 220, medium: 260, large: 330 }, slug: 'dusk-chrome' },
+  { sku: 'SR-01', name: 'Veil White', type: 'SUNSCREEN ROLLER', hardware: 'White', price: { small: 220, medium: 260, large: 330 }, slug: 'veil-white' },
+  { sku: 'SR-02', name: 'Veil Noir', type: 'SUNSCREEN ROLLER', hardware: 'Black', price: { small: 220, medium: 260, large: 330 }, slug: 'veil-noir' },
+  { sku: 'SR-03', name: 'Veil Chrome', type: 'SUNSCREEN ROLLER', hardware: 'Chrome', price: { small: 220, medium: 260, large: 330 }, slug: 'veil-chrome' },
+  { sku: 'DR-01', name: 'Duo White', type: 'DUAL ROLLER', hardware: 'White', price: { small: 320, medium: 380, large: 480 }, slug: 'duo-white' },
+  { sku: 'DR-02', name: 'Duo Black', type: 'DUAL ROLLER', hardware: 'Black', price: { small: 320, medium: 380, large: 480 }, slug: 'duo-black' },
+  { sku: 'DR-03', name: 'Duo Chrome', type: 'DUAL ROLLER', hardware: 'Chrome', price: { small: 320, medium: 380, large: 480 }, slug: 'duo-chrome' },
   // PLACEHOLDER DATA — Light Filter is the fourth blind type the visualiser
   // already renders, but it has no confirmed pricing or imagery yet: pricing
   // mirrors Sunscreen (as BASE_PRICE in useVisualiserStore already does) and
   // the imagery reuses the Sunscreen shot.
-  { sku: 'LF-01', name: 'Haze White', type: 'LIGHT FILTER ROLLER', hardware: 'White', price: { small: 220, medium: 260, large: 330 }, slug: 'haze-white', image: SUNSCREEN_IMAGE },
-  { sku: 'LF-02', name: 'Haze Noir', type: 'LIGHT FILTER ROLLER', hardware: 'Black', price: { small: 220, medium: 260, large: 330 }, slug: 'haze-noir', image: SUNSCREEN_IMAGE },
-  { sku: 'LF-03', name: 'Haze Chrome', type: 'LIGHT FILTER ROLLER', hardware: 'Chrome', price: { small: 220, medium: 260, large: 330 }, slug: 'haze-chrome', image: SUNSCREEN_IMAGE },
+  { sku: 'LF-01', name: 'Haze White', type: 'LIGHT FILTER ROLLER', hardware: 'White', price: { small: 220, medium: 260, large: 330 }, slug: 'haze-white' },
+  { sku: 'LF-02', name: 'Haze Noir', type: 'LIGHT FILTER ROLLER', hardware: 'Black', price: { small: 220, medium: 260, large: 330 }, slug: 'haze-noir' },
+  { sku: 'LF-03', name: 'Haze Chrome', type: 'LIGHT FILTER ROLLER', hardware: 'Chrome', price: { small: 220, medium: 260, large: 330 }, slug: 'haze-chrome' },
 ]
 
 /** Derived from PRODUCTS rather than written out again, so the name, tagline,
@@ -138,7 +128,6 @@ export const RANGES = PRODUCTS.map(p => ({
   price: `from $${p.priceFrom}`,
   slug: p.blindType,
   productSlug: p.slug,
-  image: p.image,
   skus: SKU_CATALOGUE.filter(s => s.type === p.type.toUpperCase()),
 }))
 
