@@ -39,7 +39,7 @@ import { useIsMobile } from '@/shared';
 
 import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 
-import { type Selection } from '../configOptions';
+import { hardwareHex, type Selection } from '../configOptions';
 import { fabricShot, FABRIC_SHOT_DIR } from '../fabricShots';
 // Relative, like the feature's other three importers of this file — see the
 // note at its head on why it has not moved.
@@ -194,9 +194,16 @@ const sheenStrength = (shot: { sheen: number } | undefined, hex: string): number
 /** THE COLOUR THE HEADRAIL AND BOTTOM BAR ARE PAINTED. The same three the
  * visualiser uses, so a blind specified here and a blind specified there are the
  * same blind. Chrome where nothing is chosen, which is what the photographs were
- * taken with. */
-const hardwareColour = (sel: Selection): string =>
-  HARDWARE_HEX[sel.hardware as keyof typeof HARDWARE_HEX] ?? HARDWARE_HEX.chrome;
+ * taken with.
+ *
+ * A PRODUCT WITH ITS OWN METALWORK LIST WINS, and it has to: an awning's row
+ * answers 'Charcoal' where a blind's answers 'chrome', and a name that is not
+ * one of the three fell through to chrome — so the cassette swatch repainted
+ * nothing at all. See hardwareHex. */
+const hardwareColour = (item: CatalogueItem, sel: Selection): string =>
+  hardwareHex(item, sel)
+  ?? HARDWARE_HEX[sel.hardware as keyof typeof HARDWARE_HEX]
+  ?? HARDWARE_HEX.chrome;
 
 export function ShopCard({ item, sel, onChange }: ShopCardProps) {
   // SIDE BY SIDE IS A DESKTOP IDEA. At 375px the row gave the photograph 190px
@@ -546,7 +553,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  background: hardwareColour(sel),
+                  background: hardwareColour(item, sel),
                   WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.hardware})`,
                   maskImage: `url(${FABRIC_SHOT_DIR}/${shot.hardware})`,
                   WebkitMaskSize: 'cover',

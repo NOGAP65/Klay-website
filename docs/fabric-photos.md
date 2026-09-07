@@ -98,6 +98,54 @@ read off a flat swatch is the wrong number for a photograph of a bright window,
 and the note on `SHEEN` beside it for why the card paints the cloth's own
 modelling back over a dark dye.
 
+## The awning, and the numbers it was cut with
+
+A folding arm awning gets `--awning`, a third geometry. It is not a blind in a
+recess and not a curtain on a wall: a sheet of acrylic held out over a garden on
+two elbowed arms, photographed from underneath, crossing the frame corner to
+corner with sky behind it.
+
+Two things make it cheap anyway. **The sky is blue** — 0.24-0.36 saturation
+against the canopy's 0.10-0.14, the widest gap between a product and its
+background of any shot here — so a fill that refuses saturation finds the
+silhouette. And **the arms are darker than the cloth they hold up**, 151-192
+against 205-222, because an arm is in its own shadow under a lit sheet. So the
+fill splits by brightness at 198: the dark half is metalwork and takes the
+cassette colour, the bright half is cloth and takes the fabric colour. No arm is
+traced by hand.
+
+```
+node tools/cut-fabric-mask.mjs public/images/fabrics/folding-arm-awnings.webp folding-arm-awnings --awning \
+  --box=0.013,0.62,0.05,0.9333 \
+  --keep=0.045,0.010,0.215,0.010,0.340,0.130,0.450,0.170,0.560,0.205,0.660,0.245,0.780,0.290,0.878,0.333,0.908,0.348,0.908,0.430,0.896,0.470,0.870,0.505,0.845,0.548,0.778,0.578,0.700,0.600,0.651,0.600,0.640,0.548,0.556,0.548,0.444,0.498,0.333,0.418,0.045,0.200 \
+  --metal=0.0611,0.0365,0.0667,0.0208,0.1611,0.0169,0.1889,0.0365,0.1978,0.0755,0.1889,0.1198,0.1611,0.1380,0.0833,0.1406,0.0611,0.1198 \
+  --metal=0.1022,0.1302,0.1689,0.1302,0.1689,0.1979,0.1022,0.1979 \
+  --metal=0.8833,0.3490,0.9070,0.3620,0.9070,0.3958,0.8911,0.4036,0.8800,0.3802 \
+  --cloth=0.6500,0.5391,0.8900,0.4831,0.8930,0.4896,0.6500,0.5950
+```
+
+- `--keep` is the silhouette, and it is the one number that cannot be skipped. A
+  box is enough to bound an upright product; an awning is diagonal, so any
+  rectangle around it also contains the house wall below its left end — cream,
+  unsaturated, connected to the cassette — and the fill walks down the wall and
+  out along the bottom into the garden. It also holds the fill off the **hazy sky
+  near the horizon**, which is pale and unsaturated and would otherwise be
+  admitted as cloth.
+- `--metal` are the cassette, its wall bracket and the front-bar end cap: bright
+  aluminium the brightness split would hand to the fabric.
+- `--cloth` is the valance hanging off the front bar, which is in shade and reads
+  at arm brightness while being cloth.
+
+Two edge rules are in the branch rather than the arguments, and both exist for
+the same reason a mask cannot be judged on White. Gaps in the fill are **closed
+at radius 8 then intersected with `--keep`** — the near arm is a lit rail whose
+own edge blends toward blue, crosses the saturation bound and drops out, leaving
+a sixteen-pixel band of undyed cream corner to corner: invisible on Natural, a
+bright stripe across a Navy awning. And the soft fringe goes on the **silhouette
+only, never on the seam between cloth and metal** — two masks partition one
+object here, and a fringe on both sides of their shared border paints it 47%
+fabric plus 47% cassette over undyed cream, a pale seam down every arm.
+
 ## What the photographs have to do
 
 - **Off-white cloth, never pure white and never blown out.** Colour is applied by

@@ -350,6 +350,24 @@ export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
 
 export type Selection = Partial<Record<FieldId, string>>
 
+/** THE HEX THE METALWORK IS PAINTED, for a product that supplies its own list.
+ *
+ * The blind hardware row answers 'white' | 'black' | 'chrome' and the card looks
+ * those three up in HARDWARE_HEX. A product with `hardwareChoices` answers with
+ * a colour NAME instead — 'Charcoal', 'Brushed brass' — which is not in that
+ * table, so the lookup missed and every awning painted its cassette chrome
+ * whatever the customer picked. The swatches already carry their own hex; this
+ * reads it back off the same list the row was built from, so the two cannot
+ * disagree.
+ *
+ * Null where the product has no list of its own, which leaves the blind
+ * behaviour exactly where it was. */
+export const hardwareHex = (item: CatalogueItem, sel: Selection): string | null => {
+  const choices = (PRODUCT_OPTIONS[item.id] ?? FALLBACK).hardwareChoices
+  if (!choices) return null
+  return choices.find(c => c.id === sel.hardware)?.hex ?? choices[0]?.hex ?? null
+}
+
 /** Every field's first choice. The panel opens on a complete, orderable
  * configuration rather than on five empty controls — nobody should have to
  * answer five questions to find out what something costs. */

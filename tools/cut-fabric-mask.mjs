@@ -103,6 +103,28 @@ const LIT = argv.filter(a => a.startsWith('--lit=')).map(a => a.slice(6).split('
  * hardware colour has something to paint. See the note in the curtain branch
  * on why it is given and on how little of it this photograph holds. */
 const TRACK = argv.filter(a => a.startsWith('--track=')).map(a => a.slice(8).split(',').map(Number));
+/** A folding arm awning. Not a blind in a recess and not a curtain on a wall:
+ * a sheet of acrylic held out over a garden on two elbowed arms, photographed
+ * from underneath against the sky. See the note in its branch. */
+const AWNING = argv.includes('--awning');
+/** `--cloth` and `--metal x1,y1,x2,y2,...`, repeatable — polygons in fractions
+ * of the frame, forced to cloth and to metal whatever the pixels say. The
+ * awning's cassette and the valance hanging off its front bar; see its branch. */
+const poly = (flag) => argv.filter(a => a.startsWith(flag)).map(a =>
+  a.slice(flag.length).split(',').map(Number));
+const CLOTH_POLY = poly('--cloth=');
+const METAL_POLY = poly('--metal=');
+/** `--keep x1,y1,x2,y2,...` — the awning's silhouette, drawn generously. The
+ * fill may not leave it.
+ *
+ * A BOX IS NOT ENOUGH FOR A DIAGONAL PRODUCT, which is the difference between
+ * this photograph and every other one here. A blind and a curtain are upright
+ * rectangles, so a rectangle bounds them and bounds nothing else. An awning
+ * crosses the frame corner to corner, and any rectangle around it also contains
+ * the house wall below its left end — cream, unsaturated, and connected to the
+ * cassette, so the fill walks straight down the wall and out along the bottom of
+ * the box into the garden. Run without this, that is exactly what it did. */
+const KEEP_POLY = poly('--keep=');
 const args = argv.filter(a => !a.startsWith('--'));
 const SRC = args[0];
 const ID = args[1];
@@ -127,7 +149,7 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage();
 
-const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, FRONT, LIT, TRACK }) => {
+const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, AWNING, BOX, GLASS, FRONT, LIT, TRACK, CLOTH_POLY, METAL_POLY, KEEP_POLY }) => {
   const im = new Image();
   im.src = 'data:image/png;base64,' + b64;
   await im.decode();
@@ -329,6 +351,197 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, 
       raw: 0, cloth: n, metal: 0, bars: rows,
       barBands: `${rows} covered, ${frameRows} open`,
       grew: 0, mask: maskUrl, hardware: null, overlay: overlayUrl,
+    };
+  }
+
+  // --- AWNINGS: a third geometry, and a third early return ----------------
+  //
+  // A FOLDING ARM AWNING IS NOT A BLIND AND NOT A CURTAIN. It is a sheet of
+  // acrylic held out over a garden on two elbowed arms, photographed from
+  // underneath. There is no recess, no halo, no track and no hem: the thing is
+  // an oblique quadrilateral hanging in the middle of the frame with sky behind
+  // it, and none of the earlier machinery has an edge to hold on to.
+  //
+  // BUT THE SKY IS BLUE, AND THAT IS THE WHOLE OF THE OUTLINE. Measured down
+  // five columns of this photograph, the sky runs 0.24-0.36 saturation and the
+  // canopy 0.10-0.14 — the widest gap between a product and its background of
+  // any shot in this directory. A flood fill that refuses anything saturated
+  // finds the awning's silhouette exactly, arms and all, with nothing to tune.
+  // The house is on the far side of the same test, at 0.19-0.55.
+  //
+  // AND THE ARMS ARE DARKER THAN THE CLOTH THEY HOLD UP, which is the other
+  // half. Column by column the canopy reads 205-222 and the arm crossing it
+  // reads 151-192, because an arm is in its own shadow under a lit sheet. So
+  // the fill is split by brightness: the dark part of the awning is its
+  // metalwork and takes the cassette colour, the bright part is its cloth and
+  // takes the fabric colour. Two colours, both landing where they belong,
+  // without a single arm being traced by hand.
+  //
+  // TWO THINGS THE SPLIT CANNOT GET, and both are given rather than guessed at.
+  // The VALANCE hangs off the front bar into shade and reads 123-192 — arm
+  // brightness doing a cloth's job — so it is declared cloth. The CASSETTE is
+  // bright white and would go to the fabric, so it is declared metal. Neither
+  // is a threshold that can be nudged into working: they are two shapes the
+  // photograph is never going to explain.
+  if (AWNING) {
+    const [T0, B0, L0, R0] = BOX ?? [0.01, 0.62, 0.05, 0.94];
+    const bT = Math.round(H * T0), bB = Math.round(H * B0);
+    const bL = Math.round(W * L0), bR = Math.round(W * R0);
+
+    const asPoly = (nums) => {
+      const pts = [];
+      for (let i = 0; i + 1 < nums.length; i += 2) pts.push([nums[i] * W, nums[i + 1] * H]);
+      return pts;
+    };
+    // Even-odd ray cast. A polygon here is read off the photograph by eye, so it
+    // is a handful of points and speed does not come into it.
+    const inPoly = (pts, x, y) => {
+      let inside = false;
+      for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        const [xi, yi] = pts[i], [xj, yj] = pts[j];
+        if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+      }
+      return inside;
+    };
+    const cloths = CLOTH_POLY.map(asPoly), metals = METAL_POLY.map(asPoly);
+    const keeps = KEEP_POLY.map(asPoly);
+    const inAnyPoly = (ps, x, y) => ps.some(p => inPoly(p, x, y));
+
+    // The awning against the sky. The lower luminance bound keeps the dark
+    // glazing of the door out; nothing on the awning itself is under 60.
+    const awning = (x, y) =>
+      x >= bL && x <= bR && y >= bT && y <= bB
+      && (!keeps.length || inAnyPoly(keeps, x, y))
+      && (inAnyPoly(cloths, x, y) || (S_(x, y) < 0.17 && L_(x, y) > 60));
+
+    const seeds = [[0.45, 0.26], [0.72, 0.35]].map(([fx, fy]) =>
+      [Math.round(W * fx), Math.round(H * fy)]);
+    const m = new Uint8Array(W * H);
+    const stack = [];
+    for (const [sx, sy] of seeds) {
+      if (!awning(sx, sy)) return { error: 'seed ' + sx + ',' + sy + ' is not on the awning' };
+      const p = sy * W + sx;
+      if (!m[p]) { m[p] = 1; stack.push(p); }
+    }
+    while (stack.length) {
+      const p = stack.pop();
+      const x = p % W, y = (p / W) | 0;
+      if (x > 0     && !m[p - 1] && awning(x - 1, y)) { m[p - 1] = 1; stack.push(p - 1); }
+      if (x < W - 1 && !m[p + 1] && awning(x + 1, y)) { m[p + 1] = 1; stack.push(p + 1); }
+      if (y > 0     && !m[p - W] && awning(x, y - 1)) { m[p - W] = 1; stack.push(p - W); }
+      if (y < H - 1 && !m[p + W] && awning(x, y + 1)) { m[p + W] = 1; stack.push(p + W); }
+    }
+    for (let y = bT; y <= bB; y++) for (let x = bL; x <= bR; x++)
+      if (inAnyPoly(metals, x, y)) m[y * W + x] = 1;
+
+    // CLOSE THE GAPS THE LIT EDGES PUNCH IN IT, THEN INTERSECT WITH THE KEEP.
+    // Same shape of fix as the roller's, and for a related reason: topology from
+    // the close, boundary from a rule the close cannot cross.
+    //
+    // The near arm is the case that needs it. It runs the length of the awning
+    // and it is the brightest thing in the frame — a lit aluminium rail seen
+    // against sky — so its own edge pixels blend toward blue, cross the
+    // saturation bound, and the fill steps around the whole rail. What that
+    // leaves is not a speckle but a sixteen-pixel band of undyed cream running
+    // corner to corner, invisible against Natural and a bright stripe across a
+    // Navy awning. The arms of a folding arm awning are the one part a colour
+    // row must not miss.
+    //
+    // Raising the bound instead was tried and is worse: the blue sky starts at
+    // 0.24 and the hazy sky near the horizon is lower than that, so a bound
+    // loose enough to admit the rail admits half the horizon with it.
+    //
+    // The close cannot grow the silhouette, because `keeps` bounds the result
+    // and the keep polygon is the silhouette. Radius 8 — the rail is 16 across.
+    const morphA = (src, r, dilate) => {
+      const tmp = new Uint8Array(W * H), out = new Uint8Array(W * H);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        let hit = dilate ? 0 : 1;
+        for (let k = -r; k <= r; k++) {
+          const v = src[y * W + Math.min(W - 1, Math.max(0, x + k))];
+          if (dilate) { if (v) { hit = 1; break; } } else if (!v) { hit = 0; break; }
+        }
+        tmp[y * W + x] = hit;
+      }
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        let hit = dilate ? 0 : 1;
+        for (let k = -r; k <= r; k++) {
+          const v = tmp[Math.min(H - 1, Math.max(0, y + k)) * W + x];
+          if (dilate) { if (v) { hit = 1; break; } } else if (!v) { hit = 0; break; }
+        }
+        out[y * W + x] = hit;
+      }
+      return out;
+    };
+    const closed = morphA(morphA(m, 8, true), 8, false);
+    for (let y = bT; y <= bB; y++) for (let x = bL; x <= bR; x++) {
+      const p = y * W + x;
+      if (closed[p] && (!keeps.length || inAnyPoly(keeps, x, y))) m[p] = 1;
+    }
+
+    // 198, in the empty band between the canopy's 205 and the arms' 192.
+    const cl = new Uint8Array(W * H), hw = new Uint8Array(W * H);
+    for (let p = 0; p < W * H; p++) {
+      if (!m[p]) continue;
+      const x = p % W, y = (p / W) | 0;
+      const metal = inAnyPoly(metals, x, y)
+        || (!inAnyPoly(cloths, x, y) && L_(x, y) < 198);
+      if (metal) hw[p] = 1; else cl[p] = 1;
+    }
+
+    let n = 0, x0 = W, y0 = H, x1 = 0, y1 = 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (m[y * W + x]) {
+      n++;
+      if (x < x0) x0 = x; if (x > x1) x1 = x;
+      if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    const png = (paint) => {
+      const cc = document.createElement('canvas');
+      cc.width = W; cc.height = H;
+      paint(cc.getContext('2d'));
+      return cc.toDataURL('image/png');
+    };
+    // THE SOFT FRINGE GOES ON THE SILHOUETTE ONLY, NEVER ON THE SEAM BETWEEN
+    // CLOTH AND METAL. Elsewhere in this file a mask is alone in the frame and a
+    // half-alpha edge is simply how it meets the room. Here two masks partition
+    // one object, and a fringe on both sides of their shared border paints that
+    // border 47% fabric plus 47% cassette over undyed cream — a pale seam down
+    // every arm, worst on exactly the dark colours a customer is looking hardest
+    // at. Inside the awning the two masks meet hard and add to 255; outside it
+    // they still fade into the sky.
+    const alpha = (src) => png((ctx) => {
+      const d = ctx.createImageData(W, H);
+      for (let p = 0; p < W * H; p++) {
+        let a = src[p] ? 255 : 0;
+        if (!a && !m[p] && p > W && p < W * H - W &&
+            (src[p - 1] + src[p + 1] + src[p - W] + src[p + W]) > 0) a = 120;
+        d.data[p * 4] = d.data[p * 4 + 1] = d.data[p * 4 + 2] = 255;
+        d.data[p * 4 + 3] = a;
+      }
+      ctx.putImageData(d, 0, 0);
+    });
+    const overlayUrl = png((ctx) => {
+      ctx.drawImage(im, 0, 0, W, H);
+      const d = ctx.getImageData(0, 0, W, H);
+      for (let p = 0; p < W * H; p++) {
+        if (cl[p]) {
+          d.data[p * 4]     = Math.round(d.data[p * 4] * 0.35 + 166);
+          d.data[p * 4 + 1] = Math.round(d.data[p * 4 + 1] * 0.35);
+          d.data[p * 4 + 2] = Math.round(d.data[p * 4 + 2] * 0.35 + 91);
+        } else if (hw[p]) {
+          d.data[p * 4]     = Math.round(d.data[p * 4] * 0.3);
+          d.data[p * 4 + 1] = Math.round(d.data[p * 4 + 1] * 0.3 + 150);
+          d.data[p * 4 + 2] = Math.round(d.data[p * 4 + 2] * 0.3 + 175);
+        }
+      }
+      ctx.putImageData(d, 0, 0);
+    });
+    const count = (a) => { let k = 0; for (let i = 0; i < a.length; i++) if (a[i]) k++; return k; };
+    return {
+      W, H, box: { L: x0, R: x1, T: y0, B: y1 },
+      raw: 0, cloth: count(cl), metal: count(hw), bars: 0,
+      barBands: n.toLocaleString() + ' px of awning', grew: 0,
+      mask: alpha(cl), hardware: alpha(hw), overlay: overlayUrl,
     };
   }
 
@@ -740,7 +953,7 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, 
     hardware: alphaPng(hw),
     overlay: oc.toDataURL('image/png'),
   };
-}, { b64, SIZE, CURTAIN, SLATS, BOX, GLASS, FRONT, LIT, TRACK });
+}, { b64, SIZE, CURTAIN, SLATS, AWNING, BOX, GLASS, FRONT, LIT, TRACK, CLOTH_POLY, METAL_POLY, KEEP_POLY });
 
 if (res.error) { console.error('  ' + res.error); await browser.close(); process.exit(1); }
 const save = (u, p) => writeFileSync(p, Buffer.from(u.split(',')[1], 'base64'));
