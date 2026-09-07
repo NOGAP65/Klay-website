@@ -131,7 +131,7 @@ if (problems.length) {
 // moving this one number — 0.38 was too little colour, 0.62 too much dimming —
 // before it was clear that no single number can be both.
 //
-// So a sheer's colour arrives in two parts. `dye` at 0.4 carries only the value:
+// So a sheer's colour arrives in two parts. `dye` at 0.5 carries only the value:
 // enough that Black is visibly darker than White, and still scaling with the
 // swatch, because that much a real sheer does do. `tint` carries the colour
 // itself, and costs no light at all.
@@ -140,7 +140,7 @@ const DYE_STRENGTH = {
   dual: 0.88,
   lightfilter: 0.7,
   sunscreen: 0.55,
-  sheer: 0.4,
+  sheer: 0.5,
 };
 
 // THE PART OF A COLOUR THAT COSTS NO LIGHT, by fabric.
