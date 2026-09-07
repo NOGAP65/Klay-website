@@ -47,8 +47,19 @@ interface Canvas2DCurtainRendererProps {
   hardwareColour: 'white' | 'black' | 'chrome';
   mount: 'ceiling' | 'window';
   colour: string;
-  /** Ordered track width — 'small' | 'medium' | 'large' | 'xl'. Sets how many
-   *  waves the heading carries. See wavesForTrack. */
+  /** Ordered track width — 'small' | 'medium' | 'large' | 'xl'.
+   *
+   * IT NO LONGER SETS THE WAVE COUNT. The count comes from the traced window
+   * now — see wavesForTrace — because fold count is a physical property of cloth
+   * spanning an opening, and the ordered size is a dropdown that may not
+   * describe the window in the photograph at all. The traced version is the
+   * honest one.
+   *
+   * KEPT ON THE INTERFACE ANYWAY, and deliberately: callers still pass it, and
+   * whether anything else in the renderer should read it is a separate question
+   * this reconciliation does not answer. Removing it would be making that
+   * decision by omission. It is not destructured below, because nothing in the
+   * body reads it yet. */
   size?: string;
   /** 0 = shut (panels meet at the centre), 1 = fully drawn back. */
   openness: number;
@@ -85,29 +96,51 @@ interface Canvas2DCurtainRendererProps {
  * There is no path here that can produce a fractional wave: the compression front
  * moves the wave WIDTHS and never the count. */
 const MIN_WAVES_PER_PANEL = 5;
+const MAX_WAVES_PER_PANEL = 20;
 
-/** Ordered track width per size pill, mm. The labels the customer reads are
- *  "up to 1.2m" and so on, and these are those numbers. */
-const TRACK_WIDTH_MM: Record<string, number> = {
-  small: 1200,
-  medium: 1800,
-  large: 2400,
-  xl: 3000,
+/** Waves a panel would carry if the traced window ran the full width of the
+ *  photograph. Everything narrower gets its share of this.
+ *
+ *  CALIBRATED, not picked: the sample room's window covers about 40% of its
+ *  frame and nine waves a panel is what looked right on it, so full frame is
+ *  nine over 0.4. Anything that changes the sample room should be checked
+ *  against this number rather than the number being nudged to suit it. */
+const WAVES_AT_FULL_FRAME = 22;
+
+/** WAVES FROM THE SIZE OF THE TRACE, which is the thing on screen.
+ *
+ * This was briefly taken from the ordered size pill instead — the millimetres
+ * that get quoted and made. Correct on paper and wrong to look at: the picture
+ * stopped agreeing with the window in it. A big opening drawn with the same few
+ * folds as a small one is the fault being fixed, and the opening is what the
+ * customer traced, not what they picked in a list.
+ *
+ * Measured as a FRACTION OF THE PHOTOGRAPH, never in raw pixels. The same window
+ * shot on a phone and on a compact is the same window, and the trace is in image
+ * coordinates — so a 4000px photo would otherwise get three times the folds of a
+ * 1254px one for no reason a customer could ever see. The fraction is stable
+ * across both, and it is also what "bigger" means when you are looking at a
+ * picture: bigger IN THE FRAME.
+ *
+ * Floored at five, because below that a panel reads as a few bulges rather than
+ * as a wave curtain, and capped at sixteen so a wall of glass does not turn into
+ * corduroy.
+ */
+const wavesForTrace = (tracedWidthPx: number, framePx: number): number => {
+  const fraction = framePx > 0 ? tracedWidthPx / framePx : 0.5;
+  const waves = Math.round(fraction * WAVES_AT_FULL_FRAME);
+  return Math.min(MAX_WAVES_PER_PANEL, Math.max(MIN_WAVES_PER_PANEL, waves));
 };
-
-/** Two panels split the track, so each covers half of it when shut. */
-const wavesForTrack = (trackMm: number): number =>
-  Math.max(MIN_WAVES_PER_PANEL, Math.round(trackMm / WAVE_PITCH_MM / 2));
 
 /** One wave per 160mm of track: heading tape carries a snap every 80mm at the
  * standard 80% fullness, and one wave — a crest and the trough beside it — spans
  * two snaps.
  *
- * It sets the wave count again — see wavesForTrack — and it remains the
+ * It does not set the wave count — the trace does, see wavesForTrace. It is the
  * renderer's link to real-world scale in the other direction: the panel shows
- * that many waves, each wave is 160mm of track, so one pixel is a known number
- * of millimetres. The cloth physics needs that, because a pendulum's period
- * depends on its length in metres and not in pixels. */
+ * however many waves the trace earned, each wave is 160mm of track, so one
+ * pixel is a known number of millimetres. The cloth physics needs that, because
+ * a pendulum's period depends on its length in metres and not in pixels. */
 const WAVE_PITCH_MM = 160;
 
 /** Stacked, both panels together occupy a third of the track. A shut panel is
@@ -244,7 +277,30 @@ const HEADING_SINK = 1.12;
  * down the drop. Nothing did, because nothing was allowed to.
  */
 
-/** THE CARRIER PINCHES, THE HEM DOES NOT.
+/** THE CARRIER PINCHES, THE HEM DOES NOT — AND NEITHER OF THEM CREASES.
+ *
+ * THIS WAS A CUSP AND IT LOOKED LIKE ONE. `sign(sin)·|sin|^e` with e below 1 has
+ * an infinite derivative wherever the sine crosses zero: dz/dθ goes as
+ * |θ|^(e-1), which at e = 0.72 diverges. That is not a tight radius, it is a
+ * mathematical crease — a point of zero radius — and the normal swings through
+ * it in the width of a single pixel. Hence the sharp edges on a stacked panel,
+ * worst exactly there because that is where the folds crowd together and the
+ * creases land next to each other.
+ *
+ * Cloth cannot do that. Fabric has bending stiffness, so there is a minimum
+ * radius it can be folded to and it is never zero — a sheer creases softly, a
+ * blockout more softly still, and neither comes to a point. The carrier pulls
+ * the cloth in tight, but tight is a small radius, not no radius.
+ *
+ * So the exponent floors at 1, where the section is exactly the sine it should
+ * have been all along: smooth everywhere, no derivative discontinuity anywhere
+ * on the surface. The pinch idea was mine and it was wrong — reasoning from
+ * "the carrier holds it" to "therefore it comes to a point" skipped the fact
+ * that the thing being held is cloth.
+ *
+ * Kept as constants rather than deleted so the section stays one expression, and
+ * so anything that wants to shape it later has the hook — but at or above 1,
+ * always. Below 1 puts the crease back.
  *
  * At the heading the cloth is clamped every 80mm by a snap, so the wave is
  * pinched hard at each carrier and the lobe between them is pushed round and
@@ -255,8 +311,8 @@ const HEADING_SINK = 1.12;
  * lobe and steepens the crossing, which is what a pinched carrier does; at 1 it
  * IS the sine. The heading value is what the render was missing entirely.
  */
-const FOLD_PINCH_HEADING = 0.72;
-const FOLD_PINCH_HEM = 0.97;
+const FOLD_PINCH_HEADING = 1.0;
+const FOLD_PINCH_HEM = 1.0;
 
 /** HOW FAR A FOLD'S CENTRELINE WANDERS BY THE HEM, in fractions of one wave.
  *
@@ -1263,8 +1319,17 @@ void main() {
   // arrives as a line. The coefficient is then free to be several times what it
   // was without the panel going muddy, because it is only ever applied to a
   // sliver.
-  float cavityShaped = pow(cavity, 2.2);
-  shade *= 1.0 - cavityShaped * mix(0.34, 0.48, vCompression);
+  // 1.8 and 0.30-0.38, softened from 2.2 and 0.34-0.48.
+  //
+  // Those were set against a surface that had a geometric cusp in it, and they
+  // were sharpening a line that was already infinitely sharp — the two compounded
+  // into a hard black edge, and the strongest coefficient was reserved for the
+  // compressed cloth, which is precisely where the folds crowd and the edges were
+  // most visible. With the section smooth the shading no longer has to be that
+  // narrow to read as a crease, and a stacked panel goes back to looking like
+  // gathered cloth rather than like folded card.
+  float cavityShaped = pow(cavity, 1.8);
+  shade *= 1.0 - cavityShaped * mix(0.30, 0.38, vCompression);
 
   // And the crest is the part that sees the most room, so it lifts slightly.
   // Cheaper on contrast than pushing the troughs further down, and it is the
@@ -1622,7 +1687,22 @@ const FABRIC_SAMPLE: Record<'blockout' | 'sheer', string> = {
   // different URL that 404s, which is the worst failure shape there is — it
   // only shows up after deploy. Match the filenames on disk exactly.
   blockout: '/images/visualiser/textures/curtains/Blockout_produced.png',
-  sheer: '/images/visualiser/textures/curtains/sheer_produced.png',
+  // DRAWN, NOT PHOTOGRAPHED, and it has to be. The map covers one panel —
+  // roughly 900mm of cloth across 1024 texels, so a texel is about 0.9mm and a
+  // voile thread is about 0.2mm. A real weave is SUB-TEXEL at this scale, which
+  // means any regular grid in the source must alias against the pixel lattice,
+  // and that aliasing is what the honeycomb was. A photograph of real cloth
+  // always carries that grid; this one is value noise all the way down, so
+  // there is no repeating frequency for anything to beat against.
+  //
+  // Warp striation running down the drop, a weaker weft, fine irregular tooth
+  // and sparse slubs elongated along the warp. Deterministic, so it is the same
+  // cloth every build, and flat mid-grey with no gradient anywhere —
+  // buildDetailTexture reads brightness as HEIGHT, so any baked lighting would
+  // come back as bumps that are not in the fabric.
+  //
+  // sheer_produced.png, the supplier swatch, is kept in the repo beside it.
+  sheer: '/images/visualiser/textures/curtains/sheer_weave.png',
 };
 
 /** Working size of the extracted detail map. The swatches are 1254px square and
@@ -1879,7 +1959,6 @@ export default function Canvas2DCurtainRenderer({
   hardwareColour,
   mount,
   colour,
-  size,
   openness,
   canvasWidth,
   canvasHeight,
@@ -2158,8 +2237,22 @@ export default function Canvas2DCurtainRenderer({
         }
       })();
 
-      // WAVE COUNT — from the ordered track width. See wavesForTrack.
-      const waveCount = wavesForTrack(TRACK_WIDTH_MM[size ?? 'medium'] ?? TRACK_WIDTH_MM.medium);
+      // WAVE COUNT — from the trace itself. See wavesForTrace.
+      //
+      // Measured across the QUAD'S OWN EDGES rather than its bounding box. A
+      // window photographed at an angle has a top edge and a bottom edge of
+      // different lengths, and the box around it is wider than either — so the
+      // box overstates a slanted trace and would hand it folds it has not
+      // earned. The mean of the two edges is the track the curtain actually runs
+      // along.
+      //
+      // WIDTH AND NOT AREA, deliberately. A taller window does not get more
+      // folds: the waves are spaced along the track, so a 3m opening carries the
+      // same heading whether it is a metre tall or three. Bigger trace, more
+      // folds — but bigger ACROSS.
+      const topEdge = Math.hypot(trPx.x - tlPx.x, trPx.y - tlPx.y);
+      const bottomEdge = Math.hypot(brPx.x - blPx.x, brPx.y - blPx.y);
+      const waveCount = wavesForTrace((topEdge + bottomEdge) / 2, W);
 
       // Panels meet at the centre with a hairline between them, so a shut pair
       // reads as two panels rather than one sheet.
@@ -2306,7 +2399,13 @@ export default function Canvas2DCurtainRenderer({
             // distance a real sheer reads as a translucent haze with the odd
             // slub catching, not as a resolved egg-crate. The blockout's sateen
             // has no open grid to light up and keeps its 0.6.
-            uBump: { value: isSheer ? 0.30 : 0.6 },
+            // 0.42 for the sheer, back up from the 0.30 the old sample had to be
+            // held down to. That number was defensive: the photographed weave was
+            // an open square mesh, and lighting it turned every hole into its own
+            // cell. The drawn weave has no cells to light — it is striation and
+            // slub — so it can carry proper relief and finally read as cloth
+            // rather than as a tint.
+            uBump: { value: isSheer ? 0.42 : 0.6 },
 
           },
           vertexShader: VERTEX_SHADER,
@@ -2439,12 +2538,7 @@ export default function Canvas2DCurtainRenderer({
   }, [
     photoUrl, canvasWidth, canvasHeight,
     tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y,
-    // `size` is in here because it decides the WAVE COUNT, and the count is
-    // baked into the mesh at build time — createPanelMesh allocates for it.
-    // Left out, changing the size pill repriced the curtain and redrew
-    // nothing, which is the worst of both: the control looks broken and the
-    // picture quietly disagrees with the order.
-    mount, fabricType, hardwareColour, size,
+    mount, fabricType, hardwareColour,
   ]);
 
   // Openness kicks the solver rather than drawing. The solver reads the live

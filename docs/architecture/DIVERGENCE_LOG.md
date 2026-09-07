@@ -7,7 +7,7 @@ machine, because *"a rule that relies on someone remembering it is not a rule, i
 The entries below are what happens without that enforcement — and every one of them was
 written by someone competent, in code that was individually good.
 
-**Running total: 12 confirmed. 6 resolved, 1 partially resolved, 1 deliberate, 4 open.**
+**Running total: 13 confirmed. 8 resolved, 1 partially resolved, 1 deliberate, 3 open.**
 
 | | Status |
 |---|---|
@@ -23,9 +23,15 @@ written by someone competent, in code that was individually good.
 | **D-10** reduced-motion snapshot ×4 | **RESOLVED at Phase 7** — usePrefersReducedMotion |
 | **D-11** hover solved 3× in the design system | **RESOLVED at Phase 7** — six unused exports deleted, 471 lines. ADR-025 |
 | **D-12** contact details ×4 | **RESOLVED** — config/site.ts built. **The first divergence here found by a written condition rather than by reading** |
+| **D-13** the curtain renderer developed twice, on two branches | **RESOLVED 7 Sep** — reconciled onto the migration branch. **The most expensive divergence in this log** |
 
 The earlier header read "3 resolved, 2 deliberate, 1 open", which never reconciled with the
 entries below it. Corrected while D-01 was being closed.
+
+**Corrected again while adding D-13.** The header said 6 resolved and 4 open; counting the table
+gives 7 and 3 — D-12 was marked resolved in its row and never added to the tally above it. The
+same failure this log documents, committed by the log: **a count maintained by hand beside a
+table maintained separately.** It is 8 and 3 with D-13 included.
 
 Add an entry the moment one is found, before deciding what to do about it. A divergence that
 is only recorded in a commit message is not recorded.
@@ -520,6 +526,104 @@ confirmation path.
 and creating it is a small piece of real work with a decision in it (does the ABN and trading
 entity belong there too, or is that a legal-footer concern?). Logged now because the duplicate
 is known now; the extraction is the trigger's own business.
+
+---
+
+## D-13 — The curtain renderer was developed twice, in parallel, on two branches
+
+**Type:** The Second Implementation (§13) · **Status:** **RESOLVED — 7 September 2026**
+**Found:** 7 Sep 2026, preparing to merge `refactor/architecture-migration` into `main`
+
+**This is D-01 one level up.** D-01 was two complete checkouts inside one working tree. This is
+two working trees, each with a branch, each carrying the same feature work — and unlike D-01,
+nothing in the repository could see it. A duplicate file is greppable. A duplicate *branch* is
+not: every check in §11 runs inside one checkout at a time and can only see the branch it is
+standing on.
+
+### How it presented
+
+`main` carried **8 commits absent from the migration branch**, all of them 4 September, all of
+them the curtain renderer:
+
+| | |
+|---|---|
+| `e39d9a6` | Hang the curtain under gravity, and put it on the sill |
+| `ef64e28` | The honeycomb was moire in the weave, not a fault in the folds |
+| `85b20a1` | One wave per 160mm of track, so a wide window gets more folds |
+| `b315b92` | Take the fold count from the traced area, not from the ordered size |
+| `2bce70d` | A sheer scatters what is behind it; it does not just let it past |
+| `3d8a9d8` | A backlit sheer is the brightest thing in the room, not a grey film |
+| `8f7bdb8` | Draw the sheer's weave instead of photographing it |
+| `465f2be` | Cloth has a bending radius; the fold section had none |
+
+**And the branch already held some of that work, under different commits.** Cherry-picking the
+OLDEST of the eight produced **five conflict regions in one file, every one with an empty
+"theirs" side** — the branch had content in those exact hunks that the commit's own parent did
+not. Two of the five were `SHEER_DIFFUSION` and the "THE CLOTH SCATTERS, IT DOES NOT JUST LET
+LIGHT PAST" model: that is `2bce70d`'s idea, a *later* commit in the list, already on the branch
+in a different form.
+
+**Not a duplicated constant. A duplicated line of development.** Every previous entry in this log
+is a value or a helper written twice. This is two weeks of shader and cloth-physics reasoning
+arrived at twice, in two places, with the same insights reached in a different order and
+expressed in different code. `git log` could not show it because the subjects differ; `git diff`
+could not show it because the paths differ — the migration had moved `src/visualiser/` to
+`src/features/visualiser/`, so rename detection was needed before the two files could be
+compared at all.
+
+**The measurable divergence, once they were lined up:** 10 hunks — 115 lines on `main` absent
+from the branch, 35 on the branch absent from `main`.
+
+### The cause: two working trees, two weeks, no merge
+
+Not carelessness, and not a bad decision at any single point. The migration branch was opened to
+restructure the tree; feature work carried on against `main` because that is what ships; and for
+two weeks nobody merged in either direction. Each side stayed individually correct the whole
+time. **Every commit on both branches was a good commit.**
+
+That is §13's sentence with the scope enlarged: *"Both correct when written, one updated six
+months later."* Here it took two weeks, and the second copy was not a file — it was a branch.
+
+### Why it is the most expensive one in this log
+
+- **D-02** was 13,568 lines and cost nothing to resolve: it was deleted, because nothing in it
+  was unique.
+- **D-13 could not be deleted from either side.** Both branches held work the other needed, so
+  the resolution was a hand-reconciliation of a 2,600-line file with a design decision inside it
+  — not a merge, and not something a tool could do.
+- **It very nearly resolved itself in the wrong direction.** The first instinct, and the first
+  instruction, was to move `main` onto the branch as one operation. That would have silently
+  reverted all eight commits. It was caught only by checking whether the branch was a superset
+  of main before overwriting — and it was not.
+
+### The decision inside the reconciliation
+
+The two branches disagreed about **where a curtain's fold count comes from**, and they could not
+both be right:
+
+| | |
+|---|---|
+| Branch | `wavesForTrack(TRACK_WIDTH_MM[size])` — from the ordered size pill |
+| `main` | `wavesForTrace(tracedWidth, framePx)` — from the window the customer traced |
+
+**Settled in favour of the trace.** Fold count is a physical property of cloth spanning an
+opening, so it derives from the opening; the ordered size is a dropdown selection that may not
+describe the photographed window at all. The traced version is the honest one — and `b315b92`'s
+own subject says it was written to replace the other.
+
+**The `size` prop stays threaded through.** It stops driving fold count; it is not removed.
+`KlayConfigurator` still passes it and the renderer still declares it. Whether anything else
+should read it is a separate decision, and deleting the prop would have made that decision by
+omission. The reasoning is recorded on the prop itself.
+
+### What would have caught it
+
+Nothing in §11 would have, and that is the finding. **The condition that matters here is not
+about code at all — it is "how long has a branch gone without a merge in either direction".**
+
+Stated as a rule, in the shape §0 asks for: *a long-lived branch must be merged from its base on
+a stated interval, and the interval must be short enough that reconciling is a merge rather than
+an archaeology exercise.* Two weeks was too long. The evidence is this entry.
 
 ---
 
