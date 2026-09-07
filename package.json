@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/emit-robots.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint src tools --fix",
     "lint:rules": "node tools/eslint-rules/verify.mjs",
