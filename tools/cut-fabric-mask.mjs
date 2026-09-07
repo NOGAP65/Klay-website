@@ -152,19 +152,18 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, 
   //
   // The slats are horizontal bars spanning the blind — which is the same shape
   // test the roller's headrail already uses, applied forty times instead of
-  // twice. A row counts as slat if most of its width is bright and near-neutral;
-  // a row through a gap is the garden, which is neither.
+  // twice. Every row is one thing or the other, all the way across, so the
+  // decision is taken per row rather than per pixel.
   //
-  // BUT THE SLATS ARE NOT THE PRODUCT, only the part of it a colour test can
-  // find. The first version stopped there and dyed the louvres alone, which put
-  // charcoal blades in a cream frame — see the note on the openings below for
-  // what the frame measures and why no threshold reaches it.
+  // BUT THE SLATS ARE NOT THE PRODUCT, only the louvred part of it. The first
+  // version stopped there and dyed the blades alone, which put charcoal louvres
+  // in a cream frame — see the note on the openings below for what the frame
+  // measures and why no threshold reaches it.
   //
   // The box is given rather than found, for the reason the curtains give: the
   // white architrave round this window is the same tone as the slats, so no
-  // threshold separates them, and the top slats are blown out brighter than any
-  // upper bound that keeps the view out. It runs frame to frame — the whole
-  // unit, not the louvred part of it.
+  // threshold separates them. It runs frame to frame — the whole unit, not the
+  // louvred part of it.
   if (SLATS) {
     const [T0, B0, L0, R0] = BOX ?? [0.11, 0.70, 0.17, 0.82];
     const bT = Math.round(H * T0), bB = Math.round(H * B0);
@@ -201,54 +200,69 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, 
     const front = FRONT.map(rect);
     const behind = (x, y) => front.some(f => x >= f.L && x <= f.R && y >= f.T && y <= f.B);
 
-    // A SLAT IS NEUTRAL; A GAP IS NOT. Through the gaps is garden — green, and
-    // measurably more saturated than a painted slat. At sat < 0.22 the first
-    // pass took both and the whole blind went pink, view included, which on
-    // Charcoal would have lost the one thing a tilted venetian is for.
+    // A SLAT IS FLAT ACROSS THE OPENING; THE VIEW IS NOT.
     //
-    // NEUTRAL ONLY, WITH NO UPPER BOUND ON BRIGHTNESS, and that upper bound is
-    // worth a paragraph because it was in here and it was wrong. It was keeping
-    // blown sky out of the gaps, and it did — but a lit slat face is blown too.
-    // Measured across the venetian's glass, row by row: a slat row runs 0.96-0.99
-    // neutral of which 0.28-0.62 is over 236, so the bound threw away between a
-    // third and two thirds of every slat and the row then failed a 0.45 vote.
-    // That is where the cream banding through the middle of a charcoal venetian
-    // came from. Neutrality alone reads 0.96-0.99 on a slat row and 0.39-0.63 on
-    // a gap row, which is a gap no threshold has to be clever about.
+    // One slat is one piece of painted timber, so a row through it reads the
+    // same at the left of the opening as at the right. A row through a gap reads
+    // the window reveal at one end, a tree in the middle and sky at the other.
+    // So the test is p90 minus p10 of luminance across the opening: measured on
+    // both photographs, a slat row spans 5-32 and a gap row 38-121.
     //
-    // The lower bound stays: a silhouetted branch is dark and can be neutral,
-    // and no slat in either photograph is under 120.
+    // THIS REPLACES A COLOUR TEST — "a slat is neutral, the garden is not" —
+    // which was here first, is the obvious thing to reach for, and is wrong
+    // twice over. Worth recording both, because both look like the sort of
+    // photograph anyone would shoot next.
     //
-    // IT IS ASKED OF THE GLASS ONLY, which is the other half of the fix. The
-    // box now runs frame to frame, and the frame passes this test on every row
-    // — so counting across the whole box would carry every gap row over the
-    // threshold and dye the view after all. The question a row has to answer is
-    // "is the opening covered here", so the opening is what it is asked about.
+    // It broke on the VENETIAN'S TOP SLATS, which are seen from underneath. Warm
+    // bounce puts their undersides at 0.22-0.30 saturation against a painted
+    // face's 0.05, while the gaps between them show flat blown sky at 0.03-0.09
+    // — so colour called every one of those rows backwards and dyed the sky
+    // instead of the slat. That was the banding across the top of the blind.
+    // Spread reads the same slats at 14-28 and the same gaps at 48-74.
     //
-    // ACROSS EVERY OPENING AT ONCE, not one at a time, and the shutter needs
-    // that. Its right panel looks at sky, which IS neutral — gap rows there
-    // reach 0.94 on their own and no threshold separates them. Its left panel
-    // looks at a tree and the same rows read 0.09-0.40. Asked of both together
-    // a gap row lands near 0.45 and a slat row at 0.95, because the slats of two
-    // panels of one shutter are at the same height by construction.
-    const slatPx = (x, y) => S_(x, y) < 0.11 && L_(x, y) > 120;
+    // It broke again on the SHUTTER'S BLOWN LOWER LIPS. The lit underside of
+    // each louvre reads 237-254, and a colour test with an upper bound to keep
+    // sky out scores those rows at 0.00-0.17, so a cream line was left under
+    // every blade. Spread reads them at 5-12, because a blown slat is still a
+    // flat one.
+    //
+    // PER OPENING, AND THE WORST ONE DECIDES. This is what lets one number serve
+    // both. Pooling the shutter's two panels would fail on its own terms — at
+    // the same height its left slats sit near 240 and its right near 200, so a
+    // pooled spread on a good slat row reads 50 — and taking the worst is also
+    // what covers the one opening spread cannot read alone: flat sky through the
+    // right panel's gap is as flat as a slat, 10-19 against 9-19, but the left
+    // panel is looking at a tree on that same row and reads 95-121. The slats of
+    // two panels of one shutter are at the same height by construction, so one
+    // opening that can see the difference is enough.
+    //
+    // IT IS ASKED OF THE GLASS ONLY. The box runs frame to frame, and the frame
+    // is flat on every row — so a spread taken across all of it would call every
+    // gap row a slat and dye the view after all. The question a row has to
+    // answer is "is the opening covered here", so the opening is what it is
+    // asked about.
+    const pct = (a, p) => a[Math.min(a.length - 1, Math.max(0, Math.round(p * (a.length - 1))))];
+    const spreadOf = (g, y) => {
+      const ls = [];
+      for (let x = g.L; x <= g.R; x++) ls.push(L_(x, y));
+      ls.sort((a, b) => a - b);
+      return pct(ls, 0.9) - pct(ls, 0.1);
+    };
+
     const m = new Uint8Array(W * H);
     let rows = 0, frameRows = 0;
     for (let y = bT; y <= bB; y++) {
       const open = glass.filter(g => y >= g.T && y <= g.B);
-      let wide = 0, n = 0;
-      for (const g of open) {
-        wide += g.R - g.L;
-        for (let x = g.L; x <= g.R; x++) if (slatPx(x, y)) n++;
-      }
+      let spread = 0;
+      for (const g of open) spread = Math.max(spread, spreadOf(g, y));
       // Above the top rail and below the bottom one there is no opening to
       // cover, and the row is solid product — a headrail, a bottom bar, the
       // head and sill of a shutter frame.
-      // 0.75, up from 0.45. The old number was set against a test that could
-      // only ever find part of a slat; against one that finds all of it, the
-      // honest question is "is this opening covered", and 0.45 answers yes to a
-      // row that is more daylight than blind.
-      if (open.length && n / wide < 0.75) {
+      //
+      // 40 sits in the middle of the empty band between a slat row's 32 and a
+      // gap row's 38, with the transition row either side of it landing on the
+      // right answer.
+      if (open.length && spread >= 40) {
         // A row the light comes through. The stiles, the rails and the rod
         // still cross it; only the openings are cut out of it.
         frameRows++;
@@ -260,12 +274,12 @@ const res = await page.evaluate(async ({ b64, SIZE, CURTAIN, SLATS, BOX, GLASS, 
         continue;
       }
       rows++;
-      // THE WHOLE ROW, NOT THE PIXELS THAT PASSED. A slat has a lit top face
-      // and a shadowed leading edge, and the edge fails any test the face
-      // passes — so marking only the qualifying pixels dyed half of each slat
-      // and left the other half cream, which reads as a fault rather than a
-      // colour. The row-level decision is the honest one: this row IS a slat,
-      // across its width, because most of its width says so.
+      // THE WHOLE ROW, NOT SOME SELECTION WITHIN IT. A slat has a lit face and
+      // a shadowed leading edge, and every per-pixel rule tried here passed one
+      // and failed the other — which dyed half of each slat and left the rest
+      // cream, reading as a fault rather than a colour. The row-level decision
+      // is the honest one: a slat spans the blind, so this row IS a slat, across
+      // its width, or it is not one at all.
       for (let x = bL; x <= bR; x++) if (!behind(x, y)) m[y * W + x] = 1;
     }
 
