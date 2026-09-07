@@ -39,7 +39,11 @@ export default async (req: Request): Promise<Response> => {
   const honeypot = checkHoneypot(body)
   if (honeypot) return honeypot
 
-  const turnstileError = await verifyTurnstile(body, getClientIp(req))
+  // CLOSED, because this path spends money. If Cloudflare cannot be reached we
+  // refuse and ask the customer to retry — a checkout that has to be attempted
+  // twice is an annoyance; an unverified request that opens a Stripe session is
+  // a hole in the one endpoint where that matters.
+  const turnstileError = await verifyTurnstile(body, getClientIp(req), 'closed')
   if (turnstileError) return turnstileError
 
   const parsed = parseBooking(body)

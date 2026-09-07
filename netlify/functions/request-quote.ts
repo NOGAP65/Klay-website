@@ -31,7 +31,12 @@ export default async (req: Request): Promise<Response> => {
   const honeypot = checkHoneypot(body)
   if (honeypot) return honeypot
 
-  const turnstileError = await verifyTurnstile(body, getClientIp(req))
+  // OPEN, and this is the deliberate asymmetry with create-checkout-session.
+  // Nothing is charged here — it is a customer asking for a quote. If Cloudflare
+  // is unreachable, taking the enquiry and letting a little spam through beats
+  // turning away a real customer who will simply go somewhere else. The honeypot
+  // and the rate limiter both still apply, so this is not unguarded.
+  const turnstileError = await verifyTurnstile(body, getClientIp(req), 'open')
   if (turnstileError) return turnstileError
 
   const parsed = parseBooking(body)
