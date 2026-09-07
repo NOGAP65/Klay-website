@@ -44,19 +44,24 @@
 export { default as ProductsPage } from './components/ProductsPage';
 
 // --- the four roller products, split out of data/products at P4-5 -----------
-// PRODUCTS is read by Footer (app chrome, Phase 5) to build its product column;
-// productByBlindType by VisualiserShowcase (feature:home, P4-6); COLOUR_COUNT
-// and PRODUCT_COUNT by marketing's About page, which quotes both as figures.
-// All four are legitimately catalogue facts that something else states.
+// productByBlindType is read by VisualiserShowcase (feature:home, P4-6);
+// COLOUR_COUNT and PRODUCT_COUNT by marketing's About page, which quotes both as
+// figures. Both are legitimately catalogue facts that something else states.
+//
+// PRODUCTS IS INTERNAL AGAIN. Footer read it to build a column of four per-SKU
+// links; that column is one link to the shop now, so nothing outside this
+// feature names the roller range. It is still the range — constants.ts derives
+// ROLLER_FROM from it — it is simply not a fact anyone else states.
+//
+// productBySlug is gone with the route that needed it, and ProductBlindType with
+// the page that annotated its store. ProductBlindType still EXISTS: Product's
+// own blindType field is typed by it. It is unexported, not deleted.
 export {
-  PRODUCTS,
-  productBySlug,
   productByBlindType,
   COLOUR_COUNT,
   PRODUCT_COUNT,
   type Product,
   type ProductSlug,
-  type ProductBlindType,
 } from './products';
 
 // --- consumed by feature:home (P4-6) ----------------------------------------

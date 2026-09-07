@@ -56,46 +56,19 @@ export interface ShopCardProps {
 
 }
 
-/** How long the box takes to open, and to shut.
+/* NO OPEN / CLOSE / TRAVEL / STAGGER TIMINGS. Five constants lived here —
+ * OPEN_MS 360, CLOSE_MS 210, TRAVEL_MS 440, STAGGER_MS 30, STAGGER_SPAN_MS 90 —
+ * and each carried a measured note about how the grid should feel when one card
+ * expanded and the others got out of its way.
  *
- * SHUTTING IS FASTER, and it has to be: the page holds the card open for
- * CLOSE_MS while the panel fades and then unmounts it, so a shrink longer than
- * that gets cut off partway through and replaced by a card already at its closed
- * width — a jump, in the middle of the animation that exists to remove one. The
- * two numbers are the same number because they have to be.
+ * NO CARD EXPANDS ANY MORE. Every card on the shop is open at once (see the
+ * dense mode in RangeConfigurator), so there is no box to grow, nothing to move
+ * aside, and no wave to time. The constants had no reader left in this file or
+ * any other; removed 7 September 2026.
  *
- * It is also how it should feel. An opening is something you are waiting to see;
- * a closing is something you have finished with. */
-export const OPEN_MS = 360;
-export const CLOSE_MS = 210;
-
-/** What the cards moving out of the way get, which is longer than the box.
- *
- * They are not racing the box — they are getting out of its way, and a card that
- * wraps to the next row travels two legs and most of the grid's width to do it.
- * At the box's own duration that read as a snap. */
-export const TRAVEL_MS = 440;
-
-/** The gap between one card leaving and the next.
- *
- * This is the whole difference between a row of cards rearranging and a row of
- * cards flowing. Every card leaving on the same frame is a single event with no
- * direction in it; a beat apart and the displacement travels through the grid,
- * away from the card that opened and back toward it when it shuts. */
-export const STAGGER_MS = 30;
-
-/** The longest the wave may take to cross the whole grid.
- *
- * STAGGER_MS is right for the few cards a customer can see at once, but the
- * range is eleven movers and a filtered grid is a different length again — so
- * left alone, the same click would run for near enough a second on the full shop
- * and a third of that on a narrowed one. The gap shrinks to fit this instead:
- * the order is kept, the duration is not the grid's length.
- *
- * 90, down from 170. At 170 the grid was still rearranging after the box had
- * finished opening, which is two events; at 90 it is one motion with a lead,
- * which is what a stagger is for. */
-export const STAGGER_SPAN_MS = 90;
+ * The reasoning is in the history rather than lost: the numbers were arrived at
+ * by measurement, and if a card is ever made to expand again, git show is a
+ * better starting point than deriving them a second time. */
 
 /** THE GRID'S OWN TWO NUMBERS, and they live here rather than on the page
  * because the card does arithmetic with them: it pins itself to one column and
@@ -120,19 +93,10 @@ export const COLUMN_MIN = 480;
  * columns on a 1440 viewport, which 30 would not. */
 export const COLUMN_GAP = 28;
 
-/** One grid column in pixels, from the grid's own width.
- *
- * COMPUTED, NOT MEASURED. Reading it off a sibling has a race in it: opening a
- * card changes which items sit where, and a measurement taken mid-transition
- * returns a number between one column and two. auto-fill's rule is
- * deterministic — as many minmax(COLUMN_MIN, 1fr) tracks as fit with the gaps
- * between them — so running the same arithmetic the browser runs gives the
- * answer with no window to be wrong in. Verified against the live grid: this
- * returns 353.33 where the browser's tracks measure 353.328px. */
-export const columnWidth = (gridWidth: number): number => {
-  const cols = Math.max(1, Math.floor((gridWidth + COLUMN_GAP) / (COLUMN_MIN + COLUMN_GAP)));
-  return (gridWidth - (cols - 1) * COLUMN_GAP) / cols;
-};
+/* NO columnWidth. It computed one grid track's width so an expanding card could
+ * pin itself to a column and its panel to the next — the same expand-on-click
+ * design the timings above served. COLUMN_MIN and COLUMN_GAP stay: the page
+ * still lays the grid out from them. */
 
 /** THE THREE THINGS TRUE OF EVERY PRODUCT, and they fill the space capping the
  * picture at 3:4 leaves under it.

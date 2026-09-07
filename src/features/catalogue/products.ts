@@ -96,9 +96,10 @@ export const PRODUCTS: Product[] = [
   },
 ]
 
-/** Product lookup by URL slug. Returns undefined for an unknown slug. */
-export const productBySlug = (slug: string | undefined): Product | undefined =>
-  PRODUCTS.find(p => p.slug === slug)
+/* NO productBySlug. It existed to turn /products/:slug into a product, and
+ * there is no such route any more — ProductDetailPage was its only caller.
+ * productByBlindType below survives because the visualiser looks a product up
+ * by what it IS, not by what its URL was. */
 
 /** Reverse map, so the old /products/blockout style URLs can be redirected
  * to the product they became rather than dead-ending. */
