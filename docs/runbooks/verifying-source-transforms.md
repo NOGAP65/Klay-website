@@ -187,7 +187,7 @@ and prove it can fail.**
 >
 > **Assume it. Do not wait to be surprised by it.**
 
-**Nine instances is a property of the work, not a run of bad luck.** They are not nine unrelated
+**Ten instances is a property of the work, not a run of bad luck.** They are not ten unrelated
 slips that happened to land in one project. They are one thing arriving repeatedly: **a check is
 written by the same person, in the same sitting, holding the same belief about the world as the
 code it checks.** If that belief is wrong, both halves are wrong together and they agree with each
@@ -197,12 +197,13 @@ So the expectation is not "be careful and this will be rare". It is **"the first
 plan the five minutes to prove otherwise"** — the same way you would not ship a function without
 running it once.
 
-### And twice now the verifier has been the last place looked, for the same reason
+### And three times now the verifier has been the last place looked, for the same reason
 
 | | |
 |---|---|
 | **Instance 7** | `verify-scope-guard.mjs` reported a refusal while having written a real file |
 | **Instance 8** | `legacy-countdown.mjs` reported a floor that had been demolished that morning |
+| **Instance 10** | `verify-exceptions.mjs` reported that two halves agreed while they named different protected files — **and this is the one that had already cost something before it was found** |
 
 Both were the tool everything else was being judged against, and both were the last thing anyone
 thought to doubt. **That is not a coincidence, it is the mechanism**: the verifier is the thing that
@@ -267,7 +268,7 @@ enforcement until it has been shown to fail — and the tool written to apply th
 never had it applied to itself, because applying it would have meant distrusting the thing whose
 job is distrust.
 
-**The seven instances are listed in full below.** They are worth reading as a set rather than
+**The ten instances are listed in full below.** They are worth reading as a set rather than
 individually: the individual bugs are all avoidable in hindsight, and the pattern is not.
 
 ---
@@ -572,6 +573,81 @@ if (fs.existsSync(PROBE)) { fs.unlinkSync(PROBE); failures++; }
 
 **Design a destructive test so that its failure is survivable**, because the failure case is
 exactly the one nobody rehearsed.
+
+## Instance 10 — the verifier compared the wrong field, and this one had a consequence
+
+**Two identifier sets agreeing proves both halves know the same exceptions exist. It proves
+nothing about what they exempt.**
+
+`tools/verify-exceptions.mjs` keeps SPECIFICATION.md §12 and `exceptions.json` in agreement —
+ADR-023, written because two copies of one list is the silent divergence §13 names. It compared
+the set of E-numbers:
+
+```js
+const inJson = new Set(json.exceptions.map((e) => e.id));
+const inSpec = new Set([...spec.matchAll(/^\|\s*(E-\d{2})\s*\|/gm)].map((m) => m[1]));
+```
+
+Both halves said `E-01 … E-06`. It printed **"OK: 6 exceptions, both halves agree"** every time it
+ran, for as long as it existed.
+
+**They did not agree.** §12's table protected four files. A paragraph at §11 named a fifth —
+`Canvas2DCurtainRenderer.tsx` — and called it *"a protected IP file (E-02's sibling) that may not
+be edited at all."* No E-number, no row, absent from the register. The check could not see the
+contradiction **because the contradiction was in a field it never read.**
+
+### What separates it from the other nine
+
+**They were all caught before they cost anything. This one had already been paid.**
+
+Instances 1 through 9 are checks found inert — a rule that never fired, a search whose empty
+result meant nothing, a verifier that wrote the file it was proving it could not write. In every
+case the finding was *"this would not have caught the thing"*, discovered before the thing
+happened.
+
+Here the thing happened. **`Canvas2DCurtainRenderer.tsx` was edited repeatedly over several
+weeks — with the owner's explicit authorisation** — while one half of the constitution called it
+untouchable. Nobody was careless. The owner was reading the register, which was right; the
+sentence was in §11, which was wrong; and the only mechanism that could have reconciled them was
+comparing a field it did not compare.
+
+> **A check that validates the index of a document rather than its content will report agreement
+> between two documents that contradict each other.**
+
+That is the general form, and it is worth more than the instance. An identifier is a label for a
+claim. Checking that both sides use the same labels is not checking that both sides make the same
+claim — and the labels are the easy half to keep in sync, which is exactly why they stay in sync
+while the claims drift.
+
+### The fix — two comparisons, and only the second would have caught it
+
+1. **Per exception, the files each half names must match.** §12 writes `` `homography.ts` ``
+   where the register writes the full path, so the comparison is on basenames. This keeps the
+   table honest.
+2. **Any file the specification's prose calls "protected IP" must appear in the register.** The
+   paragraph was not in a table, so check 1 could never have reached it. **A file can be declared
+   untouchable in a sentence, and a sentence is not a table row.**
+
+**Both were proven able to fail before being trusted**, per ADR-022 and per instance 7:
+
+| Perturbation | Result |
+|---|---|
+| Point E-03's registered path at a file §12 does not name | `FAIL: E-03 exempts different files in each half` |
+| Add prose calling `Wardrobe3D.tsx` a protected IP file | `FAIL: … absent from the register`, exit 1 |
+
+Reverted; green again afterwards.
+
+### The opt-out, and why it is declared rather than inferred
+
+Check 2 has an escape hatch, `<!-- check:exceptions ignore -->`, and it exists because **prose
+that withdraws a claim necessarily restates it.** The §11 note recording that the curtain renderer
+is *not* protected contains both the phrase and the filename; the first run of the new check
+failed on the very sentence telling it the file was unprotected.
+
+The alternative was teaching the matcher to detect negation, which is how a check starts having
+opinions about English and quietly stops being reliable. **The marker is a deliberate act, visible
+in the diff and greppable** — the same shape as an `eslint-disable` with its reason written beside
+it, which §11 already reasons about.
 
 ## The rule
 

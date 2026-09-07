@@ -655,7 +655,7 @@ wrong. **Every one was believed at the time.**
 `npm run verify:scope-guard` are, and why §11 requires them before a rule may be promoted. A
 signal nobody has seen fail is not evidence; it is a habit.
 
-`docs/runbooks/verifying-source-transforms.md` carries the seven instances and the three shapes
+`docs/runbooks/verifying-source-transforms.md` carries the ten instances and the three shapes
 they take.
 
 ### AN EXIT CONDITION MUST NOT BE WRITTEN OVER SOMETHING THE PHASE DOES NOT CONTROL
@@ -794,8 +794,26 @@ scanning for logic changes.
 
 This is not hypothetical here. `eslint --fix` removed two
 `// eslint-disable-next-line react-hooks/exhaustive-deps` directives from
-`Canvas2DCurtainRenderer.tsx` — a **protected IP file** (E-02's sibling) that may not be
-edited at all — and the run reported zero errors. Use `npm run lint:fix`, which is scoped, and
+`Canvas2DCurtainRenderer.tsx` and the run reported zero errors.
+
+> <!-- check:exceptions ignore — this blockquote withdraws a protection claim; it does not make
+> one. Without the marker, check:exceptions reads the quoted phrase below as a fresh assertion and
+> fails on the very file it is telling you is unprotected. -->
+>
+> **This paragraph used to call that file "a protected IP file (E-02's sibling) that may not be
+> edited at all". IT IS NOT ONE, and the claim is withdrawn on V's ruling, 7 September 2026.**
+> The register is `exceptions.json` and §12's table below, and both list four files: E-01
+> `homography.ts`, E-02 `Canvas2DBlindRenderer.tsx`, E-03 `CornerPinOverlay.tsx`, E-04
+> `usePhotoUpload.ts`. The curtain renderer has never been among them, practice has said so for
+> weeks, and V authorised the edits to it directly.
+>
+> **The sentence still cost something, which is why it is recorded rather than quietly deleted.**
+> For as long as it stood, the constitution called a file untouchable that the register did not
+> protect — and `check:exceptions` could not reconcile the two because it compared E-numbers and
+> never looked at a path. See instance 10 in `docs/runbooks/verifying-source-transforms.md`.
+>
+> **The lint finding it illustrates is untouched and still true:** `eslint --fix` removed two
+> load-bearing directives from a real file and reported zero errors. Use `npm run lint:fix`, which is scoped, and
 check the diff for removed directives:
 
 ```
