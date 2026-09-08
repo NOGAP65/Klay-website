@@ -14,7 +14,7 @@
 //     colour    → fabricColour     the colour card, where one exists
 //     hardware  → hardwareColour   the visible metalwork
 //     size      → windowSize       the pricing band
-//     operation → operation        manual or motorised
+//     operation → operation        how the thing is worked
 //
 // Holding to that is what keeps the panel honest: anything a customer picks
 // here reaches the cart, the quote and the installer. A sixth control would be
@@ -22,8 +22,11 @@
 //
 // VARIANT IS NOT ALWAYS LIGHT CONTROL, which is why it is not called that. It
 // is whichever choice is the first real question about a given product: light
-// control on a roller, slat material on a venetian, panel layout on a shower
-// screen. Each product names its own, and the label is what the customer reads.
+// control on a roller, the layout code on the linen shelving, panel layout on a
+// shower screen. Each product names its own, and the label is what the customer
+// reads. Several have none at all — a venetian is a venetian, and a roller
+// shutter comes in one slat — and no question is better than a question whose
+// answer changes nothing.
 //
 // EDITORIAL — READ THIS BEFORE TRUSTING IT. The choice lists below describe how
 // these products are ordinarily specified in the trade; they are not read off a
@@ -31,10 +34,22 @@
 // the roller range. They are the right shape and they are the wrong place to
 // leave unchecked — this table is the ONE place to correct them, and correcting
 // them changes the panel, the cart line and the quote together.
+//
+// THE JOINERY IS THE EXCEPTION and needs no such check. The wardrobe and the
+// shelving read their models, widths, boards and handles out of the visualiser,
+// which was built off the supplier's own deck — so those two are the only
+// entries here that are sourced rather than reasoned, and the way to change them
+// is to change the deck they came from, not this file.
 // ---------------------------------------------------------------------------
 
 import { HARDWARE_OPTIONS } from '../../data/products'
-import { HANDLE_FINISHES, modelsOfKind, WARDROBE_WIDTHS } from '@/features/visualiser'
+import {
+  HANDLE_FINISHES,
+  modelsOfKind,
+  SHELVING_WIDTHS,
+  WARDROBE_WIDTHS,
+  wardrobeModelById,
+} from '@/features/visualiser'
 import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '../../lib/pricing'
 
 
@@ -173,6 +188,40 @@ const OPERATION_CHOICES: ConfigChoice[] = [
   { id: 'motorised', label: 'Motorised' },
 ]
 
+/** HOW A ROLLER SHUTTER IS WOUND, which is not manual-or-motorised.
+ *
+ * Every other product in the range either has a chain or has a motor, and
+ * "Manual / Motorised" says that exactly. A shutter is asked differently on the
+ * quote, because both of its answers are things you can see and one of them is
+ * hung off the wall: a crank is a removable winder through the architrave, and a
+ * battery tube motor is a charged unit with no cable to run and no sparky to
+ * book. That last part is why the question is worth asking on the card at all —
+ * the answer changes who has to come to the house.
+ *
+ * These ride the same `operation` field, so the two ids are mapped onto the
+ * cart's fixed manual/motorised column rather than stored raw. See
+ * configuredLine. */
+const SHUTTER_OPERATION_CHOICES: ConfigChoice[] = [
+  { id: 'crank', label: 'Crank' },
+  { id: 'battery', label: 'Battery' },
+]
+
+/** THE FIXED COLUMN'S ANSWER FOR A CHOICE THAT IS NOT ITS OWN.
+ *
+ * The cart line carries `operation: 'manual' | 'motorised'` — pricing's own
+ * type, and the roller range's price depends on it. A shutter answers crank or
+ * battery, so something has to say which of the two columns those land in, and
+ * the honest reading is the mechanical one: a crank is turned by hand, a battery
+ * tube motor is a motor. Left unmapped they both failed `isOperation` and fell
+ * through to 'manual', which quietly filed every battery shutter as hand-wound.
+ *
+ * The label the customer picked is printed from `options` regardless — this is
+ * only the fixed column, which exists so the quote can be scoped by something. */
+const OPERATION_COLUMN: Record<string, 'manual' | 'motorised'> = {
+  crank: 'manual',
+  battery: 'motorised',
+}
+
 const HARDWARE_CHOICES: ConfigChoice[] = HARDWARE_OPTIONS.map(o => ({ id: o.id, label: o.label }))
 
 interface ProductOptions {
@@ -192,6 +241,10 @@ interface ProductOptions {
    * off where the product is not sold by window band at all. */
   size?: boolean
   operation?: boolean
+  /** Overrides Manual / Motorised where a product is not wound either way. A
+   * roller shutter is cranked or battery-driven; see
+   * SHUTTER_OPERATION_CHOICES. */
+  operationChoices?: ConfigChoice[]
   /** What the colour card is called for this product, where the catalogue item
    * carries one. */
   colourLabel?: string
@@ -209,6 +262,17 @@ interface ProductOptions {
    * sold in bands. Mutually exclusive with `size` in practice: a thing has one
    * or the other, never both. */
   widths?: number[]
+  /** THE CHOSEN MODEL'S OWN WIDTHS, where the range is not made in one set.
+   *
+   * The linen shelving is the case that forces this: its four codes have
+   * deliberately non-overlapping widths — LIN01 is the narrow pair, LIN05 the
+   * four wide ones — so the union of them offers Linen 1 at 3600mm, which is
+   * not a product. It is a different code. Narrowing to the answer that has
+   * already been given is the only way the width row can only offer real SKUs.
+   *
+   * Falls back to `widths` when no model is chosen yet, which is what
+   * defaultSelection's first pass sees. */
+  widthsOfVariant?: (variantId: string | undefined) => number[] | undefined
 }
 
 const v = (id: string, label: string): ConfigChoice => ({ id, label })
@@ -296,11 +360,24 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     operation: true,
     colourLabel: 'Mesh colour',
   },
+  // THREE QUESTIONS: COLOUR, SIZE, AND HOW IT IS WOUND.
+  //
+  // The slat row is gone. It offered "Aluminium / Insulated", which reads as a
+  // choice between a plain shutter and an upgraded one, and it is not: the slat
+  // Klay hangs is a foam-filled aluminium extrusion, so both words describe the
+  // same product and one of them was implying a cheaper version that does not
+  // exist. What a customer chooses on a shutter is the colour — see
+  // SHUTTER_COLOURS on why that choice does more work here than anywhere else in
+  // the range.
+  //
+  // And the operation is asked in the shutter's own words rather than the
+  // range's: crank or battery, not manual or motorised. See
+  // SHUTTER_OPERATION_CHOICES.
   'roller-shutters': {
-    variantLabel: 'Slat',
-    variants: [v('aluminium', 'Aluminium'), v('insulated', 'Insulated')],
     size: true,
     operation: true,
+    operationChoices: SHUTTER_OPERATION_CHOICES,
+    colourLabel: 'Colour',
   },
   'pleated-flyscreens': {
     variantLabel: 'Mesh',
@@ -323,12 +400,37 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     variants: modelsOfKind('built-in').map(m => v(m.id, m.name)),
     colourLabel: 'Colour',
     widths: WARDROBE_WIDTHS,
+    // The chosen SKU's own list, the way the visualiser asks it. See
+    // widthsOfVariant.
+    widthsOfVariant: id => (id ? wardrobeModelById(id).widths : undefined),
     hardwareLabel: 'Handle finish',
     hardwareChoices: HANDLE_FINISHES.map(f => ({ id: f.name, label: f.name, hex: f.hex })),
   },
+  // THE VISUALISER IS THE SPEC, exactly as it is for the wardrobe above.
+  //
+  // This card used to offer "Open shelving / Drawers / Racks", which is a
+  // description of the category and not a thing anyone can order: the range has
+  // no drawers and no racks in it. What Klay makes is the Forma linen shelving —
+  // four codes, four 447mm shelves apiece, 1650 high, three of them carrying a
+  // face post so the wide ones span without dipping — and the visualiser has
+  // been drawing exactly that all along.
+  //
+  // So the card asks what the visualiser asks, in the same order and off the
+  // same lists: which code, what colour board, how wide. Nothing is retyped
+  // here, so the card and the render cannot end up offering different shelving.
+  //
+  // NO HARDWARE ROW, and that is the visualiser's call too — it hides the
+  // handle group for shelving because there is no metalwork on it at all. No
+  // rail, no drawer, no pull. Four shelves and a post.
   shelving: {
-    variantLabel: 'Type',
-    variants: [v('open', 'Open shelving'), v('drawers', 'Drawers'), v('racks', 'Racks')],
+    variantLabel: 'Layout',
+    variants: modelsOfKind('shelving').map(m => v(m.id, m.name)),
+    colourLabel: 'Colour',
+    widths: SHELVING_WIDTHS,
+    // THE ONE THAT MAKES THIS NECESSARY. The four linen codes are made in four
+    // separate width sets that do not overlap, so the union is a list of sizes
+    // no single code is available in. See widthsOfVariant.
+    widthsOfVariant: id => (id ? wardrobeModelById(id).widths : undefined),
   },
   'frameless-shower-screens': {
     variantLabel: 'Panel',
@@ -347,7 +449,7 @@ const FALLBACK: ProductOptions = {
 
 /** The panel's fields, in the order they are asked. Variant first because it is
  * the question that changes what everything below it means. */
-export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
+export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] => {
   const options = PRODUCT_OPTIONS[item.id] ?? FALLBACK
   // WHERE IT IS GOING, FIRST. It used to come last, on the reasoning that
   // everything above it specifies the product and this specifies the job — so
@@ -405,12 +507,16 @@ export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
   }
   if (options.hardwareFirst) hardwareField()
   colourField()
-  if (options.widths) {
+  // THE CHOSEN MODEL'S WIDTHS WHERE IT HAS ITS OWN, the range's otherwise. The
+  // narrowing is what stops the linen card offering Linen 1 at 3600mm — see
+  // widthsOfVariant.
+  const widths = options.widthsOfVariant?.(sel?.variant) ?? options.widths
+  if (widths?.length) {
     fields.push({
       id: 'width',
       label: 'Width',
       kind: 'select',
-      choices: options.widths.map(w => v(String(w), `${w}mm`)),
+      choices: widths.map(w => v(String(w), `${w}mm`)),
     })
   }
   if (!options.hardwareFirst) hardwareField()
@@ -418,7 +524,12 @@ export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
     fields.push({ id: 'size', label: 'Window size', kind: 'chips', choices: SIZE_CHOICES })
   }
   if (options.operation) {
-    fields.push({ id: 'operation', label: 'Operation', kind: 'chips', choices: OPERATION_CHOICES })
+    fields.push({
+      id: 'operation',
+      label: 'Operation',
+      kind: 'chips',
+      choices: options.operationChoices ?? OPERATION_CHOICES,
+    })
   }
   return fields
 }
@@ -458,8 +569,44 @@ export const defaultSelection = (item: CatalogueItem): Selection => {
   // Every other field makes the same bargain — a sensible default, changed by
   // anyone who cares — and the measure appointment confirms the room anyway.
   for (const f of fieldsFor(item)) sel[f.id] = f.choices[0]?.id
-  return sel
+  // AND THEN CHECKED, BECAUSE A FIELD CAN DEPEND ON THE ANSWER ABOVE IT. The
+  // loop above ran with nothing chosen yet, so the linen card's width row saw
+  // the union of all four codes' widths and took 900 off the front of it — a
+  // width three of the four codes are not made in. Reconcile re-asks with the
+  // model now known and moves it to that code's own first width.
+  return reconcile(item, sel)
 }
+
+/** The selection with every answer checked against the choices actually on
+ * offer, and any answer that is no longer among them replaced by the first that
+ * is.
+ *
+ * ONE ANSWER CAN INVALIDATE ANOTHER. Pick Linen 1 at 1200, then switch to Linen
+ * 5 — which is made in 2700 and up — and 1200 is not a width that code comes in.
+ * Left alone the select renders with a value not in its own list, which browsers
+ * resolve by silently showing the first option while the state still says 1200:
+ * the card then displays one width and carries another into the cart.
+ *
+ * Central rather than per-field, so the next dependency added to the table is
+ * handled by the table alone. */
+export const reconcile = (item: CatalogueItem, sel: Selection): Selection => {
+  const next = { ...sel }
+  for (const f of fieldsFor(item, next)) {
+    if (next[f.id] !== undefined && !f.choices.some(c => c.id === next[f.id])) {
+      next[f.id] = f.choices[0]?.id
+    }
+  }
+  return next
+}
+
+/** The selection after one row is answered — the only way a card should change
+ * it, because an answer can invalidate a row below it. See reconcile. */
+export const withChoice = (
+  item: CatalogueItem,
+  sel: Selection,
+  fieldId: string,
+  choiceId: string,
+): Selection => reconcile(item, { ...sel, [fieldId]: choiceId })
 
 /** What this configuration costs, or null where the product has no pricing.
  *
@@ -504,7 +651,10 @@ const AT_MEASURE = 'Chosen at measure'
 export type ConfiguredLine = Omit<CartItem, 'id' | 'quantity'>
 
 export const configuredLine = (item: CatalogueItem, sel: Selection): ConfiguredLine => {
-  const fields = fieldsFor(item)
+  // WITH the selection — the width row's choices depend on the chosen model, and
+  // a line built off the unnarrowed list would look its width up in a list the
+  // customer was never shown.
+  const fields = fieldsFor(item, sel)
   const price = priceFor(item, sel)
   return {
     name: item.name,
@@ -519,7 +669,12 @@ export const configuredLine = (item: CatalogueItem, sel: Selection): ConfiguredL
     fabricColour: labelOf(fields, 'colour', sel) ?? AT_MEASURE,
     hardwareColour: labelOf(fields, 'hardware', sel) ?? AT_MEASURE,
     windowSize: isWindowSize(sel.size) ? sel.size : 'medium',
-    operation: isOperation(sel.operation) ? sel.operation : 'manual',
+    // Pricing's own two words where the product answers in them, and the mapped
+    // answer where it does not — a battery shutter is motorised, not manual.
+    // See OPERATION_COLUMN.
+    operation: isOperation(sel.operation)
+      ? sel.operation
+      : OPERATION_COLUMN[sel.operation ?? ''] ?? 'manual',
     price: price ?? 0,
     priceOnMeasure: price === null,
     options: fields.map(f => ({

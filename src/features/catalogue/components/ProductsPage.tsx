@@ -48,7 +48,7 @@ import { SORT_OPTIONS, sortProducts, type SortOption } from '../lib/sortProducts
 
 import { FilterRail } from './FilterRail';
 import { ShopCard, COLUMN_GAP, COLUMN_MIN } from './ShopCard';
-import { defaultSelection, type Selection } from '../configOptions';
+import { defaultSelection, withChoice, type Selection } from '../configOptions';
 
 /** Wider than the 1240 the rest of the site uses, and now wider again.
  *
@@ -490,10 +490,20 @@ export default function ProductsPage() {
                       key={item.id}
                       item={item}
                       sel={sel[item.id] ?? defaultSelection(item)}
+                      // THROUGH withChoice, NOT A SPREAD. Answering one row can
+                      // invalidate the row below it — the linen codes are each
+                      // made in their own widths, so switching code has to move
+                      // the width with it rather than leave a size that code is
+                      // not available in.
                       onChange={(fieldId, choiceId) =>
                         setSel(s => ({
                           ...s,
-                          [item.id]: { ...(s[item.id] ?? defaultSelection(item)), [fieldId]: choiceId },
+                          [item.id]: withChoice(
+                            item,
+                            s[item.id] ?? defaultSelection(item),
+                            fieldId,
+                            choiceId,
+                          ),
                         }))
                       }
                     />

@@ -106,7 +106,7 @@ import * as routes from '@/config/routes';
 
 import { radius, tokens, motion, shadow, space, supporting, eyebrow, headline, layout, type as typeScale, CtaLink, useHover } from '@/ds';
 import { CATALOGUE, type CatalogueItem } from '@/features/catalogue';
-import { defaultSelection, fieldsFor, type Selection } from '@/features/catalogue';
+import { defaultSelection, fieldsFor, withChoice, type Selection } from '@/features/catalogue';
 
 // The cards read data/catalogue.ts — the same twelve products the shop lists,
 // rendered by the same tile. Four of them, named below; nothing about the range
@@ -450,11 +450,14 @@ function RangeCard({
   cardPx: number | null;
 }) {
   const [sel, setSel] = useState<Selection>(() => defaultSelection(item));
+  // THROUGH withChoice, NOT A SPREAD. Answering one row can invalidate the row
+  // below it — a linen code is made in its own widths — and withChoice is where
+  // that is settled for both this panel and the shop card.
   const choose = (fieldId: string, choiceId: string) =>
-    setSel(s => ({ ...s, [fieldId]: choiceId }));
+    setSel(s => withChoice(item, s, fieldId, choiceId));
 
   // The chosen colour, read back so the tile can take it as its ground.
-  const fields = fieldsFor(item);
+  const fields = fieldsFor(item, sel);
   const leadField = fields.find(f => f.kind === 'swatches') ?? fields.find(f => f.id === 'variant');
   const chosen = leadField?.choices.find(c => c.id === sel[leadField.id]);
   // THE GLYPH FALLBACK, and all four of the current selection have photographs so

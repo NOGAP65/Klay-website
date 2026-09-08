@@ -46,5 +46,11 @@ export {
 // finishes, the model list by kind, and the width and colour tables. These are
 // data, not components — the catalogue asks the visualiser what a wardrobe can
 // be, rather than keeping a second copy of the answer.
-export { modelsOfKind, WARDROBE_WIDTHS, WARDROBE_COLOURS } from './wardrobes';
+export {
+  modelsOfKind,
+  wardrobeModelById,
+  WARDROBE_WIDTHS,
+  SHELVING_WIDTHS,
+  WARDROBE_COLOURS,
+} from './wardrobes';
 export { HANDLE_FINISHES } from './wardrobeHardware';

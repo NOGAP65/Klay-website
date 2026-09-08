@@ -753,7 +753,7 @@ export function RangeConfigurator({
   const [openField, setOpenField] = useState<string | null>(null);
 
 
-  const fields = fieldsFor(item);
+  const fields = fieldsFor(item, sel);
   const price = priceFor(item, sel);
 
   /** The rows this panel actually shows, in the order it asks them. Computed

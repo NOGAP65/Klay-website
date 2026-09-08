@@ -76,6 +76,8 @@ export {
   fieldsFor,
   priceFor,
   configuredLine,
+  // The only correct way to change a selection — see reconcile.
+  withChoice,
   type ConfigChoice,
   type ConfigField,
   type Selection,

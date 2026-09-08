@@ -185,6 +185,34 @@ export const MESH_COLOURS = [
   { name: 'Black', hex: '#26282A' },
 ]
 
+/** THE POWDER COAT ON A ROLLER SHUTTER.
+ *
+ * IT IS SOLD IN ONE SLAT, IN A CHOICE OF COLOURS. The card carried
+ * "Slat: Aluminium / Insulated", which is two products behind one name and only
+ * half true — the slat Klay hangs is a foam-filled aluminium extrusion, so
+ * "insulated" is what the product IS rather than an upgrade to choose. What a
+ * customer actually chooses is the colour, because a shutter is the most visible
+ * thing on the outside of the house: it is a painted box above the window
+ * whether it is up or down, and it either matches the roof line or it does not.
+ *
+ * NEEDS A COMMERCIAL CHECK, in the same class as SLAT_COLOURS, AWNING_COLOURS
+ * and MESH_COLOURS. These are the powder coats an extruded shutter range plainly
+ * ought to carry rather than a list read off a supplier's chart, and a wrong hex
+ * is a customer choosing a colour Klay does not sell. Eight, because a
+ * powder-coat line runs to a wall of chips and a card is not a wall: the whites
+ * and neutrals a roof line is actually built in, plus the two darks and the mill
+ * finish every extruder carries. */
+export const SHUTTER_COLOURS = [
+  { name: 'White', hex: '#F1F0EC' },
+  { name: 'Birch', hex: '#E3DDCE' },
+  { name: 'Sandbank', hex: '#CFC3AC' },
+  { name: 'Paperbark', hex: '#C6B9A4' },
+  { name: 'Dune', hex: '#A99C8B' },
+  { name: 'Woodland Grey', hex: '#54574F' },
+  { name: 'Charcoal', hex: '#44464A' },
+  { name: 'Silver', hex: '#B4B7BA' },
+]
+
 /** See AWNING_COLOURS. The housing, not the cloth. */
 export const CASSETTE_COLOURS = [
   { name: 'White', hex: '#F2F1EE' },
@@ -323,6 +351,8 @@ export const CATALOGUE: CatalogueItem[] = [
     to: enquire('Roller Shutters'),
     glyph: 'roller-shutters',
     image: '/images/products/roller-shutters.webp',
+    // ONE SLAT, IN A CHOICE OF COLOURS — see SHUTTER_COLOURS.
+    colours: SHUTTER_COLOURS,
     light: ['Blockout'],
   },
   {
@@ -357,7 +387,12 @@ export const CATALOGUE: CatalogueItem[] = [
     id: 'shelving',
     name: 'Shelving',
     group: 'Other',
-    tagline: 'Open shelving, drawers and racks, made to the room.',
+    // WHAT THE RANGE ACTUALLY IS. This read "Open shelving, drawers and racks,
+    // made to the room", which described the three invented options the card
+    // used to offer rather than anything Klay makes. The range is the Forma
+    // linen shelving — four codes, four 447mm shelves apiece, 1650 high, some
+    // with a face post to span the wide ones. No drawers and no racks.
+    tagline: 'Linen shelving in four fixed shelves, made to the opening.',
     to: enquire('Shelving'),
     // The right-hand crop of the same walk-in the wardrobe tile uses — one
     // photograph composed left to right along the line the two products divide
@@ -365,6 +400,11 @@ export const CATALOGUE: CatalogueItem[] = [
     image: '/images/range/wardrobes.jpg',
     imagePosition: '78% center',
     glyph: 'shelving',
+    // The same four board finishes the robes are made in and the same list the
+    // renderer paints them with — the linen shelving is the same cabinetry in a
+    // different box, so offering it a different set of boards would be a
+    // colour a customer picks here and cannot have.
+    colours: WARDROBE_COLOURS.map(c => ({ name: c.name, hex: c.hex })),
   },
   {
     id: 'frameless-shower-screens',

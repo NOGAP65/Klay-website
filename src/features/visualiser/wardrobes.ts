@@ -253,17 +253,31 @@ export const WARDROBE_SHELF_DEPTH_MM = 447;
 export const wardrobeDepth = (m: { kind: WardrobeKind }): number =>
   m.kind === 'shelving' ? WARDROBE_SHELF_DEPTH_MM : WARDROBE_DEPTH_MM;
 
-/** EVERY WIDTH THE BUILT-IN RANGE IS MADE IN, deduplicated and in order.
+/** EVERY WIDTH ONE FAMILY IS MADE IN, deduplicated and in order.
  *
  * Derived rather than written out, so adding a width to one SKU cannot leave
  * this behind. It is the list for a surface that has to offer widths BEFORE a
- * model is known — the range card, where width and model are two chips in the
- * same panel and neither has been answered first. The visualiser asks in order
- * and can therefore offer the chosen SKU's own narrower list, which is why that
- * one reads `wardrobeModelById(...).widths` instead. */
-export const WARDROBE_WIDTHS: number[] = [
-  ...new Set(modelsOfKind('built-in').flatMap(m => m.widths)),
-].sort((a, b) => a - b);
+ * model is known, which is now only the first moment of one: the range card
+ * opens on the union and narrows to the chosen SKU's own list as soon as the
+ * model row is answered, which it always is by default. Everywhere a model IS
+ * known reads `wardrobeModelById(...).widths` instead — the visualiser, and the
+ * card's `widthsOfVariant`.
+ *
+ * The narrowing is not cosmetic on the linen range. Its four codes are made in
+ * four non-overlapping width sets, so the union is a list of sizes no single
+ * code can be ordered in.
+ *
+ * BY KIND, because there are two cards now. The robes and the linen shelving are
+ * different families in different widths — the robes stop at 2400 and the linen
+ * runs to 3600 — and a single list would have offered each card the other's
+ * sizes. One derivation, asked twice, rather than two that can drift. */
+export const widthsOfKind = (kind: WardrobeKind): number[] =>
+  [...new Set(modelsOfKind(kind).flatMap(m => m.widths))].sort((a, b) => a - b);
+
+export const WARDROBE_WIDTHS: number[] = widthsOfKind('built-in');
+
+/** The linen range's widths: 900 through 3600. See widthsOfKind. */
+export const SHELVING_WIDTHS: number[] = widthsOfKind('shelving');
 
 export const wardrobeModelById = (id: string): WardrobeModel =>
   WARDROBE_MODELS.find(m => m.id === id) ?? WARDROBE_MODELS[0];
