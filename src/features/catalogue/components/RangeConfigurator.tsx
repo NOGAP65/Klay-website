@@ -36,6 +36,7 @@ import { useCartStore } from '@/features/cart';
 import {
   configuredLine,
   fieldsFor,
+  groupedChoices,
   priceFor,
   type ConfigChoice,
   type ConfigField,
@@ -113,15 +114,37 @@ function FieldSelect({
         backgroundPosition: `right ${space.tight}px center`,
       }}
     >
-      {field.choices.map(c => (
-        // Unstyled: the list is the platform's, and a colour set here is
-        // honoured on some and ignored on others. Half-styled native chrome
-        // looks worse than none.
-        <option key={c.id} value={c.id}>{c.label}</option>
-      ))}
+      {/* Grouped where the field says so — the location list does, and its
+          seventeen rooms need the headings to be findable. An ungrouped field
+          comes back as one unlabelled run and renders the bare options it
+          always did. */}
+      {groupedChoices(field.choices).map(run =>
+        run.group ? (
+          <optgroup key={run.group} label={run.group}>
+            {run.choices.map(c => (
+              <option key={c.id} value={c.id}>{c.label}</option>
+            ))}
+          </optgroup>
+        ) : (
+          // Unstyled: the list is the platform's, and a colour set here is
+          // honoured on some and ignored on others. Half-styled native chrome
+          // looks worse than none.
+          run.choices.map(c => (
+            <option key={c.id} value={c.id}>{c.label}</option>
+          ))
+        ),
+      )}
     </select>
   );
 }
+
+/** How many characters the longest answer in a field runs to.
+ *
+ * The dense card's select needs to say how much room its answer wants before it
+ * knows which answer is chosen — the row has to hold the widest one without
+ * reflowing every time the customer picks a different room. */
+const longestChoice = (field: ConfigField): number =>
+  field.choices.reduce((n, c) => Math.max(n, c.label.length), 0);
 
 /** One end of the quantity stepper. Square, quiet, and the same height as a
  * compact chip so the row it sits in keeps the panel's rhythm. */
@@ -337,11 +360,18 @@ function DenseField({
   // on the row worth looking at. Fourteen swatches at 22px wrap to two rows,
   // which is less height than the row of chips above it.
   //
-  // That leaves Location as the one dropdown, and it earns it: eight rooms plus
-  // an Other is a list rather than a set to compare, and it is the only field
-  // whose answer the product cannot guess — every other row opens on a sensible
-  // default, so its options are a correction rather than a decision.
-  const listed = field.kind === 'swatches' || field.choices.length <= 4;
+  // That leaves Location as the one dropdown, and it earns it twice over:
+  // seventeen numbered rooms are a list to find yourself in rather than a set to
+  // compare, and it is the only field whose answer the product cannot guess —
+  // every other row opens on a sensible default, so its options are a correction
+  // rather than a decision. It now arrives as kind 'select' too, so the length
+  // rule below is no longer the only thing keeping it out of chips.
+  // A field that ASKS to be a dropdown gets one whatever its length, so the two
+  // layouts cannot disagree about the same field: the accordion reads `kind`,
+  // and a four-choice 'select' laid out as chips here would be one row of the
+  // panel rendering as a different control on the dense card.
+  const listed =
+    field.kind === 'swatches' || (field.kind !== 'select' && field.choices.length <= 4);
 
   if (listed) {
     return (
@@ -379,7 +409,22 @@ function DenseField({
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: space.snug, minWidth: 0 }}>
+      {/* ONE LINE WHERE THE ANSWER FITS ON IT, TWO WHERE IT DOES NOT — and the
+          browser decides, because this component does not know how wide the card
+          it is in will be.
+
+          The row was flat `flex` with the label pinned and the select taking
+          whatever was left. That worked while the longest answer was LIVING
+          ROOM: measured on the shop card the row is 201px, the label eats 75 and
+          the caret 12, which leaves 114 — and MASTER BEDROOM at this tracking
+          wants 138, so it rendered as MASTER BEDR with the tail cut off. A
+          clipped answer is worse than a wrapped one; it is not obviously
+          truncated, so it reads as the name of the room.
+          Wrapping puts the label on its own line and hands the select the full
+          width, which is how every chip and swatch row on this card is already
+          laid out — so the fallback matches its neighbours rather than looking
+          like a break. */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: space.snug, minWidth: 0 }}>
         <span style={{ ...labelStyle, marginBottom: 0, flex: '0 0 auto', whiteSpace: 'nowrap' }}>
           {field.label}
         </span>
@@ -399,7 +444,18 @@ function DenseField({
             // because the answer belongs at the end of the line where it was.
             textAlign: 'right',
             direction: 'rtl',
-            flex: '1 1 auto',
+            // THE BASIS IS THE WIDEST ANSWER THIS FIELD HOLDS, not `auto`, and
+            // it is what makes the wrap above happen at the right moment. `auto`
+            // shrinks to whatever is left and clips; a basis says how much room
+            // the answer needs, so the row breaks rather than cropping it.
+            //
+            // Estimated from the label's own length rather than measured: this
+            // type is 10px Inter uppercase on 3px of tracking, which runs a
+            // shade under 10px a character, and the 12px is the caret's gutter.
+            // Being a few pixels out costs a row that wraps slightly early or
+            // slightly late — not a cut-off word, which is the failure being
+            // fixed.
+            flex: `1 1 ${longestChoice(field) * 10 + space.snug}px`,
             minWidth: 0,
             border: 'none',
             background: 'transparent',
@@ -416,12 +472,23 @@ function DenseField({
           {/* Unanswered reads Select, the same word the accordion used, so a
               row nobody has touched is a question rather than a blank. */}
           {value === undefined && <option value="">Select</option>}
-          {field.choices.map(c => (
-            // Left-to-right again inside the list: the parent is rtl so the
-            // closed value sits right, and without this the options inherit it
-            // and punctuation lands on the wrong end.
-            <option key={c.id} value={c.id} style={{ direction: 'ltr' }}>{c.label}</option>
-          ))}
+          {/* Left-to-right again inside the list: the parent is rtl so the
+              closed value sits right, and without this the options — and the
+              group headings — inherit it and punctuation lands on the wrong
+              end. */}
+          {groupedChoices(field.choices).map(run =>
+            run.group ? (
+              <optgroup key={run.group} label={run.group} style={{ direction: 'ltr' }}>
+                {run.choices.map(c => (
+                  <option key={c.id} value={c.id} style={{ direction: 'ltr' }}>{c.label}</option>
+                ))}
+              </optgroup>
+            ) : (
+              run.choices.map(c => (
+                <option key={c.id} value={c.id} style={{ direction: 'ltr' }}>{c.label}</option>
+              ))
+            ),
+          )}
         </select>
       </div>
 

@@ -71,6 +71,14 @@ export interface ConfigChoice {
   label: string
   /** Swatch fill, for a colour field. */
   hex?: string
+  /** Which heading this choice sits under in a dropdown. Optional, and only the
+   * location list uses it: seventeen rooms in one flat run is a scroll, and the
+   * customer knows which KIND of room they came for before they know its
+   * number. Choices stay a flat array — every lookup in this file and every
+   * chip renderer walks them unchanged — and the grouping is applied at render
+   * by `groupedChoices`, so a field that sets no group behaves as it always
+   * did. */
+  group?: string
 }
 
 export interface ConfigField {
@@ -98,21 +106,67 @@ const SIZE_CHOICES: ConfigChoice[] = [
  * about the room and not the product: a roller, a shutter and a wardrobe are all
  * going into somebody's bedroom or somebody's garage.
  *
- * Seven and an Other. The list covers nine cases in ten and is quicker than
- * typing for all of them; the tenth is why Other exists, since a list that
- * cannot say "garage", "caravan" or "shopfront" would push that customer into
- * picking the nearest wrong room — worse than no answer, because it reads as
- * one. Other opens a text box; see the note in RangeConfigurator's Field. */
+ * NUMBERED, BECAUSE A HOUSE HAS MORE THAN ONE BEDROOM. This used to be seven
+ * rooms and an Other, one entry per kind of room, and it broke on the ordinary
+ * case: a customer doing the whole house adds five lines that all read
+ * "Location: Bedroom", and by the time the list reaches the workshop nobody can
+ * say which blind belongs to which window. The cart is worse than unhelpful
+ * there — two identical bedrooms configured identically collapse into one line
+ * of quantity two, because the line id is built from the selection and their
+ * selections match. Numbering them makes each room its own answer, so five
+ * bedrooms stay five lines and each one is addressed.
+ *
+ * The counts are the ones a project home actually comes in: a master plus five,
+ * two living areas, three bathrooms. Past that it is a big house, and a big
+ * house has an Other.
+ *
+ * Kitchen, dining, study and outdoor stay singular — a house has one of each,
+ * and "Kitchen 1" would be a form asking a question nobody has.
+ *
+ * OTHER STAYS, and matters more now, not less. A list this specific is more
+ * tempting to force an answer out of, and a customer with a garage, a caravan or
+ * a shopfront would pick the nearest wrong room — worse than no answer, because
+ * it reads as one. Other opens a text box; see the note in RangeConfigurator's
+ * Field. */
 const LOCATION_CHOICES: ConfigChoice[] = [
-  { id: 'living', label: 'Living room' },
-  { id: 'bedroom', label: 'Bedroom' },
-  { id: 'kitchen', label: 'Kitchen' },
-  { id: 'dining', label: 'Dining' },
-  { id: 'bathroom', label: 'Bathroom' },
-  { id: 'study', label: 'Study' },
-  { id: 'outdoor', label: 'Outdoor' },
-  { id: 'other', label: 'Other' },
+  { id: 'master-bedroom', label: 'Master bedroom', group: 'Bedrooms' },
+  { id: 'bedroom-1', label: 'Bedroom 1', group: 'Bedrooms' },
+  { id: 'bedroom-2', label: 'Bedroom 2', group: 'Bedrooms' },
+  { id: 'bedroom-3', label: 'Bedroom 3', group: 'Bedrooms' },
+  { id: 'bedroom-4', label: 'Bedroom 4', group: 'Bedrooms' },
+  { id: 'bedroom-5', label: 'Bedroom 5', group: 'Bedrooms' },
+  { id: 'living-1', label: 'Living room 1', group: 'Living areas' },
+  { id: 'living-2', label: 'Living room 2', group: 'Living areas' },
+  { id: 'rumpus', label: 'Rumpus', group: 'Living areas' },
+  { id: 'kitchen', label: 'Kitchen', group: 'Living areas' },
+  { id: 'dining', label: 'Dining', group: 'Living areas' },
+  { id: 'study', label: 'Study', group: 'Living areas' },
+  { id: 'bathroom-1', label: 'Bathroom 1', group: 'Bathrooms' },
+  { id: 'bathroom-2', label: 'Bathroom 2', group: 'Bathrooms' },
+  { id: 'bathroom-3', label: 'Bathroom 3', group: 'Bathrooms' },
+  { id: 'outdoor', label: 'Outdoor', group: 'Elsewhere' },
+  { id: 'other', label: 'Other', group: 'Elsewhere' },
 ]
+
+/** A choice list broken into its dropdown headings, in the order the choices
+ * were declared.
+ *
+ * Returns one run per heading rather than a map, so the declaration order is the
+ * display order and a group cannot be split in two by a stray entry — if the
+ * list ever interleaves, the render shows it rather than silently reordering.
+ * A list with no groups comes back as a single unlabelled run, which is the
+ * ungrouped select exactly as it was. */
+export const groupedChoices = (
+  choices: ConfigChoice[],
+): { group?: string; choices: ConfigChoice[] }[] => {
+  const runs: { group?: string; choices: ConfigChoice[] }[] = []
+  for (const c of choices) {
+    const last = runs[runs.length - 1]
+    if (last && last.group === c.group) last.choices.push(c)
+    else runs.push({ group: c.group, choices: [c] })
+  }
+  return runs
+}
 
 const OPERATION_CHOICES: ConfigChoice[] = [
   { id: 'manual', label: 'Manual' },
@@ -299,13 +353,20 @@ export const fieldsFor = (item: CatalogueItem): ConfigField[] => {
   // everything above it specifies the product and this specifies the job — so
   // it should not interrupt the specifying. In a panel of six rows that reads
   // as an afterthought, and it is the opposite: the room is the one thing a
-  // customer already knows when they arrive. They came to do the bedroom; the
+  // customer already knows when they arrive. They came to do bedroom 2; the
   // fabric and the size are what they work out once they are here.
   //
   // It also changes what the rows below it mean. "Window size: small" reads
   // differently under "Location: bathroom" than under nothing at all.
+  //
+  // A DROPDOWN, NOT CHIPS, and it was chips while the list was eight long. The
+  // dense card already sent it to a select on the length rule; the accordion
+  // took its lead from `kind` and laid out one rectangle per room, which at
+  // seventeen is a wall of near-identical labels differing by one digit — the
+  // worst thing to ask anyone to scan. Rooms are a list to find yourself in,
+  // not a set to compare, which is what 'select' is for.
   const fields: ConfigField[] = [
-    { id: 'location', label: 'Location', kind: 'chips', choices: LOCATION_CHOICES },
+    { id: 'location', label: 'Location', kind: 'select', choices: LOCATION_CHOICES },
   ]
   if (options.variants?.length) {
     fields.push({
@@ -389,8 +450,8 @@ export const defaultSelection = (item: CatalogueItem): Selection => {
   const sel: Selection = {}
   // EVERY FIELD ARRIVES ANSWERED, LOCATION INCLUDED — and that reverses an
   // earlier call worth recording. Location was left blank on the reasoning that
-  // defaulting it makes the card claim the customer said "Living room" when they
-  // said nothing, which is true. What it missed is the setting: twelve cards
+  // defaulting it makes the card claim the customer said "Master bedroom" when
+  // they said nothing, which is true. What it missed is the setting: twelve cards
   // each showing one unanswered row reads as twelve incomplete forms, and the
   // customer cannot tell which of them is waiting on them.
   //
