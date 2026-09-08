@@ -346,7 +346,9 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             // Stacked it stays landscape: on a phone the picture is a band
             // across the full width, and a square one there would push the
             // questions most of a screen down.
-            aspectRatio: stacked ? '4 / 3' : '1 / 1',
+            // Keep the awning's full photograph: square crops cut off the wall
+            // cassette, while the mobile landscape crop cuts through its top.
+            aspectRatio: isPhotographicAwning ? '900 / 768' : stacked ? '4 / 3' : '1 / 1',
             // KEEPS THE MULTIPLY INSIDE THE FRAME. Without it the dye layer
             // composites against whatever is painted beneath — the card, the
             // grid, the page — and one blind would tint the card beside it.
