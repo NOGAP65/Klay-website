@@ -3,6 +3,17 @@
   publish = "dist"
 
 [build.environment]
+  # PINNED, BECAUSE THE DEFAULT DRIFTS. Netlify picks its own Node version when
+  # none is named, and that default moves over time — so the build that ships
+  # could quietly change engine underneath a lockfile that never did. Vite 8
+  # requires ^20.19 || >=22.12, which makes an unpinned default a real failure
+  # mode rather than a tidiness point: a rollback to an older default would stop
+  # the site building at all.
+  #
+  # 22 matches .nvmrc and the engines floor in package.json, so a developer's
+  # machine, CI and the deploy are all on the same major.
+  NODE_VERSION = "22"
+
   # VITE_SUPABASE_URL is intentionally public — it's a VITE_ prefixed variable
   # that goes into the browser bundle by design. Tell Netlify's secrets scanner.
   SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL"

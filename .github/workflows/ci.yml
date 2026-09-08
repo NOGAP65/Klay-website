@@ -44,7 +44,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # 22, matching .nvmrc, netlify.toml and the engines floor. It was '20',
+          # which resolves to the latest 20.x and so happens to clear vite 8's
+          # ^20.19 boundary — but only by accident of what GitHub ships that
+          # week. Naming the same major everywhere removes the coincidence.
+          node-version: '22'
           cache: npm
 
       # `npm ci` rather than `npm install`: the lockfile is committed and the
@@ -105,15 +109,20 @@ jobs:
         run: npm run lint
 
       # ---- VISIBLE, NOT BLOCKING ---------------------------------------
-      # The dev-server advisories the gate above deliberately excludes. They are
-      # real and they are the developer's machine, not the customer's browser —
-      # so they get printed on every run and are never allowed to fail the
-      # build. If this list ever contains something that is NOT dev-only, the
-      # blocking gate above will have caught it first.
+      # Everything, dev dependencies included. It reads ZERO as of the vite 8
+      # upgrade — the two dev-server advisories this step was written to keep
+      # visible are gone.
       #
-      # Clearing these needs vite 5 -> 8, a major bump across the build, the
-      # React plugin and the postcss/tailwind chain. That is its own piece of
-      # work with its own verification, not a line in a security batch.
+      # IT STAYS NON-BLOCKING ANYWAY, and the reason is the same one that made
+      # it a separate step rather than a stricter flag on the gate above: a
+      # vulnerability in the dev server is the developer's machine, not the
+      # customer's browser, and the deployed artifact is static files on a CDN
+      # with no dev server in them. A dev-only advisory should be seen on the
+      # next run and fixed deliberately; it should not stop a deploy that cannot
+      # possibly carry it.
+      #
+      # Anything that is NOT dev-only is caught by the blocking gate above
+      # before this step ever runs.
       - name: Audit everything, including dev (advisory only)
         run: npm audit || true
         continue-on-error: true
