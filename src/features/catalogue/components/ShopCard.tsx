@@ -46,6 +46,7 @@ import { fabricShot, FABRIC_SHOT_DIR } from '../fabricShots';
 import { HARDWARE_HEX } from '../../../data/products';
 import type { CatalogueItem } from '../constants';
 
+import { AwningColourLayer } from './AwningColourLayer';
 import { ProductGlyph } from './ProductGlyph';
 import { RangeConfigurator } from './RangeConfigurator';
 
@@ -183,6 +184,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
    * is unauditable. */
   const shot = fabricShot(item.id, sel.variant);
   const lit = isHovered;
+  const isPhotographicAwning = item.id === 'folding-arm-awnings';
 
   return (
     <article
@@ -375,8 +377,8 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                 // already looking at the top half of the room.
                 objectPosition: item.imagePosition ?? '50% 45%',
                 display: 'block',
-                transform: lit ? 'scale(1.04)' : 'scale(1)',
-                filter: lit
+                transform: lit && !isPhotographicAwning ? 'scale(1.04)' : 'scale(1)',
+                filter: isPhotographicAwning ? 'none' : lit
                   ? 'saturate(1.12) contrast(1.06) brightness(1.02)'
                   : 'saturate(1.04) contrast(1.03)',
                 transition: 'transform 0.7s ease, filter 0.5s ease',
@@ -396,6 +398,14 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
               <ProductGlyph type={item.glyph ?? ''} size={140} color={tokens.inkSoft} ground={tokens.band} opacity={lit ? 0.75 : 0.55} />
             </div>
           )}
+          {isPhotographicAwning && shot?.mask && (
+            <AwningColourLayer file={shot.file}
+              colour={dyeColour(item, sel)} position={item.imagePosition ?? '50% 45%'} />
+          )}
+          {isPhotographicAwning && shot?.hardware && (
+            <AwningColourLayer file={shot.file}
+              colour={hardwareColour(item, sel)} position={item.imagePosition ?? '50% 45%'} hardware />
+          )}
           {/* THE DYE. A flat colour multiplied through the blind's own mask,
               over a photograph whose fabric has been normalised to white — which
               between them ARE dyed cloth, because multiplying is what dyeing
@@ -404,7 +414,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
 
               Only where the shot carries a mask: timber is timber-coloured and
               has nothing to dye. */}
-          {shot?.mask && (
+          {shot?.mask && !isPhotographicAwning && (
             <div
               aria-hidden="true"
               style={{
@@ -428,7 +438,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                 pointerEvents: 'none',
                 // The picture scales under the pointer; the dye has to scale
                 // with it or the colour slides off the cloth.
-                transform: lit ? 'scale(1.04)' : 'scale(1)',
+                transform: lit && !isPhotographicAwning ? 'scale(1.04)' : 'scale(1)',
                 transition: 'transform 0.7s ease, background 0.25s ease',
               }}
             />
@@ -451,7 +461,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
               the colour itself. An opaque cloth takes none of it — a blockout's
               colour IS its value, and Black should be black rather than a
               black-hued photograph. See `tint` in fabricShots. */}
-          {shot?.mask && shot.tint > 0 && (
+          {shot?.mask && !isPhotographicAwning && shot.tint > 0 && (
             <div
               aria-hidden="true"
               style={{
@@ -467,7 +477,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                 WebkitMaskPosition: item.imagePosition ?? '50% 45%',
                 maskPosition: item.imagePosition ?? '50% 45%',
                 pointerEvents: 'none',
-                transform: lit ? 'scale(1.04)' : 'scale(1)',
+                transform: lit && !isPhotographicAwning ? 'scale(1.04)' : 'scale(1)',
                 transition: 'transform 0.7s ease, background 0.25s ease',
               }}
             />
@@ -479,7 +489,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
               curtain without it is a black rectangle. Nothing is drawn where the
               shot has no sheen or the colour is pale enough not to have lost
               any. */}
-          {shot?.mask && sheenStrength(shot, dyeColour(item, sel)) > 0.01 && (
+          {shot?.mask && !isPhotographicAwning && sheenStrength(shot, dyeColour(item, sel)) > 0.01 && (
             <div
               aria-hidden="true"
               style={{
@@ -497,7 +507,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                 WebkitMaskPosition: item.imagePosition ?? '50% 45%',
                 maskPosition: item.imagePosition ?? '50% 45%',
                 pointerEvents: 'none',
-                transform: lit ? 'scale(1.04)' : 'scale(1)',
+                transform: lit && !isPhotographicAwning ? 'scale(1.04)' : 'scale(1)',
                 transition: 'transform 0.7s ease, opacity 0.25s ease',
               }}
             />
@@ -510,7 +520,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
               it is a reflection. So this paints the swatch at full strength and
               a soft-light pass puts the original's specular back over it, which
               keeps the tube reading as a tube. */}
-          {shot?.hardware && (
+          {shot?.hardware && !isPhotographicAwning && (
             <>
               <div
                 aria-hidden="true"
@@ -525,7 +535,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                   WebkitMaskPosition: item.imagePosition ?? '50% 45%',
                   maskPosition: item.imagePosition ?? '50% 45%',
                   pointerEvents: 'none',
-                  transform: lit ? 'scale(1.04)' : 'scale(1)',
+                  transform: lit && !isPhotographicAwning ? 'scale(1.04)' : 'scale(1)',
                   transition: 'transform 0.7s ease, background 0.25s ease',
                 }}
               />
@@ -556,7 +566,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                   WebkitMaskPosition: item.imagePosition ?? '50% 45%',
                   maskPosition: item.imagePosition ?? '50% 45%',
                   pointerEvents: 'none',
-                  transform: lit ? 'scale(1.04)' : 'scale(1)',
+                  transform: lit && !isPhotographicAwning ? 'scale(1.04)' : 'scale(1)',
                   transition: 'transform 0.7s ease',
                 }}
               />
