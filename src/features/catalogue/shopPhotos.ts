@@ -1,0 +1,134 @@
+export type PhotoMaterial = 'cellular' | 'day' | 'mesh' | 'shutter' | 'hardware';
+export interface PhotoRegion { path: string; material: PhotoMaterial }
+export interface BoardFace { path: string; grain: 'vertical' | 'horizontal' | 'surface' }
+export interface ShopPhoto {
+  src: string;
+  description: string;
+  regions?: PhotoRegion[];
+  boards?: BoardFace[];
+  metal?: string;
+  /** Scale of the installation in this photograph, pixels per millimetre. */
+  boardScale?: number;
+}
+
+// Traced on the 1024px photographs. Keep the camera and these silhouettes
+// together: recolouring must never include the plaster or the cast shadows.
+const face = (path: string, grain: BoardFace['grain'] = 'horizontal'): BoardFace => ({ path, grain });
+const rectangle = (x: number, y: number, w: number, h: number) => `M${x} ${y}h${w}v${h}h${-w}Z`;
+const front = (x: number, y: number, w: number, h: number) => face(rectangle(x, y, w, h));
+const upright = (path: string) => face(path, 'vertical');
+const surface = (path: string) => face(path, 'surface');
+
+// Follow the small accordion edge instead of painting a rectangle over the
+// window reveal. The middle rail of Day & Night stays its original metal.
+function cellularEdge(top: number, bottom: number): string {
+  const left: string[] = [`M201 ${top}`];
+  const right: string[] = [`L890 ${bottom}`];
+  for (let y = top; y < bottom; y += 17) {
+    left.push(`L204 ${Math.min(y + 8, bottom)} L201 ${Math.min(y + 17, bottom)}`);
+  }
+  for (let y = bottom; y > top; y -= 17) {
+    right.push(`L887 ${Math.max(y - 8, top)} L890 ${Math.max(y - 17, top)}`);
+  }
+  return [...left, ...right, 'Z'].join(' ');
+}
+
+const forma1: ShopPhoto = {
+  src: '/images/shop/wardrobes-srdh.webp', description: 'Forma 1 — shelf and two hanging rails fitted into an alcove',
+  boardScale: 0.34,
+  boards: [front(163, 191, 697, 11), surface('M163 202H860L829 221H194Z'),
+    upright('M509 203H518V319L516 326H510Z')],
+  metal: 'M178 223Q180 219 182 223V228H508V237H182V241H178Z M519 228H842V223Q844 219 847 223V241H842V237H519Z',
+};
+const forma2: ShopPhoto = {
+  src: '/images/shop/wardrobes-srstdh02.webp', description: 'Forma 2 — six shelf compartments, double hanging and long hanging',
+  boardScale: 0.33,
+  boards: [
+    front(164, 154, 697, 9), surface('M164 163H861L830 184H194Z'),
+    upright('M163 163H170L194 184V794L170 824H163Z'),
+    upright('M302 163H310L326 184V781L310 825H302Z'),
+    upright('M580 163H590V825H582L572 781V184Z'),
+    front(171, 270, 131, 9), surface('M171 279H302V285H194Z'),
+    front(171, 380, 131, 8), surface('M171 388H302V395H194Z'),
+    surface('M194 487H302V492H171Z'), front(171, 492, 131, 8),
+    surface('M194 589H302V603H171Z'), front(171, 603, 131, 8),
+    surface('M194 684H302V707H171Z'), front(171, 707, 131, 8),
+    surface('M194 793H302V814H171Z'), front(171, 814, 131, 10),
+    surface('M326 464H572L582 467H310Z'), front(310, 467, 272, 8),
+  ],
+  metal: 'M318 185H322V191H573V185H577V206H573V200H322V206H318Z M590 191H842V185H847V206H842V200H590Z M318 487H322V493H573V487H577V508H573V502H322V508H318Z',
+};
+const forma3: ShopPhoto = {
+  src: '/images/shop/wardrobes-srdtdh01.webp', description: 'Forma 3 — four drawers, three open compartments and hanging rails',
+  boardScale: 0.33,
+  boards: [
+    front(162, 160, 700, 9), surface('M162 169H862L830 192H194Z'),
+    upright('M162 169H167L194 192V518L167 528V819H162Z'),
+    upright('M326 169H336L351 192V781L336 822H326Z'),
+    upright('M598 169H607V823H598L589 781V192Z'),
+    front(167, 288, 159, 8), surface('M167 296H326V306H194Z'),
+    front(167, 405, 159, 8), surface('M167 413H326V418H194Z'),
+    surface('M194 512H326V520H167Z'), front(167, 520, 159, 8),
+    front(167, 529, 158, 66), front(167, 597, 158, 66),
+    front(167, 665, 158, 67), front(167, 734, 158, 67), front(167, 802, 159, 17),
+    front(336, 366, 261, 8), surface('M336 374H597L589 379H351Z'),
+  ],
+  metal: 'M342 190H347V196H591V190H595V211H591V205H347V211H342Z M608 196H844V190H849V211H844V205H608Z M342 390H347V396H591V390H595V411H591V405H347V411H342Z '
+    + [561, 629, 698, 767].map(y => rectangle(225, y, 37, 5)).join(' '),
+};
+const linen1: ShopPhoto = {
+  src: '/images/shop/shelving-lin01.webp', description: 'Linen 1 — four fitted shelves in a narrow alcove', boardScale: 0.40,
+  boards: [front(277, 195, 472, 13), surface('M277 208H749L720 232H303Z'),
+    front(278, 383, 471, 12), surface('M278 395H749L720 402H303Z'),
+    surface('M303 559H720L749 576H278Z'), front(278, 576, 471, 11),
+    surface('M303 720H720L749 756H278Z'), front(278, 756, 471, 12)],
+};
+const linen2: ShopPhoto = {
+  src: '/images/shop/shelving-lin02.webp', description: 'Linen 2 — four continuous shelves with one front support', boardScale: 0.40,
+  boards: [front(176, 213, 742, 12), surface('M176 225H918L881 249H207Z'),
+    front(176, 383, 742, 12), surface('M176 395H918L881 402H207Z'),
+    surface('M207 553H881L918 568H176Z'), front(176, 568, 742, 12),
+    surface('M207 711H881L918 745H176Z'), front(176, 745, 742, 11),
+    upright('M537 225H552V904H537Z')],
+};
+const linen5: ShopPhoto = {
+  src: '/images/shop/shelving-lin05.webp', description: 'Linen 5 — four continuous shelves with two front supports', boardScale: 0.36,
+  boards: [front(113, 239, 857, 12), surface('M113 251H970L936 267H143Z'),
+    front(113, 407, 857, 12), surface('M113 419H970L936 426H143Z'),
+    surface('M143 564H936L970 576H113Z'), front(113, 576, 857, 12),
+    surface('M143 708H936L970 734H113Z'), front(113, 734, 857, 12),
+    upright('M377 251H390L394 267V846L390 858H377Z'),
+    upright('M683 251H695V858H683L679 846V267Z')],
+};
+const linenBroom: ShopPhoto = {
+  src: '/images/shop/shelving-linbr02.webp', description: 'Linen Broom — four shelf levels and a full-height broom bay', boardScale: 0.37,
+  boards: [front(114, 229, 862, 11), surface('M114 240H976L943 258H147Z'),
+    front(114, 391, 603, 12), surface('M114 403H717L700 409H147Z'),
+    surface('M147 540H700L717 552H114Z'), front(114, 552, 603, 11),
+    surface('M147 680H700L717 706H114Z'), front(114, 706, 603, 12),
+    upright('M411 240H424V856H411Z'), upright('M718 240H729V860H719L701 821V258Z')],
+};
+
+export const SHOP_PHOTOS: Record<string, Record<string, ShopPhoto>> = {
+  'honeycomb-blinds': {
+    blockout: { src: '/images/shop/honeycomb-blockout.webp', description: 'Blockout honeycomb — opaque cellular fabric with accordion pleats',
+      regions: [{ path: cellularEdge(112, 666), material: 'cellular' }] },
+    daynight: { src: '/images/shop/honeycomb-daynight.webp', description: 'Day & Night honeycomb — translucent upper cells and opaque lower cells',
+      regions: [{ path: cellularEdge(112, 404), material: 'day' }, { path: cellularEdge(415, 666), material: 'cellular' }] },
+  },
+  'roller-shutters': { default: {
+    src: '/images/shop/roller-shutters.webp', description: 'Aluminium roller shutter mounted outside a house window',
+    regions: [{ material: 'shutter', path: 'M172 166H869Q879 190 872 232H867V652H173V232H169Q163 202 169 172Z' }],
+  } },
+  'zip-guide-systems': { default: {
+    src: '/images/shop/zip-guide-systems.webp', description: 'Exterior window zip screen with woven mesh and side guide tracks',
+    regions: [{ material: 'mesh', path: 'M147 163H881V679H147Z' }],
+  } },
+  wardrobes: { SRDH: forma1, SRSTDH02: forma2, SRDTDH01: forma3 },
+  shelving: { LIN01: linen1, LIN02: linen2, LIN05: linen5, LINBR02: linenBroom },
+};
+
+export function shopPhoto(product: string, variant?: string): ShopPhoto | undefined {
+  const photos = SHOP_PHOTOS[product];
+  return photos?.[variant ?? 'default'] ?? (photos ? Object.values(photos)[0] : undefined);
+}

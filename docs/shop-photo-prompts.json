@@ -1,0 +1,68 @@
+[
+  {
+    "id": "zip-guide-systems",
+    "source": "exec-5f5ea03f-24b6-4935-9b35-13917361a8b1.png",
+    "asset": "public/images/shop/zip-guide-systems.webp",
+    "generationBrief": "Photoreal exterior of a modern Australian house, front-on window with externally mounted mesh zip screen. Off-white headbox, side guide tracks and bottom rail. Grey woven mesh with reflections and interior visible through it; plaster wall, soft daylight, plants clear of product edges. Square image, no text."
+  },
+  {
+    "id": "roller-shutters",
+    "source": "exec-b4d08488-6f4b-466d-850c-2ce22992cee0.png",
+    "asset": "public/images/shop/roller-shutters.webp",
+    "generationBrief": "Photoreal exterior window installation of a fully lowered aluminium roller shutter. Narrow interlocking off-white slats, rounded headbox and two guide rails fixed outside a modern Australian house. Natural daylight and plants below. Square image, no text."
+  },
+  {
+    "id": "honeycomb-blockout",
+    "source": "exec-d4149e0f-16ee-4745-9dbb-1acade918be0.png",
+    "asset": "public/images/shop/honeycomb-blockout.webp",
+    "generationBrief": "Photoreal bedroom with a front-on window fitted with an opaque off-white cellular blind. Fine horizontal accordion pleats, accurate side edges, slim headrail and bottom rail, realistic folds and soft light. Room furniture remains clear of blind. Square image."
+  },
+  {
+    "id": "honeycomb-daynight",
+    "source": "exec-161b6cc3-452b-4947-82f9-35159e500bfd.png",
+    "asset": "public/images/shop/honeycomb-daynight.webp",
+    "prompt": "Edit the provided blockout honeycomb product photograph into its DAY & NIGHT honeycomb variant. Preserve EXACTLY the room, furniture, camera, framing, window dimensions, outside edges, headrail and bottom rail. Change ONLY the honeycomb blind: it now has TWO pleated cellular fabrics on the same headrail separated by a slim horizontal moving middle rail at 48% of the blind's height. Upper section: translucent white light-filtering cellular pleats, visibly glowing softly with daylight and very faint softened garden silhouettes. Lower section: the original opaque neutral off-white blockout cellular pleats. Both sections have the exact same fine horizontal pleat scale. Keep pleated honeycomb texture, no flat roller cloth, no venetian slats. Match the original photograph's real shadows and lighting. No words, labels or annotations. Photographic precision; all surrounding pixels should stay consistent."
+  },
+  {
+    "id": "wardrobes-SRDH",
+    "source": "exec-ed5ad587-e126-42b5-82d6-cd6e2fb68cf5.png",
+    "asset": "public/images/shop/wardrobes-srdh.webp",
+    "prompt": "Generate a photorealistic straight-on architectural catalogue photograph of an installed Australian Forma 1 wardrobe interior. Square image, warm pale plaster bedroom wall with a rectangular recessed opening 1500mm wide by 2016mm high, visible oak floor below. The design is OPEN TO THE PLASTER WALLS: no enclosing cabinet side panels, no melamine back panel, no base board, no doors. A single 18mm matte-white horizontal shelf spans the full opening near the top at 1800mm. Exactly TWO satin silver hanging rails side by side directly beneath that shelf, one across the left half and one across the right half, separated by a short vertical white centre support descending only about 350mm from the top shelf. Below it is completely open plaster wall and floor. There is NO shelf tower, NO drawer tower, NO extra rail halfway down, NO clothes or props inside. Entire installation fully visible, central 65% of frame, wall around it, soft daylight entering from left with real diffuse contact shadows and subtle white melamine texture. It must look like a real installed economical custom wardrobe interior photographed professionally, not a rendered standalone wardrobe cabinet. No text, logo, labels, watermark, people or art crossing the opening."
+  },
+  {
+    "id": "wardrobes-SRSTDH02",
+    "source": "exec-3935a93d-d421-4aa2-afbe-b57343ed9d59.png",
+    "asset": "public/images/shop/wardrobes-srstdh02.webp",
+    "prompt": "Forma 2 fitted wardrobe. Preserve the photograph's same real room, warm plaster alcove, oak floor, natural side daylight, camera perspective and framing. Change ONLY the joinery INSIDE the alcove. Layout left to right: a narrow 507mm-wide full-height white melamine shelf tower, with its own two 18mm side panels, six empty open compartments stacked vertically; next a wider double-hanging bay with high chrome rail and second chrome rail at mid-height under a middle shelf; right a long-hanging bay with just one high chrome rail and completely open space beneath. One continuous top shelf at 2016mm across all bays. Full-depth divider separates the two hanging bays. Total installation width 1800mm. No doors, no end cabinet panel on right, no rear cabinet back or bottom plinth in hanging bays; alcove plaster and existing floor remain visible. Empty rails and shelves; no objects. Flat matt white board, accurate slim edges, precise believable joinery joints, natural occlusion shadows, reflective round metal rods. Photoreal architectural product photograph, no CGI gloss, text or graphics. Square image."
+  },
+  {
+    "id": "wardrobes-SRDTDH01",
+    "source": "exec-018ef6d1-3048-48b0-a207-5309e92a0b5e.png",
+    "asset": "public/images/shop/wardrobes-srdtdh01.webp",
+    "prompt": "Forma 3 fitted wardrobe. Preserve reference photo's same real room, warm plaster alcove, oak floor, daylight, camera and framing. Change ONLY internals of alcove: LEFT a 507mm white melamine tower with FOUR equal stacked drawers in lower half, each with one small brushed-silver horizontal bar pull, and THREE open shelf compartments above. MIDDLE a double-hanging bay with TWO stacked chrome rails, each below a shelf (top and mid height). RIGHT a long-hanging bay with ONE high chrome rail and completely open space below. One continuous white top shelf across whole installation. Full-depth divider between middle and right. Tower has own slim side panels. Overall width1800mm height2016mm. No doors or back panels; no cabinet right end panel against plaster; no base panel or plinth across hanging bays, oak floor shows beneath. Empty shelves and rails, no objects. Honest 18mm board thickness, immaculate natural joinery details, soft directional shadows, realistic reflective rods. Real architectural photograph, not a 3D rendering, no text. Square image."
+  },
+  {
+    "id": "shelving-LIN01",
+    "source": "exec-4728986f-e5cc-4acf-93c5-c095fb62a53d.png",
+    "asset": "public/images/shop/shelving-lin01.webp",
+    "prompt": "Generate a photorealistic straight-on architectural catalogue photograph of Australian Linen 1 built-in linen shelving, exactly as this specification: a tall narrow open alcove in warm pale plaster wall, 900mm wide, usable shelf stack 1650mm high, 447mm deep. EXACTLY FOUR fixed matte-white melamine horizontal shelf boards spanning between the two plaster side walls. Four boards total, evenly vertically spaced; the highest board is itself the top shelf, no fifth cap shelf. Open plaster wall visible behind, no cabinet back panel, no cabinet side panels, no base or toe-kick board. No vertical centre post on this narrow model. The bottom shelf floats above the oak floor; below it is open space. No doors, drawers, rails, boxes, towels, clothes or styling objects within the alcove. Square composition, complete installation in frame with breathing room and visible wall around every side, fine natural material texture, understated soft window daylight from left, believable shelf depth and contact shadows. A real Australian linen cupboard interior installed wall-to-wall, not a freestanding bookcase and not CGI. No labels, numbers, text, people or watermark."
+  },
+  {
+    "id": "shelving-LIN02",
+    "source": "exec-4ae7d437-bcd5-4950-b2d5-17588b773282.png",
+    "asset": "public/images/shop/shelving-lin02.webp",
+    "prompt": "Preserve the reference's realistic plaster alcove, white shelves, oak floor, photographic lighting, perspective and style. Change installation to Linen 2: widen alcove and FOUR continuous white melamine shelves to 1800mm wide, 1650mm high and447mm deep. Add ONE slim vertical FACE POST exactly at centre of the FRONT edges of shelves, supporting all four down to floor. The post is narrow and shallow, just at front, NOT a full-depth divider: each shelf remains ONE open continuous run with visible space BEHIND the post. Exactly FOUR shelf boards including top shelf; leave oak floor below lowest shelf open. Alcove side/back walls are warm plaster with real shadows; no white cabinet carcass, no doors, no rear panel, no bottom plinth. All shelves entirely empty. Photoreal high-end architectural installation photograph, soft natural daylight and material texture, no text or dimensions, square photo, all shelf ends and whole support visible."
+  },
+  {
+    "id": "shelving-LIN05",
+    "source": "exec-fbbce8eb-24f8-413b-a32e-d8b38a9041fa.png",
+    "asset": "public/images/shop/shelving-lin05.webp",
+    "prompt": "Preserve reference room's natural photographic style, plaster walls and oak floor, and adapt alcove to a broad 3000mm-wide installation. Linen 5: exactly FOUR continuous 18mm matt-white melamine shelf boards,1650mm high447mm deep, spanning wall-to-wall, supported by TWO slim vertical FACE POSTS at one-third and two-thirds of shelf width. Both posts stand ONLY on FRONT edge, shallow from front to back, not full-depth partitions; open space extends continuously behind posts. Posts run from top shelf to existing oak floor. FOUR boards TOTAL including top; no cabinet base or rear or side panels, no doors, no drawers. Plastered alcove walls enclose the run. Empty shelves. Leave margin around entire installation so all four shelves and both posts visible. Real architectural product photography, beautiful soft daylight and true contact shadows, no CGI, text or diagrams, square composition."
+  },
+  {
+    "id": "shelving-LINBR02",
+    "source": "exec-2610fad9-e6e7-4153-9671-27daa4641dab.png",
+    "asset": "public/images/shop/shelving-linbr02.webp",
+    "prompt": "Preserve reference natural room, plaster alcove and oak floor, expand installation to 2700mm wide1650mm high447mm deep. Linen Broom shelving: ONE top matt-white melamine shelf spans entire alcove. On LEFT THREE QUARTERS, THREE more shelf boards below the top = FOUR shelf levels total, supported by ONE slim shallow front face post at centre of left shelving run. On RIGHT QUARTER a full-height entirely open broom storage bay with NO lower shelves at all: only top shelf goes over this bay. A full-depth vertical white divider separates the right broom bay from shelves. No brooms or stored objects. No doors, no carcass side panels, no cabinet backs or base plinth; real plaster rear and side walls and oak floor visible. Correct18mm board edges, natural side light and soft contact shadows. Photoreal real-life fitted installation with accurate clean joinery; no text, no render look. Square image full installation visible."
+  }
+]

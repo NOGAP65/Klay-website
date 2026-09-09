@@ -252,7 +252,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Cellular pleats that trap air. The insulating blind.',
     to: enquire('Honeycomb Blinds'),
     glyph: 'honeycomb-blinds',
-    image: '/images/products/honeycomb-blinds.webp',
+    image: '/images/shop/honeycomb-blockout.webp',
     // THE FABRIC BLINDS SHARE THE RYNAMIC CARD, and this is an editorial claim
     // in the same class as the light values above — worth a commercial check.
     //
@@ -338,7 +338,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Tracked edges. No gaps, no flap, no wind noise.',
     to: enquire('Zip Guide Systems'),
     glyph: 'screens',
-    image: '/images/products/zip-guide-systems.webp',
+    image: '/images/shop/zip-guide-systems.webp',
     // ONE MESH, IN A CHOICE OF COLOURS — see MESH_COLOURS.
     colours: MESH_COLOURS,
     light: ['Sunscreen'],
@@ -350,7 +350,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Insulation, security and total darkness in one slat.',
     to: enquire('Roller Shutters'),
     glyph: 'roller-shutters',
-    image: '/images/products/roller-shutters.webp',
+    image: '/images/shop/roller-shutters.webp',
     // ONE SLAT, IN A CHOICE OF COLOURS — see SHUTTER_COLOURS.
     colours: SHUTTER_COLOURS,
     light: ['Blockout'],
@@ -372,8 +372,8 @@ export const CATALOGUE: CatalogueItem[] = [
     group: 'Other',
     tagline: 'Built-in, walk-in and sliding. Fitted wall to wall.',
     to: enquire('Wardrobes'),
-    image: '/images/categories/wardrobes.jpg',
-    imagePosition: '13% center',
+    image: '/images/shop/wardrobes-srdh.webp',
+    imagePosition: 'center',
     glyph: 'wardrobes',
     // The four board finishes, from the visualiser's own list — see
     // WARDROBE_COLOURS. Restating them here is how the card and the render
@@ -394,11 +394,9 @@ export const CATALOGUE: CatalogueItem[] = [
     // with a face post to span the wide ones. No drawers and no racks.
     tagline: 'Linen shelving in four fixed shelves, made to the opening.',
     to: enquire('Shelving'),
-    // The right-hand crop of the same walk-in the wardrobe tile uses — one
-    // photograph composed left to right along the line the two products divide
-    // on: hanging garments down the left, open shelves across the right.
-    image: '/images/range/wardrobes.jpg',
-    imagePosition: '78% center',
+    // The default linen layout; each model has its own photograph on the shop.
+    image: '/images/shop/shelving-lin01.webp',
+    imagePosition: 'center',
     glyph: 'shelving',
     // The same four board finishes the robes are made in and the same list the
     // renderer paints them with — the linen shelving is the same cabinetry in a

@@ -35,9 +35,9 @@
 
 import { Link } from 'react-router-dom';
 
-import { useIsMobile } from '@/shared';
-
 import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
+import { shopPhoto } from '@/features/catalogue/shopPhotos';
+import { useIsMobile } from '@/shared';
 
 import { hardwareHex, type Selection } from '../configOptions';
 import { fabricShot, FABRIC_SHOT_DIR } from '../fabricShots';
@@ -49,6 +49,7 @@ import type { CatalogueItem } from '../constants';
 import { AwningColourLayer } from './AwningColourLayer';
 import { ProductGlyph } from './ProductGlyph';
 import { RangeConfigurator } from './RangeConfigurator';
+import { ShopPhotoLayers } from './ShopPhotoLayers';
 
 export interface ShopCardProps {
   item: CatalogueItem;
@@ -182,7 +183,8 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
    * in the generated manifest rather than assembled from a template — see
    * fabricShots.ts, and the specification's note on why a constructed asset path
    * is unauditable. */
-  const shot = fabricShot(item.id, sel.variant);
+  const photo = shopPhoto(item.id, sel.variant);
+  const shot = photo ? undefined : fabricShot(item.id, sel.variant);
   const lit = isHovered;
   const isPhotographicAwning = item.id === 'folding-arm-awnings';
 
@@ -348,7 +350,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             // questions most of a screen down.
             // Keep the awning's full photograph: square crops cut off the wall
             // cassette, while the mobile landscape crop cuts through its top.
-            aspectRatio: isPhotographicAwning ? '900 / 768' : stacked ? '4 / 3' : '1 / 1',
+            aspectRatio: isPhotographicAwning ? '900 / 768' : photo ? '1 / 1' : stacked ? '4 / 3' : '1 / 1',
             // KEEPS THE MULTIPLY INSIDE THE FRAME. Without it the dye layer
             // composites against whatever is painted beneath — the card, the
             // grid, the page — and one blind would tint the card beside it.
@@ -361,7 +363,8 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             background: tokens.band,
           }}
         >
-          {shot || item.image ? (
+          {photo ? <ShopPhotoLayers photo={photo} colour={dyeColour(item, sel)}
+            colourName={sel.colour} hardware={hardwareColour(item, sel)} /> : shot || item.image ? (
             <img
               src={shot ? `${FABRIC_SHOT_DIR}/${shot.file}` : item.image}
               alt={`${item.name} — ${item.group}`}

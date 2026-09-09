@@ -52,5 +52,7 @@ export {
   WARDROBE_WIDTHS,
   SHELVING_WIDTHS,
   WARDROBE_COLOURS,
+  FINISH_TEXTURE,
+  FINISH_TILE_MM,
 } from './wardrobes';
 export { HANDLE_FINISHES } from './wardrobeHardware';
