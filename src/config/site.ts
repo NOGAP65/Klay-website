@@ -48,5 +48,16 @@ export const brand = 'Klay Interiors';
 export const tradingEntity = 'Grand Kaman Pty Ltd';
 export const abn = 'ABN 98 151 010 007';
 
-export const instagram = 'https://www.instagram.com/klayinteriors';
-export const instagramHandle = '@klayinteriors';
+/** THE OFFICIAL ACCOUNT, and the handle is not the domain.
+ *
+ * These read `klayinteriors` — the domain's spelling — and the account is
+ * `klay.interiors`, with the dot. Confirmed against the profile itself, which
+ * titles as "Klay Interiors (@klay.interiors)". The old URL was a link to an
+ * account that is not Klay's, which is worse than no link: the one place the
+ * site sends people to see real work was sending them somewhere else.
+ *
+ * ONE PAIR, READ EVERYWHERE. The footer already read these; the homepage strip
+ * printed "@klayinteriors" as a literal beside a href that came from here, so
+ * the two could disagree and did nothing to say so. It reads the handle now. */
+export const instagram = 'https://www.instagram.com/klay.interiors';
+export const instagramHandle = '@klay.interiors';

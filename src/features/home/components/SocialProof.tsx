@@ -1,16 +1,37 @@
 // ---------------------------------------------------------------------------
-// 10. In your home — the installation strip.
+// 10. From the feed — the Instagram strip.
 //
 // Trust, not conversion. It is the section that answers "does it actually look
 // like that when it's up?", which is the question the renders elsewhere on the
 // page can't answer, and the reason it comes after the two range panels have
 // made their claims.
 //
-// PLACEHOLDER IMAGERY, as briefed. These are the same product and room renders
-// used elsewhere on the page, which is exactly what this section cannot be in
-// production: a strip captioned "real Klay installations, real Melbourne homes"
-// has to be photographs of real jobs or it is working against the trust it is
-// there to build. Five real install photos replace these.
+// IT IS THE INSTAGRAM FEED NOW, and the caption changed with it. This was
+// "In your home / Real Klay installations. Real Melbourne homes." over five
+// room renders — a claim the tiles could not support, and the note here has
+// admitted as much since the day it was written. Pointing the strip at the
+// actual account does not fix that by itself, because the account's one post is
+// a brand card rather than a job; what fixes it is the section no longer
+// claiming to be something it is not. It says it is the feed, and it is.
+//
+// THE FIRST TILE IS THE REAL POST. @klay.interiors has exactly one, published
+// 7 September 2026 — a "Meet Klay" launch carousel whose first frame is a sheer
+// curtain photograph carrying the wordmark. It leads the strip and links to the
+// post itself.
+//
+// A STORED COPY, NOT A HOTLINK. Instagram's CDN URLs are signed and carry an
+// expiry (`oe=`), so an <img src> pointed at one works for a few days and then
+// serves nothing. The frame is downloaded into public/images/social/ and served
+// from there. Re-download it if the post is edited.
+//
+// THE OTHER FIVE ARE STILL PLACEHOLDERS, and are meant to become the five most
+// recent posts. That needs a feed, and a feed needs credentials: Instagram's
+// Basic Display API is gone, so the route is a Graph API long-lived token
+// against an Instagram Business or Creator account linked to a Facebook page,
+// refreshed every 60 days — a build-time fetch into a JSON file is the honest
+// shape for a page that is otherwise static. Until that exists, these five are
+// the room renders they always were, marked below so nobody mistakes them for
+// posts.
 //
 // DIRECTLY UNDER THE VISUALISER, and that adjacency is the whole reason this
 // section sits where it does. The visualiser renders a blind onto a photograph of
@@ -28,9 +49,10 @@
 // Every tile still links to the product in its photograph, which is worth as much
 // here as it was at the bottom.
 //
-// Desktop is five equal columns, edge to edge. Mobile scrolls horizontally
-// rather than folding into a 3x2 grid — five images do not divide into six cells
-// without leaving a hole, and a scrolling strip keeps all five and stays a strip.
+// Desktop is six equal columns, edge to edge — one per tile, so the real post
+// and the five slots behind it read as one row. Mobile scrolls horizontally
+// rather than folding into a grid: a strip that scrolls keeps every tile and
+// stays a strip, which is also how the feed it stands for is read.
 // ---------------------------------------------------------------------------
 
 import { Link } from 'react-router-dom';
@@ -44,52 +66,89 @@ import { TILE_GAP } from '../furniture';
 
 const INSTAGRAM = site.instagram;
 
-// EVERY TILE GOES TO THE SHOP. Three of these pointed at product pages that no
-// longer exist, and the two category links are left as they are because a
-// filtered shop is still the shop.
-//
-// The second tile also changed its PICTURE. It was soleil-sunscreen.png — a
-// product cut-out among four room photographs, which never belonged in a strip
-// of installations — and that file is deleted with the product pages it served.
-// room-5.png replaces it: the same 1920x1072 set as the two frames either side
-// of it, and a window room, which is what the slot was showing.
-const SHOTS = [
-  { image: '/images/rooms/room-4.png', to: '/products', objectPosition: 'center 40%' },
-  { image: '/images/rooms/room-5.png', to: '/products', objectPosition: 'center 40%' },
-  { image: '/images/rooms/room-3.png', to: '/products?category=sheer-curtains', objectPosition: '62% 45%' },
-  { image: '/images/rooms/room-kitchen.png', to: '/products', objectPosition: 'center 36%' },
+interface Tile {
+  image: string;
+  /** Where the tile goes. An `href` is off-site and opens in a new tab; a `to`
+   * is a route and stays in the SPA. Exactly one of the two. */
+  to?: string;
+  href?: string;
+  objectPosition: string;
+  /** What the hover plate says. A post goes to Instagram; a placeholder goes to
+   * the shop, and saying so is the difference between a tile that is a post and
+   * a tile standing in for one. */
+  cta: string;
+  alt: string;
+}
+
+/** THE REAL POST, FIRST — see the note at the top of the file.
+ *
+ * The permalink is the post's own, not the profile's, so the tile lands on the
+ * thing it is showing. It is the only tile here that is genuinely a post. */
+const POST: Tile = {
+  image: '/images/social/klay-interiors-launch.webp',
+  href: 'https://www.instagram.com/p/DdA2cgNlN4Q/',
+  // The frame is composed as a square-ish card and the tile is 4/5, so it is
+  // centred rather than cropped off-centre: the wordmark sits low in the frame
+  // and any downward bias cuts it.
+  objectPosition: 'center center',
+  cta: 'View on Instagram',
+  alt: 'Meet Klay — complete interior solutions designed to transform the way you live.',
+};
+
+/** THE FIVE SLOTS BEHIND IT, still room renders.
+ *
+ * These are placeholders for the five most recent posts and are not posts, so
+ * they go to the shop rather than pretending to link to Instagram. Three of
+ * them once pointed at product pages that no longer exist; the category links
+ * are left as they are because a filtered shop is still the shop.
+ *
+ * When the feed lands, this whole list is what it replaces. */
+const PLACEHOLDERS: Tile[] = [
+  { image: '/images/rooms/room-4.png', to: '/products', objectPosition: 'center 40%', cta: 'Shop the range', alt: '' },
+  { image: '/images/rooms/room-5.png', to: '/products', objectPosition: 'center 40%', cta: 'Shop the range', alt: '' },
+  { image: '/images/rooms/room-3.png', to: '/products?category=sheer-curtains', objectPosition: '62% 45%', cta: 'Shop the range', alt: '' },
+  { image: '/images/rooms/room-kitchen.png', to: '/products', objectPosition: 'center 36%', cta: 'Shop the range', alt: '' },
   // Cropped hard left, onto the dark timber wardrobe. Centred, this frame is a
   // yellow armchair with no window covering anywhere in it — which is the one
-  // thing a strip of installations cannot show.
-  { image: '/images/rooms/hero-room.jpg', to: '/products?category=wardrobes', objectPosition: '14% center' },
+  // thing a strip standing for a furnishings feed cannot show.
+  { image: '/images/rooms/hero-room.jpg', to: '/products?category=wardrobes', objectPosition: '14% center', cta: 'Shop the range', alt: '' },
 ];
 
-function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: boolean }) {
+const TILES: Tile[] = [POST, ...PLACEHOLDERS];
+
+function Shot({ shot, isMobile }: { shot: Tile; isMobile: boolean }) {
   const { isHovered, bind } = useHover();
-  return (
-    // A route, so <Link> — a bare href here would tear down the SPA and refetch
-    // the bundle just to move to a product page.
-    <Link
-      {...bind}
-      to={shot.to}
-      style={{
-        position: 'relative',
-        display: 'block',
-        overflow: 'hidden',
-        aspectRatio: '4 / 5',
-        // Fixed width on mobile so the row scrolls; a grid track on desktop.
-        flex: isMobile ? '0 0 62vw' : undefined,
-        // What shows while the photograph loads, so it has to be the section's
-        // own dark rather than warm white — five bright rectangles flashing on a
-        // charcoal ground and then filling in is a worse first paint than five
-        // dark ones, and on a slow connection it is the whole section.
-        background: tokens.ink,
-        textDecoration: 'none',
-      }}
-    >
+  // A route gets <Link> — a bare href there would tear down the SPA and refetch
+  // the bundle just to move to a product page. Instagram is not a route, so it
+  // gets a real anchor and a new tab: the one tile that leaves the site should
+  // not take the page they were reading with it.
+  //
+  // TWO ELEMENTS RATHER THAN ONE POLYMORPHIC ONE. This was a `Wrapper` variable
+  // holding either 'a' or Link with the differing props spread in, which reads
+  // neatly and does not typecheck: the union of an anchor's props and
+  // LinkProps has no common shape TS will accept, because `to` is required on
+  // one and absent on the other. Two returns sharing one `inner` is longer and
+  // is the version the compiler can check.
+  const frame: React.CSSProperties = {
+    position: 'relative',
+    display: 'block',
+    overflow: 'hidden',
+    aspectRatio: '4 / 5',
+    // Fixed width on mobile so the row scrolls; a grid track on desktop.
+    flex: isMobile ? '0 0 62vw' : undefined,
+    // What shows while the photograph loads, so it has to be the section's own
+    // dark rather than warm white — six bright rectangles flashing on a
+    // charcoal ground and then filling in is a worse first paint than six dark
+    // ones, and on a slow connection it is the whole section.
+    background: tokens.ink,
+    textDecoration: 'none',
+  };
+
+  const inner = (
+    <>
       <img
         src={shot.image}
-        alt=""
+        alt={shot.alt}
         style={{
           position: 'absolute',
           inset: 0,
@@ -102,7 +161,7 @@ function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: bool
           transition: 'transform 0.7s ease',
         }}
       />
-      {/* The overlay only exists on hover — a permanent label on five tiles
+      {/* The overlay only exists on hover — a permanent label on six tiles
           would compete with the section headline. */}
       <div
         style={{
@@ -124,9 +183,23 @@ function Shot({ shot, isMobile }: { shot: (typeof SHOTS)[number]; isMobile: bool
             padding: `${space.snug}px ${space.item}px`,
           }}
         >
-          Shop the range
+          {shot.cta}
         </span>
       </div>
+    </>
+  );
+
+  // Instagram is not a route, so it gets a real anchor and a new tab: the one
+  // tile that leaves the site should not take the page they were reading with
+  // it. Everything else gets <Link> — a bare href there would tear down the SPA
+  // and refetch the bundle just to move to a product page.
+  return shot.href ? (
+    <a {...bind} href={shot.href} target="_blank" rel="noreferrer noopener" style={frame}>
+      {inner}
+    </a>
+  ) : (
+    <Link {...bind} to={shot.to ?? '/products'} style={frame}>
+      {inner}
     </Link>
   );
 }
@@ -164,11 +237,17 @@ export function SocialProof() {
       {/* The page's shared band, same as the categories, the range and the
           visualiser. It supplies the section's top padding, so the section itself
           carries none. */}
+      {/* THE CAPTION SAYS WHAT THE TILES ARE. It read "In your home / Real Klay
+          installations. Real Melbourne homes." over five room renders, which
+          was a claim about photographs the section did not have — and now that
+          the strip leads with the account's own post, "in your home" would be
+          wrong about the first tile too. It is the feed, so it says so, and the
+          handle comes from config rather than being typed here. */}
       <SectionBand
         onDark
-        label="Social proof"
-        title="In your home"
-        sub="Real Klay installations. Real Melbourne homes."
+        label="Instagram"
+        title="From the feed"
+        sub={`The latest from ${site.instagramHandle}.`}
         isMobile={isMobile}
       />
 
@@ -179,7 +258,8 @@ export function SocialProof() {
             ? { display: 'flex', gap: TILE_GAP, overflowX: 'auto', padding: `0 ${space.item}px ${space.tight}px` }
             : {
                 display: 'grid',
-                gridTemplateColumns: 'repeat(5, 1fr)',
+                // Six now: the post plus the five slots behind it.
+                gridTemplateColumns: 'repeat(6, 1fr)',
                 gap: TILE_GAP,
                 // The outer two strips. Gap only applies between items, so the
                 // edges have to be padding — same treatment as the range row, so
@@ -189,7 +269,7 @@ export function SocialProof() {
               }
         }
       >
-        {SHOTS.map(shot => (
+        {TILES.map(shot => (
           <Shot key={shot.image} shot={shot} isMobile={isMobile} />
         ))}
       </div>
@@ -225,7 +305,11 @@ export function SocialProof() {
             transition: 'border-color 0.2s ease',
           }}
         >
-          @klayinteriors
+          {/* FROM CONFIG, NOT TYPED HERE. This was the literal
+              "@klayinteriors" next to an href read from site.ts, so the label
+              and the link could point at two different accounts — and they did:
+              the handle is klay.interiors, with the dot. */}
+          {site.instagramHandle}
         </a>
       </div>
     </section>

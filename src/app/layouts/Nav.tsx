@@ -32,12 +32,12 @@
 // priority, and duplicating the route means a visitor who never registers a
 // 12px word in the middle of a bar still has one unmissable way in.
 //
-// Both were gold. The button is now the bronze `accent` fill — which is the
-// logo's own colour, so the gold has in a sense come back, as the one place
-// in this bar carrying any chroma at all — and the word is distinguished by
-// weight rather than colour, see the note on barLink. That split is deliberate:
-// the button is the action and takes the colour, the word is a destination and
-// does not.
+// Both were gold, both are bronze again. The button is the `accent` fill and
+// the word is `accentEdge` type — the logo's own hue in the two constructions
+// that can carry it, a surface and a letterform. The earlier split (colour for
+// the action, weight for the destination) held while the bar was charcoal and a
+// bronze word could not be read on it; the bar is paper now and it can. See the
+// note on barLink for the measurements.
 //
 // Booking a measure is still reachable — it is the CTA on the homepage, on the
 // category pages and in the footer.
@@ -113,15 +113,16 @@ interface NavLink {
  * to the catalogue makes the bar say where to start without adding a word, a
  * chevron or a second button.
  *
- * That mark used to be gold. It is now weight and opacity, because the palette
- * has no accent hue left to spend — see barLink. The distinction survived the
- * colour being removed, which is the argument for the whole neutral pass in
- * miniature.
+ * That mark is the bronze, and it is weight AND colour — see barLink, which
+ * carries the whole history of the value leaving and coming back, and why the
+ * word takes `accentEdge` rather than the button's `accent`.
  *
- * It does not collide with the button beside it. That is a filled black block
- * and this is a word in the bar's own colour; they read as one system rather
- * than as two CTAs, and they point at different things — browse the range,
- * versus book someone to come and measure.
+ * It does not collide with the button beside it, and that is worth checking now
+ * that both carry chroma. The button is a filled bronze block with a white
+ * label; this is a bronze WORD on the bar's own paper. Same hue, opposite
+ * construction — one is a surface, one is type — so they read as one system
+ * rather than as two CTAs, and they point at different things: browse the
+ * range, versus book someone to come and measure.
  *
  * How It Works is deliberately not here. It is one page of process copy, it is
  * linked from /about and from the footer, and a fifth word would start this bar
@@ -140,28 +141,51 @@ const LINKS: NavLink[] = [
 
 /** Every word in the bar shares this, so the four cannot drift apart.
  *
- * THE ACCENT IS NO LONGER A COLOUR, and this is the clearest case on the site of
- * why it could not stay one. SHOP was gold against three warm-white siblings.
- * With the palette neutral there is no second hue to promote it with, and the
- * mechanical swap made it `fillStrong` — #1D1D1D on a #303030 bar, which the
- * contrast audit caught at 1.28:1. The accent word had become invisible.
+ * THE ACCENT IS A COLOUR AGAIN — asked for, and now affordable. The history is
+ * worth keeping because it is the reason it left. SHOP was gold against three
+ * warm-white siblings on a CHARCOAL bar; the neutral pass had no second hue to
+ * promote it with, and the mechanical swap made it `fillStrong` — #1D1D1D on
+ * #303030, which the contrast audit caught at 1.28:1. The accent word had
+ * become invisible, so it became weight and opacity instead.
  *
- * Every word now takes `linkColor`, and the two devices that were already here
- * do the whole job: SHOP is weight 500 at full opacity, the other three are
- * weight 400 at 0.82. That is a real difference at 12px — and it is the same
- * difference the bar was making before, with the colour merely sitting on top of
- * it. The active word additionally takes the underline it always had. */
-const barLink = (active: boolean, linkColor: string, accent = false) => ({
-  color: linkColor,
-  textDecoration: 'none',
-  ...typeScale.label,
-  fontWeight: accent ? 500 : 400,
-  whiteSpace: 'nowrap' as const,
-  opacity: accent || active ? 1 : 0.82,
-  paddingBottom: space.hairline,
-  borderBottom: `1px solid ${active ? tokens.line : 'transparent'}`,
-  transition: `${motion.link}, opacity 0.2s ease`,
-});
+ * What changed is the ground. The solid bar is PAPER now, and a bronze word on
+ * paper is an ordinary, legible thing where a bronze word on charcoal was not.
+ *
+ * AND IT IS `accentEdge`, NOT `accent`. That is the whole of the care needed
+ * here, and the palette had already done the arithmetic: `accent` (#8A6C46) is
+ * a FILL, and as text it measures 4.58 / 4.87 / 4.16 on paper, card and band —
+ * it fails on band. `accentEdge` (#725838) is the same bronze deeper, at
+ * 6.24 / 6.63 / 5.66, and the note beside it says in as many words that it is
+ * "what a bronze word would need". This is the something that needs one.
+ *
+ * ONLY ON A LIGHT GROUND. The bar can still be transparent over a dark hero and
+ * the drawer is a near-black overlay; #725838 on either is the 1.28:1 mistake
+ * again with a different hex. On dark the word falls back to `linkColor` and
+ * keeps the weight-and-opacity treatment, which is the same thing the rest of
+ * the site does with a retired gold — the accent collapses into the primary.
+ *
+ * The weight stays either way. It is what carried the distinction for the whole
+ * neutral period, it costs nothing to keep, and it means the bronze is
+ * reinforcing a difference rather than being the only thing making one.
+ *
+ * The active word additionally takes the underline it always had — in the
+ * bronze where the word is bronze, since a neutral rule under a coloured word
+ * reads as two decisions. */
+const barLink = (active: boolean, linkColor: string, accent = false, onDarkGround = false) => {
+  const bronze = accent && !onDarkGround;
+  const colour = bronze ? tokens.accentEdge : linkColor;
+  return {
+    color: colour,
+    textDecoration: 'none',
+    ...typeScale.label,
+    fontWeight: accent ? 500 : 400,
+    whiteSpace: 'nowrap' as const,
+    opacity: accent || active ? 1 : 0.82,
+    paddingBottom: space.hairline,
+    borderBottom: `1px solid ${active ? (bronze ? tokens.accentEdge : tokens.line) : 'transparent'}`,
+    transition: `${motion.link}, opacity 0.2s ease`,
+  };
+};
 
 export interface NavProps {
   onLight?: boolean;
@@ -296,7 +320,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
                 to={l.to}
                 onMouseEnter={() => setHovered(l.to)}
                 onMouseLeave={() => setHovered(cur => (cur === l.to ? null : cur))}
-                style={barLink(hovered === l.to, linkColor, l.accent)}
+                style={barLink(hovered === l.to, linkColor, l.accent, isOnDarkGround)}
               >
                 {l.label}
               </Link>
