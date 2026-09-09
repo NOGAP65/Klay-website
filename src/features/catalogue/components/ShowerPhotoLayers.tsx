@@ -1,6 +1,6 @@
 import { useId } from 'react';
 
-import { SCREEN_HEIGHT_MM, SCREEN_WIDTHS } from '@/features/catalogue/constants';
+import { SCREEN_DEFAULT_WIDTH_MM, SCREEN_HEIGHT_MM, SCREEN_WIDTHS } from '@/features/catalogue/constants';
 import { photoColourCurves } from '@/features/catalogue/lib/photoColour';
 import { showerPhotoWidth, showerGlassPath, showerFreeEdgePath, type ShowerPhoto } from '@/features/catalogue/lib/showerPhotoWidth';
 import { useMediaQuery } from '@/shared';
@@ -17,7 +17,7 @@ export function ShowerPhotoLayers({ src, photo, hardware, width }: Props) {
   const isReduced = useMediaQuery('(prefers-reduced-motion: reduce)');
   const frame = usePhotoTransition({ colour: hardware, hardware }, isReduced);
   const curves = photoColourCurves(frame.hardware, 'hardware');
-  const widthMm = SCREEN_WIDTHS.includes(Number(width)) ? Number(width) : SCREEN_WIDTHS[0];
+  const widthMm = SCREEN_WIDTHS.includes(Number(width)) ? Number(width) : SCREEN_DEFAULT_WIDTH_MM;
   const panel = showerPhotoWidth(photo, widthMm);
   const shot = <image href={src} width="1024" height="1024" />;
   const mounting = photo.mounting === 'clip' ? 'Clip fixed' : 'Channel fixed';

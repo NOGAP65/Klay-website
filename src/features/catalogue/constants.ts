@@ -520,37 +520,41 @@ export const CATALOGUE: CatalogueItem[] = [
   },
   {
     id: 'frameless-shower-screens',
-    name: 'Fixed frameless',
+    name: 'Fixed frameless showerscreen',
     group: 'Other',
     tagline: 'Toughened glass, no frame. The bathroom disappears.',
-    to: enquire('Fixed frameless'),
+    to: enquire('Fixed frameless showerscreen'),
     glyph: 'shower-screens',
     image: '/images/shop/shower-screen-clip.webp',
   },
   {
     id: 'radius-corner-fixed-frameless',
-    name: 'Radius corner fixed frameless',
+    name: 'Radius corner fixed frameless showerscreen',
     group: 'Other',
     tagline: 'A softly rounded corner, in clear or reeded glass.',
-    to: enquire('Radius corner fixed frameless'),
+    to: enquire('Radius corner fixed frameless showerscreen'),
     glyph: 'shower-screens',
     image: '/images/shop/shower-radius-clip-clear.webp',
   },
   {
     id: 'semi-frameless-front-only',
-    name: 'Semi-frameless (Front only)',
+    name: 'Semi-frameless (Front only) showerscreen',
     group: 'Other',
     // The tagline carries the two facts that are NOT choices on this card: the
     // glass, which comes in clear and nothing else, and the telescopic frame,
     // which is the reason the product exists. See SEMI_SCREEN_HEIGHT_MM.
     tagline: 'A framed, telescopic front panel. 6mm clear toughened glass.',
-    to: enquire('Semi-frameless (Front only)'),
-    // NO PHOTOGRAPH YET, deliberately — this SKU is specced ahead of its
-    // imagery. The glyph is the range's own and is what every product without a
-    // photograph falls back to, so the card is a drawing rather than a hole; and
-    // shopPhotos has no entry for this id, which `shopPhoto` answers with
-    // undefined by design. Drop a shot in /images/shop and add `image` when
-    // there is one.
+    to: enquire('Semi-frameless (Front only) showerscreen'),
+    image: '/images/shop/shower-semi-front-only.webp',
+    glyph: 'shower-screens',
+  },
+  {
+    id: 'semi-frameless-front-return',
+    name: 'Semi frameless (Front and Return) showerscreen',
+    group: 'Other',
+    tagline: 'A clear glass corner enclosure with a slim perimeter frame.',
+    to: enquire('Semi frameless (Front and Return) showerscreen'),
+    image: '/images/shop/shower-semi-frameless.webp',
     glyph: 'shower-screens',
   },
 ]

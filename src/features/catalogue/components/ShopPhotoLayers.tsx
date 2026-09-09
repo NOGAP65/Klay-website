@@ -7,6 +7,7 @@ import { FINISH_TEXTURE, FINISH_TILE_MM, WARDROBE_COLOURS, wardrobeModelById } f
 import { useMediaQuery } from '@/shared';
 
 import { ShowerPhotoLayers } from './ShowerPhotoLayers';
+import { SemiScreenPhotoLayers } from './SemiScreenPhotoLayers';
 import { usePhotoTransition } from './usePhotoTransition';
 
 interface Props { photo: ShopPhoto; colour: string; colourName?: string; hardware: string; width?: string }
@@ -123,7 +124,8 @@ export function ShopPhotoLayers({ photo: selectedPhoto, ...selection }: Props) {
   const [photo, setPhoto] = useState(selectedPhoto);
   useEffect(() => {
     let isCancelled = false;
-    const sources = [selectedPhoto.src, selectedPhoto.shower?.background].filter((src): src is string => !!src);
+    const sources = [selectedPhoto.src, selectedPhoto.shower?.background,
+      selectedPhoto.semi?.background, selectedPhoto.semi?.reflections].filter((src): src is string => !!src);
     void Promise.all(sources.map(src => {
       const next = new Image();
       next.src = src;
@@ -133,6 +135,8 @@ export function ShopPhotoLayers({ photo: selectedPhoto, ...selection }: Props) {
     }).catch(() => { /* Retain the last complete preview on a failed request. */ });
     return () => { isCancelled = true; };
   }, [selectedPhoto]);
+  if (photo.semi) return <SemiScreenPhotoLayers key={photo.src} src={photo.src} photo={photo.semi}
+    hardware={selection.hardware} width={selection.width} />;
   return photo.shower
     ? <ShowerPhotoLayers key={photo.src} src={photo.src} photo={photo.shower} hardware={selection.hardware} width={selection.width} />
     : <PhotoPreview key={photo.src} photo={photo} {...selection} />;

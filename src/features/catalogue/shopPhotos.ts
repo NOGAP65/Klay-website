@@ -1,5 +1,6 @@
 import type { JoineryPhotoWidth } from './lib/joineryPhotoWidth';
 import type { ShowerPhoto } from './lib/showerPhotoWidth';
+import type { SemiScreenPhoto } from './lib/semiScreenPhoto';
 
 export type PhotoMaterial = 'cellular' | 'day' | 'mesh' | 'shutter' | 'hardware';
 export interface PhotoRegion { path: string; material: PhotoMaterial }
@@ -14,6 +15,7 @@ export interface ShopPhoto {
   boardScale?: number;
   joinery?: JoineryPhotoWidth;
   shower?: ShowerPhoto;
+  semi?: SemiScreenPhoto;
 }
 
 // Traced on the 1024px photographs. Keep the camera and these silhouettes
@@ -173,6 +175,23 @@ function radiusScreen(src: string, mounting: 'clip' | 'channel', glass: 'clear' 
   };
 }
 
+function semiScreen(layout: SemiScreenPhoto['layout']): ShopPhoto {
+  const isFront = layout === 'front-only';
+  const right = isFront ? 756 : 722;
+  const bottom = isFront ? 923 : 920;
+  const frontMetal = `M145 111H159V869H145Z M${right - 17} 78H${right}V${bottom}H${right - 17}Z M181 122H193V138H181Z M181 846H193V859H181Z M373 496Q382 491 391 498L393 503Q383 510 374 506Q369 502 373 496Z`;
+  return { src: isFront ? '/images/shop/shower-semi-front-only.webp' : '/images/shop/shower-semi-frameless.webp',
+    description: `Semi-frameless ${isFront ? 'front only' : 'front and return'} showerscreen — clear glass`,
+    semi: { layout, right,
+      background: isFront ? '/images/shop/shower-semi-front-bathroom.webp' : '/images/shop/shower-semi-bathroom.webp',
+      reflections: '/images/shop/shower-semi-reflections.webp',
+      metal: frontMetal + (isFront ? '' : ' M722 79L862 147V158L722 91Z M722 906L855 824L862 834L722 920Z M854 149H862V834L854 838Z'),
+      rails: `M157 111L${right} 77V89L157 123Z M145 856L${right} ${bottom - 14}V${bottom}L145 869Z`,
+      doorEdge: `M${isFront ? 406 : 404} 109h2v770h-2Z`,
+    },
+  };
+}
+
 export const SHOP_PHOTOS: Record<string, Record<string, ShopPhoto>> = {
   'honeycomb-blinds': {
     blockout: { src: '/images/shop/honeycomb-blockout.webp', description: 'Blockout honeycomb — opaque cellular fabric with accordion pleats',
@@ -191,6 +210,8 @@ export const SHOP_PHOTOS: Record<string, Record<string, ShopPhoto>> = {
   wardrobes: { SRDH: forma1, SRSTDH02: forma2, SRDTDH01: forma3 },
   shelving: { LIN01: linen1, LIN02: linen2, LIN05: linen5, LINBR02: linenBroom },
   'frameless-shower-screens': { clip: clipScreen, channel: channelScreen },
+  'semi-frameless-front-only': { default: semiScreen('front-only') },
+  'semi-frameless-front-return': { default: semiScreen('front-return') },
   'radius-corner-fixed-frameless': {
     'clip-clear': radiusScreen('/images/shop/shower-radius-clip-clear.webp', 'clip', 'clear'),
     'channel-clear': radiusScreen('/images/shop/shower-radius-channel-clear.webp', 'channel', 'clear'),

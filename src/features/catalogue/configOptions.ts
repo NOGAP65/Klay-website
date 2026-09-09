@@ -67,6 +67,7 @@ import {
   type CatalogueItem,
 } from './constants'
 import type { CartItem } from '@/features/cart'
+import { FRONT_RETURN_SIZES, frontReturnSizeLabel } from './lib/semiScreenPhoto'
 
 // SEVEN SLOTS NOW, AND THE TWO NEW ONES ARE NOT WINDOW FIELDS.
 //
@@ -384,7 +385,7 @@ const FIXED_SCREEN_OPTIONS: ProductOptions = {
   locationChoices: SCREEN_LOCATION_CHOICES,
   variantLabel: 'Fixed',
   variants: [v('clip', 'Clip fixed'), v('channel', 'Channel fixed')],
-  hardwareLabel: 'Colour',
+  hardwareLabel: 'Hardware colour',
   hardwareFirst: true,
   hardwareChoicesOfVariant: id =>
     (id === 'channel' ? SCREEN_CHANNEL_FINISHES : SCREEN_CLIP_FINISHES).map(f => ({
@@ -423,7 +424,7 @@ const FIXED_SCREEN_OPTIONS: ProductOptions = {
  * simply the two finishes. */
 const SEMI_SCREEN_OPTIONS: ProductOptions = {
   locationChoices: SCREEN_LOCATION_CHOICES,
-  hardwareLabel: 'Colour',
+  hardwareLabel: 'Hardware colour',
   hardwareFirst: true,
   hardwareChoices: SEMI_SCREEN_FINISHES.map(f => ({ id: f.name, label: f.name, hex: f.hex })),
   widths: SEMI_SCREEN_WIDTHS,
@@ -619,6 +620,11 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // variant of a frameless screen, and it is a different product. See
   // SEMI_SCREEN_OPTIONS.
   'semi-frameless-front-only': SEMI_SCREEN_OPTIONS,
+  'semi-frameless-front-return': {
+    ...SEMI_SCREEN_OPTIONS,
+    widths: FRONT_RETURN_SIZES.map(s => s.width),
+    widthFormat: frontReturnSizeLabel,
+  },
 }
 
 /** Fallback for a product added to the catalogue before it is added here. One

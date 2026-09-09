@@ -11,7 +11,7 @@ async function loadTypescript(file) {
 const { SHOP_PHOTOS, shopPhoto } = await loadTypescript('src/features/catalogue/shopPhotos.ts');
 const { photoColourCurves } = await loadTypescript('src/features/catalogue/lib/photoColour.ts');
 const photos = Object.values(SHOP_PHOTOS).flatMap(Object.values);
-assert.equal(photos.length, 17);
+assert.equal(photos.length, 19);
 assert.notEqual(shopPhoto('honeycomb-blinds', 'blockout').src, shopPhoto('honeycomb-blinds', 'daynight').src);
 assert.equal(shopPhoto('zip-guide-systems').src, '/images/shop/zip-guide-alfresco.webp');
 for (const product of ['curtains', 'roller-blinds', 'venetian-blinds', 'plantation-shutters', 'folding-arm-awnings', 'pleated-flyscreens']) {
@@ -24,9 +24,10 @@ for (const [product, layouts] of Object.entries(expectedLayouts)) {
 }
 for (const photo of photos) {
   assert.ok(existsSync(`public${photo.src}`), photo.src);
-  assert.ok(photo.regions?.length || photo.boards?.length || photo.shower, `${photo.src} needs material regions`);
+  assert.ok(photo.regions?.length || photo.boards?.length || photo.shower || photo.semi, `${photo.src} needs material regions`);
 }
-const assets = photos.flatMap(p => [p.src, ...(p.shower ? [p.shower.background] : [])]);
+const assets = photos.flatMap(p => [p.src, ...(p.shower ? [p.shower.background] : []),
+  ...(p.semi ? [p.semi.background, p.semi.reflections] : [])]);
 assert.deepEqual(new Set(readdirSync('public/images/shop').map(f => `/images/shop/${f}`)), new Set(assets));
 const references = { cellular: '#F2F0EC', day: '#F2F0EC', mesh: '#6E7276', shutter: '#F1F0EC', hardware: '#D3D7DB' };
 const swatches = ['#303030', '#F2F0EC', '#2C4A30', '#8C2820', '#1C3048', '#DCD7CC', '#26282A', '#44464A', '#C2A161'];
@@ -43,4 +44,4 @@ const opaque = photoColourCurves('#303030', 'cellular')[0];
 const day = photoColourCurves('#303030', 'day')[0];
 assert.ok(opaque[230] - opaque[200] > 0.07, 'Dark honeycomb must retain pleat contrast');
 assert.ok(day[210] - opaque[210] > 0.3, 'Day fabric must retain transmitted daylight');
-console.log('Shop photos: 17 product photos and a shower background, all layouts, excluded products, colour range, shadows and day/night separation pass.');
+console.log('Shop photos: 19 product photos and four supporting bathroom/reflection assets; all layouts, exclusions, colours and shadows pass.');

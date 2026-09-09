@@ -29,12 +29,12 @@ const { fieldsFor, defaultSelection, withChoice, hardwareHex, configuredLine } =
 const { shopPhoto } = await import(moduleUrl('src/features/catalogue/shopPhotos.ts'));
 const { showerPhotoWidth, showerGlassPath, showerFreeEdgePath } = await import(moduleUrl('src/features/catalogue/lib/showerPhotoWidth.ts'));
 const item = CATALOGUE.find(p => p.id === 'frameless-shower-screens');
-assert.equal(item.name, 'Fixed frameless');
+assert.equal(item.name, 'Fixed frameless showerscreen');
 assert.equal(SCREEN_HEIGHT_MM, 2053, 'The existing shower height must not change');
 const initial = defaultSelection(item);
 assert.equal(initial.variant, 'clip');
 assert.equal(initial.hardware, 'Matt Black');
-assert.equal(initial.width, '700');
+assert.equal(initial.width, '1100');
 const expectedWidths = ['700', '800', '900', '1000', '1050', '1100', '1150', '1200', '1300', '1400'];
 const finishes = ['Matt Black', 'Satin Silver', 'Brushed Nickel', 'Brushed Gold', 'Matt White', 'Gunmetal', 'Polished Silver'];
 for (const variant of ['clip', 'channel']) {
@@ -45,6 +45,7 @@ for (const variant of ['clip', 'channel']) {
   const widths = fields.find(f => f.id === 'width').choices;
   assert.deepEqual(widths.map(c => c.id), expectedWidths, 'Preserve all ten configured dimensions');
   const hardware = fields.find(f => f.id === 'hardware').choices;
+  assert.equal(fields.find(f => f.id === 'hardware').label, 'Hardware colour');
   assert.deepEqual(hardware.map(c => c.id), finishes.filter(f => variant === 'clip' || f !== 'Gunmetal'));
   for (const finish of hardware) {
     const selected = withChoice(item, selection, 'hardware', finish.id);
@@ -70,7 +71,7 @@ assert.equal(withChoice(item, gunmetal, 'variant', 'channel').hardware, 'Matt Bl
 assert.notEqual(shopPhoto(item.id, 'clip').src, shopPhoto(item.id, 'channel').src);
 assert.equal(shopPhoto(item.id, 'clip').shower.background, shopPhoto(item.id, 'channel').shower.background);
 const radiusItem = CATALOGUE.find(p => p.id === 'radius-corner-fixed-frameless');
-assert.equal(radiusItem.name, 'Radius corner fixed frameless');
+assert.equal(radiusItem.name, 'Radius corner fixed frameless showerscreen');
 assert.equal(CATALOGUE.indexOf(radiusItem), CATALOGUE.indexOf(item) + 1);
 const radiusInitial = defaultSelection(radiusItem);
 assert.equal(radiusInitial.glass, 'clear');
@@ -102,4 +103,49 @@ for (const variant of ['clip', 'channel']) {
 }
 assert.equal(radiusPhotos.size, 4, 'Every glass/mounting combination has a matching photograph');
 assert.notEqual(configuredLine(radiusItem, radiusInitial).blindType, configuredLine(radiusItem, { ...radiusInitial, glass: 'reeded' }).blindType);
-console.log('Shower previews: fixed and radius panels, 60 size combinations, finishes, rounded edges, glass selection and quote identity pass.');
+const { semiScreenPlan, FRONT_RETURN_SIZES } = await import(moduleUrl('src/features/catalogue/lib/semiScreenPhoto.ts'));
+assert.deepEqual(FRONT_RETURN_SIZES, [
+  { width: 800, depth: 850 }, { width: 850, depth: 890 }, { width: 900, depth: 910 },
+  { width: 1050, depth: 1010 }, { width: 1200, depth: 1010 }, { width: 1350, depth: 1010 },
+]);
+for (const layout of ['front-only', 'front-return']) {
+  const product = CATALOGUE.find(p => p.id === `semi-frameless-${layout}`);
+  assert.ok(product.name.endsWith('showerscreen'));
+  assert.equal(new URL(product.to, 'https://klay.test').searchParams.get('product'), product.name);
+  const selection = defaultSelection(product);
+  assert.equal(selection.width, '1050');
+  const fields = fieldsFor(product, selection);
+  assert.equal(fields.find(f => f.id === 'hardware').label, 'Hardware colour');
+  assert.deepEqual(fields.map(f => f.id), ['location', 'hardware', 'width']);
+  assert.deepEqual(fields.find(f => f.id === 'hardware').choices.map(c => c.id).sort(), ['Bright Silver', 'Matt Black']);
+  assert.deepEqual(fields.find(f => f.id === 'width').choices.map(c => c.id), FRONT_RETURN_SIZES.map(s => String(s.width)));
+  const photo = shopPhoto(product.id);
+  let previousRight = 0;
+  const quoteIds = new Set();
+  for (const size of FRONT_RETURN_SIZES) {
+    const plan = semiScreenPlan(photo.semi, size.width);
+    assert.equal(plan.height, 1950, 'Semi-frameless has its own fixed height');
+    assert.equal(plan.depth, layout === 'front-return' ? size.depth : undefined);
+    assert.ok(plan.right > previousRight, 'Every size visibly widens the screen');
+    previousRight = plan.right;
+    assert.equal(plan.front[0].scaleX, 1, 'Door and knob never shrink');
+    assert.equal(plan.front[2].scaleX, 1, 'Jamb thickness stays fixed');
+    assert.ok(plan.front[1].scaleX > 0, 'Every size has a real fixed infill');
+    for (let i = 1; i < plan.front.length; i++) {
+      const a = plan.front[i - 1], b = plan.front[i];
+      assert.ok(Math.abs(a.end * a.scaleX + a.x - b.start * b.scaleX - b.x) < 0.001, 'No gap between front slices');
+    }
+    assert.equal(plan.returns.length > 0, layout === 'front-return');
+    for (const finish of ['Bright Silver', 'Matt Black']) {
+      const chosen = withChoice(product, { ...selection, width: String(size.width) }, 'hardware', finish);
+      assert.match(hardwareHex(product, chosen), /^#[0-9a-f]{6}$/i);
+      const line = configuredLine(product, chosen);
+      const dimension = line.options.find(o => o.label === 'Dimensions').value;
+      assert.ok(dimension.includes('1950') && dimension.includes(String(size.width)));
+      if (layout === 'front-return') assert.ok(dimension.includes(`D${size.depth}`));
+      quoteIds.add(line.blindType);
+    }
+  }
+  assert.equal(quoteIds.size, 12, 'Every size and finish stays distinct in the quote');
+}
+console.log('Shower previews: four products, fixed/radius controls, 12 semi-frameless sizes, 1950mm height, paired return depths, finishes and quote identity pass.');
