@@ -370,8 +370,23 @@ function DenseField({
   // layouts cannot disagree about the same field: the accordion reads `kind`,
   // and a four-choice 'select' laid out as chips here would be one row of the
   // panel rendering as a different control on the dense card.
+  //
+  // AND A FIELD CAN ASK TO BE LAID OUT, which is what `field.listed` is for and
+  // why the length rule is no longer the last word. The two mirror cards are the
+  // case that forced it: both ask "Shape", and they agreed only while both lists
+  // were short. Framed comes in three shapes so it drew chips; frameless comes
+  // in six so it fell past the cap and collapsed into a dropdown — the same
+  // question, on two adjacent cards, wearing two different controls, decided by
+  // nothing but how many shapes each happens to be made in.
+  //
+  // A shape belongs with the colour card above rather than with the length rule.
+  // "D shaped" and "Gothic" are words standing in for outlines the customer is
+  // choosing BETWEEN, so the row is the information the same way a swatch row
+  // is, and hiding it behind a press hides the only thing on the row worth
+  // looking at.
   const listed =
-    field.kind === 'swatches' || (field.kind !== 'select' && field.choices.length <= 4);
+    field.kind === 'swatches'
+    || (field.kind !== 'select' && (field.listed || field.choices.length <= 4));
 
   if (listed) {
     return (

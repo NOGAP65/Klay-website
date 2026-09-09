@@ -130,6 +130,15 @@ export interface ConfigField {
    * built, and a row whose list narrows cannot end up defaulting to a size it
    * no longer offers. */
   defaultChoice?: string
+  /** LAY THE CHOICES OUT, however many there are — the dense card's default is
+   * to collapse anything past four into a dropdown.
+   *
+   * For a field whose options are the information rather than a summary of it,
+   * the same argument the colour swatches win on: see the note on `listed` in
+   * RangeConfigurator's DenseField. A mirror's shape row is the one that asks
+   * for it, and it asks on both mirror cards rather than on the longer one, so
+   * the two stop agreeing by coincidence of length. */
+  listed?: boolean
 }
 
 /** The three window-size bands the pricing works in — see lib/pricing. Shown
@@ -319,6 +328,11 @@ interface ProductOptions {
    * ignores them. */
   variantLabel?: string
   variants?: ConfigChoice[]
+  /** Show every variant on the dense card rather than collapsing past four into
+   * a dropdown. Set where the variant is a THING the customer is comparing
+   * rather than a word summarising itself — a mirror's shape. See `listed` on
+   * ConfigField. */
+  variantsListed?: boolean
   /** Offered only where there is visible metalwork to choose — a track, a
    * headrail, a frame. A wardrobe's hinges are not a decision made on a card. */
   hardware?: boolean
@@ -438,14 +452,27 @@ const SEMI_SCREEN_OPTIONS: ProductOptions = {
 }
 
 const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
+  // BOTH MIRRORS SHOW EVERY SHAPE. They ask the same question and they used to
+  // answer it with two different controls: framed comes in three shapes so it
+  // drew chips, frameless comes in six so it fell past the dense card's
+  // four-choice cap and collapsed into a dropdown. The two agreed only while
+  // both lists happened to be short, which is not agreement.
+  //
+  // Chips is the right side of that to land on, for the reason the colour card
+  // is always shown: a shape is a thing being compared, not a word summarising
+  // itself. `variantsListed` is set on BOTH so the pair is explicit rather than
+  // coincidental — the framed card renders identically either way today, and
+  // stops depending on staying under four shapes tomorrow.
   'mirrors-without-frames': {
     variantLabel: 'Shape',
     variants: mirrorShapes(false).map(s => v(s.id, s.label)),
+    variantsListed: true,
     dimensionsOfVariant: shape => mirrorDimensions(false, shape),
   },
   'mirror-with-frame': {
     variantLabel: 'Shape',
     variants: mirrorShapes(true).map(s => v(s.id, s.label)),
+    variantsListed: true,
     dimensionsOfVariant: shape => mirrorDimensions(true, shape),
     hardwareLabel: 'Frame colour',
     hardwareChoices: MIRROR_FRAME_COLOURS,
@@ -693,6 +720,7 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
       label: options.variantLabel ?? 'Type',
       kind: 'chips',
       choices: options.variants,
+      listed: options.variantsListed,
     })
   }
   // THE CLOTH AND ITS METALWORK, in whichever order the product is decided in.
