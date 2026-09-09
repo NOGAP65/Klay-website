@@ -53,7 +53,14 @@ import {
 import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '../../lib/pricing'
 
 
-import { CASSETTE_COLOURS, type CatalogueItem } from './constants'
+import {
+  CASSETTE_COLOURS,
+  SCREEN_CHANNEL_FINISHES,
+  SCREEN_CLIP_FINISHES,
+  SCREEN_HEIGHT_MM,
+  SCREEN_WIDTHS,
+  type CatalogueItem,
+} from './constants'
 import type { CartItem } from '@/features/cart'
 
 // SEVEN SLOTS NOW, AND THE TWO NEW ONES ARE NOT WINDOW FIELDS.
@@ -163,6 +170,54 @@ const LOCATION_CHOICES: ConfigChoice[] = [
   { id: 'other', label: 'Other', group: 'Elsewhere' },
 ]
 
+/** WHERE A SHOWER SCREEN GOES, and the answer is a bathroom.
+ *
+ * The list above is right for anything that hangs in a window, and wrong for
+ * this: a fixed glass panel goes in a wet area, so offering it a kitchen, a
+ * rumpus or an outdoor is offering seventeen rooms to answer a question with
+ * five possible answers. Narrowing it is the difference between a row the
+ * customer scrolls and a row they answer.
+ *
+ * FIVE, WHERE THE SHARED LIST STOPS AT THREE. That is a deliberate difference
+ * and not a drift: the general list is the one Bobby specified and it runs to
+ * three bathrooms, and a screen is quoted per wet area in a house that may have
+ * more of them than it has blinds. Worth reconciling if the two ever need to
+ * agree — flagged rather than silently unified, because raising the shared list
+ * to five would change every other card too.
+ *
+ * NO OTHER, AND NO GROUP HEADINGS. Five entries of one kind are a list, not
+ * four runs of one, and a heading reading Bathrooms over five bathrooms is a
+ * label for the whole control. Other is left off because it is not a screen's
+ * escape hatch — there is nowhere else a shower screen goes. */
+const SCREEN_LOCATION_CHOICES: ConfigChoice[] = [
+  { id: 'bathroom-1', label: 'Bathroom 1' },
+  { id: 'bathroom-2', label: 'Bathroom 2' },
+  { id: 'bathroom-3', label: 'Bathroom 3' },
+  { id: 'bathroom-4', label: 'Bathroom 4' },
+  { id: 'bathroom-5', label: 'Bathroom 5' },
+]
+
+/** WHERE A ZIP SCREEN GOES — the two outdoor rooms it is bought for.
+ *
+ * Same reasoning as the screens above, in the other direction: a zip system is
+ * the thing you close in an alfresco or an entertaining area, and the shared
+ * list's one "Outdoor" cannot tell two of them apart. A house with an alfresco
+ * off the kitchen and a separate entertaining area is two jobs, and on one
+ * "Outdoor" they collapse into a single cart line — the same failure the
+ * numbered bedrooms fixed indoors.
+ *
+ * Grouped, because these ARE two kinds of place rather than one run of eight. */
+const ZIP_LOCATION_CHOICES: ConfigChoice[] = [
+  { id: 'alfresco-1', label: 'Alfresco 1', group: 'Alfresco' },
+  { id: 'alfresco-2', label: 'Alfresco 2', group: 'Alfresco' },
+  { id: 'alfresco-3', label: 'Alfresco 3', group: 'Alfresco' },
+  { id: 'alfresco-4', label: 'Alfresco 4', group: 'Alfresco' },
+  { id: 'entertainment-1', label: 'Entertainment area 1', group: 'Entertainment areas' },
+  { id: 'entertainment-2', label: 'Entertainment area 2', group: 'Entertainment areas' },
+  { id: 'entertainment-3', label: 'Entertainment area 3', group: 'Entertainment areas' },
+  { id: 'entertainment-4', label: 'Entertainment area 4', group: 'Entertainment areas' },
+]
+
 /** A choice list broken into its dropdown headings, in the order the choices
  * were declared.
  *
@@ -225,6 +280,15 @@ const OPERATION_COLUMN: Record<string, 'manual' | 'motorised'> = {
 const HARDWARE_CHOICES: ConfigChoice[] = HARDWARE_OPTIONS.map(o => ({ id: o.id, label: o.label }))
 
 interface ProductOptions {
+  /** WHERE THIS PRODUCT GOES, where the whole-house list is the wrong list.
+   *
+   * Nearly everything Klay makes hangs in a window and can hang in any room, so
+   * nearly everything uses LOCATION_CHOICES. Two products do not: a shower
+   * screen goes in a bathroom and a zip system goes in an outdoor room, and
+   * offering either of them seventeen rooms is offering sixteen wrong answers.
+   *
+   * Absent means the shared list, which is the case for ten of the twelve. */
+  locationChoices?: ConfigChoice[]
   /** The first real question about this product, and what to call it.
    *
    * BOTH OPTIONAL, because some products do not have one. A venetian is a
@@ -253,6 +317,13 @@ interface ProductOptions {
    * chrome headrail. */
   hardwareLabel?: string
   hardwareChoices?: ConfigChoice[]
+  /** THE CHOSEN VARIANT'S OWN FINISHES, where the range does not offer one list
+   * across all of them. A shower screen's clip fixing carries gunmetal and its
+   * channel fixing does not, so the swatch row has to narrow with the mounting
+   * — otherwise the card offers a finish that cannot be ordered in the thing
+   * just chosen. Falls back to `hardwareChoices`; see widthsOfVariant, which is
+   * the same shape for the same reason. */
+  hardwareChoicesOfVariant?: (variantId: string | undefined) => ConfigChoice[] | undefined
   /** Asks for the metalwork BEFORE the cloth, which is the order an awning is
    * decided in: the cassette is bolted to the house and the fabric goes inside
    * it. Everywhere else the cloth is the product and its frame is a trim on it,
@@ -273,6 +344,11 @@ interface ProductOptions {
    * Falls back to `widths` when no model is chosen yet, which is what
    * defaultSelection's first pass sees. */
   widthsOfVariant?: (variantId: string | undefined) => number[] | undefined
+  /** What the width row is called, where "Width" undersells it. A shower panel
+   * is ordered as a pair of dimensions, so its row says Dimensions. */
+  widthLabel?: string
+  /** How one width reads on the row and on the quote. Defaults to "1200mm". */
+  widthFormat?: (mm: number) => string
 }
 
 const v = (id: string, label: string): ConfigChoice => ({ id, label })
@@ -355,7 +431,11 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // NO SCREEN ROW: A ZIP SYSTEM IS SOLD IN ONE MESH. It carried "Sunscreen mesh
   // / Blockout PVC", which is two products behind one name, and Klay makes the
   // first. The colour is the choice — see MESH_COLOURS.
+  // AN ALFRESCO OR AN ENTERTAINMENT AREA, and never a bedroom. A zip system is
+  // the thing you close in an outdoor room, and the shared list's single
+  // "Outdoor" could not tell two of them apart — see ZIP_LOCATION_CHOICES.
   'zip-guide-systems': {
+    locationChoices: ZIP_LOCATION_CHOICES,
     size: true,
     operation: true,
     colourLabel: 'Mesh colour',
@@ -432,9 +512,47 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     // no single code is available in. See widthsOfVariant.
     widthsOfVariant: id => (id ? wardrobeModelById(id).widths : undefined),
   },
+  // ONE SKU, AND IT IS THE FIXED PANEL.
+  //
+  // This card used to offer "Fixed panel / Hinged door / Sliding", which is the
+  // shape of a shower screen category rather than a thing Klay has priced. The
+  // range starts at the fixed panel, so that is the one SKU the card sells, and
+  // the row is named for it: FIXED, answered by how the glass is held.
+  //
+  // CLIP OR CHANNEL, which is the first real question about a frameless panel
+  // and not a cosmetic one. A clip is a bracket at the corners of the glass and
+  // leaves it looking unheld; a channel is a U-track the panel sits in, which is
+  // what you use when the walls are out or the glass is big enough to want the
+  // support. It decides both of the rows underneath it.
+  //
+  // SOURCED FROM STEGBAR — the finishes, the split between them and the ten
+  // sizes are read off their clip fixed and channel fixed pages rather than
+  // reasoned about here. See SCREEN_FINISHES.
   'frameless-shower-screens': {
-    variantLabel: 'Panel',
-    variants: [v('fixed', 'Fixed panel'), v('hinged', 'Hinged door'), v('sliding', 'Sliding')],
+    // A bathroom, one of five. See SCREEN_LOCATION_CHOICES.
+    locationChoices: SCREEN_LOCATION_CHOICES,
+    variantLabel: 'Fixed',
+    variants: [v('clip', 'Clip fixed'), v('channel', 'Channel fixed')],
+    // COLOUR, NOT HARDWARE, on the label — a frameless screen is glass and the
+    // metalwork holding it, so the only colour it has IS the hardware's. It
+    // rides the hardware field because that is the cart column a finish belongs
+    // in; calling it Hardware on the card would be asking about a component
+    // when the customer is choosing a colour.
+    hardwareLabel: 'Colour',
+    hardwareFirst: true,
+    // Gunmetal on the clip, not on the channel. See SCREEN_FINISHES.
+    hardwareChoicesOfVariant: id =>
+      (id === 'channel' ? SCREEN_CHANNEL_FINISHES : SCREEN_CLIP_FINISHES).map(f => ({
+        id: f.name,
+        label: f.name,
+        hex: f.hex,
+      })),
+    // The same ten sizes on both mountings, so no widthsOfVariant is needed.
+    widths: SCREEN_WIDTHS,
+    widthLabel: 'Dimensions',
+    // "2053 × 900" — the height is the same on every size, so it is printed
+    // rather than asked. See SCREEN_HEIGHT_MM.
+    widthFormat: w => `${SCREEN_HEIGHT_MM} × ${w}`,
   },
 }
 
@@ -467,8 +585,17 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
   // seventeen is a wall of near-identical labels differing by one digit — the
   // worst thing to ask anyone to scan. Rooms are a list to find yourself in,
   // not a set to compare, which is what 'select' is for.
+  //
+  // AND NOT ALWAYS THE WHOLE HOUSE. Ten products take any room; a shower screen
+  // takes a bathroom and a zip system takes an outdoor room. See
+  // locationChoices.
   const fields: ConfigField[] = [
-    { id: 'location', label: 'Location', kind: 'select', choices: LOCATION_CHOICES },
+    {
+      id: 'location',
+      label: 'Location',
+      kind: 'select',
+      choices: options.locationChoices ?? LOCATION_CHOICES,
+    },
   ]
   if (options.variants?.length) {
     fields.push({
@@ -494,12 +621,19 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
   // A product supplies its own metalwork list where its metalwork is not a
   // blind's. `hardware: true` still means the blind headrail colours.
   const hardwareField = () => {
-    if (options.hardwareChoices) {
+    // THE CHOSEN MOUNTING'S FINISHES WHERE IT HAS ITS OWN. A shower screen's
+    // clip carries gunmetal and its channel does not, so the swatch row has to
+    // follow the row above it — the same shape as widthsOfVariant below, and for
+    // the same reason: a swatch on offer has to be a finish you can actually
+    // order in the thing you just chose.
+    const hardwareChoices =
+      options.hardwareChoicesOfVariant?.(sel?.variant) ?? options.hardwareChoices
+    if (hardwareChoices) {
       fields.push({
         id: 'hardware',
         label: options.hardwareLabel ?? 'Hardware',
         kind: 'swatches',
-        choices: options.hardwareChoices,
+        choices: hardwareChoices,
       })
     } else if (options.hardware) {
       fields.push({ id: 'hardware', label: 'Hardware', kind: 'chips', choices: HARDWARE_CHOICES })
@@ -514,9 +648,14 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
   if (widths?.length) {
     fields.push({
       id: 'width',
-      label: 'Width',
+      label: options.widthLabel ?? 'Width',
       kind: 'select',
-      choices: widths.map(w => v(String(w), `${w}mm`)),
+      // A PRODUCT MAY PRINT ITS SIZE DIFFERENTLY FROM "1200mm". A shower panel
+      // is a stock size in both directions and is ordered as one — the height
+      // never varies, so it belongs in the label rather than in a row of its
+      // own, and the line then reads the way the order does. Everything else
+      // has one dimension worth naming and keeps the plain form.
+      choices: widths.map(w => v(String(w), options.widthFormat?.(w) ?? `${w}mm`)),
     })
   }
   if (!options.hardwareFirst) hardwareField()

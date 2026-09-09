@@ -213,6 +213,60 @@ export const SHUTTER_COLOURS = [
   { name: 'Silver', hex: '#B4B7BA' },
 ]
 
+/** THE METALWORK ON A FRAMELESS SHOWER SCREEN — the clips or the channel that
+ * hold the glass, which on a frameless screen is the only hardware there is.
+ *
+ * SOURCED, NOT REASONED, and that makes this list different in kind from
+ * SLAT_COLOURS, AWNING_COLOURS, MESH_COLOURS and SHUTTER_COLOURS above. Those
+ * are the colours such a range plainly ought to carry and are flagged for a
+ * commercial check. These seven names are Stegbar's own, read off their clip
+ * fixed and channel fixed panel pages in September 2026 — the range Klay is
+ * matching — so the names and the split below are checked rather than guessed.
+ *
+ * THE HEXES ARE STILL MINE. Stegbar publishes finish names, not colour values,
+ * so the swatch tints are an approximation of a matte powder coat, a satin
+ * anodise and a brushed metal. A wrong hex here shows a customer a slightly
+ * wrong shade of a finish that does exist, which is a much smaller error than
+ * the lists above risk — but it is the thing to correct if the swatches look
+ * off beside a real sample.
+ *
+ * GUNMETAL IS CLIP ONLY. That is the one asymmetry between the two mountings
+ * and it is not an oversight: Stegbar lists seven finishes against the clip and
+ * six against the channel, gunmetal being the one that does not carry over. See
+ * SCREEN_CLIP_FINISHES and SCREEN_CHANNEL_FINISHES. */
+export const SCREEN_FINISHES = [
+  { name: 'Matt Black', hex: '#2B2B2D' },
+  { name: 'Satin Silver', hex: '#C6C9CB' },
+  { name: 'Brushed Nickel', hex: '#B5B2AC' },
+  { name: 'Brushed Gold', hex: '#C1A164' },
+  { name: 'Matt White', hex: '#F2F1EE' },
+  { name: 'Gunmetal', hex: '#5A5E63' },
+  { name: 'Polished Silver', hex: '#D9DDE0' },
+]
+
+/** All seven. A clip is a small bracket at the corners of the glass and the
+ * range's full finish list is offered against it. */
+export const SCREEN_CLIP_FINISHES = SCREEN_FINISHES
+
+/** The same six, less gunmetal — derived from the list above rather than typed
+ * out again, so a finish added to the range reaches both mountings and only the
+ * one genuine exception is written down. */
+export const SCREEN_CHANNEL_FINISHES = SCREEN_FINISHES.filter(f => f.name !== 'Gunmetal')
+
+/** EVERY WIDTH A FIXED PANEL IS MADE IN, and the one height it comes in.
+ *
+ * Stegbar's own ten sizes, identical across clip and channel: H2053 with widths
+ * from 700 to 1400. The height never varies, which is why it is a constant here
+ * and not a row on the card — a question with one answer is not a question. It
+ * is printed alongside the width so the line on the quote reads the way the
+ * order does.
+ *
+ * NOT A BAND. These are real millimetres off a stock list, so a customer picks
+ * a size that exists rather than a small/medium/large the measure has to
+ * resolve — the same reason the joinery reads widths instead of `size`. */
+export const SCREEN_HEIGHT_MM = 2053
+export const SCREEN_WIDTHS = [700, 800, 900, 1000, 1050, 1100, 1150, 1200, 1300, 1400]
+
 /** See AWNING_COLOURS. The housing, not the cloth. */
 export const CASSETTE_COLOURS = [
   { name: 'White', hex: '#F2F1EE' },
@@ -338,7 +392,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Tracked edges. No gaps, no flap, no wind noise.',
     to: enquire('Zip Guide Systems'),
     glyph: 'screens',
-    image: '/images/shop/zip-guide-systems.webp',
+    image: '/images/shop/zip-guide-alfresco.webp',
     // ONE MESH, IN A CHOICE OF COLOURS — see MESH_COLOURS.
     colours: MESH_COLOURS,
     light: ['Sunscreen'],
