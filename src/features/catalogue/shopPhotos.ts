@@ -161,6 +161,18 @@ const channelScreen: ShopPhoto = {
   },
 };
 
+function radiusScreen(src: string, mounting: 'clip' | 'channel', glass: 'clear' | 'reeded'): ShopPhoto {
+  const base = mounting === 'clip' ? clipScreen : channelScreen;
+  return { ...base, src,
+    description: `Radius corner fixed frameless — ${glass === 'reeded' ? 'narrow-reeded' : 'clear'} glass, ${mounting} fixed`,
+    shower: { ...base.shower!, glass,
+      right: mounting === 'clip' ? 664 : 679,
+      cornerRadius: mounting === 'clip' ? 114 : 110,
+      cornerHeight: mounting === 'clip' ? 130 : 125,
+    },
+  };
+}
+
 export const SHOP_PHOTOS: Record<string, Record<string, ShopPhoto>> = {
   'honeycomb-blinds': {
     blockout: { src: '/images/shop/honeycomb-blockout.webp', description: 'Blockout honeycomb — opaque cellular fabric with accordion pleats',
@@ -179,9 +191,16 @@ export const SHOP_PHOTOS: Record<string, Record<string, ShopPhoto>> = {
   wardrobes: { SRDH: forma1, SRSTDH02: forma2, SRDTDH01: forma3 },
   shelving: { LIN01: linen1, LIN02: linen2, LIN05: linen5, LINBR02: linenBroom },
   'frameless-shower-screens': { clip: clipScreen, channel: channelScreen },
+  'radius-corner-fixed-frameless': {
+    'clip-clear': radiusScreen('/images/shop/shower-radius-clip-clear.webp', 'clip', 'clear'),
+    'channel-clear': radiusScreen('/images/shop/shower-radius-channel-clear.webp', 'channel', 'clear'),
+    'clip-reeded': radiusScreen('/images/shop/shower-radius-clip-reeded.webp', 'clip', 'reeded'),
+    'channel-reeded': radiusScreen('/images/shop/shower-radius-channel-reeded.webp', 'channel', 'reeded'),
+  },
 };
 
-export function shopPhoto(product: string, variant?: string): ShopPhoto | undefined {
+export function shopPhoto(product: string, variant?: string, glass?: string): ShopPhoto | undefined {
   const photos = SHOP_PHOTOS[product];
-  return photos?.[variant ?? 'default'] ?? (photos ? Object.values(photos)[0] : undefined);
+  return photos?.[`${variant ?? 'clip'}-${glass ?? 'clear'}`]
+    ?? photos?.[variant ?? 'default'] ?? (photos ? Object.values(photos)[0] : undefined);
 }

@@ -11,7 +11,7 @@ async function loadTypescript(file) {
 const { SHOP_PHOTOS, shopPhoto } = await loadTypescript('src/features/catalogue/shopPhotos.ts');
 const { photoColourCurves } = await loadTypescript('src/features/catalogue/lib/photoColour.ts');
 const photos = Object.values(SHOP_PHOTOS).flatMap(Object.values);
-assert.equal(photos.length, 13);
+assert.equal(photos.length, 17);
 assert.notEqual(shopPhoto('honeycomb-blinds', 'blockout').src, shopPhoto('honeycomb-blinds', 'daynight').src);
 assert.equal(shopPhoto('zip-guide-systems').src, '/images/shop/zip-guide-alfresco.webp');
 for (const product of ['curtains', 'roller-blinds', 'venetian-blinds', 'plantation-shutters', 'folding-arm-awnings', 'pleated-flyscreens']) {
@@ -43,4 +43,4 @@ const opaque = photoColourCurves('#303030', 'cellular')[0];
 const day = photoColourCurves('#303030', 'day')[0];
 assert.ok(opaque[230] - opaque[200] > 0.07, 'Dark honeycomb must retain pleat contrast');
 assert.ok(day[210] - opaque[210] > 0.3, 'Day fabric must retain transmitted daylight');
-console.log('Shop photos: 13 product photos and a shower background, all layouts, excluded products, colour range, shadows and day/night separation pass.');
+console.log('Shop photos: 17 product photos and a shower background, all layouts, excluded products, colour range, shadows and day/night separation pass.');

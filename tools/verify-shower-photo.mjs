@@ -25,11 +25,11 @@ function moduleUrl(file) {
   return url;
 }
 const { CATALOGUE, SCREEN_HEIGHT_MM } = await import(moduleUrl('src/features/catalogue/constants.ts'));
-const { fieldsFor, defaultSelection, withChoice, hardwareHex } = await import(moduleUrl('src/features/catalogue/configOptions.ts'));
+const { fieldsFor, defaultSelection, withChoice, hardwareHex, configuredLine } = await import(moduleUrl('src/features/catalogue/configOptions.ts'));
 const { shopPhoto } = await import(moduleUrl('src/features/catalogue/shopPhotos.ts'));
-const { showerPhotoWidth } = await import(moduleUrl('src/features/catalogue/lib/showerPhotoWidth.ts'));
+const { showerPhotoWidth, showerGlassPath, showerFreeEdgePath } = await import(moduleUrl('src/features/catalogue/lib/showerPhotoWidth.ts'));
 const item = CATALOGUE.find(p => p.id === 'frameless-shower-screens');
-assert.equal(item.name, 'Fixed Panel Shower Screen');
+assert.equal(item.name, 'Fixed frameless');
 assert.equal(SCREEN_HEIGHT_MM, 2053, 'The existing shower height must not change');
 const initial = defaultSelection(item);
 assert.equal(initial.variant, 'clip');
@@ -69,4 +69,37 @@ const gunmetal = withChoice(item, initial, 'hardware', 'Gunmetal');
 assert.equal(withChoice(item, gunmetal, 'variant', 'channel').hardware, 'Matt Black', 'Keep existing dependent-finish behaviour');
 assert.notEqual(shopPhoto(item.id, 'clip').src, shopPhoto(item.id, 'channel').src);
 assert.equal(shopPhoto(item.id, 'clip').shower.background, shopPhoto(item.id, 'channel').shower.background);
-console.log('Shower preview: both mountings, 20 sizes, 13 finishes, fixed height and unchanged configuration choices pass.');
+const radiusItem = CATALOGUE.find(p => p.id === 'radius-corner-fixed-frameless');
+assert.equal(radiusItem.name, 'Radius corner fixed frameless');
+assert.equal(CATALOGUE.indexOf(radiusItem), CATALOGUE.indexOf(item) + 1);
+const radiusInitial = defaultSelection(radiusItem);
+assert.equal(radiusInitial.glass, 'clear');
+assert.deepEqual(fieldsFor(radiusItem).map(f => f.id), ['glass', 'location', 'variant', 'hardware', 'width']);
+assert.deepEqual(fieldsFor(radiusItem)[0].choices.map(c => c.id), ['clear', 'reeded']);
+const radiusPhotos = new Set();
+for (const variant of ['clip', 'channel']) {
+  for (const glass of ['clear', 'reeded']) {
+    const selection = { ...radiusInitial, variant, glass };
+    assert.deepEqual(fieldsFor(radiusItem, selection).slice(1), fieldsFor(item, { ...initial, variant }), 'Radius keeps the same remaining controls');
+    const photo = shopPhoto(radiusItem.id, variant, glass);
+    radiusPhotos.add(photo.src);
+    assert.equal(photo.shower.mounting, variant);
+    assert.equal(photo.shower.glass, glass);
+    assert.ok(photo.shower.cornerRadius > 0);
+    assert.ok(showerFreeEdgePath(photo.shower).includes('A'), 'The photographed free edge includes a curved corner');
+    for (const width of expectedWidths) {
+      const panel = showerPhotoWidth(photo.shower, Number(width));
+      assert.ok(panel.width > photo.shower.cornerRadius, 'The corner fits the narrowest panel');
+      assert.equal(panel.height, 787, 'The height and floor position stay fixed');
+      assert.ok(showerGlassPath(photo.shower, panel.right).includes(`H${panel.right - photo.shower.cornerRadius}A`));
+    }
+    const line = configuredLine(radiusItem, selection);
+    assert.equal(line.options[0].label, 'Glass type');
+    assert.equal(line.options[0].value, glass === 'clear' ? 'Clear' : 'Narrow-reeded');
+    assert.ok(line.blindType.includes(`:${glass}:`), 'Glass type must be part of the cart line identity');
+    assert.equal(line.priceOnMeasure, true);
+  }
+}
+assert.equal(radiusPhotos.size, 4, 'Every glass/mounting combination has a matching photograph');
+assert.notEqual(configuredLine(radiusItem, radiusInitial).blindType, configuredLine(radiusItem, { ...radiusInitial, glass: 'reeded' }).blindType);
+console.log('Shower previews: fixed and radius panels, 60 size combinations, finishes, rounded edges, glass selection and quote identity pass.');

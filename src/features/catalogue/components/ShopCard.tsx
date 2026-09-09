@@ -183,7 +183,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
    * in the generated manifest rather than assembled from a template — see
    * fabricShots.ts, and the specification's note on why a constructed asset path
    * is unauditable. */
-  const photo = shopPhoto(item.id, sel.variant);
+  const photo = shopPhoto(item.id, sel.variant, sel.glass);
   const shot = photo ? undefined : fabricShot(item.id, sel.variant);
   const lit = isHovered;
   const isPhotographicAwning = item.id === 'folding-arm-awnings';

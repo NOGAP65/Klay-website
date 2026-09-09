@@ -1,5 +1,37 @@
 [
   {
+    "id": "shower-radius-clip-clear",
+    "source": "exec-11f06944-1247-4124-8487-fc93e4c13a38.png",
+    "asset": "public/images/shop/shower-radius-clip-clear.webp",
+    "reference": "https://www.stegbar.com.au/products/frameless-shower-screens",
+    "mode": "built-in image edit",
+    "prompt": "Use case: precise-object-edit. Edit target: this existing Klay bathroom product photo. Create a matching RADIUS CORNER fixed frameless shower screen, following the form of Stegbar's Radius Corner Fixed shower screen: ONLY the exposed TOP RIGHT corner of the single flat glass panel is smoothly rounded. Keep the glass panel flat, vertical and front-facing; this is NOT curved glass in plan, not a bent enclosure, not an arch, not rounded at every corner. Preserve exact scene framing and all background pixel locations, tile joints, shower fittings, vanity, daylight, camera, panel left/top/bottom/right positions, hardware positions and material. In the 1024 square reference, glass bounds are x181 to680 and y85 to872. Remove the square top-right corner and replace it with a quarter-circle of radius 85 pixels: top edge straight to about x595 at y85, a smoothly convex curve to x680 at y170, then a vertical straight free edge to the floor. This is polished clear 10mm glass with a delicate real green-grey edge, very subtle reflections, realistic transparency and natural daylight. All other glass corners remain square. Keep the width and height identical. No extra border around the glass. No text, logos, watermarks, people or dimension labels. Photographic precision and exact alignment with the original are essential. Keep the four existing small square brushed-silver CLIPS, two at the wall and two at the floor. No continuous metal channels."
+  },
+  {
+    "id": "shower-radius-channel-clear",
+    "source": "exec-bbeae0ce-52c2-4777-bf52-076d180fa48d.png",
+    "asset": "public/images/shop/shower-radius-channel-clear.webp",
+    "reference": "https://www.stegbar.com.au/products/frameless-shower-screens",
+    "mode": "built-in image edit",
+    "prompt": "Use case: precise-object-edit. Edit target: this existing Klay bathroom product photo. Create a matching RADIUS CORNER fixed frameless shower screen, following the form of Stegbar's Radius Corner Fixed shower screen: ONLY the exposed TOP RIGHT corner of the single flat glass panel is smoothly rounded. Keep the glass panel flat, vertical and front-facing; this is NOT curved glass in plan, not a bent enclosure, not an arch, not rounded at every corner. Preserve exact scene framing and all background pixel locations, tile joints, shower fittings, vanity, daylight, camera, panel left/top/bottom/right positions, hardware positions and material. In the 1024 square reference, glass bounds are x181 to680 and y85 to872. Remove the square top-right corner and replace it with a quarter-circle of radius 85 pixels: top edge straight to about x595 at y85, a smoothly convex curve to x680 at y170, then a vertical straight free edge to the floor. This is polished clear 10mm glass with a delicate real green-grey edge, very subtle reflections, realistic transparency and natural daylight. All other glass corners remain square. Keep the width and height identical. No extra border around the glass. No text, logos, watermarks, people or dimension labels. Photographic precision and exact alignment with the original are essential. Keep the existing continuous slender brushed-silver U-CHANNEL on LEFT wall edge and BOTTOM floor edge ONLY. No square clips. The rounded corner and top and free right edges are bare polished glass."
+  },
+  {
+    "id": "shower-radius-clip-reeded",
+    "source": "exec-6085ee47-2bbf-4f7c-b502-1f805ed68718.png",
+    "asset": "public/images/shop/shower-radius-clip-reeded.webp",
+    "reference": "https://www.stegbar.com.au/products/radius-corner-clip-fixed-1",
+    "mode": "built-in image edit",
+    "prompt": "Use case: precise-object-edit. Edit target: the supplied original Klay RADIUS CORNER shower-screen photograph. Change ONLY the GLASS TYPE from clear to NARROW-REEDED glass, like Stegbar's Radius Corner Fixed Reeded Glass gallery. Keep the exact same rounded free TOP RIGHT corner shape and precise panel silhouette, all hardware positions, camera, room, framing, outside-glass stone patterns and all object locations. The panel is translucent clear narrow-reeded toughened glass: many extremely fine continuous VERTICAL flutes with realistic cylindrical refraction, roughly 4-5 pixels per flute at 1024 resolution, subtle alternating clear and shadow lines. Its surface transmits daylight while horizontally distorting and softly obscuring the shower fittings and tiled wall BEHIND the glass. It is not opaque, not flat frosted white, not striped fabric, not a blind, not horizontal flutes. The existing bathroom and shower fittings remain visible through the fluting as distorted soft forms with vertical optical streaks. Glass outside the rounded silhouette does not exist; the surrounding bathroom remains perfectly sharp and unchanged. Preserve the original photograph's green-grey polished glass edges, lighting, shadows, materials, perspective and image resolution. Keep the metal mounting unchanged in its brushed silver base finish. One photograph, no text, logos, watermark, people or labels."
+  },
+  {
+    "id": "shower-radius-channel-reeded",
+    "source": "exec-074218da-64fe-49e2-8cbf-32db33ed1d24.png",
+    "asset": "public/images/shop/shower-radius-channel-reeded.webp",
+    "reference": "https://www.stegbar.com.au/products/radius-corner-channel-fixed-1",
+    "mode": "built-in image edit",
+    "prompt": "Use case: precise-object-edit. Edit target: the supplied original Klay RADIUS CORNER shower-screen photograph. Change ONLY the GLASS TYPE from clear to NARROW-REEDED glass, like Stegbar's Radius Corner Fixed Reeded Glass gallery. Keep the exact same rounded free TOP RIGHT corner shape and precise panel silhouette, all hardware positions, camera, room, framing, outside-glass stone patterns and all object locations. The panel is translucent clear narrow-reeded toughened glass: many extremely fine continuous VERTICAL flutes with realistic cylindrical refraction, roughly 4-5 pixels per flute at 1024 resolution, subtle alternating clear and shadow lines. Its surface transmits daylight while horizontally distorting and softly obscuring the shower fittings and tiled wall BEHIND the glass. It is not opaque, not flat frosted white, not striped fabric, not a blind, not horizontal flutes. The existing bathroom and shower fittings remain visible through the fluting as distorted soft forms with vertical optical streaks. Glass outside the rounded silhouette does not exist; the surrounding bathroom remains perfectly sharp and unchanged. Preserve the original photograph's green-grey polished glass edges, lighting, shadows, materials, perspective and image resolution. Keep the metal mounting unchanged in its brushed silver base finish. One photograph, no text, logos, watermark, people or labels."
+  },
+  {
     "id": "shower-screen-clip",
     "source": "exec-b4665ff4-bfcf-4a2a-9c19-e631c84274b3.png",
     "asset": "public/images/shop/shower-screen-clip.webp",

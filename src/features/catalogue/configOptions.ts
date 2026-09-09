@@ -80,6 +80,7 @@ import type { CartItem } from '@/features/cart'
 export type FieldId =
   | 'variant' | 'colour' | 'hardware' | 'size' | 'operation'
   | 'width'
+  | 'glass'
   // Where the thing is going. Not a property of the product — a property of the
   // job — and 'locationOther' is the free text behind the Other choice, which is
   // a stored answer rather than a field: fieldsFor never emits it, and it rides
@@ -280,6 +281,8 @@ const OPERATION_COLUMN: Record<string, 'manual' | 'motorised'> = {
 const HARDWARE_CHOICES: ConfigChoice[] = HARDWARE_OPTIONS.map(o => ({ id: o.id, label: o.label }))
 
 interface ProductOptions {
+  /** A glass choice precedes the existing fields only on products offering it. */
+  glassChoices?: ConfigChoice[]
   /** WHERE THIS PRODUCT GOES, where the whole-house list is the wrong list.
    *
    * Nearly everything Klay makes hangs in a window and can hang in any room, so
@@ -352,6 +355,22 @@ interface ProductOptions {
 }
 
 const v = (id: string, label: string): ConfigChoice => ({ id, label })
+
+// Both fixed-panel shapes share these existing controls and dimensions.
+const FIXED_SCREEN_OPTIONS: ProductOptions = {
+  locationChoices: SCREEN_LOCATION_CHOICES,
+  variantLabel: 'Fixed',
+  variants: [v('clip', 'Clip fixed'), v('channel', 'Channel fixed')],
+  hardwareLabel: 'Colour',
+  hardwareFirst: true,
+  hardwareChoicesOfVariant: id =>
+    (id === 'channel' ? SCREEN_CHANNEL_FINISHES : SCREEN_CLIP_FINISHES).map(f => ({
+      id: f.name, label: f.name, hex: f.hex,
+    })),
+  widths: SCREEN_WIDTHS,
+  widthLabel: 'Dimensions',
+  widthFormat: w => `${SCREEN_HEIGHT_MM} × ${w}`,
+}
 
 const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // --- INDOOR --------------------------------------------------------------
@@ -528,31 +547,10 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // SOURCED FROM STEGBAR — the finishes, the split between them and the ten
   // sizes are read off their clip fixed and channel fixed pages rather than
   // reasoned about here. See SCREEN_FINISHES.
-  'frameless-shower-screens': {
-    // A bathroom, one of five. See SCREEN_LOCATION_CHOICES.
-    locationChoices: SCREEN_LOCATION_CHOICES,
-    variantLabel: 'Fixed',
-    variants: [v('clip', 'Clip fixed'), v('channel', 'Channel fixed')],
-    // COLOUR, NOT HARDWARE, on the label — a frameless screen is glass and the
-    // metalwork holding it, so the only colour it has IS the hardware's. It
-    // rides the hardware field because that is the cart column a finish belongs
-    // in; calling it Hardware on the card would be asking about a component
-    // when the customer is choosing a colour.
-    hardwareLabel: 'Colour',
-    hardwareFirst: true,
-    // Gunmetal on the clip, not on the channel. See SCREEN_FINISHES.
-    hardwareChoicesOfVariant: id =>
-      (id === 'channel' ? SCREEN_CHANNEL_FINISHES : SCREEN_CLIP_FINISHES).map(f => ({
-        id: f.name,
-        label: f.name,
-        hex: f.hex,
-      })),
-    // The same ten sizes on both mountings, so no widthsOfVariant is needed.
-    widths: SCREEN_WIDTHS,
-    widthLabel: 'Dimensions',
-    // "2053 × 900" — the height is the same on every size, so it is printed
-    // rather than asked. See SCREEN_HEIGHT_MM.
-    widthFormat: w => `${SCREEN_HEIGHT_MM} × ${w}`,
+  'frameless-shower-screens': FIXED_SCREEN_OPTIONS,
+  'radius-corner-fixed-frameless': {
+    ...FIXED_SCREEN_OPTIONS,
+    glassChoices: [v('clear', 'Clear'), v('reeded', 'Narrow-reeded')],
   },
 }
 
@@ -597,6 +595,9 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
       choices: options.locationChoices ?? LOCATION_CHOICES,
     },
   ]
+  if (options.glassChoices) {
+    fields.unshift({ id: 'glass', label: 'Glass type', kind: 'chips', choices: options.glassChoices })
+  }
   if (options.variants?.length) {
     fields.push({
       id: 'variant',

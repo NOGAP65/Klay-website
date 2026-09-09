@@ -460,11 +460,20 @@ export const CATALOGUE: CatalogueItem[] = [
   },
   {
     id: 'frameless-shower-screens',
-    name: 'Fixed Panel Shower Screen',
+    name: 'Fixed frameless',
     group: 'Other',
     tagline: 'Toughened glass, no frame. The bathroom disappears.',
-    to: enquire('Fixed Panel Shower Screen'),
+    to: enquire('Fixed frameless'),
     glyph: 'shower-screens',
     image: '/images/shop/shower-screen-clip.webp',
+  },
+  {
+    id: 'radius-corner-fixed-frameless',
+    name: 'Radius corner fixed frameless',
+    group: 'Other',
+    tagline: 'A softly rounded corner, in clear or reeded glass.',
+    to: enquire('Radius corner fixed frameless'),
+    glyph: 'shower-screens',
+    image: '/images/shop/shower-radius-clip-clear.webp',
   },
 ]

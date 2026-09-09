@@ -15,6 +15,28 @@ export interface ShowerPhoto {
   referenceWidthMm: number;
   fittings: ShowerFitting[];
   channel?: string;
+  cornerRadius?: number;
+  cornerHeight?: number;
+  glass?: 'clear' | 'reeded';
+}
+
+/** The free corner keeps its radius as the panel gets wider. */
+export function showerGlassPath(photo: ShowerPhoto, right: number) {
+  const radius = photo.cornerRadius ?? 0;
+  const rise = photo.cornerHeight ?? radius;
+  const corner = radius > 0
+    ? `H${right - radius}A${radius} ${rise} 0 0 1 ${right} ${photo.top + rise}`
+    : `H${right}`;
+  return `M${photo.left - 2} ${photo.top}${corner}V${photo.bottom + 2}H${photo.left - 2}Z`;
+}
+
+/** Trace just the photographed free edge, including its rounded top corner. */
+export function showerFreeEdgePath(photo: ShowerPhoto) {
+  const radius = photo.cornerRadius ?? 0;
+  const rise = photo.cornerHeight ?? radius;
+  return radius > 0
+    ? `M${photo.right - radius} ${photo.top}A${radius} ${rise} 0 0 1 ${photo.right} ${photo.top + rise}V${photo.bottom}`
+    : `M${photo.right} ${photo.top}V${photo.bottom}`;
 }
 
 /** Crop the photographed glass in place; only its free edge moves. The room,
