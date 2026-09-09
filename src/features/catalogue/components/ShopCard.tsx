@@ -43,7 +43,7 @@ import { hardwareHex, type Selection } from '../configOptions';
 import { cabinetMirrorSize } from '../lib/cabinetMirror';
 import { walkInLayout, WALK_IN_FOOTPRINT_MM, WALK_IN_HEIGHT_MM } from '../lib/walkInWardrobes';
 import { flyscreenConfiguration, flyscreenDimensions } from '../lib/pleatedFlyscreens';
-import { fabricShot, FABRIC_SHOT_DIR } from '../fabricShots';
+import { fabricShot, FABRIC_SHOT_DIR, type FabricShot } from '../fabricShots';
 // Relative, like the feature's other three importers of this file — see the
 // note at its head on why it has not moved.
 import { HARDWARE_HEX } from '../../../data/products';
@@ -120,11 +120,52 @@ const ASSURANCES = [
 
 /** THE COLOUR A DYED SHOT IS MULTIPLIED BY.
  *
- * The swatch's own hex, straight from the catalogue — the photograph has already
- * been normalised so that multiplying by it lands on the right cloth. White
- * where nothing is chosen, which is a no-op and leaves the fabric as shot. */
+ * The swatch's own hex, straight from the catalogue. White where nothing is
+ * chosen, which is a no-op and leaves the fabric as shot.
+ *
+ * This is the colour the CUSTOMER picked, and it stays the raw swatch: the tint
+ * pass wants the true hue, and sheenStrength wants the true luminance. What goes
+ * into the multiply is dyePaint below. */
 const dyeColour = (item: CatalogueItem, sel: Selection): string =>
   item.colours?.find(c => c.name === sel.colour)?.hex ?? '#FFFFFF';
+
+/** THE COLOUR THE MULTIPLY LAYER IS ACTUALLY PAINTED, given the cloth it will
+ * be multiplied through.
+ *
+ * THE COMMENT ABOVE USED TO SAY THE PHOTOGRAPH HAD BEEN NORMALISED SO THAT
+ * MULTIPLYING BY THE SWATCH LANDS ON THE RIGHT CLOTH. It had not been. Measured
+ * under each product's own mask, the cloth runs from 240,235,228 down to
+ * 200,191,176, and every shot is warmer than it is blue — the roller blockout by
+ * 12, its dual by 24. Multiply is per-channel, so that cast went straight onto
+ * whatever the customer chose, in proportion to how pale it was. Sampled out of
+ * the rendered card, White came back 222,216,207 against a swatch of
+ * 242,240,236: an error of -20,-24,-29, which does not read as "a little dark",
+ * it reads as cream. Fourteen colours averaged 24 off.
+ *
+ * SO DIVIDE THE CLOTH OUT FIRST. Multiplying by swatch x 255/white lands on the
+ * swatch exactly, and for every colour with headroom — which is most of the card
+ * — that is the end of it.
+ *
+ * WHERE THERE IS NOT ENOUGH HEADROOM, SCALE THE WHOLE TRIPLE. A pale swatch on a
+ * dark cloth asks for more than 255 in some channel, and clamping channels
+ * independently would reintroduce exactly the cast this removes — the channel
+ * that clips stops rising while the others carry on. Scaling all three by one
+ * factor keeps the ratios, so the colour comes out the right HUE and only as
+ * bright as the photograph can carry. White on the roller blockout lands
+ * 216,215,211 instead of 222,216,207: a shade darker, and neutral instead of
+ * cream. Lifting the pale end further needs the photograph brightened, not the
+ * paint.
+ *
+ * No white point means an undyed shot or one not yet measured, and the swatch
+ * goes through untouched — which is what every card did before this existed. */
+const dyePaint = (hex: string, white: FabricShot['white']): string => {
+  if (!white) return hex;
+  const channel = (i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  const wanted = [0, 1, 2].map(i => (channel(i) * 255) / white[i]);
+  const headroom = Math.max(...wanted, 255) / 255;
+  const [r, g, b] = wanted.map(v => Math.round(v / headroom));
+  return `rgb(${r}, ${g}, ${b})`;
+};
 
 /** HOW MUCH OF THE CLOTH'S OWN MODELLING HAS TO GO BACK ON TOP, 0..1.
  *
@@ -429,7 +470,10 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: dyeColour(item, sel),
+                // THROUGH dyePaint, not the raw swatch — the cloth's own white
+                // point is divided out here so the multiply lands on the colour
+                // the customer picked rather than on a warmed version of it.
+                background: dyePaint(dyeColour(item, sel), shot.white),
                 mixBlendMode: 'multiply',
                 // A SHEER TAKES LESS DYE THAN A BLOCKOUT, and at full strength
                 // the fabric row appeared to do nothing on exactly the colours

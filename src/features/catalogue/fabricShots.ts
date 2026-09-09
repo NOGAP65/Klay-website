@@ -57,20 +57,31 @@ export interface FabricShot {
    * and arms are large matte extrusions and need 0.7, or they render as flat
    * cut-out shapes rather than parts of the machine. */
   spec: number;
+  /** WHAT THIS CLOTH PHOTOGRAPHS AS, [r, g, b] — the white the dye is
+   * multiplied through, measured under the product's mask.
+   *
+   * The header above says the fabric has been normalised to white. It has not:
+   * these run from 240,235,228 down to 200,191,176, and every one of them is
+   * warmer than it is blue. Multiplying a swatch through that puts the cast on
+   * the swatch, which is why White rendered as cream. The card divides it out
+   * first -- see dyePaint in ShopCard.
+   *
+   * Absent on an undyed shot, which has nothing to divide out. */
+  white?: [number, number, number];
 }
 
 export const FABRIC_SHOT_DIR = '/images/fabrics';
 
 export const FABRIC_SHOTS: FabricShot[] = [
-  { product: 'curtains', fabric: 'blockout', file: 'curtains-blockout.webp', mask: 'curtains.mask.png', hardware: 'curtains.hardware.png', dye: 1, tint: 0, sheen: 0.5, spec: 0.4 },
-  { product: 'curtains', fabric: 'sheer', file: 'curtains-sheer.webp', mask: 'curtains.mask.png', hardware: 'curtains.hardware.png', dye: 0.5, tint: 0.9, sheen: 0.5, spec: 0.4 },
-  { product: 'folding-arm-awnings', fabric: null, file: 'folding-arm-awnings.webp', mask: 'folding-arm-awnings.mask.png', hardware: 'folding-arm-awnings.hardware.png', dye: 1, tint: 0, sheen: 0.7, spec: 0.7 },
-  { product: 'plantation-shutters', fabric: null, file: 'plantation-shutters.webp', mask: 'plantation-shutters.mask.png', hardware: null, dye: 1, tint: 0, sheen: 0, spec: 0.4 },
-  { product: 'roller-blinds', fabric: 'blockout', file: 'roller-blinds-blockout.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 1, tint: 0, sheen: 0, spec: 0.4 },
-  { product: 'roller-blinds', fabric: 'dual', file: 'roller-blinds-dual.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.88, tint: 0, sheen: 0, spec: 0.4 },
-  { product: 'roller-blinds', fabric: 'lightfilter', file: 'roller-blinds-lightfilter.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.7, tint: 0, sheen: 0, spec: 0.4 },
-  { product: 'roller-blinds', fabric: 'sunscreen', file: 'roller-blinds-sunscreen.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.55, tint: 0, sheen: 0, spec: 0.4 },
-  { product: 'venetian-blinds', fabric: null, file: 'venetian-blinds.webp', mask: 'venetian-blinds.mask.png', hardware: null, dye: 1, tint: 0, sheen: 0, spec: 0.4 },
+  { product: 'curtains', fabric: 'blockout', file: 'curtains-blockout.webp', mask: 'curtains.mask.png', hardware: 'curtains.hardware.png', dye: 1, tint: 0, sheen: 0.5, spec: 0.4, white: [203, 194, 182] },
+  { product: 'curtains', fabric: 'sheer', file: 'curtains-sheer.webp', mask: 'curtains.mask.png', hardware: 'curtains.hardware.png', dye: 0.5, tint: 0.9, sheen: 0.5, spec: 0.4, white: [230, 227, 222] },
+  { product: 'folding-arm-awnings', fabric: null, file: 'folding-arm-awnings.webp', mask: 'folding-arm-awnings.mask.png', hardware: 'folding-arm-awnings.hardware.png', dye: 1, tint: 0, sheen: 0.7, spec: 0.7, white: [223, 214, 202] },
+  { product: 'plantation-shutters', fabric: null, file: 'plantation-shutters.webp', mask: 'plantation-shutters.mask.png', hardware: null, dye: 1, tint: 0, sheen: 0, spec: 0.4, white: [208, 201, 189] },
+  { product: 'roller-blinds', fabric: 'blockout', file: 'roller-blinds-blockout.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 1, tint: 0, sheen: 0, spec: 0.4, white: [223, 217, 211] },
+  { product: 'roller-blinds', fabric: 'dual', file: 'roller-blinds-dual.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.88, tint: 0, sheen: 0, spec: 0.4, white: [200, 191, 176] },
+  { product: 'roller-blinds', fabric: 'lightfilter', file: 'roller-blinds-lightfilter.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.7, tint: 0, sheen: 0, spec: 0.4, white: [240, 235, 228] },
+  { product: 'roller-blinds', fabric: 'sunscreen', file: 'roller-blinds-sunscreen.webp', mask: 'roller-blinds.mask.png', hardware: 'roller-blinds.hardware.png', dye: 0.55, tint: 0, sheen: 0, spec: 0.4, white: [216, 208, 195] },
+  { product: 'venetian-blinds', fabric: null, file: 'venetian-blinds.webp', mask: 'venetian-blinds.mask.png', hardware: null, dye: 1, tint: 0, sheen: 0, spec: 0.4, white: [221, 215, 203] },
 ];
 
 /** The shot for a configuration, or undefined where none has been photographed
