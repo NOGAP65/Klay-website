@@ -16,6 +16,8 @@ Twenty-one generated product images and four supporting bathroom/reflection asse
 | Mirrors Frameless / Mirrors Framed | One shared Gothic bathroom photo, with dynamic outlines and frame finishes |
 | Mirrors with Cabinets | One photograph with the mirror door open at an angle, revealing two shelves |
 
+The cabinet preview uses a shared physical height scale for the box and mirror. Round's 600mm face extends beyond the 530mm cabinet, and its curved backing meets both photographed hinges. Gothic and Pill meet the same fixed hinge positions. Shape changes redraw immediately, retaining the photographic shelves, quiet reflection and soft cabinet contact shadow.
+
 The images live in `public/images/shop/`. Asset paths and generation prompts/briefs are recorded in `shop-photo-prompts.json`. Original generated PNGs remain in the local Codex generated-images directory; only compressed production assets are shipped.
 
 **Mirrors with Cabinets** uses `mirrors-cabinets-open.webp`. Stegbar's [Pill with White Cabinet](https://www.stegbar.com.au/products/pill-with-white-cabinet) open-door photograph was supplied directly to the built-in image tool as a construction reference, alongside Klay's approved quiet mirror image for room styling. The resulting original photograph shows a recessed white cabinet, two shelves, concealed hinges and a shaped mirror door viewed at an angle. The earlier closed, frontal draft was removed from public assets. The source Stegbar image is not shipped.

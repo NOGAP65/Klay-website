@@ -82,12 +82,35 @@ assert.equal(cabinet.name, 'Mirrors with Cabinets');
 assert.deepEqual(fieldsFor(cabinet).map(f => f.id), ['location', 'variant'], 'Shape is the only product choice');
 assert.deepEqual(fieldsFor(cabinet).find(f => f.id === 'variant').choices.map(c => c.label), ['Gothic', 'Round', 'Pill']);
 const cabinetIds = new Set();
+const cabinetTransforms = new Set();
+function rightEdgeAt(points, y) {
+  const crossings = points.flatMap(([x1, y1], index) => {
+    const [x2, y2] = points[(index + 1) % points.length];
+    if (y1 === y2 || y < Math.min(y1, y2) || y > Math.max(y1, y2)) return [];
+    return [x1 + (x2 - x1) * (y - y1) / (y2 - y1)];
+  });
+  assert.ok(crossings.length >= 2, 'Both hinges fall within the mirror height');
+  return Math.max(...crossings);
+}
 for (const [shape, height, width] of [['gothic', 800, 500], ['round', 600, 600], ['pill', 1000, 500]]) {
   const sel = withChoice(cabinet, defaultSelection(cabinet), 'variant', shape);
   const plan = cabinetMirrorPlan(shape);
   assert.deepEqual([plan.height, plan.width, plan.depth], [height, width, 150]);
   assert.ok(plan.points.every(([x, y]) => x > 0 && x < 1024 && y > 0 && y < 1024), 'Angled door stays inside the photo');
-  assert.ok(plan.projectedWidth < width * 0.73, 'Door is viewed at an angle');
+  for (const hinge of plan.hinges) {
+    assert.ok(Math.abs(rightEdgeAt(plan.points, hinge.y) + plan.backingDepth - hinge.x) < 1,
+      `${shape}: mirror backing meets each photographed hinge without a gap`);
+  }
+  cabinetTransforms.add(plan.cabinetTransform);
+  if (shape === 'round') {
+    const ys = plan.points.map(([, y]) => y);
+    const displayedHeight = Math.max(...ys) - Math.min(...ys);
+    assert.ok(Math.abs(displayedHeight / plan.cabinetHeight - 600 / 530) < 0.005,
+      'Round mirror and cabinet use the same physical height scale');
+    assert.ok(plan.projectedWidth > plan.cabinetProjectedWidth,
+      'The open Round face remains wider than the photographed cabinet');
+    assert.ok(plan.projectedWidth < displayedHeight, 'Round face is foreshortened by the open-door angle');
+  }
   const line = configuredLine(cabinet, sel);
   assert.ok(line.options.some(o => o.label === 'Dimensions (H × W × D)' && o.value === cabinetMirrorSize(shape)));
   assert.ok(line.options.some(o => o.label === 'Cabinet finish' && o.value === 'White'));
@@ -95,4 +118,5 @@ for (const [shape, height, width] of [['gothic', 800, 500], ['round', 600, 600],
   assert.equal(shopPhoto(cabinet.id, shape).src, '/images/shop/mirrors-cabinets-open.webp');
 }
 assert.equal(cabinetIds.size, 3, 'Each cabinet shape makes a separate quote line');
+assert.equal(cabinetTransforms.size, 1, 'Changing the mirror shape keeps the cabinet fixed in place');
 console.log('Mirrors: 22 wall-mirror sizes and 3 cabinet shapes, fixed specifications, perspective, colours and quote details pass.');
