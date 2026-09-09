@@ -480,12 +480,19 @@ export const CATALOGUE: CatalogueItem[] = [
   },
 
   // --- OTHER ---------------------------------------------------------------
+  // TWO WARDROBE CARDS, BECAUSE THERE ARE TWO RANGES. This card offers Forma 1,
+  // 2 and 3, which are all `kind: 'built-in'` — and its name said "Wardrobes"
+  // over a tagline promising "Built-in, walk-in and sliding". None of that was
+  // true: there is no sliding unit in the range at all, and the three walk-in
+  // models the visualiser has been drawing all along could not be ordered from
+  // anywhere on the site. So the name says which range it is, the tagline says
+  // what it actually does, and the walk-ins get the card below.
   {
     id: 'wardrobes',
-    name: 'Wardrobes',
+    name: 'Built in wardrobes',
     group: 'Other',
-    tagline: 'Built-in, walk-in and sliding. Fitted wall to wall.',
-    to: enquire('Wardrobes'),
+    tagline: 'Fitted wall to wall, in the opening you already have.',
+    to: enquire('Built in wardrobes'),
     image: '/images/shop/wardrobes-srdh.webp',
     imagePosition: 'center',
     glyph: 'wardrobes',
@@ -496,6 +503,33 @@ export const CATALOGUE: CatalogueItem[] = [
     // The Forma range is modelled now, so this card carries the badge the two
     // window products have carried all along.
     visualise: { category: 'wardrobe' },
+  },
+  {
+    id: 'walk-in-wardrobes',
+    name: 'Walk in wardrobes',
+    group: 'Other',
+    // A ROOM, NOT A CUPBOARD, and that is the whole difference from the card
+    // above. A built-in is fitted into an opening in a bedroom wall; a walk-in
+    // is the run of joinery around the inside of its own small room, in an L or
+    // a U. Forma 4 and 5 are L-shaped, Forma 6 is U-shaped.
+    tagline: 'An L or a U of joinery, around a room of its own.',
+    to: enquire('Walk in wardrobes'),
+    // NO PHOTOGRAPH YET. shopPhotos has three shots keyed to the built-in
+    // models and none for the walk-ins, and `shopPhoto` answers an unlisted
+    // product with undefined by design, so the card falls back to the range
+    // glyph the way every photo-less product does. Add `image` when there is a
+    // walk-in shot.
+    //
+    // AND NO VISUALISE BADGE, though the visualiser can genuinely draw these.
+    // The badge only carries a `category`, so it would open the panel on a
+    // BUILT-IN and the customer would have to find the Type toggle themselves —
+    // a badge that lands on the wrong product is worse than no badge. Giving
+    // `visualise` a kind is the fix, and it is a change to that contract rather
+    // than to this entry.
+    glyph: 'wardrobes',
+    // The same board finishes as the built-ins: one range of boards, two
+    // shapes of cabinet. See WARDROBE_COLOURS.
+    colours: WARDROBE_COLOURS.map(c => ({ name: c.name, hex: c.hex })),
   },
   {
     id: 'shelving',

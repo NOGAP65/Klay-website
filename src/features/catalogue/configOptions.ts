@@ -47,6 +47,7 @@ import {
   HANDLE_FINISHES,
   modelsOfKind,
   SHELVING_WIDTHS,
+  WALKIN_WIDTHS,
   WARDROBE_WIDTHS,
   wardrobeModelById,
 } from '@/features/visualiser'
@@ -614,6 +615,25 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     widths: WARDROBE_WIDTHS,
     // The chosen SKU's own list, the way the visualiser asks it. See
     // widthsOfVariant.
+    widthsOfVariant: id => (id ? wardrobeModelById(id).widths : undefined),
+    hardwareLabel: 'Handle finish',
+    hardwareChoices: HANDLE_FINISHES.map(f => ({ id: f.name, label: f.name, hex: f.hex })),
+  },
+  // THE WALK-INS, WHICH THE SHOP COULD NOT REACH UNTIL NOW. The visualiser has
+  // been drawing Forma 4, 5 and 6 the whole time — modelsOfKind('walk-in') —
+  // and no card offered them, so three products Klay makes were unorderable.
+  //
+  // THE SAME FOUR QUESTIONS AS THE BUILT-INS, off the walk-in lists: which
+  // model, what board, how wide, which handle. It asks them identically because
+  // it is the same cabinetry in a different shape, and the one thing that must
+  // not be shared is the width list — Forma 4 is made in 2400 and 3000 while 5
+  // and 6 are 2400 only, so the union offers each of the latter two a size it
+  // does not come in. Hence the same widthsOfVariant narrowing as above.
+  'walk-in-wardrobes': {
+    variantLabel: 'Model',
+    variants: modelsOfKind('walk-in').map(m => v(m.id, m.name)),
+    colourLabel: 'Colour',
+    widths: WALKIN_WIDTHS,
     widthsOfVariant: id => (id ? wardrobeModelById(id).widths : undefined),
     hardwareLabel: 'Handle finish',
     hardwareChoices: HANDLE_FINISHES.map(f => ({ id: f.name, label: f.name, hex: f.hex })),

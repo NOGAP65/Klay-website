@@ -232,11 +232,25 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
     legacyFile: '',
   },
 
-  // WALK-INS ARE A DIFFERENT FAMILY and are left as they were — the catalogue
-  // above is the built-in robe range (BIR), and these are not in it.
-  { id: '7.0L', name: 'Forma 7.0L', layout: 'L-shaped walk-in', kind: 'walk-in', widths: [2400, 3000], artworkId: '7.0L', legacyFile: 'Forma Wardrobe 7.0L Sticker.png' },
-  { id: '9.0L', name: 'Forma 9.0L', layout: 'L-shaped walk-in, long run', kind: 'walk-in', widths: [2400], artworkId: '9.0L', legacyFile: 'Forma Wardrobe 9.0L Sticker.png' },
-  { id: '12.0U', name: 'Forma 12.0U', layout: 'U-shaped walk-in', kind: 'walk-in', widths: [2400], artworkId: '12.0U', legacyFile: 'Forma Wardrobe 12.0U Sticker.png' },
+  // WALK-INS ARE A DIFFERENT FAMILY — the catalogue above is the built-in robe
+  // range (BIR), and these are not in it.
+  //
+  // FORMA 4, 5 AND 6 TO A CUSTOMER; 7.0L, 9.0L AND 12.0U TO US. The names used
+  // to be the codes, which put two numbering systems in front of the same
+  // person: three built-ins called Forma 1, 2 and 3, then three walk-ins called
+  // Forma 7.0L, 9.0L and 12.0U. Nothing explains to a customer why the range
+  // skips 4 to 6 and then starts using decimals and letters. The numbering runs
+  // 1 to 6 now.
+  //
+  // THE IDS DO NOT FOLLOW, and here that is not a preference — it is what the
+  // files on disk are called. `artworkId` and `legacyFile` name real assets,
+  // wardrobeCutouts.ts carries `7.0L-white-interior.png` and friends,
+  // cut-wardrobe-stickers keys its view map by the same strings, and
+  // useVisualiserStore defaults a walk-in to '7.0L'. The code is the supplier's
+  // and belongs on the order; Forma 4 is what the customer reads.
+  { id: '7.0L', name: 'Forma 4', layout: 'L-shaped walk-in', kind: 'walk-in', widths: [2400, 3000], artworkId: '7.0L', legacyFile: 'Forma Wardrobe 7.0L Sticker.png' },
+  { id: '9.0L', name: 'Forma 5', layout: 'L-shaped walk-in, long run', kind: 'walk-in', widths: [2400], artworkId: '9.0L', legacyFile: 'Forma Wardrobe 9.0L Sticker.png' },
+  { id: '12.0U', name: 'Forma 6', layout: 'U-shaped walk-in', kind: 'walk-in', widths: [2400], artworkId: '12.0U', legacyFile: 'Forma Wardrobe 12.0U Sticker.png' },
 ];
 
 export const modelsOfKind = (kind: WardrobeKind) => WARDROBE_MODELS.filter(m => m.kind === kind);
@@ -278,6 +292,10 @@ export const WARDROBE_WIDTHS: number[] = widthsOfKind('built-in');
 
 /** The linen range's widths: 900 through 3600. See widthsOfKind. */
 export const SHELVING_WIDTHS: number[] = widthsOfKind('shelving');
+
+/** The walk-in range's widths: 2400 and 3000. Only Forma 4 is made in the
+ * wider one, which is why the card narrows by model — see widthsOfKind. */
+export const WALKIN_WIDTHS: number[] = widthsOfKind('walk-in');
 
 export const wardrobeModelById = (id: string): WardrobeModel =>
   WARDROBE_MODELS.find(m => m.id === id) ?? WARDROBE_MODELS[0];

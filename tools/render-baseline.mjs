@@ -96,11 +96,17 @@ const CASES = [
   // The forma2 case is Black Ply now. It still exercises the non-white path, and
   // it covers a case the old walnut did not: a non-white finish with no decor
   // sheet of its own, which is the state Black Ply is in until one is cropped.
-  // Natural Oak on 9.0L below is the one that exercises a real texture file.
+  // Natural Oak on Forma 5 below is the one that exercises a real texture file.
+  //
+  // THE WALK-IN CLICKS ARE MODEL NAMES, not ids, because that is what the
+  // button in the panel reads — so they moved with the rename from Forma 12.0U
+  // and Forma 9.0L to Forma 6 and Forma 5. A click target that no longer
+  // matches any button fails loudly here, which is the right behaviour and is
+  // why these are worth changing in step rather than leaving to rot.
   { name: 'wardrobe-builtin-forma1-white', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Built-in', 'Forma 1'], finish: 'Matt Polar White' },
   { name: 'wardrobe-builtin-forma2-blackply', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Built-in', 'Forma 2'], finish: 'Woodmatt Black Ply' },
-  { name: 'wardrobe-walkin-12u-white', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Walk-in', 'Forma 12.0U'], finish: 'Matt Polar White' },
-  { name: 'wardrobe-walkin-9l-oak', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Walk-in', 'Forma 9.0L'], finish: 'Matt Natural Oak' },
+  { name: 'wardrobe-walkin-12u-white', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Walk-in', 'Forma 6'], finish: 'Matt Polar White' },
+  { name: 'wardrobe-walkin-9l-oak', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Walk-in', 'Forma 5'], finish: 'Matt Natural Oak' },
   { name: 'wardrobe-see-in-3d', route: '/', capture: 'screenshot', clicks: ['SEE IN 3D'] },
 ];
 
