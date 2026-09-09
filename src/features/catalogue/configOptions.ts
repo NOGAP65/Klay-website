@@ -68,6 +68,7 @@ import {
 } from './constants'
 import type { CartItem } from '@/features/cart'
 import { FRONT_RETURN_SIZES, frontReturnSizeLabel } from './lib/semiScreenPhoto'
+import { mirrorShapes, mirrorDimensions, MIRROR_FRAME_COLOURS } from './lib/mirrorPhoto'
 
 // SEVEN SLOTS NOW, AND THE TWO NEW ONES ARE NOT WINDOW FIELDS.
 //
@@ -86,6 +87,7 @@ import { FRONT_RETURN_SIZES, frontReturnSizeLabel } from './lib/semiScreenPhoto'
 export type FieldId =
   | 'variant' | 'colour' | 'hardware' | 'size' | 'operation'
   | 'width'
+  | 'dimension'
   | 'glass'
   // Where the thing is going. Not a property of the product — a property of the
   // job — and 'locationOther' is the free text behind the Other choice, which is
@@ -295,6 +297,8 @@ const OPERATION_COLUMN: Record<string, 'manual' | 'motorised'> = {
 const HARDWARE_CHOICES: ConfigChoice[] = HARDWARE_OPTIONS.map(o => ({ id: o.id, label: o.label }))
 
 interface ProductOptions {
+  /** Paired dimensions vary with mirror shape and travel together into the quote. */
+  dimensionsOfVariant?: (variantId: string | undefined) => ConfigChoice[]
   /** A glass choice precedes the existing fields only on products offering it. */
   glassChoices?: ConfigChoice[]
   /** WHERE THIS PRODUCT GOES, where the whole-house list is the wrong list.
@@ -434,6 +438,18 @@ const SEMI_SCREEN_OPTIONS: ProductOptions = {
 }
 
 const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
+  'mirrors-without-frames': {
+    variantLabel: 'Shape',
+    variants: mirrorShapes(false).map(s => v(s.id, s.label)),
+    dimensionsOfVariant: shape => mirrorDimensions(false, shape),
+  },
+  'mirror-with-frame': {
+    variantLabel: 'Shape',
+    variants: mirrorShapes(true).map(s => v(s.id, s.label)),
+    dimensionsOfVariant: shape => mirrorDimensions(true, shape),
+    hardwareLabel: 'Frame colour',
+    hardwareChoices: MIRROR_FRAME_COLOURS,
+  },
   // --- INDOOR --------------------------------------------------------------
   // The one priced product. Its variant ids are the four pricing blind types
   // verbatim, which is what lets the panel show a live price — see priceFor.
@@ -738,6 +754,10 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
     })
   }
   if (!options.hardwareFirst) hardwareField()
+  if (options.dimensionsOfVariant) {
+    fields.push({ id: 'dimension', label: 'Dimensions (H × W)', kind: 'select',
+      choices: options.dimensionsOfVariant(sel?.variant) })
+  }
   if (options.size) {
     fields.push({ id: 'size', label: 'Window size', kind: 'chips', choices: SIZE_CHOICES })
   }

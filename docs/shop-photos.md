@@ -1,6 +1,6 @@
 # Shop product photos — September 2026
 
-Nineteen generated product images and four supporting bathroom/reflection assets cover nine product families. Each image is a 1024 × 1024 WebP. Colour variants are applied at runtime; there are no generated images per colour.
+Twenty generated product images and four supporting bathroom/reflection assets cover eleven product families. The two mirror SKUs share one image. Each image is a 1024 × 1024 WebP. Colour variants are applied at runtime; there are no generated images per colour.
 
 | Product | Base images |
 | --- | --- |
@@ -13,8 +13,27 @@ Nineteen generated product images and four supporting bathroom/reflection assets
 | Radius corner fixed frameless showerscreen | Clear and Narrow-reeded glass, each in Clip fixed and Channel fixed |
 | Semi-frameless (Front only) showerscreen | Front-only photo and matching empty alcove |
 | Semi frameless (Front and Return) showerscreen | Corner enclosure photo and matching empty bathroom |
+| Mirrors without frames / Mirror with Frame | One shared Gothic bathroom photo, with dynamic outlines and frame finishes |
 
 The images live in `public/images/shop/`. Asset paths and generation prompts/briefs are recorded in `shop-photo-prompts.json`. Original generated PNGs remain in the local Codex generated-images directory; only compressed production assets are shipped.
+
+Mirrors use `mirrors-gothic.webp`, an original built-in generation inspired by Stegbar's [Gothic](https://www.stegbar.com.au/products/gothic) and [framed Gothic](https://www.stegbar.com.au/products/gothic-with-gold-frame) photography. The selected image has a travertine vanity, soft sage-grey wall, warm reflected shower niche and no outdoor reflections. It replaces the rejected plain rectangular draft; that draft was never shipped. Both cards open on Gothic. Framed shapes follow Stegbar's framed range: Gothic, Round and Pill. White, Golden and Black are the only frame finishes.
+
+Dimensions were checked against Stegbar's public product data on 9 September 2026. All pairs below are **height × width, in mm**:
+
+| SKU / shape | Available dimensions | Reference |
+| --- | --- | --- |
+| Frameless Gothic | 800 × 700; 900 × 700; 1000 × 700 | [Gothic](https://www.stegbar.com.au/products/gothic) |
+| Frameless Round | 600 × 600; 800 × 800; 1000 × 1000 | [Round](https://www.stegbar.com.au/products/round) |
+| Frameless Rectangular | 600 × 600; 900 × 600; 900 × 1200 | [Rectangular](https://www.stegbar.com.au/products/rectangular) |
+| Frameless Oval | 800 × 700; 900 × 700; 1000 × 700 | [Oval](https://www.stegbar.com.au/products/oval) |
+| Frameless Rectangle with radius corners | 800 × 700; 900 × 700; 1000 × 700 | [Radius corners](https://www.stegbar.com.au/products/rectangle-with-radius-corners) |
+| Frameless D shaped | 750 × 900; 900 × 1200; 1100 × 1500 | [D shaped](https://www.stegbar.com.au/products/d-shaped) |
+| Framed Gothic | 800 × 500 | [Gothic with frame](https://www.stegbar.com.au/products/gothic-with-white-frame) |
+| Framed Round | 600 × 600; 900 × 900 | [Round with frame](https://www.stegbar.com.au/products/round-with-white-frame) |
+| Framed Pill | 1000 × 500 | [Pill with frame](https://www.stegbar.com.au/products/pill-with-white-frame) |
+
+`mirrorPhoto.ts` supplies both the configurator choices and physical preview dimensions. The paired `dimension` field prevents mixing unsupported heights and widths; it reconciles when the shape changes and persists the full pair into the quote and cart identity. `MirrorPhotoLayers.tsx` samples wall and reflection from the single photograph, keeping one camera scale and bottom mounting baseline. The wall extends from the unobstructed side strips without repeating seams. Reflections keep their scale while changing shapes reveals a different area. Fine polished glass edges, contact shadows and a shaded 7mm frame lip follow the outline. Shape and size redraw immediately; only the frame colour uses the existing 320ms transition, with reduced motion respected. D shaped follows the reference's flat right edge. Curvature is a visual approximation, not a fabrication template.
 
 Both semi-frameless previews use original photos made with the built-in image tool, guided by Stegbar's [Front Only](https://www.stegbar.com.au/products/front-only-screen) and [Front and Return](https://www.stegbar.com.au/products/front-and-return-screen) pages. Their height is 1950mm and their front widths are 800, 850, 900, 1050, 1200 and 1350mm. The return depths paired with those widths are respectively 850, 890, 910, 1010, 1010 and 1010mm. Only Matt Black and Bright Silver are offered, under Hardware colour. Clear glass is fixed; there is no clip/channel selector on a framed product. Both open at 1050mm, the listed size closest to the user's requested approximately 1100mm default. The fixed and radius screens open at 1100mm and keep their existing 2053mm height. All four shower product names end with showerscreen and all four use the Hardware colour label.
 

@@ -8,9 +8,10 @@ import { useMediaQuery } from '@/shared';
 
 import { ShowerPhotoLayers } from './ShowerPhotoLayers';
 import { SemiScreenPhotoLayers } from './SemiScreenPhotoLayers';
+import { MirrorPhotoLayers } from './MirrorPhotoLayers';
 import { usePhotoTransition } from './usePhotoTransition';
 
-interface Props { photo: ShopPhoto; colour: string; colourName?: string; hardware: string; width?: string }
+interface Props { photo: ShopPhoto; colour: string; colourName?: string; hardware: string; width?: string; shape?: string; dimension?: string }
 interface ArtworkProps {
   photo: ShopPhoto; id: string; finish: string; isReduced: boolean;
   slice: WidthSlice; index: number; scaleY: number;
@@ -135,6 +136,8 @@ export function ShopPhotoLayers({ photo: selectedPhoto, ...selection }: Props) {
     }).catch(() => { /* Retain the last complete preview on a failed request. */ });
     return () => { isCancelled = true; };
   }, [selectedPhoto]);
+  if (photo.mirror) return <MirrorPhotoLayers src={photo.src} framed={photo.mirror.framed}
+    shape={selection.shape} dimension={selection.dimension} hardware={selection.hardware} />;
   if (photo.semi) return <SemiScreenPhotoLayers key={photo.src} src={photo.src} photo={photo.semi}
     hardware={selection.hardware} width={selection.width} />;
   return photo.shower

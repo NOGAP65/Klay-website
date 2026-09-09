@@ -364,7 +364,8 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
           }}
         >
           {photo ? <ShopPhotoLayers photo={photo} colour={dyeColour(item, sel)}
-            colourName={sel.colour} hardware={hardwareColour(item, sel)} width={sel.width} /> : shot || item.image ? (
+            colourName={sel.colour} hardware={hardwareColour(item, sel)} width={sel.width}
+            shape={sel.variant} dimension={sel.dimension} /> : shot || item.image ? (
             <img
               src={shot ? `${FABRIC_SHOT_DIR}/${shot.file}` : item.image}
               alt={`${item.name} — ${item.group}`}

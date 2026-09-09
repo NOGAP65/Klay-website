@@ -557,4 +557,20 @@ export const CATALOGUE: CatalogueItem[] = [
     image: '/images/shop/shower-semi-frameless.webp',
     glyph: 'shower-screens',
   },
+  {
+    id: 'mirrors-without-frames',
+    name: 'Mirrors without frames',
+    group: 'Other',
+    tagline: 'Polished edges and sculptural shapes, with a size for your space.',
+    to: enquire('Mirrors without frames'),
+    image: '/images/shop/mirrors-gothic.webp',
+  },
+  {
+    id: 'mirror-with-frame',
+    name: 'Mirror with Frame',
+    group: 'Other',
+    tagline: 'A refined frame in white, golden or black.',
+    to: enquire('Mirror with Frame'),
+    image: '/images/shop/mirrors-gothic.webp',
+  },
 ]
