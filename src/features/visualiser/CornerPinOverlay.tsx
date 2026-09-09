@@ -45,22 +45,59 @@ const MIDPOINTS: { id: MidpointId; indices: [number, number]; axis: 'x' | 'y'; c
 // (rather than scaling with image dimensions), so they don't dwarf a small
 // traced window or vanish on a huge photo.
 //
-// Corner handles are crosshairs — a big transparent hit circle (easy to grab
-// on mobile) underneath a small precise white crosshair + teal centre dot,
-// like a camera/scope reticle.
-const CORNER_HIT_RADIUS_PX = 16;
-const CROSSHAIR_LINE_LENGTH_PX = 20;
-const CROSSHAIR_STROKE_PX = 2;
-const CROSSHAIR_SHADOW_STROKE_PX = 3;
-const CROSSHAIR_SHADOW_OFFSET_PX = 1;
-const CROSSHAIR_CENTER_RADIUS_PX = 4;
-const CROSSHAIR_CENTER_STROKE_PX = 1.5;
-
-// Midpoint diamonds keep their small visual size but get a bigger invisible
-// hit circle, same idea as the corner crosshairs.
-const MIDPOINT_HIT_RADIUS_PX = 8;
-const MIDPOINT_DIAMOND_PX = 10;
-const MIDPOINT_DIAMOND_STROKE_PX = 1.5;
+// Corner handles are crosshairs — a big transparent hit circle underneath a
+// small precise white crosshair + teal centre dot, like a camera/scope reticle.
+//
+// TWO SETS, AND THE POINTER PICKS. One set of sizes was serving a mouse and a
+// thumb, and it was drawn for the mouse: a 16px corner radius is a 32px target
+// and a midpoint's 8px is a 16px one, against the 44px both Apple and Android
+// publish as the minimum a finger can reliably hit. On a phone the pins were
+// fiddly to grab and the reticle was too fine to see what it was sitting on,
+// which is the same complaint twice — the handle is both the target and the
+// only indication of where the corner IS.
+//
+// The coarse set clears 44px on both handles and grows the drawn glyph with the
+// target, because a big invisible circle under a small crosshair tells the
+// finger nothing about where it may press.
+//
+// ASKED AS `pointer: coarse`, NOT AS A WIDTH. The question is whether a finger
+// is doing the dragging, and that is not the same question as how wide the
+// screen is: a touch laptop and a tablet both need the big handles at desktop
+// widths, and a phone browser in desktop-site mode still has a thumb on it.
+const HANDLE_PX = {
+  fine: {
+    cornerHitRadius: 16,
+    crosshairLineLength: 20,
+    crosshairStroke: 2,
+    crosshairShadowStroke: 3,
+    crosshairShadowOffset: 1,
+    crosshairCenterRadius: 4,
+    crosshairCenterStroke: 1.5,
+    // Midpoint diamonds keep their small visual size but get a bigger
+    // invisible hit circle, same idea as the corner crosshairs.
+    midpointHitRadius: 8,
+    midpointDiamond: 10,
+    midpointDiamondStroke: 1.5,
+  },
+  coarse: {
+    // 48px across, so it clears the 44px floor with a little to spare.
+    cornerHitRadius: 24,
+    crosshairLineLength: 30,
+    crosshairStroke: 2.5,
+    crosshairShadowStroke: 3.75,
+    crosshairShadowOffset: 1.25,
+    crosshairCenterRadius: 6,
+    crosshairCenterStroke: 2,
+    // 40px, deliberately a shade under the corner's 48. The two hit circles
+    // start overlapping once a traced side is shorter than their radii
+    // combined, and where they do the midpoint wins — it is painted second.
+    // Keeping it smaller means a corner stays grabbable further down, and the
+    // crossover is a side of about 88px against the fine set's 48px.
+    midpointHitRadius: 20,
+    midpointDiamond: 15,
+    midpointDiamondStroke: 2,
+  },
+} as const;
 
 const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProps>(
   ({ imageWidth, imageHeight, onConfirm, initialCornersPct }, ref) => {
@@ -80,6 +117,25 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
     const activeMidpoint = useRef<MidpointId | null>(null);
     const lastMidpointPoint = useRef<Point | null>(null);
     const svgRef = useRef<SVGSVGElement | null>(null);
+
+    // WHICH HANDLE SET TO DRAW — see HANDLE_PX.
+    //
+    // Subscribed here rather than through the shared useMediaQuery hook: no
+    // file in this feature imports @/shared, the scope guard is what keeps that
+    // true, and this is one media query. It mirrors the ResizeObserver below it,
+    // which watches for the same reason — a rendered size this component cannot
+    // be told about.
+    const [isCoarsePointer, setCoarsePointer] = useState(
+      () => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches,
+    );
+    useEffect(() => {
+      const query = window.matchMedia('(pointer: coarse)');
+      const update = () => setCoarsePointer(query.matches);
+      update();
+      query.addEventListener('change', update);
+      return () => query.removeEventListener('change', update);
+    }, []);
+    const handlePx = HANDLE_PX[isCoarsePointer ? 'coarse' : 'fine'];
 
     // Tracks the SVG's actual rendered CSS size so a "12px" handle can be
     // converted into the right size in viewBox (image-pixel) units.
@@ -203,16 +259,16 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
     // units using the SVG's actual rendered width, so handles stay a
     // constant on-screen size regardless of the photo's resolution.
     const scale = renderedWidth > 0 ? imageWidth / renderedWidth : 1;
-    const cornerHitRadius = CORNER_HIT_RADIUS_PX * scale;
-    const crosshairHalfLength = (CROSSHAIR_LINE_LENGTH_PX * scale) / 2;
-    const crosshairStroke = CROSSHAIR_STROKE_PX * scale;
-    const crosshairShadowStroke = CROSSHAIR_SHADOW_STROKE_PX * scale;
-    const crosshairShadowOffset = CROSSHAIR_SHADOW_OFFSET_PX * scale;
-    const crosshairCenterRadius = CROSSHAIR_CENTER_RADIUS_PX * scale;
-    const crosshairCenterStroke = CROSSHAIR_CENTER_STROKE_PX * scale;
-    const midpointHitRadius = MIDPOINT_HIT_RADIUS_PX * scale;
-    const midpointSide = MIDPOINT_DIAMOND_PX * scale;
-    const midpointStroke = MIDPOINT_DIAMOND_STROKE_PX * scale;
+    const cornerHitRadius = handlePx.cornerHitRadius * scale;
+    const crosshairHalfLength = (handlePx.crosshairLineLength * scale) / 2;
+    const crosshairStroke = handlePx.crosshairStroke * scale;
+    const crosshairShadowStroke = handlePx.crosshairShadowStroke * scale;
+    const crosshairShadowOffset = handlePx.crosshairShadowOffset * scale;
+    const crosshairCenterRadius = handlePx.crosshairCenterRadius * scale;
+    const crosshairCenterStroke = handlePx.crosshairCenterStroke * scale;
+    const midpointHitRadius = handlePx.midpointHitRadius * scale;
+    const midpointSide = handlePx.midpointDiamond * scale;
+    const midpointStroke = handlePx.midpointDiamondStroke * scale;
     const midpoints = MIDPOINTS.map(m => {
       const [i, j] = m.indices;
       const [x1, y1] = corners[i];
