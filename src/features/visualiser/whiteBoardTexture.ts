@@ -1,9 +1,9 @@
 // ---------------------------------------------------------------------------
 // MATT WHITE MELAMINE, GENERATED.
 //
-// The three timber finishes get the supplier's own decor sheet photographed —
+// The timber finishes get the supplier's own decor sheet photographed —
 // see FINISH_TEXTURE — and white got nothing, on the reasoning that Matt
-// Wardrobe White is a plain surface and a plain surface needs no photograph.
+// Polar White is a plain surface and a plain surface needs no photograph.
 // That reasoning is wrong, and it is wrong in the specific way that makes
 // renders look like renders: a plain surface is not a UNIFORM one.
 //
@@ -113,7 +113,7 @@ export interface WhiteBoardMaps {
 /** The three maps, built off one noise field.
  *
  * `base` is the finish's own measured colour — this varies it, it does not
- * replace it, so Matt Wardrobe White stays the white on the quote. */
+ * replace it, so Matt Polar White stays the white on the quote. */
 /** THE MAPS ARE THE EXPENSIVE PART OF BUILDING A SCENE, so they are built
  * once per colour and kept.
  *

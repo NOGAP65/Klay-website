@@ -344,7 +344,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   curtainOpenness: 0,
   wardrobeKind: 'built-in',
   wardrobeModel: 'SRSTDH02',
-  wardrobeColour: 'Matt Wardrobe White',
+  wardrobeColour: 'Matt Polar White',
   wardrobeRecessed: true,
   wardrobeWallColour: DEFAULT_WALL_COLOUR,
   wardrobeHandleFinish: DEFAULT_HANDLE_FINISH,

@@ -86,9 +86,20 @@ const CASES = [
   // suppliedAssetPath returns null for anything but white, so a white-only set
   // would never exercise the fallback, and the finishes are the only part drawn
   // from a texture file rather than geometry.
-  { name: 'wardrobe-builtin-forma1-white', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Built-in', 'Forma 1'], finish: 'Matt Wardrobe White' },
-  { name: 'wardrobe-builtin-forma2-walnut', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Built-in', 'Forma 2'], finish: 'Woodmatt Notaio Walnut' },
-  { name: 'wardrobe-walkin-12u-white', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Walk-in', 'Forma 12.0U'], finish: 'Matt Wardrobe White' },
+  // FINISH NAMES ARE LOOKED UP, NOT VALIDATED — wardrobeColour() falls back to
+  // the first entry for a name it does not know, which is the white. So a
+  // scenario naming a retired decor does not fail, it quietly renders white and
+  // reports green while testing nothing. That is what happened to the walnut
+  // case when the range went to three finishes, and it is why these strings have
+  // to be changed with WARDROBE_COLOURS rather than left to rot.
+  //
+  // The forma2 case is Black Ply now. It still exercises the non-white path, and
+  // it covers a case the old walnut did not: a non-white finish with no decor
+  // sheet of its own, which is the state Black Ply is in until one is cropped.
+  // Natural Oak on 9.0L below is the one that exercises a real texture file.
+  { name: 'wardrobe-builtin-forma1-white', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Built-in', 'Forma 1'], finish: 'Matt Polar White' },
+  { name: 'wardrobe-builtin-forma2-blackply', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Built-in', 'Forma 2'], finish: 'Woodmatt Black Ply' },
+  { name: 'wardrobe-walkin-12u-white', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Walk-in', 'Forma 12.0U'], finish: 'Matt Polar White' },
   { name: 'wardrobe-walkin-9l-oak', route: '/', capture: 'screenshot', clicks: ['WARDROBES', 'Walk-in', 'Forma 9.0L'], finish: 'Matt Natural Oak' },
   { name: 'wardrobe-see-in-3d', route: '/', capture: 'screenshot', clicks: ['SEE IN 3D'] },
 ];

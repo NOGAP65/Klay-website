@@ -458,7 +458,7 @@ function drawBuiltIn(
   // Built once per draw and reused across every face, because a fresh tile per
   // face would put a visible seam at each joint.
   // THE SUPPLIER'S OWN BOARD where it has loaded, invented grain until it does.
-  // A photograph of Antico Oak carries its knots and splits; a procedural tile
+  // A photograph of Natural Oak carries its knots and splits; a procedural tile
   // carries a plausible rhythm and no knots, which is the difference between
   // timber and wallpaper.
   const wood = isWoodFinish(wardrobeColour(colourName).slug);

@@ -415,7 +415,7 @@ function cut({ width: w, height: h, data: px }) {
     const r = out[i * 4], g = out[i * 4 + 1], b = out[i * 4 + 2];
     const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
     // Bright, and close to neutral. Natural oak would need a wider gate; the
-    // supplied set is all Matt Wardrobe White.
+    // supplied set is all Matt Polar White.
     if (mx >= 165 && mx - mn <= 34) board[i] = 1;
   }
 
@@ -579,8 +579,8 @@ const VIEW = {
 
 // --- what goes IN the wardrobe --------------------------------------------
 //
-// The modelled carcass is what the three timber finishes fall back to, because
-// all ten renders are Matt Wardrobe White and no tint invents walnut figure.
+// The modelled carcass is what the timber finishes fall back to, because
+// all ten renders are Matt Polar White and no tint invents black ply figure.
 // Modelled board is fine; modelled CLOTHING is not -- flat coloured bars at the
 // pitch of a coat rail were the loudest synthetic thing in the frame.
 //

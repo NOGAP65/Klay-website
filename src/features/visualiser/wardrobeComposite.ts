@@ -385,10 +385,10 @@ export function sampleBoardColour(
   return n ? [r / n, g / n, b / n] : null;
 }
 
-/** WOODGRAIN, for the three finishes with no photograph.
+/** WOODGRAIN, for the finishes with no photograph.
  *
- * The supplied renders are all Matt Wardrobe White, so Natural Oak, Antico Oak
- * and Notaio Walnut have no artwork and fall to the modelled carcass. Modelled
+ * The supplied renders are all Polar White, so Black Ply and Natural Oak have no
+ * artwork and fall to the modelled carcass. Modelled
  * board filled with one flat colour is what made the wardrobe read as a block
  * -- and it is a specifically WOOD failure, because the thing that says a panel
  * is timber and not painted MDF is the figure in it. A flat brown rectangle

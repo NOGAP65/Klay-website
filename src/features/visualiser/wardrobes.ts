@@ -286,38 +286,88 @@ export const wardrobeModelById = (id: string): WardrobeModel =>
 export const wardrobeDimensions = (m: WardrobeModel): string =>
   `${m.widths.join(' / ')} W × ${WARDROBE_HEIGHT_MM} H × ${WARDROBE_DEPTH_MM} D mm`;
 
-/** THE FOUR BOARD FINISHES the range is made in — the manufacturer's own names,
+/** THE THREE BOARD FINISHES the range is made in — the manufacturer's own names,
  * verbatim, so what is chosen here is what gets written on the quote. The slug
- * is what appears in the artwork filename. */
+ * is what appears in the artwork filename.
+ *
+ * THREE, DOWN FROM FOUR, AND TWO OF THEM ARE RENAMED. This listed Matt Wardrobe
+ * White, Matt Natural Oak, Woodmatt Antico Oak and Woodmatt Notaio Walnut. The
+ * range is Polar White, Black Ply and Natural Oak: the walnut is dropped
+ * outright, and Antico Oak — a grey oak — is not the third finish at all. The
+ * third is Black Ply, which Polytec describes as "a black stained coloured
+ * plywood with large open grain structure" and lists in the Wardrobe Decorative
+ * Woodmatt line, which is the range this is.
+ *
+ * "Matt Wardrobe White" was also not a decor name. Polytec has no such colour;
+ * the white in the range is Polar White, a cool white, and the name matters
+ * because this string is what goes on the quote. */
 export const WARDROBE_COLOURS: { name: string; slug: string; hex: string }[] = [
   // THE HEXES ARE MEASURED FROM THE BOARDS, not chosen to look like them.
   //
-  // They were eyeballed, and the eye was wrong in a way that mattered: Notaio
-  // Walnut was set at #6A4A34, a dark chocolate, where the real decor averages
-  // #866750 — a mid brown. So the swatch in the picker promised one board and
-  // the render, once it had the supplier's own sheet on it, delivered another.
-  // Averaged over the decor sheet, they now agree.
-  { name: 'Matt Wardrobe White', slug: 'white', hex: '#F1EFEB' },
+  // They were once eyeballed, and the eye was wrong in a way that mattered: the
+  // walnut that used to sit at the end of this list was set at #6A4A34, a dark
+  // chocolate, where its real decor averages #8D7864 — a mid brown. So the
+  // swatch in the picker promised one board and the render, once it had the
+  // supplier's own sheet on it, delivered another.
+  //
+  // The two new values were measured the same way and not by eye: the centre
+  // 80% of Polytec's own 960px decor swatch, averaged. The method checks out
+  // against the one board that did not change — Natural Oak measures #B9A481
+  // this way against the #B7A486 already recorded here, which is the same board
+  // to within a rounding error, so its long-standing value is left alone rather
+  // than churned for two points of red.
+  //
+  // Polar White moving from #F1EFEB to #F6F6F6 is a real correction, not a
+  // nudge: the old value was a warm off-white (R > G > B) and Polar White is
+  // neutral-to-cool by description and by measurement. A warm white swatch beside
+  // a cool white board is the exact failure the walnut taught.
+  { name: 'Matt Polar White', slug: 'white', hex: '#F6F6F6' },
+  { name: 'Woodmatt Black Ply', slug: 'black-ply', hex: '#3D3B3A' },
   { name: 'Matt Natural Oak', slug: 'natural-oak', hex: '#B7A486' },
-  { name: 'Woodmatt Antico Oak', slug: 'antico-oak', hex: '#7F7262' },
-  { name: 'Woodmatt Notaio Walnut', slug: 'notaio-walnut', hex: '#866750' },
 ];
 
-/** THE BOARD'S OWN PHOTOGRAPH, for the three timber finishes.
+/** THE BOARD'S OWN PHOTOGRAPH, for the finishes that have one.
  *
  * These are the supplier's decor sheets — the actual Polytec boards the Forma
  * range is pressed in, which is what the customer receives. Woodgrain drawn
  * procedurally was standing in for them: it gave the board SOME figure, which
- * beat a flat brown rectangle, but it was invented figure and it looked it.
- * Antico Oak in particular is a grey oak with dark knots and splits running
- * through it, and no amount of sine waves produces a knot.
+ * beat a flat brown rectangle, but it was invented figure and it looked it, and
+ * no amount of sine waves produces a knot.
  *
- * White has none, and needs none: Matt Wardrobe White is a plain surface, and
- * the photographic renders already cover it. */
+ * White has none, and needs none: Polar White is a plain surface, and the
+ * photographic renders already cover it.
+ *
+ * BLACK PLY HAS NONE, AND DOES WANT ONE — the one gap left by the move to three
+ * finishes, recorded rather than papered over. Polytec describe the board as
+ * having a "large open grain structure", so it is the opposite of a plain
+ * surface.
+ *
+ * It is not left flat in the meantime. isWoodFinish is `slug !== 'white'`, so
+ * black ply takes the procedural grain tile over its measured colour — the same
+ * fallback the three timbers rendered with before their sheets were added, and
+ * the note below on invented figure applies to it exactly. Good enough to ship;
+ * not as good as the board.
+ *
+ * IT WAS NOT FAKED FROM WHAT IS ON HAND, deliberately. Two candidates were
+ * checked and both would have been a guess dressed as a measurement. Reusing
+ * antico-oak.jpg would paint a grey oak's knots onto a black board. And
+ * squashing Polytec's own full-sheet image to this tile does not work either:
+ * the sheets are not published at a consistent shape (natural oak comes as
+ * 720x1296, black ply as 1500x2500), so there is no way to know what span of
+ * real board a crop covers — and FINISH_TILE_MM below is applied to every
+ * texture alike, so a wrong span is exactly the dolls'-house-or-barn-door
+ * failure noted there.
+ *
+ * What it needs is the sheet cropped the way these three were, by someone with
+ * the supplier's file and the scale it was taken at. Then add:
+ *     'black-ply': `${DIR}/finishes/black-ply.jpg`,
+ *
+ * The antico-oak.jpg and notaio-walnut.jpg files are still on disk and are now
+ * unreferenced — left in place rather than deleted, since a decor that comes
+ * back into the range would want them, and an unused 150KB costs less than a
+ * re-crop. */
 export const FINISH_TEXTURE: Record<string, string> = {
   'natural-oak': `${DIR}/finishes/natural-oak.jpg`,
-  'antico-oak': `${DIR}/finishes/antico-oak.jpg`,
-  'notaio-walnut': `${DIR}/finishes/notaio-walnut.jpg`,
 };
 
 /** How much real board one tile of the texture covers, millimetres.
@@ -363,15 +413,15 @@ export const wardrobeColourHex = (name: string): string => wardrobeColour(name).
  * of this change -- and the probe that says so was shown able to fail first, by
  * swapping the walnut texture, which moved exactly the six walnut cases and
  * left the six white ones still. On the unreachable surface it is enumeration,
- * because no probe can reach it: ten models x three views x four finishes
+ * because no probe can reach it: ten models x three views x three finishes
  * against the ten files on disk, the same three pairs resolving (7.0L, 9.0L,
- * 12.0U -- interior, white) and the same 117 falling back.
+ * 12.0U -- interior, white) and the rest falling back.
  *
  * VIEW AND FINISH ARE MATCHED STRICTLY, not coerced. A model whose artwork was
  * shot front-on has no interior cut-out, and the manifest saying so is the
- * whole point; and only Matt Wardrobe White was photographed, for the reason
+ * whole point; and only Matt Polar White was photographed, for the reason
  * set out at wardrobeCutoutFor. Serving a front render as an interior, or a
- * white carcass as walnut, would be worse than the honest fallback. */
+ * white carcass as black ply, would be worse than the honest fallback. */
 export function suppliedAssetPath(
   model: WardrobeModel,
   colourName: string,
