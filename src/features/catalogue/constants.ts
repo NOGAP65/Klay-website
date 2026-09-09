@@ -202,6 +202,52 @@ export const MESH_COLOURS = [
  * powder-coat line runs to a wall of chips and a card is not a wall: the whites
  * and neutrals a roof line is actually built in, plus the two darks and the mill
  * finish every extruder carries. */
+/** THE FOUR DOORS A SHAKER SLIDER IS MADE IN, and the three metals that hold
+ * them. Read off Stegbar's shaker sliding two-door and three-door pages,
+ * September 2026 — the two pages carry identical lists, so the panel count does
+ * not change what a door can be.
+ *
+ * MEASURED, THE SAME WAY THE WARDROBE BOARDS WERE: the centre 80% of Polytec's
+ * own 960px decor swatch, averaged. Three of the four are boards this repo has
+ * already measured by that method, and they came back to the digit — Notaio
+ * Walnut #8D7864, Antico Oak #8B7C6C, Polar White #F6F6F6, all agreeing with
+ * what WARDROBE_COLOURS and its history record. Only Coastal Oak is new.
+ *
+ * STEGBAR ALSO PAIRS EVERY ONE WITH A MIRROR — the pages list Coastal Oak and
+ * Mirror/Coastal Oak, and so on for all four. That is a second question (is a
+ * panel mirrored?) rather than four more colours, so it is deliberately NOT
+ * eight swatches here: two entries with the same hex and different names is a
+ * colour row that cannot be read. A Mirror row is the honest way to offer it
+ * and is not built, because it was not asked for. */
+export const SHAKER_DOOR_COLOURS = [
+  { name: 'Coastal Oak', hex: '#C7B299' },
+  { name: 'Notaio Walnut', hex: '#8D7864' },
+  { name: 'Antico Oak', hex: '#8B7C6C' },
+  { name: 'Polar White', hex: '#F6F6F6' },
+]
+
+/** THE METALWORK ON A SHAKER SLIDER — the frame and the track.
+ *
+ * Stegbar's own three, verbatim from the same two pages. Matt Black and
+ * Polished Silver are the values SCREEN_FINISHES already carries for the same
+ * two finishes, taken from there rather than retyped.
+ *
+ * PEARL WHITE IS THE ONE APPROXIMATION. It is a Stegbar powder coat rather than
+ * a Polytec decor, so there is no swatch to average — Polytec serves a 404 for
+ * it. The value is an off-white pearl and carries the same caveat as the other
+ * hand-set metals in this file.
+ *
+ * NOTE FOR THE FRAMED SKU. Stegbar's separate, non-shaker Framed Sliding range
+ * publishes a different frame list — White, Polished Silver, Satin Silver and
+ * Matte Black. Both shaker SKUs use the shaker list, because both are shaker
+ * doors and this is what Stegbar puts against them; if the framed shaker should
+ * follow the framed range's four instead, this is the one place to change it. */
+export const SHAKER_METAL_COLOURS = [
+  { name: 'Matt Black', hex: '#2B2B2D' },
+  { name: 'Polished Silver', hex: '#D9DDE0' },
+  { name: 'Pearl White', hex: '#EDEAE3' },
+]
+
 export const SHUTTER_COLOURS = [
   { name: 'White', hex: '#F1F0EC' },
   { name: 'Birch', hex: '#E3DDCE' },
@@ -503,6 +549,37 @@ export const CATALOGUE: CatalogueItem[] = [
     // The Forma range is modelled now, so this card carries the badge the two
     // window products have carried all along.
     visualise: { category: 'wardrobe' },
+  },
+  // THE DOORS, WHICH ARE A PRODUCT AND NOT A WARDROBE LAYOUT. Sliding was
+  // struck off the wardrobe card's own variants because nothing in the Forma
+  // range is a sliding unit — the card was describing a category rather than
+  // anything orderable. This is the thing it was reaching for: a set of sliding
+  // doors across the front of an opening, sold in its own right.
+  //
+  // TWO SKUS, FRAMED AND NOT, sharing one configuration — see
+  // SHAKER_SLIDING_OPTIONS. Both are shaker doors; the frame is what differs,
+  // and it differs in the product rather than in anything the customer picks.
+  {
+    id: 'shaker-framed-sliding-doors',
+    name: 'Shaker Framed sliding doors',
+    group: 'Other',
+    tagline: 'Framed shaker panels on a rolling track, across the opening.',
+    to: enquire('Shaker Framed sliding doors'),
+    // NO PHOTOGRAPH YET on either SKU, so both fall back to the range glyph the
+    // way every photo-less product does. shopPhotos has no entry for these ids
+    // and `shopPhoto` answers that with undefined by design.
+    glyph: 'wardrobes',
+    // The four decors Stegbar makes a shaker door in — see SHAKER_DOOR_COLOURS.
+    colours: SHAKER_DOOR_COLOURS,
+  },
+  {
+    id: 'shaker-sliding-doors',
+    name: 'Shaker sliding doors',
+    group: 'Other',
+    tagline: 'Shaker panels on a rolling track, with no surrounding frame.',
+    to: enquire('Shaker sliding doors'),
+    glyph: 'wardrobes',
+    colours: SHAKER_DOOR_COLOURS,
   },
   {
     id: 'walk-in-wardrobes',

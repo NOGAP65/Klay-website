@@ -65,6 +65,7 @@ import {
   SEMI_SCREEN_FINISHES,
   SEMI_SCREEN_HEIGHT_MM,
   SEMI_SCREEN_WIDTHS,
+  SHAKER_METAL_COLOURS,
   type CatalogueItem,
 } from './constants'
 import type { CartItem } from '@/features/cart'
@@ -455,7 +456,38 @@ const SEMI_SCREEN_OPTIONS: ProductOptions = {
   defaultWidth: SEMI_SCREEN_DEFAULT_WIDTH_MM,
 }
 
+/** SHAKER SLIDING DOORS, framed and not — one configuration, two SKUs.
+ *
+ * Three questions, in the order they are decided: how many panels span the
+ * opening, what the doors are, then what the metal holding them is.
+ *
+ * PANELS FIRST because it is the only one that depends on the opening rather
+ * than on taste — a 1.8m robe takes two doors and a 2.4m one takes three — and
+ * it is the answer that makes the other two mean something. Two and three,
+ * which is what Stegbar sells the shaker slider in; their separate non-shaker
+ * framed range also lists a four-panel door, and it is left off because it is
+ * not a shaker.
+ *
+ * NO SIZE ROW. Stegbar publishes these as ranges rather than a stock list —
+ * 440-2440 high against three width bands — which is another way of saying made
+ * to measure. A row of bands would be asking the customer to pre-empt the
+ * measure appointment, and the width is what the appointment is for.
+ *
+ * ONE OBJECT FOR BOTH, the way the two fixed shower panels share theirs. The
+ * frame is the difference between the SKUs and it is not something the customer
+ * picks, so there is nothing for the two configurations to disagree about — and
+ * sharing means they cannot drift into disagreeing later. */
+const SHAKER_SLIDING_OPTIONS: ProductOptions = {
+  variantLabel: 'Panels',
+  variants: [v('two', 'Two'), v('three', 'Three')],
+  colourLabel: 'Door colour',
+  hardwareLabel: 'Hardware colour',
+  hardwareChoices: SHAKER_METAL_COLOURS.map(c => ({ id: c.name, label: c.name, hex: c.hex })),
+}
+
 const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
+  'shaker-framed-sliding-doors': SHAKER_SLIDING_OPTIONS,
+  'shaker-sliding-doors': SHAKER_SLIDING_OPTIONS,
   // BOTH MIRRORS SHOW EVERY SHAPE. They ask the same question and they used to
   // answer it with two different controls: framed comes in three shapes so it
   // drew chips, frameless comes in six so it fell past the dense card's
