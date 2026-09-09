@@ -1,11 +1,12 @@
 # Shop product photos — September 2026
 
-Twenty-five generated product images and four supporting bathroom/reflection assets cover fifteen product families. The two wall-mirror SKUs share one image; the cabinet mirrors share one further image across their three shapes. Each image is a 1024 × 1024 WebP. Colour variants are applied at runtime; there are no generated images per colour. Eight sourced finish samples for the sliding doors are stored separately in `public/images/shop/finishes/`.
+Twenty-six generated product images and four supporting bathroom/reflection assets cover sixteen product families. The two wall-mirror SKUs share one image; the cabinet mirrors share one further image across their three shapes. Each image is a 1024 × 1024 WebP. Colour variants are applied at runtime; there are no generated images per colour. Eight sourced finish samples for the sliding doors are stored separately in `public/images/shop/finishes/`.
 
 | Product | Base images |
 | --- | --- |
 | Honeycomb | Blockout and Day & Night in the same room |
 | Roller shutters | Exterior window installation |
+| Pleated flyscreens | One patio-doorway photo with Single/Double closing bars and four frame finishes |
 | Zip guide systems | Floor-to-beam mesh screen across an alfresco opening |
 | Wardrobes | Forma 1, Forma 2, Forma 3 |
 | Walk in wardrobes | Forma 4 (LS01, L-shaped) and Forma 5 (US01, U-shaped) |
@@ -59,7 +60,7 @@ Wardrobe and shelving layouts were checked against the existing visualiser. Form
 
 Model images are decoded before changing the matching material masks, preventing a new layout's texture from appearing on the previous image. Wardrobe and shelving widths use the visualizer's `columnsFor` measurements, including fixed 507mm towers, shared dividers and evenly positioned shelf supports. Only the horizontal spans resize. The shop preview height is fixed at 2000mm, with the same camera scale, top and floor position across every layout and width. A fixed 1280 × 1024 frame prevents selecting a width from changing the image height or moving the controls. Photo crops and material masks move together, while grain keeps its physical scale. Existing configuration choices and visualizer product specifications are unchanged.
 
-Joinery width and finish selections redraw immediately, with no interpolation or texture fade. Colour changes on honeycomb, roller shutters, zip mesh, shower fittings and the awning's fabric and cassette ease over 320ms. Rapid colour changes start from the currently visible colour, and reduced-motion preferences disable the transitions. Curtain, roller blind, Venetian and plantation previews retain their existing treatment. Flyscreens are excluded.
+Joinery width and finish selections redraw immediately, with no interpolation or texture fade. Colour changes on honeycomb, roller shutters, zip mesh, shower fittings and the awning's fabric and cassette ease over 320ms. Rapid colour changes start from the currently visible colour, and reduced-motion preferences disable the transitions. Curtain, roller blind, Venetian and plantation previews retain their existing treatment. Pleated flyscreens use the same colour transition for their four frame finishes; Single/Double hardware redraws immediately.
 
 Fixed frameless showerscreen has separate clip and channel photos, guided by Stegbar's [Clip Fixed Panel](https://www.stegbar.com.au/products/clip-fixed-panel) and [Channel Fixed Panel](https://www.stegbar.com.au/products/channel-fixed-panel) galleries. These are original generated images, produced with the built-in image tool. The existing configuration lists are unchanged: clip/channel mounting, their seven/six finishes and ten widths, with the existing 2053mm height. The catalogue name and enquiry link now say Fixed frameless showerscreen.
 

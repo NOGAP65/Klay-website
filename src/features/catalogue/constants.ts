@@ -478,7 +478,7 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Mesh that folds away to nothing when you are not using it.',
     to: enquire('Pleated Flyscreens'),
     glyph: 'pleated-flyscreens',
-    image: '/images/products/pleated-flyscreens.webp',
+    image: '/images/shop/pleated-flyscreen.webp',
   },
 
   // --- OTHER ---------------------------------------------------------------

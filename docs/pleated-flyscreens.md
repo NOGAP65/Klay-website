@@ -10,4 +10,6 @@ Source: the product configuration image supplied by the user on 10 September 202
 
 These replace the unsourced Standard/Pet resistant mesh options and Small/Medium/Large size bands. Configuration uses visible buttons; frame colours use visible swatches with the selected name underneath. The dimension caption follows the configuration, and configuration, frame colour and dimensions persist into the quote. The supplied image labels these as dimensions; no extra dimension ranges are inferred. Swatch hex values approximate the photographed colour samples.
 
-The existing product photograph is retained. This change configures the product and its quote details; it does not add a new generated image or recolour the existing photo.
+The shop uses one original generated patio-doorway photograph, saved as `public/images/shop/pleated-flyscreen.webp`. Single has one moving bar and side closing handle. Double redraws immediately with two meeting bars and handles at the centre, and a cassette on either side. Both illustrate the same doorway; the caption reports the supplied configuration dimensions.
+
+Black, White, Clear Anodised and Monument recolour only the photographed metal. Mesh, room lighting and dark handle recesses retain their original appearance. Colour transitions use the existing 320ms animation and respect reduced-motion settings. The replaced static photograph has been removed. The generation prompt is recorded in `pleated-flyscreen-image-prompt.txt`.

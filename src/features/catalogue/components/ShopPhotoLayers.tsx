@@ -12,6 +12,7 @@ import { MirrorPhotoLayers } from './MirrorPhotoLayers';
 import { CabinetMirrorPhotoLayers } from './CabinetMirrorPhotoLayers';
 import { SlidingDoorPhotoLayers } from './SlidingDoorPhotoLayers';
 import { WalkInPhotoLayers } from './WalkInPhotoLayers';
+import { FlyscreenPhotoLayers } from './FlyscreenPhotoLayers';
 import { usePhotoTransition } from './usePhotoTransition';
 
 interface Props { photo: ShopPhoto; colour: string; colourName?: string; hardware: string; hardwareName?: string; width?: string; shape?: string; dimension?: string }
@@ -143,6 +144,8 @@ export function ShopPhotoLayers({ photo: selectedPhoto, ...selection }: Props) {
     panels={selection.shape} dimension={selection.dimension} materialName={selection.colourName} hardware={selection.hardware} />;
   if (photo.walkIn) return <WalkInPhotoLayers src={photo.src} layoutId={photo.walkIn}
     colourName={selection.colourName} hardwareName={selection.hardwareName} />;
+  if (photo.flyscreen) return <FlyscreenPhotoLayers src={photo.src} configuration={selection.shape}
+    hardware={selection.hardware} hardwareName={selection.hardwareName} />;
   if (photo.cabinetMirror) return <CabinetMirrorPhotoLayers src={photo.src} shape={selection.shape} />;
   if (photo.mirror) return <MirrorPhotoLayers src={photo.src} framed={photo.mirror.framed}
     shape={selection.shape} dimension={selection.dimension} hardware={selection.hardware} />;
