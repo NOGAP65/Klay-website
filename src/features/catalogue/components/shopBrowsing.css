@@ -1,0 +1,60 @@
+.shop-browse { font-family: var(--shop-body); color: var(--shop-ink); }
+.shop-filter-rail { display: flex; flex-direction: column; gap: 26px; }
+.shop-filter-rail fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
+.shop-filter-rail legend { padding: 0; margin-bottom: 10px; font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--shop-muted); }
+.shop-filter-option { display: flex; align-items: center; gap: 9px; min-height: 34px; cursor: pointer; font-size: 12px; border-radius: 3px; }
+.shop-filter-option:hover { background: rgb(29 29 29 / 4%); }
+.shop-filter-option input { width: 16px; height: 16px; margin: 0; accent-color: var(--shop-accent); flex: 0 0 auto; cursor: inherit; }
+.shop-filter-option > span:first-of-type { flex: 1; }
+.shop-filter-option.is-unavailable { opacity: .38; cursor: default; }
+.shop-filter-count { padding-right: 4px; font-size: 11px; color: var(--shop-muted); font-variant-numeric: tabular-nums; }
+.shop-search { display: flex; align-items: center; gap: 10px; padding: 0 14px; border: 1px solid var(--shop-line); background: var(--shop-paper); border-radius: 5px; margin: 0 0 8px; color: var(--shop-muted); }
+.shop-search input { width: 100%; min-width: 0; min-height: 46px; border: 0; background: transparent; outline: 0; color: var(--shop-ink); font: inherit; font-size: 13px; }
+.shop-search input::-webkit-search-cancel-button { display: none; }
+.shop-search:focus-within { outline: 2px solid var(--shop-accent); outline-offset: 2px; }
+.shop-browse-toolbar { display: flex; align-items: center; gap: 12px; position: sticky; top: 66px; z-index: 20; min-height: 64px; margin-bottom: 18px; background: var(--shop-band); border-bottom: 1px solid var(--shop-line); }
+.shop-result-count { flex: 1; font-size: 12px; color: var(--shop-muted); white-space: nowrap; }
+.shop-sort { display: flex; align-items: center; position: relative; }
+.shop-sort select { appearance: none; border: 1px solid var(--shop-line); background: var(--shop-paper); color: var(--shop-ink); min-height: 42px; border-radius: 4px; padding: 0 32px 0 12px; font: inherit; font-size: 12px; cursor: pointer; width: 165px; }
+.shop-sort > span:last-child { position: absolute; right: 12px; pointer-events: none; }
+.shop-icon-button { flex-shrink: 0; min-width: 42px; min-height: 42px; font-size: 24px; color: inherit; background: transparent; border: 0; cursor: pointer; }
+.shop-filter-button, .shop-primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 0 12px; border: 1px solid var(--shop-line); background: transparent; color: var(--shop-ink); border-radius: 4px; cursor: pointer; font: inherit; font-size: 12px; white-space: nowrap; }
+.shop-filter-button.is-active, .shop-primary-button { background: var(--shop-ink); color: var(--shop-paper); border-color: var(--shop-ink); }
+.shop-filter-button:disabled { opacity: .4; cursor: default; }
+.shop-active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -4px 0 20px; }
+.shop-active-filters button { display: inline-flex; align-items: center; gap: 10px; min-height: 36px; max-width: 100%; padding: 5px 10px; font: inherit; font-size: 12px; background: var(--shop-paper); border: 1px solid var(--shop-line); border-radius: 4px; color: var(--shop-ink); cursor: pointer; }
+.shop-active-filters button > span:first-child { overflow-wrap: anywhere; }
+.shop-active-filters button > span:last-child { flex-shrink: 0; }
+button.shop-clear { font: inherit; font-size: 12px; color: var(--shop-ink); background: transparent; border: 0; padding: 8px 4px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.shop-browse :is(button, select, input):focus-visible { outline: 2px solid var(--shop-accent); outline-offset: 3px; }
+.shop-search input:focus-visible { outline: 0; }
+.shop-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.shop-filter-drawer { position: fixed; inset: 0 auto 0 0; margin: 0; padding: 0; width: min(390px, 100vw); max-width: 100vw; height: 100dvh; max-height: 100dvh; border: 0; color: var(--shop-ink); background: var(--shop-paper); font-family: var(--shop-body); }
+.shop-filter-drawer::backdrop { background: rgb(29 29 29 / 45%); }
+.shop-drawer-content { display: flex; flex-direction: column; height: 100%; }
+.shop-drawer-content header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid var(--shop-line); }
+.shop-drawer-content h2 { font-size: 18px; font-weight: 500; margin: 0; }
+.shop-drawer-scroll { overflow-y: auto; overscroll-behavior: contain; flex: 1; padding: 22px 24px; }
+.shop-drawer-scroll .shop-filter-option { min-height: 44px; font-size: 14px; }
+.shop-drawer-content footer { display: flex; gap: 10px; padding: 16px 20px max(16px, env(safe-area-inset-bottom)); border-top: 1px solid var(--shop-line); }
+.shop-drawer-content footer .shop-primary-button { flex: 1; }
+.shop-drawer-search { padding-bottom: 20px; overflow-wrap: anywhere; }
+.shop-drawer-search p { margin: 0; font-size: 13px; }
+.shop-empty { padding: 48px 20px; background: var(--shop-paper); border: 1px solid var(--shop-line); border-radius: 8px; text-align: center; }
+.shop-empty h2 { font-family: var(--shop-display); font-size: 32px; font-weight: 300; margin: 0; }
+.shop-empty p { font-size: 14px; color: var(--shop-muted); line-height: 1.6; overflow-wrap: anywhere; }
+.shop-empty-actions { display: flex; justify-content: center; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 20px; }
+@media (max-width: 768px) {
+  .shop-browse-toolbar { top: 66px; gap: 8px; }
+  .shop-search input { font-size: 16px; }
+  .shop-search input::placeholder { font-size: 13px; }
+  .shop-sort select { width: 138px; font-size: 11px; padding-left: 10px; }
+  .shop-result-count { font-size: 11px; text-align: center; }
+  .shop-filter-button { padding: 0 10px; }
+  .shop-active-filters button { min-height: 40px; }
+}
+@media (max-width: 359px) {
+  .shop-browse-toolbar { gap: 6px; }
+  .shop-sort select { width: 124px; }
+  .shop-filter-button svg { display: none; }
+}
