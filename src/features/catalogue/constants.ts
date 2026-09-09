@@ -557,20 +557,33 @@ export const CATALOGUE: CatalogueItem[] = [
     image: '/images/shop/shower-semi-frameless.webp',
     glyph: 'shower-screens',
   },
+  // THE TWO MIRRORS, NAMED AS A PAIR. They were "Mirrors without frames" and
+  // "Mirror with Frame" — one plural and one singular, one describing itself in
+  // three words and the other in three different ones, so the shop listed them
+  // as if they were unrelated products. They are the same product with and
+  // without a frame, and the names now say that: the noun first, the one thing
+  // that differs second, which is also what sorts them together in a list.
+  //
+  // THE IDS DELIBERATELY DO NOT FOLLOW. `mirrors-without-frames` and
+  // `mirror-with-frame` are keys, not copy — they address SHOP_PHOTOS,
+  // PRODUCT_OPTIONS and tools/verify-mirror-photo, and they are baked into the
+  // line ids of any cart already in a customer's browser. Renaming them buys a
+  // tidier grep and costs a silent cart migration, so the display name is what
+  // changed.
   {
     id: 'mirrors-without-frames',
-    name: 'Mirrors without frames',
+    name: 'Mirrors Frameless',
     group: 'Other',
     tagline: 'Polished edges and sculptural shapes, with a size for your space.',
-    to: enquire('Mirrors without frames'),
-    image: '/images/shop/mirrors-gothic.webp',
+    to: enquire('Mirrors Frameless'),
+    image: '/images/shop/mirrors-clean.webp',
   },
   {
     id: 'mirror-with-frame',
-    name: 'Mirror with Frame',
+    name: 'Mirrors Framed',
     group: 'Other',
     tagline: 'A refined frame in white, golden or black.',
-    to: enquire('Mirror with Frame'),
-    image: '/images/shop/mirrors-gothic.webp',
+    to: enquire('Mirrors Framed'),
+    image: '/images/shop/mirrors-clean.webp',
   },
 ]

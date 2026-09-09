@@ -27,12 +27,12 @@ const { fieldsFor, defaultSelection, withChoice, configuredLine } = await import
 const { mirrorPlan } = await import(moduleUrl('src/features/catalogue/lib/mirrorPhoto.ts'));
 const { shopPhoto } = await import(moduleUrl('src/features/catalogue/shopPhotos.ts'));
 const expected = [
-  { id: 'mirrors-without-frames', name: 'Mirrors without frames', framed: false, shapes: {
+  { id: 'mirrors-without-frames', name: 'Mirrors Frameless', framed: false, shapes: {
     gothic: ['800x700', '900x700', '1000x700'], round: ['600x600', '800x800', '1000x1000'],
     rectangular: ['600x600', '900x600', '900x1200'], oval: ['800x700', '900x700', '1000x700'],
     radius: ['800x700', '900x700', '1000x700'], 'd-shaped': ['750x900', '900x1200', '1100x1500'],
   } },
-  { id: 'mirror-with-frame', name: 'Mirror with Frame', framed: true, shapes: {
+  { id: 'mirror-with-frame', name: 'Mirrors Framed', framed: true, shapes: {
     gothic: ['800x500'], round: ['600x600', '900x900'], pill: ['1000x500'],
   } },
 ];
@@ -63,7 +63,7 @@ for (const product of expected) {
       assert.equal(plan.y + plan.h, 669, 'Constant mounting baseline');
       assert.ok(plan.x > 0 && plan.y > 0 && plan.x + plan.w < 1024, 'Entire mirror fits photograph');
       const photo = shopPhoto(product.id, shape);
-      assert.equal(photo.src, '/images/shop/mirrors-gothic.webp');
+      assert.equal(photo.src, '/images/shop/mirrors-clean.webp');
       assert.equal(photo.mirror.framed, product.framed);
       const line = configuredLine(item, sel);
       assert.ok(line.options.some(o => o.label === 'Dimensions (H × W)' && o.value === `H${height} × W${width} mm`));
