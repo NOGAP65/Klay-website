@@ -8,4 +8,8 @@ The URL stores search, filters and sorting. Refresh, sharing and browser Back re
 
 The compact results toolbar remains beneath the navigation while scrolling. On mobile, Filters opens a modal drawer with larger checkbox targets, scrollable contents, a fixed result-count button, Escape dismissal, keyboard focus containment and focus return. Active chips and clear actions provide recovery from narrow searches. The mobile banner grows to fit its text on small screens.
 
+Result changes now use short fades and position transitions, with a fade fallback for browsers without view transitions. Search changes coalesce for 150ms while the input and counts stay immediate. Returning to results scrolls smoothly before shortening the page, and browser scroll anchoring is disabled within the shop to avoid competing jumps. Rapid changes cancel the previous transition and keep the latest selection. Product cards are memoized so filter controls and sibling configuration changes do not repaint every photo. These browsing transitions depend only on product IDs and order; product colour and dimension rendering retain their existing behaviour.
+
+The mobile drawer slides in and out with a fading backdrop. Its result count updates immediately, but the product grid waits until dismissal before changing. Reduced-motion preferences skip the result movement and drawer travel.
+
 Validation: `node tools/verify-shop-browsing.mjs`, TypeScript and production build. Browser checks cover desktop filtering, refresh and Back, 390px and 320px layouts, modal focus wrapping and dismissal, native sorting, empty-search recovery, retained product choices and sticky controls.

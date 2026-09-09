@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { space, tokens, type as typeScale } from '@/ds';
@@ -6,14 +6,17 @@ import { useIsMobile, useMediaQuery } from '@/shared';
 
 import { useKlayStore } from '../../../store';
 import { defaultSelection, withChoice, type Selection } from '../configOptions';
+import type { CatalogueItem } from '../constants';
 import { EMPTY_FACETS, applyFacets, facetCount } from '../lib/facets';
 import { readBrowseState, writeBrowseState, type BrowseState } from '../lib/shopBrowseState';
 import { sortProducts } from '../lib/sortProducts';
 
 import { FilterDrawer } from './FilterDrawer';
 import { FilterRail } from './FilterRail';
-import { ShopCard, COLUMN_GAP, COLUMN_MIN } from './ShopCard';
+import { COLUMN_GAP, COLUMN_MIN } from './ShopCard';
+import { ShopProductCard } from './ShopProductCard';
 import { ShopToolbar } from './ShopToolbar';
+import { useShopResults } from './useShopResults';
 import './shopBrowsing.css';
 
 const PAGE_MAX = 1600;
@@ -37,14 +40,13 @@ export default function ProductsPage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, [setScrollY]);
   const items = useMemo(() => sortProducts(applyFacets(state.facets, state.query), state.sort), [state]);
-  const revealResults = () => requestAnimationFrame(() => {
-    const top = resultsRef.current?.getBoundingClientRect().top;
-    if (top !== undefined && top < 80) window.scrollBy({ top: top - 80, behavior: 'instant' });
-  });
+  const { displayed, regionRef, isUpdating } = useShopResults(items, state.query, isDrawerOpen && isNarrow, resultsRef);
+  const chooseProduct = useCallback((item: CatalogueItem, field: string, choice: string) => {
+    setSel(current => ({ ...current, [item.id]: withChoice(item, current[item.id] ?? defaultSelection(item), field, choice) }));
+  }, []);
   const updateBrowse = (next: Partial<BrowseState>, shouldReplace = false) => {
     setSearchParams(current => writeBrowseState(current, { ...readBrowseState(current), ...next }),
       { replace: shouldReplace, preventScrollReset: true });
-    if (!isDrawerOpen && !shouldReplace) revealResults();
   };
   const clearAll = () => updateBrowse({ facets: EMPTY_FACETS, query: '' });
   const browseStyle = {
@@ -153,13 +155,11 @@ export default function ProductsPage() {
           <div ref={resultsRef} style={{ flex: 1, minWidth: 0 }}>
             <ShopToolbar state={state} count={items.length} isNarrow={isNarrow} onChange={updateBrowse}
               onOpenFilters={() => setDrawerOpen(true)} />
-            {items.length > 0 ? <div style={{ display: 'grid',
+            <div ref={regionRef} className="shop-results" aria-busy={isUpdating}>
+            {displayed.length > 0 ? <div style={{ display: 'grid',
               gridTemplateColumns: isNarrow ? 'repeat(1, 1fr)' : `repeat(auto-fill, minmax(${COLUMN_MIN}px, 1fr))`,
               columnGap: isNarrow ? 12 : COLUMN_GAP, rowGap: isNarrow ? 12 : COLUMN_GAP }}>
-              {items.map(item => <ShopCard key={item.id} item={item} sel={sel[item.id] ?? defaultSelection(item)}
-                onChange={(fieldId, choiceId) => setSel(current => ({ ...current,
-                  [item.id]: withChoice(item, current[item.id] ?? defaultSelection(item), fieldId, choiceId),
-                }))} />)}
+              {displayed.map(item => <ShopProductCard key={item.id} item={item} selection={sel[item.id]} onChoice={chooseProduct} />)}
             </div> : <div className="shop-empty">
               <h2>No products found</h2>
               <p>{state.query ? `Nothing matches “${state.query}”${facetCount(state.facets) ? ' with these filters' : ''}. Try a product name such as mirrors or blinds.`
@@ -170,12 +170,13 @@ export default function ProductsPage() {
                 <Link to="/contact" style={{ color: tokens.ink, fontSize: typeScale.label.fontSize, textUnderlineOffset: 3 }}>Ask us for help</Link>
               </div>
             </div>}
+            </div>
           </div>
         </div>
       </section>
     </main>
     {isNarrow && <FilterDrawer isOpen={isDrawerOpen} facets={state.facets} query={state.query} count={items.length}
       onChange={facets => updateBrowse({ facets })} onClear={clearAll}
-      onClose={() => { setDrawerOpen(false); revealResults(); }} />}
+      onClose={() => setDrawerOpen(false)} />}
   </div>;
 }

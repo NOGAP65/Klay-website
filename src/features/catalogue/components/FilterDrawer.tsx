@@ -1,4 +1,6 @@
-import { useEffect, useRef, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+
+import { useMediaQuery } from '@/shared';
 
 import { EMPTY_FACETS, facetCount, type Facets } from '../lib/facets';
 
@@ -23,6 +25,13 @@ export function FilterDrawer({ isOpen, facets, query, count, onChange, onClear, 
   onChange: (next: Facets) => void; onClear: () => void; onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const isReduced = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const [isClosing, setClosing] = useState(false);
+  const finishClose = () => { setClosing(false); onClose(); };
+  const requestClose = () => {
+    if (isReduced) finishClose();
+    else setClosing(true);
+  };
   useEffect(() => {
     if (!isOpen) return;
     const dialog = dialogRef.current;
@@ -38,12 +47,13 @@ export function FilterDrawer({ isOpen, facets, query, count, onChange, onClear, 
     };
   }, [isOpen]);
 
-  return <dialog ref={dialogRef} className="shop-filter-drawer" aria-labelledby="shop-filter-title"
-    onCancel={onClose} onKeyDown={keepFocusInDrawer}
-    onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
+  return <dialog ref={dialogRef} className="shop-filter-drawer" aria-labelledby="shop-filter-title" data-closing={isClosing}
+    onCancel={event => { event.preventDefault(); requestClose(); }} onKeyDown={keepFocusInDrawer}
+    onAnimationEnd={event => { if (event.target === event.currentTarget && event.animationName === 'shop-drawer-out') finishClose(); }}
+    onClick={event => { if (event.target === event.currentTarget) requestClose(); }}>
     <div className="shop-drawer-content">
       <header><h2 id="shop-filter-title">Filters</h2>
-        <button autoFocus type="button" className="shop-icon-button" aria-label="Close filters" onClick={onClose}>×</button>
+        <button autoFocus type="button" className="shop-icon-button" aria-label="Close filters" onClick={requestClose}>×</button>
       </header>
       <div className="shop-drawer-scroll">
         {query && <div className="shop-drawer-search">
@@ -53,7 +63,7 @@ export function FilterDrawer({ isOpen, facets, query, count, onChange, onClear, 
       </div>
       <footer>
         <button type="button" className="shop-filter-button" disabled={!facetCount(facets)} onClick={() => onChange(EMPTY_FACETS)}>Reset filters</button>
-        <button type="button" className="shop-primary-button" onClick={onClose}>
+        <button type="button" className="shop-primary-button" onClick={requestClose}>
           Show {count} product{count === 1 ? '' : 's'}
         </button>
       </footer>
