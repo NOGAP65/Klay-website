@@ -57,6 +57,7 @@ import {
   CASSETTE_COLOURS,
   SCREEN_CHANNEL_FINISHES,
   SCREEN_CLIP_FINISHES,
+  SCREEN_DEFAULT_WIDTH_MM,
   SCREEN_HEIGHT_MM,
   SCREEN_WIDTHS,
   type CatalogueItem,
@@ -114,6 +115,14 @@ export interface ConfigField {
    * so. Everything else stays chips or swatches. */
   kind: 'chips' | 'swatches' | 'select'
   choices: ConfigChoice[]
+  /** The choice this row opens on, where the first is not the right answer.
+   *
+   * Absent everywhere but the shower panel's width — see defaultWidth. It is on
+   * the FIELD rather than read out of the options table by defaultSelection so
+   * that the one place a default is decided is the one place the choices are
+   * built, and a row whose list narrows cannot end up defaulting to a size it
+   * no longer offers. */
+  defaultChoice?: string
 }
 
 /** The three window-size bands the pricing works in — see lib/pricing. Shown
@@ -352,6 +361,16 @@ interface ProductOptions {
   widthLabel?: string
   /** How one width reads on the row and on the quote. Defaults to "1200mm". */
   widthFormat?: (mm: number) => string
+  /** THE WIDTH THE CARD OPENS ON, where the narrowest is the wrong answer.
+   *
+   * Absent means the first in the list, which is what every other row does and
+   * is right for a scale of equals. A shower panel is not one: its narrowest
+   * size is the exception rather than the middle, so it names its own. See
+   * SCREEN_DEFAULT_WIDTH_MM.
+   *
+   * Ignored where the chosen model is not made in it — reconcile has the last
+   * word, so this cannot put an unorderable size on a card. */
+  defaultWidth?: number
 }
 
 const v = (id: string, label: string): ConfigChoice => ({ id, label })
@@ -370,6 +389,10 @@ const FIXED_SCREEN_OPTIONS: ProductOptions = {
   widths: SCREEN_WIDTHS,
   widthLabel: 'Dimensions',
   widthFormat: w => `${SCREEN_HEIGHT_MM} × ${w}`,
+  // 1100, not the 700 off the front of the list — see SCREEN_DEFAULT_WIDTH_MM.
+  // Set here rather than on either product, so both fixed-panel shapes open on
+  // the same size and cannot drift apart.
+  defaultWidth: SCREEN_DEFAULT_WIDTH_MM,
 }
 
 const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
@@ -657,6 +680,11 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
       // own, and the line then reads the way the order does. Everything else
       // has one dimension worth naming and keeps the plain form.
       choices: widths.map(w => v(String(w), options.widthFormat?.(w) ?? `${w}mm`)),
+      // Only where the product asks for one AND is made in it. A model whose
+      // own width list does not include it falls back to that list's first,
+      // which is what firstChoice below does.
+      defaultChoice:
+        options.defaultWidth !== undefined ? String(options.defaultWidth) : undefined,
     })
   }
   if (!options.hardwareFirst) hardwareField()
@@ -695,7 +723,20 @@ export const hardwareHex = (item: CatalogueItem, sel: Selection): string | null 
   return choices.find(c => c.id === sel.hardware)?.hex ?? choices[0]?.hex ?? null
 }
 
-/** Every field's first choice. The panel opens on a complete, orderable
+/** THE ANSWER A ROW OPENS ON: the one it names, where it names one and is made
+ * in it, and otherwise the first on offer.
+ *
+ * The guard is the point. A `defaultChoice` is written against the product's
+ * full width list, and the row a customer sees may be a single model's narrower
+ * one — so it is checked against the choices actually present rather than
+ * trusted, which keeps an unorderable size off the card without either caller
+ * having to know that is a risk. */
+const firstChoice = (f: ConfigField): string | undefined =>
+  (f.defaultChoice !== undefined && f.choices.some(c => c.id === f.defaultChoice)
+    ? f.defaultChoice
+    : f.choices[0]?.id)
+
+/** Every field's opening choice. The panel opens on a complete, orderable
  * configuration rather than on five empty controls — nobody should have to
  * answer five questions to find out what something costs. */
 export const defaultSelection = (item: CatalogueItem): Selection => {
@@ -709,7 +750,7 @@ export const defaultSelection = (item: CatalogueItem): Selection => {
   //
   // Every other field makes the same bargain — a sensible default, changed by
   // anyone who cares — and the measure appointment confirms the room anyway.
-  for (const f of fieldsFor(item)) sel[f.id] = f.choices[0]?.id
+  for (const f of fieldsFor(item)) sel[f.id] = firstChoice(f)
   // AND THEN CHECKED, BECAUSE A FIELD CAN DEPEND ON THE ANSWER ABOVE IT. The
   // loop above ran with nothing chosen yet, so the linen card's width row saw
   // the union of all four codes' widths and took 900 off the front of it — a
@@ -734,7 +775,7 @@ export const reconcile = (item: CatalogueItem, sel: Selection): Selection => {
   const next = { ...sel }
   for (const f of fieldsFor(item, next)) {
     if (next[f.id] !== undefined && !f.choices.some(c => c.id === next[f.id])) {
-      next[f.id] = f.choices[0]?.id
+      next[f.id] = firstChoice(f)
     }
   }
   return next

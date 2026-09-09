@@ -267,6 +267,21 @@ export const SCREEN_CHANNEL_FINISHES = SCREEN_FINISHES.filter(f => f.name !== 'G
 export const SCREEN_HEIGHT_MM = 2053
 export const SCREEN_WIDTHS = [700, 800, 900, 1000, 1050, 1100, 1150, 1200, 1300, 1400]
 
+/** THE SIZE THE CARD OPENS ON, and it is not the narrowest.
+ *
+ * Every other row on every card defaults to its first choice, which is right
+ * where the list is a scale of equals — a fabric, a finish, a room. It is wrong
+ * here, because 700 is the narrowest panel in the range and a shower opening
+ * that narrow is the exception. Opening on it makes the common case a
+ * correction: nearly every customer has to change the row before the card
+ * describes their bathroom, and a default nobody wants is worse than no default
+ * because it looks like an answer.
+ *
+ * 1100 is the middle of the ten and the ordinary single-shower opening, so the
+ * card opens on something most people can leave alone. The exact panel is
+ * settled at the measure either way. */
+export const SCREEN_DEFAULT_WIDTH_MM = 1100
+
 /** See AWNING_COLOURS. The housing, not the cloth. */
 export const CASSETTE_COLOURS = [
   { name: 'White', hex: '#F2F1EE' },
