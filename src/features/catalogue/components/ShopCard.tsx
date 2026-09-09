@@ -42,6 +42,7 @@ import { useIsMobile } from '@/shared';
 import { hardwareHex, type Selection } from '../configOptions';
 import { cabinetMirrorSize } from '../lib/cabinetMirror';
 import { walkInLayout, WALK_IN_FOOTPRINT_MM, WALK_IN_HEIGHT_MM } from '../lib/walkInWardrobes';
+import { flyscreenConfiguration, flyscreenDimensions } from '../lib/pleatedFlyscreens';
 import { fabricShot, FABRIC_SHOT_DIR } from '../fabricShots';
 // Relative, like the feature's other three importers of this file — see the
 // note at its head on why it has not moved.
@@ -587,6 +588,10 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
               references darken their product shots by nothing at all. */}
         </div>
 
+        {item.id === 'pleated-flyscreens' && <p style={{ ...typeScale.micro, color: tokens.inkSoft,
+          letterSpacing: 'normal', textTransform: 'none', margin: `${space.snug}px 0 0` }}>
+          {flyscreenConfiguration(sel.variant).name} · {flyscreenDimensions(sel.variant)}
+        </p>}
         {photo?.cabinetMirror && <p style={{ ...typeScale.micro, color: tokens.inkSoft,
           letterSpacing: 'normal', textTransform: 'none', margin: `${space.snug}px 0 0` }}>
           {cabinetMirrorSize(sel.variant)} · White cabinet · Two shelves

@@ -72,6 +72,7 @@ import { slidingOpenings, defaultSlidingOpening, slidingMetals, type SlidingDoor
 import { mirrorShapes, mirrorDimensions, MIRROR_FRAME_COLOURS } from './lib/mirrorPhoto'
 import { CABINET_MIRROR_SHAPES, cabinetMirrorSpecifications } from './lib/cabinetMirror'
 import { WALK_IN_LAYOUTS, WALK_IN_HARDWARE, walkInSpecifications } from './lib/walkInWardrobes'
+import { FLYSCREEN_CONFIGURATIONS, FLYSCREEN_COLOURS, flyscreenSpecifications } from './lib/pleatedFlyscreens'
 
 // SEVEN SLOTS NOW, AND THE TWO NEW ONES ARE NOT WINDOW FIELDS.
 //
@@ -617,9 +618,12 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     colourLabel: 'Colour',
   },
   'pleated-flyscreens': {
-    variantLabel: 'Mesh',
-    variants: [v('standard', 'Standard'), v('pet', 'Pet resistant')],
-    size: true,
+    variantLabel: 'Configuration',
+    variants: FLYSCREEN_CONFIGURATIONS.map(configuration => v(configuration.id, configuration.name)),
+    hardwareLabel: 'Frame colour',
+    hardwareChoices: FLYSCREEN_COLOURS.map(colour => ({ id: colour.name, label: colour.name, hex: colour.hex })),
+    showFinishSelection: true,
+    specificationsOfVariant: flyscreenSpecifications,
   },
 
   // --- OTHER ---------------------------------------------------------------
