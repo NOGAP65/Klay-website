@@ -19,6 +19,7 @@ export interface ShopPhoto {
   mirror?: { framed: boolean };
   cabinetMirror?: boolean;
   slidingDoor?: 'framed' | 'shaker';
+  walkIn?: 'LS01' | 'US01';
 }
 
 // Traced on the 1024px photographs. Keep the camera and these silhouettes
@@ -196,6 +197,10 @@ function semiScreen(layout: SemiScreenPhoto['layout']): ShopPhoto {
 }
 
 export const SHOP_PHOTOS: Record<string, Record<string, ShopPhoto>> = {
+  'walk-in-wardrobes': {
+    LS01: { src: '/images/shop/walkin-ls01.webp', description: 'Forma 4 — L-shaped walk-in wardrobe', walkIn: 'LS01' },
+    US01: { src: '/images/shop/walkin-us01.webp', description: 'Forma 5 — U-shaped walk-in wardrobe', walkIn: 'US01' },
+  },
   'shaker-framed-sliding-doors': { default: { src: '/images/shop/sliding-framed.webp',
     description: 'Framed sliding wardrobe doors with a white aluminium frame', slidingDoor: 'framed' } },
   'shaker-sliding-doors': { default: { src: '/images/shop/sliding-shaker.webp',

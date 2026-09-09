@@ -11,20 +11,20 @@ async function loadTypescript(file) {
 const { SHOP_PHOTOS, shopPhoto } = await loadTypescript('src/features/catalogue/shopPhotos.ts');
 const { photoColourCurves } = await loadTypescript('src/features/catalogue/lib/photoColour.ts');
 const photos = Object.values(SHOP_PHOTOS).flatMap(Object.values);
-assert.equal(photos.length, 24);
+assert.equal(photos.length, 26);
 assert.notEqual(shopPhoto('honeycomb-blinds', 'blockout').src, shopPhoto('honeycomb-blinds', 'daynight').src);
 assert.equal(shopPhoto('zip-guide-systems').src, '/images/shop/zip-guide-alfresco.webp');
 for (const product of ['curtains', 'roller-blinds', 'venetian-blinds', 'plantation-shutters', 'folding-arm-awnings', 'pleated-flyscreens']) {
   assert.equal(shopPhoto(product), undefined, `${product} must keep its existing preview`);
 }
-const expectedLayouts = { wardrobes: ['SRDH', 'SRSTDH02', 'SRDTDH01'], shelving: ['LIN01', 'LIN02', 'LIN05', 'LINBR02'] };
+const expectedLayouts = { wardrobes: ['SRDH', 'SRSTDH02', 'SRDTDH01'], shelving: ['LIN01', 'LIN02', 'LIN05', 'LINBR02'], 'walk-in-wardrobes': ['LS01', 'US01'] };
 for (const [product, layouts] of Object.entries(expectedLayouts)) {
   assert.deepEqual(Object.keys(SHOP_PHOTOS[product]), layouts);
   assert.equal(new Set(layouts.map(layout => shopPhoto(product, layout).src)).size, layouts.length);
 }
 for (const photo of photos) {
   assert.ok(existsSync(`public${photo.src}`), photo.src);
-  assert.ok(photo.regions?.length || photo.boards?.length || photo.shower || photo.semi || photo.mirror || photo.cabinetMirror || photo.slidingDoor, `${photo.src} needs material regions`);
+  assert.ok(photo.regions?.length || photo.boards?.length || photo.shower || photo.semi || photo.mirror || photo.cabinetMirror || photo.slidingDoor || photo.walkIn, `${photo.src} needs material regions`);
 }
 const assets = photos.flatMap(p => [p.src, ...(p.shower ? [p.shower.background] : []),
   ...(p.semi ? [p.semi.background, p.semi.reflections] : [])]);
@@ -44,5 +44,5 @@ const opaque = photoColourCurves('#303030', 'cellular')[0];
 const day = photoColourCurves('#303030', 'day')[0];
 assert.ok(opaque[230] - opaque[200] > 0.07, 'Dark honeycomb must retain pleat contrast');
 assert.ok(day[210] - opaque[210] > 0.3, 'Day fabric must retain transmitted daylight');
-assert.equal(new Set(photos.map(p => p.src)).size, 23, 'Each sliding door family adds one photo');
-console.log('Shop photos: 23 product photos for 24 configurations and four supporting assets; layouts, exclusions, colours and shadows pass.');
+assert.equal(new Set(photos.map(p => p.src)).size, 25, 'Each walk-in layout has one photo');
+console.log('Shop photos: 25 product photos for 26 configurations and four supporting assets; layouts, exclusions, colours and shadows pass.');

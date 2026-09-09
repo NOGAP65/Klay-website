@@ -41,6 +41,7 @@ import { useIsMobile } from '@/shared';
 
 import { hardwareHex, type Selection } from '../configOptions';
 import { cabinetMirrorSize } from '../lib/cabinetMirror';
+import { walkInLayout, WALK_IN_FOOTPRINT_MM, WALK_IN_HEIGHT_MM } from '../lib/walkInWardrobes';
 import { fabricShot, FABRIC_SHOT_DIR } from '../fabricShots';
 // Relative, like the feature's other three importers of this file — see the
 // note at its head on why it has not moved.
@@ -593,6 +594,10 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
         {photo?.slidingDoor === 'shaker' && <p style={{ ...typeScale.micro, color: tokens.inkSoft,
           letterSpacing: 'normal', textTransform: 'none', margin: `${space.snug}px 0 0` }}>
           Preview shown at 2m high. Final dimensions confirmed at measure.
+        </p>}
+        {photo?.walkIn && <p style={{ ...typeScale.micro, color: tokens.inkSoft,
+          letterSpacing: 'normal', textTransform: 'none', margin: `${space.snug}px 0 0` }}>
+          {walkInLayout(photo.walkIn).shape} · {WALK_IN_FOOTPRINT_MM} × {WALK_IN_FOOTPRINT_MM}mm footprint · {WALK_IN_HEIGHT_MM}mm high
         </p>}
         {/* THE NAME IS NOT HERE ANY MORE — it moved to the head of the card,
             above both columns. Under the picture it read as a caption on the

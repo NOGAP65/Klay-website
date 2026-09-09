@@ -47,7 +47,6 @@ import {
   HANDLE_FINISHES,
   modelsOfKind,
   SHELVING_WIDTHS,
-  WALKIN_WIDTHS,
   WARDROBE_WIDTHS,
   wardrobeModelById,
 } from '@/features/visualiser'
@@ -72,6 +71,7 @@ import { FRONT_RETURN_SIZES, frontReturnSizeLabel } from './lib/semiScreenPhoto'
 import { slidingOpenings, defaultSlidingOpening, SLIDING_METAL_COLOURS, type SlidingDoorStyle } from './lib/slidingDoors'
 import { mirrorShapes, mirrorDimensions, MIRROR_FRAME_COLOURS } from './lib/mirrorPhoto'
 import { CABINET_MIRROR_SHAPES, cabinetMirrorSpecifications } from './lib/cabinetMirror'
+import { WALK_IN_LAYOUTS, WALK_IN_HARDWARE, walkInSpecifications } from './lib/walkInWardrobes'
 
 // SEVEN SLOTS NOW, AND THE TWO NEW ONES ARE NOT WINDOW FIELDS.
 //
@@ -640,24 +640,14 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     hardwareLabel: 'Handle finish',
     hardwareChoices: HANDLE_FINISHES.map(f => ({ id: f.name, label: f.name, hex: f.hex })),
   },
-  // THE WALK-INS, WHICH THE SHOP COULD NOT REACH UNTIL NOW. The visualiser has
-  // been drawing Forma 4, 5 and 6 the whole time — modelsOfKind('walk-in') —
-  // and no card offered them, so three products Klay makes were unorderable.
-  //
-  // THE SAME FOUR QUESTIONS AS THE BUILT-INS, off the walk-in lists: which
-  // model, what board, how wide, which handle. It asks them identically because
-  // it is the same cabinetry in a different shape, and the one thing that must
-  // not be shared is the width list — Forma 4 is made in 2400 and 3000 while 5
-  // and 6 are 2400 only, so the union offers each of the latter two a size it
-  // does not come in. Hence the same widthsOfVariant narrowing as above.
+  // Signature LS01 / US01 layouts, fixed at the PDF's 2400 × 2400 footprint.
   'walk-in-wardrobes': {
     variantLabel: 'Model',
-    variants: modelsOfKind('walk-in').map(m => v(m.id, m.name)),
-    colourLabel: 'Colour',
-    widths: WALKIN_WIDTHS,
-    widthsOfVariant: id => (id ? wardrobeModelById(id).widths : undefined),
-    hardwareLabel: 'Handle finish',
-    hardwareChoices: HANDLE_FINISHES.map(f => ({ id: f.name, label: f.name, hex: f.hex })),
+    variants: WALK_IN_LAYOUTS.map(m => v(m.id, m.name)),
+    colourLabel: 'Board finish',
+    hardwareLabel: 'Hardware colour',
+    hardwareChoices: WALK_IN_HARDWARE.map(f => ({ id: f.name, label: f.name, hex: f.hex })),
+    specificationsOfVariant: walkInSpecifications,
   },
   // THE VISUALISER IS THE SPEC, exactly as it is for the wardrobe above.
   //

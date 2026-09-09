@@ -37,6 +37,7 @@ import { WARDROBE_COLOURS } from '@/features/visualiser'
 
 import { PRODUCTS } from './products'
 import { FRAMED_DOOR_MATERIALS, SHAKER_DOOR_MATERIALS } from './lib/slidingDoors'
+import { WALK_IN_COLOURS } from './lib/walkInWardrobes'
 
 import type { BlindType } from '../../lib/pricing'
 
@@ -530,25 +531,11 @@ export const CATALOGUE: CatalogueItem[] = [
     // A ROOM, NOT A CUPBOARD, and that is the whole difference from the card
     // above. A built-in is fitted into an opening in a bedroom wall; a walk-in
     // is the run of joinery around the inside of its own small room, in an L or
-    // a U. Forma 4 and 5 are L-shaped, Forma 6 is U-shaped.
+    // a U. Signature LS01 is Forma 4; US01 is Forma 5.
     tagline: 'An L or a U of joinery, around a room of its own.',
     to: enquire('Walk in wardrobes'),
-    // NO PHOTOGRAPH YET. shopPhotos has three shots keyed to the built-in
-    // models and none for the walk-ins, and `shopPhoto` answers an unlisted
-    // product with undefined by design, so the card falls back to the range
-    // glyph the way every photo-less product does. Add `image` when there is a
-    // walk-in shot.
-    //
-    // AND NO VISUALISE BADGE, though the visualiser can genuinely draw these.
-    // The badge only carries a `category`, so it would open the panel on a
-    // BUILT-IN and the customer would have to find the Type toggle themselves —
-    // a badge that lands on the wrong product is worse than no badge. Giving
-    // `visualise` a kind is the fix, and it is a change to that contract rather
-    // than to this entry.
     glyph: 'wardrobes',
-    // The same board finishes as the built-ins: one range of boards, two
-    // shapes of cabinet. See WARDROBE_COLOURS.
-    colours: WARDROBE_COLOURS.map(c => ({ name: c.name, hex: c.hex })),
+    colours: WALK_IN_COLOURS,
   },
   {
     id: 'shelving',
