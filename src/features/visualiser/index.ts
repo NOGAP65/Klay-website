@@ -56,3 +56,5 @@ export {
   FINISH_TILE_MM,
 } from './wardrobes';
 export { HANDLE_FINISHES } from './wardrobeHardware';
+// Shop width previews share the same fixed modules and bay proportions.
+export { BOARD_MM, columnsFor, sidePanelsFor } from './wardrobeGeometry';

@@ -1,3 +1,5 @@
+import type { JoineryPhotoWidth } from './lib/joineryPhotoWidth';
+
 export type PhotoMaterial = 'cellular' | 'day' | 'mesh' | 'shutter' | 'hardware';
 export interface PhotoRegion { path: string; material: PhotoMaterial }
 export interface BoardFace { path: string; grain: 'vertical' | 'horizontal' | 'surface' }
@@ -9,6 +11,7 @@ export interface ShopPhoto {
   metal?: string;
   /** Scale of the installation in this photograph, pixels per millimetre. */
   boardScale?: number;
+  joinery?: JoineryPhotoWidth;
 }
 
 // Traced on the 1024px photographs. Keep the camera and these silhouettes
@@ -36,6 +39,9 @@ function cellularEdge(top: number, bottom: number): string {
 const forma1: ShopPhoto = {
   src: '/images/shop/wardrobes-srdh.webp', description: 'Forma 1 — shelf and two hanging rails fitted into an alcove',
   boardScale: 0.34,
+  joinery: { modelId: 'SRDH', start: 163, top: 191, bottom: 826, columns: [
+    { end: 514, leftReturn: 27, rightReturn: 8 }, { end: 860, leftReturn: 6, rightReturn: 27 },
+  ] },
   boards: [front(163, 191, 697, 11), surface('M163 202H860L829 221H194Z'),
     upright('M509 203H518V319L516 326H510Z')],
   metal: 'M178 223Q180 219 182 223V228H508V237H182V241H178Z M519 228H842V223Q844 219 847 223V241H842V237H519Z',
@@ -43,6 +49,10 @@ const forma1: ShopPhoto = {
 const forma2: ShopPhoto = {
   src: '/images/shop/wardrobes-srstdh02.webp', description: 'Forma 2 — six shelf compartments, double hanging and long hanging',
   boardScale: 0.33,
+  joinery: { modelId: 'SRSTDH02', start: 163, top: 154, bottom: 825, columns: [
+    { end: 306 }, { end: 585, leftReturn: 27, rightReturn: 13 },
+    { end: 861, leftReturn: 6, rightReturn: 33 },
+  ] },
   boards: [
     front(164, 154, 697, 9), surface('M164 163H861L830 184H194Z'),
     upright('M163 163H170L194 184V794L170 824H163Z'),
@@ -61,6 +71,10 @@ const forma2: ShopPhoto = {
 const forma3: ShopPhoto = {
   src: '/images/shop/wardrobes-srdtdh01.webp', description: 'Forma 3 — four drawers, three open compartments and hanging rails',
   boardScale: 0.33,
+  joinery: { modelId: 'SRDTDH01', start: 162, top: 160, bottom: 823, columns: [
+    { end: 331 }, { end: 603, leftReturn: 26, rightReturn: 14 },
+    { end: 862, leftReturn: 5, rightReturn: 32 },
+  ] },
   boards: [
     front(162, 160, 700, 9), surface('M162 169H862L830 192H194Z'),
     upright('M162 169H167L194 192V518L167 528V819H162Z'),
@@ -78,6 +92,9 @@ const forma3: ShopPhoto = {
 };
 const linen1: ShopPhoto = {
   src: '/images/shop/shelving-lin01.webp', description: 'Linen 1 — four fitted shelves in a narrow alcove', boardScale: 0.40,
+  joinery: { modelId: 'LIN01', start: 277, top: 195, bottom: 930, columns: [
+    { end: 749, leftReturn: 26, rightReturn: 29 },
+  ] },
   boards: [front(277, 195, 472, 13), surface('M277 208H749L720 232H303Z'),
     front(278, 383, 471, 12), surface('M278 395H749L720 402H303Z'),
     surface('M303 559H720L749 576H278Z'), front(278, 576, 471, 11),
@@ -85,6 +102,9 @@ const linen1: ShopPhoto = {
 };
 const linen2: ShopPhoto = {
   src: '/images/shop/shelving-lin02.webp', description: 'Linen 2 — four continuous shelves with one front support', boardScale: 0.40,
+  joinery: { modelId: 'LIN02', start: 176, top: 213, bottom: 904, columns: [
+    { end: 918, leftReturn: 31, rightReturn: 37, posts: [{ start: 537, end: 552 }] },
+  ] },
   boards: [front(176, 213, 742, 12), surface('M176 225H918L881 249H207Z'),
     front(176, 383, 742, 12), surface('M176 395H918L881 402H207Z'),
     surface('M207 553H881L918 568H176Z'), front(176, 568, 742, 12),
@@ -93,6 +113,10 @@ const linen2: ShopPhoto = {
 };
 const linen5: ShopPhoto = {
   src: '/images/shop/shelving-lin05.webp', description: 'Linen 5 — four continuous shelves with two front supports', boardScale: 0.36,
+  joinery: { modelId: 'LIN05', start: 113, top: 239, bottom: 858, columns: [
+    { end: 970, leftReturn: 30, rightReturn: 34,
+      posts: [{ start: 377, end: 394 }, { start: 679, end: 695 }] },
+  ] },
   boards: [front(113, 239, 857, 12), surface('M113 251H970L936 267H143Z'),
     front(113, 407, 857, 12), surface('M113 419H970L936 426H143Z'),
     surface('M143 564H936L970 576H113Z'), front(113, 576, 857, 12),
@@ -102,6 +126,10 @@ const linen5: ShopPhoto = {
 };
 const linenBroom: ShopPhoto = {
   src: '/images/shop/shelving-linbr02.webp', description: 'Linen Broom — four shelf levels and a full-height broom bay', boardScale: 0.37,
+  joinery: { modelId: 'LINBR02', start: 114, top: 229, bottom: 860, columns: [
+    { end: 723.5, leftReturn: 33, rightReturn: 22.5, posts: [{ start: 411, end: 424 }] },
+    { end: 976, leftReturn: 5.5, rightReturn: 33 },
+  ] },
   boards: [front(114, 229, 862, 11), surface('M114 240H976L943 258H147Z'),
     front(114, 391, 603, 12), surface('M114 403H717L700 409H147Z'),
     surface('M147 540H700L717 552H114Z'), front(114, 552, 603, 11),

@@ -16,7 +16,11 @@ Wardrobe and shelving layouts were checked against the existing visualiser. Form
 
 `shopPhotos.ts` binds each existing configuration ID to a photo and traced material regions. `ShopPhotoLayers.tsx` applies the same board decor textures used by the visualiser, orienting grain along the boards and retaining the photograph's illumination. Hanging rails and drawer pulls have separate metal masks. Honeycomb pleats and shutter slats retain local contrast through colour curves; Day & Night has separate transmissive and opaque regions. Zip mesh retains its view through to the glass and interior.
 
-Model images are decoded before changing the matching material masks, preventing a new layout's texture from appearing on the previous image. Square framing keeps image and masks aligned at all screen widths. Product configurations and the completed curtain, roller blind, Venetian, plantation and awning previews remain unchanged. Flyscreens and shower screens are excluded.
+Model images are decoded before changing the matching material masks, preventing a new layout's texture from appearing on the previous image. Wardrobe and shelving widths use the visualizer's `columnsFor` measurements, including fixed 507mm towers, shared dividers and evenly positioned shelf supports. Only the horizontal spans resize. The shop preview height is fixed at 2000mm, with the same camera scale, top and floor position across every layout and width. A fixed 1280 × 1024 frame prevents selecting a width from changing the image height or moving the controls. Photo crops and material masks move together, while grain keeps its physical scale. Existing configuration choices and visualizer product specifications are unchanged.
+
+Width, material colour and metal finish ease over 320ms; wood textures crossfade over the same interval. Rapid changes start from the current visible value, and reduced-motion preferences disable the transitions. The completed curtain, roller blind, Venetian, plantation and awning previews remain unchanged. Flyscreens and shower screens are excluded.
+
+Width regression check: `node tools/verify-shop-widths.mjs` covers every available joinery width, stable height and frame, fixed towers, visualizer support positions, complete crop coverage and consistent grain scale.
 
 The replaced product photos, old wardrobe category/range images, superseded fabric shots and zip masks were deleted. All active references now point to the new photos; older dated asset inventories remain historical records.
 
