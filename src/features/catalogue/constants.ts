@@ -282,6 +282,51 @@ export const SCREEN_WIDTHS = [700, 800, 900, 1000, 1050, 1100, 1150, 1200, 1300,
  * settled at the measure either way. */
 export const SCREEN_DEFAULT_WIDTH_MM = 1100
 
+/** THE SEMI-FRAMED FRONT-ONLY SCREEN — a different product, not a variant.
+ *
+ * It shares the frameless card's SHAPE — a bathroom, a colour, a size — and
+ * none of its numbers, which is why it gets its own constants rather than
+ * reusing the three above. Read off Stegbar's front-only screen page, September
+ * 2026:
+ *
+ *   height   1950, against the frameless panel's 2053
+ *   widths   800, 850, 900, 1050, 1200, 1350 — six, against the frameless ten,
+ *            and only 900, 1050 and 1200 appear in both lists
+ *   glass    6mm Grade A, clear, and clear ONLY
+ *   finishes Matt Black and Bright Silver
+ *
+ * WHY IT IS FRAMED AT ALL: the frame is what makes it cheap and what makes it
+ * telescopic. Stegbar describe the front-only screen as adjusting to the
+ * opening, which is a thing a framed edge can do and a fixed pane of frameless
+ * glass cannot — so the two products are not the same screen at two prices.
+ *
+ * NO GLASS ROW. It is made in clear and nothing else, so there is no question to
+ * ask; the fact rides in the tagline where a customer will actually read it
+ * rather than as a control with one option. */
+export const SEMI_SCREEN_HEIGHT_MM = 1950
+export const SEMI_SCREEN_WIDTHS = [800, 850, 900, 1050, 1200, 1350]
+
+/** 1050, for the same reason the frameless opens on 1100 — the middle of the
+ * list and an ordinary opening, rather than the narrowest size it makes. It is
+ * also the nearest size this range has to its sibling's default, so the two
+ * cards open on the same shower rather than on two different ones. */
+export const SEMI_SCREEN_DEFAULT_WIDTH_MM = 1050
+
+/** ITS TWO FINISHES. Matt Black is the same powder coat the frameless range
+ * carries and is taken from that list rather than retyped, so the two cannot
+ * describe the same finish with two hexes.
+ *
+ * Bright Silver is Stegbar's name for this range's polished aluminium, and it is
+ * the finish the frameless list calls Polished Silver. Same tint, different
+ * name, and the NAME is what goes on the quote — so it is written out here under
+ * the name this product is actually ordered in. Both hexes carry the same caveat
+ * as the rest of SCREEN_FINISHES: the names are sourced, the values are an
+ * approximation of a matte coat and a bright anodise. */
+export const SEMI_SCREEN_FINISHES = [
+  SCREEN_FINISHES.find(f => f.name === 'Matt Black')!,
+  { name: 'Bright Silver', hex: '#D9DDE0' },
+]
+
 /** See AWNING_COLOURS. The housing, not the cloth. */
 export const CASSETTE_COLOURS = [
   { name: 'White', hex: '#F2F1EE' },
@@ -490,5 +535,22 @@ export const CATALOGUE: CatalogueItem[] = [
     to: enquire('Radius corner fixed frameless'),
     glyph: 'shower-screens',
     image: '/images/shop/shower-radius-clip-clear.webp',
+  },
+  {
+    id: 'semi-frameless-front-only',
+    name: 'Semi-frameless (Front only)',
+    group: 'Other',
+    // The tagline carries the two facts that are NOT choices on this card: the
+    // glass, which comes in clear and nothing else, and the telescopic frame,
+    // which is the reason the product exists. See SEMI_SCREEN_HEIGHT_MM.
+    tagline: 'A framed, telescopic front panel. 6mm clear toughened glass.',
+    to: enquire('Semi-frameless (Front only)'),
+    // NO PHOTOGRAPH YET, deliberately — this SKU is specced ahead of its
+    // imagery. The glyph is the range's own and is what every product without a
+    // photograph falls back to, so the card is a drawing rather than a hole; and
+    // shopPhotos has no entry for this id, which `shopPhoto` answers with
+    // undefined by design. Drop a shot in /images/shop and add `image` when
+    // there is one.
+    glyph: 'shower-screens',
   },
 ]

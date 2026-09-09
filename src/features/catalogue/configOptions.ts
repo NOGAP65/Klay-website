@@ -60,6 +60,10 @@ import {
   SCREEN_DEFAULT_WIDTH_MM,
   SCREEN_HEIGHT_MM,
   SCREEN_WIDTHS,
+  SEMI_SCREEN_DEFAULT_WIDTH_MM,
+  SEMI_SCREEN_FINISHES,
+  SEMI_SCREEN_HEIGHT_MM,
+  SEMI_SCREEN_WIDTHS,
   type CatalogueItem,
 } from './constants'
 import type { CartItem } from '@/features/cart'
@@ -395,6 +399,39 @@ const FIXED_SCREEN_OPTIONS: ProductOptions = {
   defaultWidth: SCREEN_DEFAULT_WIDTH_MM,
 }
 
+/** THE SEMI-FRAMED FRONT-ONLY SCREEN. Same card as the fixed frameless above —
+ * a bathroom, a colour, a size — off its own numbers. See SEMI_SCREEN_HEIGHT_MM
+ * in constants for where those come from.
+ *
+ * TWO ROWS OF THE FRAMELESS CARD ARE NOT HERE, and both absences are the point.
+ *
+ * NO GLASS ROW: it is made in 6mm clear and nothing else, so there is nothing to
+ * ask. The radius-corner screen has that row because it genuinely offers clear
+ * or narrow-reeded; a row with one option is a question whose answer changes
+ * nothing, which the header of this file argues is worse than no question.
+ *
+ * AND NO CLIP-OR-CHANNEL ROW, which is the one judgement call in this entry. A
+ * clip and a channel are the two ways to hold a FRAMELESS pane — the whole
+ * choice is about what does the holding when there is no frame. This screen has
+ * a frame; that is what the word semi-framed means, and Stegbar's front-only
+ * page offers no mounting choice at all, only a finish and a size. Carrying the
+ * row over would have been duplicating the shape of the sibling card past the
+ * point where it describes the product.
+ *
+ * So the finish is a plain `hardwareChoices` rather than the frameless card's
+ * `hardwareChoicesOfVariant`: with no variant to vary by, the two finishes are
+ * simply the two finishes. */
+const SEMI_SCREEN_OPTIONS: ProductOptions = {
+  locationChoices: SCREEN_LOCATION_CHOICES,
+  hardwareLabel: 'Colour',
+  hardwareFirst: true,
+  hardwareChoices: SEMI_SCREEN_FINISHES.map(f => ({ id: f.name, label: f.name, hex: f.hex })),
+  widths: SEMI_SCREEN_WIDTHS,
+  widthLabel: 'Dimensions',
+  widthFormat: w => `${SEMI_SCREEN_HEIGHT_MM} × ${w}`,
+  defaultWidth: SEMI_SCREEN_DEFAULT_WIDTH_MM,
+}
+
 const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // --- INDOOR --------------------------------------------------------------
   // The one priced product. Its variant ids are the four pricing blind types
@@ -575,6 +612,13 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     ...FIXED_SCREEN_OPTIONS,
     glassChoices: [v('clear', 'Clear'), v('reeded', 'Narrow-reeded')],
   },
+  // THE FRAMED ONE, and it is not a spread of the two above. Its own object,
+  // because it shares their shape and none of their numbers — a different
+  // height, a different six widths, two finishes and no mounting. Spreading
+  // FIXED_SCREEN_OPTIONS and overriding five keys would have looked like a
+  // variant of a frameless screen, and it is a different product. See
+  // SEMI_SCREEN_OPTIONS.
+  'semi-frameless-front-only': SEMI_SCREEN_OPTIONS,
 }
 
 /** Fallback for a product added to the catalogue before it is added here. One
