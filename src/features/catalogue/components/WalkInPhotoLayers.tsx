@@ -50,9 +50,8 @@ export function WalkInPhotoLayers({ src, layoutId, colourName, hardwareName }: {
     <g clipPath={`url(#${id}-rails)`}>{shot}</g>
     <g clipPath={`url(#${id}-foreground)`}>{shot}</g>
     {handles.map((h, i) => {
-      const width = handle.profile === 'short' ? h.w * 0.3 : h.w;
-      const inset = (h.w - width) / 2;
-      return <g key={i} transform={`matrix(1 ${h.slope} 0 1 ${h.x + inset} ${h.y + inset * h.slope})`}>
+      const width = h.w;
+      return <g key={i} transform={`matrix(1 ${h.slope} 0 1 ${h.x} ${h.y})`}>
         <rect x="1" y="3" width={width} height="6" rx="1" fill="#302922" opacity=".25" />
         <path d={`M0 0H${width}V5L${width - 2} 7H1Z`} fill={`url(#${id}-handle)`} />
         <path d={`M1 .5H${width - 1}`} fill="none" stroke="#FFFFFF" strokeOpacity=".42" strokeWidth=".8" />

@@ -37,9 +37,9 @@ assert.deepEqual(WALK_IN_COLOURS.map(f => f.name), [
   'Matt Wardrobe White', 'Woodmatt Notaio Walnut', 'Matt Natural Oak', 'Woodmatt Antico Oak',
 ]);
 assert.deepEqual(WALK_IN_HARDWARE.map(f => f.name), [
-  'T23 Inox', 'T24 Brushed Matt Black', 'T25 Brushed Brass',
-  'T26 Brushed Brass', 'T27 Inox', 'T28 Brushed Matt Black',
+  'Inox', 'Brushed Matt Black', 'Brushed Brass',
 ]);
+assert.deepEqual(WALK_IN_HARDWARE.map(f => f.id), ['T23 Inox', 'T24 Brushed Matt Black', 'T25 Brushed Brass']);
 const finishSources = JSON.parse(readFileSync('docs/walk-in-finishes.json', 'utf8'));
 for (const finish of WALK_IN_COLOURS) {
   const source = finishSources.find(f => f.name === finish.name);
@@ -49,7 +49,7 @@ for (const finish of WALK_IN_COLOURS) {
 const ids=new Set();
 for (const layout of WALK_IN_LAYOUTS) {
   for(const colour of WALK_IN_COLOURS) for(const hardware of WALK_IN_HARDWARE) {
-    const selection=withChoice(item, withChoice(item, {...initial,colour:colour.name}, 'variant', layout.id), 'hardware', hardware.name);
+    const selection=withChoice(item, withChoice(item, {...initial,colour:colour.name}, 'variant', layout.id), 'hardware', hardware.id);
     const line=configuredLine(item, selection);
     assert.equal(line.name, 'Walk in wardrobes');
     assert.equal(line.fabricColour, colour.name);
@@ -66,8 +66,8 @@ for (const layout of WALK_IN_LAYOUTS) {
     assert.equal(fieldsFor(item, selection).find(f=>f.id==='hardware').kind,'swatches');
   }
 }
-assert.equal(ids.size,48);
+assert.equal(ids.size,24);
 const migrated=withChoice(item,{...initial,variant:'12.0U',colour:'Woodmatt Black Ply',hardware:'Brass'},'variant','US01');
 assert.equal(migrated.colour,'Matt Wardrobe White');
 assert.equal(migrated.hardware,'T23 Inox');
-console.log('Walk-ins: both PDF layouts, 48 finish/handle combinations, fixed dimensions, source photos and complete quote details pass.');
+console.log('Walk-ins: both PDF layouts, 24 finish/handle combinations, fixed dimensions, source photos and complete quote details pass.');

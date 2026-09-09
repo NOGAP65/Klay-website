@@ -79,4 +79,4 @@ Validation: `node tools/verify-shop-photos.mjs`, `node tools/verify-fabric-shots
 
 ### 10 September 2026 finish update
 
-Sliding doors and walk-ins now use the exact current Stegbar website finish names with visible one-click swatches. The existing photos are reused with sourced MDF/vinyl/timber samples and isolated board masks. Both sliding styles have fixed 2000mm preview height and fixed camera scale across widths. Walk-ins retain the two approved PDF layouts and fixed 2000mm height, with four board finishes and six handle styles. See `sliding-doors.md` and `walk-in-wardrobes.md` for current source decisions.
+Sliding doors and walk-ins now use the exact current Stegbar website finish names with visible one-click swatches. The existing photos are reused with sourced MDF/vinyl/timber samples and isolated board masks. Both sliding styles have fixed 2000mm preview height and fixed camera scale across widths. Walk-ins retain the two approved PDF layouts and fixed 2000mm height, with four board finishes and one handle style in three colours. See `sliding-doors.md` and `walk-in-wardrobes.md` for current source decisions.

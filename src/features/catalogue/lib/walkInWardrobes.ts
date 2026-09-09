@@ -13,15 +13,12 @@ export const WALK_IN_COLOURS = [
   { name: 'Woodmatt Antico Oak', hex: '#8B7B6C', texture: '/images/shop/finishes/walkin-antico-oak.webp' },
 ];
 export const WALK_IN_HARDWARE = [
-  { name: 'T23 Inox', hex: '#C5C6C4', profile: 'long' },
-  { name: 'T24 Brushed Matt Black', hex: '#292929', profile: 'long' },
-  { name: 'T25 Brushed Brass', hex: '#B8A080', profile: 'long' },
-  { name: 'T26 Brushed Brass', hex: '#B8A080', profile: 'short' },
-  { name: 'T27 Inox', hex: '#C5C6C4', profile: 'short' },
-  { name: 'T28 Brushed Matt Black', hex: '#292929', profile: 'short' },
+  { id: 'T23 Inox', name: 'Inox', hex: '#C5C6C4' },
+  { id: 'T24 Brushed Matt Black', name: 'Brushed Matt Black', hex: '#292929' },
+  { id: 'T25 Brushed Brass', name: 'Brushed Brass', hex: '#B8A080' },
 ];
 export const walkInFinish = (name?: string) => WALK_IN_COLOURS.find(f => f.name === name) ?? WALK_IN_COLOURS[0];
-export const walkInHardware = (name?: string) => WALK_IN_HARDWARE.find(f => f.name === name) ?? WALK_IN_HARDWARE[0];
+export const walkInHardware = (id?: string) => WALK_IN_HARDWARE.find(f => f.id === id) ?? WALK_IN_HARDWARE[0];
 export const WALK_IN_FOOTPRINT_MM = 2400;
 // User's fixed 2m height overrides the supplier's 2016mm overall height.
 export const WALK_IN_HEIGHT_MM = 2000;

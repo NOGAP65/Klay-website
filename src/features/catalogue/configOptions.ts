@@ -107,7 +107,6 @@ export interface ConfigChoice {
   hex?: string
   texture?: string
   mirror?: 'none' | 'mixed' | 'all'
-  shortLabel?: string
   /** Which heading this choice sits under in a dropdown. Optional, and only the
    * location list uses it: seventeen rooms in one flat run is a scroll, and the
    * customer knows which KIND of room they came for before they know its
@@ -651,8 +650,8 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     colourLabel: 'Board material & colour',
     colourKind: 'swatches',
     showFinishSelection: true,
-    hardwareLabel: 'Handle style & colour',
-    hardwareChoices: WALK_IN_HARDWARE.map(f => ({ id: f.name, label: f.name, hex: f.hex, shortLabel: f.name.split(' ')[0] })),
+    hardwareLabel: 'Handle colour',
+    hardwareChoices: WALK_IN_HARDWARE.map(f => ({ id: f.id, label: f.name, hex: f.hex })),
     specificationsOfVariant: walkInSpecifications,
   },
   // THE VISUALISER IS THE SPEC, exactly as it is for the wardrobe above.
