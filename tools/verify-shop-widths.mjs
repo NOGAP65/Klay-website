@@ -52,6 +52,8 @@ for (const photo of [...Object.values(SHOP_PHOTOS.wardrobes), ...Object.values(S
     }
     close(source, 1024, 'Whole photo covered');
     close(destination, plan.width, 'Whole frame covered');
+    assert.equal(plan.roomSlices.length, 3, 'The room must not inherit drawer or support slices');
+    close(plan.roomSlices[1].width, plan.cabinetWidth, 'Continuous room opening');
     if (model.id === 'SRSTDH02' || model.id === 'SRDTDH01') {
       close(plan.slices[1].width / ppm, MODULE_WIDTH_MM, 'Tower stays exactly 507mm');
     }

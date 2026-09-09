@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-interface Frame { width: number; colour: string; hardware: string }
+interface Frame { colour: string; hardware: string }
 const channels = (hex: string) => [1, 3, 5].map(start => parseInt(hex.slice(start, start + 2), 16));
 const blend = (from: string, to: string, t: number) => {
   const a = channels(from);
@@ -11,19 +11,18 @@ const blend = (from: string, to: string, t: number) => {
 export function usePhotoTransition(target: Frame, isReduced: boolean): Frame {
   const [frame, setFrame] = useState(target);
   const painted = useRef(target);
-  const { width, colour, hardware } = target;
+  const { colour, hardware } = target;
   useEffect(() => {
     const from = painted.current;
-    const to = { width, colour, hardware };
+    const to = { colour, hardware };
     if (isReduced) { painted.current = to; setFrame(to); return; }
-    if (from.width === width && from.colour === colour && from.hardware === hardware) return;
+    if (from.colour === colour && from.hardware === hardware) return;
     const start = performance.now();
     let request = 0;
     const tick = (now: number) => {
       const progress = Math.min(1, (now - start) / 320);
       const t = 1 - (1 - progress) ** 3;
       const next = progress === 1 ? to : {
-        width: from.width + (width - from.width) * t,
         colour: blend(from.colour, colour, t), hardware: blend(from.hardware, hardware, t),
       };
       painted.current = next;
@@ -32,6 +31,6 @@ export function usePhotoTransition(target: Frame, isReduced: boolean): Frame {
     };
     request = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(request);
-  }, [width, colour, hardware, isReduced]);
+  }, [colour, hardware, isReduced]);
   return isReduced ? target : frame;
 }

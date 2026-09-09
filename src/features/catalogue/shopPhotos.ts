@@ -149,8 +149,8 @@ export const SHOP_PHOTOS: Record<string, Record<string, ShopPhoto>> = {
     regions: [{ material: 'shutter', path: 'M172 166H869Q879 190 872 232H867V652H173V232H169Q163 202 169 172Z' }],
   } },
   'zip-guide-systems': { default: {
-    src: '/images/shop/zip-guide-systems.webp', description: 'Exterior window zip screen with woven mesh and side guide tracks',
-    regions: [{ material: 'mesh', path: 'M147 163H881V679H147Z' }],
+    src: '/images/shop/zip-guide-alfresco.webp', description: 'Alfresco zip screen fitted between patio posts, with a view through the mesh to the garden',
+    regions: [{ material: 'mesh', path: 'M128 181H929V799H128Z' }],
   } },
   wardrobes: { SRDH: forma1, SRSTDH02: forma2, SRDTDH01: forma3 },
   shelving: { LIN01: linen1, LIN02: linen2, LIN05: linen5, LINBR02: linenBroom },

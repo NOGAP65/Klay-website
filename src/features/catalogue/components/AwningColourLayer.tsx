@@ -2,6 +2,9 @@ import { useId } from 'react';
 
 import { FABRIC_SHOT_DIR } from '@/features/catalogue/fabricShots';
 import { awningColourCurves } from '@/features/catalogue/lib/awningColour';
+import { useMediaQuery } from '@/shared';
+
+import { usePhotoTransition } from './usePhotoTransition';
 
 interface Props {
   file: string;
@@ -38,7 +41,9 @@ function silhouette(hardware: boolean): string {
 /** Recolour each material while preserving the photograph's local contrast. */
 export function AwningColourLayer({ file, colour, position, hardware = false }: Props) {
   const id = `awning-${useId().replace(/:/g, '')}`;
-  const curves = awningColourCurves(colour, hardware);
+  const isReduced = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const frame = usePhotoTransition({ colour, hardware: colour }, isReduced);
+  const curves = awningColourCurves(frame.colour, hardware);
 
   return (
     <>

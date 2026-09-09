@@ -6,7 +6,7 @@ Eleven generated base images cover the five remaining product families. Each ima
 | --- | --- |
 | Honeycomb | Blockout and Day & Night in the same room |
 | Roller shutters | Exterior window installation |
-| Zip guide systems | Exterior mesh screen over a window |
+| Zip guide systems | Floor-to-beam mesh screen across an alfresco opening |
 | Wardrobes | Forma 1, Forma 2, Forma 3 |
 | Shelving | Linen 1, Linen 2, Linen 5, Linen Broom |
 
@@ -14,11 +14,13 @@ The images live in `public/images/shop/`. Asset paths and generation prompts/bri
 
 Wardrobe and shelving layouts were checked against the existing visualiser. Forma 1 has two side-by-side rails and a short support; Forma 2 has a six-compartment shelf tower; Forma 3 has four drawers and three open compartments. Linen layouts have four shelves and respectively zero, one, or two front posts. Linen Broom has one front post and an open right-hand broom bay.
 
-`shopPhotos.ts` binds each existing configuration ID to a photo and traced material regions. `ShopPhotoLayers.tsx` applies the same board decor textures used by the visualiser, orienting grain along the boards and retaining the photograph's illumination. Hanging rails and drawer pulls have separate metal masks. Honeycomb pleats and shutter slats retain local contrast through colour curves; Day & Night has separate transmissive and opaque regions. Zip mesh retains its view through to the glass and interior.
+`shopPhotos.ts` binds each existing configuration ID to a photo and traced material regions. `ShopPhotoLayers.tsx` applies the same board decor textures used by the visualiser, orienting grain along the boards and retaining the photograph's illumination. Hanging rails and drawer pulls have separate metal masks. Honeycomb pleats and shutter slats retain local contrast through colour curves; Day & Night has separate transmissive and opaque regions. Zip mesh retains its view through to the garden and outdoor area.
 
 Model images are decoded before changing the matching material masks, preventing a new layout's texture from appearing on the previous image. Wardrobe and shelving widths use the visualizer's `columnsFor` measurements, including fixed 507mm towers, shared dividers and evenly positioned shelf supports. Only the horizontal spans resize. The shop preview height is fixed at 2000mm, with the same camera scale, top and floor position across every layout and width. A fixed 1280 × 1024 frame prevents selecting a width from changing the image height or moving the controls. Photo crops and material masks move together, while grain keeps its physical scale. Existing configuration choices and visualizer product specifications are unchanged.
 
-Width, material colour and metal finish ease over 320ms; wood textures crossfade over the same interval. Rapid changes start from the current visible value, and reduced-motion preferences disable the transitions. The completed curtain, roller blind, Venetian, plantation and awning previews remain unchanged. Flyscreens and shower screens are excluded.
+Joinery width and finish selections redraw immediately, with no interpolation or texture fade. Only window-covering colours animate: honeycomb, roller shutters, zip mesh, and the awning's fabric and cassette colours ease over 320ms. Rapid colour changes start from the currently visible colour, and reduced-motion preferences disable the transitions. Curtain, roller blind, Venetian and plantation previews retain their existing treatment. Flyscreens and shower screens are excluded.
+
+The room above and below the joinery uses one continuous opening region, independent of tower and support boundaries, so those boundaries do not cut through daylight or floorboards. The zip-screen window shot was replaced with an alfresco installation photograph and its mesh mask retraced; the superseded image was removed.
 
 Width regression check: `node tools/verify-shop-widths.mjs` covers every available joinery width, stable height and frame, fixed towers, visualizer support positions, complete crop coverage and consistent grain scale.
 

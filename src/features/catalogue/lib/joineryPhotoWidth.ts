@@ -72,7 +72,15 @@ export function joineryWidthSlices(photo: JoineryPhotoWidth, widthMm: number) {
     start = end;
   });
   add(sourceStart, 1024, margin + cabinetWidth, FRAME_WIDTH);
-  return { slices, width: FRAME_WIDTH, height: 1024, scaleY,
+  // The room has no drawer towers or shelf posts. Remap its opening as one
+  // continuous region so cabinet boundaries never cut across floor or light.
+  const roomScaleX = cabinetWidth / (sourceStart - photo.start);
+  const roomSlices = [slices[0], {
+    sourceX: photo.start, sourceWidth: sourceStart - photo.start,
+    x: margin, width: cabinetWidth, scaleX: roomScaleX,
+    translateX: margin - photo.start * roomScaleX,
+  }, slices[slices.length - 1]];
+  return { slices, roomSlices, width: FRAME_WIDTH, height: 1024, scaleY,
     cabinetWidth, cabinetHeight: HEIGHT_PX, rows: [
       { sourceY: 0, sourceHeight: photo.top, y: 0, height: 180 },
       { sourceY: photo.top, sourceHeight: photo.bottom - photo.top, y: 180, height: HEIGHT_PX },

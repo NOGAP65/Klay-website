@@ -1,9 +1,9 @@
 [
   {
     "id": "zip-guide-systems",
-    "source": "exec-5f5ea03f-24b6-4935-9b35-13917361a8b1.png",
-    "asset": "public/images/shop/zip-guide-systems.webp",
-    "generationBrief": "Photoreal exterior of a modern Australian house, front-on window with externally mounted mesh zip screen. Off-white headbox, side guide tracks and bottom rail. Grey woven mesh with reflections and interior visible through it; plaster wall, soft daylight, plants clear of product edges. Square image, no text."
+    "source": "exec-486e5613-942a-4952-972e-db5846451754.png",
+    "asset": "public/images/shop/zip-guide-alfresco.webp",
+    "generationBrief": "Use case: photorealistic-natural. Asset: square 1024×1024 product photo for Klay's Zip Guide Systems shop preview. Create a convincing real architectural photograph of an Australian covered alfresco patio, viewed straight on FROM INSIDE the covered terrace looking through a broad 3-metre-wide floor-to-beam outdoor opening toward a sunny lawn, low planting and a timber boundary fence. The product is ONE fully lowered tensioned exterior zip-track woven solar mesh screen spanning this large alfresco opening, secured to narrow charcoal aluminium side tracks on the two structural posts, with a slim head cassette beneath the patio beam and a straight bottom rail just above the tiled patio floor. THIS IS AN ALFRESCO ENCLOSURE, NOT A SCREEN ON A HOUSE WINDOW: no glass, no window frames, no window sill and no small punched wall opening. Patio roof underside and wide structural posts clearly visible around the screen; pale textured outdoor floor in foreground, a small edge of outdoor lounge furniture far to the left OUTSIDE the mesh silhouette, room-scale installation obvious. Use medium neutral grey fine woven mesh (roughly #6E7276 in the lit foreground) that visibly softens and filters the lawn and garden behind it while remaining semi-transparent. Real fine grid weave, natural daylight falloff across the taut fabric, believable rail contact shadows, natural material imperfections, no glossy CGI or rendered appearance. Camera perfectly level and frontal so all mesh edges form an almost axis-aligned rectangle, full product visible with margins: target mesh bounds approximately x150 to875 and y190 to780 on a1024 square. No people, text, logo, watermark or swatch graphics. One base image only; colours will be applied with runtime material masks."
   },
   {
     "id": "roller-shutters",

@@ -91,12 +91,13 @@ function PhotoArtwork(props: ArtworkProps) {
 function PhotoPreview({ photo, colour, colourName, hardware, width }: Props) {
   const id = `shop-photo-${useId().replace(/:/g, '')}`;
   const isReduced = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const isInstant = isReduced || !!photo.joinery;
   const model = photo.joinery ? wardrobeModelById(photo.joinery.modelId) : undefined;
   const widthMm = model?.widths.includes(Number(width)) ? Number(width) : model?.widths[0] ?? 0;
-  const frame = usePhotoTransition({ width: widthMm, colour, hardware }, isReduced);
+  const frame = usePhotoTransition({ colour, hardware }, isInstant);
   const finish = WARDROBE_COLOURS.find(c => c.name === colourName)?.slug ?? 'white';
-  const plan = photo.joinery ? joineryWidthSlices(photo.joinery, frame.width) : {
-    slices: [WHOLE], width: 1024, scaleY: 1,
+  const plan = photo.joinery ? joineryWidthSlices(photo.joinery, widthMm) : {
+    slices: [WHOLE], roomSlices: [WHOLE], width: 1024, scaleY: 1,
     rows: [{ sourceY: 0, sourceHeight: 1024, y: 0, height: 1024 }],
   };
   const description = `${photo.description} — ${colourName ?? ''}${model ? ` — ${widthMm}mm wide × ${JOINERY_HEIGHT_MM}mm high` : ''}`;
@@ -105,11 +106,11 @@ function PhotoPreview({ photo, colour, colourName, hardware, width }: Props) {
     style={{ width: '100%', height: '100%', display: 'block' }}>
     <PhotoDefinitions photo={photo} id={id} colour={frame.colour} hardware={frame.hardware} />
     {plan.rows.map((row, rowIndex) => <g key={rowIndex}>
-      {plan.slices.map((slice, index) => <svg key={index} x={slice.x} y={row.y}
+      {(photo.joinery && rowIndex !== 1 ? plan.roomSlices : plan.slices).map((slice, index) => <svg key={index} x={slice.x} y={row.y}
         width={slice.width + 6} height={row.height + 6} overflow="hidden" preserveAspectRatio="none"
         viewBox={`${slice.sourceX} ${row.sourceY} ${slice.sourceWidth + 6 / slice.scaleX} ${row.sourceHeight + 6 * row.sourceHeight / row.height}`}>
         {photo.joinery && rowIndex !== 1 ? <image href={photo.src} width="1024" height="1024" />
-          : <PhotoArtwork photo={photo} id={id} finish={finish} isReduced={isReduced}
+          : <PhotoArtwork photo={photo} id={id} finish={finish} isReduced={isInstant}
             slice={slice} index={index} scaleY={plan.scaleY} />}
       </svg>)}
     </g>)}

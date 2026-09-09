@@ -13,6 +13,7 @@ const { photoColourCurves } = await loadTypescript('src/features/catalogue/lib/p
 const photos = Object.values(SHOP_PHOTOS).flatMap(Object.values);
 assert.equal(photos.length, 11);
 assert.notEqual(shopPhoto('honeycomb-blinds', 'blockout').src, shopPhoto('honeycomb-blinds', 'daynight').src);
+assert.equal(shopPhoto('zip-guide-systems').src, '/images/shop/zip-guide-alfresco.webp');
 for (const product of ['curtains', 'roller-blinds', 'venetian-blinds', 'plantation-shutters', 'folding-arm-awnings', 'pleated-flyscreens', 'frameless-shower-screens']) {
   assert.equal(shopPhoto(product), undefined, `${product} must keep its existing preview`);
 }
