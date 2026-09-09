@@ -6,6 +6,7 @@ import type { PhotoMaterial, ShopPhoto } from '@/features/catalogue/shopPhotos';
 import { FINISH_TEXTURE, FINISH_TILE_MM, WARDROBE_COLOURS, wardrobeModelById } from '@/features/visualiser';
 import { useMediaQuery } from '@/shared';
 
+import { ShowerPhotoLayers } from './ShowerPhotoLayers';
 import { usePhotoTransition } from './usePhotoTransition';
 
 interface Props { photo: ShopPhoto; colour: string; colourName?: string; hardware: string; width?: string }
@@ -122,12 +123,17 @@ export function ShopPhotoLayers({ photo: selectedPhoto, ...selection }: Props) {
   const [photo, setPhoto] = useState(selectedPhoto);
   useEffect(() => {
     let isCancelled = false;
-    const next = new Image();
-    next.src = selectedPhoto.src;
-    void next.decode().then(() => {
+    const sources = [selectedPhoto.src, selectedPhoto.shower?.background].filter((src): src is string => !!src);
+    void Promise.all(sources.map(src => {
+      const next = new Image();
+      next.src = src;
+      return next.decode();
+    })).then(() => {
       if (!isCancelled) setPhoto(selectedPhoto);
     }).catch(() => { /* Retain the last complete preview on a failed request. */ });
     return () => { isCancelled = true; };
   }, [selectedPhoto]);
-  return <PhotoPreview key={photo.src} photo={photo} {...selection} />;
+  return photo.shower
+    ? <ShowerPhotoLayers key={photo.src} src={photo.src} photo={photo.shower} hardware={selection.hardware} width={selection.width} />
+    : <PhotoPreview key={photo.src} photo={photo} {...selection} />;
 }

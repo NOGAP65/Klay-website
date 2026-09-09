@@ -460,11 +460,11 @@ export const CATALOGUE: CatalogueItem[] = [
   },
   {
     id: 'frameless-shower-screens',
-    name: 'Frameless Shower Screens',
+    name: 'Fixed Panel Shower Screen',
     group: 'Other',
     tagline: 'Toughened glass, no frame. The bathroom disappears.',
-    to: enquire('Frameless Shower Screens'),
+    to: enquire('Fixed Panel Shower Screen'),
     glyph: 'shower-screens',
-    image: '/images/products/frameless-shower-screens.webp',
+    image: '/images/shop/shower-screen-clip.webp',
   },
 ]

@@ -11,10 +11,10 @@ async function loadTypescript(file) {
 const { SHOP_PHOTOS, shopPhoto } = await loadTypescript('src/features/catalogue/shopPhotos.ts');
 const { photoColourCurves } = await loadTypescript('src/features/catalogue/lib/photoColour.ts');
 const photos = Object.values(SHOP_PHOTOS).flatMap(Object.values);
-assert.equal(photos.length, 11);
+assert.equal(photos.length, 13);
 assert.notEqual(shopPhoto('honeycomb-blinds', 'blockout').src, shopPhoto('honeycomb-blinds', 'daynight').src);
 assert.equal(shopPhoto('zip-guide-systems').src, '/images/shop/zip-guide-alfresco.webp');
-for (const product of ['curtains', 'roller-blinds', 'venetian-blinds', 'plantation-shutters', 'folding-arm-awnings', 'pleated-flyscreens', 'frameless-shower-screens']) {
+for (const product of ['curtains', 'roller-blinds', 'venetian-blinds', 'plantation-shutters', 'folding-arm-awnings', 'pleated-flyscreens']) {
   assert.equal(shopPhoto(product), undefined, `${product} must keep its existing preview`);
 }
 const expectedLayouts = { wardrobes: ['SRDH', 'SRSTDH02', 'SRDTDH01'], shelving: ['LIN01', 'LIN02', 'LIN05', 'LINBR02'] };
@@ -24,9 +24,10 @@ for (const [product, layouts] of Object.entries(expectedLayouts)) {
 }
 for (const photo of photos) {
   assert.ok(existsSync(`public${photo.src}`), photo.src);
-  assert.ok(photo.regions?.length || photo.boards?.length, `${photo.src} needs material regions`);
+  assert.ok(photo.regions?.length || photo.boards?.length || photo.shower, `${photo.src} needs material regions`);
 }
-assert.deepEqual(new Set(readdirSync('public/images/shop').map(f => `/images/shop/${f}`)), new Set(photos.map(p => p.src)));
+const assets = photos.flatMap(p => [p.src, ...(p.shower ? [p.shower.background] : [])]);
+assert.deepEqual(new Set(readdirSync('public/images/shop').map(f => `/images/shop/${f}`)), new Set(assets));
 const references = { cellular: '#F2F0EC', day: '#F2F0EC', mesh: '#6E7276', shutter: '#F1F0EC', hardware: '#D3D7DB' };
 const swatches = ['#303030', '#F2F0EC', '#2C4A30', '#8C2820', '#1C3048', '#DCD7CC', '#26282A', '#44464A', '#C2A161'];
 for (const [material, reference] of Object.entries(references)) {
@@ -42,4 +43,4 @@ const opaque = photoColourCurves('#303030', 'cellular')[0];
 const day = photoColourCurves('#303030', 'day')[0];
 assert.ok(opaque[230] - opaque[200] > 0.07, 'Dark honeycomb must retain pleat contrast');
 assert.ok(day[210] - opaque[210] > 0.3, 'Day fabric must retain transmitted daylight');
-console.log('Shop photos: 11 assets, all layouts, excluded products, colour range, shadows and day/night separation pass.');
+console.log('Shop photos: 13 product photos and a shower background, all layouts, excluded products, colour range, shadows and day/night separation pass.');

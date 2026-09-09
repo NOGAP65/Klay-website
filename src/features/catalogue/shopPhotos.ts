@@ -1,4 +1,5 @@
 import type { JoineryPhotoWidth } from './lib/joineryPhotoWidth';
+import type { ShowerPhoto } from './lib/showerPhotoWidth';
 
 export type PhotoMaterial = 'cellular' | 'day' | 'mesh' | 'shutter' | 'hardware';
 export interface PhotoRegion { path: string; material: PhotoMaterial }
@@ -12,6 +13,7 @@ export interface ShopPhoto {
   /** Scale of the installation in this photograph, pixels per millimetre. */
   boardScale?: number;
   joinery?: JoineryPhotoWidth;
+  shower?: ShowerPhoto;
 }
 
 // Traced on the 1024px photographs. Keep the camera and these silhouettes
@@ -137,6 +139,28 @@ const linenBroom: ShopPhoto = {
     upright('M411 240H424V856H411Z'), upright('M718 240H729V860H719L701 821V258Z')],
 };
 
+const showerRoom = {
+  background: '/images/shop/shower-screen-bathroom.webp',
+  left: 181, right: 680, top: 85, bottom: 872, referenceWidthMm: 1400,
+};
+const clipScreen: ShopPhoto = {
+  src: '/images/shop/shower-screen-clip.webp',
+  description: 'Clear fixed shower panel with discreet wall and floor clips',
+  shower: { ...showerRoom, mounting: 'clip', fittings: [
+    { anchor: 'wall', footprint: rectangle(176, 131, 27, 30), metal: rectangle(179, 134, 20, 23) },
+    { anchor: 'wall', footprint: rectangle(176, 794, 27, 31), metal: rectangle(179, 797, 20, 24) },
+    { anchor: 'wall', footprint: rectangle(249, 855, 30, 24), metal: 'M253 858H273V874H253Z' },
+    { anchor: 'free', footprint: rectangle(606, 855, 29, 24), metal: 'M609 858H629V874H609Z' },
+  ] },
+};
+const channelScreen: ShopPhoto = {
+  src: '/images/shop/shower-screen-channel.webp',
+  description: 'Clear fixed shower panel in slim wall and floor channels',
+  shower: { ...showerRoom, mounting: 'channel', fittings: [],
+    channel: 'M178 84H187V866H680V875H178Z',
+  },
+};
+
 export const SHOP_PHOTOS: Record<string, Record<string, ShopPhoto>> = {
   'honeycomb-blinds': {
     blockout: { src: '/images/shop/honeycomb-blockout.webp', description: 'Blockout honeycomb — opaque cellular fabric with accordion pleats',
@@ -154,6 +178,7 @@ export const SHOP_PHOTOS: Record<string, Record<string, ShopPhoto>> = {
   } },
   wardrobes: { SRDH: forma1, SRSTDH02: forma2, SRDTDH01: forma3 },
   shelving: { LIN01: linen1, LIN02: linen2, LIN05: linen5, LINBR02: linenBroom },
+  'frameless-shower-screens': { clip: clipScreen, channel: channelScreen },
 };
 
 export function shopPhoto(product: string, variant?: string): ShopPhoto | undefined {

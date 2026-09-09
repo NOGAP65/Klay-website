@@ -1,5 +1,28 @@
 [
   {
+    "id": "shower-screen-clip",
+    "source": "exec-b4665ff4-bfcf-4a2a-9c19-e631c84274b3.png",
+    "asset": "public/images/shop/shower-screen-clip.webp",
+    "reference": "https://www.stegbar.com.au/products/clip-fixed-panel",
+    "mode": "built-in image generation",
+    "prompt": "Use case: photorealistic-natural. Asset type: square 1024x1024 shop product photograph for Klay, one neutral base photo for a configurable Fixed Panel Shower Screen. Reference direction: Stegbar's Clip Fixed Panel Shower Screen product gallery: a single clear frameless glass walk-in panel held with small square clips, not a hinged or sliding enclosure. Create an ORIGINAL photograph, not the Stegbar image. Scene: understated real Australian bathroom, warm pale limestone-look large-format tile walls and floor, subtle natural stone variation, narrow grout lines, softly lit from a high window out of frame on the right. Main subject: ONE rectangular 10mm clear glass fixed shower panel, 2053mm high and 1400mm wide, on the front plane of a walk-in shower, anchored to the left perpendicular tiled wall and tiled floor. Almost perfectly frontal, level architectural camera; glass vertical edges truly vertical, horizontal top and bottom truly horizontal. Entire panel visible with generous margins, approximately x260 to772 and y120 to870 in a 1024 square; its actual width/height ratio must be 1400/2053. Two small square brushed silver metal wall clips near the top and bottom of LEFT glass edge, and two small square brushed silver floor clips along bottom, all realistic about 45mm wide. No continuous frame/channel, no hinges, no handles, no door, no return panel, no overhead brace. Large open walk-through gap on right of glass. Behind panel, shower rail, round overhead shower and mixer on tiled back wall toward left; keep right half of background mostly plain pale stone for clear visible glass edges. Back wall meets a flat tiled floor around y790; front glass bottom around y870. Glass subtly visible through soft window reflections, a delicate green-grey polished edge and restrained transparent sheen, not blue opaque glass, not frosted. Natural contact shadows around the real brushed metal clips, convincing specular highlights, real stone pores, editorial architectural photography, no CGI look, no stylised rendering, no plants or foreground props obscuring glass edges, no text, logo, watermark, dimension annotations, people, or colour swatches. One full colour scene."
+  },
+  {
+    "id": "shower-screen-channel",
+    "source": "exec-7466f911-a2a3-4e3e-8c56-00391aef1216.png",
+    "asset": "public/images/shop/shower-screen-channel.webp",
+    "reference": "https://www.stegbar.com.au/products/channel-fixed-panel",
+    "mode": "built-in image edit",
+    "prompt": "Use case: precise-object-edit. Edit target: the attached original Klay bathroom photograph. Produce the matching CHANNEL FIXED variant of this same single clear frameless fixed panel shower screen. Change ONLY its mounting hardware: remove the two square silver clips at the left wall edge and the two square clips at the floor; replace them with a slender continuous satin/brushed silver aluminium U-channel along the LEFT vertical wall edge and along the BOTTOM horizontal floor edge. The channel is about 20mm wide in real life, narrower than the existing clips. Bare polished glass on the TOP and RIGHT edges, no top rail, no right rail, no hinges, no handle, no supporting arm, no extra glass panel. Retain exactly the same glass size and position, glass transparency and reflections, tiled bathroom, shower head/mixer, grout lines, vanity, sunlight, perspective, framing, image dimensions, ALL background pixel locations. Product mask alignment between these photos is essential. Real silver material with narrow bright edge highlights, brushed surfaces and contact shadows. Photorealistic architectural product photography. No logos, text or watermark."
+  },
+  {
+    "id": "shower-screen-bathroom",
+    "source": "exec-e6dd0b29-45ba-408e-804b-b76f1b9ab394.png",
+    "asset": "public/images/shop/shower-screen-bathroom.webp",
+    "mode": "built-in image edit",
+    "prompt": "Use case: precise-object-edit. Edit target: the attached Klay bathroom photograph. Create a CLEAN BACKGROUND PLATE of this exact bathroom by removing ONLY the single foreground glass shower panel and its mounting clips. Remove the glass top/left/right/bottom edge, glass reflections and glass tint, the two square wall clips on the left, and the two square floor clips. Restore the uninterrupted pale limestone tiled wall and floor where they were visible through glass, continuing precisely the same grout lines and stone textures. Keep every other pixel, camera, crop, geometry, sunlight, shower head, shower rail, mixer, drain, wall joins, tile joints, vanity and high window exactly aligned with the original. Do NOT redesign or move anything. Do not add a different screen. Square image, original resolution, no text or labels. This empty shower background will be used behind a dynamically sized transparent screen, so identical alignment is essential."
+  },
+  {
     "id": "zip-guide-systems",
     "source": "exec-486e5613-942a-4952-972e-db5846451754.png",
     "asset": "public/images/shop/zip-guide-alfresco.webp",

@@ -688,7 +688,8 @@ export type Selection = Partial<Record<FieldId, string>>
  * Null where the product has no list of its own, which leaves the blind
  * behaviour exactly where it was. */
 export const hardwareHex = (item: CatalogueItem, sel: Selection): string | null => {
-  const choices = (PRODUCT_OPTIONS[item.id] ?? FALLBACK).hardwareChoices
+  const options = PRODUCT_OPTIONS[item.id] ?? FALLBACK
+  const choices = options.hardwareChoicesOfVariant?.(sel.variant) ?? options.hardwareChoices
   if (!choices) return null
   return choices.find(c => c.id === sel.hardware)?.hex ?? choices[0]?.hex ?? null
 }
