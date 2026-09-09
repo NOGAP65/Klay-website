@@ -327,6 +327,33 @@ const cardBasisOpen = (isFourUp: boolean, isWideRow: boolean) => {
 const sharePx = (rowWidth: number, isFourUp: boolean) =>
   (rowWidth - (Math.ceil(cols(isFourUp)) - 1) * TILE_GAP) / cols(isFourUp);
 
+/** THE OPEN SLOT'S WIDTH IN PIXELS — the pixel twin of cardBasisOpen, and it
+ * exists because the two used to be worked out separately and disagreed.
+ *
+ * THE BUG IT FIXES WAS A MOBILE ONE, and it was arithmetic rather than timing.
+ * The scroll nudge built its target from `openShares`, which returns 1 for the
+ * stacked case; the LAYOUT builds it from cardBasisOpen, which returns '100%'.
+ * Those are the same thing only when a share is a whole card, and below the
+ * four-up breakpoint `cols` is 1.8 — so one share is 55% of the row and the
+ * nudge was aiming at a card a little over half as wide as the one on screen.
+ *
+ * Measured on a 390px phone: a 358px row, an open slot genuinely 358px wide, a
+ * target computed at 197px, and a nudge therefore 161px short — 45% of the row.
+ * Tapping a card scrolled it most of the way in and left it hanging off the
+ * right edge, every time, which is the glitch.
+ *
+ * Deriving both from one function is the actual repair. `openShares` still says
+ * how many shares the DESKTOP slot spans, which is what it is for and what the
+ * CSS calc needs; it is no longer asked a question about pixels it cannot
+ * answer for a fractional column count. */
+const openSlotPx = (rowWidth: number, isFourUp: boolean, isWideRow: boolean) => {
+  // Stacked, the slot is the whole row — the panel goes under the photograph
+  // rather than beside it, so there is nothing to leave room for.
+  if (!isFourUp) return rowWidth;
+  const n = openShares(isFourUp, isWideRow);
+  return sharePx(rowWidth, isFourUp) * n + (n - 1) * TILE_GAP;
+};
+
 /** How long a card takes to widen. Shared by the slot transition, the panel's
  * entrance and the scroll nudge that follows both, so the three cannot drift out
  * of step — the nudge in particular has to start AFTER the width has settled, or
@@ -957,13 +984,15 @@ export function RangeRow() {
       // mid-transition on the frame after the state change, so offsetWidth gives
       // a card partway between one share and two and the nudge lands short.
       //
-      // Computed from the same share arithmetic the slot itself uses rather than
-      // read off a closed sibling: a sibling is one share, and the open slot is
-      // two shares at one breakpoint and three at another, so doubling a sibling
-      // under-nudged by a whole share below 1250.
-      const n = openShares(isFourUp, isWideRow);
-      const target = sharePx(row.clientWidth, isFourUp) * n + (n - 1) * TILE_GAP;
+      // THROUGH openSlotPx, which is the pixel twin of the slot's own
+      // cardBasisOpen. This used to do the share arithmetic inline off
+      // `openShares`, which is right on desktop and 45% short on a phone — see
+      // the note on openSlotPx for the measurement.
+      const target = openSlotPx(row.clientWidth, isFourUp, isWideRow);
       const over = slot.offsetLeft + target - (row.scrollLeft + row.clientWidth);
+      // On mobile the open slot IS the row, so `over` resolves to
+      // offsetLeft - scrollLeft and this lands the card flush at the left edge,
+      // which is the right resting place for a full-width card.
       if (over > 0) row.scrollTo({ left: row.scrollLeft + over, behavior: 'smooth' });
     }, EXPAND_MS);
     return () => window.clearTimeout(timer);
@@ -1080,7 +1109,21 @@ export function RangeRow() {
             alignItems: 'flex-start',
             // Snaps to card edges so the row never rests showing two half cards,
             // however it was moved. Off while a card is open — see the slot.
-            scrollSnapType: openId ? 'none' : 'x mandatory',
+            //
+            // KEYED ON framedId, NOT openId, AND THAT IS THE SECOND HALF OF THE
+            // MOBILE FIX. Closing clears `openId` at the START of the 450ms
+            // narrowing — the same reason the gold frame had to be given a
+            // lagging id of its own. Mandatory snapping therefore came back on
+            // while the slot was still animating 100% down to one share, so the
+            // browser re-snapped to the nearest edge on every frame of it and
+            // fought the transition the whole way out. Desktop hides this
+            // because a four-up row does not overflow at rest and so has
+            // nothing to snap to; mobile is the only case that scrolls, which is
+            // why it only ever looked broken there.
+            //
+            // framedId spans the open AND the narrowing, so snapping returns
+            // once the row has actually stopped moving.
+            scrollSnapType: framedId ? 'none' : 'x mandatory',
           }}
         >
           {RANGE.map(item => {
@@ -1104,8 +1147,13 @@ export function RangeRow() {
                   // SNAP OFF WHILE OPEN. Mandatory snapping and a programmatic
                   // scroll fight each other — the browser re-snaps to the nearest
                   // card edge and undoes the nudge that was bringing the open
-                  // card into view. It comes back the moment the panel closes.
-                  scrollSnapAlign: isOpen ? 'none' : 'start',
+                  // card into view.
+                  //
+                  // The align point has to lag the close for the same reason the
+                  // container's snap type does: an alignment coming back on the
+                  // first frame of a 450ms narrowing is a snap target moving
+                  // under the animation. See scrollSnapType on the scroller.
+                  scrollSnapAlign: framedId === item.id ? 'none' : 'start',
                   transition: `flex-basis ${EXPAND_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
                 }}
                 // ON THE SLOT, NOT THE CARD. The card lifts and translates on
