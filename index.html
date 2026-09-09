@@ -20,7 +20,19 @@
 
          Keep it out unless a real weight-500 need appears, and if one does, check
          the file actually resolves before relying on it. */
-      @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;500&display=swap');
+      /* INTER 600 IS REQUESTED NOW, and it is a fix rather than an addition.
+         The bar was 300/400/500, and src asks for `fontWeight: 600` in ten
+         places — the cart badge in the nav among them — so every one of those
+         was being SYNTHESISED by the browser: a faux bold, which smears the
+         letterforms rather than using the designer's heavier face, and is most
+         obvious at small sizes in caps, which is exactly where the site uses it.
+         Asking for the real face costs one more woff2 and makes those ten honest.
+
+         700 IS STILL NOT REQUESTED, and four call sites in src ask for it. They
+         are synthesising too. Left alone deliberately: the right fix there is
+         probably to move them to 600 rather than to buy a second file, and that
+         is a judgement about those four places rather than about this line. */
+      @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap');
 
       /* The custom properties that used to live here were dead — nothing in
          src referenced var(--anything), and the values had drifted off the

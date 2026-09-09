@@ -164,9 +164,11 @@ const LINKS: NavLink[] = [
  * keeps the weight-and-opacity treatment, which is the same thing the rest of
  * the site does with a retired gold — the accent collapses into the primary.
  *
- * The weight stays either way. It is what carried the distinction for the whole
- * neutral period, it costs nothing to keep, and it means the bronze is
- * reinforcing a difference rather than being the only thing making one.
+ * The weight stays either way — and it is 600 now rather than 500. It is what
+ * carried the distinction for the whole neutral period, it costs nothing to
+ * keep, and it means the bronze is reinforcing a difference rather than being
+ * the only thing making one. On a dark ground it is the only thing making one,
+ * which is the other reason not to drop it.
  *
  * The active word additionally takes the underline it always had — in the
  * bronze where the word is bronze, since a neutral rule under a coloured word
@@ -178,7 +180,14 @@ const barLink = (active: boolean, linkColor: string, accent = false, onDarkGroun
     color: colour,
     textDecoration: 'none',
     ...typeScale.label,
-    fontWeight: accent ? 500 : 400,
+    // 600 AGAINST 400, AND 600 IS A REAL FACE AS OF THIS CHANGE. It was 500,
+    // which was the heaviest weight Inter was being loaded at — so "bolder"
+    // had nowhere to go and asking for 700 would have bought a synthesised
+    // faux bold, which smears at 12px in caps. index.html requests 600 now.
+    //
+    // It also lands the word on the same weight as the cart badge beside it,
+    // so the two heaviest things in the bar's centre-right agree.
+    fontWeight: accent ? 600 : 400,
     whiteSpace: 'nowrap' as const,
     opacity: accent || active ? 1 : 0.82,
     paddingBottom: space.hairline,
