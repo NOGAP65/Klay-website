@@ -40,6 +40,7 @@ import { shopPhoto } from '@/features/catalogue/shopPhotos';
 import { useIsMobile } from '@/shared';
 
 import { hardwareHex, type Selection } from '../configOptions';
+import { cabinetMirrorSize } from '../lib/cabinetMirror';
 import { fabricShot, FABRIC_SHOT_DIR } from '../fabricShots';
 // Relative, like the feature's other three importers of this file — see the
 // note at its head on why it has not moved.
@@ -585,6 +586,10 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
               references darken their product shots by nothing at all. */}
         </div>
 
+        {photo?.cabinetMirror && <p style={{ ...typeScale.micro, color: tokens.inkSoft,
+          letterSpacing: 'normal', textTransform: 'none', margin: `${space.snug}px 0 0` }}>
+          {cabinetMirrorSize(sel.variant)} · White cabinet · Two shelves
+        </p>}
         {/* THE NAME IS NOT HERE ANY MORE — it moved to the head of the card,
             above both columns. Under the picture it read as a caption on the
             photograph; across the top it says which product the whole card is

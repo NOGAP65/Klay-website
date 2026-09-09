@@ -17,6 +17,7 @@ export interface ShopPhoto {
   shower?: ShowerPhoto;
   semi?: SemiScreenPhoto;
   mirror?: { framed: boolean };
+  cabinetMirror?: boolean;
 }
 
 // Traced on the 1024px photographs. Keep the camera and these silhouettes
@@ -194,6 +195,8 @@ function semiScreen(layout: SemiScreenPhoto['layout']): ShopPhoto {
 }
 
 export const SHOP_PHOTOS: Record<string, Record<string, ShopPhoto>> = {
+  'mirrors-with-cabinets': { default: { src: '/images/shop/mirrors-cabinets-open.webp',
+    description: 'Shaped mirror with a white storage cabinet', cabinetMirror: true } },
   'mirrors-without-frames': { default: { src: '/images/shop/mirrors-quiet.webp',
     description: 'Frameless mirror above a travertine vanity', mirror: { framed: false } } },
   'mirror-with-frame': { default: { src: '/images/shop/mirrors-quiet.webp',

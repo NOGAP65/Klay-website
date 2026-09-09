@@ -1,6 +1,6 @@
 # Shop product photos — September 2026
 
-Twenty generated product images and four supporting bathroom/reflection assets cover eleven product families. The two mirror SKUs share one image. Each image is a 1024 × 1024 WebP. Colour variants are applied at runtime; there are no generated images per colour.
+Twenty-one generated product images and four supporting bathroom/reflection assets cover twelve product families. The two wall-mirror SKUs share one image; the cabinet mirrors share one further image across their three shapes. Each image is a 1024 × 1024 WebP. Colour variants are applied at runtime; there are no generated images per colour.
 
 | Product | Base images |
 | --- | --- |
@@ -14,8 +14,13 @@ Twenty generated product images and four supporting bathroom/reflection assets c
 | Semi-frameless (Front only) showerscreen | Front-only photo and matching empty alcove |
 | Semi frameless (Front and Return) showerscreen | Corner enclosure photo and matching empty bathroom |
 | Mirrors Frameless / Mirrors Framed | One shared Gothic bathroom photo, with dynamic outlines and frame finishes |
+| Mirrors with Cabinets | One photograph with the mirror door open at an angle, revealing two shelves |
 
 The images live in `public/images/shop/`. Asset paths and generation prompts/briefs are recorded in `shop-photo-prompts.json`. Original generated PNGs remain in the local Codex generated-images directory; only compressed production assets are shipped.
+
+**Mirrors with Cabinets** uses `mirrors-cabinets-open.webp`. Stegbar's [Pill with White Cabinet](https://www.stegbar.com.au/products/pill-with-white-cabinet) open-door photograph was supplied directly to the built-in image tool as a construction reference, alongside Klay's approved quiet mirror image for room styling. The resulting original photograph shows a recessed white cabinet, two shelves, concealed hinges and a shaped mirror door viewed at an angle. The earlier closed, frontal draft was removed from public assets. The source Stegbar image is not shipped.
+
+The only product choice is **Shape: Gothic, Round or Pill**; the shared Location field still identifies the room for the quote. Each shape's fixed specifications appear below the photograph and persist into the quote: Gothic **H800 × W500 × D150 mm**, Round **H600 × W600 × D150 mm**, Pill **H1000 × W500 × D150 mm**. White cabinet finish is fixed. Sizes and the 129mm carcass plus 21mm door depth were checked on the [Gothic](https://www.stegbar.com.au/products/gothic-with-white-cabinet), [Round](https://www.stegbar.com.au/products/round-with-white-cabinet) and Pill pages on 9 September 2026. No installation, hinge-hand, colour or size selectors were added. `cabinetMirror.ts` projects the three door outlines around a shared hinge axis; `CabinetMirrorPhotoLayers.tsx` retains the photographed cabinet and shelves while updating the angled mirror, backing and quiet wall reflection immediately. The perspective is illustrative, not a fabrication drawing.
 
 Mirrors use `mirrors-quiet.webp`, an original built-in generation inspired by Stegbar's [Gothic](https://www.stegbar.com.au/products/gothic) and [framed Gothic](https://www.stegbar.com.au/products/gothic-with-gold-frame) photography. The selected image has a travertine vanity, soft sage-grey wall and clear mirror glass reflecting an uncluttered warm-white wall and a narrow doorway edge. A targeted built-in image edit removed the reflected shower, niche, towels and bottle. The rejected silver-gradient draft is not shipped. The previous reflection image was removed from public assets. It replaces the rejected plain rectangular draft; that draft was never shipped. Both cards open on Gothic. Framed shapes follow Stegbar's framed range: Gothic, Round and Pill. White, Golden and Black are the only frame finishes.
 

@@ -69,6 +69,7 @@ import {
 import type { CartItem } from '@/features/cart'
 import { FRONT_RETURN_SIZES, frontReturnSizeLabel } from './lib/semiScreenPhoto'
 import { mirrorShapes, mirrorDimensions, MIRROR_FRAME_COLOURS } from './lib/mirrorPhoto'
+import { CABINET_MIRROR_SHAPES, cabinetMirrorSpecifications } from './lib/cabinetMirror'
 
 // SEVEN SLOTS NOW, AND THE TWO NEW ONES ARE NOT WINDOW FIELDS.
 //
@@ -306,6 +307,8 @@ const OPERATION_COLUMN: Record<string, 'manual' | 'motorised'> = {
 const HARDWARE_CHOICES: ConfigChoice[] = HARDWARE_OPTIONS.map(o => ({ id: o.id, label: o.label }))
 
 interface ProductOptions {
+  /** Fixed specifications shown on the quote without asking for another choice. */
+  specificationsOfVariant?: (variantId?: string) => { label: string; value: string }[]
   /** Paired dimensions vary with mirror shape and travel together into the quote. */
   dimensionsOfVariant?: (variantId: string | undefined) => ConfigChoice[]
   /** A glass choice precedes the existing fields only on products offering it. */
@@ -476,6 +479,12 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     dimensionsOfVariant: shape => mirrorDimensions(true, shape),
     hardwareLabel: 'Frame colour',
     hardwareChoices: MIRROR_FRAME_COLOURS,
+  },
+  'mirrors-with-cabinets': {
+    variantLabel: 'Shape',
+    variants: CABINET_MIRROR_SHAPES.map(s => v(s.id, s.label)),
+    variantsListed: true,
+    specificationsOfVariant: cabinetMirrorSpecifications,
   },
   // --- INDOOR --------------------------------------------------------------
   // The one priced product. Its variant ids are the four pricing blind types
@@ -957,13 +966,13 @@ export const configuredLine = (item: CatalogueItem, sel: Selection): ConfiguredL
       : OPERATION_COLUMN[sel.operation ?? ''] ?? 'manual',
     price: price ?? 0,
     priceOnMeasure: price === null,
-    options: fields.map(f => ({
+    options: [...fields.map(f => ({
       label: f.label,
       // What the customer typed beats the word Other, which tells the workshop
       // nothing. Falls back to Other where they chose it and typed nothing.
       value: f.id === 'location' && sel.location === 'other' && sel.locationOther?.trim()
         ? sel.locationOther.trim()
         : f.choices.find(c => c.id === sel[f.id])?.label ?? AT_MEASURE,
-    })),
+    })), ...(PRODUCT_OPTIONS[item.id]?.specificationsOfVariant?.(sel.variant) ?? [])],
   }
 }

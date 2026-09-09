@@ -76,4 +76,23 @@ for (const product of expected) {
     assert.equal(new Set(ids).size, 3, 'Frame colours remain separate cart configurations');
   }
 }
-console.log('Mirrors: 22 shape/size configurations, valid dependent dimensions, true proportions, frame colours and quote details pass.');
+const { cabinetMirrorPlan, cabinetMirrorSize } = await import(moduleUrl('src/features/catalogue/lib/cabinetMirror.ts'));
+const cabinet = CATALOGUE.find(p => p.id === 'mirrors-with-cabinets');
+assert.equal(cabinet.name, 'Mirrors with Cabinets');
+assert.deepEqual(fieldsFor(cabinet).map(f => f.id), ['location', 'variant'], 'Shape is the only product choice');
+assert.deepEqual(fieldsFor(cabinet).find(f => f.id === 'variant').choices.map(c => c.label), ['Gothic', 'Round', 'Pill']);
+const cabinetIds = new Set();
+for (const [shape, height, width] of [['gothic', 800, 500], ['round', 600, 600], ['pill', 1000, 500]]) {
+  const sel = withChoice(cabinet, defaultSelection(cabinet), 'variant', shape);
+  const plan = cabinetMirrorPlan(shape);
+  assert.deepEqual([plan.height, plan.width, plan.depth], [height, width, 150]);
+  assert.ok(plan.points.every(([x, y]) => x > 0 && x < 1024 && y > 0 && y < 1024), 'Angled door stays inside the photo');
+  assert.ok(plan.projectedWidth < width * 0.73, 'Door is viewed at an angle');
+  const line = configuredLine(cabinet, sel);
+  assert.ok(line.options.some(o => o.label === 'Dimensions (H × W × D)' && o.value === cabinetMirrorSize(shape)));
+  assert.ok(line.options.some(o => o.label === 'Cabinet finish' && o.value === 'White'));
+  cabinetIds.add(line.blindType);
+  assert.equal(shopPhoto(cabinet.id, shape).src, '/images/shop/mirrors-cabinets-open.webp');
+}
+assert.equal(cabinetIds.size, 3, 'Each cabinet shape makes a separate quote line');
+console.log('Mirrors: 22 wall-mirror sizes and 3 cabinet shapes, fixed specifications, perspective, colours and quote details pass.');

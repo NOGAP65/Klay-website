@@ -586,4 +586,12 @@ export const CATALOGUE: CatalogueItem[] = [
     to: enquire('Mirrors Framed'),
     image: '/images/shop/mirrors-quiet.webp',
   },
+  {
+    id: 'mirrors-with-cabinets',
+    name: 'Mirrors with Cabinets',
+    group: 'Other',
+    tagline: 'Hidden storage behind a shaped mirror, with a white cabinet.',
+    to: enquire('Mirrors with Cabinets'),
+    image: '/images/shop/mirrors-cabinets-open.webp',
+  },
 ]
