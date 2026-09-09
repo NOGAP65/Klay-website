@@ -68,7 +68,7 @@ import {
 } from './constants'
 import type { CartItem } from '@/features/cart'
 import { FRONT_RETURN_SIZES, frontReturnSizeLabel } from './lib/semiScreenPhoto'
-import { slidingOpenings, defaultSlidingOpening, SLIDING_METAL_COLOURS, type SlidingDoorStyle } from './lib/slidingDoors'
+import { slidingOpenings, defaultSlidingOpening, slidingMetals, type SlidingDoorStyle } from './lib/slidingDoors'
 import { mirrorShapes, mirrorDimensions, MIRROR_FRAME_COLOURS } from './lib/mirrorPhoto'
 import { CABINET_MIRROR_SHAPES, cabinetMirrorSpecifications } from './lib/cabinetMirror'
 import { WALK_IN_LAYOUTS, WALK_IN_HARDWARE, walkInSpecifications } from './lib/walkInWardrobes'
@@ -105,6 +105,9 @@ export interface ConfigChoice {
   label: string
   /** Swatch fill, for a colour field. */
   hex?: string
+  texture?: string
+  mirror?: 'none' | 'mixed' | 'all'
+  shortLabel?: string
   /** Which heading this choice sits under in a dropdown. Optional, and only the
    * location list uses it: seventeen rooms in one flat run is a scroll, and the
    * customer knows which KIND of room they came for before they know its
@@ -142,6 +145,7 @@ export interface ConfigField {
    * for it, and it asks on both mirror cards rather than on the longer one, so
    * the two stop agreeing by coincidence of length. */
   listed?: boolean
+  showSelection?: boolean
 }
 
 /** The three window-size bands the pricing works in — see lib/pricing. Shown
@@ -355,6 +359,7 @@ interface ProductOptions {
    * carries one. */
   colourLabel?: string
   colourKind?: 'swatches' | 'select'
+  showFinishSelection?: boolean
   /** Overrides the blind hardware list. A wardrobe's visible metalwork is a
    * handle in one of the supplier's six finishes, not a blind's white / black /
    * chrome headrail. */
@@ -464,11 +469,10 @@ const slidingOptions = (style: SlidingDoorStyle): ProductOptions => ({
   variantLabel: 'Doors',
   variants: [v('two', 'Two doors'), v('three', 'Three doors')],
   colourLabel: 'Door material & colour',
-  colourKind: 'select',
+  colourKind: 'swatches',
+  showFinishSelection: true,
   hardwareLabel: 'Hardware colour',
-  hardwareChoices: style === 'shaker'
-    ? SLIDING_METAL_COLOURS.map(c => ({ id: c.name, label: c.name, hex: c.hex }))
-    : [{ id: 'White', label: 'White', hex: '#FDFDFD' }],
+  hardwareChoices: slidingMetals(style).map(c => ({ id: c.name, label: c.name, hex: c.hex })),
   dimensionsLabel: style === 'framed' ? 'Dimensions (H × W)' : 'Opening size range (H × W)',
   dimensionsOfVariant: panels => slidingOpenings(style, panels),
   defaultDimensionOfVariant: panels => defaultSlidingOpening(style, panels),
@@ -644,9 +648,11 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   'walk-in-wardrobes': {
     variantLabel: 'Model',
     variants: WALK_IN_LAYOUTS.map(m => v(m.id, m.name)),
-    colourLabel: 'Board finish',
-    hardwareLabel: 'Hardware colour',
-    hardwareChoices: WALK_IN_HARDWARE.map(f => ({ id: f.name, label: f.name, hex: f.hex })),
+    colourLabel: 'Board material & colour',
+    colourKind: 'swatches',
+    showFinishSelection: true,
+    hardwareLabel: 'Handle style & colour',
+    hardwareChoices: WALK_IN_HARDWARE.map(f => ({ id: f.name, label: f.name, hex: f.hex, shortLabel: f.name.split(' ')[0] })),
     specificationsOfVariant: walkInSpecifications,
   },
   // THE VISUALISER IS THE SPEC, exactly as it is for the wardrobe above.
@@ -773,7 +779,8 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
       id: 'colour',
       label: options.colourLabel ?? 'Colour',
       kind: options.colourKind ?? 'swatches',
-      choices: item.colours.map(c => ({ id: c.name, label: c.name, hex: c.hex })),
+      choices: item.colours.map(c => ({ id: c.name, label: c.name, hex: c.hex, texture: c.texture, mirror: c.mirror })),
+      showSelection: options.showFinishSelection,
     })
   }
   // A product supplies its own metalwork list where its metalwork is not a
@@ -792,6 +799,7 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
         label: options.hardwareLabel ?? 'Hardware',
         kind: 'swatches',
         choices: hardwareChoices,
+        showSelection: options.showFinishSelection,
       })
     } else if (options.hardware) {
       fields.push({ id: 'hardware', label: 'Hardware', kind: 'chips', choices: HARDWARE_CHOICES })

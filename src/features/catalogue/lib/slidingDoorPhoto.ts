@@ -36,9 +36,11 @@ export function photoGrid(source: PhotoRect, target: PhotoRect, sourceEdges: [nu
 export function slidingDoorPhotoPlan(style: SlidingDoorStyle, panels?: string, dimension?: string, material?: string) {
   const opening = slidingOpening(style, panels, dimension);
   const width = (opening.minWidth + opening.maxWidth) / 2;
-  const height = style === 'framed' ? 2160 : 2000;
-  const scale = Math.min(820 / height, 830 / width);
-  const frame = { x: (1024 - width * scale) / 2, y: 860 - height * scale, w: width * scale, h: height * scale };
+  // A fixed camera and 2m display height: width must never zoom the whole product.
+  const height = 2000;
+  const viewportWidth = 1280;
+  const scale = 0.32;
+  const frame = { x: (viewportWidth - width * scale) / 2, y: 180, w: width * scale, h: height * scale };
   const source = SLIDING_PHOTO_GEOMETRY[style];
   const sourceFrame = source.frame;
   const verticalScale = frame.h / sourceFrame.h;
@@ -55,12 +57,12 @@ export function slidingDoorPhotoPlan(style: SlidingDoorStyle, panels?: string, d
   });
   const xs = [0, sourceFrame.x, sourceFrame.x + sourceFrame.w, 1024];
   const ys = [0, sourceFrame.y, sourceFrame.y + sourceFrame.h, 1024];
-  const xt = [0, frame.x, frame.x + frame.w, 1024];
+  const xt = [0, frame.x, frame.x + frame.w, viewportWidth];
   const yt = [0, frame.y, frame.y + frame.h, 1024];
   const room = Array.from({ length: 9 }, (_, i) => {
     const x = i % 3, y = Math.floor(i / 3);
     return { source: { x: xs[x], y: ys[y], w: xs[x + 1] - xs[x], h: ys[y + 1] - ys[y] },
       target: { x: xt[x], y: yt[y], w: xt[x + 1] - xt[x], h: yt[y + 1] - yt[y] } };
   });
-  return { opening, width, height, frame, doors, room, source, scale, verticalScale };
+  return { opening, width, height, viewportWidth, frame, doors, room, source, scale, verticalScale };
 }

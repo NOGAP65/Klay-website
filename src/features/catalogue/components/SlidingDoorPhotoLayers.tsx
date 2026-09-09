@@ -24,20 +24,20 @@ export function SlidingDoorPhotoLayers({ src, style, panels, dimension, material
   const reduced = useMediaQuery('(prefers-reduced-motion: reduce)');
   const plan = slidingDoorPhotoPlan(style, panels, dimension, materialName);
   const material = slidingMaterial(style, materialName);
-  const metal = usePhotoTransition({ colour: '#FFFFFF', hardware: style === 'framed' ? '#FDFDFD' : hardware }, reduced);
+  const metal = usePhotoTransition({ colour: '#FFFFFF', hardware }, reduced);
   // White powder coat diffuses the silver base shot's reflections while retaining track grooves.
   const whiteCoat = Array.from({ length: 256 }, (_, i) => {
     const v = i / 255;
     return v < 0.16 ? v * 1.8 : 0.288 + 0.7 * ((v - 0.16) / 0.84) ** 0.45;
   });
-  const curves = style === 'framed' ? [whiteCoat, whiteCoat, whiteCoat] : photoColourCurves(metal.hardware, 'hardware');
+  const curves = metal.hardware.toUpperCase() === '#FDFDFD' ? [whiteCoat, whiteCoat, whiteCoat] : photoColourCurves(metal.hardware, 'hardware');
   const { face, panel } = plan.source;
   const glass = style === 'shaker' ? { x: 192, y: 108, w: 266, h: 681 } : face;
   const baseMaterials = slidingMaterials(style).filter(m => m.mirror !== 'mixed' && m.texture);
   const activeTexture = material.texture;
   const shot = <image href={src} width="1024" height="1024" />;
   return <svg role="img" aria-label={`${style === 'framed' ? 'Framed' : 'Shaker'} sliding wardrobe doors — ${plan.doors.length} doors, ${material.name}, ${plan.opening.label}`}
-    viewBox="0 0 1024 1024" data-preview-doors={plan.doors.length} data-preview-width={plan.width}
+    viewBox={`0 0 ${plan.viewportWidth} 1024`} data-preview-doors={plan.doors.length} data-preview-width={plan.width}
     data-preview-height={plan.height} data-preview-material={material.name}
     style={{ display: 'block', width: '100%', height: '100%' }}>
     <defs>

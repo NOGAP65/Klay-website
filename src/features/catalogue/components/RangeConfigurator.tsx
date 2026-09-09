@@ -277,18 +277,27 @@ function Swatch({
         // One swatch definition: 20 x 20, radius 2. It was radius 1 here against
         // 50% in the visualiser controls — the same object as a square in one
         // panel and a circle in the next.
-        width: 20,
+        width: choice.shortLabel ? 32 : 20,
         height: 20,
         padding: 0,
         borderRadius: radius.sm,
         cursor: 'pointer',
         background: choice.hex,
+        backgroundImage: [
+          choice.mirror === 'mixed' ? 'linear-gradient(110deg, #c2ccca 0%, #f6f8f6 28%, #a6b3b1 49%, transparent 50%)'
+            : choice.mirror === 'all' ? 'linear-gradient(110deg, #c2ccca, #f6f8f6 45%, #a6b3b1)' : '',
+          choice.texture ? `url("${choice.texture}")` : '',
+        ].filter(Boolean).join(', ') || undefined,
+        backgroundSize: 'cover',
+        color: choice.hex === '#292929' ? '#FFFFFF' : '#222222',
+        fontSize: 9,
+        fontFamily: tokens.body,
         border: `1px solid ${tokens.line}`,
         outline: selected ? `1.5px solid ${tokens.line}` : isHovered ? `1.5px solid ${tokens.lineStrong}` : 'none',
         outlineOffset: 2,
         transition: 'outline-color 0.2s ease',
       }}
-    />
+    >{choice.shortLabel}</button>
   );
 }
 
@@ -412,6 +421,10 @@ function DenseField({
             ),
           )}
         </div>
+        {field.showSelection && <div style={{ fontFamily: tokens.body, fontSize: 11, lineHeight: 1.35,
+          color: tokens.inkSoft, marginTop: 6, minHeight: 30 }}>
+          {field.choices.find(c => c.id === value)?.label}
+        </div>}
         {divider && (
           <div
             aria-hidden="true"

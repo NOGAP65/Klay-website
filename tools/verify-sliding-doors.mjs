@@ -37,9 +37,16 @@ for (const [id, style, name, counts] of [
   const initial = defaultSelection(item);
   const fields = fieldsFor(item, initial);
   const materials = fields.find(f => f.id === 'colour').choices;
-  assert.equal(materials.length, style === 'framed' ? 3 : 8);
+  assert.equal(fields.find(f => f.id === 'colour').kind, 'swatches');
+  assert.equal(fields.find(f => f.id === 'hardware').kind, 'swatches');
+  assert.deepEqual(materials.map(m => m.label), style === 'framed' ? [
+    'MDF Natural Oak', 'MDF Prime Oak', 'Mirror/MDF Silver/Natural Oak', 'Mirror/MDF Silver/Prime Oak',
+    'Mirror Silver', 'Vinyl Sienna', 'Vinyl Linen', 'Vinyl Surf',
+    'Mirror/Vinyl Silver/Sienna', 'Mirror/Vinyl Silver/Linen', 'Mirror/Vinyl Silver/Surf',
+  ] : ['Coastal Oak', 'Notaio Walnut', 'Antico Oak', 'Polar White',
+    'Mirror/Coastal Oak', 'Mirror/Notaio Walnut', 'Mirror/Antico Oak', 'Mirror/Polar White']);
   assert.deepEqual(fields.find(f => f.id === 'hardware').choices.map(c => c.id),
-    style === 'framed' ? ['White'] : ['Matt Black', 'Polished Silver', 'Pearl White']);
+    style === 'framed' ? ['Matt Black', 'Pearl White', 'Polished Silver'] : ['Matt Black', 'Polished Silver', 'Pearl White']);
   for (const [pi, panels] of ['two', 'three'].entries()) {
     let sel = withChoice(item, initial, 'variant', panels);
     const options = fieldsFor(item, sel);
@@ -52,7 +59,9 @@ for (const [id, style, name, counts] of [
     for (const size of sizes) {
       sel = withChoice(item, sel, 'dimension', size.id);
       const layout = slidingDoorPhotoPlan(style, panels, size.id);
-      assert.equal(layout.height, style === 'framed' ? 2160 : 2000);
+      assert.equal(layout.height, 2000);
+      assert.equal(layout.frame.h, 640, 'Visible height stays constant across all widths and door counts');
+      assert.equal(layout.frame.y, 180, 'The top stays at the same camera position');
       assert.ok(layout.width > previousWidth, 'Each size changes the represented width');
       previousWidth = layout.width;
       assert.ok(Math.abs(layout.frame.w / layout.frame.h - layout.width / layout.height) < 1e-10,
@@ -62,7 +71,7 @@ for (const [id, style, name, counts] of [
       for (const { source, target } of slices) for (const rect of [source, target]) {
         assert.ok([rect.x, rect.y, rect.w, rect.h].every(Number.isFinite));
         assert.ok(rect.w > 0 && rect.h > 0 && rect.x >= 0 && rect.y >= 0);
-        assert.ok(rect.x + rect.w <= 1024.001 && rect.y + rect.h <= 1024.001, 'Every slice remains inside the photograph');
+        assert.ok(rect.x + rect.w <= 1280.001 && rect.y + rect.h <= 1024.001, 'Every slice remains inside the photograph');
       }
       for (const material of materials) for (const hardware of options.find(f => f.id === 'hardware').choices) {
         const selection = { ...sel, colour: material.id, hardware: hardware.id };
@@ -87,5 +96,5 @@ for (const finish of finishSources) {
   assert.match(finish.hex, /^#[a-f\d]{6}$/i);
   assert.ok(readFileSync(finish.asset).length > 0, 'Official finish image exists');
 }
-assert.equal(quoteIds.size, 147);
-console.log('Sliding doors: 27 PDF framed configurations and 120 Shaker configurations, dimensions, mirror layout, sourced finishes and quote details pass.');
+assert.equal(quoteIds.size, 417);
+console.log('Sliding doors: 297 framed configurations and 120 Shaker configurations, dimensions, mirror layout, sourced finishes and quote details pass.');

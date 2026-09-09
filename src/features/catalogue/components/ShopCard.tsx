@@ -352,7 +352,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             // questions most of a screen down.
             // Keep the awning's full photograph: square crops cut off the wall
             // cassette, while the mobile landscape crop cuts through its top.
-            aspectRatio: photo?.joinery ? '1280 / 1024' : isPhotographicAwning ? '900 / 768' : photo ? '1 / 1' : stacked ? '4 / 3' : '1 / 1',
+            aspectRatio: photo?.joinery || photo?.slidingDoor ? '1280 / 1024' : isPhotographicAwning ? '900 / 768' : photo ? '1 / 1' : stacked ? '4 / 3' : '1 / 1',
             // KEEPS THE MULTIPLY INSIDE THE FRAME. Without it the dye layer
             // composites against whatever is painted beneath — the card, the
             // grid, the page — and one blind would tint the card beside it.
@@ -366,7 +366,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
           }}
         >
           {photo ? <ShopPhotoLayers photo={photo} colour={dyeColour(item, sel)}
-            colourName={sel.colour} hardware={hardwareColour(item, sel)} width={sel.width}
+            colourName={sel.colour} hardware={hardwareColour(item, sel)} hardwareName={sel.hardware} width={sel.width}
             shape={sel.variant} dimension={sel.dimension} /> : shot || item.image ? (
             <img
               src={shot ? `${FABRIC_SHOT_DIR}/${shot.file}` : item.image}
@@ -591,7 +591,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
           letterSpacing: 'normal', textTransform: 'none', margin: `${space.snug}px 0 0` }}>
           {cabinetMirrorSize(sel.variant)} · White cabinet · Two shelves
         </p>}
-        {photo?.slidingDoor === 'shaker' && <p style={{ ...typeScale.micro, color: tokens.inkSoft,
+        {photo?.slidingDoor && <p style={{ ...typeScale.micro, color: tokens.inkSoft,
           letterSpacing: 'normal', textTransform: 'none', margin: `${space.snug}px 0 0` }}>
           Preview shown at 2m high. Final dimensions confirmed at measure.
         </p>}

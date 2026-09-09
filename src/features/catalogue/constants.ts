@@ -67,7 +67,7 @@ export interface CatalogueItem {
   /** ProductGlyph key, used where no photograph exists — which is most of the
    * range. See components/ProductGlyph. */
   glyph?: string
-  colours?: { name: string; hex: string }[]
+  colours?: { name: string; hex: string; texture?: string; mirror?: 'none' | 'mixed' | 'all' }[]
   /** MULTI-VALUED, and that is what makes the filter work at this grain. One
    * card covers a whole product type, and a honeycomb blind is made in blockout
    * AND light-filter fabrics — it carries both and matches if either is ticked.
@@ -510,7 +510,7 @@ export const CATALOGUE: CatalogueItem[] = [
     id: 'shaker-framed-sliding-doors',
     name: 'Framed Sliding Wardrobe Doors',
     group: 'Other',
-    tagline: 'White aluminium frames with Surf vinyl, mirror or a mix of both.',
+    tagline: 'Aluminium frames with oak, vinyl or mirror panels in your chosen finish.',
     to: enquire('Framed Sliding Wardrobe Doors'),
     glyph: 'wardrobes',
     colours: FRAMED_DOOR_MATERIALS,

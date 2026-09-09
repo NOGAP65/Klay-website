@@ -1,6 +1,6 @@
 [
   {
-    "name": "Vinyl (Surf)",
+    "name": "Vinyl Surf",
     "slug": "vinyl-surf",
     "hex": "#eff0f2",
     "source": "https://www.stegbar.com.au/cdn/shop/files/1_a4e7342f-a028-4f0d-8e25-e9e84441421a.webp?v=1766507722&width=1400",
@@ -54,5 +54,33 @@
     "hex": "#f6f6f6",
     "source": "https://www.polytec.com.au/img/products/960-960/polar-white.jpg",
     "asset": "public/images/shop/finishes/polar-white.webp"
+  },
+  {
+    "name": "MDF Natural Oak",
+    "slug": "natural-oak",
+    "hex": "#c2a67f",
+    "source": "https://www.stegbar.com.au/cdn/shop/files/natural-oak.jpg?v=1766507439&width=1400",
+    "asset": "public/images/shop/finishes/natural-oak.webp"
+  },
+  {
+    "name": "MDF Prime Oak",
+    "slug": "prime-oak",
+    "hex": "#a98d71",
+    "source": "https://www.stegbar.com.au/cdn/shop/files/prime-oak.jpg?v=1766507478&width=1400",
+    "asset": "public/images/shop/finishes/prime-oak.webp"
+  },
+  {
+    "name": "Vinyl Sienna",
+    "slug": "vinyl-sienna",
+    "hex": "#f3eee8",
+    "source": "https://www.stegbar.com.au/cdn/shop/files/3.-sienna-swatch.jpg?v=1766507642&width=1400",
+    "asset": "public/images/shop/finishes/vinyl-sienna.webp"
+  },
+  {
+    "name": "Vinyl Linen",
+    "slug": "vinyl-linen",
+    "hex": "#f0ede6",
+    "source": "https://www.stegbar.com.au/cdn/shop/files/2.-linen-swatch.jpg?v=1766507681&width=1400",
+    "asset": "public/images/shop/finishes/vinyl-linen.webp"
   }
 ]

@@ -1,4 +1,4 @@
-// Framed: supplied Stegbar Signature PDF, pp. 14–17. Shaker: Stegbar Shop Online.
+// Finish names follow Stegbar Shop Online, checked 10 September 2026.
 export type SlidingDoorStyle = 'framed' | 'shaker';
 export interface DoorMaterial {
   name: string;
@@ -11,12 +11,21 @@ const textures = '/images/shop/finishes';
 const solid = (name: string, hex: string, texture?: string, grain?: DoorMaterial['grain']): DoorMaterial =>
   ({ name, hex, texture, grain, mirror: 'none' });
 const mirrorMix = (material: DoorMaterial, name: string): DoorMaterial => ({ ...material, name, mirror: 'mixed' });
-const surf = solid('Vinyl (Surf)', '#EFF0F2', `${textures}/vinyl-surf.webp`);
+const surf = solid('Vinyl Surf', '#EFF0F2', `${textures}/vinyl-surf.webp`);
+const sienna = solid('Vinyl Sienna', '#F3EEE8', `${textures}/vinyl-sienna.webp`);
+const linen = solid('Vinyl Linen', '#F0EDE6', `${textures}/vinyl-linen.webp`);
+const naturalOak = solid('MDF Natural Oak', '#C2A67F', `${textures}/natural-oak.webp`, 'oak');
+const primeOak = solid('MDF Prime Oak', '#A98D71', `${textures}/prime-oak.webp`, 'oak');
 
 export const FRAMED_DOOR_MATERIALS: DoorMaterial[] = [
-  surf,
-  { name: 'Mirror', hex: '#D8D8D8', mirror: 'all' },
-  mirrorMix(surf, 'Vinyl (Surf) + Mirror'),
+  naturalOak, primeOak,
+  mirrorMix(naturalOak, 'Mirror/MDF Silver/Natural Oak'),
+  mirrorMix(primeOak, 'Mirror/MDF Silver/Prime Oak'),
+  { name: 'Mirror Silver', hex: '#D8D8D8', mirror: 'all' },
+  sienna, linen, surf,
+  mirrorMix(sienna, 'Mirror/Vinyl Silver/Sienna'),
+  mirrorMix(linen, 'Mirror/Vinyl Silver/Linen'),
+  mirrorMix(surf, 'Mirror/Vinyl Silver/Surf'),
 ];
 const shakerTimbers = [
   solid('Coastal Oak', '#C7B299', `${textures}/coastal-oak.webp`, 'oak'),
@@ -32,6 +41,9 @@ export const SLIDING_METAL_COLOURS = [
   { name: 'Polished Silver', hex: '#D8D8D8' },
   { name: 'Pearl White', hex: '#FDFDFD' },
 ];
+export const slidingMetals = (style: SlidingDoorStyle) => style === 'framed'
+  ? [SLIDING_METAL_COLOURS[0], SLIDING_METAL_COLOURS[2], SLIDING_METAL_COLOURS[1]]
+  : SLIDING_METAL_COLOURS;
 export const slidingMaterials = (style: SlidingDoorStyle) =>
   style === 'framed' ? FRAMED_DOOR_MATERIALS : SHAKER_DOOR_MATERIALS;
 export const slidingMaterial = (style: SlidingDoorStyle, name?: string) =>

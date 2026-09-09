@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Matt Wardrobe White",
+    "slug": "walkin-white",
+    "hex": "#fdfdfd",
+    "source": "https://www.stegbar.com.au/cdn/shop/files/wardrobe-white-copy.jpg?v=1767683136&width=1400",
+    "asset": "public/images/shop/finishes/walkin-white.webp"
+  },
+  {
+    "name": "Woodmatt Notaio Walnut",
+    "slug": "walkin-notaio-walnut",
+    "hex": "#8f7964",
+    "source": "https://www.stegbar.com.au/cdn/shop/files/notaio-walnut.jpg?v=1767683365&width=1400",
+    "asset": "public/images/shop/finishes/walkin-notaio-walnut.webp"
+  },
+  {
+    "name": "Matt Natural Oak",
+    "slug": "walkin-natural-oak",
+    "hex": "#c2a67f",
+    "source": "https://www.stegbar.com.au/cdn/shop/files/natural-oak_ea92d4f6-66c8-40a5-a0c4-00c899e1f5a3.jpg?v=1767683248&width=1400",
+    "asset": "public/images/shop/finishes/walkin-natural-oak.webp"
+  },
+  {
+    "name": "Woodmatt Antico Oak",
+    "slug": "walkin-antico-oak",
+    "hex": "#8b7b6c",
+    "source": "https://www.stegbar.com.au/cdn/shop/files/antico-oak.jpg?v=1767683452&width=1400",
+    "asset": "public/images/shop/finishes/walkin-antico-oak.webp"
+  }
+]

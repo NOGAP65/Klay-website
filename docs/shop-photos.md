@@ -76,3 +76,7 @@ Width regression check: `node tools/verify-shop-widths.mjs` covers every availab
 The replaced product photos, old wardrobe category/range images, superseded fabric shots and zip masks were deleted. All active references now point to the new photos; older dated asset inventories remain historical records.
 
 Validation: `node tools/verify-shop-photos.mjs`, `node tools/verify-fabric-shots.mjs`, `node tools/verify-asset-paths.mjs`, `node tools/verify-awning-colour.mjs`, TypeScript and the production build. Browser review covers both honeycomb types, light/dark exterior finishes, all seven joinery layouts, wood finishes and metal finishes.
+
+### 10 September 2026 finish update
+
+Sliding doors and walk-ins now use the exact current Stegbar website finish names with visible one-click swatches. The existing photos are reused with sourced MDF/vinyl/timber samples and isolated board masks. Both sliding styles have fixed 2000mm preview height and fixed camera scale across widths. Walk-ins retain the two approved PDF layouts and fixed 2000mm height, with four board finishes and six handle styles. See `sliding-doors.md` and `walk-in-wardrobes.md` for current source decisions.
