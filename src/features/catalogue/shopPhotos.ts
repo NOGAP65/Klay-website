@@ -194,9 +194,9 @@ function semiScreen(layout: SemiScreenPhoto['layout']): ShopPhoto {
 }
 
 export const SHOP_PHOTOS: Record<string, Record<string, ShopPhoto>> = {
-  'mirrors-without-frames': { default: { src: '/images/shop/mirrors-gothic.webp',
+  'mirrors-without-frames': { default: { src: '/images/shop/mirrors-quiet.webp',
     description: 'Frameless mirror above a travertine vanity', mirror: { framed: false } } },
-  'mirror-with-frame': { default: { src: '/images/shop/mirrors-gothic.webp',
+  'mirror-with-frame': { default: { src: '/images/shop/mirrors-quiet.webp',
     description: 'Framed mirror above a travertine vanity', mirror: { framed: true } } },
   'honeycomb-blinds': {
     blockout: { src: '/images/shop/honeycomb-blockout.webp', description: 'Blockout honeycomb — opaque cellular fabric with accordion pleats',

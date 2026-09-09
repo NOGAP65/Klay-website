@@ -63,7 +63,7 @@ for (const product of expected) {
       assert.equal(plan.y + plan.h, 669, 'Constant mounting baseline');
       assert.ok(plan.x > 0 && plan.y > 0 && plan.x + plan.w < 1024, 'Entire mirror fits photograph');
       const photo = shopPhoto(product.id, shape);
-      assert.equal(photo.src, '/images/shop/mirrors-clean.webp');
+      assert.equal(photo.src, '/images/shop/mirrors-quiet.webp');
       assert.equal(photo.mirror.framed, product.framed);
       const line = configuredLine(item, sel);
       assert.ok(line.options.some(o => o.label === 'Dimensions (H × W)' && o.value === `H${height} × W${width} mm`));

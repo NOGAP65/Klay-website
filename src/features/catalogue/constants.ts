@@ -576,7 +576,7 @@ export const CATALOGUE: CatalogueItem[] = [
     group: 'Other',
     tagline: 'Polished edges and sculptural shapes, with a size for your space.',
     to: enquire('Mirrors Frameless'),
-    image: '/images/shop/mirrors-clean.webp',
+    image: '/images/shop/mirrors-quiet.webp',
   },
   {
     id: 'mirror-with-frame',
@@ -584,6 +584,6 @@ export const CATALOGUE: CatalogueItem[] = [
     group: 'Other',
     tagline: 'A refined frame in white, golden or black.',
     to: enquire('Mirrors Framed'),
-    image: '/images/shop/mirrors-clean.webp',
+    image: '/images/shop/mirrors-quiet.webp',
   },
 ]

@@ -13,13 +13,15 @@ export function MirrorPhotoLayers({ src, framed, shape, dimension, hardware }: P
   const frame = usePhotoTransition({ colour: hardware, hardware }, isReduced);
   const plan = mirrorPlan(framed, shape, dimension);
   const rim = framed ? 4.1 : 1.25;
+  // Keep a little doorway at the far edge so small mirrors still read as glass.
+  const reflectionX = Math.max(512 + plan.w * 0.4 - 707 * 2, plan.x + plan.w - 738 * 2);
   return <svg role="img" aria-label={`${plan.label} ${framed ? 'framed' : 'frameless'} mirror — ${plan.height}mm high × ${plan.width}mm wide`}
     viewBox="0 0 1024 1024" data-preview-width={plan.width} data-preview-height={plan.height}
     data-preview-shape={plan.shape} data-preview-framed={framed}
     style={{ display: 'block', width: '100%', height: '100%', isolation: 'isolate' }}>
     <defs>
       <clipPath id={`${id}-glass`}><path d={plan.path} /></clipPath>
-      {/* The same photograph supplies room, wall grain and reflected bathroom. */}
+      {/* One photograph supplies the room, wall grain and quiet reflected wall. */}
       <clipPath id={`${id}-room-wall`}><rect width="1024" height="704" /></clipPath>
       <linearGradient id={`${id}-across`}><stop stopColor="black" /><stop offset="1" stopColor="white" /></linearGradient>
       <linearGradient id={`${id}-down`} x2="0" y2="1">
@@ -47,9 +49,9 @@ export function MirrorPhotoLayers({ src, framed, shape, dimension, hardware }: P
       </g>
     </g>
     <path d={plan.path} fill="#A4A59A" filter={`url(#${id}-shadow)`} />
-    {/* Fixed reflection scale: changing mirror dimensions reveals more of the room. */}
+    {/* Preserve photographic proportions while framing the quiet reflection. */}
     <g clipPath={`url(#${id}-glass)`}>
-      <image href={src} x="-512" y="-665" width="2048" height="2048" />
+      <image href={src} x={reflectionX} y="-665" width="2048" height="2048" />
     </g>
     {framed && <path d={plan.path} transform="translate(1.5 1.8)" fill="none" stroke={frame.hardware} strokeWidth={rim + 1.6} />}
     <path d={plan.path} fill="none" stroke={framed ? frame.hardware : `url(#${id}-edge)`} strokeWidth={rim} />
