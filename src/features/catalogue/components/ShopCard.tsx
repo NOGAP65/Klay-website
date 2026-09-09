@@ -590,6 +590,10 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
           letterSpacing: 'normal', textTransform: 'none', margin: `${space.snug}px 0 0` }}>
           {cabinetMirrorSize(sel.variant)} · White cabinet · Two shelves
         </p>}
+        {photo?.slidingDoor === 'shaker' && <p style={{ ...typeScale.micro, color: tokens.inkSoft,
+          letterSpacing: 'normal', textTransform: 'none', margin: `${space.snug}px 0 0` }}>
+          Preview shown at 2m high. Final dimensions confirmed at measure.
+        </p>}
         {/* THE NAME IS NOT HERE ANY MORE — it moved to the head of the card,
             above both columns. Under the picture it read as a caption on the
             photograph; across the top it says which product the whole card is

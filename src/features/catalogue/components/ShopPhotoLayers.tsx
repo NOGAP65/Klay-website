@@ -10,6 +10,7 @@ import { ShowerPhotoLayers } from './ShowerPhotoLayers';
 import { SemiScreenPhotoLayers } from './SemiScreenPhotoLayers';
 import { MirrorPhotoLayers } from './MirrorPhotoLayers';
 import { CabinetMirrorPhotoLayers } from './CabinetMirrorPhotoLayers';
+import { SlidingDoorPhotoLayers } from './SlidingDoorPhotoLayers';
 import { usePhotoTransition } from './usePhotoTransition';
 
 interface Props { photo: ShopPhoto; colour: string; colourName?: string; hardware: string; width?: string; shape?: string; dimension?: string }
@@ -137,6 +138,8 @@ export function ShopPhotoLayers({ photo: selectedPhoto, ...selection }: Props) {
     }).catch(() => { /* Retain the last complete preview on a failed request. */ });
     return () => { isCancelled = true; };
   }, [selectedPhoto]);
+  if (photo.slidingDoor) return <SlidingDoorPhotoLayers src={photo.src} style={photo.slidingDoor}
+    panels={selection.shape} dimension={selection.dimension} materialName={selection.colourName} hardware={selection.hardware} />;
   if (photo.cabinetMirror) return <CabinetMirrorPhotoLayers src={photo.src} shape={selection.shape} />;
   if (photo.mirror) return <MirrorPhotoLayers src={photo.src} framed={photo.mirror.framed}
     shape={selection.shape} dimension={selection.dimension} hardware={selection.hardware} />;

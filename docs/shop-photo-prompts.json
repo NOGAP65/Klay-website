@@ -1,5 +1,22 @@
 [
   {
+    "id": "sliding-framed",
+    "source": "exec-349a9408-a8a0-49b5-9dc2-332d7de0a94a.png",
+    "asset": "public/images/shop/sliding-framed.webp",
+    "reference": "https://www.stegbar.com.au/products/framed-two-door",
+    "specificationReference": "Stegbar Signature Range Pitch Deck Final.pdf, pages 14–17",
+    "mode": "built-in image generation",
+    "prompt": "Use case: photorealistic-natural. Create ONE original premium architectural product photograph for Klay Interiors, square 1024x1024, showing a fully installed TWO PANEL FRAMED SLIDING WARDROBE DOOR across a bedroom alcove. Construction reference: Stegbar Framed Two Door Wardrobe Sliding: two plain FLAT slab panels, slim aluminium frame around each door, integrated narrow vertical finger-grip stiles, horizontal double track at head and floor, panels on overlapping sliding tracks. NO shaker borders, no recessed panels, no hinged doors, no swing handles, no internal cross-bars. Both large flat infill panels are neutral satin ivory-white, and all metalwork is natural bright silver with fine dark grooves and highlights, for later texture and colour changes. Front-on level camera, corrected verticals, entire opening a near rectangle from approximately x162 to862 y115 to875 on a 1024 square, straight horizontal top and bottom. Centre seam near x512. A 2200mm high by 2000mm wide wardrobe opening; doors reach down to floor track. No furniture obscures any part of the doors or tracks. Restrained premium Australian bedroom, warm off-white plaster wall, pale natural oak floor with a narrow woven rug only across bottom foreground below y935, a small glimpse of cream upholstered bed at extreme lower right outside the opening, empty left and right wall margins. Soft natural daylight from off-frame left, no harsh cast window-grid shadow, no plants. Authentic subtle surface texture and photographic light falloff, believable frame contact shadows and 3D recess, lightly shadowed right reveal and real track grooves. Looks like an expensive real interiors photograph, NOT a CAD render, not a diagram. No mirror in the base shot, no text, branding, logo, labels, watermark, collage or extra doors."
+  },
+  {
+    "id": "sliding-shaker",
+    "source": "exec-1054f0b8-2e46-4fea-958f-57339288dfc3.png",
+    "asset": "public/images/shop/sliding-shaker.webp",
+    "reference": "https://www.stegbar.com.au/products/shaker-sliding-two-door",
+    "mode": "built-in image generation",
+    "prompt": "Use case: photorealistic-natural. Create ONE original premium architectural product photograph for Klay Interiors, square 1024x1024, a fully installed TWO PANEL SHAKER SLIDING WARDROBE DOOR across a bedroom alcove. Construction guided by Stegbar Shaker Two Door Wardrobe Sliding: each timber door has ONE full-height long recessed rectangular centre panel enclosed by FOUR wide flat square-edged rails/stiles, approximately 130mm wide; 25mm thick glued-and-dowelled five-piece timber door with 9mm centre insert. Exactly two doors, each with one large tall recessed panel. No midrail, no lattice or crossbars, no hinged door knobs, no swing handles. Natural thin SILVER ALUMINIUM sliding track at top and floor, discreet slim finger-grip at meeting edges. The timber door faces are satin ivory-white with minimal subtle wood grain so actual decor textures can be applied later. Photograph the recessed bevels and joinery corners with accurate small soft contact shadows. Front-on level camera, corrected verticals, full opening roughly x162..862 and y115..875 at 1024px, top and bottom horizontal, centre join x512. Real 2200mm high by 2000mm wide wardrobe opening. All door corners, floor track and head track unobstructed. Restrained premium Australian bedroom: warm ivory plaster wall, pale natural oak plank floor, small part of cream upholstered bed at far lower right OUTSIDE the wardrobe opening, narrow rug across bottom foreground below y935, entirely quiet empty wall either side. Soft natural daylight from off-frame left, no hard window-grid shadows, no plants or busy decor. Real interior magazine photography, subtle true grain and paint texture, architectural lens, natural dynamic range. NO CGI look, NO diagram, NO text, brand, logo, labels, watermark or collage. No mirror in base image. Door panels should fill the opening realistically and be the hero of the photograph."
+  },
+  {
     "id": "mirrors-with-cabinets",
     "source": "exec-c8016c01-ee25-4c9c-9b34-3abd16a6c38d.png",
     "asset": "public/images/shop/mirrors-cabinets-open.webp",

@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Vinyl (Surf)",
+    "slug": "vinyl-surf",
+    "hex": "#eff0f2",
+    "source": "https://www.stegbar.com.au/cdn/shop/files/1_a4e7342f-a028-4f0d-8e25-e9e84441421a.webp?v=1766507722&width=1400",
+    "asset": "public/images/shop/finishes/vinyl-surf.webp"
+  },
+  {
+    "name": "Matt Black",
+    "slug": "matt-black",
+    "hex": "#242426",
+    "source": "https://www.stegbar.com.au/cdn/shop/files/matt-black_2024.jpg?v=1765107403&width=1400",
+    "asset": "public/images/shop/finishes/matt-black.webp"
+  },
+  {
+    "name": "Polished Silver",
+    "slug": "polished-silver",
+    "hex": "#d8d8d8",
+    "source": "https://www.stegbar.com.au/cdn/shop/files/bright-silver_2024_63478521-6166-4aee-bdab-5cb0be075768.jpg?v=1766507143&width=1400",
+    "asset": "public/images/shop/finishes/polished-silver.webp"
+  },
+  {
+    "name": "Pearl White",
+    "slug": "pearl-white",
+    "hex": "#fdfdfd",
+    "source": "https://www.stegbar.com.au/cdn/shop/files/pearl-white.jpg?v=1766508572&width=1400",
+    "asset": "public/images/shop/finishes/pearl-white.webp"
+  },
+  {
+    "name": "Coastal Oak",
+    "slug": "coastal-oak",
+    "hex": "#c7b299",
+    "source": "https://www.polytec.com.au/img/products/960-960/coastal-oak.jpg",
+    "asset": "public/images/shop/finishes/coastal-oak.webp"
+  },
+  {
+    "name": "Notaio Walnut",
+    "slug": "notaio-walnut",
+    "hex": "#8f7964",
+    "source": "https://www.polytec.com.au/img/products/960-960/notaio-walnut.jpg",
+    "asset": "public/images/shop/finishes/notaio-walnut.webp"
+  },
+  {
+    "name": "Antico Oak",
+    "slug": "antico-oak",
+    "hex": "#8b7b6b",
+    "source": "https://www.polytec.com.au/img/products/960-960/antico-oak.jpg",
+    "asset": "public/images/shop/finishes/antico-oak.webp"
+  },
+  {
+    "name": "Polar White",
+    "slug": "polar-white",
+    "hex": "#f6f6f6",
+    "source": "https://www.polytec.com.au/img/products/960-960/polar-white.jpg",
+    "asset": "public/images/shop/finishes/polar-white.webp"
+  }
+]

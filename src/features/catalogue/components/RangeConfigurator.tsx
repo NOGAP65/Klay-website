@@ -453,8 +453,8 @@ function DenseField({
             // as a form bolted into a product card.
             ...typeScale.micro,
             color: tokens.inkSoft,
-            letterSpacing: '0.3em',
-            textTransform: 'uppercase',
+            letterSpacing: longestChoice(field) > 24 ? '0.04em' : '0.3em',
+            textTransform: longestChoice(field) > 24 ? 'none' : 'uppercase',
             // Right up against the caret, and the whole control right-aligned,
             // because the answer belongs at the end of the line where it was.
             textAlign: 'right',

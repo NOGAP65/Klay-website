@@ -65,11 +65,11 @@ import {
   SEMI_SCREEN_FINISHES,
   SEMI_SCREEN_HEIGHT_MM,
   SEMI_SCREEN_WIDTHS,
-  SHAKER_METAL_COLOURS,
   type CatalogueItem,
 } from './constants'
 import type { CartItem } from '@/features/cart'
 import { FRONT_RETURN_SIZES, frontReturnSizeLabel } from './lib/semiScreenPhoto'
+import { slidingOpenings, defaultSlidingOpening, SLIDING_METAL_COLOURS, type SlidingDoorStyle } from './lib/slidingDoors'
 import { mirrorShapes, mirrorDimensions, MIRROR_FRAME_COLOURS } from './lib/mirrorPhoto'
 import { CABINET_MIRROR_SHAPES, cabinetMirrorSpecifications } from './lib/cabinetMirror'
 
@@ -313,6 +313,8 @@ interface ProductOptions {
   specificationsOfVariant?: (variantId?: string) => { label: string; value: string }[]
   /** Paired dimensions vary with mirror shape and travel together into the quote. */
   dimensionsOfVariant?: (variantId: string | undefined) => ConfigChoice[]
+  dimensionsLabel?: string
+  defaultDimensionOfVariant?: (variantId: string | undefined) => string
   /** A glass choice precedes the existing fields only on products offering it. */
   glassChoices?: ConfigChoice[]
   /** WHERE THIS PRODUCT GOES, where the whole-house list is the wrong list.
@@ -352,6 +354,7 @@ interface ProductOptions {
   /** What the colour card is called for this product, where the catalogue item
    * carries one. */
   colourLabel?: string
+  colourKind?: 'swatches' | 'select'
   /** Overrides the blind hardware list. A wardrobe's visible metalwork is a
    * handle in one of the supplier's six finishes, not a blind's white / black /
    * chrome headrail. */
@@ -456,38 +459,24 @@ const SEMI_SCREEN_OPTIONS: ProductOptions = {
   defaultWidth: SEMI_SCREEN_DEFAULT_WIDTH_MM,
 }
 
-/** SHAKER SLIDING DOORS, framed and not — one configuration, two SKUs.
- *
- * Three questions, in the order they are decided: how many panels span the
- * opening, what the doors are, then what the metal holding them is.
- *
- * PANELS FIRST because it is the only one that depends on the opening rather
- * than on taste — a 1.8m robe takes two doors and a 2.4m one takes three — and
- * it is the answer that makes the other two mean something. Two and three,
- * which is what Stegbar sells the shaker slider in; their separate non-shaker
- * framed range also lists a four-panel door, and it is left off because it is
- * not a shaker.
- *
- * NO SIZE ROW. Stegbar publishes these as ranges rather than a stock list —
- * 440-2440 high against three width bands — which is another way of saying made
- * to measure. A row of bands would be asking the customer to pre-empt the
- * measure appointment, and the width is what the appointment is for.
- *
- * ONE OBJECT FOR BOTH, the way the two fixed shower panels share theirs. The
- * frame is the difference between the SKUs and it is not something the customer
- * picks, so there is nothing for the two configurations to disagree about — and
- * sharing means they cannot drift into disagreeing later. */
-const SHAKER_SLIDING_OPTIONS: ProductOptions = {
-  variantLabel: 'Panels',
-  variants: [v('two', 'Two'), v('three', 'Three')],
-  colourLabel: 'Door colour',
+// Mirror combinations are materials; names distinguish them from the solid panels.
+const slidingOptions = (style: SlidingDoorStyle): ProductOptions => ({
+  variantLabel: 'Doors',
+  variants: [v('two', 'Two doors'), v('three', 'Three doors')],
+  colourLabel: 'Door material & colour',
+  colourKind: 'select',
   hardwareLabel: 'Hardware colour',
-  hardwareChoices: SHAKER_METAL_COLOURS.map(c => ({ id: c.name, label: c.name, hex: c.hex })),
-}
+  hardwareChoices: style === 'shaker'
+    ? SLIDING_METAL_COLOURS.map(c => ({ id: c.name, label: c.name, hex: c.hex }))
+    : [{ id: 'White', label: 'White', hex: '#FDFDFD' }],
+  dimensionsLabel: style === 'framed' ? 'Dimensions (H × W)' : 'Opening size range (H × W)',
+  dimensionsOfVariant: panels => slidingOpenings(style, panels),
+  defaultDimensionOfVariant: panels => defaultSlidingOpening(style, panels),
+})
 
 const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
-  'shaker-framed-sliding-doors': SHAKER_SLIDING_OPTIONS,
-  'shaker-sliding-doors': SHAKER_SLIDING_OPTIONS,
+  'shaker-framed-sliding-doors': slidingOptions('framed'),
+  'shaker-sliding-doors': slidingOptions('shaker'),
   // BOTH MIRRORS SHOW EVERY SHAPE. They ask the same question and they used to
   // answer it with two different controls: framed comes in three shapes so it
   // drew chips, frameless comes in six so it fell past the dense card's
@@ -793,7 +782,7 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
     fields.push({
       id: 'colour',
       label: options.colourLabel ?? 'Colour',
-      kind: 'swatches',
+      kind: options.colourKind ?? 'swatches',
       choices: item.colours.map(c => ({ id: c.name, label: c.name, hex: c.hex })),
     })
   }
@@ -844,8 +833,9 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
   }
   if (!options.hardwareFirst) hardwareField()
   if (options.dimensionsOfVariant) {
-    fields.push({ id: 'dimension', label: 'Dimensions (H × W)', kind: 'select',
-      choices: options.dimensionsOfVariant(sel?.variant) })
+    fields.push({ id: 'dimension', label: options.dimensionsLabel ?? 'Dimensions (H × W)', kind: 'select',
+      choices: options.dimensionsOfVariant(sel?.variant),
+      defaultChoice: options.defaultDimensionOfVariant?.(sel?.variant) })
   }
   if (options.size) {
     fields.push({ id: 'size', label: 'Window size', kind: 'chips', choices: SIZE_CHOICES })

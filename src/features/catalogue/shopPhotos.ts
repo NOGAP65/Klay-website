@@ -18,6 +18,7 @@ export interface ShopPhoto {
   semi?: SemiScreenPhoto;
   mirror?: { framed: boolean };
   cabinetMirror?: boolean;
+  slidingDoor?: 'framed' | 'shaker';
 }
 
 // Traced on the 1024px photographs. Keep the camera and these silhouettes
@@ -195,6 +196,10 @@ function semiScreen(layout: SemiScreenPhoto['layout']): ShopPhoto {
 }
 
 export const SHOP_PHOTOS: Record<string, Record<string, ShopPhoto>> = {
+  'shaker-framed-sliding-doors': { default: { src: '/images/shop/sliding-framed.webp',
+    description: 'Framed sliding wardrobe doors with a white aluminium frame', slidingDoor: 'framed' } },
+  'shaker-sliding-doors': { default: { src: '/images/shop/sliding-shaker.webp',
+    description: 'Shaker sliding wardrobe doors with recessed timber panels', slidingDoor: 'shaker' } },
   'mirrors-with-cabinets': { default: { src: '/images/shop/mirrors-cabinets-open.webp',
     description: 'Shaped mirror with a white storage cabinet', cabinetMirror: true } },
   'mirrors-without-frames': { default: { src: '/images/shop/mirrors-quiet.webp',

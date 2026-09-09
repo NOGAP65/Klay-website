@@ -1,6 +1,6 @@
 # Shop product photos — September 2026
 
-Twenty-one generated product images and four supporting bathroom/reflection assets cover twelve product families. The two wall-mirror SKUs share one image; the cabinet mirrors share one further image across their three shapes. Each image is a 1024 × 1024 WebP. Colour variants are applied at runtime; there are no generated images per colour.
+Twenty-three generated product images and four supporting bathroom/reflection assets cover fourteen product families. The two wall-mirror SKUs share one image; the cabinet mirrors share one further image across their three shapes. Each image is a 1024 × 1024 WebP. Colour variants are applied at runtime; there are no generated images per colour. Eight sourced finish samples for the sliding doors are stored separately in `public/images/shop/finishes/`.
 
 | Product | Base images |
 | --- | --- |
@@ -9,6 +9,8 @@ Twenty-one generated product images and four supporting bathroom/reflection asse
 | Zip guide systems | Floor-to-beam mesh screen across an alfresco opening |
 | Wardrobes | Forma 1, Forma 2, Forma 3 |
 | Shelving | Linen 1, Linen 2, Linen 5, Linen Broom |
+| Framed Sliding Wardrobe Doors | One flat-panel sliding wardrobe photo, with dynamic Surf/mirror layouts and sizes |
+| Shaker Sliding Wardrobe Doors | One recessed-panel sliding wardrobe photo, with dynamic timber, mirror, hardware and size options |
 | Fixed frameless showerscreen | Clip fixed and Channel fixed, plus their shared empty bathroom |
 | Radius corner fixed frameless showerscreen | Clear and Narrow-reeded glass, each in Clip fixed and Channel fixed |
 | Semi-frameless (Front only) showerscreen | Front-only photo and matching empty alcove |
@@ -19,6 +21,8 @@ Twenty-one generated product images and four supporting bathroom/reflection asse
 The cabinet preview uses a shared physical height scale for the box and mirror. Round's 600mm face extends beyond the 530mm cabinet, and its curved backing meets both photographed hinges. Gothic and Pill meet the same fixed hinge positions. Shape changes redraw immediately, retaining the photographic shelves, quiet reflection and soft cabinet contact shadow.
 
 The images live in `public/images/shop/`. Asset paths and generation prompts/briefs are recorded in `shop-photo-prompts.json`. Original generated PNGs remain in the local Codex generated-images directory; only compressed production assets are shipped.
+
+Sliding door names, materials, dimensions, source precedence and preview behaviour are documented in [sliding-doors.md](sliding-doors.md). The user-supplied Signature PDF takes precedence for framed door configurations. The Shaker SKU follows Stegbar's Shop Online product pages, as the PDF has no Shaker section. Each uses one original photo from the built-in image tool; the website photographs are construction references and are not shipped. Colour changes fade; door count and dimensions redraw immediately.
 
 **Mirrors with Cabinets** uses `mirrors-cabinets-open.webp`. Stegbar's [Pill with White Cabinet](https://www.stegbar.com.au/products/pill-with-white-cabinet) open-door photograph was supplied directly to the built-in image tool as a construction reference, alongside Klay's approved quiet mirror image for room styling. The resulting original photograph shows a recessed white cabinet, two shelves, concealed hinges and a shaped mirror door viewed at an angle. The earlier closed, frontal draft was removed from public assets. The source Stegbar image is not shipped.
 
