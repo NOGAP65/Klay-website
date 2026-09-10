@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { computeHomography } from './homography';
+import { computeHomography, windowDepthProjection } from './homography';
 import { foldLean, foldDepth, MIN_FOLD_PITCH } from './curtainCloth';
 import { createCurtainLighting, type CurtainLighting } from './curtainLighting';
 
@@ -103,23 +103,9 @@ const HEM_SPLAY = 0.16;
 /** Extra wave depth at the hem, same reason. */
 const HEM_DEPTH_GAIN = 0.14;
 
-/** How far the hem rides up and down with fold depth, as a fraction of the fold's
- * own depth — and the same at the heading, where it is much smaller.
- *
- * Without this the panels are boxes. The waves live purely in z, the camera looks
- * straight down -z, so depth moved nothing on screen and the top and bottom edges
- * came out as dead straight horizontal lines across a rippling surface. A real
- * curtain's hem is scalloped: you are looking slightly DOWN at it, so the part of
- * each wave that bulges toward the room sits lower in frame than the part that
- * bows away, and the hem draws that out as a wave of its own.
- *
- * A true perspective camera would give this for free, but the orthographic one is
- * what keeps the render locked to the traced window, so the depth cue is applied
- * as a shear on y instead: a projection effect, which is what it is.
- *
- * Scaled off the reference render, where the hem's scallop measures about 17% of
- * the wave pitch peak-to-peak against a fold depth of ~0.41 of pitch. A little
- * over that here, since this is looked at much smaller than a 1535px still. */
+/** Small residual scallop in the relaxed cloth. Camera-angle parallax is
+ * handled separately by WINDOW_PROJECTION; this keeps the softly irregular
+ * hem shape from the photographed fabric rather than making it ruler-flat. */
 const HEM_DEPTH_SWING = 0.10;
 
 /** The heading gets a swing too, and this is what stops the top of the panel
@@ -951,8 +937,21 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
 
 // --- Shaders --------------------------------------------------------------
 
-const VERTEX_SHADER = `
+// Keep clip-space w so tracks and fabric interpolate in perspective.
+const WINDOW_PROJECTION = `
 uniform mat3 uQuadH;
+uniform vec3 uDepthColumn;
+uniform vec2 uFrame;
+vec4 projectWindow(vec4 world) {
+  vec3 p = uQuadH * vec3(world.xy, 1.0) + uDepthColumn * world.z;
+  return vec4(2.0 * p.xy / uFrame - p.z, 0.5 * (p.z - 1.0), p.z);
+}
+`;
+
+const VERTEX_SHADER = `
+${WINDOW_PROJECTION}
+uniform mat3 uViewNormal;
+varying vec3 vViewNormal;
 uniform mat4 uShadowMatrix;
 varying vec4 vShadow;
 attribute float aCompression;
@@ -960,33 +959,21 @@ attribute float aDepth;
 attribute vec2 aPhotoUv;
 varying vec2 vPhotoUv;
 
-uniform vec2 uFrame;
-
 varying vec3 vNormal;
 varying vec2 vUv;
 varying float vCompression;
 varying float vDepth;
-/** Where this fragment lands on the photograph, 0..1. The camera is an ortho
- *  box over the image, so warped world coordinates ARE image pixels. */
-varying vec2 vBackdrop;
 
 void main() {
   vNormal = normalMatrix * normal;
+  vViewNormal = uViewNormal * vNormal;
   vUv = uv;
   vPhotoUv = aPhotoUv;
   vCompression = aCompression;
   vDepth = aDepth;
-  // ONTO THE TRACED QUAD. Everything above is solved square — the waves, the
-    // sway, the track — in an axis-aligned box, and this is where it gets put
-    // back on a window that was photographed in perspective. modelMatrix first
-    // so the vertex is in world pixel space, then the homography with its
-    // perspective divide, then the ordinary projection.
-    vec4 world = modelMatrix * vec4(position, 1.0);
-    vShadow = uShadowMatrix * world;
-    vec3 warped = uQuadH * vec3(world.xy, 1.0);
-    world.xy = warped.xy / warped.z;
-    vBackdrop = world.xy / uFrame;
-    gl_Position = projectionMatrix * viewMatrix * world;
+  vec4 world = modelMatrix * vec4(position, 1.0);
+  vShadow = uShadowMatrix * world;
+  gl_Position = projectWindow(world);
 }
 `;
 
@@ -1008,7 +995,9 @@ uniform vec2 uTexRepeat;
 uniform vec3 uRoomTint;
 uniform float uRoomExposure;
 varying vec4 vShadow;
-varying vec2 vBackdrop;
+uniform vec2 uFrame;
+uniform float uFocal;
+varying vec3 vViewNormal;
 varying vec3 vNormal;
 varying vec2 vUv;
 varying float vCompression;
@@ -1030,7 +1019,8 @@ void main() {
   if (N.z < 0.0) N = -N;
   float tooth = texture2D(uTexture, vUv * uTexRepeat).r - 0.5;
   vec3 L = normalize(vec3(-0.75, 0.45, 1.0));
-  float facing = max(N.z, 0.0);
+  vec3 viewDirection = normalize(vec3((0.5 * uFrame - gl_FragCoord.xy) / uFocal, 1.0));
+  float facing = abs(dot(normalize(vViewNormal), viewDirection));
   float direct = max(dot(N,L), 0.0);
   // Use the shop photograph's actual fold falloff as the resting light field.
   // Every photographed valley is registered to one geometric return, so the
@@ -1047,6 +1037,7 @@ void main() {
   float fibre = pow(1.0 - facing, 2.0) * direct * 0.04;
   surface += vec3(fibre * dark);
   if (uIsSheer > 0.5) {
+    vec2 vBackdrop = gl_FragCoord.xy / uFrame;
     float path = texture2D(uDensity, vBackdrop).r * 12.0;
     float transmit = exp(-uOpacity * max(1.0, path));
     vec3 behind = texture2D(uBackdrop, vBackdrop).rgb;
@@ -1068,19 +1059,11 @@ const TRACK_MIN_PX = 5;
 const BRACKET_GAP_MM = 34;
 
 const TRACK_VERTEX_SHADER = `
-uniform mat3 uQuadH;
+${WINDOW_PROJECTION}
 varying vec2 vUv;
 void main() {
   vUv = uv;
-  // ONTO THE TRACED QUAD. Everything above is solved square — the waves, the
-    // sway, the track — in an axis-aligned box, and this is where it gets put
-    // back on a window that was photographed in perspective. modelMatrix first
-    // so the vertex is in world pixel space, then the homography with its
-    // perspective divide, then the ordinary projection.
-    vec4 world = modelMatrix * vec4(position, 1.0);
-    vec3 warped = uQuadH * vec3(world.xy, 1.0);
-    world.xy = warped.xy / warped.z;
-    gl_Position = projectionMatrix * viewMatrix * world;
+  gl_Position = projectWindow(modelMatrix * vec4(position, 1.0));
 }
 `;
 
@@ -1540,7 +1523,9 @@ export default function Canvas2DCurtainRenderer({
           [blPx.x, blPx.y],
         ];
         try {
-          const h = computeHomography(box, quad);
+          const raw = computeHomography(box, quad);
+          const centreW = raw[6] * (windowLeft + windowRight) / 2 + raw[7] * (windowTop + windowBottom) / 2 + raw[8];
+          const h = raw.map(n => n / centreW);
           // Matrix3.set takes row-major, which is what computeHomography returns.
           return new THREE.Matrix3().set(h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], h[8]);
         } catch {
@@ -1549,6 +1534,17 @@ export default function Canvas2DCurtainRenderer({
           return new THREE.Matrix3();
         }
       })();
+
+      const h = quadMatrix.clone().transpose().toArray();
+      const projection = windowDepthProjection(h, W, H);
+      const viewNormal = new THREE.Matrix3().fromArray(projection.basis).transpose().invert().transpose();
+      const projectionUniforms = {
+        uQuadH: { value: quadMatrix },
+        uDepthColumn: { value: new THREE.Vector3(...projection.depth) },
+        uViewNormal: { value: viewNormal },
+        uFocal: { value: projection.focal },
+        uFrame: { value: new THREE.Vector2(W, H) },
+      };
 
       // WAVE COUNT — from the trace itself. See wavesForTrace.
       //
@@ -1693,7 +1689,7 @@ export default function Canvas2DCurtainRenderer({
       const makeMaterial = () =>
         new THREE.ShaderMaterial({
           uniforms: {
-            uQuadH: { value: quadMatrix },
+            ...projectionUniforms,
             uShadowMap: { value: null },
             uShadowMatrix: { value: new THREE.Matrix4() },
             uDensity: { value: null },
@@ -1748,7 +1744,7 @@ export default function Canvas2DCurtainRenderer({
       // renderOrder -1 and no depth write: it is composited under the cloth and
       // over the photograph, and it must never occlude the panel that casts it.
       const shadowMaterial = new THREE.ShaderMaterial({
-        uniforms: { uQuadH: { value: quadMatrix }, uAlpha: { value: SILL_SHADOW_ALPHA } },
+        uniforms: { ...projectionUniforms, uAlpha: { value: SILL_SHADOW_ALPHA } },
         vertexShader: TRACK_VERTEX_SHADER,
         fragmentShader: SHADOW_FRAGMENT_SHADER,
         transparent: true,
@@ -1776,7 +1772,7 @@ export default function Canvas2DCurtainRenderer({
 
       const trackMaterial = new THREE.ShaderMaterial({
         uniforms: {
-          uQuadH: { value: quadMatrix },
+          ...projectionUniforms,
           uColour: { value: hardwareVec },
           uIsChrome: { value: hardwareColour === 'chrome' ? 1 : 0 },
           uRoomTint: { value: roomTint },
@@ -1797,7 +1793,7 @@ export default function Canvas2DCurtainRenderer({
       // edge of the opening as if it continued through the wall.
       const capW = Math.max(2, trackHeight * 0.46);
       const capMaterial = new THREE.ShaderMaterial({
-        uniforms: { uQuadH: { value: quadMatrix }, uColour: { value: hardwareVec }, uRoomTint: { value: roomTint } },
+        uniforms: { ...projectionUniforms, uColour: { value: hardwareVec }, uRoomTint: { value: roomTint } },
         vertexShader: TRACK_VERTEX_SHADER,
         fragmentShader: TRACK_CAP_FRAGMENT_SHADER,
         transparent: true,
@@ -1817,7 +1813,7 @@ export default function Canvas2DCurtainRenderer({
       const railShadow = new THREE.Mesh(
         new THREE.PlaneGeometry(windowWidth + capW, trackHeight * 2.2),
         new THREE.ShaderMaterial({
-          uniforms: {uQuadH:{value:quadMatrix},uAlpha:{value:0.12}},
+          uniforms: {...projectionUniforms,uAlpha:{value:0.12}},
           vertexShader:TRACK_VERTEX_SHADER, fragmentShader:SHADOW_FRAGMENT_SHADER,
           transparent:true, depthWrite:false,
         }),
@@ -1838,7 +1834,7 @@ export default function Canvas2DCurtainRenderer({
       }
 
       lightingRef.current?.dispose();
-      const lighting = createCurtainLighting(renderer, scene, camera, [leftPanel, rightPanel], quadMatrix, W, H, VERTEX_SHADER, isSheer);
+      const lighting = createCurtainLighting(renderer, scene, camera, [leftPanel, rightPanel], projectionUniforms, W, H, VERTEX_SHADER, isSheer);
       lightingRef.current = lighting;
       for (const material of materialsRef.current) {
         material.uniforms.uShadowMap.value = lighting.shadowMap;

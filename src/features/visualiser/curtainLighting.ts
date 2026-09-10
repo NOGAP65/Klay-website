@@ -12,7 +12,7 @@ export interface CurtainLighting {
  * pass sums the optical path through every sheer layer, including return faces. */
 export function createCurtainLighting(
   renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera,
-  panels: THREE.Mesh[], quad: THREE.Matrix3, width: number, height: number,
+  panels: THREE.Mesh[], projectionUniforms: Record<string, THREE.IUniform>, width: number, height: number,
   vertexShader: string, isSheer: boolean,
 ): CurtainLighting {
   const resolution = renderer.domElement.width > 1100 ? 1536 : 1024;
@@ -29,13 +29,16 @@ export function createCurtainLighting(
     .multiply(light.projectionMatrix).multiply(light.matrixWorldInverse);
   const depthMaterial = new THREE.MeshDepthMaterial({ side: THREE.DoubleSide });
   const densityMaterial = new THREE.ShaderMaterial({
-    uniforms: { uQuadH:{value:quad}, uFrame:{value:new THREE.Vector2(width,height)}, uShadowMatrix:{value:shadowMatrix} },
+    uniforms: { ...projectionUniforms, uShadowMatrix:{value:shadowMatrix} },
     vertexShader,
     fragmentShader: `
-      varying vec3 vNormal;
+      uniform vec2 uFrame;
+      uniform float uFocal;
+      varying vec3 vViewNormal;
       varying vec2 vUv;
       void main() {
-        float facing = max(0.12, abs(normalize(vNormal).z));
+        vec3 viewDirection = normalize(vec3((0.5 * uFrame - gl_FragCoord.xy) / uFocal, 1.0));
+        float facing = max(0.12, abs(dot(normalize(vViewNormal), viewDirection)));
         float hem = 1.0 - smoothstep(0.018, 0.024, vUv.y);
         float tape = smoothstep(0.965, 0.99, vUv.y);
         float path = (1.0 + hem * 1.2 + tape * 0.8) / facing;

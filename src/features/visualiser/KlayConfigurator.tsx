@@ -1576,6 +1576,14 @@ export default function KlayConfigurator({
             borderTop: `1px solid ${tokens.onDarkLine}`,
           }}
         >
+          {showTraceState && !isWardrobe && (
+            <p style={{ width: '100%', margin: 0, textAlign: 'center', fontSize: 12, lineHeight: 1.5, color: tokens.onDarkMuted }}>
+              {store.productCategory === 'curtain'
+                ? 'Place the top corners at the track ends and the bottom corners where the curtains should finish.'
+                : 'Place each corner on the matching corner of your window opening.'}
+              {' Follow the angle in your photo — the dotted lines show the fit.'}
+            </p>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: space.sm }}>{footerButtons}</div>
         </div>
       )}

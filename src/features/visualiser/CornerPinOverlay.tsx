@@ -1,4 +1,5 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { isValidWindowQuad, windowPlane } from './homography';
 
 export type Point = [number, number];
 
@@ -29,16 +30,15 @@ const DEFAULT_CORNERS_PCT: Point[] = [
 const TEAL = '#4ABFB5';
 
 // Corner order is [tl, tr, br, bl]. Each midpoint sits between the two
-// corners listed and, when dragged, moves only those two corners together
-// along a single axis (x for top/bottom, y for left/right) — this is what
-// lets the user skew/tilt the traced area to match perspective.
+// corners listed. Edge handles follow the pointer in both directions so an
+// angled opening can be resized without snapping to the photo's axes.
 type MidpointId = 'top' | 'bottom' | 'left' | 'right';
 
-const MIDPOINTS: { id: MidpointId; indices: [number, number]; axis: 'x' | 'y'; cursor: string }[] = [
-  { id: 'top', indices: [0, 1], axis: 'x', cursor: 'ew-resize' },
-  { id: 'right', indices: [1, 2], axis: 'y', cursor: 'ns-resize' },
-  { id: 'bottom', indices: [3, 2], axis: 'x', cursor: 'ew-resize' },
-  { id: 'left', indices: [0, 3], axis: 'y', cursor: 'ns-resize' },
+const MIDPOINTS: { id: MidpointId; indices: [number, number]; cursor: string }[] = [
+  { id: 'top', indices: [0, 1], cursor: 'move' },
+  { id: 'right', indices: [1, 2], cursor: 'move' },
+  { id: 'bottom', indices: [3, 2], cursor: 'move' },
+  { id: 'left', indices: [0, 3], cursor: 'move' },
 ];
 
 // Handles render at a fixed on-screen size regardless of image resolution
@@ -153,8 +153,17 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
       return () => ro.disconnect();
     }, []);
 
+    const updateCorners = useCallback((update: (prev: Point[]) => Point[]) => {
+      setCorners(prev => {
+        const next = update(prev).map(([x, y]): Point => [
+          Math.max(0, Math.min(imageWidth, x)), Math.max(0, Math.min(imageHeight, y)),
+        ]);
+        return isValidWindowQuad(next, Math.min(imageWidth, imageHeight) * 0.015) ? next : prev;
+      });
+    }, [imageWidth, imageHeight]);
+
     useImperativeHandle(ref, () => ({
-      confirm: () => onConfirm(corners),
+      confirm: () => { if (isValidWindowQuad(corners)) onConfirm(corners); },
     }), [corners, onConfirm]);
 
     const toImagePoint = useCallback(
@@ -191,7 +200,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
       if (activeIndex.current !== null) {
         const point = toImagePoint(e.clientX, e.clientY);
         const index = activeIndex.current;
-        setCorners(prev => prev.map((c, i) => (i === index ? point : c)));
+        updateCorners(prev => prev.map((c, i) => (i === index ? point : c)));
         return;
       }
       if (activeMidpoint.current !== null && lastMidpointPoint.current) {
@@ -201,12 +210,12 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
         const dy = point[1] - last[1];
         const config = MIDPOINTS.find(m => m.id === activeMidpoint.current)!;
         const [i, j] = config.indices;
-        setCorners(prev => prev.map((c, idx) =>
-          idx !== i && idx !== j ? c : config.axis === 'x' ? [c[0] + dx, c[1]] : [c[0], c[1] + dy]
+        updateCorners(prev => prev.map((c, idx) =>
+          idx !== i && idx !== j ? c : [c[0] + dx, c[1] + dy]
         ));
         lastMidpointPoint.current = point;
       }
-    }, [toImagePoint]);
+    }, [toImagePoint, updateCorners]);
 
     const handlePointerUp = useCallback(() => {
       activeIndex.current = null;
@@ -236,7 +245,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
       if (activeIndex.current !== null) {
         const point = toImagePoint(touch.clientX, touch.clientY);
         const index = activeIndex.current;
-        setCorners(prev => prev.map((c, i) => (i === index ? point : c)));
+        updateCorners(prev => prev.map((c, i) => (i === index ? point : c)));
         return;
       }
       if (activeMidpoint.current !== null && lastMidpointPoint.current) {
@@ -246,14 +255,18 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
         const dy = point[1] - last[1];
         const config = MIDPOINTS.find(m => m.id === activeMidpoint.current)!;
         const [i, j] = config.indices;
-        setCorners(prev => prev.map((c, idx) =>
-          idx !== i && idx !== j ? c : config.axis === 'x' ? [c[0] + dx, c[1]] : [c[0], c[1] + dy]
+        updateCorners(prev => prev.map((c, idx) =>
+          idx !== i && idx !== j ? c : [c[0] + dx, c[1] + dy]
         ));
         lastMidpointPoint.current = point;
       }
-    }, [toImagePoint]);
+    }, [toImagePoint, updateCorners]);
 
     const polygonPoints = corners.map(([x, y]) => `${x},${y}`).join(' ');
+    const plane = windowPlane(corners);
+    const guides = [1 / 3, 2 / 3].flatMap(t => [
+      [plane(t, 0), plane(t, 1)], [plane(0, t), plane(1, t)],
+    ]);
 
     // Convert the desired fixed CSS pixel sizes into viewBox (image pixel)
     // units using the SVG's actual rendered width, so handles stay a
@@ -284,6 +297,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', touchAction: 'none' }}
           onPointerMove={handleSvgPointerMove}
           onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
           onPointerLeave={handlePointerUp}
           onTouchMove={handleSvgTouchMove}
           onTouchEnd={handlePointerUp}
@@ -295,6 +309,11 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
             stroke={TEAL}
             strokeWidth={Math.max(imageWidth, imageHeight) * 0.004}
           />
+          {guides.map(([a, b], i) => (
+            <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]}
+              stroke="rgba(255,255,255,0.6)" strokeWidth={scale}
+              strokeDasharray={`${4 * scale} ${5 * scale}`} pointerEvents="none" />
+          ))}
           {corners.map(([x, y], i) => (
             <g key={i}>
               {/* Shadow crosshair, offset slightly, drawn first (underneath) */}
@@ -355,6 +374,16 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
                 stroke="none"
                 onPointerDown={handlePinPointerDown(i)}
                 onTouchStart={handlePinTouchStart(i)}
+                role="button"
+                tabIndex={0}
+                aria-label={`Adjust ${['top left', 'top right', 'bottom right', 'bottom left'][i]} corner`}
+                onKeyDown={e => {
+                  const delta = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+                  if (!delta) return;
+                  e.preventDefault();
+                  const step = scale * (e.shiftKey ? 10 : 1);
+                  updateCorners(prev => prev.map((c, j) => j === i ? [c[0] + delta[0] * step, c[1] + delta[1] * step] : c));
+                }}
                 style={{ cursor: 'crosshair', touchAction: 'none' }}
               />
             </g>

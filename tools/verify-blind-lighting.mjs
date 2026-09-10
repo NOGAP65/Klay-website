@@ -2,9 +2,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 
-const code = ts.transpileModule(readFileSync('src/features/visualiser/blindLighting.ts', 'utf8'), {
+const homography = ts.transpileModule(readFileSync('src/features/visualiser/homography.ts', 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
 }).outputText;
+const homographyUrl = `data:text/javascript;base64,${Buffer.from(homography).toString('base64')}`;
+const code = ts.transpileModule(readFileSync('src/features/visualiser/blindLighting.ts', 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+}).outputText.replace("'./homography'", JSON.stringify(homographyUrl));
 const { sampleBlindLighting, blindTextureCoordinates } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 
 const size = 100;
