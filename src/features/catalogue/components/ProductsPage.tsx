@@ -142,7 +142,7 @@ export default function ProductsPage() {
               }}
             >
               Blinds, curtains, shutters, awnings, wardrobes and shower screens — measured,
-              made and installed by hand across Victoria.
+              made and installed by hand across Australia.
             </p>
           </div>
         </section>

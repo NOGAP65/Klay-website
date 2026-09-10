@@ -39,7 +39,8 @@ export const MOTORISED_ADDON = 150
  *  CONFIRM THIS NUMBER BEFORE TAKING REAL PAYMENTS.
  *
  *  The configurator has always shown its estimate as "+ professional
- *  installation across Victoria" — i.e. install was quoted separately and
+ *  installation across Australia" — Victoria, when this was written — i.e.
+ *  install was quoted separately and
  *  never priced in the code. Charging the full amount up front means the
  *  checkout has to include it, so it needs a value, and this is a placeholder
  *  rather than a rate anyone at Klay has signed off.

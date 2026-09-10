@@ -147,4 +147,4 @@ export const PRODUCT_COUNT = PRODUCTS.length
  * quoted. Summing the two cards would inflate it and imply one card of 31. */
 export const COLOUR_COUNT = RYNAMIC_COLOURS.length
 
-export const PRICING_NOTE = 'All prices include professional installation across Victoria. Motorised upgrade available on all products.'
+export const PRICING_NOTE = 'All prices include professional installation across Australia. Motorised upgrade available on all products.'

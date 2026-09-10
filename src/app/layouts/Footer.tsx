@@ -151,7 +151,7 @@ export function Footer() {
               }}
             >
               Australian made-to-measure blinds, curtains and wardrobes — measured and installed
-              by hand across Victoria.
+              by hand across Australia.
             </p>
             <div style={{ marginTop: space.item }}>
               <FooterLink to={site.instagram}>{site.instagramHandle}</FooterLink>

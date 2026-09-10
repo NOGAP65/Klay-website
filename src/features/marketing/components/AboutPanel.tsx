@@ -15,10 +15,17 @@
 // what they do not know is who turns up at the house.
 //
 // EVERY CLAIM HERE IS ALREADY ON THE SITE. The measure and the install being
-// included, the Melbourne manufacture, the two-year warranty and the Victoria
-// coverage are the trust ticker's six items; the technicians being employed
-// rather than contracted is AboutPage's. Nothing is invented for this panel —
-// if a claim changes it has to change in those places too.
+// included, the Melbourne manufacture and the coverage are the trust ticker's
+// items; the technicians being employed rather than contracted is AboutPage's.
+// Nothing is invented for this panel — if a claim changes it has to change in
+// those places too.
+//
+// THE COVERAGE IS AUSTRALIA NOW, changed with site.coverage and the ticker. The
+// warranty is a loose end: the ticker dropped "2-Year Warranty" as a term of
+// sale rather than a reason to trust anyone, and this paragraph still states it.
+// It is left standing because dropping a warranty from prose is a decision about
+// what Klay offers rather than about what a strip says, and it is not this
+// file's to take. Flagged for V.
 // ---------------------------------------------------------------------------
 
 /** The clearest roller shot in the library — the bracket line across the head of
@@ -29,7 +36,7 @@ const IMAGE = '/images/rooms/room-living.png';
 
 const BODY = [
   'Every blind and curtain is cut to your window in Melbourne and fitted by our own technicians — the people who came to measure are the people who come back to install. Nothing is handed to whichever contractor happens to be free that week.',
-  'There are no showrooms and no sales reps, which is why the in-home measure and the installation are part of the price rather than lines added to the end of it. Two-year warranty, and we cover Victoria.',
+  'There are no showrooms and no sales reps, which is why the in-home measure and the installation are part of the price rather than lines added to the end of it. Two-year warranty, and we cover Australia.',
 ];
 
 export function AboutPanel() {

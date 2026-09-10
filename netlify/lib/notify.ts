@@ -172,7 +172,7 @@ export function confirmOrderPaid(args: {
          ${row('Total paid', formatAUD(args.amountCents / 100))}
        </table>
        <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#8A8580">
-         Made to measure in Australia, installed by hand across Victoria.
+         Made to measure in Australia, installed by hand across Australia.
        </p>`,
     ),
   )

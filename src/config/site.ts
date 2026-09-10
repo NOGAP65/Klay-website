@@ -39,7 +39,21 @@ export const address = '18 Maltings Cct, Epping VIC 3076';
 export const hoursShort = 'Mon–Fri 8am–6pm';
 export const hoursLong = 'Monday – Friday, 8am – 6pm';
 
-export const coverage = 'Victoria-wide — Melbourne metro and surrounds';
+/** WHERE KLAY WILL TRAVEL, and it is the country now.
+ *
+ * This read "Victoria-wide — Melbourne metro and surrounds", which the trust
+ * ticker stopped agreeing with when its coverage line became Australia-wide.
+ * One of the two had to move and this is the one every other surface reads, so
+ * it is the one that did: the contact page prints it as its Coverage field, and
+ * the footer, the shop banner, the pricing note, the About page, the service-area
+ * FAQ, the page's own meta description and the confirmation email all made the
+ * same claim in their own words. Every one of them is now Australia.
+ *
+ * ONE CLAIM, NINE PLACES, and only this one is a constant. The rest were prose
+ * — "installed by hand across Victoria" — which is why the site could contradict
+ * itself for as long as it did: nothing links a sentence in a footer to a
+ * sentence in an email. */
+export const coverage = 'Australia-wide — every state and territory';
 
 /** The legal footer line. `tradingEntity` and `abn` are the registered company,
  * not the brand — Klay Interiors is what customers deal with, Grand Kaman Pty

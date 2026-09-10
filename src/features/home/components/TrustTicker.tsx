@@ -59,11 +59,12 @@ export const BAR_HEIGHT = 38;
  * claiming Victoria and Australia in one loop contradicts itself, so this is a
  * replacement rather than an addition.
  *
- * THE FOOTER STILL SAYS VICTORIA. `site.coverage` reads "Victoria-wide —
- * Melbourne metro and surrounds" and the contact page and footer print it. That
- * is now inconsistent with this bar and it is deliberately NOT changed here:
- * where a business will travel is a commercial claim, and one line in a ticker
- * is not the place to decide it for every page at once. Flagged for V. */
+ * AND THE REST OF THE SITE FOLLOWED. This line was changed first and left the
+ * footer, the contact page, the shop banner, the pricing note, the About page,
+ * the service-area FAQ, the meta description and the confirmation email all
+ * still saying Victoria — nine places making one claim, of which only
+ * `site.coverage` was a constant and the other eight were prose. They are all
+ * Australia now; see the note on site.coverage for the list. */
 const CREDENTIALS = [
   'Free In-Home Measure Included',
   'Professional Installation Included',

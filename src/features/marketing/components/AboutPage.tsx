@@ -67,7 +67,7 @@ export default function AboutPage() {
         <div style={{ display: 'flex', gap: space.band, maxWidth: 1200, margin: '0 auto', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 320px' }}>
             <h2 style={{ ...headline.section, color: tokens.ink }}>
-              Made for Victorian homes.
+              Made for Australian homes.
             </h2>
           </div>
           <div style={{ flex: '1 1 420px' }}>
@@ -82,8 +82,8 @@ export default function AboutPage() {
               available that week.
             </p>
             <p style={{ ...supporting.onLight, fontSize: typeScale.lead.fontSize, lineHeight: 1.9, marginTop: 22 }}>
-              Everything ships out of our warehouse in Epping, and we cover Melbourne metro and surrounding
-              Victorian regions — the same team, start to finish, wherever you are in the state.
+              Everything ships out of our warehouse in Epping, and we cover Australia — every state and
+              territory, the same team start to finish, wherever you are.
             </p>
           </div>
         </div>

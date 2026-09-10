@@ -35,7 +35,7 @@ const FAQS = [
   },
   {
     q: 'What areas do you service?',
-    a: 'We cover Melbourne metro and surrounding Victorian regions. Enter your address at checkout or call us and we will confirm coverage and the next available measure slot for your suburb.',
+    a: 'We cover Australia — every state and territory. Enter your address at checkout or call us and we will confirm coverage and the next available measure slot for your suburb.',
   },
 ];
 
