@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { computeHomography } from './homography';
-import { FOLD_LEAN, foldDepth, MIN_FOLD_PITCH } from './curtainCloth';
+import { foldLean, foldDepth, MIN_FOLD_PITCH } from './curtainCloth';
 import { createCurtainLighting, type CurtainLighting } from './curtainLighting';
 
 // ---------------------------------------------------------------------------
@@ -98,7 +98,7 @@ const FRONT_SOFTNESS = 1.6;
  * pinned to its carrier; below that the fabric is free and a bunched panel
  * splays toward the room. Scaled by how compressed the panel is, so a shut
  * curtain hangs straight and the two panels never cross at the centre. */
-const HEM_SPLAY = 0.1;
+const HEM_SPLAY = 0.16;
 
 /** Extra wave depth at the hem, same reason. */
 const HEM_DEPTH_GAIN = 0.14;
@@ -120,7 +120,7 @@ const HEM_DEPTH_GAIN = 0.14;
  * Scaled off the reference render, where the hem's scallop measures about 17% of
  * the wave pitch peak-to-peak against a fold depth of ~0.41 of pitch. A little
  * over that here, since this is looked at much smaller than a 1535px still. */
-const HEM_DEPTH_SWING = 0.25;
+const HEM_DEPTH_SWING = 0.10;
 
 /** The heading gets a swing too, and this is what stops the top of the panel
  * reading as a box.
@@ -136,7 +136,7 @@ const HEM_DEPTH_SWING = 0.25;
  * The specks are fixed properly by HEADING_SINK below rather than by giving up
  * the scallop. Smaller than HEM_DEPTH_SWING because the projection effect really
  * does grow with distance below the camera axis. */
-const HEADING_DEPTH_SWING = 0.07;
+const HEADING_DEPTH_SWING = 0.018;
 
 /** Sinks the heading by its own worst upward excursion, so the scallop hangs
  * BELOW the track line instead of straddling it.
@@ -195,62 +195,9 @@ const HEADING_SINK = 1.12;
  * down the drop. Nothing did, because nothing was allowed to.
  */
 
-/** THE CARRIER PINCHES, THE HEM DOES NOT — AND NEITHER OF THEM CREASES.
- *
- * THIS WAS A CUSP AND IT LOOKED LIKE ONE. `sign(sin)·|sin|^e` with e below 1 has
- * an infinite derivative wherever the sine crosses zero: dz/dθ goes as
- * |θ|^(e-1), which at e = 0.72 diverges. That is not a tight radius, it is a
- * mathematical crease — a point of zero radius — and the normal swings through
- * it in the width of a single pixel. Hence the sharp edges on a stacked panel,
- * worst exactly there because that is where the folds crowd together and the
- * creases land next to each other.
- *
- * Cloth cannot do that. Fabric has bending stiffness, so there is a minimum
- * radius it can be folded to and it is never zero — a sheer creases softly, a
- * blockout more softly still, and neither comes to a point. The carrier pulls
- * the cloth in tight, but tight is a small radius, not no radius.
- *
- * So the exponent floors at 1, where the section is exactly the sine it should
- * have been all along: smooth everywhere, no derivative discontinuity anywhere
- * on the surface. The pinch idea was mine and it was wrong — reasoning from
- * "the carrier holds it" to "therefore it comes to a point" skipped the fact
- * that the thing being held is cloth.
- *
- * Kept as constants rather than deleted so the section stays one expression, and
- * so anything that wants to shape it later has the hook — but at or above 1,
- * always. Below 1 puts the crease back.
- *
- * At the heading the cloth is clamped every 80mm by a snap, so the wave is
- * pinched hard at each carrier and the lobe between them is pushed round and
- * full — a squarer wave than a sine. Below the tape nothing holds it, and the
- * section relaxes toward the plain sinusoid the fabric would take on its own.
- *
- * Applied as the exponent on |sin| with the sign kept: below 1 flattens the
- * lobe and steepens the crossing, which is what a pinched carrier does; at 1 it
- * IS the sine. The heading value is what the render was missing entirely.
- */
-const FOLD_PINCH_HEADING = 1.0;
-const FOLD_PINCH_HEM = 1.0;
-
-/** HOW FAR A FOLD'S CENTRELINE WANDERS BY THE HEM, in fractions of one wave.
- *
- * A fold is a hinge, not a rail. The top is fixed to a carrier and the bottom
- * is free, so every fold leans a little — never the same amount twice, and the
- * lean is what stops nine folds reading as nine printed lines. Seeded from the
- * same waveJitter that already varies the widths, so a fold that hangs wider
- * also leans further and the two irregularities agree instead of fighting.
- *
- * Superlinear in depth: the tape holds the top third almost straight and the
- * lean accumulates below it. Same shape, and the same reason, as
- * SWAY_SHAPE_POWER.
- *
- * 0.45 IS MEASURED OFF A PHOTOGRAPH, not chosen. In a backlit sheer at a window
- * the folds lean several degrees over the drop and no two lean alike — some
- * cross. The first pass used 0.17 and it still read as ruled lines, because a
- * sixth of a wave over two metres is under a degree and the eye does not see it.
- * Nearly half a wave does.
- */
-const FOLD_WANDER = 0.28;
+// Fixed at the tape, individual folds drift and bow gently down the drop.
+// The photo shading travels with the same vertices, preserving the fabric grain.
+const FOLD_WANDER = 0.38;
 const FOLD_WANDER_POWER = 1.35;
 
 /** THE WEIGHTED HEM BAND, which is stiffer than the cloth above it.
@@ -261,7 +208,7 @@ const FOLD_WANDER_POWER = 1.35;
  * the hem was a sawtooth — the sine at full amplitude cut straight across — and
  * a sawtooth hem is a paper fan, not a curtain.
  */
-const HEM_STIFFEN = 0.22;
+const HEM_STIFFEN = 0.32;
 const HEM_STIFFEN_SPAN = 0.08;
 
 /** HOW UNEVEN THE HEM IS, as a fraction of the drop.
@@ -845,9 +792,11 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
   // down every row. What is no longer in here is z and the normal: both are
   // functions of the row now, which is the whole of this change.
   const colX = new Float64Array(cols + 1);
-  const colPhase = new Float64Array(cols + 1);
+  const colSection = new Float64Array(cols + 1);
   const colAmp = new Float64Array(cols + 1);
   const colWander = new Float64Array(cols + 1);
+  const colLean = new Float64Array(cols + 1);
+  const colBow = new Float64Array(cols + 1);
   const colComp = new Float64Array(cols + 1);
   /** Extra arrival delay for this column, seconds. Interpolated between waves
    *  rather than stepped, or the panel creases where two neighbours are reading
@@ -855,6 +804,7 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
   const colStagger = new Float64Array(cols + 1);
   const staggerScale = travelTime * SWAY_FOLD_STAGGER;
 
+  const extendedWidth = span / count / (1 - overall * (1 - WAVE_MIN_RATIO));
   let cum = 0;      // distance from the leading edge at the current wave's start
   let wave = 0;
   for (let c = 0; c <= cols; c++) {
@@ -876,19 +826,21 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     const hi = i0 + 1 < 0 ? 0 : i0 + 1 > count - 1 ? count - 1 : i0 + 1;
     colAmp[c] = depths[lo] + (depths[hi] - depths[lo]) * f;
 
-    colPhase[c] = p * TAU;
+    colSection[c] = -colAmp[c] * Math.cos(p * TAU);
     // Measured from the WALL end so the hem splay reaches further toward the
     // room while the heading stays pinned to its end carrier.
     colX[c] = span - offset;
     colComp[c] = compressions[wave];
 
-    // The lean this fold takes by the hem, in radians of its own cycle. Same
-    // interpolation as the depth so it varies smoothly along the panel, and
-    // seeded from the same jitter, so the fold that hangs deeper is the one
-    // that also leans further. See FOLD_WANDER.
+    // Interpolate drift between adjacent folds so the panel stays continuous.
     const w0 = waveJitter(lo, 8.7);
     const w1 = waveJitter(hi, 8.7);
-    colWander[c] = FOLD_WANDER * TAU * (w0 + (w1 - w0) * f);
+    // Move each fold's whole cross-section, including its photographed light.
+    // Shifting only the depth phase left straight stripes painted on the cloth.
+    const edgeEase = Math.sin(Math.PI * p / count) * (1 - overall * 0.7);
+    colWander[c] = FOLD_WANDER * extendedWidth * (w0 + (w1 - w0) * f) * edgeEase;
+    colBow[c] = extendedWidth * 0.09 * (waveJitter(lo, 4.6) + (waveJitter(hi, 4.6) - waveJitter(lo, 4.6)) * f) * edgeEase;
+    colLean[c] = foldLean(widths[lo], extendedWidth) + (foldLean(widths[hi], extendedWidth) - foldLean(widths[lo], extendedWidth)) * f;
 
     // Per-fold arrival offset, interpolated between wave centres on the same
     // t/i0/f the depth uses — so it varies smoothly along the panel instead of
@@ -899,28 +851,6 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     const s1 = waveJitter(hi, 5.3);
     colStagger[c] = staggerScale * (s0 + (s1 - s0) * f);
   }
-
-  /** THE SECTION AT ONE HEIGHT.
-   *
-   * Three things happen to it on the way down and all three are gravity:
-   *   the carrier's pinch relaxes out    — FOLD_PINCH_*
-   *   the fold leans off vertical        — FOLD_WANDER
-   *   the weighted hem pulls the fold in — HEM_STIFFEN
-   *
-   * `sign(sin)·|sin|^e` rather than a plain sine: at e below 1 the lobe flattens
-   * and the crossing steepens, which is the shape a snap carrier forces on the
-   * cloth it is holding. At e = 1 it is exactly the sine it always was, which is
-   * what the free cloth near the hem relaxes back to.
-   */
-  const sectionZ = (c: number, vy: number): number => {
-    const pinch = FOLD_PINCH_HEADING + (FOLD_PINCH_HEM - FOLD_PINCH_HEADING) * vy;
-    const phase = colPhase[c] + colWander[c] * Math.pow(vy, FOLD_WANDER_POWER);
-    const s = -Math.cos(phase);
-    const shaped = s < 0 ? -Math.pow(-s, pinch) : Math.pow(s, pinch);
-    // The hem band, over the last HEM_STIFFEN_SPAN of the drop only.
-    const intoHem = smoothstep01((vy - (1 - HEM_STIFFEN_SPAN)) / HEM_STIFFEN_SPAN);
-    return colAmp[c] * shaped * (1 - HEM_STIFFEN * intoHem);
-  };
 
   // One row's z values, so the normal at a column can be taken from its
   // neighbours in the SAME row rather than from a slope that ignores height.
@@ -946,6 +876,9 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
   let v = 0;
   for (let r = 0; r <= ROWS; r++) {
     const vy = r / ROWS; // 0 at the heading, 1 at the hem
+    const driftWeight = Math.pow(vy, FOLD_WANDER_POWER);
+    const bowWeight = Math.sin(Math.PI * vy);
+    const intoHem = smoothstep01((vy - (1 - HEM_STIFFEN_SPAN)) / HEM_STIFFEN_SPAN);
     // Only a compressed panel splays: at openness 0 this is 1 and the two panels
     // meet cleanly at the centre instead of overlapping.
     const splay = 1 + HEM_SPLAY * vy * vy * overall;
@@ -975,7 +908,7 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     const rowSway = swayAgo ? swayAgo(rowDelay) : sway;
     const lagAtRow = rowSway * Math.pow(vy, SWAY_SHAPE_POWER);
 
-    for (let c = 0; c <= cols; c++) rowZ[c] = sectionZ(c, vy) * deepen;
+    for (let c = 0; c <= cols; c++) rowZ[c] = colSection[c] * (1 - HEM_STIFFEN * intoHem) * deepen;
 
     for (let c = 0; c <= cols; c++, v++) {
       const i3 = v * 3;
@@ -996,7 +929,8 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
       // wanders. See HEM_UNEVEN.
       const y = topY - (height - colShort[c] * vy) * vy;
 
-      positions[i3] = wallX + towardCentre * (colX[c] * splay + lag + (z + colAmp[c]) * FOLD_LEAN);
+      const relaxedDrift = colWander[c] * driftWeight + colBow[c] * bowWeight;
+      positions[i3] = wallX + towardCentre * (colX[c] * splay + lag + relaxedDrift + (z + colAmp[c]) * colLean[c]);
       positions[i3 + 1] = y - z * swing - sink;
       positions[i3 + 2] = z;
 
@@ -1126,57 +1060,11 @@ void main() {
 }
 `;
 
-// ---------------------------------------------------------------------------
-// THE TRACK
-//
-// Wave curtains do not hang from a pole, they hang from an aluminium track: a
-// slim extrusion with a channel along its underside, and gliders running in that
-// channel at the heading tape's snap spacing. What was here before was a single
-// gradient strip, which is why it read as a roller blind's tube — the two things
-// that make a track a track are the CHANNEL and the RUNNERS in it, and it had
-// neither.
-//
-// Drawn as a real profile seen dead on, top to bottom: a bright chamfer along the
-// top edge where the extrusion faces the ceiling, a flat front face falling away
-// gently, a lower chamfer picking up floor bounce, and a recessed channel in
-// shadow with the gliders visible inside it.
-//
-// Proportions are from the actual hardware — a 16mm face, gliders at 80mm centres
-// (which is the same 80mm that makes our 160mm wave pitch, so the runners land on
-// the wave zero-crossings by construction), brackets at 600mm centres.
-// ---------------------------------------------------------------------------
-
-/** Real profile height, mm. */
+// --- Track profile ---------------------------------------------------------
+// Slightly enlarge the 16 mm face to preserve the underside at preview sizes.
 const TRACK_FACE_MM = 16;
-
-/** How much the track is drawn oversized, and why it has to be.
- *
- * At true scale a 16mm track is under three pixels on the default room photo,
- * which cannot carry a chamfer, a channel and a row of gliders — it is one grey
- * line. So the profile is drawn about two and a half times life size. Everything
- * INSIDE it stays in correct proportion, and the two spacings that are big enough
- * to render honestly, the gliders and the brackets, are left at their real
- * dimensions. The alternative was a track nobody can see. */
-const TRACK_OVERSIZE = 2.4;
-
-/** Floor in pixels, so a small trace or a low-resolution photo still gets a track
- * with a readable profile rather than a hairline. */
-const TRACK_MIN_PX = 6;
-
-/** Glider centres, mm. The 80mm wave standard — and the same 80mm the heading
- * tape uses, so one glider sits at every point where the fabric crosses the track
- * plane. */
-const RUNNER_PITCH_MM = 80;
-
-/** How far a face-fixed track hangs below its fixing line, in mm.
- *
- * A face bracket screws to the wall above the opening and the track clamps into
- * its lower end, so the track sits roughly 34mm below the screws — about twice
- * the 16mm face. That drop is the whole visible difference between the two
- * mounts (the brackets themselves are not drawn; the track hides them), so it
- * has to survive the same 2.4x oversize the profile gets. Expressed as a bare
- * multiple of the track height it did not: at 1.15x, the track covered all but
- * about two pixels of it and the Ceiling/Window control looked inert. */
+const TRACK_OVERSIZE = 1.6;
+const TRACK_MIN_PX = 5;
 const BRACKET_GAP_MM = 34;
 
 const TRACK_VERTEX_SHADER = `
@@ -1219,127 +1107,43 @@ void main() {
 }
 `;
 
+// Broad matte face, softly rolled edges and a recessed underside. Runners are
+// mostly concealed by the heading; fixed beads across an open track look toothed.
 const TRACK_FRAGMENT_SHADER = `
-
-precision mediump float;
-
+precision highp float;
 uniform vec3 uColour;
+uniform vec3 uRoomTint;
 uniform float uIsChrome;
-/** Glider pitch in uv.x units, so runners can be drawn procedurally rather than
- * as nineteen more meshes. */
-uniform float uRunnerPitch;
-
 varying vec2 vUv;
-
 void main() {
-  float y = vUv.y;          // 1 at the top of the extrusion
-
-  // Two separate terms, and the split is the whole point.
-  //
-  // NOTE: no backticks anywhere in this file's GLSL — the shaders live in JS
-  // template literals, so one would end the string and break the build.
-  //
-  // diffuse is the anodising or paint. It MULTIPLIES the hardware colour, so it
-  // carries the hue — but multiplying is all the old shader did, and that is why
-  // only the white track worked. On #303030 black the entire 0.4-1.06 range
-  // collapses into near-black: channel, chamfers and gliders all landed within a
-  // few levels of each other and the profile read as a flat sticker.
-  //
-  // spec is the sheen, and it is ADDED, not multiplied — so it does not care how
-  // dark the base is. That is physically how a dark anodised extrusion stays
-  // legible in a real room: you read its shape from the light it throws back at
-  // you, not from parts of it getting darker.
-  float diffuse;
-  float spec;
-
-  if (y > 0.88) {
-    // TOP CHAMFER — faces the ceiling, takes the most light, and is what makes
-    // the track read as having a top surface at all.
-    diffuse = 0.98; spec = 0.45;
-  } else if (y > 0.40) {
-    // FRONT FACE. Falls away downward, gently: a flat face, not a tube. The
-    // original ramped hard over its whole height, which is what a cylinder does
-    // and is why it looked like a roller.
-    float t = (y - 0.40) / 0.48;
-    diffuse = mix(0.86, 1.0, t);
-    spec = 0.10 + 0.16 * t;
-  } else if (y > 0.29) {
-    // LOWER CHAMFER — turns down and forward, catching a little floor bounce.
-    diffuse = 0.92; spec = 0.22;
-  } else {
-    // CHANNEL. Recessed, so much the darkest part of the profile. This is the
-    // single feature that separates a track from a bar.
-    diffuse = 0.42; spec = 0.02;
-  }
-
-  // CHROME mirrors the room, and that is the only thing that distinguishes it
-  // from grey paint. Read down the face: ceiling (bright), the horizon line
-  // where wall meets ceiling (dark), then floor bounce (dim). The previous
-  // single sine over the whole height just banded the bar.
-  if (uIsChrome > 0.5) {
-    float sky     = smoothstep(0.62, 0.96, y);
-    float horizon = 1.0 - smoothstep(0.0, 0.09, abs(y - 0.58));
-    float bounce  = smoothstep(0.42, 0.30, y);
-    diffuse *= 1.0 - 0.34 * horizon;
-    spec += 0.85 * sky + 0.20 * bounce;
-  }
-
-  // GLIDERS in the channel — what the fabric actually hangs from, and at this
-  // spacing also the reason the waves fall where they do.
-  if (y <= 0.29) {
-    float u = vUv.x / max(uRunnerPitch, 1e-5);
-    float d = abs(fract(u) - 0.5) * 2.0;     // 0 at a glider's centre
-    // A dome, not the old hard-edged dash — that read as a stitched seam.
-    float bead = 1.0 - smoothstep(0.10, 0.62, d);
-    // Falls off vertically too, so each one is a bead sitting in the slot
-    // rather than a full-height bar filling it.
-    float vy = smoothstep(0.02, 0.26, y) * (1.0 - smoothstep(0.20, 0.29, y));
-    bead *= clamp(vy * 1.6, 0.0, 1.0);
-    diffuse = mix(diffuse, 0.86, bead);
-    // A small highlight on each crown, so the runners read on dark hardware too.
-    spec += bead * (1.0 - smoothstep(0.0, 0.34, d)) * 0.42;
-  }
-
-  // The slot's own opening along the very bottom edge — a dark hairline, which
-  // is what you actually see of a channel from the front.
-  float slot = 1.0 - smoothstep(0.0, 0.055, y);
-  diffuse *= 1.0 - slot * 0.5;
-  spec *= 1.0 - slot;
-
-  // Painted white hardware is matte; anodised black and polished chrome are not.
-  // Scaling the specular by how light the base already is keeps a white track
-  // from clipping to a blown-out bar, while letting a black one read fully.
-  float lum = dot(uColour, vec3(0.299, 0.587, 0.114));
-  float specGain = mix(1.0, 0.28, smoothstep(0.25, 0.85, lum));
-
-  vec3 col = uColour * diffuse + vec3(spec * specGain);
-  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+  float y = vUv.y;
+  float upper = smoothstep(0.74,0.98,y);
+  float lower = 1.0 - smoothstep(0.13,0.33,y);
+  float slot = 1.0 - smoothstep(0.035,0.13,y);
+  float diffuse = 0.89 + upper * 0.09 - lower * 0.16 - slot * 0.22;
+  float spec = 0.018 + upper * 0.038;
+  float reflectedBand = exp(-pow((y-0.70)/0.16,2.0));
+  spec += uIsChrome * (0.12 * reflectedBand + 0.06 * upper);
+  vec3 col = uColour * uRoomTint * diffuse + vec3(spec);
+  gl_FragColor = vec4(clamp(col,0.0,1.0),1.0);
 }
 `;
 
-/** End cap. Moulded, slightly proud of the profile, and flat rather than
- * chamfered — so it reads as a cap and not as more track. */
 const TRACK_CAP_FRAGMENT_SHADER = `
-precision mediump float;
+precision highp float;
 uniform vec3 uColour;
+uniform vec3 uRoomTint;
 varying vec2 vUv;
 void main() {
-  // Same diffuse + additive-specular split as the extrusion, for the same
-  // reason: a purely multiplicative cap vanishes on dark hardware, and then the
-  // track appears to run off through the wall again.
-  float diffuse = mix(0.78, 1.0, smoothstep(0.0, 0.85, vUv.y));
-  float spec = 0.30 * smoothstep(0.45, 1.0, vUv.y);
-  // Inner edge in shadow where it meets the extrusion.
-  float inner = 1.0 - smoothstep(0.0, 0.22, vUv.x);
-  diffuse *= 1.0 - inner * 0.18;
-  spec *= 1.0 - inner;
-
-  float lum = dot(uColour, vec3(0.299, 0.587, 0.114));
-  float specGain = mix(1.0, 0.28, smoothstep(0.25, 0.85, lum));
-  gl_FragColor = vec4(clamp(uColour * diffuse + vec3(spec * specGain), 0.0, 1.0), 1.0);
+  vec2 q = abs(vUv-0.5) - vec2(0.28,0.28);
+  float edge = length(max(q,0.0)) + min(max(q.x,q.y),0.0) - 0.22;
+  float alpha = 1.0 - smoothstep(-0.035,0.015,edge);
+  float roundLight = smoothstep(0.12,0.88,vUv.y);
+  float seam = 1.0 - smoothstep(0.0,0.10,vUv.x);
+  vec3 col = uColour * uRoomTint * (0.78 + 0.16*roundLight - seam*0.055) + vec3(0.024*roundLight);
+  gl_FragColor = vec4(clamp(col,0.0,1.0),alpha);
 }
 `;
-
 
 // The approved shop photograph supplies the blockout's fine fabric detail.
 // Its broad fold lighting is removed; geometry and the shadow pass provide it.
@@ -1970,22 +1774,12 @@ export default function Canvas2DCurtainRenderer({
       const trackZ = shutWaveWidth * DEPTH_PACKED * (1 + HEM_DEPTH_GAIN) * 1.3 + 1;
       const centreX = (windowLeft + windowRight) / 2;
 
-      // NO BRACKETS. They were drawn here and have been removed: in the room,
-      // looking at a curtain from anywhere a person actually stands, the track
-      // hides its own brackets almost completely. Drawing them put a row of hard
-      // tabs along the top that reads as hardware clutter and is not what the
-      // product looks like. The face-fix DROP stays — the track sitting lower
-      // than a ceiling fix is the real, visible difference between the mounts.
-
       const trackMaterial = new THREE.ShaderMaterial({
         uniforms: {
           uQuadH: { value: quadMatrix },
           uColour: { value: hardwareVec },
           uIsChrome: { value: hardwareColour === 'chrome' ? 1 : 0 },
-          // Glider pitch in uv.x. Real 80mm centres — and since the wave pitch is
-          // two of these, a glider lands on every wave zero-crossing without
-          // anything having to be aligned by hand.
-          uRunnerPitch: { value: (RUNNER_PITCH_MM * pxPerMm) / windowWidth },
+          uRoomTint: { value: roomTint },
         },
         vertexShader: TRACK_VERTEX_SHADER,
         fragmentShader: TRACK_FRAGMENT_SHADER,
@@ -1994,28 +1788,53 @@ export default function Canvas2DCurtainRenderer({
         new THREE.PlaneGeometry(windowWidth, trackHeight),
         trackMaterial,
       );
-      track.position.set(centreX, headingY + trackHeight / 2, trackZ);
+      track.position.set(centreX, headingY + trackHeight * 0.22, trackZ);
       track.renderOrder = 3;
       scene.add(track);
 
       // END CAPS — a track is cut to length and capped, and the cap is a moulded
       // part slightly proud of the extrusion. Without them the track runs off the
       // edge of the opening as if it continued through the wall.
-      const capW = Math.max(2, trackHeight * 0.42);
+      const capW = Math.max(2, trackHeight * 0.46);
       const capMaterial = new THREE.ShaderMaterial({
-        uniforms: { uQuadH: { value: quadMatrix }, uColour: { value: hardwareVec } },
+        uniforms: { uQuadH: { value: quadMatrix }, uColour: { value: hardwareVec }, uRoomTint: { value: roomTint } },
         vertexShader: TRACK_VERTEX_SHADER,
         fragmentShader: TRACK_CAP_FRAGMENT_SHADER,
+        transparent: true,
       });
       for (const [x, flip] of [[windowLeft, -1], [windowRight, 1]] as const) {
         const cap = new THREE.Mesh(
           new THREE.PlaneGeometry(capW, trackHeight * 1.06),
           capMaterial,
         );
-        cap.position.set(x + (flip * capW) / 2, headingY + trackHeight / 2, trackZ + 0.5);
+        cap.position.set(x + (flip * capW) / 2, headingY + trackHeight * 0.22, trackZ + 0.5);
         cap.scale.x = flip;
         cap.renderOrder = 4;
         scene.add(cap);
+      }
+
+      // A faint wall shadow seats the rail in the room, including when open.
+      const railShadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(windowWidth + capW, trackHeight * 2.2),
+        new THREE.ShaderMaterial({
+          uniforms: {uQuadH:{value:quadMatrix},uAlpha:{value:0.12}},
+          vertexShader:TRACK_VERTEX_SHADER, fragmentShader:SHADOW_FRAGMENT_SHADER,
+          transparent:true, depthWrite:false,
+        }),
+      );
+      railShadow.position.set(centreX,headingY-trackHeight*0.6,-2);
+      railShadow.renderOrder=-2;
+      scene.add(railShadow);
+      if (faceFixed) {
+        // Small wall-fix straps sit behind the rail instead of a floating gap.
+        const strapWidth=Math.max(2,trackHeight*0.38);
+        const strapHeight=bracketDrop-trackHeight*0.35;
+        for (const fraction of [0.05,0.5,0.95]) {
+          const strap=new THREE.Mesh(new THREE.PlaneGeometry(strapWidth,strapHeight),capMaterial);
+          strap.position.set(windowLeft+windowWidth*fraction,windowTop-strapHeight/2,trackZ-0.5);
+          strap.renderOrder=2;
+          scene.add(strap);
+        }
       }
 
       lightingRef.current?.dispose();

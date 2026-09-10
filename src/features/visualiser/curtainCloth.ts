@@ -1,6 +1,7 @@
 // A sheared wave has genuine return faces without intersecting itself:
 // x = pitch*t + lean*z, z = amplitude*sin(2*pi*t). The shear is invertible.
 export const FOLD_LEAN = 0.38;
+const RELAXED_LEAN = 0.08;
 export const FABRIC_FULLNESS = 2.25;
 export const MIN_FOLD_PITCH = 0.24;
 
@@ -14,11 +15,18 @@ export function foldArcLength(pitch: number, amplitude: number, lean = FOLD_LEAN
   return length;
 }
 
-export function solveFoldDepth(pitch: number, fabricLength: number): number {
+/** Open, rounded lobes only turn back under themselves as carriers gather. */
+export function foldLean(pitch: number, extendedPitch: number): number {
+  const compression = Math.max(0, Math.min(1, (1 - pitch / extendedPitch) / (1 - MIN_FOLD_PITCH)));
+  const eased = compression * compression * (3 - 2 * compression);
+  return RELAXED_LEAN + (FOLD_LEAN - RELAXED_LEAN) * eased;
+}
+
+export function solveFoldDepth(pitch: number, fabricLength: number, lean = FOLD_LEAN): number {
   let lo = 0, hi = fabricLength / 2;
   for (let i = 0; i < 20; i++) {
     const mid = (lo + hi) / 2;
-    if (foldArcLength(pitch, mid) < fabricLength) lo = mid;
+    if (foldArcLength(pitch, mid, lean) < fabricLength) lo = mid;
     else hi = mid;
   }
   return (lo + hi) / 2;
@@ -26,8 +34,10 @@ export function solveFoldDepth(pitch: number, fabricLength: number): number {
 
 // Solve at startup, then interpolate while dragging. Fabric length is conserved
 // as carriers gather, without running an iterative solver on every frame.
-const depthTable = Array.from({ length: 129 }, (_, i) =>
-  solveFoldDepth(MIN_FOLD_PITCH + i / 128 * (1 - MIN_FOLD_PITCH), FABRIC_FULLNESS));
+const depthTable = Array.from({ length: 129 }, (_, i) => {
+  const pitch = MIN_FOLD_PITCH + i / 128 * (1 - MIN_FOLD_PITCH);
+  return solveFoldDepth(pitch, FABRIC_FULLNESS, foldLean(pitch, 1));
+});
 
 export function foldDepth(pitch: number, extendedPitch: number): number {
   const ratio = Math.max(MIN_FOLD_PITCH, Math.min(1, pitch / extendedPitch));
