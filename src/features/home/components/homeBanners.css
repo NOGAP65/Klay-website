@@ -12,7 +12,7 @@
   width: 100%;
   height: 80vh;
   height: 80svh;
-  background: #000;
+  background: var(--banner-ink);
 }
 
 .home-hero {
@@ -20,7 +20,7 @@
   min-height: 0;
   padding-top: var(--home-nav-height);
   overflow: hidden;
-  background: #000;
+  background: var(--banner-ink);
   color: var(--banner-paper);
   display: flex;
   align-items: center;
@@ -41,7 +41,7 @@
 .home-hero h1 { margin: 0 0 30px; font-family: var(--banner-display); font-size: clamp(44px, 4.25vw, 84px); font-weight: 300; line-height: 1.02; letter-spacing: -.025em; text-shadow: 0 2px 16px rgba(29,29,29,.25); }
 .home-hero h1 em { font-weight: inherit; }
 
-.home-steps { --step-circle: 40px; background: #000; color: var(--banner-paper); padding: 22px clamp(16px, 4vw, 88px); }
+.home-steps { --step-circle: 40px; background: var(--banner-ink); color: var(--banner-paper); padding: 22px clamp(16px, 4vw, 88px); }
 .home-steps-intro { margin: 0 0 20px; text-align: center; text-transform: uppercase; letter-spacing: .22em; font-size: 11px; line-height: 1.6; font-weight: 400; }
 .home-steps-list { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
 .home-steps-list::before { content: ''; position: absolute; top: calc(var(--step-circle) / 2); left: 16.6667%; right: 16.6667%; height: 1px; background: var(--banner-accent); }
@@ -54,7 +54,7 @@
 .home-steps-link:hover h2 { text-decoration: underline; }
 .home-steps-copy p { margin: 4px 0 0; font-size: 12px; line-height: 1.6; color: var(--banner-on-dark); }
 
-.home-process { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 28%); grid-template-areas: 'content photo'; width: 100%; margin: 32px 0 56px; background: #000; color: var(--banner-on-accent); }
+.home-process { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 28%); grid-template-areas: 'content photo'; width: 100%; margin: 32px 0 56px; background: var(--banner-ink); color: var(--banner-on-accent); }
 .home-process-photo { grid-area: photo; position: relative; overflow: hidden; min-height: 280px; }
 .home-process-photo > img { position: absolute; width: 100%; height: 100%; object-fit: cover; object-position: 55% center; display: block; }
 .home-process-content { grid-area: content; padding: 34px clamp(24px, 3.5vw, 64px); min-width: 0; }
