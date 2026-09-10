@@ -1,9 +1,11 @@
 import * as THREE from 'three';
+import { CURTAIN_SCREEN_SPACE_GLSL } from './curtainScreenSpace';
 
 export interface CurtainLighting {
   shadowMap: THREE.Texture;
   shadowMatrix: THREE.Matrix4;
   densityMap: THREE.Texture;
+  resize: (width: number, height: number) => void;
   render: () => void;
   dispose: () => void;
 }
@@ -18,7 +20,11 @@ export function createCurtainLighting(
   const resolution = renderer.domElement.width > 1100 ? 1536 : 1024;
   const shadow = new THREE.WebGLRenderTarget(resolution, resolution);
   shadow.depthTexture = new THREE.DepthTexture(resolution, resolution, THREE.UnsignedIntType);
-  const density = new THREE.WebGLRenderTarget(renderer.domElement.width, renderer.domElement.height, { depthBuffer: false });
+  // Resolve subpixel fold edges before sampling their transmission. A sharp
+  // unsampled density pass over antialiased cloth produces dark comb lines.
+  const density = new THREE.WebGLRenderTarget(renderer.domElement.width, renderer.domElement.height, {
+    depthBuffer: false, samples: Math.min(4, renderer.capabilities.maxSamples),
+  });
   const scale = Math.max(width, height);
   const light = new THREE.OrthographicCamera(-scale * 0.72, scale * 0.72, scale * 0.72, -scale * 0.72, 1, scale * 4);
   const target = new THREE.Vector3(width / 2, height / 2, 0);
@@ -32,12 +38,11 @@ export function createCurtainLighting(
     uniforms: { ...projectionUniforms, uShadowMatrix:{value:shadowMatrix} },
     vertexShader,
     fragmentShader: `
-      uniform vec2 uFrame;
-      uniform float uFocal;
+      ${CURTAIN_SCREEN_SPACE_GLSL}
       varying vec3 vViewNormal;
       varying vec2 vUv;
       void main() {
-        vec3 viewDirection = normalize(vec3((0.5 * uFrame - gl_FragCoord.xy) / uFocal, 1.0));
+        vec3 viewDirection = curtainViewDirection();
         float facing = max(0.12, abs(dot(normalize(vViewNormal), viewDirection)));
         float hem = 1.0 - smoothstep(0.018, 0.024, vUv.y);
         float tape = smoothstep(0.965, 0.99, vUv.y);
@@ -49,6 +54,7 @@ export function createCurtainLighting(
   });
   return {
     shadowMap:shadow.depthTexture, shadowMatrix, densityMap:density.texture,
+    resize: (w, h) => density.setSize(w, h),
     render() {
       const visibility = scene.children.map(object => object.visible);
       // Floor contact-shadow decals are receivers, not solid shadow casters.

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { computeHomography, windowDepthProjection } from './homography';
 import { foldLean, foldDepth, MIN_FOLD_PITCH } from './curtainCloth';
 import { createCurtainLighting, type CurtainLighting } from './curtainLighting';
+import { CURTAIN_SCREEN_SPACE_GLSL, curtainDrawingSize } from './curtainScreenSpace';
 
 // ---------------------------------------------------------------------------
 // WAVE FOLD CURTAINS
@@ -499,16 +500,6 @@ const swaySettled = (state: SwayState): boolean =>
 const COLS_PER_WAVE = 24;
 const ROWS = 48;
 
-/** Ceiling on the render buffer's width in pixels.
- *
- * The canvas used to be sized to the photo's own resolution, which is fine for
- * the default 1254px room but means a 4000px phone photo shaded 16 MILLION
- * fragments per frame — enough to drop a low-end machine to single figures while
- * the slider moves. The result is CSS-scaled to the container either way, and
- * the ortho camera maps the world to the viewport rather than to pixels, so
- * capping the buffer costs nothing but sampling and changes no coordinates. */
-const RENDER_MAX_WIDTH = 1400;
-
 // The detail map covers each panel EXACTLY ONCE — it is not tiled.
 //
 // Tiling was tried twice and both ways showed. Plain repeat puts a hard join at
@@ -995,8 +986,7 @@ uniform vec2 uTexRepeat;
 uniform vec3 uRoomTint;
 uniform float uRoomExposure;
 varying vec4 vShadow;
-uniform vec2 uFrame;
-uniform float uFocal;
+${CURTAIN_SCREEN_SPACE_GLSL}
 varying vec3 vViewNormal;
 varying vec3 vNormal;
 varying vec2 vUv;
@@ -1019,7 +1009,7 @@ void main() {
   if (N.z < 0.0) N = -N;
   float tooth = texture2D(uTexture, vUv * uTexRepeat).r - 0.5;
   vec3 L = normalize(vec3(-0.75, 0.45, 1.0));
-  vec3 viewDirection = normalize(vec3((0.5 * uFrame - gl_FragCoord.xy) / uFocal, 1.0));
+  vec3 viewDirection = curtainViewDirection();
   float facing = abs(dot(normalize(vViewNormal), viewDirection));
   float direct = max(dot(N,L), 0.0);
   // Use the shop photograph's actual fold falloff as the resting light field.
@@ -1037,7 +1027,7 @@ void main() {
   float fibre = pow(1.0 - facing, 2.0) * direct * 0.04;
   surface += vec3(fibre * dark);
   if (uIsSheer > 0.5) {
-    vec2 vBackdrop = gl_FragCoord.xy / uFrame;
+    vec2 vBackdrop = curtainScreenUv();
     float path = texture2D(uDensity, vBackdrop).r * 12.0;
     float transmit = exp(-uOpacity * max(1.0, path));
     vec3 behind = texture2D(uBackdrop, vBackdrop).rgb;
@@ -1383,6 +1373,7 @@ export default function Canvas2DCurtainRenderer({
     let cancelled = false;
     let backdropTexture: THREE.Texture | undefined;
     let foldPhotoTexture: THREE.Texture | undefined;
+    let resizeObserver: ResizeObserver | undefined;
 
     const init = async () => {
       const bgCanvas = bgRef.current;
@@ -1405,9 +1396,9 @@ export default function Canvas2DCurtainRenderer({
       // The fabric buffer is capped; the ortho camera below still spans 0..W in
       // photo pixels, so world coordinates are unchanged and the two canvases
       // stay aligned — both are CSS-sized to the container.
-      const renderScale = Math.min(1, Math.min(RENDER_MAX_WIDTH, (containerRef.current?.clientWidth || W) * 1.6) / W);
-      threeCanvas.width = Math.round(W * renderScale);
-      threeCanvas.height = Math.round(H * renderScale);
+      const drawingSize = curtainDrawingSize(W, H, containerRef.current?.clientWidth || W, window.devicePixelRatio);
+      threeCanvas.width = drawingSize.width;
+      threeCanvas.height = drawingSize.height;
 
       const bgCtx = bgCanvas.getContext('2d');
       if (bgCtx) bgCtx.drawImage(photo, 0, 0);
@@ -1544,6 +1535,7 @@ export default function Canvas2DCurtainRenderer({
         uViewNormal: { value: viewNormal },
         uFocal: { value: projection.focal },
         uFrame: { value: new THREE.Vector2(W, H) },
+        uViewport: { value: new THREE.Vector2(threeCanvas.width, threeCanvas.height) },
       };
 
       // WAVE COUNT — from the trace itself. See wavesForTrace.
@@ -1842,12 +1834,26 @@ export default function Canvas2DCurtainRenderer({
         material.uniforms.uDensity.value = lighting.densityMap;
       }
       draw(opennessRef.current, 0);
+
+      // Rotating a phone or resizing the page must resize every lighting pass
+      // together. Geometry, the trace and the moving cloth are kept intact.
+      resizeObserver = new ResizeObserver(() => {
+        if (cancelled || !containerRef.current) return;
+        const size = curtainDrawingSize(W, H, containerRef.current.clientWidth, window.devicePixelRatio);
+        if (threeCanvas.width === size.width && threeCanvas.height === size.height) return;
+        renderer.setSize(size.width, size.height, false);
+        projectionUniforms.uViewport.value.set(size.width, size.height);
+        lighting.resize(size.width, size.height);
+        lighting.render();
+      });
+      if (containerRef.current) resizeObserver.observe(containerRef.current);
     };
 
     init();
 
     return () => {
       cancelled = true;
+      resizeObserver?.disconnect();
       backdropTexture?.dispose();
       foldPhotoTexture?.dispose();
       stopSolver();

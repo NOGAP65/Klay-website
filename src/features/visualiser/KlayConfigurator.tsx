@@ -1473,6 +1473,7 @@ export default function KlayConfigurator({
             ref={overlayRef}
             imageWidth={photoBitmap!.width}
             imageHeight={photoBitmap!.height}
+            photoUrl={store.photoUrl!}
             onConfirm={handleConfirmTrace}
             initialCornersPct={
               openingWidthFor(hookPhotoUrl) !== null
@@ -1584,7 +1585,7 @@ export default function KlayConfigurator({
               {' Follow the angle in your photo — the dotted lines show the fit.'}
             </p>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: space.sm }}>{footerButtons}</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', width: '100%', minWidth: 0, gap: space.sm }}>{footerButtons}</div>
         </div>
       )}
     </div>
