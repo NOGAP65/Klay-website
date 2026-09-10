@@ -1357,7 +1357,7 @@ function buildDetailTexture(path: string): Promise<FabricTexture> {
     canvas.width = 512; canvas.height = 1024;
     const ctx = canvas.getContext('2d')!;
     const fromShop = path.includes('/fabrics/');
-    if (fromShop) ctx.drawImage(img, 86, 105, 340, 585, 0, 0, 512, 1024);
+    if (fromShop) ctx.drawImage(img, 113, 105, 280, 585, 0, 0, 512, 1024);
     else ctx.drawImage(img, 0, 0, 512, 1024);
     const pixels = ctx.getImageData(0,0,512,1024);
     const low = document.createElement('canvas');
@@ -1764,7 +1764,8 @@ export default function Canvas2DCurtainRenderer({
       const waveCount = wavesForTrace((topEdge + bottomEdge) / 2, W);
       // Register the shop's photographed troughs to individual physical folds.
       // An atlas avoids UV jumps at repeated folds and preserves the full drop.
-      const troughs = [82,113,141,173,208,242,277,310,352,393];
+      // Start beyond the foreground plant and sofa in the source photograph.
+      const troughs = [113,141,173,208,242,277,310,352,393];
       const atlas = document.createElement('canvas');
       atlas.width = waveCount * 64; atlas.height = 1024;
       const atlasCtx = atlas.getContext('2d')!;
