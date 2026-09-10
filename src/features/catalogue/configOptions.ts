@@ -251,9 +251,9 @@ const WARDROBE_LOCATION_CHOICES: ConfigChoice[] = [
 ]
 
 const FLYSCREEN_LOCATION_CHOICES: ConfigChoice[] = [
-  { id: 'sliding-doors', label: 'Sliding doors' },
-  { id: 'laundry-door', label: 'Laundry door' },
-  { id: 'entry-door', label: 'Entry door' },
+  ...numberedLocations('sliding-door', 'Sliding door', 'Sliding doors', 5),
+  ...numberedLocations('laundry-door', 'Laundry door', 'Laundry doors', 5),
+  ...numberedLocations('entry-door', 'Entry door', 'Entry doors', 5),
 ]
 
 /** WHERE A ZIP SCREEN GOES — the two outdoor rooms it is bought for.
