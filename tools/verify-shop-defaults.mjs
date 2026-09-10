@@ -27,7 +27,7 @@ const { fieldsFor, defaultSelection, withChoice, configuredLine } = await import
 const find = id => CATALOGUE.find(item => item.id === id);
 const wardrobe = find('wardrobes');
 assert.deepEqual(defaultSelection(wardrobe), {
-  location: 'master-bedroom', variant: 'SRDTDH01', colour: 'Woodmatt Black Ply', width: '1800', hardware: 'Black',
+  location: 'master-bedroom', variant: 'SRDTDH01', colour: 'Matt Polar White', width: '1800', hardware: 'Black',
 });
 const shelf = find('shelving');
 const shelfDefault = defaultSelection(shelf);
@@ -63,4 +63,4 @@ for (const item of CATALOGUE) {
   const initial = defaultSelection(item);
   for (const field of fieldsFor(item, initial)) assert.ok(field.choices.some(c => c.id === initial[field.id]), `${item.id}: valid default for ${field.id}`);
 }
-console.log('Shop defaults: Forma 3/1800/black, Forma 8/2700, all numbered locations, distinct quote lines and valid dependent widths pass.');
+console.log('Shop defaults: Forma 3/1800/white/black handles, Forma 8/2700, all numbered locations, distinct quote lines and valid dependent widths pass.');

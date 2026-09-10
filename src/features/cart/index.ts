@@ -51,3 +51,4 @@ export { default as CartPage } from './components/CartPage';
 
 // --- the basket itself ------------------------------------------------------
 export { useCartStore, type CartItem } from './store/cartStore';
+export { CartPopover } from './components/CartPopover';

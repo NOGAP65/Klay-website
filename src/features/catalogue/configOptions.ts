@@ -659,7 +659,7 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   wardrobes: {
     defaultVariant: 'SRDTDH01',
     defaultWidth: 1800,
-    defaultColour: 'Woodmatt Black Ply',
+    defaultColour: 'Matt Polar White',
     defaultHardware: 'Black',
     variantLabel: 'Model',
     variants: modelsOfKind('built-in').map(m => v(m.id, m.name)),

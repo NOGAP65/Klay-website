@@ -49,7 +49,7 @@ import { Link } from 'react-router-dom';
 import * as routes from '@/config/routes';
 
 import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
-import { useCartStore } from '@/features/cart';
+import { CartPopover, useCartStore } from '@/features/cart';
 import { useIsMobile, useMediaQuery } from '@/shared';
 
 import { useKlayStore } from '../../store';
@@ -220,7 +220,6 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
 
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
-  const cartHover = useHover();
   const ctaHover = useHover();
 
   const isAlwaysSolid = solid || isCompressed;
@@ -342,62 +341,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
               the right of the primary CTA reads as the last word when it is the
               least important thing there. */}
           <div style={{ display: 'flex', alignItems: 'center', gap: CONTROL_GAP, flex: '0 0 auto' }}>
-            <Link
-              to={routes.cart}
-              {...cartHover.bind}
-              style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                // Square, and the same height as the CTA beside it — the cart and
-                // the button are a pair of controls. See NAV_CONTROL.
-                width: NAV_CONTROL,
-                height: NAV_CONTROL,
-                borderRadius: radius.md,
-                border: `1px solid ${cartHover.isHovered ? tokens.line : isOnDarkGround ? tokens.onDarkEdge : tokens.line}`,
-                // The hover wash follows the ground. A paper wash at 0.12 was
-                // the right move on a charcoal bar and is invisible on a paper
-                // one, so on light it inverts to ink at 0.06 — enough to read as
-                // a pressed state without becoming a second button.
-                background: cartHover.isHovered
-                  ? isOnDarkGround
-                    ? 'rgba(248,248,248,0.12)'
-                    : 'rgba(29,29,29,0.06)'
-                  : 'transparent',
-                color: linkColor,
-                textDecoration: 'none',
-                transition: 'all 0.2s ease',
-              }}
-              aria-label="Cart"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="9" cy="21" r="1" />
-                <circle cx="20" cy="21" r="1" />
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-              </svg>
-              {cartItemCount > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: -4,
-                  right: -4,
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  background: tokens.accent,
-                  color: tokens.onAccent,
-                  fontFamily: tokens.body,
-                  ...typeScale.micro,
-                  letterSpacing: 'normal',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  {cartItemCount}
-                </span>
-              )}
-            </Link>
+            <CartPopover color={linkColor} isOnDarkGround={isOnDarkGround} />
 
             {/* Shop Now. It was Book a Measure for a while, on the argument
                 that with SHOP already in the bar a Shop Now button beside it is
@@ -431,6 +375,8 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
       )}
 
       {isCollapsed && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, zIndex: 9001 }}>
+        <CartPopover color={linkColor} isOnDarkGround={isOnDarkGround} onOpen={() => setMenuOpen(false)} />
         <button
           aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
           onClick={() => setMenuOpen((v) => !v)}
@@ -456,6 +402,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
         >
           {isMenuOpen ? '✕' : '☰'}
         </button>
+        </div>
       )}
 
       {isCollapsed && isMenuOpen && (
