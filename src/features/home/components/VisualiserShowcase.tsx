@@ -109,6 +109,7 @@ const SELECTED = {
  * group headings under it. */
 function CategoryTabs() {
   const { productCategory, setProductCategory } = useVisualiserStore();
+  const isMobile = useIsMobile();
   const tabs: { id: ProductCategory; label: string }[] = [
     { id: 'blind', label: 'Blinds' },
     { id: 'curtain', label: 'Curtains' },
@@ -117,7 +118,7 @@ function CategoryTabs() {
   ];
 
   return (
-    <div style={{ display: 'flex', gap: space.hairline }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isMobile ? 2 : 4}, minmax(0, 1fr))`, gap: space.hairline }}>
       {tabs.map(tab => {
         const isActive = productCategory === tab.id;
         return (
