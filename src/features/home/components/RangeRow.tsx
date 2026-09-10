@@ -27,14 +27,24 @@
 // TWO AT A TIME, WITH ARROWS. A ShopCard is a photograph beside a column of
 // questions and it wants about 480px to be either of those things; four across
 // a 1280px band would give each 313 and neither half would work. Two is what
-// the card's own COLUMN_MIN allows, and the other two are one press away.
+// the card's own COLUMN_MIN allows, and the rest are one press away.
 //
-// PAIRED SO NO PAGE SHOWS TWO OF A KIND. The rule that picks these four — no
-// two may be the same sort of object — now decides their order as well: blinds
-// with wardrobes, curtains with the outdoor screen. Each page is one thing you
-// hang in a window and one thing you do not, which is the range's whole claim
-// made twice rather than a page of soft furnishings followed by a page of
-// everything else.
+// IT MOVES ONE CARD, NOT TWO, AND IT SLIDES. This began as a pager: two cards
+// swapped for the other two, instantly. Stepping by one is the better control
+// for four products — it gives three views rather than two, every adjacent pair
+// gets seen, and the card that stays put is what tells the eye the row moved
+// rather than the page changing under it. That only reads if it is animated: a
+// swap where one of the two happens to be identical is indistinguishable from a
+// stutter.
+//
+// SO IT IS A TRACK, NOT A SLICE. All four cards are always rendered in one row
+// and the row is translated; the wrapper clips. Nothing mounts or unmounts on a
+// press, which is also why the transition can be a plain transform — the
+// cheapest thing a browser animates, and no layout is touched by it.
+//
+// THE STEP IS COMPUTED, NOT MEASURED. One card plus one gap, in a calc against
+// the track's own width, so the slide stays exact at every viewport instead of
+// depending on a pixel read that is wrong for a frame after any resize.
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
@@ -93,6 +103,19 @@ const perPage = (isMobile: boolean) => (isMobile ? 1 : 2);
 const PAGER_SIZE = 40;
 const PAGER_GAP = 16;
 
+/** The gap between two cards on the track, and the same number the step is
+ * built from — held once because the two cannot disagree without the slide
+ * landing a gap out. */
+const CARD_GAP = 16;
+
+/** How long one card's travel takes.
+ *
+ * Long enough to be seen as travel rather than as a cut, short enough that a
+ * second press does not feel queued. The easing is the same
+ * cubic-bezier(0.22, 1, 0.36, 1) the range card's own expansion used — it
+ * arrives quickly and settles, which is what stops a slide reading as a drag. */
+const SLIDE_MS = 460;
+
 /** A chevron, drawn here rather than imported — the same reason the rest of the
  * site draws its own marks. Points whichever way it is told. */
 function Chevron({ direction }: { direction: 'left' | 'right' }) {
@@ -109,32 +132,38 @@ function Chevron({ direction }: { direction: 'left' | 'right' }) {
   );
 }
 
-/** One of the two pagers.
+/** One of the two arrows.
  *
- * IT WRAPS RATHER THAN DISABLING. With two pages a disabled arrow is a control
- * that is dead half the time it is looked at, and on a set this small there is
- * no sense of position to lose by cycling — the pair reads as "the other two",
- * not as a scrollbar. Both arrows therefore always work, which is also what
- * having one on each side is for. */
+ * IT DIMS AT THE END OF THE TRACK RATHER THAN VANISHING, which is the same call
+ * the quantity stepper in RangeConfigurator makes and for the same reason: a
+ * control that disappears at one end is a control the customer has to
+ * rediscover at the other. It used to wrap instead, which suited a two-page
+ * pager and does not suit a track — cycling from the last card back to the
+ * first is a slide the whole width of the row, and the one thing this animation
+ * is for is showing that the row moved by ONE. */
 function Pager({
   direction,
   onPress,
   label,
+  disabled,
   style,
 }: {
   direction: 'left' | 'right';
   onPress: () => void;
   label: string;
+  disabled: boolean;
   /** Where to put it. Flanking, the two are lifted out of flow into the page's
    * own margins — see the note where they are placed. */
   style?: React.CSSProperties;
 }) {
   const { isHovered, bind } = useHover();
+  const lit = isHovered && !disabled;
   return (
     <button
       {...bind}
       type="button"
       onClick={onPress}
+      disabled={disabled}
       aria-label={label}
       style={{
         flex: '0 0 auto',
@@ -146,10 +175,10 @@ function Pager({
         boxSizing: 'border-box',
         padding: 0,
         borderRadius: radius.md,
-        border: `1px solid ${isHovered ? tokens.lineStrong : tokens.line}`,
-        background: isHovered ? tokens.band : 'transparent',
-        color: tokens.ink,
-        cursor: 'pointer',
+        border: `1px solid ${lit ? tokens.lineStrong : tokens.line}`,
+        background: lit ? tokens.band : 'transparent',
+        color: disabled ? tokens.inkFaint : tokens.ink,
+        cursor: disabled ? 'default' : 'pointer',
         transition: motion.button,
         ...style,
       }}
@@ -161,14 +190,22 @@ function Pager({
 
 export function RangeRow() {
   const isMobile = useIsMobile();
-  const size = perPage(isMobile);
-  const pageCount = Math.ceil(RANGE.length / size);
+  const visible = perPage(isMobile);
 
-  /** WHICH PAGE, IN PAGES RATHER THAN IN CARDS. Holding an item offset instead
-   * would need re-deriving every time the breakpoint changed the page size, and
-   * would land the row mid-pair on a rotate. */
-  const [page, setPage] = useState(0);
-  const turn = (by: number) => setPage(p => (p + by + pageCount) % pageCount);
+  /** THE LEFTMOST CARD ON SCREEN, counted in cards.
+   *
+   * The furthest it can go is however many cards do not fit — four with two
+   * visible gives three positions, 0 to 2. It was a page number when the arrows
+   * moved two at a time; counting cards is what lets them move one.
+   *
+   * CLAMPED ON READ, not on write, because `visible` changes underneath it: a
+   * phone rotated to a tablet goes from four positions to three, and an index
+   * of 3 held from the narrow layout would slide the track a card past the end
+   * of itself. */
+  const [wanted, setWanted] = useState(0);
+  const lastIndex = Math.max(0, RANGE.length - visible);
+  const index = Math.min(wanted, lastIndex);
+  const step = (by: number) => setWanted(Math.min(Math.max(index + by, 0), lastIndex));
 
   /** EVERY CARD'S SELECTION, KEPT BY ID — the same shape the shop page holds.
    *
@@ -179,7 +216,15 @@ export function RangeRow() {
    * is touched and defaultSelection fills in for the rest. */
   const [sel, setSel] = useState<Record<string, Selection>>({});
 
-  const shown = RANGE.slice(page * size, page * size + size);
+  /** ONE CARD'S TRAVEL, as a CSS length against the track's own width.
+   *
+   * A card is its share of the visible band less the gaps between the shares;
+   * a step is that plus one gap. Written as a calc rather than a measurement so
+   * it stays exact through a resize — percentages in a translate resolve
+   * against the element's own border box, and the track's box IS the visible
+   * band, however wide that turns out to be. */
+  const cardWidth = `((100% - ${(visible - 1) * CARD_GAP}px) / ${visible})`;
+  const slide = `calc(-1 * ${index} * (${cardWidth} + ${CARD_GAP}px))`;
 
   const inner: React.CSSProperties = {
     maxWidth: layout.gridMax,
@@ -255,33 +300,55 @@ export function RangeRow() {
             <>
               <Pager
                 direction="left"
-                onPress={() => turn(-1)}
-                label="Previous bestsellers"
+                onPress={() => step(-1)}
+                label="Previous product"
+                disabled={index === 0}
                 style={{
                   position: 'absolute',
                   left: -(PAGER_SIZE + PAGER_GAP),
                   top: '50%',
                   transform: 'translateY(-50%)',
+                  zIndex: 1,
                 }}
               />
               <Pager
                 direction="right"
-                onPress={() => turn(1)}
-                label="More bestsellers"
+                onPress={() => step(1)}
+                label="Next product"
+                disabled={index === lastIndex}
                 style={{
                   position: 'absolute',
                   right: -(PAGER_SIZE + PAGER_GAP),
                   top: '50%',
                   transform: 'translateY(-50%)',
+                  zIndex: 1,
                 }}
               />
             </>
           )}
-          {/* minWidth 0 on the track, or a ShopCard's own content floors the
-              flex item and the pair overflows the band instead of sharing it. */}
-          <div style={{ display: 'flex', gap: space.item }}>
-            {shown.map(item => (
-              <div key={item.id} style={{ flex: '1 1 0', minWidth: 0 }}>
+          {/* THE WINDOW. It clips the track to the visible band — which is the
+              whole mechanism, and it is safe to clip because ShopCard carries
+              no shadow to cut off: border, radius and background, all inside its
+              own box. See the note on the article in ShopCard. */}
+          <div style={{ overflow: 'hidden' }}>
+            {/* THE TRACK. Every card, always rendered, always in order; only its
+                offset changes. willChange because this is the one thing on the
+                section that animates, and it keeps the slide off the main
+                thread's paint. */}
+            <div
+              style={{
+                display: 'flex',
+                gap: CARD_GAP,
+                transform: `translateX(${slide})`,
+                transition: `transform ${SLIDE_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                willChange: 'transform',
+              }}
+            >
+              {RANGE.map(item => (
+                // flex-basis rather than `1 1 0`: the cards off screen have to
+                // keep the same width as the ones on it, and a growing basis
+                // would share the track between four instead of showing two.
+                <div key={item.id} style={{ flex: `0 0 calc(${cardWidth})`, minWidth: 0 }}>
                 <ShopCard
                   item={item}
                   sel={sel[item.id] ?? defaultSelection(item)}
@@ -300,12 +367,13 @@ export function RangeRow() {
                     }))
                   }
                 />
-              </div>
-            ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* The phone's pagers, and mobile's Shop All under them. Centred as a
+        {/* The phone's arrows, and mobile's Shop All under them. Centred as a
             pair rather than ranged out to the edges: at this width they are two
             controls sitting together, not the ends of a track. */}
         {isMobile && (
@@ -318,8 +386,18 @@ export function RangeRow() {
               paddingTop: space.group,
             }}
           >
-            <Pager direction="left" onPress={() => turn(-1)} label="Previous bestsellers" />
-            <Pager direction="right" onPress={() => turn(1)} label="More bestsellers" />
+            <Pager
+              direction="left"
+              onPress={() => step(-1)}
+              label="Previous product"
+              disabled={index === 0}
+            />
+            <Pager
+              direction="right"
+              onPress={() => step(1)}
+              label="Next product"
+              disabled={index === lastIndex}
+            />
           </div>
         )}
         {isMobile && (
