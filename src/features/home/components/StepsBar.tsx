@@ -31,65 +31,59 @@
 // all. See data/steps.ts.
 //
 // ---------------------------------------------------------------------------
-// WHY IT MOVES NOW, having been a centred static row.
+// STATIC AGAIN, AND THREE STEPS — asked for, and the reversal is worth its own
+// note because the argument this bar was built on is directly below.
 //
-// Measured in the running page at 1440: the four steps occupied 425px and the
-// other 1,015 were empty charcoal. A centred row cannot fix that — the wider the
-// viewport, the more dead ground it grows on both sides, and the strip reads as a
-// caption somebody forgot to widen rather than as a band of the page. A marquee
-// has no such failure mode. Its content is cut by both edges by definition, so
-// the bar is full at every width there is, and 1440 is not a special case of it.
+// It moved because of a measurement: at 1440 the four steps occupied 425px and
+// the other 1,015 were empty charcoal, and a CENTRED row cannot fix that — the
+// wider the viewport, the more dead ground it grows on both sides. That was
+// true, and it is answered here without motion. The three steps are DISTRIBUTED
+// across the band rather than huddled in the middle of it, so the bar is full at
+// every width for the same reason the marquee was: nothing is centred, the
+// content reaches both edges of the container. What the marquee bought at the
+// cost of a permanently moving strip, `space-between` buys for nothing.
 //
-// It is also the move the brands Klay is measured against actually make. Monday
-// Haircare runs seven credentials as a 34px black strip, uppercase micro-caps,
-// wide tracking, no dividers, looping forever; Kookaï and Allbirds run 26 and
-// 32px announcement bars. Not one of the three has a how-it-works section at all,
-// because nothing about buying shampoo needs explaining — Klay's process does,
-// and the marquee is how that brand family would say it.
+// And a moving strip has a cost the note below never priced. This bar is a LINK,
+// and it was a link whose target slid out from under the pointer — hence the
+// pause-on-hover that had to be bolted to it. A reader deciding whether to press
+// something should not have to chase it. Static, that whole problem is gone
+// along with the marquee keyframes, the doubled track, the compositor layer and
+// the separate reduced-motion path.
+//
+// THREE, NOT FOUR, and the labels changed with the count: Buy, Professional
+// measure, Professional install. That is the process from the customer's side —
+// what they do, then the two things Klay turns up and does. The four-step story
+// (Design, Measure, Make, Install) is the marketing one and still lives on
+// /how-it-works, which this bar still links to; see the note on BAR_STEPS for
+// why this file no longer reads STEPS.
 //
 // ARROWS, NOT DOTS, and this is the whole difference from the trust ticker. That
-// strip is a LIST of six credentials in any order and separates them with `·`.
-// This one is a SEQUENCE of four steps in the only order they happen, and an
-// arrow between them says so at a glance without a word being spent on it.
-//
-// IT IS NOT DIFFERENTIATED FROM THE TICKER BY SPEED, which was the first
-// instinct and the wrong one. Both strips are briefly on screen together — the
-// hero is cut so this bar shows under it — and two marquees at one pace would
-// read as one mechanism running twice. But the arrows, the inverted colourway
-// and the pause-on-hover already say they are different things, so the speed is
-// free to be set on its own merits. See DURATION_S.
+// strip is a LIST of credentials in any order and separates them with `·`. This
+// one is a SEQUENCE in the only order it happens, and an arrow between them says
+// so at a glance without a word being spent on it. There is no arrow after the
+// last step now — it only existed because the strip looped, and step 03 is
+// followed by nothing.
 // ---------------------------------------------------------------------------
 
 import { Link } from 'react-router-dom';
 
 import * as routes from '@/config/routes';
 
-import { tokens, space, type as typeScale, useHover, usePrefersReducedMotion } from '@/ds';
-import { STEPS } from '@/features/marketing';
+import { tokens, space, layout, type as typeScale, useHover } from '@/ds';
+import { useIsMobile } from '@/shared';
 
-/** One full pass of the four steps — and it is set from a measured width, not a
- * guessed one.
+/** THE THREE STEPS THIS BAR SAYS, and it no longer reads STEPS from marketing.
  *
- * The four steps with their promises measure 1,277px in the running page (the
- * rendered track is 2,555, being two copies of that). This was first written as
- * 64s on an estimate of ~2,400px per run, which would have run the strip at
- * 20px/s — a step taking sixteen seconds to cross, and over a minute before a
- * reader had seen all four. Nobody stays above the fold for a minute.
+ * That constant is the four-step story — Design, Measure, Make, Install, each
+ * with an actor, a body, a promise and a photograph — and it belongs to
+ * /how-it-works, which renders all of it. This bar wants three labels and
+ * nothing else, so borrowing that array meant taking a `label` out of four
+ * objects and dropping the rest, and it meant that changing what the bar says
+ * would change what the page says.
  *
- * The constraint that actually sets this: the bar is half-cut by the fold, so it
- * is on screen from load, and a visitor gives the top of a page something like
- * ten or fifteen seconds. The whole sequence has to pass inside that. 1,277px
- * over 24s is 53px/s, which does it — and is comfortably readable rather than
- * frantic at 10 and 12px.
- *
- * It ends up about a quarter faster than the ticker's 42px/s. That is fine, and
- * it is not what tells the two strips apart; see the header note.
- *
- * Note this only binds below about 1,300px of viewport. Wider than that, one run
- * is narrower than the screen and the reader has the entire sequence in front of
- * them at every instant regardless of pace — the speed is doing its work on
- * phones, which is where a 1,277px run is genuinely hiding three of four steps. */
-const DURATION_S = 24;
+ * Three plain strings, held here, is the honest shape of what this component
+ * needs. The page keeps its four steps; the bar keeps its three. */
+const BAR_STEPS = ['Buy', 'Professional measure', 'Professional install'];
 
 /** THE BAR'S OWN RENDERED HEIGHT, exported so the hero can position the fold
  * against it rather than carrying a literal.
@@ -108,94 +102,70 @@ const DURATION_S = 24;
  * the fold instead of sitting squarely above it. Same reason the constant has to
  * be derived: half of a stale number is still stale.
  *
- * Unchanged by the marquee rewrite, which is the point of the rewrite: the strip
- * gained the full width and the four promises without gaining a pixel of height. */
+ * Unchanged by the marquee rewrite, and unchanged again by going static: the
+ * padding and the label's type are what set it, and neither moved. The hero's
+ * fold lands where it always did. That is worth stating rather than assuming —
+ * a bar that changed height here would silently misplace the fold on the
+ * homepage, which is the failure this constant exists to prevent. */
 export const STEPS_BAR_HEIGHT = space.item * 2 + Math.round(12 * 1.6);
 
-/** One pass of the four steps. Rendered twice inside the track — the animation
- * travels exactly -50%, so the wrap lands on an identical frame and the seam
- * cannot be seen. The second copy is aria-hidden so a screen reader is not read
- * the same four steps twice. */
-function Run() {
+/** ONE STEP: its ordinal, its label, and the arrow that leads to the next.
+ *
+ * The arrow belongs to the step BEFORE the gap rather than being a child of the
+ * row, because that is what lets the row distribute: five flex children — step,
+ * arrow, step, arrow, step — would space the arrows as though they were steps
+ * and leave them floating in the middle of nothing. Attached, each step is one
+ * indivisible object and the three of them share the band between them. */
+function Step({ label, index, isLast }: { label: string; index: number; isLast: boolean }) {
   return (
-    <>
-      {STEPS.map((step, i) => (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'baseline',
+        gap: space.tight,
+        flexShrink: 0,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <span
+        style={{
+          ...typeScale.label,
+          fontFamily: tokens.display,
+          letterSpacing: 'normal',
+          lineHeight: 1,
+          // FULL GOLD. It was gold at 0.5, which measured 2.45 on charcoal —
+          // the numeral was decoration the eye could not resolve rather than
+          // the ordering mark it is there to be. At full strength it measures
+          // 5.53. It still reads as subordinate to the label because it is set
+          // in the display face at label size, which is a quieter difference
+          // than opacity and a legible one.
+          color: tokens.onDark,
+        }}
+      >
+        {String(index + 1).padStart(2, '0')}
+      </span>
+      <span style={{ ...typeScale.label, color: tokens.onDark }}>{label}</span>
+      {/* NOT AFTER THE LAST ONE. The old strip drew an arrow after every step
+          including the fourth, because it looped and step 04 was followed by
+          step 01 — a missing arrow at the seam was the one frame that would
+          have given the wrap away. Nothing follows step 03 now, and an arrow
+          pointing off the end of a finished sequence promises a fourth step
+          that does not exist. */}
+      {!isLast && (
         <span
-          key={step.label}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'baseline',
-            gap: space.tight,
-            flexShrink: 0,
-            whiteSpace: 'nowrap',
-          }}
+          aria-hidden="true"
+          style={{ color: tokens.onDarkEdge, paddingLeft: space.group, fontSize: 12 }}
         >
-          <span
-            style={{
-              ...typeScale.label,
-              fontFamily: tokens.display,
-              letterSpacing: 'normal',
-              lineHeight: 1,
-              // FULL GOLD. It was gold at 0.5, which measured 2.45 on charcoal
-              // — the numeral was decoration the eye could not resolve rather
-              // than the ordering mark it is there to be. At full strength it
-              // measures 5.53. It still reads as subordinate to the label
-              // because it is set in the display face at label size, which is
-              // a quieter difference than opacity and a legible one.
-              color: tokens.onDark,
-            }}
-          >
-            {String(i + 1).padStart(2, '0')}
-          </span>
-          <span style={{ ...typeScale.label, color: tokens.onDark }}>{step.label}</span>
-          {/* THE PROMISE, in micro rather than label and sentence case rather
-              than caps — but at FULL GOLD, not dimmed.
-              It has to sit beside the label without competing with it: the label
-              is the ordering mark you scan, this is the reason to keep reading,
-              and caps at the same size would have made every step two headlines.
-              Size and case do that on their own.
-              Opacity was the obvious third separation and it is the wrong one,
-              for exactly the reason the numeral above is no longer dimmed. Gold
-              at 0.72 measures 3.59:1 on charcoal, and 10px at weight 500 is not
-              large-scale text under 1.4.3 — large-scale starts at 18px, or 14px
-              bold — so the floor here is 4.5 and nothing short of full gold
-              clears it (0.85 only reaches 4.41). Full gold measures 5.53. */}
-          <span
-            style={{
-              ...typeScale.micro,
-              textTransform: 'none',
-              letterSpacing: '0.06em',
-              color: tokens.onDark,
-              paddingLeft: space.tight,
-            }}
-          >
-            {step.promise}
-          </span>
-          {/* AN ARROW, not the ticker's dot — these four are a sequence, and the
-              arrow carries the ordering the dot throws away. Drawn on light edge
-              rather than gold so it separates the steps without becoming a fifth
-              gold thing per step to look at.
-              After the last step as well as between them, because the strip
-              loops: step 04 is followed by step 01, and a missing arrow at the
-              seam is the one frame that would give the wrap away. */}
-          <span
-            aria-hidden="true"
-            style={{ color: tokens.onDarkEdge, padding: `0 ${space.group}px`, fontSize: 12 }}
-          >
-            →
-          </span>
+          →
         </span>
-      ))}
-    </>
+      )}
+    </span>
   );
 }
 
 export function StepsBar() {
   const { isHovered, bind } = useHover();
-  // Read once, on mount. A strip that slides sideways forever is precisely what
-  // this preference exists to stop — index.html also kills every animation
-  // under the same query, so this is belt and braces for the DOM it renders.
-  const shouldReduceMotion = usePrefersReducedMotion();
+  const isMobile = useIsMobile();
 
   return (
     <Link
@@ -209,47 +179,52 @@ export function StepsBar() {
         // the link it is. Same move the dark CTA makes everywhere else.
         background: isHovered ? tokens.ink : tokens.charcoal,
         transition: 'background 0.25s ease',
-        // Hidden while it animates, scrollable when it does not — under reduced
-        // motion the reader needs some way to reach the steps that sit off the
-        // right edge. klay-hscroll hides the scrollbar itself.
-        overflowX: shouldReduceMotion ? 'auto' : 'hidden',
-        // No horizontal padding, unlike the static row this replaces. A marquee
-        // is meant to be cut by both edges; inset by space.item it would instead
-        // appear and disappear a gutter early, which reads as a clipping bug
-        // rather than as a strip running past the viewport.
         padding: `${space.item}px 0`,
       }}
-      className={shouldReduceMotion ? 'klay-hscroll' : undefined}
     >
+      {/* THE BAND'S OWN CONTAINER, and the padding is back on it.
+          The marquee deliberately had none — a strip meant to be cut by both
+          edges would otherwise appear and disappear a gutter early, which reads
+          as a clipping bug. A static row has the opposite need: the first
+          ordinal and the last label are meant to sit ON the page's margins,
+          lining up with the heading of the section below rather than running
+          into the viewport edge.
+          SPACE-BETWEEN IS WHAT REPLACES THE MOTION. Centred, three steps would
+          be a 500px huddle in the middle of a 1440px band with the same dead
+          charcoal either side that sent this bar to a marquee in the first
+          place. Distributed, the row reaches both margins at every width, which
+          is the property the marquee was bought for. */}
       <div
+        className="klay-hscroll"
         style={{
+          maxWidth: layout.gridMax,
+          margin: '0 auto',
+          padding: `0 ${layout.inlinePad(isMobile)}px`,
           display: 'flex',
           alignItems: 'baseline',
-          width: 'max-content',
-          // Its own compositor layer, so the transform never repaints the bar.
-          // See TrustTicker: the rAF version of this pattern cost 296 style
-          // recalculations a second while idle. A keyframed transform costs none.
-          willChange: 'transform',
-          animation: shouldReduceMotion ? undefined : `klay-marquee ${DURATION_S}s linear infinite`,
-          // Pauses under the pointer, which the trust ticker deliberately does
-          // not do. The difference is that this strip is a link: a reader who
-          // has brought the cursor here is deciding whether to click, and a
-          // target that keeps moving under the pointer is one they have to
-          // chase. The ticker is not clickable and stopping it reads as broken.
-          animationPlayState: isHovered ? 'paused' : 'running',
-          paddingLeft: space.group,
+          // Distributed on a desktop, packed on a phone. Below the breakpoint
+          // the three steps are wider than the screen — "Professional install"
+          // alone is most of a phone — so spacing them apart would only push
+          // the third further out of reach. Packed and swipeable, the reader
+          // gets step 01 in place and the rest a thumb away.
+          justifyContent: isMobile ? 'flex-start' : 'space-between',
+          gap: isMobile ? space.group : 0,
+          // ONE LINE, ALWAYS. Wrapping is the one thing this row must not do:
+          // STEPS_BAR_HEIGHT is derived from a single label's line box and the
+          // hero positions its fold against it, so a second line would silently
+          // land the fold in the wrong place. It scrolls instead, with the
+          // scrollbar hidden by klay-hscroll.
+          overflowX: 'auto',
         }}
       >
-        <Run />
-        {/* The second copy exists only so the -50% wrap lands on an identical
-            frame. Under reduced motion nothing wraps — the track is a plain
-            horizontal scroller — and the copy would just mean a reader who
-            scrolls it reaches step 04 and then finds all four again. */}
-        {!shouldReduceMotion && (
-          <div aria-hidden="true" style={{ display: 'flex', alignItems: 'baseline' }}>
-            <Run />
-          </div>
-        )}
+        {BAR_STEPS.map((label, index) => (
+          <Step
+            key={label}
+            label={label}
+            index={index}
+            isLast={index === BAR_STEPS.length - 1}
+          />
+        ))}
       </div>
     </Link>
   );

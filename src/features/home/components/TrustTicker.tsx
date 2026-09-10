@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// 1. Trust ticker — six credentials, moving continuously, before anything else.
+// 1. Trust ticker — five credentials, moving continuously, before anything else.
 //
 // This replaces the announcement bar, which rotated three marketing lines with a
 // crossfade. The difference is not cosmetic. A rotator shows ONE claim at a time
@@ -11,7 +11,7 @@
 //
 // It is also a different claim. The bar sold offers ("see it in your home before
 // you buy"); this sells legitimacy — measure, installation, where it is made,
-// warranty, coverage, and the two things Klay does not have. That is the question
+// how far Klay travels, and the two things it does not have. That is the question
 // being asked in the first second on the page, and it is asked before the brand
 // name has even been read.
 //
@@ -30,23 +30,45 @@ import { tokens, space, type as typeScale, usePrefersReducedMotion } from '@/ds'
  *
  * It was a pixels-per-second speed, which a rAF loop can honour directly and a
  * CSS animation cannot — a keyframed transform is given a duration, and the
- * distance is however wide the content turns out to be. Six credentials at this
- * type size run roughly 1,700px, so 40s is about 42px/s: the same pace the loop
- * ran at, expressed the way CSS needs it.
+ * distance is however wide the content turns out to be. So the duration has to
+ * be set from the run's measured width, and it drifts whenever the list changes
+ * length. The note that used to sit here said so and left it at that.
  *
- * The trade is that the pace now drifts slightly with the length of the list
- * rather than being exact. For a credential bar that is not a real cost, and it
- * buys back 296 style recalculations a second. */
-const DURATION_S = 40;
+ * IT DRIFTED. Six credentials measured roughly 1,700px, and 40s was about
+ * 42px/s. Dropping the warranty took the run to 1,465px measured in the running
+ * page, which at 40s is 36.6px/s — the same strip reading a sixth slower for no
+ * reason anybody chose. 35s puts it back at 41.9.
+ *
+ * A credential bar can carry a little drift; it should not carry a whole
+ * revision of its pace as a side effect of an edit to its copy. If the list
+ * changes again, measure the track and divide by 42. */
+const DURATION_S = 35;
 
 export const BAR_HEIGHT = 38;
 
+/** FIVE NOW, AND THE COVERAGE IS THE COUNTRY.
+ *
+ * The warranty is gone. "2-Year Warranty" is a term of sale rather than a
+ * reason to trust anyone — it is the sort of line every competitor's badge soup
+ * carries, which is exactly the register this strip is built to stay out of, and
+ * on a bar that a visitor reads in one pass it was spending a sixth of the list
+ * on the least persuasive thing Klay could say.
+ *
+ * And "Victoria-Wide Coverage" is now "Australia-Wide Coverage", which is a
+ * change of fact and not of wording. The two could not both stand: a strip
+ * claiming Victoria and Australia in one loop contradicts itself, so this is a
+ * replacement rather than an addition.
+ *
+ * THE FOOTER STILL SAYS VICTORIA. `site.coverage` reads "Victoria-wide —
+ * Melbourne metro and surrounds" and the contact page and footer print it. That
+ * is now inconsistent with this bar and it is deliberately NOT changed here:
+ * where a business will travel is a commercial claim, and one line in a ticker
+ * is not the place to decide it for every page at once. Flagged for V. */
 const CREDENTIALS = [
   'Free In-Home Measure Included',
   'Professional Installation Included',
   'Custom Made in Melbourne',
-  '2-Year Warranty',
-  'Victoria-Wide Coverage',
+  'Australia-Wide Coverage',
   'No Sales Reps. No Showrooms.',
 ];
 
