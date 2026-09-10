@@ -222,6 +222,9 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
   // become two rows.
   const stacked = useIsMobile();
   const { isHovered, bind } = useHover();
+  /** Its own hover, because it underlines on its own rather than with the card
+   * — the card's `isHovered` lights the whole tile and lifts the picture. */
+  const enquiryHover = useHover();
 
   /** THE PHOTOGRAPH FOR THIS CONFIGURATION, where one has been taken. Looked up
    * in the generated manifest rather than assembled from a template — see
@@ -312,10 +315,19 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
           alignItems: 'stretch',
         }}
       >
-        <Link
-          to={item.to}
+        {/* NOT A LINK ANY MORE. This column was an anchor to `item.to` — the
+            contact form — so clicking the photograph took the customer off the
+            card and onto an enquiry. That is the wrong destination for the most
+            obvious click on a shop card: the picture is the thing being
+            configured, right next to a colour row and an Add to cart, and a
+            customer pressing it is asking to look closer, not to leave and
+            write to us.
+            It also swallowed everything under it. The anchor wrapped the
+            assurance lines too, so "5-year warranty" was a link to an enquiry
+            form. The enquiry is offered explicitly at the foot of the column
+            now, in words, which is the honest way to ask for it. */}
+        <div
           style={{
-            textDecoration: 'none',
             // Half the card each on a desktop. Stacked, the picture takes the
             // full width and its own ratio decides its height.
             // More of the card than the questions get. A square frame is as
@@ -680,7 +692,42 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
               </span>
             ))}
           </div>
-        </Link>
+
+          {/* THE WAY OUT FOR SOMEBODY WHO IS NOT BUYING TODAY, and it is the
+              destination the photograph used to hold — offered in words instead
+              of hidden under an image.
+              MARGIN-TOP AUTO IS THE ALIGNMENT. The questions column pushes its
+              price and Add to cart to its own bottom, so pushing this to the
+              bottom of the picture column lands the two on the same line
+              without either knowing the other's height. Centred across the
+              picture rather than ranged left, because it belongs to the whole
+              column rather than to the assurance list above it.
+              Stacked, the column is content-sized and there is no spare height
+              for auto to take, so it simply follows the assurances with a gap
+              of its own. */}
+          <div style={{ marginTop: stacked ? space.item : 'auto', paddingTop: space.snug, textAlign: 'center' }}>
+            <Link
+              {...enquiryHover.bind}
+              to={item.to}
+              style={{
+                ...typeScale.micro,
+                letterSpacing: 'normal',
+                textTransform: 'none',
+                // accentEdge, not the button's accent: this is bronze TYPE, and
+                // the palette measures the fill at 4.16 on band where the
+                // deeper sibling clears everywhere — 6.63 on this card. Same
+                // decision as the nav's SHOP.
+                color: tokens.accentEdge,
+                textDecoration: 'none',
+                borderBottom: `1px solid ${enquiryHover.isHovered ? tokens.accentEdge : 'transparent'}`,
+                paddingBottom: 1,
+                transition: 'border-color 0.2s ease',
+              }}
+            >
+              Not ready to buy? Talk to us.
+            </Link>
+          </div>
+        </div>
 
         {/* THE QUESTIONS, in the other column. It fills the height the
             photograph set, and pushes its own price and Add to cart to the
