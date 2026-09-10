@@ -244,6 +244,18 @@ const SHELVING_LOCATION_CHOICES: ConfigChoice[] = [
   { id: 'other', label: 'Other' },
 ]
 
+const WARDROBE_LOCATION_CHOICES: ConfigChoice[] = [
+  { id: 'master-bedroom', label: 'Master' },
+  ...Array.from({ length: 5 }, (_, i) => ({ id: `bedroom-${i + 1}`, label: `Bedroom ${i + 1}` })),
+  { id: 'other', label: 'Other' },
+]
+
+const FLYSCREEN_LOCATION_CHOICES: ConfigChoice[] = [
+  { id: 'sliding-doors', label: 'Sliding doors' },
+  { id: 'laundry-door', label: 'Laundry door' },
+  { id: 'entry-door', label: 'Entry door' },
+]
+
 /** WHERE A ZIP SCREEN GOES — the two outdoor rooms it is bought for.
  *
  * Same reasoning as the screens above, in the other direction: a zip system is
@@ -483,6 +495,7 @@ const SEMI_SCREEN_OPTIONS: ProductOptions = {
 
 // Mirror combinations are materials; names distinguish them from the solid panels.
 const slidingOptions = (style: SlidingDoorStyle): ProductOptions => ({
+  locationChoices: WARDROBE_LOCATION_CHOICES,
   variantLabel: 'Doors',
   variants: [v('two', 'Two doors'), v('three', 'Three doors')],
   colourLabel: 'Door material & colour',
@@ -638,6 +651,7 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     colourLabel: 'Colour',
   },
   'pleated-flyscreens': {
+    locationChoices: FLYSCREEN_LOCATION_CHOICES,
     variantLabel: 'Configuration',
     variants: FLYSCREEN_CONFIGURATIONS.map(configuration => v(configuration.id, configuration.name)),
     hardwareLabel: 'Frame colour',
@@ -657,6 +671,7 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // nothing in the range is a sliding unit; it was describing the category
   // rather than anything orderable.
   wardrobes: {
+    locationChoices: WARDROBE_LOCATION_CHOICES,
     defaultVariant: 'SRDTDH01',
     defaultWidth: 1800,
     defaultColour: 'Matt Polar White',
@@ -673,6 +688,7 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   },
   // Signature LS01 / US01 layouts, fixed at the PDF's 2400 × 2400 footprint.
   'walk-in-wardrobes': {
+    locationChoices: WARDROBE_LOCATION_CHOICES,
     defaultColour: 'Matt Polar White',
     defaultHardware: 'T24 Brushed Matt Black',
     variantLabel: 'Model',

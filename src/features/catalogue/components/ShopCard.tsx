@@ -265,16 +265,10 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
         // lift, and there is no longer a plate under the image to raise.
       }}
     >
-      {/* THE HEAD, spanning both columns. Stacked, the name sat between the
-          picture and the questions and read as a caption on the photograph;
-          across the top it does a name's job — says what this whole card is
-          about before either column starts.
-
-          The link is a real one: on the shop, unlike the homepage, a product
-          page is somewhere a customer might actually want to go. */}
-      <Link
-        to={item.to}
-        style={{ display: 'block', textDecoration: 'none', flex: '0 0 auto', marginBottom: space.snug }}
+      {/* Keep the product heading and photograph on the configurator. The
+          explicit enquiry link below is the way to open the contact page. */}
+      <div
+        style={{ display: 'block', flex: '0 0 auto', marginBottom: space.snug }}
       >
         <div
           style={{
@@ -302,7 +296,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             {item.tagline}
           </p>
         )}
-      </Link>
+      </div>
 
       {/* THE TWO COLUMNS. */}
       <div
@@ -724,7 +718,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                 transition: 'border-color 0.2s ease',
               }}
             >
-              Not ready to buy? Talk to us.
+              Not ready to buy? Enquire now
             </Link>
           </div>
         </div>
