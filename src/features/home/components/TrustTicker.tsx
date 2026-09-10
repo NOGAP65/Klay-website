@@ -68,7 +68,7 @@ export const BAR_HEIGHT = 38;
 const CREDENTIALS = [
   'Free In-Home Measure Included',
   'Professional Installation Included',
-  'Custom Made in Melbourne',
+  'Custom Made in Australia',
   'Australia-Wide Coverage',
   'No Sales Reps. No Showrooms.',
 ];

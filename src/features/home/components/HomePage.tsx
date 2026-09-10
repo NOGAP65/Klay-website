@@ -143,11 +143,11 @@ export default function HomePage() {
         '--banner-on-accent': tokens.onAccent, '--banner-line': tokens.line,
         '--banner-display': tokens.display, '--banner-body': tokens.body,
       } as CSSProperties}>
-        {/* 3 — The promise, full bleed under the transparent nav. */}
-        <Hero />
-
-        {/* The three stages from the customer's side, visible before shopping. */}
-        <StepsBar />
+        {/* One viewport-sized opening keeps the hero and journey visible together. */}
+        <div className="home-opening">
+          <Hero />
+          <StepsBar />
+        </div>
 
         {/* 5 — FOUR HERO PRODUCTS, one row, nothing behind an arrow. A roller
             blind, a curtain, a wardrobe and an awning: one per part of the

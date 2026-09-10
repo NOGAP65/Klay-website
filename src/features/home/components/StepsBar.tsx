@@ -3,14 +3,15 @@ import { Link } from 'react-router-dom';
 import * as routes from '@/config/routes';
 
 const BAR_STEPS = [
-  { label: 'Buy online', body: 'Choose your product', to: routes.products },
-  { label: 'Check measure', body: 'Every detail confirmed', to: routes.howItWorks },
-  { label: 'Installation', body: 'Professionally fitted', to: routes.howItWorks },
+  { label: 'Buy now', body: 'Choose your product', to: routes.products },
+  { label: 'Professional check measure', body: 'We confirm every detail', to: routes.howItWorks },
+  { label: 'Professional installation', body: 'Installed by our professionals', to: routes.howItWorks },
 ];
 
 export function StepsBar() {
   return (
     <section className="home-steps" aria-label="How buying with Klay works">
+      <p className="home-steps-intro">One platform. Turnkey solutions for every product.</p>
       <ol className="home-steps-list">
         {BAR_STEPS.map((step, index) => (
           <li className="home-steps-item" key={step.label}>

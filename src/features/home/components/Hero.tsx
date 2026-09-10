@@ -22,7 +22,8 @@ export function Hero() {
       <div className="home-hero-content">
         <p className="home-banner-eyebrow">Klay Interiors</p>
         <h1 id="home-hero-title">The finishing layer<br />of <em>your home.</em></h1>
-        <CtaButton onClick={scrollToId('visualiser')}>Design Yours</CtaButton>
+        <CtaButton onClick={scrollToId('visualiser')}
+          style={{ height: 'var(--hero-cta-height, 52px)' }}>Design Yours</CtaButton>
       </div>
     </section>
   );
