@@ -115,7 +115,7 @@ export const COLUMN_GAP = 28;
 const ASSURANCES = [
   'Professional installation included',
   '5-year warranty',
-  'Made to measure in Melbourne',
+  'Made in Australia',
 ];
 
 /** THE COLOUR A DYED SHOT IS MULTIPLIED BY.

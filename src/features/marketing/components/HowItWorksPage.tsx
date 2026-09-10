@@ -35,7 +35,7 @@ const FAQS = [
   },
   {
     q: 'What areas do you service?',
-    a: 'We cover Australia — every state and territory. Enter your address at checkout or call us and we will confirm coverage and the next available measure slot for your suburb.',
+    a: 'We cover Australia — every state and territory. Wardrobes, shelving, showerscreens and mirrors are not available in WA. Enter your address at checkout or email us and we will confirm coverage and the next available measure slot for your suburb.',
   },
 ];
 
@@ -200,7 +200,7 @@ export default function HowItWorksPage() {
             Your exact measurements go straight to our manufacturing partner, Rynamic Industries SA, where every blind is cut and finished to the millimetre. Nothing is made until your window has been measured.
           </p>
           <p style={{ ...supporting.onLight, lineHeight: 1.8, marginTop: 16, maxWidth: 480 }}>
-            Finished blinds are freighted to Melbourne in as little as 2 business days, then quality checked again before your installation is booked.
+            Finished blinds are freighted to you in as little as 2 business days, then quality checked again before your installation is booked.
           </p>
         </div>
         <div style={{ flex: '1 1 360px' }}>

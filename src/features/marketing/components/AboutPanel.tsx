@@ -15,7 +15,7 @@
 // what they do not know is who turns up at the house.
 //
 // EVERY CLAIM HERE IS ALREADY ON THE SITE. The measure and the install being
-// included, the Melbourne manufacture and the coverage are the trust ticker's
+// included, the Australian manufacture and the coverage are the trust ticker's
 // items; the technicians being employed rather than contracted is AboutPage's.
 // Nothing is invented for this panel — if a claim changes it has to change in
 // those places too.
@@ -35,7 +35,7 @@
 const IMAGE = '/images/rooms/room-living.png';
 
 const BODY = [
-  'Every blind and curtain is cut to your window in Melbourne and fitted by our own technicians — the people who came to measure are the people who come back to install. Nothing is handed to whichever contractor happens to be free that week.',
+  'Every blind and curtain is cut to your window in Australia and fitted by our own technicians — the people who came to measure are the people who come back to install. Nothing is handed to whichever contractor happens to be free that week.',
   'There are no showrooms and no sales reps, which is why the in-home measure and the installation are part of the price rather than lines added to the end of it. Two-year warranty, and we cover Australia.',
 ];
 

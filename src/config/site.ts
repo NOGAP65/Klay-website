@@ -7,7 +7,7 @@
 // address were written out in app/layouts/Footer.tsx,
 // features/marketing/components/AboutPage.tsx and ContactPage.tsx. D-12.
 //
-// WHY THIS IS WORTH A MODULE RATHER THAN A SHRUG. A phone number is the fact
+// WHY THIS IS WORTH A MODULE RATHER THAN A SHRUG. A contact detail is the fact
 // most likely to change and least likely to be searched for exhaustively.
 // Change it in the footer, miss the About page, and the site quotes two numbers
 // with no error anywhere — no type breaks, no test fails, no lint rule fires.
@@ -26,18 +26,33 @@
 // site knows about itself.
 // ---------------------------------------------------------------------------
 
-/** Displayed. `phoneHref` is what it dials — they are not the same string. */
-export const phone = '1300 00 KLAY';
-export const phoneHref = 'tel:1300005529';
+/* NO PHONE NUMBER. `phone` was "1300 00 KLAY" and `phoneHref` the digits it
+ * dialled, and they were printed in the footer's contact column, the About
+ * page's one-line footer and the contact page's details table.
+ *
+ * REMOVED RATHER THAN BLANKED. An empty string would have rendered as an empty
+ * table row, an orphan separator on the About line and a `tel:` link to
+ * nothing; deleting the exports makes every call site a type error instead, so
+ * the compiler found all three rather than the eye having to.
+ *
+ * THE PHONE FIELDS ON THE FORMS ARE UNTOUCHED, and they are a different thing:
+ * those ask the CUSTOMER for a number so a technician can ring about a measure.
+ * Nothing about withdrawing Klay's own number says stop collecting theirs.
+ *
+ * If a number comes back it comes back here, and the three call sites are in
+ * this commit's diff. */
 
 export const email = 'hello@klayinteriors.com.au';
 export const emailHref = `mailto:${email}`;
 
 export const address = '18 Maltings Cct, Epping VIC 3076';
 
-/** The same opening hours, in the two lengths the site actually renders. */
-export const hoursShort = 'Mon–Fri 8am–6pm';
-export const hoursLong = 'Monday – Friday, 8am – 6pm';
+/** The same opening hours, in the two lengths the site actually renders.
+ *
+ * 8–4, down from 8–6. Both strings, because they are two renderings of one
+ * fact — see the note above on why that is fine and two facts is not. */
+export const hoursShort = 'Mon–Fri 8am–4pm';
+export const hoursLong = 'Monday – Friday, 8am – 4pm';
 
 /** WHERE KLAY WILL TRAVEL, and it is the country now.
  *
@@ -55,12 +70,36 @@ export const hoursLong = 'Monday – Friday, 8am – 6pm';
  * sentence in an email. */
 export const coverage = 'Australia-wide — every state and territory';
 
-/** The legal footer line. `tradingEntity` and `abn` are the registered company,
- * not the brand — Klay Interiors is what customers deal with, Grand Kaman Pty
- * Ltd is who they contract with, and the distinction is why both are here. */
+/** WHAT AUSTRALIA-WIDE DOES NOT COVER.
+ *
+ * The joinery, the screens and the mirrors are not available in WA. The window
+ * furnishings are — blinds, curtains, shutters, awnings and the outdoor screens
+ * all go everywhere — so this is an exclusion on four product families rather
+ * than on a state.
+ *
+ * IT LIVES BESIDE `coverage` BECAUSE IT QUALIFIES IT, and a claim printed
+ * without its exception is the more misleading half of one. Both are shown
+ * together wherever coverage is stated: the contact page's details table and
+ * the service-area answer on How It Works.
+ *
+ * NOT ENFORCED, and that is worth being plain about. Nothing stops a WA
+ * postcode configuring a wardrobe and adding it to the cart — the catalogue has
+ * no notion of where a product may go, and the quote is confirmed by a person
+ * before anything is made. Stating it is the honest minimum; gating it is a
+ * product decision about the shop, not a line of copy. */
+export const coverageExclusion =
+  'Wardrobes, shelving, showerscreens and mirrors are not available in WA.';
+
+/** The legal footer line. `tradingEntity` is the registered company, not the
+ * brand — Klay Interiors is what customers deal with, Grand Kaman Pty Ltd is
+ * who they contract with, and the distinction is why both are here.
+ *
+ * NO `abn`. It was "ABN 98 151 010 007" and it was the third item on the
+ * footer's copyright line. Removed as asked, and the export goes with the
+ * usage so nothing is left holding a number the site no longer shows — the
+ * trading entity stays, which is the part that says who the contract is with. */
 export const brand = 'Klay Interiors';
 export const tradingEntity = 'Grand Kaman Pty Ltd';
-export const abn = 'ABN 98 151 010 007';
 
 /** THE OFFICIAL ACCOUNT, and the handle is not the domain.
  *

@@ -82,7 +82,7 @@ export default function AboutPage() {
               available that week.
             </p>
             <p style={{ ...supporting.onLight, fontSize: typeScale.lead.fontSize, lineHeight: 1.9, marginTop: 22 }}>
-              Everything ships out of our warehouse in Epping, and we cover Australia — every state and
+              Everything ships out of our own warehouse, and we cover Australia — every state and
               territory, the same team start to finish, wherever you are.
             </p>
           </div>
@@ -145,7 +145,7 @@ export default function AboutPage() {
               brand-conviction page that gave a convinced reader nowhere to go. */}
           <div style={{ marginTop: 80, paddingTop: 48, borderTop: `1px solid ${tokens.lineFaint}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: space.group, flexWrap: 'wrap' }}>
             <p style={{ ...supporting.onLight, fontSize: typeScale.body.fontSize, margin: 0 }}>
-              {site.address} · {site.email} · {site.phone}
+              {site.address} · {site.email}
             </p>
             <Link
               to={routes.visualiser}

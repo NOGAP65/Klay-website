@@ -14,12 +14,19 @@ import { sendEnquiry } from '../api/sendEnquiry';
 // service moment, not a sales one — there is no dark section on this page now,
 // so the near-black is gone rather than merely retuned.
 
+/** THE DETAILS TABLE. No Phone row — the number came off the site entirely, see
+ * the note in config/site — so email is the one direct channel beside the form
+ * below.
+ *
+ * COVERAGE CARRIES ITS EXCEPTION. Stating "every state and territory" without
+ * the WA exclusion is the more misleading half of the claim, and a customer
+ * reading a coverage row is exactly the one it applies to. One row, both facts,
+ * because they are one answer. */
 const DETAILS = [
-  { label: 'Phone', value: site.phone },
   { label: 'Email', value: site.email },
   { label: 'Address', value: site.address },
   { label: 'Hours', value: site.hoursLong },
-  { label: 'Coverage', value: site.coverage },
+  { label: 'Coverage', value: `${site.coverage}. ${site.coverageExclusion}` },
 ];
 
 // The local `Field` that used to live here has moved to components/FormField

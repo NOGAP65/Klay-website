@@ -98,10 +98,10 @@ const COLUMNS: { heading: string; links: { label: string; to: string }[] }[] = [
   },
   {
     heading: 'Contact',
-    links: [
-      { label: site.phone, to: site.phoneHref },
-      { label: site.email, to: site.emailHref },
-    ],
+    // ONE WAY IN, NOT TWO. The phone number came out of this column with the
+    // rest of the site's — see the note in config/site. Email is what is left,
+    // and the contact page below it takes an enquiry without either.
+    links: [{ label: site.email, to: site.emailHref }],
   },
 ];
 
@@ -195,7 +195,10 @@ export function Footer() {
           }}
         >
           <span style={{ ...typeScale.body, color: tokens.onDarkMuted }}>
-            © {new Date().getFullYear()} {site.brand} · {site.tradingEntity} · {site.abn}
+            {/* Brand and trading entity, no ABN — removed as asked. The
+                separator went with it rather than being left to hang after the
+                entity. */}
+            © {new Date().getFullYear()} {site.brand} · {site.tradingEntity}
           </span>
           <div style={{ display: 'flex', gap: space.item }}>
             {['Privacy', 'Terms', 'Warranty'].map(l => (
