@@ -307,10 +307,11 @@ void main() {
   if (u_blindType > 0.5 && u_blindType < 1.5) {
     col += vec3(0.015*daylight*dyeLuma);
   } else if (u_blindType > 1.5 && u_blindType < 2.5) {
-    // Privacy fabric scatters the daylight, without an image of the garden.
+    // Woven light-filter fabric glows in daylight while retaining its yarn
+    // texture. A softly diffused background is composited through it below.
     vec3 transmitted = u_tintColor.rgb*mix(vec3(1.0),u_roomTint,0.35)*(0.79+0.30*daylight);
-    transmitted *= 1.0+detail*u_textureAmount*0.6;
-    col = mix(col,transmitted,0.76);
+    transmitted *= 1.0+detail*u_textureAmount;
+    col = mix(col,transmitted,0.55);
   }
   if (u_folds > 0.5) col *= 1.0+0.06*sin(uv.x*u_folds*6.2831853);
   float edgeL = 1.0-smoothstep(0.0,0.025,uv.x);
@@ -319,6 +320,7 @@ void main() {
   col *= 1.0-u_shade*(edgeL*0.035+edgeR*0.025+hem*0.035);
   float opacity = u_opacity;
   if (u_blindType > 0.5 && u_blindType < 1.5) opacity = clamp(opacity+detail*0.06,0.0,1.0);
+  if (u_blindType > 1.5 && u_blindType < 2.5) opacity = clamp(opacity+detail*0.10,0.0,1.0);
   gl_FragColor = vec4(clamp(col,0.0,1.0)*opacity,opacity);
 }
 `;
@@ -366,7 +368,7 @@ const shaderTypeFor = (blindType: string): number => SHADER_TYPE[blindType] ?? 3
  * transparent a given blind is. */
 const FABRIC_OPACITY: Record<string, number> = {
   blockout: 1,
-  lightfilter: 1,
+  lightfilter: 0.82,
   sunscreen: 0.65,
   sheer: 0.38,
 };
@@ -671,7 +673,7 @@ interface FabricSurface {
 const FABRIC_SURFACE: Record<string, FabricSurface> = {
   blockout: { textureAmount: 0.65, tileX: 1.7 },
   sunscreen: { textureAmount: 0.5, tileX: 2 },
-  lightfilter: { textureAmount: 0.5, tileX: 2 },
+  lightfilter: { textureAmount: 0.85, tileX: 2 },
 };
 
 const DEFAULT_SURFACE: FabricSurface = { textureAmount: FABRIC_TEXTURE_AMOUNT, tileX: 1 };
@@ -1831,6 +1833,10 @@ const drawBlindArea = (
     // sunscreenDiffusionPx.
     if (type === 'sunscreen') {
       drawBackgroundDiffusion(ctx, photo, W, H, fabricQuad, scaleToBlind(sunscreenDiffusionPx(fabricColor), avgW));
+    } else if (type === 'lightfilter') {
+      // Broad silhouettes survive the cloth; leaves and other fine detail
+      // dissolve into soft light, as in the shop's light-filter photograph.
+      drawBackgroundDiffusion(ctx, photo, W, H, fabricQuad, scaleToBlind(14, avgW));
     }
 
     // --- DEPTH (pre-fabric) ---
@@ -1893,9 +1899,9 @@ const drawBlindArea = (
         drawQuad(state, [tl, midT, midBp, fabBL], fabricTexture, panelOpts);
         drawQuad(state, [midT2, tr, fabBR, midB2p], fabricTexture, panelOpts);
       } else {
-        // Blockout reflects room light; light filter transmits a broad diffuse
-        // light field without showing the outdoor scene. Sunscreen retains
-        // colour-dependent visibility through the woven mesh.
+        // Blockout reflects room light; light filter passes soft silhouettes
+        // through a woven surface. Sunscreen retains colour-dependent
+        // visibility through the mesh.
         drawQuad(state, [tl, tr, fabBR, fabBL], fabricTexture, {
           tint,
           textureAmount: type === 'sunscreen'
