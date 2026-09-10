@@ -1,3 +1,5 @@
+import { FINISH_TEXTURE, WARDROBE_COLOURS } from '../../visualiser/wardrobes';
+
 /** PDF layouts retained; finishes follow Stegbar's website at the user's request. */
 export const WALK_IN_LAYOUTS = [
   { id: 'LS01', name: 'Forma 4', shape: 'L-shaped', drawers: 4,
@@ -6,12 +8,10 @@ export const WALK_IN_LAYOUTS = [
     description: 'Two shelf towers, double hanging and twin drawer towers at the back.' },
 ] as const;
 
-export const WALK_IN_COLOURS = [
-  { name: 'Matt Wardrobe White', hex: '#FDFDFD', texture: '/images/shop/finishes/walkin-white.webp' },
-  { name: 'Woodmatt Notaio Walnut', hex: '#8F7964', texture: '/images/shop/finishes/walkin-notaio-walnut.webp' },
-  { name: 'Matt Natural Oak', hex: '#C2A67F', texture: '/images/shop/finishes/walkin-natural-oak.webp' },
-  { name: 'Woodmatt Antico Oak', hex: '#8B7B6C', texture: '/images/shop/finishes/walkin-antico-oak.webp' },
-];
+// Share the three offered board finishes with built-in wardrobes.
+export const WALK_IN_COLOURS = WARDROBE_COLOURS.map(finish => ({
+  ...finish, texture: FINISH_TEXTURE[finish.slug],
+}));
 export const WALK_IN_HARDWARE = [
   { id: 'T23 Inox', name: 'Inox', hex: '#C5C6C4' },
   { id: 'T24 Brushed Matt Black', name: 'Brushed Matt Black', hex: '#292929' },

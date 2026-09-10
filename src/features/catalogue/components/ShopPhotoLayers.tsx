@@ -61,7 +61,8 @@ function WoodLayers({ photo, id, finish, isReduced, slice, index, scaleY }: Artw
   const tileW = FINISH_TILE_MM.w * photoScale;
   const tileH = FINISH_TILE_MM.h * photoScale;
   return <g mask={`url(#${id}-boards)`}>
-    {Object.entries(FINISH_TEXTURE).map(([slug, texture]) => {
+    {WARDROBE_COLOURS.filter(board => board.slug !== 'white').map(({ slug, hex }) => {
+      const texture = FINISH_TEXTURE[slug];
       const pattern = `${id}-${index}-${slug}`;
       return <g key={slug} opacity={finish === slug ? 1 : 0} style={{
         isolation: 'isolate', transition: isReduced ? 'none' : 'opacity 320ms ease',
@@ -69,7 +70,8 @@ function WoodLayers({ photo, id, finish, isReduced, slice, index, scaleY }: Artw
         <defs>{GRAINS.map(grain => <pattern key={grain} id={`${pattern}-${grain}`}
           patternUnits="userSpaceOnUse" width={tileW} height={tileH}
           patternTransform={grainTransform(grain, slice.scaleX / scaleY, slice.translateX / scaleY)}>
-          <image href={texture} width={tileW} height={tileH} preserveAspectRatio="none" />
+          <rect width={tileW} height={tileH} fill={hex} />
+          {texture && <image href={texture} width={tileW} height={tileH} preserveAspectRatio="none" />}
         </pattern>)}</defs>
         {photo.boards?.map((f, i) => <path key={i} d={f.path} fill={`url(#${pattern}-${f.grain})`} />)}
         <g filter={`url(#${id}-lighting)`} style={{ mixBlendMode: 'multiply' }}>

@@ -546,10 +546,10 @@ export const CATALOGUE: CatalogueItem[] = [
     // used to offer rather than anything Klay makes. The range is the Forma
     // linen shelving — four codes, four 447mm shelves apiece, 1650 high, some
     // with a face post to span the wide ones. No drawers and no racks.
-    tagline: 'Linen shelving in four fixed shelves, made to the opening.',
+    tagline: 'Four fixed shelves for your garage, linen or pantry, made to the opening.',
     to: enquire('Shelving'),
     // The default linen layout; each model has its own photograph on the shop.
-    image: '/images/shop/shelving-lin01.webp',
+    image: '/images/shop/shelving-lin05.webp',
     imagePosition: 'center',
     glyph: 'shelving',
     // The same four board finishes the robes are made in and the same list the

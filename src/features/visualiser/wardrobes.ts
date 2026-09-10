@@ -189,7 +189,7 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
   // wide ones. A 3600 shelf is not a scaled-up 900 — it is a different code.
   {
     id: 'LIN01',
-    name: 'Linen 1',
+    name: 'Forma 6',
     layout: '4 shelves',
     code: 'LIN01',
     kind: 'shelving',
@@ -200,7 +200,7 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
   },
   {
     id: 'LIN02',
-    name: 'Linen 2',
+    name: 'Forma 7',
     layout: '4 shelves + face post',
     code: 'LIN02',
     kind: 'shelving',
@@ -211,7 +211,7 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
   },
   {
     id: 'LIN05',
-    name: 'Linen 5',
+    name: 'Forma 8',
     layout: '4 shelves + two posts',
     code: 'LIN05',
     kind: 'shelving',
@@ -222,7 +222,7 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
   },
   {
     id: 'LINBR02',
-    name: 'Linen Broom',
+    name: 'Forma 9',
     layout: '4 shelves + broom bay',
     code: 'LINBR02',
     kind: 'shelving',

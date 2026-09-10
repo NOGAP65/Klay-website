@@ -1,15 +1,25 @@
 .shop-browse { font-family: var(--shop-body); color: var(--shop-ink); overflow-anchor: none; }
 html:has(.shop-browse) { scrollbar-gutter: stable; }
-.shop-result-card { min-width: 0; height: 100%; view-transition-name: var(--shop-card-name); }
+/* Only the placeholder highlight moves; product cards never slide or resize during filtering. */
+.shop-result-card { min-width: 0; height: 100%; }
 .shop-result-card > article { width: 100%; }
-.shop-empty { view-transition-name: klay-shop-empty; }
-html.shop-view-transition { view-transition-name: none; }
-html.shop-view-transition::view-transition { pointer-events: none; }
-html.shop-view-transition::view-transition-group(*) { animation-duration: 280ms; animation-timing-function: cubic-bezier(.2,.7,.2,1); }
-html.shop-view-transition::view-transition-old(*) { animation: shop-result-out 180ms ease both; mix-blend-mode: normal; height: 100%; object-fit: none; object-position: left top; }
-html.shop-view-transition::view-transition-new(*) { animation: shop-result-in 260ms ease both; mix-blend-mode: normal; height: 100%; object-fit: none; object-position: left top; }
-@keyframes shop-result-out { to { opacity: 0; } }
-@keyframes shop-result-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.shop-results { position: relative; }
+.shop-results[aria-busy="true"] { min-height: 450px; }
+.shop-skeleton-overlay { position: absolute; inset: 0; overflow: clip; pointer-events: none; }
+.shop-skeleton-grid { position: sticky; top: 150px; display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 28px; }
+.shop-skeleton-card { position: relative; overflow: hidden; isolation: isolate; background: white; border-radius: 10px; padding: 16px; }
+.shop-skeleton-card::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 52%) 50%, transparent 100%); transform: translateX(-100%); animation: shop-skeleton-sweep 1400ms linear infinite; }
+@keyframes shop-skeleton-sweep { to { transform: translateX(100%); } }
+.shop-skeleton-line, .shop-skeleton-photo, .shop-skeleton-field, .shop-skeleton-action { background: #e9e7e3; border-radius: 4px; }
+.shop-skeleton-line { height: 10px; width: 80%; margin-bottom: 20px; }
+.shop-skeleton-heading { height: 24px; width: 58%; margin-bottom: 12px; }
+.shop-skeleton-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.shop-skeleton-photo { aspect-ratio: 1; }
+.shop-skeleton-fields { display: flex; flex-direction: column; gap: 18px; }
+.shop-skeleton-field { height: 42px; }
+.shop-skeleton-action { height: 48px; margin-top: 12px; }
+@media (max-width: 1100px) { .shop-skeleton-grid { grid-template-columns: 1fr; gap: 12px; } }
+@media (max-width: 768px) { .shop-skeleton-body { grid-template-columns: 1fr; } }
 .shop-filter-rail { display: flex; flex-direction: column; gap: 26px; }
 .shop-filter-rail fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
 .shop-filter-rail legend { padding: 0; margin-bottom: 10px; font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--shop-muted); }
@@ -36,7 +46,6 @@ html.shop-view-transition::view-transition-new(*) { animation: shop-result-in 26
 .shop-active-filters button { display: inline-flex; align-items: center; gap: 10px; min-height: 36px; max-width: 100%; padding: 5px 10px; font: inherit; font-size: 12px; background: var(--shop-paper); border: 1px solid var(--shop-line); border-radius: 4px; color: var(--shop-ink); cursor: pointer; }
 .shop-active-filters button > span:first-child { overflow-wrap: anywhere; }
 .shop-active-filters button > span:last-child { flex-shrink: 0; }
-.shop-active-filters button { animation: shop-result-in 180ms ease both; }
 button.shop-clear { font: inherit; font-size: 12px; color: var(--shop-ink); background: transparent; border: 0; padding: 8px 4px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .shop-browse :is(button, select, input):focus-visible { outline: 2px solid var(--shop-accent); outline-offset: 3px; }
 .shop-search input:focus-visible { outline: 0; }
@@ -79,6 +88,7 @@ button.shop-clear { font: inherit; font-size: 12px; color: var(--shop-ink); back
   .shop-filter-button svg { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .shop-skeleton-card::after { animation: none; display: none; }
   .shop-filter-option { transition: none; }
   .shop-active-filters button, .shop-filter-drawer[open], .shop-filter-drawer[open]::backdrop { animation-duration: 1ms; }
 }

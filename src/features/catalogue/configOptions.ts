@@ -230,6 +230,20 @@ const SCREEN_LOCATION_CHOICES: ConfigChoice[] = [
   { id: 'bathroom-5', label: 'Bathroom 5' },
 ]
 
+/** Product-specific numbered locations also keep quote lines distinct. */
+const numberedLocations = (id: string, label: string, group: string, count: number): ConfigChoice[] =>
+  Array.from({ length: count }, (_, i) => ({ id: `${id}-${i + 1}`, label: `${label} ${i + 1}`, group }))
+const MIRROR_LOCATION_CHOICES: ConfigChoice[] = [
+  ...numberedLocations('bathroom', 'Bathroom', 'Bathrooms', 5),
+  ...numberedLocations('ensuite', 'Ensuite', 'Ensuites', 5),
+]
+const SHELVING_LOCATION_CHOICES: ConfigChoice[] = [
+  ...numberedLocations('garage', 'Garage', 'Garage', 3),
+  ...numberedLocations('linen', 'Linen', 'Linen', 5),
+  ...numberedLocations('pantry', 'Pantry', 'Pantry', 5),
+  { id: 'other', label: 'Other' },
+]
+
 /** WHERE A ZIP SCREEN GOES — the two outdoor rooms it is bought for.
  *
  * Same reasoning as the screens above, in the other direction: a zip system is
@@ -313,6 +327,9 @@ const OPERATION_COLUMN: Record<string, 'manual' | 'motorised'> = {
 const HARDWARE_CHOICES: ConfigChoice[] = HARDWARE_OPTIONS.map(o => ({ id: o.id, label: o.label }))
 
 interface ProductOptions {
+  defaultVariant?: string
+  defaultColour?: string
+  defaultHardware?: string
   /** Fixed specifications shown on the quote without asking for another choice. */
   specificationsOfVariant?: (variantId?: string) => { label: string; value: string }[]
   /** Paired dimensions vary with mirror shape and travel together into the quote. */
@@ -493,12 +510,14 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // coincidental — the framed card renders identically either way today, and
   // stops depending on staying under four shapes tomorrow.
   'mirrors-without-frames': {
+    locationChoices: MIRROR_LOCATION_CHOICES,
     variantLabel: 'Shape',
     variants: mirrorShapes(false).map(s => v(s.id, s.label)),
     variantsListed: true,
     dimensionsOfVariant: shape => mirrorDimensions(false, shape),
   },
   'mirror-with-frame': {
+    locationChoices: MIRROR_LOCATION_CHOICES,
     variantLabel: 'Shape',
     variants: mirrorShapes(true).map(s => v(s.id, s.label)),
     variantsListed: true,
@@ -507,6 +526,7 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     hardwareChoices: MIRROR_FRAME_COLOURS,
   },
   'mirrors-with-cabinets': {
+    locationChoices: MIRROR_LOCATION_CHOICES,
     variantLabel: 'Shape',
     variants: CABINET_MIRROR_SHAPES.map(s => v(s.id, s.label)),
     variantsListed: true,
@@ -637,6 +657,10 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // nothing in the range is a sliding unit; it was describing the category
   // rather than anything orderable.
   wardrobes: {
+    defaultVariant: 'SRDTDH01',
+    defaultWidth: 1800,
+    defaultColour: 'Woodmatt Black Ply',
+    defaultHardware: 'Black',
     variantLabel: 'Model',
     variants: modelsOfKind('built-in').map(m => v(m.id, m.name)),
     colourLabel: 'Colour',
@@ -649,6 +673,8 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   },
   // Signature LS01 / US01 layouts, fixed at the PDF's 2400 × 2400 footprint.
   'walk-in-wardrobes': {
+    defaultColour: 'Matt Polar White',
+    defaultHardware: 'T24 Brushed Matt Black',
     variantLabel: 'Model',
     variants: WALK_IN_LAYOUTS.map(m => v(m.id, m.name)),
     colourLabel: 'Board material & colour',
@@ -675,6 +701,9 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // handle group for shelving because there is no metalwork on it at all. No
   // rail, no drawer, no pull. Four shelves and a post.
   shelving: {
+    locationChoices: SHELVING_LOCATION_CHOICES,
+    defaultVariant: 'LIN05',
+    defaultWidth: 2700,
     variantLabel: 'Layout',
     variants: modelsOfKind('shelving').map(m => v(m.id, m.name)),
     colourLabel: 'Colour',
@@ -769,6 +798,7 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
       label: options.variantLabel ?? 'Type',
       kind: 'chips',
       choices: options.variants,
+      defaultChoice: options.defaultVariant,
       listed: options.variantsListed,
     })
   }
@@ -784,6 +814,7 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
       kind: options.colourKind ?? 'swatches',
       choices: item.colours.map(c => ({ id: c.name, label: c.name, hex: c.hex, texture: c.texture, mirror: c.mirror })),
       showSelection: options.showFinishSelection,
+      defaultChoice: options.defaultColour,
     })
   }
   // A product supplies its own metalwork list where its metalwork is not a
@@ -802,6 +833,7 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
         label: options.hardwareLabel ?? 'Hardware',
         kind: 'swatches',
         choices: hardwareChoices,
+        defaultChoice: options.defaultHardware,
         showSelection: options.showFinishSelection,
       })
     } else if (options.hardware) {

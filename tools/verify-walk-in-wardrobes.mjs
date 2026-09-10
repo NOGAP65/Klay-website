@@ -29,23 +29,20 @@ const { shopPhoto } = await import(moduleUrl('src/features/catalogue/shopPhotos.
 const item = CATALOGUE.find(p => p.id === 'walk-in-wardrobes');
 const initial = defaultSelection(item);
 assert.equal(initial.variant, 'LS01');
-assert.equal(initial.colour, 'Matt Wardrobe White');
-assert.equal(initial.hardware, 'T23 Inox');
+assert.equal(initial.colour, 'Matt Polar White');
+assert.equal(initial.hardware, 'T24 Brushed Matt Black');
 assert.deepEqual(WALK_IN_LAYOUTS.map(m => m.name), ['Forma 4', 'Forma 5']);
 assert.deepEqual(fieldsFor(item, initial).map(f => f.id), ['location', 'variant', 'colour', 'hardware']);
 assert.deepEqual(WALK_IN_COLOURS.map(f => f.name), [
-  'Matt Wardrobe White', 'Woodmatt Notaio Walnut', 'Matt Natural Oak', 'Woodmatt Antico Oak',
+  'Matt Polar White', 'Woodmatt Black Ply', 'Matt Natural Oak',
 ]);
 assert.deepEqual(WALK_IN_HARDWARE.map(f => f.name), [
   'Inox', 'Brushed Matt Black', 'Brushed Brass',
 ]);
 assert.deepEqual(WALK_IN_HARDWARE.map(f => f.id), ['T23 Inox', 'T24 Brushed Matt Black', 'T25 Brushed Brass']);
-const finishSources = JSON.parse(readFileSync('docs/walk-in-finishes.json', 'utf8'));
-for (const finish of WALK_IN_COLOURS) {
-  const source = finishSources.find(f => f.name === finish.name);
-  assert.equal(source.hex.toUpperCase(), finish.hex);
-  assert.equal(source.asset, 'public'+finish.texture);
-}
+const { WARDROBE_COLOURS } = await import(moduleUrl('src/features/visualiser/wardrobes.ts'));
+assert.deepEqual(WALK_IN_COLOURS.map(({ name, hex }) => ({ name, hex })),
+  WARDROBE_COLOURS.map(({ name, hex }) => ({ name, hex })));
 const ids=new Set();
 for (const layout of WALK_IN_LAYOUTS) {
   for(const colour of WALK_IN_COLOURS) for(const hardware of WALK_IN_HARDWARE) {
@@ -61,13 +58,13 @@ for (const layout of WALK_IN_LAYOUTS) {
     const photo=shopPhoto(item.id,layout.id);
     assert.equal(photo.walkIn,layout.id);
     assert.ok(readFileSync('public'+photo.src).length>1000);
-    assert.ok(readFileSync('public'+colour.texture).length>100);
+    if (colour.texture) assert.ok(readFileSync('public'+colour.texture).length>100);
     assert.equal(fieldsFor(item, selection).find(f=>f.id==='colour').kind,'swatches');
     assert.equal(fieldsFor(item, selection).find(f=>f.id==='hardware').kind,'swatches');
   }
 }
-assert.equal(ids.size,24);
-const migrated=withChoice(item,{...initial,variant:'12.0U',colour:'Woodmatt Black Ply',hardware:'Brass'},'variant','US01');
-assert.equal(migrated.colour,'Matt Wardrobe White');
-assert.equal(migrated.hardware,'T23 Inox');
-console.log('Walk-ins: both PDF layouts, 24 finish/handle combinations, fixed dimensions, source photos and complete quote details pass.');
+assert.equal(ids.size,18);
+const migrated=withChoice(item,{...initial,variant:'12.0U',colour:'Woodmatt Notaio Walnut',hardware:'Brass'},'variant','US01');
+assert.equal(migrated.colour,'Matt Polar White');
+assert.equal(migrated.hardware,'T24 Brushed Matt Black');
+console.log('Walk-ins: both PDF layouts, 18 finish/handle combinations, fixed dimensions, source photos and complete quote details pass.');

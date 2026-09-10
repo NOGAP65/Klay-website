@@ -39,11 +39,12 @@ export function WalkInPhotoLayers({ src, layoutId, colourName, hardwareName }: {
       </g>
       {['vertical', 'horizontal'].map(grain => <pattern key={grain} id={`${id}-${grain}`} width="260" height="700"
         patternUnits="userSpaceOnUse" patternTransform={grain === 'horizontal' ? 'rotate(90)' : undefined}>
-        <image href={finish.texture} width="260" height="700" preserveAspectRatio="none" />
+        <rect width="260" height="700" fill={finish.hex} />
+        {finish.texture && <image href={finish.texture} width="260" height="700" preserveAspectRatio="none" />}
       </pattern>)}
     </defs>
     <use href={`#${id}-clean`} />
-    {finish.name !== 'Matt Wardrobe White' && <g clipPath={`url(#${id}-boards)`} style={{ isolation: 'isolate' }}>
+    {finish.slug !== 'white' && <g clipPath={`url(#${id}-boards)`} style={{ isolation: 'isolate' }}>
       {WALK_IN_BOARDS[layout.id].map((f, i) => <path key={i} d={f.path} fill={`url(#${id}-${f.grain})`} />)}
       <g filter={`url(#${id}-light)`} style={{ mixBlendMode: 'multiply' }}><use href={`#${id}-clean`} /></g>
     </g>}

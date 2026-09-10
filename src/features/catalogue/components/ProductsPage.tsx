@@ -15,6 +15,7 @@ import { FilterDrawer } from './FilterDrawer';
 import { FilterRail } from './FilterRail';
 import { COLUMN_GAP, COLUMN_MIN } from './ShopCard';
 import { ShopProductCard } from './ShopProductCard';
+import { ShopResultsSkeleton } from './ShopResultsSkeleton';
 import { ShopToolbar } from './ShopToolbar';
 import { useShopResults } from './useShopResults';
 import './shopBrowsing.css';
@@ -156,6 +157,8 @@ export default function ProductsPage() {
             <ShopToolbar state={state} count={items.length} isNarrow={isNarrow} onChange={updateBrowse}
               onOpenFilters={() => setDrawerOpen(true)} />
             <div ref={regionRef} className="shop-results" aria-busy={isUpdating}>
+            {isUpdating && <ShopResultsSkeleton count={items.length} />}
+            <div style={{ visibility: isUpdating ? 'hidden' : undefined }} aria-hidden={isUpdating || undefined}>
             {displayed.length > 0 ? <div style={{ display: 'grid',
               gridTemplateColumns: isNarrow ? 'repeat(1, 1fr)' : `repeat(auto-fill, minmax(${COLUMN_MIN}px, 1fr))`,
               columnGap: isNarrow ? 12 : COLUMN_GAP, rowGap: isNarrow ? 12 : COLUMN_GAP }}>
@@ -170,6 +173,7 @@ export default function ProductsPage() {
                 <Link to="/contact" style={{ color: tokens.ink, fontSize: typeScale.label.fontSize, textUnderlineOffset: 3 }}>Ask us for help</Link>
               </div>
             </div>}
+            </div>
             </div>
           </div>
         </div>

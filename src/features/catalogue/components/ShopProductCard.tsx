@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, type CSSProperties } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 
 import { defaultSelection, type Selection } from '../configOptions';
 import type { CatalogueItem } from '../constants';
@@ -12,7 +12,7 @@ export const ShopProductCard = memo(function ShopProductCard({ item, selection, 
 }) {
   const initial = useMemo(() => defaultSelection(item), [item]);
   const change = useCallback((field: string, choice: string) => onChoice(item, field, choice), [item, onChoice]);
-  return <div className="shop-result-card" style={{ '--shop-card-name': `klay-product-${item.id}` } as CSSProperties}>
+  return <div className="shop-result-card">
     <ShopCard item={item} sel={selection ?? initial} onChange={change} />
   </div>;
 });

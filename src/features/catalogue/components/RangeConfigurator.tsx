@@ -65,18 +65,7 @@ const labelStyle: React.CSSProperties = {
   marginBottom: space.hairline,
 };
 
-/** One choice, as a rectangle. Selected is a gold fill with ink text — the same
- * pairing every primary action on the site uses, so a chosen option reads as
- * something the page has committed to rather than as a highlight. */
-/** A DROPDOWN, for a field whose choices are a scale rather than a set.
- *
- * Native, for the same reasons the visualiser's is: the platform's own picker
- * beats anything drawn here on a phone, and it is keyboard- and
- * screen-reader-correct for free. `appearance: none` strips the system chrome so
- * the box can carry the same height, radius and selected-lozenge treatment as
- * Chip, and the arrow is an inline data URI rather than a positioned element —
- * a select cannot have children, and anything absolutely positioned over it
- * would swallow the click that opens it. */
+/** Native dropdown with a visible boundary, readable answer and persistent chevron. */
 function FieldSelect({
   field,
   value,
@@ -87,33 +76,37 @@ function FieldSelect({
   onChange: (choiceId: string) => void;
 }) {
   const arrow = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="${tokens.paper}" stroke-width="1.4" stroke-linecap="round"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="8" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="${tokens.ink}" stroke-width="1.4" stroke-linecap="round"/></svg>`,
   );
   return (
     <select
+      aria-label={field.label}
       value={value ?? ''}
       onChange={e => onChange(e.target.value)}
       style={{
         width: '100%',
-        height: 34,
-        padding: `0 ${space.group}px 0 ${space.tight}px`,
+        minWidth: 0,
+        minHeight: 42,
+        padding: '10px 36px 10px 12px',
         boxSizing: 'border-box',
         borderRadius: radius.sm,
-        // The chosen value IS the field, so the box wears the selected chip's
-        // treatment — it is never empty and never reads as unanswered.
-        border: `1px solid ${tokens.ink}`,
-        background: tokens.ink,
-        color: tokens.paper,
+        border: `1px solid ${tokens.lineStrong}`,
+        backgroundColor: tokens.paper,
+        color: tokens.ink,
         fontFamily: tokens.body,
-        fontSize: 12,
+        fontSize: 13,
+        lineHeight: 1.4,
+        textAlign: 'left',
         cursor: 'pointer',
         appearance: 'none',
         WebkitAppearance: 'none',
         backgroundImage: `url("data:image/svg+xml,${arrow}")`,
         backgroundRepeat: 'no-repeat',
-        backgroundPosition: `right ${space.tight}px center`,
+        backgroundPosition: 'right 12px center',
+        outlineColor: tokens.accent,
       }}
     >
+      {value === undefined && <option value="">Select</option>}
       {/* Grouped where the field says so — the location list does, and its
           seventeen rooms need the headings to be findable. An ungrouped field
           comes back as one unlabelled run and renders the bare options it
@@ -137,14 +130,6 @@ function FieldSelect({
     </select>
   );
 }
-
-/** How many characters the longest answer in a field runs to.
- *
- * The dense card's select needs to say how much room its answer wants before it
- * knows which answer is chosen — the row has to hold the widest one without
- * reflowing every time the customer picks a different room. */
-const longestChoice = (field: ConfigField): number =>
-  field.choices.reduce((n, c) => Math.max(n, c.label.length), 0);
 
 /** One end of the quantity stepper. Square, quiet, and the same height as a
  * compact chip so the row it sits in keeps the panel's rhythm. */
@@ -350,9 +335,6 @@ function DenseField({
   onOtherChange?: (value: string) => void;
   onChange: (choiceId: string) => void;
 }) {
-  const caret = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="7" height="4" viewBox="0 0 7 4"><path d="M0 0l3.5 4L7 0z" fill="${tokens.inkSoft}"/></svg>`,
-  );
   // A ROW SHOWS ITS CHOICES UNLESS THERE ARE TOO MANY TO SHOW. Two, three or
   // four answers fit on a line or two and are more use laid out than hidden —
   // "Blockout Light filter Sunscreen Dual" is not longer than a select reading
@@ -434,87 +416,9 @@ function DenseField({
 
   return (
     <div>
-      {/* ONE LINE WHERE THE ANSWER FITS ON IT, TWO WHERE IT DOES NOT — and the
-          browser decides, because this component does not know how wide the card
-          it is in will be.
-
-          The row was flat `flex` with the label pinned and the select taking
-          whatever was left. That worked while the longest answer was LIVING
-          ROOM: measured on the shop card the row is 201px, the label eats 75 and
-          the caret 12, which leaves 114 — and MASTER BEDROOM at this tracking
-          wants 138, so it rendered as MASTER BEDR with the tail cut off. A
-          clipped answer is worse than a wrapped one; it is not obviously
-          truncated, so it reads as the name of the room.
-          Wrapping puts the label on its own line and hands the select the full
-          width, which is how every chip and swatch row on this card is already
-          laid out — so the fallback matches its neighbours rather than looking
-          like a break. */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: space.snug, minWidth: 0 }}>
-        <span style={{ ...labelStyle, marginBottom: 0, flex: '0 0 auto', whiteSpace: 'nowrap' }}>
-          {field.label}
-        </span>
-        <select
-          value={value ?? ''}
-          onChange={e => onChange(e.target.value)}
-          aria-label={field.label}
-          style={{
-            // THE ROW'S OWN TYPE, not the system's. This has to be
-            // indistinguishable from the label it replaced, or six of them read
-            // as a form bolted into a product card.
-            ...typeScale.micro,
-            color: tokens.inkSoft,
-            letterSpacing: longestChoice(field) > 24 ? '0.04em' : '0.3em',
-            textTransform: longestChoice(field) > 24 ? 'none' : 'uppercase',
-            // Right up against the caret, and the whole control right-aligned,
-            // because the answer belongs at the end of the line where it was.
-            textAlign: 'right',
-            direction: 'rtl',
-            // THE BASIS IS THE WIDEST ANSWER THIS FIELD HOLDS, not `auto`, and
-            // it is what makes the wrap above happen at the right moment. `auto`
-            // shrinks to whatever is left and clips; a basis says how much room
-            // the answer needs, so the row breaks rather than cropping it.
-            //
-            // Estimated from the label's own length rather than measured: this
-            // type is 10px Inter uppercase on 3px of tracking, which runs a
-            // shade under 10px a character, and the 12px is the caret's gutter.
-            // Being a few pixels out costs a row that wraps slightly early or
-            // slightly late — not a cut-off word, which is the failure being
-            // fixed.
-            flex: `1 1 ${longestChoice(field) * 10 + space.snug}px`,
-            minWidth: 0,
-            border: 'none',
-            background: 'transparent',
-            appearance: 'none',
-            WebkitAppearance: 'none',
-            cursor: 'pointer',
-            padding: `2px ${space.snug}px 2px 0`,
-            backgroundImage: `url("data:image/svg+xml,${caret}")`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'right center',
-            outlineColor: tokens.accent,
-          }}
-        >
-          {/* Unanswered reads Select, the same word the accordion used, so a
-              row nobody has touched is a question rather than a blank. */}
-          {value === undefined && <option value="">Select</option>}
-          {/* Left-to-right again inside the list: the parent is rtl so the
-              closed value sits right, and without this the options — and the
-              group headings — inherit it and punctuation lands on the wrong
-              end. */}
-          {groupedChoices(field.choices).map(run =>
-            run.group ? (
-              <optgroup key={run.group} label={run.group} style={{ direction: 'ltr' }}>
-                {run.choices.map(c => (
-                  <option key={c.id} value={c.id} style={{ direction: 'ltr' }}>{c.label}</option>
-                ))}
-              </optgroup>
-            ) : (
-              run.choices.map(c => (
-                <option key={c.id} value={c.id} style={{ direction: 'ltr' }}>{c.label}</option>
-              ))
-            ),
-          )}
-        </select>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+        <span style={{ ...labelStyle, marginBottom: 0 }}>{field.label}</span>
+        <FieldSelect field={field} value={value} onChange={onChange} />
       </div>
 
       {/* Only where an Other has been chosen — see the note in Field. */}

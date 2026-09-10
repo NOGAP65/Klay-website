@@ -100,7 +100,7 @@ const forma3: ShopPhoto = {
     + [561, 629, 698, 767].map(y => rectangle(225, y, 37, 5)).join(' '),
 };
 const linen1: ShopPhoto = {
-  src: '/images/shop/shelving-lin01.webp', description: 'Linen 1 — four fitted shelves in a narrow alcove', boardScale: 0.40,
+  src: '/images/shop/shelving-lin01.webp', description: 'Forma 6 — four fitted shelves in a narrow alcove', boardScale: 0.40,
   joinery: { modelId: 'LIN01', start: 277, top: 195, bottom: 930, columns: [
     { end: 749, leftReturn: 26, rightReturn: 29 },
   ] },
@@ -110,7 +110,7 @@ const linen1: ShopPhoto = {
     surface('M303 720H720L749 756H278Z'), front(278, 756, 471, 12)],
 };
 const linen2: ShopPhoto = {
-  src: '/images/shop/shelving-lin02.webp', description: 'Linen 2 — four continuous shelves with one front support', boardScale: 0.40,
+  src: '/images/shop/shelving-lin02.webp', description: 'Forma 7 — four continuous shelves with one front support', boardScale: 0.40,
   joinery: { modelId: 'LIN02', start: 176, top: 213, bottom: 904, columns: [
     { end: 918, leftReturn: 31, rightReturn: 37, posts: [{ start: 537, end: 552 }] },
   ] },
@@ -121,7 +121,7 @@ const linen2: ShopPhoto = {
     upright('M537 225H552V904H537Z')],
 };
 const linen5: ShopPhoto = {
-  src: '/images/shop/shelving-lin05.webp', description: 'Linen 5 — four continuous shelves with two front supports', boardScale: 0.36,
+  src: '/images/shop/shelving-lin05.webp', description: 'Forma 8 — four continuous shelves with two front supports', boardScale: 0.36,
   joinery: { modelId: 'LIN05', start: 113, top: 239, bottom: 858, columns: [
     { end: 970, leftReturn: 30, rightReturn: 34,
       posts: [{ start: 377, end: 394 }, { start: 679, end: 695 }] },
@@ -134,7 +134,7 @@ const linen5: ShopPhoto = {
     upright('M683 251H695V858H683L679 846V267Z')],
 };
 const linenBroom: ShopPhoto = {
-  src: '/images/shop/shelving-linbr02.webp', description: 'Linen Broom — four shelf levels and a full-height broom bay', boardScale: 0.37,
+  src: '/images/shop/shelving-linbr02.webp', description: 'Forma 9 — four shelf levels and a full-height broom bay', boardScale: 0.37,
   joinery: { modelId: 'LINBR02', start: 114, top: 229, bottom: 860, columns: [
     { end: 723.5, leftReturn: 33, rightReturn: 22.5, posts: [{ start: 411, end: 424 }] },
     { end: 976, leftReturn: 5.5, rightReturn: 33 },
