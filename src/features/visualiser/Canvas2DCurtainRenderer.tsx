@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { computeHomography } from './homography';
+import { FOLD_LEAN, foldDepth, MIN_FOLD_PITCH } from './curtainCloth';
+import { createCurtainLighting, type CurtainLighting } from './curtainLighting';
 
 // ---------------------------------------------------------------------------
 // WAVE FOLD CURTAINS
@@ -72,40 +74,19 @@ interface Canvas2DCurtainRendererProps {
 // of image resolution. Wider traced openings carry more folds; the count stays
 // fixed while opening so fabric gathers instead of disappearing.
 const MIN_WAVES_PER_PANEL = 5;
-const MAX_WAVES_PER_PANEL = 20;
-const WAVES_AT_FULL_FRAME = 15;
+const MAX_WAVES_PER_PANEL = 28;
+const WAVES_AT_FULL_FRAME = 18;
 const wavesForTrace = (tracedWidthPx: number, framePx: number): number => {
   const fraction = framePx > 0 ? tracedWidthPx / framePx : 0.5;
   return Math.min(MAX_WAVES_PER_PANEL, Math.max(MIN_WAVES_PER_PANEL, Math.round(fraction * WAVES_AT_FULL_FRAME)));
 };
 const WAVE_PITCH_MM = 160;
 
-/** Stacked, both panels together occupy a third of the track. A shut panel is
- * half the track, so each wave compresses to exactly a third of its shut pitch
- * — that ratio IS the "takes a third of the space" spec, and it is why the
- * minimum wave width below needs no separate number. */
-const OPEN_STACK_FRACTION = 1 / 3;
+// Fully gathered cloth occupies 24% of the track. The cached arc-length
+// solution preserves fullness while the spacing between carriers changes.
+const OPEN_STACK_FRACTION = MIN_FOLD_PITCH;
 const WAVE_MIN_RATIO = OPEN_STACK_FRACTION;
-
-// FABRIC_ARC_RATIO lived here: the fabric consumed by one wave as a multiple of
-// its shut pitch, 1.42. It fed the arc-length depth solver, and then only the
-// weave repeat once that solver was replaced by DEPTH_SHUT/DEPTH_PACKED. Now that
-// the weave covers each panel exactly once there is nothing left for it to set.
-
-/** Wave depth, as a multiple of the SHUT pitch: shut, and fully packed.
- *
- * These replace an arc-length solver that bisected the sine's arc integral per
- * wave per frame to hold the fabric length constant. It was not worth its cost,
- * because the answer barely moves: as a wave's width goes to zero its arc length
- * tends to 4x its amplitude, so the amplitude tends to a CONSTANT of a quarter
- * the fabric length — 0.355 of the shut pitch at our fullness, against 0.33 when
- * shut. Two hundred-odd square roots per wave per frame to travel 8%.
- *
- * The depth was never what compression changes. What changes is the wave's
- * ASPECT: the same depth over a third of the width, which is a much steeper
- * surface and reads as a much sharper fold. That comes free from the width. */
-const DEPTH_SHUT = 0.33;
-const DEPTH_PACKED = 0.36;
+const DEPTH_PACKED = foldDepth(MIN_FOLD_PITCH, 1);
 
 /** Width of the compression front, in waves. A hard sequential handover — wave
  * n at its minimum before wave n+1 starts moving — steps visibly as the slider
@@ -139,7 +120,7 @@ const HEM_DEPTH_GAIN = 0.14;
  * Scaled off the reference render, where the hem's scallop measures about 17% of
  * the wave pitch peak-to-peak against a fold depth of ~0.41 of pitch. A little
  * over that here, since this is looked at much smaller than a 1535px still. */
-const HEM_DEPTH_SWING = 0.16;
+const HEM_DEPTH_SWING = 0.25;
 
 /** The heading gets a swing too, and this is what stops the top of the panel
  * reading as a box.
@@ -269,7 +250,7 @@ const FOLD_PINCH_HEM = 1.0;
  * sixth of a wave over two metres is under a degree and the eye does not see it.
  * Nearly half a wave does.
  */
-const FOLD_WANDER = 0.10;
+const FOLD_WANDER = 0.28;
 const FOLD_WANDER_POWER = 1.35;
 
 /** THE WEIGHTED HEM BAND, which is stiffer than the cloth above it.
@@ -330,7 +311,7 @@ const HEM_BAND = 0.035;
  * A twelfth is a sheer, not frosted glass: at this radius a garden behind the
  * cloth stays a garden — you can see it is green and leafy — but no single leaf
  * survives, which is exactly the line a real sheer draws. */
-const SHEER_DIFFUSION = 1 / 12;
+const SHEER_DIFFUSION = 1 / 24;
 
 
 
@@ -582,8 +563,8 @@ const swaySettled = (state: SwayState): boolean =>
  * few thousand vertices, and the fragment cost — which is what actually decides
  * the frame rate — does not move at all, because the panel covers the same
  * pixels either way. */
-const COLS_PER_WAVE = 10;
-const ROWS = 36;
+const COLS_PER_WAVE = 24;
+const ROWS = 48;
 
 /** Ceiling on the render buffer's width in pixels.
  *
@@ -625,8 +606,8 @@ const HARDWARE_HEX: Record<string, string> = {
 // --- Helpers ---------------------------------------------------------------
 
 // Sheer coverage before extra layers from folds, stacking and the doubled hem.
-const SHEER_OPACITY_DARK = 0.46;
-const SHEER_OPACITY_LIGHT = 0.60;
+const SHEER_OPACITY_DARK = 1.35;
+const SHEER_OPACITY_LIGHT = 1.10;
 
 const sheerOpacity = (colour: string): number => {
   const l = luma01(colour);
@@ -731,7 +712,7 @@ function panelLayout(
   for (let i = 0; i < count; i++) {
     const compression = clamp01((shutWidth - widths[i]) / (shutWidth - minWidth));
     const jitter = 1 + waveJitter(i, 1.7) * 0.09;
-    depths.push(shutWidth * (DEPTH_SHUT + (DEPTH_PACKED - DEPTH_SHUT) * compression) * jitter);
+    depths.push(foldDepth(widths[i], shutWidth) * jitter);
     compressions.push(compression);
   }
 
@@ -771,6 +752,8 @@ function createPanelMesh(count: number): PanelMesh {
   const positions = new Float32Array(vertexCount * 3);
   const normals = new Float32Array(vertexCount * 3);
   const uvs = new Float32Array(vertexCount * 2);
+  const photoUvs = new Float32Array(vertexCount * 2);
+
   const compression = new Float32Array(vertexCount);
   const depth = new Float32Array(vertexCount);
 
@@ -783,6 +766,8 @@ function createPanelMesh(count: number): PanelMesh {
     for (let c = 0; c <= cols; c++) {
       uvs[v * 2] = c / cols;
       uvs[v * 2 + 1] = 1 - r / ROWS;
+      photoUvs[v * 2] = c / cols;
+      photoUvs[v * 2 + 1] = 1 - r / ROWS;
       v++;
     }
   }
@@ -811,6 +796,7 @@ function createPanelMesh(count: number): PanelMesh {
   geometry.setAttribute('position', posAttr);
   geometry.setAttribute('normal', normAttr);
   geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  geometry.setAttribute('aPhotoUv', new THREE.BufferAttribute(photoUvs, 2));
   geometry.setAttribute('aCompression', compAttr);
   geometry.setAttribute('aDepth', depthAttr);
   geometry.setIndex(new THREE.BufferAttribute(indices, 1));
@@ -839,18 +825,11 @@ interface PanelWrite {
   travelTime?: number;
 }
 
-/** Rewrites one panel's vertex data for a new openness.
- *
- * Normals are derived analytically from the surface slope rather than by
- * computeVertexNormals, which walked every triangle taking cross products. This
- * is a height field z(x) with only smooth quadratic terms down the drop, so the
- * slope at a column is the same all the way down it: the normal is computed once
- * per COLUMN and copied down, which is ROWS times less work than per vertex, and
- * needs no cross products at all. */
+/** Rewrites the fixed mesh in place; normals include folds, lean and hem. */
 function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
   const { layout, wallX, towardCentre, topY, bottomY, sway = 0, swayAgo, travelTime = 0 } = w;
   const { widths, depths, compressions, span, overall } = layout;
-  const { positions, normals, compression, depth, cols, count } = mesh;
+  const { positions, compression, depth, cols, count } = mesh;
   const height = topY - bottomY;
   const TAU = Math.PI * 2;
 
@@ -936,7 +915,7 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
   const sectionZ = (c: number, vy: number): number => {
     const pinch = FOLD_PINCH_HEADING + (FOLD_PINCH_HEM - FOLD_PINCH_HEADING) * vy;
     const phase = colPhase[c] + colWander[c] * Math.pow(vy, FOLD_WANDER_POWER);
-    const s = Math.sin(phase);
+    const s = -Math.cos(phase);
     const shaped = s < 0 ? -Math.pow(-s, pinch) : Math.pow(s, pinch);
     // The hem band, over the last HEM_STIFFEN_SPAN of the drop only.
     const intoHem = smoothstep01((vy - (1 - HEM_STIFFEN_SPAN)) / HEM_STIFFEN_SPAN);
@@ -1017,37 +996,19 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
       // wanders. See HEM_UNEVEN.
       const y = topY - (height - colShort[c] * vy) * vy;
 
-      positions[i3] = wallX + towardCentre * (colX[c] * splay + lag);
+      positions[i3] = wallX + towardCentre * (colX[c] * splay + lag + (z + colAmp[c]) * FOLD_LEAN);
       positions[i3 + 1] = y - z * swing - sink;
       positions[i3 + 2] = z;
 
-      // THE NORMAL, FROM THIS ROW'S OWN NEIGHBOURS. It used to be computed once
-      // per column from the analytic slope of a sine and copied down the whole
-      // drop, on the grounds that the slope did not change with height. It does
-      // now — that is the entire change — so a central difference across the two
-      // adjacent columns is taken instead, one-sided at the two edges. The
-      // surface is smooth in x, so this is the answer the derivative would give,
-      // and it stays right whatever sectionZ is made to do next.
-      const cLo = c > 0 ? c - 1 : c;
-      const cHi = c < cols ? c + 1 : c;
-      const dz = rowZ[cHi] - rowZ[cLo];
-      const dx = (colX[cHi] - colX[cLo]) * splay * towardCentre;
-      const nx = -dz;
-      const nz = dx;
-      const len = Math.hypot(nx, nz) || 1;
-
-      normals[i3] = nx / len;
-      normals[i3 + 1] = 0;
-      normals[i3 + 2] = nz / len;
       compression[v] = colComp[c];
       depth[v] = z / maxDepth;
-      // The y shear tilts the surface slightly out of the x-z plane. Left out of
-      // the normal on purpose: at this magnitude it is a fraction of a degree,
-      // and carrying it would cost a normalise per vertex to change nothing.
     }
   }
 
   const g = mesh.geometry;
+  // The cloth can turn back under itself. Full 3D normals also include the
+  // leaning folds and weighted hem, so light follows the actual surface.
+  g.computeVertexNormals();
   (g.attributes.position as THREE.BufferAttribute).needsUpdate = true;
   (g.attributes.normal as THREE.BufferAttribute).needsUpdate = true;
   (g.attributes.aCompression as THREE.BufferAttribute).needsUpdate = true;
@@ -1058,8 +1019,12 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
 
 const VERTEX_SHADER = `
 uniform mat3 uQuadH;
+uniform mat4 uShadowMatrix;
+varying vec4 vShadow;
 attribute float aCompression;
 attribute float aDepth;
+attribute vec2 aPhotoUv;
+varying vec2 vPhotoUv;
 
 uniform vec2 uFrame;
 
@@ -1074,6 +1039,7 @@ varying vec2 vBackdrop;
 void main() {
   vNormal = normalMatrix * normal;
   vUv = uv;
+  vPhotoUv = aPhotoUv;
   vCompression = aCompression;
   vDepth = aDepth;
   // ONTO THE TRACED QUAD. Everything above is solved square — the waves, the
@@ -1082,6 +1048,7 @@ void main() {
     // so the vertex is in world pixel space, then the homography with its
     // perspective divide, then the ordinary projection.
     vec4 world = modelMatrix * vec4(position, 1.0);
+    vShadow = uShadowMatrix * world;
     vec3 warped = uQuadH * vec3(world.xy, 1.0);
     world.xy = warped.xy / warped.z;
     vBackdrop = world.xy / uFrame;
@@ -1089,61 +1056,73 @@ void main() {
 }
 `;
 
-// Photographic fold illumination follows the fabric UVs as it gathers. The
-// geometry supplies silhouette and movement; it does not paint a second set
-// of bright ridges over the photographed cloth.
+// Surface illumination and self-shadowing are computed from the 3D folds.
+// Sheer transmission sums the optical path through ALL overlapping layers.
 const FRAGMENT_SHADER = `
-precision mediump float;
+precision highp float;
 uniform vec3 uColour;
 uniform float uOpacity;
 uniform float uIsSheer;
 uniform sampler2D uBackdrop;
-uniform float uHasBackdrop;
-uniform float uHemBand;
+uniform sampler2D uShadowMap;
+uniform sampler2D uDensity;
 uniform sampler2D uTexture;
+uniform sampler2D uFoldPhoto;
+uniform float uPhotoMirror;
+varying vec2 vPhotoUv;
 uniform vec2 uTexRepeat;
+uniform vec3 uRoomTint;
+uniform float uRoomExposure;
+varying vec4 vShadow;
 varying vec2 vBackdrop;
 varying vec3 vNormal;
 varying vec2 vUv;
 varying float vCompression;
 varying float vDepth;
 
+float shadowTap(vec3 p, vec2 offset) {
+  return step(p.z - 0.00055, texture2D(uShadowMap, p.xy + offset * 0.0013).r);
+}
+float visibility() {
+  vec3 p = vShadow.xyz / vShadow.w;
+  float lit = shadowTap(p,vec2(-1.0,-1.0)) + shadowTap(p,vec2(0.0,-1.0)) + shadowTap(p,vec2(1.0,-1.0))
+    + shadowTap(p,vec2(-1.0,0.0)) + shadowTap(p,vec2(0.0,0.0)) + shadowTap(p,vec2(1.0,0.0))
+    + shadowTap(p,vec2(-1.0,1.0)) + shadowTap(p,vec2(0.0,1.0)) + shadowTap(p,vec2(1.0,1.0));
+  return lit / 9.0;
+}
 void main() {
-  vec3 sampleCloth = texture2D(uTexture, vUv * uTexRepeat).rgb;
-  float luminance = dot(sampleCloth, vec3(0.299, 0.587, 0.114));
-  // Remove the white sample's colour cast, retaining its real fold shading,
-  // slubs and soft irregular creases. All colour choices use the same map.
-  float photoShade = clamp(luminance / 0.87, 0.38, 1.08);
-  float cavity = max(0.0, -vDepth);
-  float packed = smoothstep(0.25, 1.0, vCompression);
-  float heading = smoothstep(0.95, 1.0, vUv.y);
-  float hem = 1.0 - smoothstep(uHemBand * 0.7, uHemBand, vUv.y);
-  float sideHem = (1.0 - smoothstep(0.0, 0.006, vUv.x))
-                + smoothstep(0.994, 1.0, vUv.x);
-  float contact = 1.0 - heading * (0.10 + cavity * 0.06);
-  contact *= 1.0 - packed * cavity * 0.10;
-  contact *= 1.0 - hem * 0.055 - sideHem * 0.045;
-  vec3 surface = uColour * photoShade * contact;
-  // Diffuse fibre reflection retains detail in charcoal without a satin glint.
-  float dark = 1.0 - smoothstep(0.08, 0.55, dot(uColour, vec3(0.299, 0.587, 0.114)));
-  surface += vec3(max(0.0, photoShade - 0.55) * 0.035 * dark);
-
-  float alpha = 1.0;
+  vec3 N = normalize(vNormal);
+  if (!gl_FrontFacing) N = -N;
+  if (N.z < 0.0) N = -N;
+  float tooth = texture2D(uTexture, vUv * uTexRepeat).r - 0.5;
+  vec3 L = normalize(vec3(-0.75, 0.45, 1.0));
+  float facing = max(N.z, 0.0);
+  float direct = max(dot(N,L), 0.0);
+  // Use the shop photograph's actual fold falloff as the resting light field.
+  // Every photographed valley is registered to one geometric return, so the
+  // light deforms with the cloth instead of tiling unrelated stripes over it.
+  vec3 foldPhoto = texture2D(uFoldPhoto, vec2(mix(vPhotoUv.x,1.0-vPhotoUv.x,uPhotoMirror),vPhotoUv.y)).rgb;
+  float photoLight = dot(foldPhoto,vec3(0.299,0.587,0.114));
+  float cavity = pow(max(0.0, -vDepth), 1.5);
+  float gathered = smoothstep(0.0,1.0,vCompression);
+  float liveLight = (0.78 + 0.22 * direct) * mix(0.72,1.0,visibility());
+  float shade = (0.10 + photoLight) * mix(1.0,liveLight,gathered * 0.75);
+  shade *= 1.0 - cavity * gathered * 0.12;
+  vec3 surface = uColour * uRoomTint * shade * (1.0 + tooth * 0.10) * uRoomExposure;
+  float dark = 1.0 - smoothstep(0.05, 0.5, dot(uColour, vec3(0.299,0.587,0.114)));
+  float fibre = pow(1.0 - facing, 2.0) * direct * 0.04;
+  surface += vec3(fibre * dark);
   if (uIsSheer > 0.5) {
-    // Layers accumulate optically as the curtain stacks. The doubled bottom
-    // hem and the shaded sides of folds have a longer path through the cloth.
-    float layers = 1.0 + packed * 1.8 + (1.0 - luminance) * 1.2 + hem * 0.9;
-    float coverage = 1.0 - pow(1.0 - uOpacity, layers);
-    if (uHasBackdrop > 0.5) {
-      vec3 behind = texture2D(uBackdrop, vBackdrop).rgb;
-      float transmission = (1.0 - coverage) * 0.92;
-      // Energy-balanced diffuse transmission avoids glowing white stripes.
-      surface = mix(surface, behind, transmission);
-    } else {
-      alpha = coverage;
-    }
+    float path = texture2D(uDensity, vBackdrop).r * 12.0;
+    float transmit = exp(-uOpacity * max(1.0, path));
+    vec3 behind = texture2D(uBackdrop, vBackdrop).rgb;
+    // Backlit fibres scatter towards the viewer. This varies with the room's
+    // actual light field; the selected dye still absorbs part of that light.
+    vec3 backlit = mix(uColour, vec3(1.0), 0.18) * (0.80 + 0.20 * behind);
+    vec3 cloth = mix(surface, backlit * (0.55 + photoLight * 0.48), 0.45);
+    surface = cloth * (1.0 - transmit) + behind * transmit;
   }
-  gl_FragColor = vec4(clamp(surface, 0.0, 1.0), alpha);
+  gl_FragColor = vec4(clamp(surface,0.0,1.0),1.0);
 }
 `;
 
@@ -1362,11 +1341,11 @@ void main() {
 `;
 
 
-// Each sample contains eight photographed folds. Repeat horizontally along
-// the same UVs used by the moving mesh, with mipmaps to prevent weave shimmer.
+// The approved shop photograph supplies the blockout's fine fabric detail.
+// Its broad fold lighting is removed; geometry and the shadow pass provide it.
 const FABRIC_SAMPLE: Record<'blockout' | 'sheer', string> = {
-  blockout: '/images/visualiser/textures/curtains/blockout-drape.webp',
-  sheer: '/images/visualiser/textures/curtains/sheer-drape.webp',
+  blockout: '/images/fabrics/curtains-blockout.webp',
+  sheer: '/images/visualiser/textures/curtains/sheer_produced.png',
 };
 interface FabricTexture { texture: THREE.Texture }
 const textureCache = new Map<string, Promise<FabricTexture>>();
@@ -1374,22 +1353,36 @@ function buildDetailTexture(path: string): Promise<FabricTexture> {
   const cached = textureCache.get(path);
   if (cached) return cached;
   const pending = loadImage(path).then(img => {
-    const texture = new THREE.Texture(img);
-    // This shader composites in display space, like the 2D photograph below.
-    // Decoding just the backdrop to linear made transmitted light too dark.
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 1024;
+    const ctx = canvas.getContext('2d')!;
+    const fromShop = path.includes('/fabrics/');
+    if (fromShop) ctx.drawImage(img, 86, 105, 340, 585, 0, 0, 512, 1024);
+    else ctx.drawImage(img, 0, 0, 512, 1024);
+    const pixels = ctx.getImageData(0,0,512,1024);
+    const low = document.createElement('canvas');
+    low.width = 512; low.height = 1024;
+    const lowCtx = low.getContext('2d')!;
+    lowCtx.filter = 'blur(18px)'; lowCtx.drawImage(canvas,0,0);
+    const smooth = lowCtx.getImageData(0,0,512,1024).data;
+    for (let i=0;i<pixels.data.length;i+=4) {
+      const value = (pixels.data[i]+pixels.data[i+1]+pixels.data[i+2]) / 3;
+      const base = (smooth[i]+smooth[i+1]+smooth[i+2]) / 3;
+      const detail = Math.max(0,Math.min(255,128+(value-base)*1.4));
+      pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=detail;
+      pixels.data[i+3]=255;
+    }
+    ctx.putImageData(pixels,0,0);
+    const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.NoColorSpace;
-    texture.wrapS = THREE.MirroredRepeatWrapping;
+    texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
     texture.minFilter = THREE.LinearMipmapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.generateMipmaps = true;
-    texture.needsUpdate = true;
-    return { texture };
-  }).catch(error => {
-    textureCache.delete(path);
-    throw error;
-  });
-  textureCache.set(path, pending);
+    return {texture};
+  }).catch(error => {textureCache.delete(path); throw error;});
+  textureCache.set(path,pending);
   return pending;
 }
 
@@ -1432,7 +1425,9 @@ export default function Canvas2DCurtainRenderer({
   const containerRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLCanvasElement>(null);
   const threeRef = useRef<HTMLCanvasElement>(null);
+  const foregroundRef = useRef<HTMLCanvasElement>(null);
 
+  const lightingRef = useRef<CurtainLighting | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.OrthographicCamera | null>(null);
@@ -1513,7 +1508,10 @@ export default function Canvas2DCurtainRenderer({
       shadows[1].position.set(windowRight - span / 2, top, -1);
     }
 
-    renderer.render(scene, camera);
+    const roomFilter = fabricType === 'blockout' ? `brightness(${0.90 + open * 0.10})` : 'none';
+    if (bgRef.current) bgRef.current.style.filter = roomFilter;
+    if (foregroundRef.current) foregroundRef.current.style.filter = roomFilter;
+    lightingRef.current?.render();
   };
 
   /** Runs the cloth solver until the hem is still.
@@ -1597,15 +1595,17 @@ export default function Canvas2DCurtainRenderer({
   useEffect(() => {
     let cancelled = false;
     let backdropTexture: THREE.Texture | undefined;
+    let foldPhotoTexture: THREE.Texture | undefined;
 
     const init = async () => {
       const bgCanvas = bgRef.current;
       const threeCanvas = threeRef.current;
       if (!bgCanvas || !threeCanvas) return;
 
-      const [photo, fabric] = await Promise.all([
+      const [photo, fabric, foldPhotoImage] = await Promise.all([
         loadImage(photoUrl),
         buildDetailTexture(FABRIC_SAMPLE[fabricType] ?? FABRIC_SAMPLE.blockout),
+        loadImage('/images/fabrics/curtains-blockout.webp'),
       ]);
       if (cancelled) return;
 
@@ -1618,12 +1618,51 @@ export default function Canvas2DCurtainRenderer({
       // The fabric buffer is capped; the ortho camera below still spans 0..W in
       // photo pixels, so world coordinates are unchanged and the two canvases
       // stay aligned — both are CSS-sized to the container.
-      const renderScale = Math.min(1, RENDER_MAX_WIDTH / W);
+      const renderScale = Math.min(1, Math.min(RENDER_MAX_WIDTH, (containerRef.current?.clientWidth || W) * 1.6) / W);
       threeCanvas.width = Math.round(W * renderScale);
       threeCanvas.height = Math.round(H * renderScale);
 
       const bgCtx = bgCanvas.getContext('2d');
       if (bgCtx) bgCtx.drawImage(photo, 0, 0);
+      const foreground = foregroundRef.current;
+      if (foreground) {
+        foreground.width = W; foreground.height = H;
+        const ctx = foreground.getContext('2d')!;
+        ctx.clearRect(0,0,W,H);
+        if (photoUrl.endsWith('/curtain-shop-room.webp')) {
+          // Foreground objects stay in front of the curtain. The plant matte
+          // is restricted to its known area, so outdoor foliage is never cut out.
+          ctx.drawImage(photo,0,0);
+          const fg = ctx.getImageData(0,0,W,H);
+          for (let y=0;y<H;y++) for (let x=0;x<W;x++) {
+            const i=(y*W+x)*4;
+            const nx=x/W, ny=y/H;
+            const light=(fg.data[i]*0.299+fg.data[i+1]*0.587+fg.data[i+2]*0.114)/255;
+            const leaf = nx<0.085 && ny>0.39 && ny<0.64;
+            const edge = ny<0.65 ? 0.06+(ny-0.615)*0.8 : ny<0.77 ? 0.088 : 0.088-(ny-0.77)*0.24;
+            const sofa = ny>0.615 && ny<0.829 && nx<edge;
+            fg.data[i+3] = sofa ? 255 : leaf ? Math.round(clamp01((0.67-light)/0.16)*clamp01((0.085-nx)/0.008)*255) : 0;
+          }
+          ctx.putImageData(fg,0,0);
+        }
+      }
+      // Sample neutral surfaces around the opening, excluding dark furniture
+      // and saturated foliage, to match each customer's room colour and light.
+      const lightCanvas = document.createElement('canvas');
+      lightCanvas.width=32; lightCanvas.height=32;
+      const lightCtx=lightCanvas.getContext('2d')!;
+      lightCtx.drawImage(photo,0,0,32,32);
+      const lightPixels=lightCtx.getImageData(0,0,32,32).data;
+      const roomRGB=[0,0,0]; let roomSamples=0;
+      for(let y=0;y<20;y++) for(let x=0;x<32;x++) {
+        if(y>3 && x>3 && x<28) continue;
+        const i=(y*32+x)*4, rgb=[lightPixels[i],lightPixels[i+1],lightPixels[i+2]];
+        if(Math.min(...rgb)<90 || Math.max(...rgb)-Math.min(...rgb)>60) continue;
+        rgb.forEach((v,c)=>{roomRGB[c]+=v;}); roomSamples++;
+      }
+      const brightest=Math.max(...roomRGB,1);
+      const roomTint=new THREE.Vector3(...roomRGB.map(v=>roomSamples ? 0.72+0.28*v/brightest : 1) as [number,number,number]);
+
 
       // THE DIFFUSED BACKDROP the sheer looks through. Redrawn small and
       // sampled back up, which is a blur by resampling: the browser's own
@@ -1723,6 +1762,21 @@ export default function Canvas2DCurtainRenderer({
       const topEdge = Math.hypot(trPx.x - tlPx.x, trPx.y - tlPx.y);
       const bottomEdge = Math.hypot(brPx.x - blPx.x, brPx.y - blPx.y);
       const waveCount = wavesForTrace((topEdge + bottomEdge) / 2, W);
+      // Register the shop's photographed troughs to individual physical folds.
+      // An atlas avoids UV jumps at repeated folds and preserves the full drop.
+      const troughs = [82,113,141,173,208,242,277,310,352,393];
+      const atlas = document.createElement('canvas');
+      atlas.width = waveCount * 64; atlas.height = 1024;
+      const atlasCtx = atlas.getContext('2d')!;
+      for (let i=0;i<waveCount;i++) {
+        const j = i % (troughs.length-1);
+        atlasCtx.drawImage(foldPhotoImage,troughs[j],57,troughs[j+1]-troughs[j],654,i*64,0,64,1024);
+      }
+      foldPhotoTexture = new THREE.CanvasTexture(atlas);
+      foldPhotoTexture.colorSpace = THREE.NoColorSpace;
+      foldPhotoTexture.minFilter = THREE.LinearMipmapLinearFilter;
+      foldPhotoTexture.needsUpdate = true;
+
 
       // A small centre overlap closes the light leak between the two panels.
       const gap = -windowWidth * 0.002;
@@ -1829,12 +1883,17 @@ export default function Canvas2DCurtainRenderer({
       const colourVec = new THREE.Vector3(rgb.r / 255, rgb.g / 255, rgb.b / 255);
       const isSheer = fabricType === 'sheer';
 
-      const repeat = new THREE.Vector2(waveCount / 8, 1);
+      const repeat = new THREE.Vector2(1, 1);
 
       const makeMaterial = () =>
         new THREE.ShaderMaterial({
           uniforms: {
             uQuadH: { value: quadMatrix },
+            uShadowMap: { value: null },
+            uShadowMatrix: { value: new THREE.Matrix4() },
+            uDensity: { value: null },
+            uRoomTint: { value: roomTint },
+            uRoomExposure: { value: 1.0 },
             uColour: { value: colourVec },
             uOpacity: { value: isSheer ? sheerOpacity(colourRef.current) : 1.0 },
             uIsSheer: { value: isSheer ? 1.0 : 0.0 },
@@ -1845,13 +1904,15 @@ export default function Canvas2DCurtainRenderer({
             uFrame: { value: new THREE.Vector2(W, H) },
             uHemBand: { value: HEM_BAND },
             uTexture: { value: fabric.texture },
+            uFoldPhoto: { value: foldPhotoTexture },
+            uPhotoMirror: { value: 0 },
             uTexRepeat: { value: repeat },
 
           },
           vertexShader: VERTEX_SHADER,
           fragmentShader: FRAGMENT_SHADER,
-          transparent: isSheer,
-          depthWrite: !isSheer,
+          transparent: false,
+          depthWrite: true,
           side: THREE.DoubleSide,
         });
 
@@ -1861,6 +1922,8 @@ export default function Canvas2DCurtainRenderer({
       const rightMesh = createPanelMesh(waveCount);
       const leftMaterial = makeMaterial();
       const rightMaterial = makeMaterial();
+      // Both panels receive light from the same side of the room.
+      rightMaterial.uniforms.uPhotoMirror.value = 1;
       materialsRef.current = [leftMaterial, rightMaterial];
       const leftPanel = new THREE.Mesh(leftMesh.geometry, leftMaterial);
       const rightPanel = new THREE.Mesh(rightMesh.geometry, rightMaterial);
@@ -1954,6 +2017,14 @@ export default function Canvas2DCurtainRenderer({
         scene.add(cap);
       }
 
+      lightingRef.current?.dispose();
+      const lighting = createCurtainLighting(renderer, scene, camera, [leftPanel, rightPanel], quadMatrix, W, H, VERTEX_SHADER, isSheer);
+      lightingRef.current = lighting;
+      for (const material of materialsRef.current) {
+        material.uniforms.uShadowMap.value = lighting.shadowMap;
+        material.uniforms.uShadowMatrix.value = lighting.shadowMatrix;
+        material.uniforms.uDensity.value = lighting.densityMap;
+      }
       draw(opennessRef.current, 0);
     };
 
@@ -1962,6 +2033,7 @@ export default function Canvas2DCurtainRenderer({
     return () => {
       cancelled = true;
       backdropTexture?.dispose();
+      foldPhotoTexture?.dispose();
       stopSolver();
     };
     // The corner props are listed as eight NUMBERS, not as four objects.
@@ -2028,6 +2100,7 @@ export default function Canvas2DCurtainRenderer({
           }
         });
       }
+      lightingRef.current?.dispose();
       if (rendererRef.current) rendererRef.current.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2035,11 +2108,7 @@ export default function Canvas2DCurtainRenderer({
 
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
-      {/* TWO CANVASES, AND THEY ARE LABELLED — see data-render-surface.
-          The room photograph is drawn in 2D underneath; the cloth is WebGL on
-          top of it. Anything looking for "the curtain" wants the second one,
-          and for two weeks the render baseline took the first — silently, and
-          reported green while the renderer underneath it was replaced. */}
+      {/* Photo, cloth and foreground are separate registered surfaces. */}
       <canvas
         ref={bgRef}
         data-render-surface="curtain-backdrop"
@@ -2057,6 +2126,8 @@ export default function Canvas2DCurtainRenderer({
           pointerEvents: 'none',
         }}
       />
+      <canvas ref={foregroundRef} data-render-surface="curtain-foreground"
+        style={{position:'absolute',inset:0,width:'100%',height:'auto',pointerEvents:'none'}} />
     </div>
   );
 }

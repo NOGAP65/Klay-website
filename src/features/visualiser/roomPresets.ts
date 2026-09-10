@@ -10,9 +10,9 @@ export interface WindowRoom {
 export const WINDOW_ROOMS: Record<'blind' | 'curtain', WindowRoom[]> = {
   curtain: [
     {
-      url: '/images/visualiser/rooms/curtain-living.webp',
+      url: '/images/visualiser/rooms/curtain-shop-room.webp',
       name: 'Garden living room',
-      corners: [[0.085, 0.079], [0.915, 0.079], [0.915, 0.696], [0.085, 0.696]],
+      corners: [[0.067, 0.057], [0.943, 0.057], [0.943, 0.790], [0.067, 0.790]],
     },
     {
       url: '/images/visualiser/rooms/curtain-bedroom.webp',
@@ -22,9 +22,9 @@ export const WINDOW_ROOMS: Record<'blind' | 'curtain', WindowRoom[]> = {
   ],
   blind: [
     {
-      url: '/images/visualiser/rooms/blind-reading.webp',
-      name: 'Courtyard reading room',
-      corners: [[0.216, 0.144], [0.790, 0.144], [0.790, 0.606], [0.216, 0.606]],
+      url: '/images/visualiser/preview.png',
+      name: 'Original bedroom',
+      corners: [[0.1918, 0.1989], [0.5841, 0.2492], [0.5830, 0.6382], [0.1864, 0.6699]],
     },
     {
       url: '/images/visualiser/rooms/blind-bedroom.webp',

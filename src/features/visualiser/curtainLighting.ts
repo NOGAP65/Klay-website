@@ -1,0 +1,74 @@
+import * as THREE from 'three';
+
+export interface CurtainLighting {
+  shadowMap: THREE.Texture;
+  shadowMatrix: THREE.Matrix4;
+  densityMap: THREE.Texture;
+  render: () => void;
+  dispose: () => void;
+}
+
+/** Shadow depth comes from the actual folded geometry. A separate additive
+ * pass sums the optical path through every sheer layer, including return faces. */
+export function createCurtainLighting(
+  renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera,
+  panels: THREE.Mesh[], quad: THREE.Matrix3, width: number, height: number,
+  vertexShader: string, isSheer: boolean,
+): CurtainLighting {
+  const resolution = renderer.domElement.width > 1100 ? 1536 : 1024;
+  const shadow = new THREE.WebGLRenderTarget(resolution, resolution);
+  shadow.depthTexture = new THREE.DepthTexture(resolution, resolution, THREE.UnsignedIntType);
+  const density = new THREE.WebGLRenderTarget(renderer.domElement.width, renderer.domElement.height, { depthBuffer: false });
+  const scale = Math.max(width, height);
+  const light = new THREE.OrthographicCamera(-scale * 0.72, scale * 0.72, scale * 0.72, -scale * 0.72, 1, scale * 4);
+  const target = new THREE.Vector3(width / 2, height / 2, 0);
+  light.position.copy(target).add(new THREE.Vector3(-0.75, 0.45, 1).normalize().multiplyScalar(scale * 1.8));
+  light.lookAt(target);
+  light.updateMatrixWorld();
+  const shadowMatrix = new THREE.Matrix4().set(0.5,0,0,0.5, 0,0.5,0,0.5, 0,0,0.5,0.5, 0,0,0,1)
+    .multiply(light.projectionMatrix).multiply(light.matrixWorldInverse);
+  const depthMaterial = new THREE.MeshDepthMaterial({ side: THREE.DoubleSide });
+  const densityMaterial = new THREE.ShaderMaterial({
+    uniforms: { uQuadH:{value:quad}, uFrame:{value:new THREE.Vector2(width,height)}, uShadowMatrix:{value:shadowMatrix} },
+    vertexShader,
+    fragmentShader: `
+      varying vec3 vNormal;
+      varying vec2 vUv;
+      void main() {
+        float facing = max(0.12, abs(normalize(vNormal).z));
+        float hem = 1.0 - smoothstep(0.018, 0.024, vUv.y);
+        float tape = smoothstep(0.965, 0.99, vUv.y);
+        float path = (1.0 + hem * 1.2 + tape * 0.8) / facing;
+        gl_FragColor = vec4(vec3(path / 12.0), 1.0);
+      }`,
+    side:THREE.DoubleSide, depthTest:false, depthWrite:false,
+    transparent:true, blending:THREE.AdditiveBlending,
+  });
+  return {
+    shadowMap:shadow.depthTexture, shadowMatrix, densityMap:density.texture,
+    render() {
+      const visibility = scene.children.map(object => object.visible);
+      // Floor contact-shadow decals are receivers, not solid shadow casters.
+      scene.children.forEach(object => { if (object.renderOrder < 0) object.visible = false; });
+      scene.overrideMaterial = depthMaterial;
+      renderer.setRenderTarget(shadow);
+      renderer.setClearColor(0xffffff, 1);
+      renderer.clear();
+      renderer.render(scene, light);
+      if (isSheer) {
+        scene.children.forEach(object => { object.visible = panels.includes(object as THREE.Mesh); });
+        scene.overrideMaterial = densityMaterial;
+        renderer.setRenderTarget(density);
+        renderer.setClearColor(0x000000, 0);
+        renderer.clear();
+        renderer.render(scene, camera);
+      }
+      scene.children.forEach((object, i) => { object.visible = visibility[i]; });
+      scene.overrideMaterial = null;
+      renderer.setRenderTarget(null);
+      renderer.setClearColor(0x000000, 0);
+      renderer.render(scene, camera);
+    },
+    dispose() { shadow.dispose(); density.dispose(); depthMaterial.dispose(); densityMaterial.dispose(); },
+  };
+}

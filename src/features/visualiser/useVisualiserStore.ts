@@ -431,6 +431,8 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
     const reconcile = (name: string) => (palette.some(c => c.name === name) ? name : palette[0].name);
     return {
       productCategory: cat,
+      ...(s.defaultWindowActive && s.productCategory !== cat
+        ? { rollPosition: cat === 'curtain' ? 0.94 : 0.5 } : {}),
       fabricColour: reconcile(s.fabricColour),
       windows: s.windows.map(w => ({ ...w, fabricColour: reconcile(w.fabricColour) })),
     };
