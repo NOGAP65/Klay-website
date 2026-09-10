@@ -614,6 +614,7 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // Cassette before cloth: the cassette is bolted to the house and the fabric
   // goes inside it. See AWNING_COLOURS.
   'folding-arm-awnings': {
+    locationChoices: [v('rear', 'Rear'), v('side', 'Side'), v('front', 'Front')],
     hardwareLabel: 'Cassette colour',
     hardwareChoices: CASSETTE_COLOURS.map(c => ({ id: c.name, label: c.name, hex: c.hex })),
     hardwareFirst: true,

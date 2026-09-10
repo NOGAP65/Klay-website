@@ -96,7 +96,7 @@
 // every other page and stay in components/.
 // ---------------------------------------------------------------------------
 
-import { useEffect } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 
 import { tokens } from '@/ds';
 
@@ -109,6 +109,7 @@ import { SocialProof } from './SocialProof';
 import { StepsBar } from './StepsBar';
 import { Testimonials } from './Testimonials';
 import { VisualiserShowcase } from './VisualiserShowcase';
+import './homeBanners.css';
 
 export default function HomePage() {
   const setScrollY = useKlayStore((s) => s.setScrollY);
@@ -134,15 +135,18 @@ export default function HomePage() {
   return (
     <>
 
-      <main style={{ background: tokens.paper }}>
+      <main style={{ background: tokens.paper,
+        '--banner-paper': tokens.paper, '--banner-card': tokens.card,
+        '--banner-band': tokens.band, '--banner-ink': tokens.ink,
+        '--banner-muted': tokens.inkSoft, '--banner-on-dark': tokens.onDarkMuted,
+        '--banner-accent': tokens.accent, '--banner-accent-edge': tokens.accentEdge,
+        '--banner-on-accent': tokens.onAccent, '--banner-line': tokens.line,
+        '--banner-display': tokens.display, '--banner-body': tokens.body,
+      } as CSSProperties}>
         {/* 3 — The promise, full bleed under the transparent nav. */}
         <Hero />
 
-        {/* 4 — The whole process in one gold line. It replaces a 635px How It
-            Works section: the four steps are reassurance rather than persuasion,
-            and answering "who does the work?" here means the customer meets the
-            range already knowing how buying works. The detail moved to
-            /how-it-works, which the bar links to. */}
+        {/* The three stages from the customer's side, visible before shopping. */}
         <StepsBar />
 
         {/* 5 — FOUR HERO PRODUCTS, one row, nothing behind an arrow. A roller
@@ -153,8 +157,7 @@ export default function HomePage() {
             RangeRow, and THE RANGE IS ONE SECTION NOW above. */}
         <RangeRow />
 
-        {/* 6 — The catch, for anyone who read the range and still doesn't know
-            which one is theirs. */}
+        {/* The purchase-to-installation journey, followed by the visualiser. */}
         <RecommendationBanner />
 
         {/* 7 — The centrepiece: configure it, see it on your own window, buy it. */}
