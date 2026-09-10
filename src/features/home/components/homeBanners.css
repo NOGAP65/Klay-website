@@ -69,6 +69,10 @@
 .home-process h3 a { color: inherit; text-decoration: none; text-underline-offset: 4px; }
 .home-process h3 a:hover { text-decoration: underline; }
 .home-process-item p { color: color-mix(in srgb, var(--banner-on-accent) 80%, transparent); font-size: 12px; line-height: 1.6; margin: 0; max-width: 190px; }
+.home-step-pricing { display: flex; align-items: center; gap: 8px; }
+.home-steps .home-step-pricing { justify-content: center; }
+.home-pricing-sizes { display: inline-flex; flex: 0 0 auto; gap: 3px; }
+.home-pricing-sizes > span { display: grid; place-items: center; box-sizing: border-box; width: 20px; height: 20px; border: 1px solid var(--banner-on-dark); border-radius: 2px; color: var(--banner-paper); font-size: 10px; font-weight: 500; line-height: 1; }
 .home-process-next { display: inline-flex; align-items: center; gap: 16px; flex-shrink: 0; min-height: 44px; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--banner-on-accent) 40%, transparent); background: transparent; color: inherit; padding: 0; text-align: left; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; }
 .home-process-next span { display: inline-block; font-size: 21px; transition: transform .2s ease; }
 .home-process-next:hover span { transform: translate(2px, -2px); }
@@ -114,6 +118,9 @@
   .home-process h3 { font-size: 12px; }
   .home-process-item p { font-size: 11px; }
   .home-process-number { font-size: 22px; }
+  .home-step-pricing { gap: 5px; }
+  .home-pricing-sizes { gap: 2px; }
+  .home-pricing-sizes > span { width: 14px; height: 16px; font-size: 9px; }
 }
 
 @media (max-height: 700px) {
@@ -128,12 +135,19 @@
   .home-hero-content { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 8px; }
   .home-hero .home-banner-eyebrow { display: none; }
   .home-hero h1 { font-size: clamp(24px, 8svh, 32px); margin: 0; }
-  .home-steps { --step-circle: 26px; padding-block: 12px; }
-  .home-steps-intro { font-size: 10px; margin-bottom: 10px; }
+  .home-steps { --step-circle: 26px; padding-block: 8px; }
+  .home-steps-intro { display: none; }
   .home-steps-link { gap: 6px; }
   .home-steps-number { font-size: 11px; }
   .home-steps h2 { font-size: 10px; letter-spacing: .08em; }
-  .home-steps-copy p { display: none; }
+  .home-steps-copy p { font-size: 10px; line-height: 1.4; }
+}
+
+@media (max-height: 600px) and (orientation: portrait) {
+  .home-opening { --hero-cta-height: 44px; }
+  .home-hero .home-banner-eyebrow { display: none; }
+  .home-hero-content { padding-block: 16px; }
+  .home-hero h1 { font-size: clamp(26px, 4.5svh, 32px); margin-bottom: 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

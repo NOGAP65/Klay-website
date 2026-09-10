@@ -2,11 +2,12 @@ import { Link } from 'react-router-dom';
 
 import * as routes from '@/config/routes';
 import { scrollToId } from '@/shared';
+import { JourneyStepDetail } from './JourneyStepDetail';
 
 const PROCESS_STEPS = [
-  { title: 'Buy online', detail: 'Choose your product. Installation included.' },
-  { title: 'Check measure', detail: 'We visit to confirm every detail.' },
-  { title: 'Installation', detail: 'Made to measure. Professionally fitted.' },
+  { title: 'Buy online' },
+  { title: 'Check measure' },
+  { title: 'Installation' },
 ];
 
 export function RecommendationBanner() {
@@ -30,7 +31,7 @@ export function RecommendationBanner() {
               <span className="home-process-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
               <div>
                 <h3>{index === 0 ? <Link to={routes.products}>{step.title}</Link> : step.title}</h3>
-                <p>{step.detail}</p>
+                <JourneyStepDetail index={index} />
               </div>
             </li>
           ))}
