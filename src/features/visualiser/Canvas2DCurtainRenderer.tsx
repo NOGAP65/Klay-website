@@ -68,79 +68,16 @@ interface Canvas2DCurtainRendererProps {
   photoUrl: string;
 }
 
-// --- The physical spec -----------------------------------------------------
-
-/** WAVES PER PANEL, FROM THE WIDTH THAT WAS ORDERED.
- *
- * This was fixed at nine on every window. The reasoning was that nine is what
- * the largest size produces and it "looks right at every window" — but it does
- * not, and a wide window is where it fails hardest: nine waves stretched across
- * three metres is nine fat bulges, and the customer sees a curtain that is not
- * the one they are buying. A wave fold curtain has one wave per 160mm of track
- * and that is the whole character of the heading. More track, more waves.
- *
- * So it is derived again — from the SIZE THAT WAS ORDERED, not from the pixels
- * of the trace. Pixels cannot give millimetres on their own, and the size pill
- * is the real number: it is what gets quoted, made and installed. It also means
- * moving that control visibly changes the curtain, which is the correct
- * relationship between a spec and a picture of it.
- *
- * The floor is what the old comment was really protecting against, and it is
- * kept: below about five the panel reads as a few bulges rather than as a wave
- * curtain. A 1.2m track is 3.75 waves a panel on the arithmetic, and it is drawn
- * with five. That is the one place this lies, and it lies in the direction of
- * the product being recognisable.
- *
- * A whole number, always, and the mesh spans exactly this many full sine periods
- * — so a panel opens and closes on a complete wave and never on half of one.
- * There is no path here that can produce a fractional wave: the compression front
- * moves the wave WIDTHS and never the count. */
+// Fold spacing is calibrated to the room photographs and remains independent
+// of image resolution. Wider traced openings carry more folds; the count stays
+// fixed while opening so fabric gathers instead of disappearing.
 const MIN_WAVES_PER_PANEL = 5;
 const MAX_WAVES_PER_PANEL = 20;
-
-/** Waves a panel would carry if the traced window ran the full width of the
- *  photograph. Everything narrower gets its share of this.
- *
- *  CALIBRATED, not picked: the sample room's window covers about 40% of its
- *  frame and nine waves a panel is what looked right on it, so full frame is
- *  nine over 0.4. Anything that changes the sample room should be checked
- *  against this number rather than the number being nudged to suit it. */
-const WAVES_AT_FULL_FRAME = 22;
-
-/** WAVES FROM THE SIZE OF THE TRACE, which is the thing on screen.
- *
- * This was briefly taken from the ordered size pill instead — the millimetres
- * that get quoted and made. Correct on paper and wrong to look at: the picture
- * stopped agreeing with the window in it. A big opening drawn with the same few
- * folds as a small one is the fault being fixed, and the opening is what the
- * customer traced, not what they picked in a list.
- *
- * Measured as a FRACTION OF THE PHOTOGRAPH, never in raw pixels. The same window
- * shot on a phone and on a compact is the same window, and the trace is in image
- * coordinates — so a 4000px photo would otherwise get three times the folds of a
- * 1254px one for no reason a customer could ever see. The fraction is stable
- * across both, and it is also what "bigger" means when you are looking at a
- * picture: bigger IN THE FRAME.
- *
- * Floored at five, because below that a panel reads as a few bulges rather than
- * as a wave curtain, and capped at sixteen so a wall of glass does not turn into
- * corduroy.
- */
+const WAVES_AT_FULL_FRAME = 15;
 const wavesForTrace = (tracedWidthPx: number, framePx: number): number => {
   const fraction = framePx > 0 ? tracedWidthPx / framePx : 0.5;
-  const waves = Math.round(fraction * WAVES_AT_FULL_FRAME);
-  return Math.min(MAX_WAVES_PER_PANEL, Math.max(MIN_WAVES_PER_PANEL, waves));
+  return Math.min(MAX_WAVES_PER_PANEL, Math.max(MIN_WAVES_PER_PANEL, Math.round(fraction * WAVES_AT_FULL_FRAME)));
 };
-
-/** One wave per 160mm of track: heading tape carries a snap every 80mm at the
- * standard 80% fullness, and one wave — a crest and the trough beside it — spans
- * two snaps.
- *
- * It does not set the wave count — the trace does, see wavesForTrace. It is the
- * renderer's link to real-world scale in the other direction: the panel shows
- * however many waves the trace earned, each wave is 160mm of track, so one
- * pixel is a known number of millimetres. The cloth physics needs that, because
- * a pendulum's period depends on its length in metres and not in pixels. */
 const WAVE_PITCH_MM = 160;
 
 /** Stacked, both panels together occupy a third of the track. A shut panel is
@@ -202,7 +139,7 @@ const HEM_DEPTH_GAIN = 0.14;
  * Scaled off the reference render, where the hem's scallop measures about 17% of
  * the wave pitch peak-to-peak against a fold depth of ~0.41 of pitch. A little
  * over that here, since this is looked at much smaller than a 1535px still. */
-const HEM_DEPTH_SWING = 0.3;
+const HEM_DEPTH_SWING = 0.16;
 
 /** The heading gets a swing too, and this is what stops the top of the panel
  * reading as a box.
@@ -218,7 +155,7 @@ const HEM_DEPTH_SWING = 0.3;
  * The specks are fixed properly by HEADING_SINK below rather than by giving up
  * the scallop. Smaller than HEM_DEPTH_SWING because the projection effect really
  * does grow with distance below the camera axis. */
-const HEADING_DEPTH_SWING = 0.22;
+const HEADING_DEPTH_SWING = 0.07;
 
 /** Sinks the heading by its own worst upward excursion, so the scallop hangs
  * BELOW the track line instead of straddling it.
@@ -332,7 +269,7 @@ const FOLD_PINCH_HEM = 1.0;
  * sixth of a wave over two metres is under a degree and the eye does not see it.
  * Nearly half a wave does.
  */
-const FOLD_WANDER = 0.45;
+const FOLD_WANDER = 0.10;
 const FOLD_WANDER_POWER = 1.35;
 
 /** THE WEIGHTED HEM BAND, which is stiffer than the cloth above it.
@@ -360,7 +297,7 @@ const HEM_STIFFEN_SPAN = 0.08;
  * the term is zero however uneven the hem, because the tape holds the top and
  * only the free end can wander.
  */
-const HEM_UNEVEN = 0.014;
+const HEM_UNEVEN = 0.004;
 
 /** The doubled hem band, as a fraction of the drop, and how much darker it is.
  *
@@ -369,7 +306,7 @@ const HEM_UNEVEN = 0.014;
  * distinctly denser strip along the bottom edge, which is exactly what the
  * backlit reference shows. Without it the cloth just stops. */
 const HEM_BAND = 0.035;
-const HEM_BAND_DENSITY = 0.30;
+
 
 /** THE SHADOW THE CURTAIN THROWS ON THE SILL.
  *
@@ -395,37 +332,7 @@ const HEM_BAND_DENSITY = 0.30;
  * survives, which is exactly the line a real sheer draws. */
 const SHEER_DIFFUSION = 1 / 12;
 
-/** TRANSMISSION AND SCATTER, and the two of them ADD.
- *
- * A backlit sheer is the brightest thing in the room — brighter than the wall
- * beside it, often clipping to white where the window is directly behind. Every
- * photograph of one shows this and the render was doing the opposite: it sat
- * DARKER than the wall, because the cloth was being blended OVER the window as
- * a mix. A mix can only ever land between the two things it mixes, so putting
- * cloth over glass could only darken the glass. That is a grey film, and it is
- * what it looked like.
- *
- * What actually reaches the eye is two separate paths summed:
- *
- *   TRANSMITTED  the window's own light, having come through the weave. Soft,
- *                because the threads scattered it on the way (see
- *                SHEER_DIFFUSION), and NOT shaded by the folds — light that has
- *                passed through the cloth does not care which way the surface
- *                was facing.
- *   SCATTERED    the room's light bouncing off the near face. This one IS shaded
- *                by the folds, and it is the only thing that is.
- *
- * Summing them produces the whole behaviour for free, including two things that
- * were being chased separately before. Over the bright window the transmitted
- * term dominates and the folds WASH OUT — which is exactly what the reference
- * shows, the folds nearly vanishing into the glow and reappearing at the edges.
- * And the total can exceed the wall's brightness, so the cloth glows instead of
- * greying.
- *
- * Both are scaled by the fabric's own opacity, so a charcoal sheer transmits
- * little and scatters dark while a white one does the opposite. */
-const SHEER_TRANSMIT_GAIN = 1.25;
-const SHEER_SCATTER_GAIN = 1.0;
+
 
 const SILL_SHADOW_DROP = 0.055;
 const SILL_SHADOW_ALPHA = 0.34;
@@ -707,7 +614,7 @@ const RENDER_MAX_WIDTH = 1400;
 // It also means the weave stretches with the window's aspect rather than staying
 // square. On the window shapes this gets — roughly square panels — that is a few
 // percent, and it degrades into softness rather than into an artifact.
-const WEAVE_REPEAT = 1;
+
 
 const HARDWARE_HEX: Record<string, string> = {
   white: '#EDEDED',
@@ -717,34 +624,9 @@ const HARDWARE_HEX: Record<string, string> = {
 
 // --- Helpers ---------------------------------------------------------------
 
-// --- Sheer opacity -------------------------------------------------------
-
-/** A sheer is a veil, and how much of one depends on the colour it is woven in.
- * A white sheer scatters the daylight coming through it forward into the room and
- * hazes over into something you plainly see; a charcoal one absorbs that scatter
- * and reads much more as a tint over the view. So the paler the colour, the more
- * opaque it renders.
- *
- * The floor is what matters as much as the range: at 0.62 the previous fixed
- * value the fabric was barely there against a bright window, and a curtain you
- * cannot see is not a visualisation of a curtain. Even the darkest colour still
- * covers most of what is behind it.
- *
- * THE SETTLED POINT IS BETWEEN TWO FAILURES. 0.62 was a tinted pane you could
- * read a fence through, so it stopped selling a curtain; 0.82/0.95 corrected
- * that and overshot, because at those values a sheer against a bright window
- * is a pale sheet and the one thing a customer buys a sheer FOR — that it
- * filters the light instead of stopping it — never appears on screen. These
- * sit a little below that: the garden behind is legible as shape and colour
- * without resolving into detail, which is what a sheer actually does, and the
- * difference from the blockout option is now obvious at a glance rather than a
- * matter of a few percent of white.
- *
- * The gap between the two ends is deliberately unchanged. It is the physics —
- * a pale sheer scatters daylight forward and hazes over, a dark one absorbs
- * that scatter and tints — and only the overall level was wrong. */
-const SHEER_OPACITY_DARK = 0.74;
-const SHEER_OPACITY_LIGHT = 0.87;
+// Sheer coverage before extra layers from folds, stacking and the doubled hem.
+const SHEER_OPACITY_DARK = 0.46;
+const SHEER_OPACITY_LIGHT = 0.60;
 
 const sheerOpacity = (colour: string): number => {
   const l = luma01(colour);
@@ -1207,236 +1089,61 @@ void main() {
 }
 `;
 
+// Photographic fold illumination follows the fabric UVs as it gathers. The
+// geometry supplies silhouette and movement; it does not paint a second set
+// of bright ridges over the photographed cloth.
 const FRAGMENT_SHADER = `
 precision mediump float;
-
 uniform vec3 uColour;
 uniform float uOpacity;
 uniform float uIsSheer;
 uniform sampler2D uBackdrop;
 uniform float uHasBackdrop;
-uniform float uTransmitGain;
-uniform float uScatterGain;
-varying vec2 vBackdrop;
 uniform float uHemBand;
-uniform float uHemDensity;
 uniform sampler2D uTexture;
 uniform vec2 uTexRepeat;
-uniform float uTexAmount;
-uniform float uBump;
-
+varying vec2 vBackdrop;
 varying vec3 vNormal;
 varying vec2 vUv;
 varying float vCompression;
 varying float vDepth;
 
 void main() {
-  // The panel is a single-valued height field z(x) seen from +z, so the
-  // room-facing normal always has z >= 0. Forcing that is exact here and means
-  // neither triangle winding nor DoubleSide can flip the lighting.
-  vec3 N = normalize(vNormal);
-  if (N.z < 0.0) N = -N;
-
-  // THE CLOTH'S OWN SURFACE, from the sample photograph. RG are the surface
-  // slope along u and v, B is height as albedo. See buildDetailTexture.
-  vec3 tex = texture2D(uTexture, vUv * uTexRepeat).rgb;
-  float slopeU = (tex.r - 0.5) * 2.0;
-  float slopeV = (tex.g - 0.5) * 2.0;
-  float relief = (tex.b - 0.5) * 2.0;
-
-  // Tilt the normal by that slope, rather than just darkening the colour with
-  // it. This is the whole difference between fabric and a flat panel: relief
-  // catches the room light, so the cloth's creases and slub light up on the side
-  // facing the window and fall away on the other, and they keep doing that as
-  // the fold they sit on turns. Painted on as luminance instead, the same data
-  // reads as dirt on a flat surface — which is exactly how it looked.
-  //
-  // v runs down the drop so its bitangent is world up, and u runs along the wave;
-  // for a surface whose normal lies in the x-z plane that tangent is exactly
-  // up x N, with no need to carry a tangent attribute.
-  //
-  // The geometric normal is kept as well. Relief belongs in the light REFLECTED
-  // off the cloth, not in the light coming THROUGH it: transmission depends on how
-  // far the light travels through the sheet, which is set by the fold the fabric
-  // is lying on and not by which thread it crossed on the way out. Feeding the
-  // bumped normal into the sheer's transmission made every thread flash
-  // independently and the fabric came out looking like crumpled foil.
-  vec3 geoN = N;
-  vec3 up = vec3(0.0, 1.0, 0.0);
-  vec3 tangent = normalize(cross(up, N));
-  N = normalize(N - (tangent * slopeU + up * slopeV) * uBump);
-
-  // The selected colour is the fabric; the photo contributes only its deviation
-  // from its own mean, so a white curtain stays white instead of picking up the
-  // sample's grey.
-  // Two terms, and the second is what keeps dark fabrics from going featureless.
-  // The multiplicative term is what makes the selected colour survive — the
-  // surface scales the colour rather than being mixed into it, so white stays
-  // white — but it scales toward zero as the colour darkens, and on black a 30%
-  // swing is a rounding error. The additive term is a fixed absolute swing that
-  // does not shrink with the base colour: imperceptible against a pale fabric,
-  // and carrying the entire surface on a charcoal or black one.
-  vec3 colour = uColour * (1.0 + relief * uTexAmount)
-              + vec3(relief * uTexAmount * 0.12);
-
-  // --- LIGHTING -------------------------------------------------------------
-  //
-  // Deliberately narrow. Everything below used to run about three times the
-  // contrast it does now, and the result read as heavy grey shadow painted into
-  // the folds rather than as a lit surface — a curtain photographed with one hard
-  // lamp in a black room. A real curtain lives in a bright interior: light arrives
-  // from the window behind it, off the ceiling, off the floor, off the opposite
-  // wall, so the darkest part of a fold is only modestly darker than the lightest.
-  // The fold shape has to be carried by WHERE the tone changes, not by how far.
-
-  // Room light: front, above, a little to the left, matching the rest of the
-  // visualiser. Half-Lambert rather than clamped n-dot-l — cloth scatters light
-  // around its own curvature and a hard terminator on a fold reads as plastic.
-  // The exponent is near 1 now; raising it sharpened the terminator, which is the
-  // opposite of what a soft interior does.
-  vec3 L = normalize(vec3(-0.40, 0.32, 0.86));
-  float wrap = dot(N, L) * 0.5 + 0.5;
-  float shade = mix(0.80, 1.06, pow(wrap, 1.1));
-
-  // Occlusion in the concave side of a fold, which sees less of the room than the
-  // crest does. This is the one cue worth spending contrast on, because it is what
-  // actually describes the fold, so it survives while the broad ramp above gives
-  // way. Stronger once the waves pack together and start shading each other.
+  vec3 sampleCloth = texture2D(uTexture, vUv * uTexRepeat).rgb;
+  float luminance = dot(sampleCloth, vec3(0.299, 0.587, 0.114));
+  // Remove the white sample's colour cast, retaining its real fold shading,
+  // slubs and soft irregular creases. All colour choices use the same map.
+  float photoShade = clamp(luminance / 0.87, 0.38, 1.08);
   float cavity = max(0.0, -vDepth);
+  float packed = smoothstep(0.25, 1.0, vCompression);
+  float heading = smoothstep(0.95, 1.0, vUv.y);
+  float hem = 1.0 - smoothstep(uHemBand * 0.7, uHemBand, vUv.y);
+  float sideHem = (1.0 - smoothstep(0.0, 0.006, vUv.x))
+                + smoothstep(0.994, 1.0, vUv.x);
+  float contact = 1.0 - heading * (0.10 + cavity * 0.06);
+  contact *= 1.0 - packed * cavity * 0.10;
+  contact *= 1.0 - hem * 0.055 - sideHem * 0.045;
+  vec3 surface = uColour * photoShade * contact;
+  // Diffuse fibre reflection retains detail in charcoal without a satin glint.
+  float dark = 1.0 - smoothstep(0.08, 0.55, dot(uColour, vec3(0.299, 0.587, 0.114)));
+  surface += vec3(max(0.0, photoShade - 0.55) * 0.035 * dark);
 
-  // NARROW AND DARK, NOT WIDE AND GREY — and getting that backwards is what made
-  // the old render read as painted shading rather than as cloth.
-  //
-  // In a photograph of hanging sheer the tone is not a symmetric wave at all: it
-  // is a WIDE soft bright lobe separated from the next one by a NARROW crease
-  // that goes genuinely dark, nearly black against a lit window. The previous
-  // constants had it the other way round, spreading a gentle 7–20% darkening
-  // across half of every wave. That reads as grey paint because no real fold is
-  // shaded that way.
-  //
-  // The exponent is what makes it narrow: at 2.2 the term is still near zero
-  // over most of the lobe and only bites in the last of the trough, so the dark
-  // arrives as a line. The coefficient is then free to be several times what it
-  // was without the panel going muddy, because it is only ever applied to a
-  // sliver.
-  // 1.8 and 0.30-0.38, softened from 2.2 and 0.34-0.48.
-  //
-  // Those were set against a surface that had a geometric cusp in it, and they
-  // were sharpening a line that was already infinitely sharp — the two compounded
-  // into a hard black edge, and the strongest coefficient was reserved for the
-  // compressed cloth, which is precisely where the folds crowd and the edges were
-  // most visible. With the section smooth the shading no longer has to be that
-  // narrow to read as a crease, and a stacked panel goes back to looking like
-  // gathered cloth rather than like folded card.
-  float cavityShaped = pow(cavity, 1.8);
-  shade *= 1.0 - cavityShaped * mix(0.30, 0.38, vCompression);
-
-  // And the crest is the part that sees the most room, so it lifts slightly.
-  // Cheaper on contrast than pushing the troughs further down, and it is the
-  // separation between one fold and the next that carries the shape.
-  shade *= 1.0 + max(0.0, vDepth) * 0.045;
-
-  // THE TRACK'S OWN SHADOW. It hangs directly over the heading and blocks the
-  // ceiling light, so the top of the cloth sits in a band of shade — much deeper
-  // inside the folds, which the track closes off almost entirely. This is what
-  // attaches the fabric to the hardware: without it the panel reads as starting
-  // below the track rather than hanging from it.
-  float underTrack = smoothstep(0.80, 1.0, vUv.y);
-  shade *= 1.0 - underTrack * (0.10 + cavity * 0.14);
-
-  // Packed fabric is denser — more layers, less light through and around it.
-  // Squared, so only genuinely stacked cloth darkens: a half-open panel is still
-  // a curtain, not a bundle. The old flat 0.95 barely registered at full stack,
-  // where the fabric is several layers thick and visibly heavier.
-  shade *= mix(1.0, 0.89, vCompression * vCompression);
-
-  // The hem picks up floor bounce rather than window light, so it sits a shade
-  // below the heading. Barely there on purpose: overdone it reads as the curtain
-  // fading out at the bottom.
-  float drop = 1.0 - vUv.y;
-  shade *= 1.0 - drop * drop * 0.05;
-
-  // THE DOUBLED HEM. Two or three layers where the rest of the panel is one, so
-  // it is both darker and — below, in the alpha — denser. On a sheer against a
-  // window this strip is one of the most recognisable things about the product,
-  // and the cloth simply stopped without it.
-  float hemBand = 1.0 - smoothstep(0.0, uHemBand, vUv.y);
-  shade *= 1.0 - hemBand * 0.13;
-
-  colour *= shade;
-
-  float alpha = uOpacity;
-
-  // SHEER. Backlit by the window, so brightness is governed by how far the light
-  // travels through the cloth: where the surface faces the camera the path is
-  // shortest and it glows, and where it turns edge-on the path is long and it goes
-  // dense. That contrast is the whole character of a sheer.
+  float alpha = 1.0;
   if (uIsSheer > 0.5) {
-    // 2.4, up from 1.5, and the floor drops from 0.90 to 0.74. Same reading off
-    // the same photograph: on a backlit sheer the glow is confined to the part
-    // of the lobe square to the camera, and the cloth goes dense fast as it
-    // turns away — the light path through the weave lengthens as 1/cos and the
-    // fabric stacks up behind itself. A wide gentle glow is the tell of a
-    // surface being lit rather than a cloth being seen through.
-    float facing = pow(max(geoN.z, 0.0), 2.4);
-    vec3 glow = colour + vec3(0.13, 0.11, 0.06);
-    colour = mix(colour, glow, facing * (1.0 - vCompression * 0.4));
-
-    // TRANSPARENCY FROM THE WEAVE ITSELF, which is the honest way to draw a sheer:
-    // it is not a uniformly hazy sheet, it is an open cloth, and what you see
-    // through it is the gaps between its threads. So the slub reads as slightly
-    // more solid and the open weave as slightly clearer, from the same relief
-    // channel the lighting uses. A flat alpha is what made it look like tinted
-    // glass rather than fabric.
-    alpha *= clamp(1.0 + relief * 0.30, 0.80, 1.10);
-
-    // Packed fabric is layer upon layer, and stacks up nearly solid at the ends.
-    alpha = mix(alpha, min(1.0, alpha + 0.14), vCompression);
-
-    // THE CLOTH SCATTERS, IT DOES NOT JUST LET LIGHT PAST.
-    //
-    // Left to ordinary alpha blending, everything behind a sheer arrives at the
-    // eye SHARP — the garden through the window was legible leaf by leaf under a
-    // veil, which is what glass does, or a tinted film. It is not what cloth
-    // does. A sheer is an open weave in front of a bright field: light entering
-    // it is scattered by every thread it passes, so the image behind survives
-    // only as tone and colour, never as detail.
-    //
-    // The blend has to be done here rather than by the compositor, because the
-// compositor only has the sharp original to blend with. So the diffused
-    // backdrop is sampled and mixed in at exactly the weight the alpha would
-    // have carried, and the fragment then draws opaque — the same visual
-    // weight of cloth, over a backdrop that has been through the weave.
+    // Layers accumulate optically as the curtain stacks. The doubled bottom
+    // hem and the shaded sides of folds have a longer path through the cloth.
+    float layers = 1.0 + packed * 1.8 + (1.0 - luminance) * 1.2 + hem * 0.9;
+    float coverage = 1.0 - pow(1.0 - uOpacity, layers);
     if (uHasBackdrop > 0.5) {
-      // The window's light, already softened by the weave. See SHEER_DIFFUSION.
       vec3 behind = texture2D(uBackdrop, vBackdrop).rgb;
-
-      // How much gets through. Less where the cloth is stacked several layers
-      // deep, less again through the doubled hem, and a little less where the
-      // surface has turned away from the camera and the path through the weave
-      // is longer than the sheet is thick.
-      float transmit = (1.0 - uOpacity) * uTransmitGain;
-      transmit *= 1.0 - vCompression * 0.55;
-      transmit *= 1.0 - hemBand * 0.45;
-      transmit *= mix(0.72, 1.0, facing);
-
-      // The near face, lit by the room. This carries the fold shading — and it
-      // is the ONLY term that does, which is why the folds fade out against the
-      // bright window and come back against the wall.
-      vec3 scattered = colour * uOpacity * uScatterGain;
-
-      colour = behind * transmit + scattered;
-      // Composited here, so it draws opaque: the blend has already happened and
-      // the framebuffer must not do it a second time against the sharp original.
-      alpha = 1.0;
+      float transmission = (1.0 - coverage) * 0.92;
+      // Energy-balanced diffuse transmission avoids glowing white stripes.
+      surface = mix(surface, behind, transmission);
+    } else {
+      alpha = coverage;
     }
-
-    // And the doubled hem is the same effect in a strip: three layers of a sheer
-    // read almost as a solid band. See HEM_BAND_DENSITY.
-    alpha = mix(alpha, min(1.0, alpha + uHemDensity), hemBand);
   }
-
-  gl_FragColor = vec4(colour, clamp(alpha, 0.0, 1.0));
+  gl_FragColor = vec4(clamp(surface, 0.0, 1.0), alpha);
 }
 `;
 
@@ -1655,277 +1362,35 @@ void main() {
 `;
 
 
-// --- Fabric textures ------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// FABRIC — purpose-made flat swatches
-//
-// These are shot (well, generated) to spec for this renderer: 1254px square,
-// the cloth flat and taut, lit dead even edge to edge, weave filling the
-// frame, no props and no watermark. That specification is the reason this
-// section is now short.
-//
-// The samples it replaced were draped studio photographs, and nearly all the
-// machinery here existed to undo that: they carried their own folds and their
-// own lighting, which tiled onto our waves as a second set of creases lying
-// at the wrong angle, and a badge in one corner that tiled as a row of dark
-// blobs. Undoing it took a search for the frame's flattest patch, a crop that
-// dodged the badge, and a low pass aggressive enough to strip every crease —
-// which took most of the fabric's character with it and left something close
-// enough to flat colour that the two cloths were indistinguishable.
-//
-// A flat swatch needs none of that. The whole frame is usable, and the low
-// pass only has to remove the swatch's overall level so the shader gets a
-// deviation rather than a colour. Everything else — thread grid, slub,
-// surface — is kept and used as relief.
-// ---------------------------------------------------------------------------
-
+// Each sample contains eight photographed folds. Repeat horizontally along
+// the same UVs used by the moving mesh, with mipmaps to prevent weave shimmer.
 const FABRIC_SAMPLE: Record<'blockout' | 'sheer', string> = {
-  // CASE-SENSITIVE all the way down, and these two do not even agree with each
-  // other: `Blockout_produced` is capitalised and `sheer_produced` is not, and
-  // `curtains` is lowercase. A Linux host serves any other casing as a
-  // different URL that 404s, which is the worst failure shape there is — it
-  // only shows up after deploy. Match the filenames on disk exactly.
-  blockout: '/images/visualiser/textures/curtains/Blockout_produced.png',
-  // DRAWN, NOT PHOTOGRAPHED, and it has to be. The map covers one panel —
-  // roughly 900mm of cloth across 1024 texels, so a texel is about 0.9mm and a
-  // voile thread is about 0.2mm. A real weave is SUB-TEXEL at this scale, which
-  // means any regular grid in the source must alias against the pixel lattice,
-  // and that aliasing is what the honeycomb was. A photograph of real cloth
-  // always carries that grid; this one is value noise all the way down, so
-  // there is no repeating frequency for anything to beat against.
-  //
-  // Warp striation running down the drop, a weaker weft, fine irregular tooth
-  // and sparse slubs elongated along the warp. Deterministic, so it is the same
-  // cloth every build, and flat mid-grey with no gradient anywhere —
-  // buildDetailTexture reads brightness as HEIGHT, so any baked lighting would
-  // come back as bumps that are not in the fabric.
-  //
-  // sheer_produced.png, the supplier swatch, is kept in the repo beside it.
-  sheer: '/images/visualiser/textures/curtains/sheer_weave.png',
+  blockout: '/images/visualiser/textures/curtains/blockout-drape.webp',
+  sheer: '/images/visualiser/textures/curtains/sheer-drape.webp',
 };
-
-/** Working size of the extracted detail map. The swatches are 1254px square and
- * the whole frame is usable, so 1024 is a mild downscale that keeps the weave
- * resolved — the blockout's threads sit about 4px apart in the source, and at 512
- * they landed on the Nyquist limit and half blurred away. */
-const DETAIL_SIZE = 1024;
-
-/** Resolution the low frequencies are measured at, as a fraction of DETAIL_SIZE.
- *
- * Down to 1/32 now the swatches are flat: each cell is ~32px, so only structure
- * broader than about 64px is removed. On an evenly lit swatch there is almost
- * nothing at that scale to take out beyond the overall grey level, which is the
- * one thing that does have to go — the shader wants a deviation to modulate the
- * selected colour with, not a colour of its own.
- *
- * Everything finer is kept and used as relief, which now includes the sheer's
- * slub patches. Those are the fabric, and with one tile per panel they appear
- * once rather than repeating, so they read as cloth varying across its width. The
- * draped samples needed this eight times more aggressive purely to kill creases,
- * and that took the character out with them. */
-const DETAIL_LOW_FRACTION = 1 / 32;
-const DETAIL_LOW_SIZE = Math.round(DETAIL_SIZE * DETAIL_LOW_FRACTION);
-
-/** Standard deviation the packed slope channels are normalised to. Keeps the
- * 8-bit range well used and makes uBump mean the same thing for any sample. */
-const SLOPE_TARGET_STD = 0.16;
-
-/** Standard deviation the detail map is normalised to, so uTexAmount means the
- * same thing whatever the sample photo's own contrast happens to be. Swap in a
- * new fabric and it arrives at a comparable strength instead of needing the
- * shader retuned. */
-const DETAIL_TARGET_STD = 0.055;
-
-// SAMPLE_CROP and pickFlattestCrop lived here. The crop used to be two thirds of
-// the frame, positioned by scoring a grid of candidates for whichever patch had
-// the least large-scale structure in it — because a crease is high-frequency
-// across itself, survives any filter strong enough to keep the weave, and ends up
-// ruled diagonally across the curtain, so the only real answer was to not crop
-// one. On a flat swatch there is no crease to dodge and no badge to avoid, so the
-// crop is the whole frame and there is nothing to choose.
-
-interface FabricTexture {
-  texture: THREE.Texture;
-}
-
+interface FabricTexture { texture: THREE.Texture }
 const textureCache = new Map<string, Promise<FabricTexture>>();
-
 function buildDetailTexture(path: string): Promise<FabricTexture> {
-  let cached = textureCache.get(path);
+  const cached = textureCache.get(path);
   if (cached) return cached;
-
-  cached = (async () => {
-    const img = await loadImage(path);
-    const S = DETAIL_SIZE;
-    const L = DETAIL_LOW_SIZE;
-
-    // The whole frame, squared off from the centre in case a future swatch is not
-    // square. These are, so this is a straight full-frame read.
-    const side = Math.min(img.naturalWidth, img.naturalHeight);
-    const sx = (img.naturalWidth - side) / 2;
-    const sy = (img.naturalHeight - side) / 2;
-
-    const sharp = document.createElement('canvas');
-    sharp.width = S;
-    sharp.height = S;
-    const sctx = sharp.getContext('2d');
-    if (!sctx) throw new Error('2d context unavailable');
-    sctx.drawImage(img, sx, sy, side, side, 0, 0, S, S);
-    const src = sctx.getImageData(0, 0, S, S).data;
-
-    // LOW PASS BY DOWNSCALE, not by blur. ctx.filter blur treats everything
-    // outside the bitmap as transparent and averages it in, so it haloes the
-    // border — subtracting that would ring a bright frame around every tile. A
-    // downscale is a box average with no boundary to get wrong. Two steps, since
-    // a single large reduction is where browsers start dropping samples rather
-    // than averaging them.
-    const step = L * 2;
-    const mid = document.createElement('canvas');
-    mid.width = step;
-    mid.height = step;
-    const mctx = mid.getContext('2d');
-    if (!mctx) throw new Error('2d context unavailable');
-    mctx.drawImage(sharp, 0, 0, S, S, 0, 0, step, step);
-
-    const lowCanvas = document.createElement('canvas');
-    lowCanvas.width = L;
-    lowCanvas.height = L;
-    const lctx = lowCanvas.getContext('2d');
-    if (!lctx) throw new Error('2d context unavailable');
-    lctx.drawImage(mid, 0, 0, step, step, 0, 0, L, L);
-    const lowData = lctx.getImageData(0, 0, L, L).data;
-
-    const low = new Float32Array(L * L);
-    for (let i = 0; i < L * L; i++) {
-      low[i] = (lowData[i * 4] * 0.299 + lowData[i * 4 + 1] * 0.587 + lowData[i * 4 + 2] * 0.114) / 255;
-    }
-
-    const sampleLow = (fx: number, fy: number): number => {
-      const x = Math.min(L - 1, Math.max(0, fx));
-      const y = Math.min(L - 1, Math.max(0, fy));
-      const x0 = Math.floor(x);
-      const y0 = Math.floor(y);
-      const x1 = Math.min(L - 1, x0 + 1);
-      const y1 = Math.min(L - 1, y0 + 1);
-      const tx = x - x0;
-      const ty = y - y0;
-      const a = low[y0 * L + x0];
-      const b = low[y0 * L + x1];
-      const c = low[y1 * L + x0];
-      const d = low[y1 * L + x1];
-      return (a + (b - a) * tx) * (1 - ty) + (c + (d - c) * tx) * ty;
-    };
-
-    // HEIGHT = photo minus its own low frequencies. What is left is the cloth's
-    // surface: its creases, its slub, its weave — the ups and downs the sample
-    // was photographed with, minus the studio's lighting.
-    const height = new Float32Array(S * S);
-    let sum = 0;
-    for (let y = 0; y < S; y++) {
-      const fy = ((y + 0.5) / S) * L - 0.5;
-      for (let x = 0; x < S; x++) {
-        const i = y * S + x;
-        const luma = (src[i * 4] * 0.299 + src[i * 4 + 1] * 0.587 + src[i * 4 + 2] * 0.114) / 255;
-        const d = luma - sampleLow(((x + 0.5) / S) * L - 0.5, fy);
-        height[i] = d;
-        sum += d;
-      }
-    }
-    const mean = sum / (S * S);
-    let variance = 0;
-    for (let i = 0; i < S * S; i++) {
-      const d = height[i] - mean;
-      variance += d * d;
-    }
-    const std = Math.sqrt(variance / (S * S));
-    const gain = Math.min(8, Math.max(0.2, DETAIL_TARGET_STD / Math.max(1e-5, std)));
-    for (let i = 0; i < S * S; i++) height[i] = (height[i] - mean) * gain;
-
-    // SLOPE. The relief is used by tilting the surface normal, not by darkening
-    // the colour, and that needs the height field's gradient. Central
-    // differences, wrapped, so the edges get a slope like everywhere else.
-    const gx = new Float32Array(S * S);
-    const gy = new Float32Array(S * S);
-    let slopeVar = 0;
-    for (let y = 0; y < S; y++) {
-      for (let x = 0; x < S; x++) {
-        const i = y * S + x;
-        const xl = (x + S - 1) % S;
-        const xr = (x + 1) % S;
-        const yu = (y + S - 1) % S;
-        const yd = (y + 1) % S;
-        gx[i] = (height[y * S + xr] - height[y * S + xl]) * 0.5;
-        gy[i] = (height[yd * S + x] - height[yu * S + x]) * 0.5;
-        slopeVar += gx[i] * gx[i] + gy[i] * gy[i];
-      }
-    }
-    const slopeStd = Math.sqrt(slopeVar / (2 * S * S));
-    const slopeGain = Math.min(40, Math.max(0.5, SLOPE_TARGET_STD / Math.max(1e-6, slopeStd)));
-
-    // Packed: RG carry the surface slope along u and v, B carries the height as
-    // albedo variation. One fetch in the shader rather than three, which matters
-    // on the hardware this has to run on.
-    const out = document.createElement('canvas');
-    out.width = S;
-    out.height = S;
-    const octx = out.getContext('2d');
-    if (!octx) throw new Error('2d context unavailable');
-    const image = octx.createImageData(S, S);
-    const pack = (v: number) => Math.round(Math.min(255, Math.max(0, (v * 0.5 + 0.5) * 255)));
-    for (let i = 0; i < S * S; i++) {
-      image.data[i * 4] = pack(gx[i] * slopeGain);
-      image.data[i * 4 + 1] = pack(gy[i] * slopeGain);
-      image.data[i * 4 + 2] = pack(height[i]);
-      image.data[i * 4 + 3] = 255;
-    }
-    octx.putImageData(image, 0, 0);
-
-    const texture = new THREE.CanvasTexture(out);
-    // Clamped, because the map covers each panel exactly once and never wraps —
-    // see WEAVE_REPEAT. Nothing samples outside 0..1, so the wrap mode is only
-    // here to make that explicit rather than leave a repeat mode implying tiling
-    // that does not happen.
-    texture.wrapS = THREE.ClampToEdgeWrapping;
+  const pending = loadImage(path).then(img => {
+    const texture = new THREE.Texture(img);
+    // This shader composites in display space, like the 2D photograph below.
+    // Decoding just the backdrop to linear made transmitted light too dark.
+    texture.colorSpace = THREE.NoColorSpace;
+    texture.wrapS = THREE.MirroredRepeatWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
-    // MIPMAPPED, AND THIS IS WHY THE CLOTH LOOKED LIKE A HONEYCOMB.
-    //
-    // The old reasoning was that the map is magnified rather than minified, so a
-    // mip chain would never be sampled. That is true of exactly one case: a
-    // fully-drawn panel across a wide window on a full-size buffer. It is false
-    // everywhere else, and the cases where it is false are the ones on screen
-    // most of the time.
-    //
-    // u runs along the FABRIC, not along x, so the whole 640-texel map is
-    // carried across whatever width the panel currently occupies. Draw the
-    // curtain back and that width collapses to a third — the same map crushed
-    // into a third of the pixels, a minification of three or four times. And the
-    // map's content is an open-weave linen: a REGULAR SQUARE GRID. A regular grid
-    // sampled below its own Nyquist limit does not go soft, it beats against the
-    // pixel lattice and produces a second, coarser grid that is not in the cloth
-    // at all. That interference is the honeycomb, and it was worst exactly where
-    // the fabric stacks — which is where the panel is narrowest.
-    //
-    // Trilinear plus anisotropy fixes it properly rather than by blurring the
-    // texture: the mip chain supplies a correctly band-limited sample for
-    // whatever minification this frame is asking for, and the anisotropic taps
-    // keep the weave sharp along the fold while it is being averaged across it.
-    //
-    // The WebGL1 note the old comment carried no longer applies: three's renderer
-    // is WebGL2 here, where NPOT textures take mipmaps and repeat wrapping like
-    // any other.
     texture.minFilter = THREE.LinearMipmapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.generateMipmaps = true;
-    // Anisotropy is set once the renderer exists and can be asked for its
-    // limit — the textures are built before it. See the init below.
     texture.needsUpdate = true;
-
     return { texture };
-  })();
-
-  textureCache.set(path, cached);
-  return cached;
+  }).catch(error => {
+    textureCache.delete(path);
+    throw error;
+  });
+  textureCache.set(path, pending);
+  return pending;
 }
 
 // --- Component ------------------------------------------------------------
@@ -2001,6 +1466,9 @@ export default function Canvas2DCurtainRenderer({
    * setup — see createPanelMesh. */
   /** `nowSec` is only passed from the solver loop. A static draw — a fresh trace,
    *  a colour change — has no history to read and every row uses `sway`. */
+  const colourRef = useRef(colour);
+  colourRef.current = colour;
+
   const draw = (open: number, sway: number, nowSec?: number) => {
     const layout = layoutRef.current;
     const left = leftMeshRef.current;
@@ -2128,6 +1596,7 @@ export default function Canvas2DCurtainRenderer({
 
   useEffect(() => {
     let cancelled = false;
+    let backdropTexture: THREE.Texture | undefined;
 
     const init = async () => {
       const bgCanvas = bgRef.current;
@@ -2175,7 +1644,8 @@ export default function Canvas2DCurtainRenderer({
         blurCtx.drawImage(photo, 0, 0, blurW, blurH);
       }
       const backdrop = new THREE.CanvasTexture(blurCanvas);
-      backdrop.colorSpace = THREE.SRGBColorSpace;
+      backdropTexture = backdrop;
+      backdrop.colorSpace = THREE.NoColorSpace;
       backdrop.wrapS = THREE.ClampToEdgeWrapping;
       backdrop.wrapT = THREE.ClampToEdgeWrapping;
       backdrop.minFilter = THREE.LinearFilter;
@@ -2254,9 +1724,8 @@ export default function Canvas2DCurtainRenderer({
       const bottomEdge = Math.hypot(brPx.x - blPx.x, brPx.y - blPx.y);
       const waveCount = wavesForTrace((topEdge + bottomEdge) / 2, W);
 
-      // Panels meet at the centre with a hairline between them, so a shut pair
-      // reads as two panels rather than one sheet.
-      const gap = windowWidth * 0.004;
+      // A small centre overlap closes the light leak between the two panels.
+      const gap = -windowWidth * 0.002;
       const shutPanelWidth = (windowWidth - gap) / 2;
       const shutWaveWidth = shutPanelWidth / waveCount;
 
@@ -2356,56 +1825,27 @@ export default function Canvas2DCurtainRenderer({
       camera.lookAt(0, 0, 0);
       cameraRef.current = camera;
 
-      const rgb = hexToRgb(colour);
+      const rgb = hexToRgb(colourRef.current);
       const colourVec = new THREE.Vector3(rgb.r / 255, rgb.g / 255, rgb.b / 255);
       const isSheer = fabricType === 'sheer';
 
-      const repeat = new THREE.Vector2(WEAVE_REPEAT, WEAVE_REPEAT);
+      const repeat = new THREE.Vector2(waveCount / 8, 1);
 
       const makeMaterial = () =>
         new THREE.ShaderMaterial({
           uniforms: {
             uQuadH: { value: quadMatrix },
             uColour: { value: colourVec },
-            uOpacity: { value: isSheer ? sheerOpacity(colour) : 1.0 },
+            uOpacity: { value: isSheer ? sheerOpacity(colourRef.current) : 1.0 },
             uIsSheer: { value: isSheer ? 1.0 : 0.0 },
             // Only the sheer looks through anything. A blockout has nothing
             // behind it to diffuse, so it never samples this.
             uBackdrop: { value: backdrop },
             uHasBackdrop: { value: isSheer && blurCtx ? 1.0 : 0.0 },
-            uTransmitGain: { value: SHEER_TRANSMIT_GAIN },
-            uScatterGain: { value: SHEER_SCATTER_GAIN },
             uFrame: { value: new THREE.Vector2(W, H) },
             uHemBand: { value: HEM_BAND },
-            uHemDensity: { value: HEM_BAND_DENSITY },
             uTexture: { value: fabric.texture },
             uTexRepeat: { value: repeat },
-            // Albedo variation stays modest: the relief now carries the surface
-            // through the lighting, and doubling it up in the colour as well
-            // pushes the cloth back toward looking stained.
-            uTexAmount: { value: isSheer ? 0.30 : 0.32 },
-            // How hard the sample's relief tilts the normal — and therefore how
-            // much the cloth glints. Pulled down from 0.7/1.0: a steep normal
-            // tilt on every thread catches the light like a sheen, which is what
-            // was making the fabric look faintly satin. Enough to read the weave
-            // as a surface, not enough to make it shine. The sheer sits lower
-            // again despite the more pronounced weave, because a backlit veil is
-            // mostly transmitted light and relief on top of that reads as
-            // glitter rather than as thread.
-            // 0.30 for the sheer, down from 0.45. The bump turns the weave map
-            // into relief that catches the room light, and on an open-weave
-            // linen every hole in the mesh becomes its own lit cell. Correct in
-            // principle — that IS what the cloth does — but at this viewing
-            // distance a real sheer reads as a translucent haze with the odd
-            // slub catching, not as a resolved egg-crate. The blockout's sateen
-            // has no open grid to light up and keeps its 0.6.
-            // 0.42 for the sheer, back up from the 0.30 the old sample had to be
-            // held down to. That number was defensive: the photographed weave was
-            // an open square mesh, and lighting it turned every hole into its own
-            // cell. The drawn weave has no cells to light — it is striation and
-            // slub — so it can carry proper relief and finally read as cloth
-            // rather than as a tint.
-            uBump: { value: isSheer ? 0.42 : 0.6 },
 
           },
           vertexShader: VERTEX_SHADER,
@@ -2521,6 +1961,7 @@ export default function Canvas2DCurtainRenderer({
 
     return () => {
       cancelled = true;
+      backdropTexture?.dispose();
       stopSolver();
     };
     // The corner props are listed as eight NUMBERS, not as four objects.

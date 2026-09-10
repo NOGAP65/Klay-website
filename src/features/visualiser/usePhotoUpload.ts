@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const MAX_DIMENSION = 1600;
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
@@ -40,10 +40,13 @@ export const usePhotoUpload = (): UsePhotoUploadResult => {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoBitmap, setPhotoBitmap] = useState<ImageBitmap | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const loadVersion = useRef(0);
+  useEffect(() => () => { loadVersion.current++; }, []);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
 
   const processFile = useCallback(async (file: File) => {
+    const version = ++loadVersion.current;
     try {
       if (file.size > MAX_FILE_SIZE) {
         throw new Error('Photo is too large. Please use an image under 15MB.');
@@ -56,11 +59,13 @@ export const usePhotoUpload = (): UsePhotoUploadResult => {
       const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
       const { bitmap: resizedBitmap, url } = await downscale(bitmap);
       bitmap.close();
+      if (version !== loadVersion.current) { resizedBitmap.close(); return; }
 
       setUploadError(null);
-      setPhotoBitmap(resizedBitmap);
+      setPhotoBitmap(prev => { prev?.close(); return resizedBitmap; });
       setPhotoUrl(url);
     } catch (error) {
+      if (version !== loadVersion.current) return;
       const message = error instanceof Error
         ? error.message
         : 'Failed to load photo. Please try again.';
@@ -110,10 +115,12 @@ export const usePhotoUpload = (): UsePhotoUploadResult => {
   // and photoUrl is set to the same path the canvas will load, keeping the
   // preset flow identical to an upload from the renderer's point of view.
   const loadFromUrl = useCallback((url: string) => {
+    const version = ++loadVersion.current;
     const img = new Image();
     img.onload = async () => {
       try {
         const bitmap = await createImageBitmap(img);
+        if (version !== loadVersion.current) { bitmap.close(); return; }
         setUploadError(null);
         setPhotoBitmap(prev => {
           prev?.close();
@@ -121,14 +128,18 @@ export const usePhotoUpload = (): UsePhotoUploadResult => {
         });
         setPhotoUrl(url);
       } catch {
+        if (version !== loadVersion.current) return;
         setUploadError('Failed to load room photo. Please try again.');
       }
     };
-    img.onerror = () => setUploadError('Failed to load room photo. Please try again.');
+    img.onerror = () => {
+      if (version === loadVersion.current) setUploadError('Failed to load room photo. Please try again.');
+    };
     img.src = url;
   }, []);
 
   const clear = useCallback(() => {
+    loadVersion.current++;
     setPhotoUrl(null);
     setUploadError(null);
     setPhotoBitmap(prev => {

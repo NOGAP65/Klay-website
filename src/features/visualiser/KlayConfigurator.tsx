@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { radius, tokens, space, type as typeScale } from '@/ds';
 import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from './useVisualiserStore';
 import { usePhotoUpload } from './usePhotoUpload';
+import { WINDOW_ROOMS, defaultWindowRoom, windowRoomFor } from './roomPresets';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
@@ -702,19 +703,6 @@ function MotorRemote({
  * They are supplied with doors on. The doors are not the product here — the
  * opening behind them is — so the trace goes on the opening and the visualiser
  * draws an open carcass into it. */
-/** THE PATHS WERE WRONG AND HAD ALWAYS BEEN. They named `/images/room-N.png`;
- * the files are in `/images/rooms/`. Three empty frames on "visualise in your
- * own room", live, for as long as this list has existed.
- *
- * IT DID NOT 404, WHICH IS WHY NOTHING SAW IT. Vite and Netlify both fall back
- * to index.html for an unmatched path, so each request returned 200 with 9 KB
- * of HTML and the <img> quietly failed to decode it. The browser image check
- * counted non-200 responses and there were none to count.
- *
- * Caught by npm run check:asset-paths, which reads the file system instead of
- * the network for exactly this reason. */
-const PRESET_ROOMS_WINDOW = ['/images/rooms/room-3.png', '/images/rooms/room-4.png', '/images/rooms/room-5.png'];
-
 export interface WardrobeRoom {
   url: string;
   /** The opening's real width, from the label in the photograph itself. */
@@ -751,8 +739,10 @@ const PRESET_ROOMS_WARDROBE: WardrobeRoom[] = [
   { url: '/images/visualiser/openings/opening-2400.jpeg', openingMm: 2400 },
 ];
 
-const presetRoomsFor = (category: string): string[] =>
-  category === 'wardrobe' ? PRESET_ROOMS_WARDROBE.map(r => r.url) : PRESET_ROOMS_WINDOW;
+const presetRoomsFor = (category: ProductCategory) =>
+  isJoinery(category)
+    ? PRESET_ROOMS_WARDROBE.map(room => ({ ...room, name: `${room.openingMm}mm opening` }))
+    : WINDOW_ROOMS[category];
 
 /** The opening width a wardrobe sample was shot at, if this is one of them.
  *
@@ -771,49 +761,10 @@ export const openingWidthFor = (url: string | null): number | null => {
   return PRESET_ROOMS_WARDROBE.find(r => norm(r.url) === want)?.openingMm ?? null;
 };
 
-// Loaded automatically on mount so the visualiser never shows an empty
-// upload prompt by default — the blind renders immediately against this
-// photo using a fixed set of corner pins (see DEFAULT_WINDOW_CORNERS_PCT),
-// with no CornerPinOverlay involved at all until the user replaces it.
-const DEFAULT_WINDOW_URL = '/images/visualiser/preview.png';
-
-/** THE WARDROBE PREVIEW IS AN ALCOVE, not the window photograph.
- *
- * Preview.png is a bedroom with a window in it, and it is right for a blind.
- * For a wardrobe it was never more than the least-bad option: a customer
- * arriving on the wardrobe tab saw a cupboard standing against a window, which
- * is the first thing the visualiser says about the product and it was saying
- * something false.
- *
- * The 1500 alcove says the true thing instead — a built-in robe in an opening,
- * which is what these are — and it comes dimensioned, so the seeded trace can
- * be the real opening rather than a guess. */
+// Each category loads a photograph with its own measured corners.
 const DEFAULT_WARDROBE_URL = '/images/visualiser/openings/opening-1500.jpeg';
-
-// Shelving takes the alcove too: it is joinery going into an opening, and the
-// window photograph would be as wrong for it as it is for a robe.
 const defaultPhotoFor = (category: ProductCategory) =>
-  isJoinery(category) ? DEFAULT_WARDROBE_URL : DEFAULT_WINDOW_URL;
-// The glass aperture of the double window in Preview.png (1254 x 1254).
-//
-// These pins are paired to this photo and only this photo. Swapping
-// DEFAULT_WINDOW_URL without re-measuring will hang the blind off its window.
-//
-// A true quad, not a rectangle: the window is photographed in perspective, so
-// the top edge falls ~63px from left to right while the bottom edge rises
-// ~40px, and the left edge stands ~103px taller than the right. Each corner
-// therefore has its own x AND y — an axis-aligned rectangle cannot sit on this
-// window. Order is TL, TR, BR, BL, which is what the renderer destructures
-// positionally.
-// Measured by dragging the corner pins onto the glass in the browser, then
-// reading back the confirmed quad — so these are the renderer's own numbers,
-// not an estimate off the image.
-const DEFAULT_WINDOW_CORNERS_PCT: [number, number][] = [
-  [0.1918, 0.1989], // top-left     — x 241, y 249
-  [0.5841, 0.2492], // top-right    — x 732, y 312
-  [0.5830, 0.6382], // bottom-right — x 731, y 800
-  [0.1864, 0.6699], // bottom-left  — x 234, y 840
-];
+  isJoinery(category) ? DEFAULT_WARDROBE_URL : defaultWindowRoom(category).url;
 
 /** WHERE A WARDROBE STANDS ON THE DEFAULT PHOTO.
  *
@@ -1031,7 +982,7 @@ export default function KlayConfigurator({
           ? alcoveCornersPct(openingMm)
           : isJoinery(useVisualiserStore.getState().productCategory)
             ? DEFAULT_WARDROBE_CORNERS_PCT
-            : DEFAULT_WINDOW_CORNERS_PCT;
+            : defaultWindowRoom(store.productCategory).corners;
       const corners: Point[] = seed.map(([px, py]) => [
         px * photoBitmap.width,
         py * photoBitmap.height,
@@ -1072,7 +1023,9 @@ export default function KlayConfigurator({
   }, []);
   // Brief, near-instant window while the default photo's bitmap loads —
   // rendered as nothing (not the upload prompt) so there's no empty state.
-  const isLoadingDefault = store.defaultWindowActive && !hasPhoto && !uploadError && !showUploadPrompt;
+  const isLoadingDefault = store.defaultWindowActive
+    && (!hasPhoto || hookPhotoUrl !== defaultPhotoFor(store.productCategory) || !confirmedArea)
+    && !uploadError && !showUploadPrompt;
 
   const handleChangePhoto = () => {
     clear();
@@ -1213,11 +1166,10 @@ export default function KlayConfigurator({
   // ONLY WHILE THE DEFAULT PHOTO IS SHOWING. Once the customer has uploaded a
   // room and traced it, that trace is theirs; throwing it away because they
   // looked at a different product would be destroying work they did.
-  const seededForWardrobeRef = useRef(isJoinery(store.productCategory));
+  const seededCategoryRef = useRef(store.productCategory);
   useEffect(() => {
-    const isWardrobe = isJoinery(store.productCategory);
-    if (isWardrobe === seededForWardrobeRef.current) return;
-    seededForWardrobeRef.current = isWardrobe;
+    if (store.productCategory === seededCategoryRef.current) return;
+    seededCategoryRef.current = store.productCategory;
     if (!store.defaultWindowActive) return;
     hasSeededDefaultRef.current = false;
     store.clearTracedAreas();
@@ -1430,7 +1382,7 @@ export default function KlayConfigurator({
         boxShadow: '0 16px 40px rgba(29,29,29,0.22)',
       }}
     >
-      <div ref={mediaBoxRef} style={{ position: 'relative', width: '100%', aspectRatio: String(photoRatio) }}>
+      <div ref={mediaBoxRef} style={{ position: 'relative', width: '100%', aspectRatio: String(photoRatio), minHeight: showUploadState ? 310 : undefined }}>
       {isLoadingDefault ? null : showUploadState ? (
         /* STATE 1 — no photo yet, or the user asked to visualise their own room */
         <div
@@ -1445,36 +1397,35 @@ export default function KlayConfigurator({
             padding: space.md,
           }}
         >
-          <div style={{ maxWidth: 360, margin: '0 auto' }}>
+          <div style={{ maxWidth: 420, width: '100%', margin: '0 auto' }}>
             <h2 style={{ ...typeScale.card, color: tokens.onDark }}>
               Upload a photo of your window
             </h2>
             <p style={{ ...typeScale.body, color: tokens.onDarkMuted, marginTop: space.xs }}>
-              or choose a preset room
+              {store.productCategory === 'curtain' ? 'or try a room with full-length curtains' : store.productCategory === 'blind' ? 'or try a room with your blinds' : 'or choose a preset room'}
             </p>
             <div style={{ display: 'flex', gap: space.sm, marginTop: space.md, justifyContent: 'center' }}>
               <Button variant="primary" onClick={handleUpload}>Upload photo</Button>
               <Button onClick={handleTakePhoto}>Take photo</Button>
             </div>
-            <div style={{ display: 'flex', gap: space.md, marginTop: space.lg, justifyContent: 'center' }}>
-              {presetRoomsFor(store.productCategory).map(url => (
-                <img
-                  key={url}
-                  src={url}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: space.sm, marginTop: space.md }}>
+              {presetRoomsFor(store.productCategory).map(room => (
+                <button
+                  key={room.url}
+                  type="button"
+                  aria-label={`Use ${room.name}`}
                   onClick={() => {
-                    store.setPhotoUrl(url);
-                    loadFromUrl(url);
+                    hasSeededDefaultRef.current = true;
+                    store.setDefaultWindowActive(false);
+                    setShowUploadPrompt(false);
+                    loadFromUrl(room.url);
                     store.clearTracedAreas();
                   }}
-                  style={{
-                    width: 116,
-                    height: 78,
-                    objectFit: 'cover',
-                    borderRadius: radius.md,
-                    border: `1px solid ${tokens.onDarkLine}`,
-                    cursor: 'pointer',
-                  }}
-                />
+                  style={{ padding: 0, overflow: 'hidden', borderRadius: radius.md, border: `1px solid ${tokens.onDarkLine}`, background: 'transparent', color: tokens.onDark, cursor: 'pointer' }}
+                >
+                  <img src={room.url} alt={room.name} style={{ width: '100%', aspectRatio: '3 / 2', objectFit: 'cover', display: 'block' }} />
+                  <span style={{ display: 'block', fontSize: 11, padding: '7px 4px' }}>{room.name}</span>
+                </button>
               ))}
             </div>
           </div>
@@ -1505,7 +1456,7 @@ export default function KlayConfigurator({
             initialCornersPct={
               openingWidthFor(hookPhotoUrl) !== null
                 ? (alcoveCornersPct(openingWidthFor(hookPhotoUrl)!) as Point[])
-                : undefined
+                : windowRoomFor(hookPhotoUrl)?.corners
             }
           />
           {/* Confirm / Change photo live in the footer — see footerButtons. */}
