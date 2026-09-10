@@ -70,6 +70,19 @@ export { ProductGlyph } from './components/ProductGlyph';
 // needed it too. Public because the homepage's range row is outside this
 // feature; see the component's own header for why this is its home.
 export { RangeConfigurator } from './components/RangeConfigurator';
+/** THE SHOP'S OWN CARD, public for the homepage's Bestsellers row.
+ *
+ * That row used to draw its own: a photograph, a name block, and a
+ * configuration panel that expanded out of the side of it. Two cards for one
+ * product, maintained apart — the shop's grew photo layers, a location row,
+ * dependent dimensions and a dyed preview, and the homepage's did not, so the
+ * same product looked like two different products two sections apart.
+ *
+ * Bestsellers renders this one now. Exporting it is the sanctioned way for
+ * feature:home to reach it (§1 rule 3, ADR-019) and it is the same reason
+ * RangeConfigurator above is public — one card, defined once, wherever a
+ * product is offered. */
+export { ShopCard } from './components/ShopCard';
 export { CATALOGUE, GROUPS, LIGHT_VALUES, type CatalogueItem, type Group } from './constants';
 export {
   defaultSelection,
