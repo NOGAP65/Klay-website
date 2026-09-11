@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom';
 
 import * as routes from '@/config/routes';
-import { JourneyStepDetail } from './JourneyStepDetail';
 
 const BAR_STEPS = [
-  { label: 'Buy now', to: routes.products },
-  { label: 'Professional check measure', to: routes.howItWorks },
-  { label: 'Professional installation', to: routes.howItWorks },
+  { label: 'Buy now', body: 'Choose your product', to: routes.products },
+  { label: 'Professional check measure', body: 'We confirm every detail', to: routes.howItWorks },
+  { label: 'Professional installation', body: 'Installed by our professionals', to: routes.howItWorks },
 ];
 
 export function StepsBar() {
@@ -20,7 +19,7 @@ export function StepsBar() {
               <span className="home-steps-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
               <div className="home-steps-copy">
                 <h2>{step.label}</h2>
-                <JourneyStepDetail index={index} />
+                <p>{step.body}</p>
               </div>
             </Link>
           </li>

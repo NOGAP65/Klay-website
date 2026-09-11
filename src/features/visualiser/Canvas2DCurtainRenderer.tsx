@@ -1,10 +1,8 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { curtainPlane, curtainScale, hangingDrop } from './curtainPlane';
-import { foldLean, foldDepth, foldSection, MIN_FOLD_PITCH } from './curtainCloth';
+import { computeHomography } from './homography';
+import { foldLean, foldDepth, MIN_FOLD_PITCH } from './curtainCloth';
 import { createCurtainLighting, type CurtainLighting } from './curtainLighting';
-import { CURTAIN_SCREEN_SPACE_GLSL, curtainDrawingSize } from './curtainScreenSpace';
-import { curtainRoomLight } from './curtainRoomLight';
 
 // ---------------------------------------------------------------------------
 // WAVE FOLD CURTAINS
@@ -51,10 +49,20 @@ interface Canvas2DCurtainRendererProps {
   hardwareColour: 'white' | 'black' | 'chrome';
   mount: 'ceiling' | 'window';
   colour: string;
-  /** Pricing band. Preview scale uses the traced aspect and measured drop. */
+  /** Ordered track width — 'small' | 'medium' | 'large' | 'xl'.
+   *
+   * IT NO LONGER SETS THE WAVE COUNT. The count comes from the traced window
+   * now — see wavesForTrace — because fold count is a physical property of cloth
+   * spanning an opening, and the ordered size is a dropdown that may not
+   * describe the window in the photograph at all. The traced version is the
+   * honest one.
+   *
+   * KEPT ON THE INTERFACE ANYWAY, and deliberately: callers still pass it, and
+   * whether anything else in the renderer should read it is a separate question
+   * this reconciliation does not answer. Removing it would be making that
+   * decision by omission. It is not destructured below, because nothing in the
+   * body reads it yet. */
   size?: string;
-  /** Track-to-hem measurement used only to scale the preview. */
-  dropMm?: number;
   /** 0 = shut (panels meet at the centre), 1 = fully drawn back. */
   openness: number;
   canvasWidth: number;
@@ -65,6 +73,14 @@ interface Canvas2DCurtainRendererProps {
 // Fold spacing is calibrated to the room photographs and remains independent
 // of image resolution. Wider traced openings carry more folds; the count stays
 // fixed while opening so fabric gathers instead of disappearing.
+const MIN_WAVES_PER_PANEL = 5;
+const MAX_WAVES_PER_PANEL = 28;
+const WAVES_AT_FULL_FRAME = 18;
+const wavesForTrace = (tracedWidthPx: number, framePx: number): number => {
+  const fraction = framePx > 0 ? tracedWidthPx / framePx : 0.5;
+  return Math.min(MAX_WAVES_PER_PANEL, Math.max(MIN_WAVES_PER_PANEL, Math.round(fraction * WAVES_AT_FULL_FRAME)));
+};
+const WAVE_PITCH_MM = 160;
 
 // Fully gathered cloth occupies 24% of the track. The cached arc-length
 // solution preserves fullness while the spacing between carriers changes.
@@ -82,10 +98,55 @@ const FRONT_SOFTNESS = 1.6;
  * pinned to its carrier; below that the fabric is free and a bunched panel
  * splays toward the room. Scaled by how compressed the panel is, so a shut
  * curtain hangs straight and the two panels never cross at the centre. */
-const HEM_SPLAY = 0.045;
+const HEM_SPLAY = 0.16;
 
 /** Extra wave depth at the hem, same reason. */
-const HEM_DEPTH_GAIN = 0.035;
+const HEM_DEPTH_GAIN = 0.14;
+
+/** How far the hem rides up and down with fold depth, as a fraction of the fold's
+ * own depth — and the same at the heading, where it is much smaller.
+ *
+ * Without this the panels are boxes. The waves live purely in z, the camera looks
+ * straight down -z, so depth moved nothing on screen and the top and bottom edges
+ * came out as dead straight horizontal lines across a rippling surface. A real
+ * curtain's hem is scalloped: you are looking slightly DOWN at it, so the part of
+ * each wave that bulges toward the room sits lower in frame than the part that
+ * bows away, and the hem draws that out as a wave of its own.
+ *
+ * A true perspective camera would give this for free, but the orthographic one is
+ * what keeps the render locked to the traced window, so the depth cue is applied
+ * as a shear on y instead: a projection effect, which is what it is.
+ *
+ * Scaled off the reference render, where the hem's scallop measures about 17% of
+ * the wave pitch peak-to-peak against a fold depth of ~0.41 of pitch. A little
+ * over that here, since this is looked at much smaller than a 1535px still. */
+const HEM_DEPTH_SWING = 0.10;
+
+/** The heading gets a swing too, and this is what stops the top of the panel
+ * reading as a box.
+ *
+ * It was zero. The reasoning was sound as far as it went — the fabric is clipped
+ * to its carriers, and any swing lifted the back half of each wave above the
+ * track as a row of dark specks — but the cost was that the top edge came out as
+ * a dead straight horizontal line ruled across a rippling surface. A real wave
+ * curtain does not do that: the bays that bow toward the room hang visibly lower
+ * than the ones that bow away, so the heading scallops just like the hem, only
+ * shallower.
+ *
+ * The specks are fixed properly by HEADING_SINK below rather than by giving up
+ * the scallop. Smaller than HEM_DEPTH_SWING because the projection effect really
+ * does grow with distance below the camera axis. */
+const HEADING_DEPTH_SWING = 0.018;
+
+/** Sinks the heading by its own worst upward excursion, so the scallop hangs
+ * BELOW the track line instead of straddling it.
+ *
+ * z swings symmetrically (colZ = amp * sin), so the shear lowers the forward
+ * bays and raises the back ones by the same amount. Dropping the whole heading
+ * by that amount puts the highest point back on the track line. Slightly over 1
+ * so the back bays finish a shade inside the track's band and are occluded by
+ * it — the overlap is what removes the seam between fabric and hardware. */
+const HEADING_SINK = 1.12;
 
 // ---------------------------------------------------------------------------
 // CLOTH PHYSICS — the hem does not go where the carriers go
@@ -136,7 +197,7 @@ const HEM_DEPTH_GAIN = 0.035;
 
 // Fixed at the tape, individual folds drift and bow gently down the drop.
 // The photo shading travels with the same vertices, preserving the fabric grain.
-const FOLD_WANDER = 0.18;
+const FOLD_WANDER = 0.38;
 const FOLD_WANDER_POWER = 1.35;
 
 /** THE WEIGHTED HEM BAND, which is stiffer than the cloth above it.
@@ -147,7 +208,7 @@ const FOLD_WANDER_POWER = 1.35;
  * the hem was a sawtooth — the sine at full amplitude cut straight across — and
  * a sawtooth hem is a paper fan, not a curtain.
  */
-const HEM_STIFFEN = 0.045;
+const HEM_STIFFEN = 0.32;
 const HEM_STIFFEN_SPAN = 0.08;
 
 /** HOW UNEVEN THE HEM IS, as a fraction of the drop.
@@ -164,7 +225,7 @@ const HEM_STIFFEN_SPAN = 0.08;
  * the term is zero however uneven the hem, because the tape holds the top and
  * only the free end can wander.
  */
-const HEM_UNEVEN = 0.0012;
+const HEM_UNEVEN = 0.004;
 
 /** The doubled hem band, as a fraction of the drop, and how much darker it is.
  *
@@ -187,11 +248,22 @@ const HEM_BAND = 0.035;
  * cloth, rather than painted into the background canvas: it has to move with
  * the panel as the curtain is drawn back, and the background is composited
  * once. */
-// Keep the room recognisable through an open weave. Heavy low-resolution blur
-// turns outdoor highlights into broad glossy stripes when mapped through folds.
-const SHEER_DIFFUSION = 1 / 14;
+/** HOW HARD THE SHEER SCATTERS WHAT IS BEHIND IT.
+ *
+ * The backdrop is redrawn at this fraction of the photograph's width and
+ * sampled back up, which is a blur by resampling — cheap, and the softness
+ * scales with the image rather than being a fixed pixel radius that would mean
+ * one thing on a 1254px room and another on a 4000px phone photo.
+ *
+ * A twelfth is a sheer, not frosted glass: at this radius a garden behind the
+ * cloth stays a garden — you can see it is green and leafy — but no single leaf
+ * survives, which is exactly the line a real sheer draws. */
+const SHEER_DIFFUSION = 1 / 24;
 
 
+
+const SILL_SHADOW_DROP = 0.055;
+const SILL_SHADOW_ALPHA = 0.34;
 
 // ---------------------------------------------------------------------------
 
@@ -438,8 +510,18 @@ const swaySettled = (state: SwayState): boolean =>
  * few thousand vertices, and the fragment cost — which is what actually decides
  * the frame rate — does not move at all, because the panel covers the same
  * pixels either way. */
-const COLS_PER_WAVE = 40;
+const COLS_PER_WAVE = 24;
 const ROWS = 48;
+
+/** Ceiling on the render buffer's width in pixels.
+ *
+ * The canvas used to be sized to the photo's own resolution, which is fine for
+ * the default 1254px room but means a 4000px phone photo shaded 16 MILLION
+ * fragments per frame — enough to drop a low-end machine to single figures while
+ * the slider moves. The result is CSS-scaled to the container either way, and
+ * the ortho camera maps the world to the viewport rather than to pixels, so
+ * capping the buffer costs nothing but sampling and changes no coordinates. */
+const RENDER_MAX_WIDTH = 1400;
 
 // The detail map covers each panel EXACTLY ONCE — it is not tiled.
 //
@@ -471,8 +553,8 @@ const HARDWARE_HEX: Record<string, string> = {
 // --- Helpers ---------------------------------------------------------------
 
 // Sheer coverage before extra layers from folds, stacking and the doubled hem.
-const SHEER_OPACITY_DARK = 1.45;
-const SHEER_OPACITY_LIGHT = 1.16;
+const SHEER_OPACITY_DARK = 1.35;
+const SHEER_OPACITY_LIGHT = 1.10;
 
 const sheerOpacity = (colour: string): number => {
   const l = luma01(colour);
@@ -601,7 +683,6 @@ function panelLayout(
  * worst. Wave COUNT is fixed for the life of the track, so the vertex count and
  * the index buffer are fixed too, and only the positions actually move. */
 interface PanelMesh {
-  soft: boolean;
   geometry: THREE.BufferGeometry;
   positions: Float32Array;
   normals: Float32Array;
@@ -611,7 +692,7 @@ interface PanelMesh {
   count: number;
 }
 
-function createPanelMesh(count: number, soft = false): PanelMesh {
+function createPanelMesh(count: number): PanelMesh {
   const cols = count * COLS_PER_WAVE;
   const vertexCount = (cols + 1) * (ROWS + 1);
 
@@ -670,7 +751,7 @@ function createPanelMesh(count: number, soft = false): PanelMesh {
   // to contain the panel; computing it per frame from 400-odd vertices is waste.
   geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e6);
 
-  return { geometry, positions, normals, compression, depth, cols, count, soft };
+  return { geometry, positions, normals, compression, depth, cols, count };
 }
 
 interface PanelWrite {
@@ -697,6 +778,7 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
   const { widths, depths, compressions, span, overall } = layout;
   const { positions, compression, depth, cols, count } = mesh;
   const height = topY - bottomY;
+  const TAU = Math.PI * 2;
 
   let maxDepth = 1e-6;
   for (let i = 0; i < count; i++) if (depths[i] > maxDepth) maxDepth = depths[i];
@@ -739,12 +821,12 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     // boundary where two neighbours were compressed differently.
     const t = p - 0.5;
     const i0 = Math.floor(t);
-    const f = smoothstep01(t - i0);
+    const f = t - i0;
     const lo = i0 < 0 ? 0 : i0 > count - 1 ? count - 1 : i0;
     const hi = i0 + 1 < 0 ? 0 : i0 + 1 > count - 1 ? count - 1 : i0 + 1;
     colAmp[c] = depths[lo] + (depths[hi] - depths[lo]) * f;
 
-    colSection[c] = colAmp[c] * foldSection(p);
+    colSection[c] = -colAmp[c] * Math.cos(p * TAU);
     // Measured from the WALL end so the hem splay reaches further toward the
     // room while the heading stays pinned to its end carrier.
     colX[c] = span - offset;
@@ -756,9 +838,8 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     // Move each fold's whole cross-section, including its photographed light.
     // Shifting only the depth phase left straight stripes painted on the cloth.
     const edgeEase = Math.sin(Math.PI * p / count) * (1 - overall * 0.7);
-    const softness = mesh.soft ? 1.8 : 1;
-    colWander[c] = FOLD_WANDER * softness * extendedWidth * (w0 + (w1 - w0) * f) * edgeEase;
-    colBow[c] = extendedWidth * 0.09 * softness * (waveJitter(lo, 4.6) + (waveJitter(hi, 4.6) - waveJitter(lo, 4.6)) * f) * edgeEase;
+    colWander[c] = FOLD_WANDER * extendedWidth * (w0 + (w1 - w0) * f) * edgeEase;
+    colBow[c] = extendedWidth * 0.09 * (waveJitter(lo, 4.6) + (waveJitter(hi, 4.6) - waveJitter(lo, 4.6)) * f) * edgeEase;
     colLean[c] = foldLean(widths[lo], extendedWidth) + (foldLean(widths[hi], extendedWidth) - foldLean(widths[lo], extendedWidth)) * f;
 
     // Per-fold arrival offset, interpolated between wave centres on the same
@@ -784,7 +865,7 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     const p = (c / cols) * count;
     const t = p - 0.5;
     const i0 = Math.floor(t);
-    const f = smoothstep01(t - i0);
+    const f = t - i0;
     const lo = i0 < 0 ? 0 : i0 > count - 1 ? count - 1 : i0;
     const hi = i0 + 1 < 0 ? 0 : i0 + 1 > count - 1 ? count - 1 : i0 + 1;
     const j0 = waveJitter(lo, 2.9);
@@ -804,6 +885,17 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     // Billow: air trapped in front of a moving panel deepens the folds, and it
     // does so lowest down where the cloth is freest.
     const deepen = 1 + HEM_DEPTH_GAIN * vy * vy + billow * vy;
+
+    // Depth read as height: forward of the track sits lower in frame, and more so
+    // the further down the drop you look. This is what scallops the hem instead of
+    // ruling a straight line under a rippling surface. See HEM_DEPTH_SWING.
+    const swing = HEADING_DEPTH_SWING + (HEM_DEPTH_SWING - HEADING_DEPTH_SWING) * vy;
+
+    // The heading's own drop, tapering out over the top of the panel. Without it
+    // the back half of every wave rises above the track; with it the whole
+    // scallop hangs from the track line instead of straddling it.
+    // See HEADING_SINK.
+    const sink = maxDepth * HEADING_DEPTH_SWING * HEADING_SINK * (1 - vy) * (1 - vy);
 
     // The lag at this height. Zero at the heading, since that is bolted to the
     // carriers, growing superlinearly to the full value at the hem.
@@ -835,18 +927,12 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
       // The drop, per column. Zero deviation at the heading and the full
       // deviation at the hem, so the tape stays straight and only the free end
       // wanders. See HEM_UNEVEN.
+      const y = topY - (height - colShort[c] * vy) * vy;
+
       const relaxedDrift = colWander[c] * driftWeight + colBow[c] * bowWeight;
       positions[i3] = wallX + towardCentre * (colX[c] * splay + lag + relaxedDrift + (z + colAmp[c]) * colLean[c]);
+      positions[i3 + 1] = y - z * swing - sink;
       positions[i3 + 2] = z;
-      if (r === 0) {
-        positions[i3 + 1] = topY;
-      } else {
-        const above = i3 - (cols + 1) * 3;
-        positions[i3 + 1] = positions[above + 1] - hangingDrop(
-          (height - colShort[c]) / ROWS,
-          positions[i3] - positions[above], z - positions[above + 2],
-        );
-      }
 
       compression[v] = colComp[c];
       depth[v] = z / maxDepth;
@@ -863,35 +949,10 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
   (g.attributes.aDepth as THREE.BufferAttribute).needsUpdate = true;
 }
 
-// The receiver is a horizontal sill/floor at the traced lower edge. Follow the
-// actual hem in x and depth instead of painting a dark vertical rectangle.
-function writeHemShadow(shadow: THREE.Mesh, cloth: PanelMesh, floorY: number, radius: number) {
-  const positions = shadow.geometry.attributes.position as THREE.BufferAttribute;
-  for (let row=0;row<2;row++) for (let c=0;c<=cloth.cols;c++) {
-    const source = (ROWS*(cloth.cols+1)+c)*3;
-    positions.setXYZ(row*(cloth.cols+1)+c, cloth.positions[source], floorY,
-      cloth.positions[source+2] + (row === 0 ? -radius : radius));
-  }
-  positions.needsUpdate = true;
-}
-
 // --- Shaders --------------------------------------------------------------
 
-// Keep clip-space w so tracks and fabric interpolate in perspective.
-const WINDOW_PROJECTION = `
-uniform mat3 uQuadH;
-uniform vec3 uDepthColumn;
-uniform vec2 uFrame;
-vec4 projectWindow(vec4 world) {
-  vec3 p = uQuadH * vec3(world.xy, 1.0) + uDepthColumn * world.z;
-  return vec4(2.0 * p.xy / uFrame - p.z, 0.5 * (p.z - 1.0), p.z);
-}
-`;
-
 const VERTEX_SHADER = `
-${WINDOW_PROJECTION}
-uniform mat3 uViewNormal;
-varying vec3 vViewNormal;
+uniform mat3 uQuadH;
 uniform mat4 uShadowMatrix;
 varying vec4 vShadow;
 attribute float aCompression;
@@ -899,21 +960,33 @@ attribute float aDepth;
 attribute vec2 aPhotoUv;
 varying vec2 vPhotoUv;
 
+uniform vec2 uFrame;
+
 varying vec3 vNormal;
 varying vec2 vUv;
 varying float vCompression;
 varying float vDepth;
+/** Where this fragment lands on the photograph, 0..1. The camera is an ortho
+ *  box over the image, so warped world coordinates ARE image pixels. */
+varying vec2 vBackdrop;
 
 void main() {
   vNormal = normalMatrix * normal;
-  vViewNormal = uViewNormal * vNormal;
   vUv = uv;
   vPhotoUv = aPhotoUv;
   vCompression = aCompression;
   vDepth = aDepth;
-  vec4 world = modelMatrix * vec4(position, 1.0);
-  vShadow = uShadowMatrix * world;
-  gl_Position = projectWindow(world);
+  // ONTO THE TRACED QUAD. Everything above is solved square — the waves, the
+    // sway, the track — in an axis-aligned box, and this is where it gets put
+    // back on a window that was photographed in perspective. modelMatrix first
+    // so the vertex is in world pixel space, then the homography with its
+    // perspective divide, then the ordinary projection.
+    vec4 world = modelMatrix * vec4(position, 1.0);
+    vShadow = uShadowMatrix * world;
+    vec3 warped = uQuadH * vec3(world.xy, 1.0);
+    world.xy = warped.xy / warped.z;
+    vBackdrop = world.xy / uFrame;
+    gl_Position = projectionMatrix * viewMatrix * world;
 }
 `;
 
@@ -935,77 +1008,55 @@ uniform vec2 uTexRepeat;
 uniform vec3 uRoomTint;
 uniform float uRoomExposure;
 varying vec4 vShadow;
-${CURTAIN_SCREEN_SPACE_GLSL}
-varying vec3 vViewNormal;
+varying vec2 vBackdrop;
 varying vec3 vNormal;
 varying vec2 vUv;
 varying float vCompression;
 varying float vDepth;
 
-// Broad source filtering and receiver slope correction prevent stair-stepped
-// bands on oblique folds. This is deliberately a soft indoor light source.
+float shadowTap(vec3 p, vec2 offset) {
+  return step(p.z - 0.00055, texture2D(uShadowMap, p.xy + offset * 0.0013).r);
+}
 float visibility() {
   vec3 p = vShadow.xyz / vShadow.w;
-  if (any(lessThan(p.xy,vec2(0.0))) || any(greaterThan(p.xy,vec2(1.0)))) return 1.0;
-  vec3 dx = dFdx(p), dy = dFdy(p);
-  float determinant = dx.x * dy.y - dx.y * dy.x;
-  vec2 gradient = abs(determinant) > 0.00000001
-    ? vec2(dy.y * dx.z - dx.y * dy.z, dx.x * dy.z - dy.x * dx.z) / determinant : vec2(0.0);
-  float lit = 0.0;
-  for (int i = 0; i < 16; i++) {
-    float angle = float(i) * 2.399963;
-    vec2 offset = vec2(cos(angle),sin(angle)) * sqrt((float(i)+0.5)/16.0) * 0.004;
-    float receiver = p.z + clamp(dot(gradient,offset),-0.004,0.004) - 0.00045;
-    lit += smoothstep(receiver-0.00018,receiver+0.00018,texture2D(uShadowMap,p.xy+offset).r);
-  }
-  return lit / 16.0;
-}
-vec3 toLinear(vec3 c) {
-  return mix(c/12.92,pow((c+0.055)/1.055,vec3(2.4)),step(vec3(0.04045),c));
-}
-vec3 toSrgb(vec3 c) {
-  c = max(c,vec3(0.0));
-  return mix(c*12.92,1.055*pow(c,vec3(1.0/2.4))-0.055,step(vec3(0.0031308),c));
+  float lit = shadowTap(p,vec2(-1.0,-1.0)) + shadowTap(p,vec2(0.0,-1.0)) + shadowTap(p,vec2(1.0,-1.0))
+    + shadowTap(p,vec2(-1.0,0.0)) + shadowTap(p,vec2(0.0,0.0)) + shadowTap(p,vec2(1.0,0.0))
+    + shadowTap(p,vec2(-1.0,1.0)) + shadowTap(p,vec2(0.0,1.0)) + shadowTap(p,vec2(1.0,1.0));
+  return lit / 9.0;
 }
 void main() {
   vec3 N = normalize(vNormal);
+  if (!gl_FrontFacing) N = -N;
   if (N.z < 0.0) N = -N;
-  vec3 V = curtainViewDirection();
-  float facing = clamp(abs(dot(normalize(vViewNormal),V)),0.0,1.0);
-  float tooth = texture2D(uTexture,vUv*uTexRepeat).r - 0.5;
-  // The photograph supplies only de-lit cloth detail, never a second set of
-  // painted fold shadows. All broad shading belongs to the real 3D surface.
-  float detail = texture2D(uFoldPhoto,vec2(mix(vPhotoUv.x,1.0-vPhotoUv.x,uPhotoMirror),vPhotoUv.y)).r - 0.5;
-  float key = max(dot(N,normalize(vec3(-0.6,0.65,1.0))),0.0);
-  float fill = max(dot(N,normalize(vec3(0.8,0.2,0.7))),0.0);
-  float cavity = smoothstep(0.0,1.0,-vDepth);
-  float shadow = uIsSheer > 0.5 ? 1.0 : mix(0.80,1.0,visibility());
-  float shade = (0.32 + 0.50*key + 0.18*fill) * shadow;
-  shade *= 1.0 - cavity * (0.035 + smoothstep(0.0,1.0,vCompression)*0.06);
-  vec3 dye = toLinear(uColour);
-  vec3 illumination = toLinear(uRoomTint) * uRoomExposure;
-  vec3 surface = dye * illumination * shade * (1.0 + tooth*0.08 + detail*0.20);
-  // Matte fibres have a soft grazing sheen; they do not become white plastic.
-  surface += dye * illumination * pow(1.0-facing,3.0) * 0.018;
+  float tooth = texture2D(uTexture, vUv * uTexRepeat).r - 0.5;
+  vec3 L = normalize(vec3(-0.75, 0.45, 1.0));
+  float facing = max(N.z, 0.0);
+  float direct = max(dot(N,L), 0.0);
+  // Use the shop photograph's actual fold falloff as the resting light field.
+  // Every photographed valley is registered to one geometric return, so the
+  // light deforms with the cloth instead of tiling unrelated stripes over it.
+  vec3 foldPhoto = texture2D(uFoldPhoto, vec2(mix(vPhotoUv.x,1.0-vPhotoUv.x,uPhotoMirror),vPhotoUv.y)).rgb;
+  float photoLight = dot(foldPhoto,vec3(0.299,0.587,0.114));
+  float cavity = pow(max(0.0, -vDepth), 1.5);
+  float gathered = smoothstep(0.0,1.0,vCompression);
+  float liveLight = (0.78 + 0.22 * direct) * mix(0.72,1.0,visibility());
+  float shade = (0.10 + photoLight) * mix(1.0,liveLight,gathered * 0.75);
+  shade *= 1.0 - cavity * gathered * 0.12;
+  vec3 surface = uColour * uRoomTint * shade * (1.0 + tooth * 0.10) * uRoomExposure;
+  float dark = 1.0 - smoothstep(0.05, 0.5, dot(uColour, vec3(0.299,0.587,0.114)));
+  float fibre = pow(1.0 - facing, 2.0) * direct * 0.04;
+  surface += vec3(fibre * dark);
   if (uIsSheer > 0.5) {
-    vec2 screenUv = curtainScreenUv();
-    float layers = max(1.0,texture2D(uDensity,screenUv).r*12.0);
-    vec3 behind = texture2D(uBackdrop,screenUv).rgb;
-    // Photographed drape retains the soft, irregular falloff of actual cloth.
-    // It belongs to these same moving vertices; only overlaps add opacity.
-    float photograph = texture2D(uFoldPhoto,vec2(mix(vPhotoUv.x,1.0-vPhotoUv.x,uPhotoMirror),vPhotoUv.y)).a;
-    float gathered = smoothstep(0.0,1.0,vCompression);
-    float drape = (0.10 + photograph) * (1.0 - cavity*gathered*0.08);
-    float transmission = exp(-uOpacity*layers);
-    vec3 cloth = uColour*uRoomTint*drape*sqrt(uRoomExposure);
-    cloth *= 1.0 + tooth*0.10;
-    // Diffuse fill carries the fabric dye, including in the dark colours.
-    vec3 fillColour = uColour * uRoomTint * (0.86 + 0.14*behind);
-    cloth = mix(cloth,fillColour*(0.55+photograph*0.48),0.40);
-    gl_FragColor = vec4(clamp(cloth*(1.0-transmission)+behind*transmission,0.0,1.0),1.0);
-    return;
+    float path = texture2D(uDensity, vBackdrop).r * 12.0;
+    float transmit = exp(-uOpacity * max(1.0, path));
+    vec3 behind = texture2D(uBackdrop, vBackdrop).rgb;
+    // Backlit fibres scatter towards the viewer. This varies with the room's
+    // actual light field; the selected dye still absorbs part of that light.
+    vec3 backlit = mix(uColour, vec3(1.0), 0.18) * (0.80 + 0.20 * behind);
+    vec3 cloth = mix(surface, backlit * (0.55 + photoLight * 0.48), 0.45);
+    surface = cloth * (1.0 - transmit) + behind * transmit;
   }
-  gl_FragColor = vec4(clamp(toSrgb(surface),0.0,1.0),1.0);
+  gl_FragColor = vec4(clamp(surface,0.0,1.0),1.0);
 }
 `;
 
@@ -1017,15 +1068,33 @@ const TRACK_MIN_PX = 5;
 const BRACKET_GAP_MM = 34;
 
 const TRACK_VERTEX_SHADER = `
-${WINDOW_PROJECTION}
+uniform mat3 uQuadH;
 varying vec2 vUv;
 void main() {
   vUv = uv;
-  gl_Position = projectWindow(modelMatrix * vec4(position, 1.0));
+  // ONTO THE TRACED QUAD. Everything above is solved square — the waves, the
+    // sway, the track — in an axis-aligned box, and this is where it gets put
+    // back on a window that was photographed in perspective. modelMatrix first
+    // so the vertex is in world pixel space, then the homography with its
+    // perspective divide, then the ordinary projection.
+    vec4 world = modelMatrix * vec4(position, 1.0);
+    vec3 warped = uQuadH * vec3(world.xy, 1.0);
+    world.xy = warped.xy / warped.z;
+    gl_Position = projectionMatrix * viewMatrix * world;
 }
 `;
 
-// A short wall shadow seats the rail in the room.
+/** THE SILL SHADOW.
+ *
+ * Black, with an alpha that is strongest at the hem and gone within
+ * SILL_SHADOW_DROP of the drop below it. Squared rather than linear, because
+ * contact shadow is an occlusion term and occlusion closes up fast: a linear
+ * ramp spreads the same darkness evenly and reads as a painted grey band, which
+ * is the same mistake the fold shading was making before the references.
+ *
+ * u carries a taper at the two ends, so the shadow does not stop dead where the
+ * panel does — the cloth is not a wall and its shadow has soft ends.
+ */
 const SHADOW_FRAGMENT_SHADER = `
 precision mediump float;
 uniform float uAlpha;
@@ -1035,17 +1104,6 @@ void main() {
   float fall = vUv.y * vUv.y;
   float ends = smoothstep(0.0, 0.10, vUv.x) * smoothstep(0.0, 0.10, 1.0 - vUv.x);
   gl_FragColor = vec4(0.0, 0.0, 0.0, fall * ends * uAlpha);
-}
-`;
-
-const HEM_SHADOW_FRAGMENT_SHADER = `
-precision mediump float;
-uniform float uAlpha;
-varying vec2 vUv;
-void main() {
-  float fall = exp(-pow((vUv.y-0.5)*4.5,2.0)) * sin(3.141593*vUv.y);
-  float ends = smoothstep(0.0,0.04,vUv.x) * smoothstep(0.0,0.04,1.0-vUv.x);
-  gl_FragColor = vec4(0.0,0.0,0.0,fall*ends*uAlpha);
 }
 `;
 
@@ -1091,7 +1149,7 @@ void main() {
 // Its broad fold lighting is removed; geometry and the shadow pass provide it.
 const FABRIC_SAMPLE: Record<'blockout' | 'sheer', string> = {
   blockout: '/images/fabrics/curtains-blockout.webp',
-  sheer: '/images/visualiser/textures/curtains/sheer-drape.webp',
+  sheer: '/images/visualiser/textures/curtains/sheer_produced.png',
 };
 interface FabricTexture { texture: THREE.Texture }
 const textureCache = new Map<string, Promise<FabricTexture>>();
@@ -1104,7 +1162,6 @@ function buildDetailTexture(path: string): Promise<FabricTexture> {
     const ctx = canvas.getContext('2d')!;
     const fromShop = path.includes('/fabrics/');
     if (fromShop) ctx.drawImage(img, 113, 105, 280, 585, 0, 0, 512, 1024);
-    else if(path.includes('sheer-drape')) ctx.drawImage(img,102,36,804,1396,0,0,512,1024);
     else ctx.drawImage(img, 0, 0, 512, 1024);
     const pixels = ctx.getImageData(0,0,512,1024);
     const low = document.createElement('canvas');
@@ -1168,7 +1225,6 @@ export default function Canvas2DCurtainRenderer({
   canvasWidth,
   canvasHeight,
   photoUrl,
-  dropMm = 2400,
 }: Canvas2DCurtainRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLCanvasElement>(null);
@@ -1182,8 +1238,9 @@ export default function Canvas2DCurtainRenderer({
   const leftMeshRef = useRef<PanelMesh | null>(null);
   const rightMeshRef = useRef<PanelMesh | null>(null);
   const materialsRef = useRef<THREE.ShaderMaterial[]>([]);
-  /** A soft floor receiver follows each panel's actual hem. */
+  /** One sill shadow per panel. See SILL_SHADOW_ALPHA. */
   const shadowMeshesRef = useRef<THREE.Mesh[]>([]);
+  const shadowDropRef = useRef(0);
   const layoutRef = useRef<Layout | null>(null);
 
   // Openness animates at 60fps; everything else changes on a click. Keeping the
@@ -1242,10 +1299,17 @@ export default function Canvas2DCurtainRenderer({
     writePanelMesh(left, { ...common, wallX: windowLeft, towardCentre: 1 });
     writePanelMesh(right, { ...common, wallX: windowRight, towardCentre: -1 });
 
+    // The sill shadow follows the cloth that casts it. A unit plane scaled to
+    // this openness's span, sat immediately under the hem and behind the panel.
     const shadows = shadowMeshesRef.current;
     if (shadows.length === 2) {
-      writeHemShadow(shadows[0],left,windowBottom,shutWaveWidth*0.8);
-      writeHemShadow(shadows[1],right,windowBottom,shutWaveWidth*0.8);
+      const drop = shadowDropRef.current;
+      const span = Math.max(1, shaped.span);
+      const top = windowBottom - drop / 2;
+      shadows[0].scale.x = span;
+      shadows[0].position.set(windowLeft + span / 2, top, -1);
+      shadows[1].scale.x = span;
+      shadows[1].position.set(windowRight - span / 2, top, -1);
     }
 
     const roomFilter = fabricType === 'blockout' ? `brightness(${0.90 + open * 0.10})` : 'none';
@@ -1336,7 +1400,6 @@ export default function Canvas2DCurtainRenderer({
     let cancelled = false;
     let backdropTexture: THREE.Texture | undefined;
     let foldPhotoTexture: THREE.Texture | undefined;
-    let resizeObserver: ResizeObserver | undefined;
 
     const init = async () => {
       const bgCanvas = bgRef.current;
@@ -1346,7 +1409,7 @@ export default function Canvas2DCurtainRenderer({
       const [photo, fabric, foldPhotoImage] = await Promise.all([
         loadImage(photoUrl),
         buildDetailTexture(FABRIC_SAMPLE[fabricType] ?? FABRIC_SAMPLE.blockout),
-        loadImage(fabricType==='sheer' ? FABRIC_SAMPLE.sheer : '/images/fabrics/curtains-blockout.webp'),
+        loadImage('/images/fabrics/curtains-blockout.webp'),
       ]);
       if (cancelled) return;
 
@@ -1359,9 +1422,9 @@ export default function Canvas2DCurtainRenderer({
       // The fabric buffer is capped; the ortho camera below still spans 0..W in
       // photo pixels, so world coordinates are unchanged and the two canvases
       // stay aligned — both are CSS-sized to the container.
-      const drawingSize = curtainDrawingSize(W, H, containerRef.current?.clientWidth || W, window.devicePixelRatio);
-      threeCanvas.width = drawingSize.width;
-      threeCanvas.height = drawingSize.height;
+      const renderScale = Math.min(1, Math.min(RENDER_MAX_WIDTH, (containerRef.current?.clientWidth || W) * 1.6) / W);
+      threeCanvas.width = Math.round(W * renderScale);
+      threeCanvas.height = Math.round(H * renderScale);
 
       const bgCtx = bgCanvas.getContext('2d');
       if (bgCtx) bgCtx.drawImage(photo, 0, 0);
@@ -1402,12 +1465,7 @@ export default function Canvas2DCurtainRenderer({
         rgb.forEach((v,c)=>{roomRGB[c]+=v;}); roomSamples++;
       }
       const brightest=Math.max(...roomRGB,1);
-      lightCanvas.width=96; lightCanvas.height=96;
-      lightCtx.drawImage(photo,0,0,96,96);
-      const localLight=curtainRoomLight(lightCtx.getImageData(0,0,96,96).data,96,96,
-        [[tl.x/W,tl.y/H],[tr.x/W,tr.y/H],[br.x/W,br.y/H],[bl.x/W,bl.y/H]]);
-      const roomTint=new THREE.Vector3(...(fabricType==='sheer' ? localLight.tint
-        : roomRGB.map(v=>roomSamples ? 0.72+0.28*v/brightest : 1) as [number,number,number]));
+      const roomTint=new THREE.Vector3(...roomRGB.map(v=>roomSamples ? 0.72+0.28*v/brightest : 1) as [number,number,number]);
 
 
       // THE DIFFUSED BACKDROP the sheer looks through. Redrawn small and
@@ -1445,53 +1503,80 @@ export default function Canvas2DCurtainRenderer({
       const blPx = flip(bl);
       const brPx = flip(br);
 
-      const plane = curtainPlane(
-        [[tlPx.x, tlPx.y], [trPx.x, trPx.y], [brPx.x, brPx.y], [blPx.x, blPx.y]], W, H,
-      );
-      const { left: windowLeft, right: windowRight, top: windowTop, bottom: windowBottom,
-        width: windowWidth, homography: h, projection } = plane;
-      const quadMatrix = new THREE.Matrix3().set(h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], h[8]);
-      const viewNormal = new THREE.Matrix3().fromArray(projection.basis).transpose().invert().transpose();
-      const projectionUniforms = {
-        uQuadH: { value: quadMatrix },
-        uDepthColumn: { value: new THREE.Vector3(...projection.depth) },
-        uViewNormal: { value: viewNormal },
-        uFocal: { value: projection.focal },
-        uFrame: { value: new THREE.Vector2(W, H) },
-        uViewport: { value: new THREE.Vector2(threeCanvas.width, threeCanvas.height) },
-      };
+      const windowLeft = Math.min(tlPx.x, blPx.x);
+      const windowRight = Math.max(trPx.x, brPx.x);
+      const windowTop = Math.max(tlPx.y, trPx.y);
+      const windowBottom = Math.min(blPx.y, brPx.y);
+      const windowWidth = windowRight - windowLeft;
 
-      // Physical fold spacing follows the measured drop and rectified aspect.
-      const scale = curtainScale(windowWidth, windowTop-windowBottom, dropMm);
-      const waveCount = scale.waves;
+      // THE SLANT. The blind renderer has always drawn onto the traced quad; the
+      // curtain collapsed that quad to its bounding box and drew square inside
+      // it, so on a window photographed in perspective the curtain's track ran
+      // level while the window's head sloped away beneath it, and the hem sat
+      // flat on a sill that did not. It read as a decal on the photo rather than
+      // as cloth in the room.
+      //
+      // The whole scene is still SOLVED square — the cloth simulation wants a
+      // rectangle and the wave pitch means nothing on a trapezium — and is then
+      // mapped onto the quad by this homography in the vertex shaders. Solve
+      // square, draw crooked.
+      //
+      // Corner order matches the quad's: the box's top-left goes to the quad's
+      // top-left. Geometry outside the box (the track above the head, the
+      // panels' overhang past the reveal) extrapolates through the same
+      // transform, which is what keeps the track parallel to the window head
+      // instead of stopping at it.
+      const quadMatrix = (() => {
+        const box: [number, number][] = [
+          [windowLeft, windowTop],
+          [windowRight, windowTop],
+          [windowRight, windowBottom],
+          [windowLeft, windowBottom],
+        ];
+        const quad: [number, number][] = [
+          [tlPx.x, tlPx.y],
+          [trPx.x, trPx.y],
+          [brPx.x, brPx.y],
+          [blPx.x, blPx.y],
+        ];
+        try {
+          const h = computeHomography(box, quad);
+          // Matrix3.set takes row-major, which is what computeHomography returns.
+          return new THREE.Matrix3().set(h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], h[8]);
+        } catch {
+          // Collinear or coincident corners. An un-warped curtain is wrong; a
+          // missing one is worse, so fall back to drawing it square.
+          return new THREE.Matrix3();
+        }
+      })();
+
+      // WAVE COUNT — from the trace itself. See wavesForTrace.
+      //
+      // Measured across the QUAD'S OWN EDGES rather than its bounding box. A
+      // window photographed at an angle has a top edge and a bottom edge of
+      // different lengths, and the box around it is wider than either — so the
+      // box overstates a slanted trace and would hand it folds it has not
+      // earned. The mean of the two edges is the track the curtain actually runs
+      // along.
+      //
+      // WIDTH AND NOT AREA, deliberately. A taller window does not get more
+      // folds: the waves are spaced along the track, so a 3m opening carries the
+      // same heading whether it is a metre tall or three. Bigger trace, more
+      // folds — but bigger ACROSS.
+      const topEdge = Math.hypot(trPx.x - tlPx.x, trPx.y - tlPx.y);
+      const bottomEdge = Math.hypot(brPx.x - blPx.x, brPx.y - blPx.y);
+      const waveCount = wavesForTrace((topEdge + bottomEdge) / 2, W);
       // Register the shop's photographed troughs to individual physical folds.
       // An atlas avoids UV jumps at repeated folds and preserves the full drop.
       // Start beyond the foreground plant and sofa in the source photograph.
-      const troughs = fabricType==='sheer' ? [102,237,372,505,638,772,906] : [113,141,173,208,242,277,310,352,393];
+      const troughs = [113,141,173,208,242,277,310,352,393];
       const atlas = document.createElement('canvas');
       atlas.width = waveCount * 64; atlas.height = 1024;
       const atlasCtx = atlas.getContext('2d')!;
       for (let i=0;i<waveCount;i++) {
         const j = i % (troughs.length-1);
-        atlasCtx.drawImage(foldPhotoImage,troughs[j],fabricType==='sheer'?36:57,troughs[j+1]-troughs[j],fabricType==='sheer'?1396:654,i*64,0,64,1024);
+        atlasCtx.drawImage(foldPhotoImage,troughs[j],57,troughs[j+1]-troughs[j],654,i*64,0,64,1024);
       }
-      const drape = atlasCtx.getImageData(0,0,atlas.width,atlas.height);
-      for (let x=0;x<atlas.width;x++) {
-        let mean=0;
-        for (let y=0;y<atlas.height;y++) {
-          const i=(y*atlas.width+x)*4;
-          mean+=(drape.data[i]+drape.data[i+1]+drape.data[i+2])/3;
-        }
-        mean/=atlas.height;
-        for (let y=0;y<atlas.height;y++) {
-          const i=(y*atlas.width+x)*4;
-          const value=(drape.data[i]+drape.data[i+1]+drape.data[i+2])/3;
-          drape.data[i+3]=value;
-          const residual=Math.max(70,Math.min(186,128+(value-mean)*1.2));
-          drape.data[i]=drape.data[i+1]=drape.data[i+2]=residual;
-        }
-      }
-      atlasCtx.putImageData(drape,0,0);
       foldPhotoTexture = new THREE.CanvasTexture(atlas);
       foldPhotoTexture.colorSpace = THREE.NoColorSpace;
       foldPhotoTexture.minFilter = THREE.LinearMipmapLinearFilter;
@@ -1503,9 +1588,13 @@ export default function Canvas2DCurtainRenderer({
       const shutPanelWidth = (windowWidth - gap) / 2;
       const shutWaveWidth = shutPanelWidth / waveCount;
 
-      // Hardware and settling speed use the same measurement as fold spacing.
-      const pxPerMm = (windowTop - windowBottom) / scale.dropMm;
-      const dropMetres = scale.dropMm / 1000;
+      // PHYSICAL SCALE, backwards out of the wave pitch. Each wave is 160mm of
+      // track whatever the window measures, so one wave's width in pixels IS the
+      // conversion — and the drop follows from the traced window's aspect. The
+      // cloth solver needs metres: a pendulum's period comes from its length, and
+      // a tall curtain has to swing more slowly than a short one.
+      const pxPerMm = shutWaveWidth / WAVE_PITCH_MM;
+      const dropMetres = Math.max(0.3, (windowTop - windowBottom) / pxPerMm / 1000);
       const omega = SWAY_FREQ_SCALE * 1.2024 * Math.sqrt(GRAVITY / dropMetres);
       // Time for the wave to run the drop: 2·sqrt(h/g) for a sheet hanging under
       // its own weight, corrected by the same factor as the frequency so the two
@@ -1604,12 +1693,12 @@ export default function Canvas2DCurtainRenderer({
       const makeMaterial = () =>
         new THREE.ShaderMaterial({
           uniforms: {
-            ...projectionUniforms,
+            uQuadH: { value: quadMatrix },
             uShadowMap: { value: null },
             uShadowMatrix: { value: new THREE.Matrix4() },
             uDensity: { value: null },
             uRoomTint: { value: roomTint },
-            uRoomExposure: { value: isSheer ? localLight.exposure : roomSamples ? Math.max(0.68,Math.min(1.02,brightest/roomSamples/255+0.16)) : 0.9 },
+            uRoomExposure: { value: 1.0 },
             uColour: { value: colourVec },
             uOpacity: { value: isSheer ? sheerOpacity(colourRef.current) : 1.0 },
             uIsSheer: { value: isSheer ? 1.0 : 0.0 },
@@ -1634,8 +1723,8 @@ export default function Canvas2DCurtainRenderer({
 
       // Buffers allocated here and only ever rewritten — applyOpenness fills in
       // the positions below.
-      const leftMesh = createPanelMesh(waveCount, fabricType === 'sheer');
-      const rightMesh = createPanelMesh(waveCount, fabricType === 'sheer');
+      const leftMesh = createPanelMesh(waveCount);
+      const rightMesh = createPanelMesh(waveCount);
       const leftMaterial = makeMaterial();
       const rightMaterial = makeMaterial();
       // Both panels receive light from the same side of the room.
@@ -1651,24 +1740,30 @@ export default function Canvas2DCurtainRenderer({
       leftMeshRef.current = leftMesh;
       rightMeshRef.current = rightMesh;
 
-      // Soft contact follows the actual hem on the horizontal receiver.
+      // --- SILL SHADOW ----------------------------------------------------
+      // One per panel, because each one has to follow its own leading edge as
+      // the curtain is drawn back. A unit plane, scaled and placed in draw()
+      // where the span for this openness is known.
+      //
+      // renderOrder -1 and no depth write: it is composited under the cloth and
+      // over the photograph, and it must never occlude the panel that casts it.
       const shadowMaterial = new THREE.ShaderMaterial({
-        uniforms: { ...projectionUniforms, uAlpha: { value: isSheer ? 0.13 : 0.22 } },
+        uniforms: { uQuadH: { value: quadMatrix }, uAlpha: { value: SILL_SHADOW_ALPHA } },
         vertexShader: TRACK_VERTEX_SHADER,
-        fragmentShader: HEM_SHADOW_FRAGMENT_SHADER,
+        fragmentShader: SHADOW_FRAGMENT_SHADER,
         transparent: true,
         depthWrite: false,
-        side: THREE.DoubleSide,
       });
+      const shadowDrop = (windowTop - windowBottom) * SILL_SHADOW_DROP;
       const shadows: THREE.Mesh[] = [];
       for (let i = 0; i < 2; i++) {
-        const s = new THREE.Mesh(new THREE.PlaneGeometry(1,1,leftMesh.cols,1), shadowMaterial);
+        const s = new THREE.Mesh(new THREE.PlaneGeometry(1, shadowDrop), shadowMaterial);
         s.renderOrder = -1;
-        s.frustumCulled = false;
         scene.add(s);
         shadows.push(s);
       }
       shadowMeshesRef.current = shadows;
+      shadowDropRef.current = shadowDrop;
 
       // --- TRACK ASSEMBLY -------------------------------------------------
       // The panels hang from something, and it has to look like the thing they
@@ -1676,19 +1771,18 @@ export default function Canvas2DCurtainRenderer({
       // heading, the way a real track hides the top of the tape.
       const hw = hexToRgb(HARDWARE_HEX[hardwareColour] ?? HARDWARE_HEX.white);
       const hardwareVec = new THREE.Vector3(hw.r / 255, hw.g / 255, hw.b / 255);
-      const trackZ = fabricType === 'sheer' ? 0 : shutWaveWidth * DEPTH_PACKED * (1 + HEM_DEPTH_GAIN) * 1.3 + 1;
+      const trackZ = shutWaveWidth * DEPTH_PACKED * (1 + HEM_DEPTH_GAIN) * 1.3 + 1;
       const centreX = (windowLeft + windowRight) / 2;
 
       const trackMaterial = new THREE.ShaderMaterial({
         uniforms: {
-          ...projectionUniforms,
+          uQuadH: { value: quadMatrix },
           uColour: { value: hardwareVec },
           uIsChrome: { value: hardwareColour === 'chrome' ? 1 : 0 },
           uRoomTint: { value: roomTint },
         },
         vertexShader: TRACK_VERTEX_SHADER,
         fragmentShader: TRACK_FRAGMENT_SHADER,
-        depthTest: fabricType !== 'sheer',
       });
       const track = new THREE.Mesh(
         new THREE.PlaneGeometry(windowWidth, trackHeight),
@@ -1703,11 +1797,10 @@ export default function Canvas2DCurtainRenderer({
       // edge of the opening as if it continued through the wall.
       const capW = Math.max(2, trackHeight * 0.46);
       const capMaterial = new THREE.ShaderMaterial({
-        uniforms: { ...projectionUniforms, uColour: { value: hardwareVec }, uRoomTint: { value: roomTint } },
+        uniforms: { uQuadH: { value: quadMatrix }, uColour: { value: hardwareVec }, uRoomTint: { value: roomTint } },
         vertexShader: TRACK_VERTEX_SHADER,
         fragmentShader: TRACK_CAP_FRAGMENT_SHADER,
         transparent: true,
-        depthTest: fabricType !== 'sheer',
       });
       for (const [x, flip] of [[windowLeft, -1], [windowRight, 1]] as const) {
         const cap = new THREE.Mesh(
@@ -1724,7 +1817,7 @@ export default function Canvas2DCurtainRenderer({
       const railShadow = new THREE.Mesh(
         new THREE.PlaneGeometry(windowWidth + capW, trackHeight * 2.2),
         new THREE.ShaderMaterial({
-          uniforms: {...projectionUniforms,uAlpha:{value:0.12}},
+          uniforms: {uQuadH:{value:quadMatrix},uAlpha:{value:0.12}},
           vertexShader:TRACK_VERTEX_SHADER, fragmentShader:SHADOW_FRAGMENT_SHADER,
           transparent:true, depthWrite:false,
         }),
@@ -1745,7 +1838,7 @@ export default function Canvas2DCurtainRenderer({
       }
 
       lightingRef.current?.dispose();
-      const lighting = createCurtainLighting(renderer, scene, camera, [leftPanel, rightPanel], projectionUniforms, W, H, VERTEX_SHADER, isSheer);
+      const lighting = createCurtainLighting(renderer, scene, camera, [leftPanel, rightPanel], quadMatrix, W, H, VERTEX_SHADER, isSheer);
       lightingRef.current = lighting;
       for (const material of materialsRef.current) {
         material.uniforms.uShadowMap.value = lighting.shadowMap;
@@ -1753,26 +1846,12 @@ export default function Canvas2DCurtainRenderer({
         material.uniforms.uDensity.value = lighting.densityMap;
       }
       draw(opennessRef.current, 0);
-
-      // Rotating a phone or resizing the page must resize every lighting pass
-      // together. Geometry, the trace and the moving cloth are kept intact.
-      resizeObserver = new ResizeObserver(() => {
-        if (cancelled || !containerRef.current) return;
-        const size = curtainDrawingSize(W, H, containerRef.current.clientWidth, window.devicePixelRatio);
-        if (threeCanvas.width === size.width && threeCanvas.height === size.height) return;
-        renderer.setSize(size.width, size.height, false);
-        projectionUniforms.uViewport.value.set(size.width, size.height);
-        lighting.resize(size.width, size.height);
-        lighting.render();
-      });
-      if (containerRef.current) resizeObserver.observe(containerRef.current);
     };
 
     init();
 
     return () => {
       cancelled = true;
-      resizeObserver?.disconnect();
       backdropTexture?.dispose();
       foldPhotoTexture?.dispose();
       stopSolver();
@@ -1790,7 +1869,7 @@ export default function Canvas2DCurtainRenderer({
     // effects below without touching the scene.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    photoUrl, canvasWidth, canvasHeight, dropMm,
+    photoUrl, canvasWidth, canvasHeight,
     tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y,
     mount, fabricType, hardwareColour,
   ]);

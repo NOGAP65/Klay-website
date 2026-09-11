@@ -1,4 +1,4 @@
-import { windowPlane, type Point } from './homography';
+import type { Point } from './homography';
 
 export interface BlindLighting {
   tint: [number, number, number];
@@ -16,9 +16,10 @@ const luma = (rgb: number[]) => rgb[0] * 0.299 + rgb[1] * 0.587 + rgb[2] * 0.114
  * Daylight is averaged into four broad regions: it cannot reproduce an outdoor
  * scene through a privacy fabric, only the variation in its illumination. */
 export function sampleBlindLighting(pixels: Uint8ClampedArray, width: number, height: number, quad: Point[]): BlindLighting {
-  const plane = windowPlane(quad);
+  const [tl, tr, br, bl] = quad;
   const sample = (u: number, v: number): number[] => {
-    const [x, y] = plane(u, v);
+    const x = (tl[0] * (1-u) + tr[0] * u) * (1-v) + (bl[0] * (1-u) + br[0] * u) * v;
+    const y = (tl[1] * (1-u) + tr[1] * u) * (1-v) + (bl[1] * (1-u) + br[1] * u) * v;
     const px = clamp(Math.round(x * (width-1)), 0, width-1);
     const py = clamp(Math.round(y * (height-1)), 0, height-1);
     const index = (py * width + px) * 4;

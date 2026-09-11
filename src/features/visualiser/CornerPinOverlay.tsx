@@ -1,5 +1,4 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { isValidWindowQuad, windowPlane } from './homography';
 
 export type Point = [number, number];
 
@@ -10,7 +9,6 @@ export interface CornerPinOverlayHandle {
 interface CornerPinOverlayProps {
   imageWidth: number;
   imageHeight: number;
-  photoUrl?: string;
   onConfirm: (corners: Point[]) => void;
   /** Where to open the pins, as fractions of the image, TL TR BR BL.
    *
@@ -31,15 +29,16 @@ const DEFAULT_CORNERS_PCT: Point[] = [
 const TEAL = '#4ABFB5';
 
 // Corner order is [tl, tr, br, bl]. Each midpoint sits between the two
-// corners listed. Edge handles follow the pointer in both directions so an
-// angled opening can be resized without snapping to the photo's axes.
+// corners listed and, when dragged, moves only those two corners together
+// along a single axis (x for top/bottom, y for left/right) — this is what
+// lets the user skew/tilt the traced area to match perspective.
 type MidpointId = 'top' | 'bottom' | 'left' | 'right';
 
-const MIDPOINTS: { id: MidpointId; indices: [number, number]; cursor: string }[] = [
-  { id: 'top', indices: [0, 1], cursor: 'move' },
-  { id: 'right', indices: [1, 2], cursor: 'move' },
-  { id: 'bottom', indices: [3, 2], cursor: 'move' },
-  { id: 'left', indices: [0, 3], cursor: 'move' },
+const MIDPOINTS: { id: MidpointId; indices: [number, number]; axis: 'x' | 'y'; cursor: string }[] = [
+  { id: 'top', indices: [0, 1], axis: 'x', cursor: 'ew-resize' },
+  { id: 'right', indices: [1, 2], axis: 'y', cursor: 'ns-resize' },
+  { id: 'bottom', indices: [3, 2], axis: 'x', cursor: 'ew-resize' },
+  { id: 'left', indices: [0, 3], axis: 'y', cursor: 'ns-resize' },
 ];
 
 // Handles render at a fixed on-screen size regardless of image resolution
@@ -101,7 +100,7 @@ const HANDLE_PX = {
 } as const;
 
 const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProps>(
-  ({ imageWidth, imageHeight, photoUrl, onConfirm, initialCornersPct }, ref) => {
+  ({ imageWidth, imageHeight, onConfirm, initialCornersPct }, ref) => {
     // A CALLER MAY SAY WHERE TO START. The supplied wardrobe photographs were
     // shot with the opening dimensioned, so where the alcove is and how wide it
     // is are both known — the pins can open on it rather than on a generic box
@@ -115,9 +114,6 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
       )
     );
     const activeIndex = useRef<number | null>(null);
-    const [activeCorner, setActiveCorner] = useState<number | null>(null);
-    const [focusedCorner, setFocusedCorner] = useState<number | null>(null);
-    const grabOffset = useRef<Point>([0, 0]);
     const activeMidpoint = useRef<MidpointId | null>(null);
     const lastMidpointPoint = useRef<Point | null>(null);
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -157,17 +153,8 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
       return () => ro.disconnect();
     }, []);
 
-    const updateCorners = useCallback((update: (prev: Point[]) => Point[]) => {
-      setCorners(prev => {
-        const next = update(prev).map(([x, y]): Point => [
-          Math.max(0, Math.min(imageWidth, x)), Math.max(0, Math.min(imageHeight, y)),
-        ]);
-        return isValidWindowQuad(next, Math.min(imageWidth, imageHeight) * 0.015) ? next : prev;
-      });
-    }, [imageWidth, imageHeight]);
-
     useImperativeHandle(ref, () => ({
-      confirm: () => { if (isValidWindowQuad(corners)) onConfirm(corners); },
+      confirm: () => onConfirm(corners),
     }), [corners, onConfirm]);
 
     const toImagePoint = useCallback(
@@ -190,10 +177,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
       e.stopPropagation();
       (e.target as Element).setPointerCapture(e.pointerId);
       activeIndex.current = index;
-      const point = toImagePoint(e.clientX, e.clientY);
-      grabOffset.current = [point[0]-corners[index][0], point[1]-corners[index][1]];
-      setActiveCorner(index);
-    }, [corners, toImagePoint]);
+    }, []);
 
     const handleMidpointPointerDown = useCallback((id: MidpointId) => (e: React.PointerEvent) => {
       e.preventDefault();
@@ -207,7 +191,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
       if (activeIndex.current !== null) {
         const point = toImagePoint(e.clientX, e.clientY);
         const index = activeIndex.current;
-        updateCorners(prev => prev.map((c, i) => (i === index ? [point[0]-grabOffset.current[0], point[1]-grabOffset.current[1]] : c)));
+        setCorners(prev => prev.map((c, i) => (i === index ? point : c)));
         return;
       }
       if (activeMidpoint.current !== null && lastMidpointPoint.current) {
@@ -217,17 +201,15 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
         const dy = point[1] - last[1];
         const config = MIDPOINTS.find(m => m.id === activeMidpoint.current)!;
         const [i, j] = config.indices;
-        updateCorners(prev => prev.map((c, idx) =>
-          idx !== i && idx !== j ? c : [c[0] + dx, c[1] + dy]
+        setCorners(prev => prev.map((c, idx) =>
+          idx !== i && idx !== j ? c : config.axis === 'x' ? [c[0] + dx, c[1]] : [c[0], c[1] + dy]
         ));
         lastMidpointPoint.current = point;
       }
-    }, [toImagePoint, updateCorners]);
+    }, [toImagePoint]);
 
     const handlePointerUp = useCallback(() => {
       activeIndex.current = null;
-      setActiveCorner(null);
-      grabOffset.current = [0, 0];
       activeMidpoint.current = null;
       lastMidpointPoint.current = null;
     }, []);
@@ -239,13 +221,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
     const handlePinTouchStart = useCallback((index: number) => (e: React.TouchEvent) => {
       e.stopPropagation();
       activeIndex.current = index;
-      const touch = e.touches[0];
-      if (touch) {
-        const point = toImagePoint(touch.clientX, touch.clientY);
-        grabOffset.current = [point[0]-corners[index][0], point[1]-corners[index][1]];
-      }
-      setActiveCorner(index);
-    }, [corners, toImagePoint]);
+    }, []);
 
     const handleMidpointTouchStart = useCallback((id: MidpointId) => (e: React.TouchEvent) => {
       e.stopPropagation();
@@ -260,7 +236,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
       if (activeIndex.current !== null) {
         const point = toImagePoint(touch.clientX, touch.clientY);
         const index = activeIndex.current;
-        updateCorners(prev => prev.map((c, i) => (i === index ? [point[0]-grabOffset.current[0], point[1]-grabOffset.current[1]] : c)));
+        setCorners(prev => prev.map((c, i) => (i === index ? point : c)));
         return;
       }
       if (activeMidpoint.current !== null && lastMidpointPoint.current) {
@@ -270,26 +246,19 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
         const dy = point[1] - last[1];
         const config = MIDPOINTS.find(m => m.id === activeMidpoint.current)!;
         const [i, j] = config.indices;
-        updateCorners(prev => prev.map((c, idx) =>
-          idx !== i && idx !== j ? c : [c[0] + dx, c[1] + dy]
+        setCorners(prev => prev.map((c, idx) =>
+          idx !== i && idx !== j ? c : config.axis === 'x' ? [c[0] + dx, c[1]] : [c[0], c[1] + dy]
         ));
         lastMidpointPoint.current = point;
       }
-    }, [toImagePoint, updateCorners]);
+    }, [toImagePoint]);
 
     const polygonPoints = corners.map(([x, y]) => `${x},${y}`).join(' ');
-    const plane = windowPlane(corners);
-    const guides = [1 / 3, 2 / 3].flatMap(t => [
-      [plane(t, 0), plane(t, 1)], [plane(0, t), plane(1, t)],
-    ]);
 
     // Convert the desired fixed CSS pixel sizes into viewBox (image pixel)
     // units using the SVG's actual rendered width, so handles stay a
     // constant on-screen size regardless of the photo's resolution.
     const scale = renderedWidth > 0 ? imageWidth / renderedWidth : 1;
-    const loupeCorner = activeCorner ?? focusedCorner;
-    const loupePoint = loupeCorner === null ? null : corners[loupeCorner];
-    const loupeRadius = 16 * scale;
     const cornerHitRadius = handlePx.cornerHitRadius * scale;
     const crosshairHalfLength = (handlePx.crosshairLineLength * scale) / 2;
     const crosshairStroke = handlePx.crosshairStroke * scale;
@@ -315,7 +284,6 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', touchAction: 'none' }}
           onPointerMove={handleSvgPointerMove}
           onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
           onPointerLeave={handlePointerUp}
           onTouchMove={handleSvgTouchMove}
           onTouchEnd={handlePointerUp}
@@ -327,11 +295,6 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
             stroke={TEAL}
             strokeWidth={Math.max(imageWidth, imageHeight) * 0.004}
           />
-          {guides.map(([a, b], i) => (
-            <line key={i} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]}
-              stroke="rgba(255,255,255,0.6)" strokeWidth={scale}
-              strokeDasharray={`${4 * scale} ${5 * scale}`} pointerEvents="none" />
-          ))}
           {corners.map(([x, y], i) => (
             <g key={i}>
               {/* Shadow crosshair, offset slightly, drawn first (underneath) */}
@@ -392,18 +355,6 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
                 stroke="none"
                 onPointerDown={handlePinPointerDown(i)}
                 onTouchStart={handlePinTouchStart(i)}
-                role="button"
-                tabIndex={0}
-                onFocus={() => setFocusedCorner(i)}
-                onBlur={() => setFocusedCorner(null)}
-                aria-label={`Adjust ${['top left', 'top right', 'bottom right', 'bottom left'][i]} corner`}
-                onKeyDown={e => {
-                  const delta = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
-                  if (!delta) return;
-                  e.preventDefault();
-                  const step = scale * (e.shiftKey ? 10 : 1);
-                  updateCorners(prev => prev.map((c, j) => j === i ? [c[0] + delta[0] * step, c[1] + delta[1] * step] : c));
-                }}
                 style={{ cursor: 'crosshair', touchAction: 'none' }}
               />
             </g>
@@ -434,17 +385,6 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
             </g>
           ))}
         </svg>
-        {photoUrl && loupePoint && (
-          <svg aria-label="Magnified corner alignment" role="img"
-            viewBox={`${loupePoint[0]-loupeRadius} ${loupePoint[1]-loupeRadius} ${loupeRadius*2} ${loupeRadius*2}`}
-            style={{position:'absolute',top:8,...(loupeCorner === 0 || loupeCorner === 3 ? {right:8} : {left:8}),width:96,height:96,
-              pointerEvents:'none',border:'2px solid white',borderRadius:12,background:'#292929',boxShadow:'0 4px 16px #0005'}}>
-            <image href={photoUrl} x={0} y={0} width={imageWidth} height={imageHeight} />
-            <path d={`M ${loupePoint[0]-loupeRadius*.4} ${loupePoint[1]} H ${loupePoint[0]+loupeRadius*.4} M ${loupePoint[0]} ${loupePoint[1]-loupeRadius*.4} V ${loupePoint[1]+loupeRadius*.4}`}
-              stroke="white" strokeWidth={scale*.7} />
-            <circle cx={loupePoint[0]} cy={loupePoint[1]} r={scale*.8} fill={TEAL} />
-          </svg>
-        )}
       </div>
     );
   }

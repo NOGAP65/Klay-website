@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { radius, tokens, space, type as typeScale } from '@/ds';
 import { formatAUD, isBlindType } from '../../lib/pricing';
@@ -121,31 +121,6 @@ const CURTAIN_SIZE_OPTIONS: { id: CurtainSize; label: string; sub: string }[] = 
   { id: 'large', label: 'Large', sub: 'up to 2.4m' },
   { id: 'xl', label: 'XL', sub: 'up to 3m' },
 ];
-
-function CurtainPreviewHeight({ onDark }: { onDark: boolean }) {
-  const height = useVisualiserStore(s => s.curtainDropMm);
-  const setHeight = useVisualiserStore(s => s.setCurtainDropMm);
-  const [draft,setDraft] = useState(String(height));
-  useEffect(()=>setDraft(String(height)),[height]);
-  const sk=skin(onDark);
-  const commit=()=>{
-    const next=Number(draft);
-    if (!Number.isFinite(next) || next<400 || next>4500) setDraft(String(height));
-    else setHeight(next);
-  };
-  return <Field onDark={onDark} label="Preview height" caption="Track to hem">
-    <div style={{display:'flex',alignItems:'center',gap:space.sm}}>
-      <input aria-label="Curtain preview height in millimetres" type="number" inputMode="numeric"
-        min={400} max={4500} step={50} value={draft}
-        onChange={e=>setDraft(e.target.value)} onBlur={commit}
-        onKeyDown={e=>{if(e.key==='Enter'){commit();e.currentTarget.blur();}}}
-        style={{width:100,padding:'9px 12px',borderRadius:6,border:`1px solid ${sk.edge}`,
-          background:sk.boxFill,color:sk.label,font:'inherit'}} />
-      <span style={{color:sk.quiet,fontSize:13}}>mm</span>
-    </div>
-    <p style={{color:sk.quiet,fontSize:12,lineHeight:1.5,margin:'6px 0 0'}}>Use your curtain height for correctly sized folds.</p>
-  </Field>;
-}
 
 const CURTAIN_OPERATION_OPTIONS: { id: CurtainOperation; label: string }[] = [
   { id: 'manual', label: 'Manual' },
@@ -859,8 +834,6 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 ))}
               </div>
             </Field>
-
-            <CurtainPreviewHeight onDark={onDark} />
 
             <Field onDark={onDark} label="Operation">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>

@@ -1,11 +1,9 @@
 import * as THREE from 'three';
-import { CURTAIN_SCREEN_SPACE_GLSL } from './curtainScreenSpace';
 
 export interface CurtainLighting {
   shadowMap: THREE.Texture;
   shadowMatrix: THREE.Matrix4;
   densityMap: THREE.Texture;
-  resize: (width: number, height: number) => void;
   render: () => void;
   dispose: () => void;
 }
@@ -14,17 +12,13 @@ export interface CurtainLighting {
  * pass sums the optical path through every sheer layer, including return faces. */
 export function createCurtainLighting(
   renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera,
-  panels: THREE.Mesh[], projectionUniforms: Record<string, THREE.IUniform>, width: number, height: number,
+  panels: THREE.Mesh[], quad: THREE.Matrix3, width: number, height: number,
   vertexShader: string, isSheer: boolean,
 ): CurtainLighting {
   const resolution = renderer.domElement.width > 1100 ? 1536 : 1024;
   const shadow = new THREE.WebGLRenderTarget(resolution, resolution);
   shadow.depthTexture = new THREE.DepthTexture(resolution, resolution, THREE.UnsignedIntType);
-  // Resolve subpixel fold edges before sampling their transmission. A sharp
-  // unsampled density pass over antialiased cloth produces dark comb lines.
-  const density = new THREE.WebGLRenderTarget(renderer.domElement.width, renderer.domElement.height, {
-    depthBuffer: false, samples: Math.min(4, renderer.capabilities.maxSamples),
-  });
+  const density = new THREE.WebGLRenderTarget(renderer.domElement.width, renderer.domElement.height, { depthBuffer: false });
   const scale = Math.max(width, height);
   const light = new THREE.OrthographicCamera(-scale * 0.72, scale * 0.72, scale * 0.72, -scale * 0.72, 1, scale * 4);
   const target = new THREE.Vector3(width / 2, height / 2, 0);
@@ -35,22 +29,16 @@ export function createCurtainLighting(
     .multiply(light.projectionMatrix).multiply(light.matrixWorldInverse);
   const depthMaterial = new THREE.MeshDepthMaterial({ side: THREE.DoubleSide });
   const densityMaterial = new THREE.ShaderMaterial({
-    uniforms: { ...projectionUniforms, uShadowMatrix:{value:shadowMatrix} },
+    uniforms: { uQuadH:{value:quad}, uFrame:{value:new THREE.Vector2(width,height)}, uShadowMatrix:{value:shadowMatrix} },
     vertexShader,
     fragmentShader: `
-      ${CURTAIN_SCREEN_SPACE_GLSL}
-      varying vec3 vViewNormal;
+      varying vec3 vNormal;
       varying vec2 vUv;
       void main() {
-        vec3 viewDirection = curtainViewDirection();
-        float cosine = abs(dot(normalize(vViewNormal), viewDirection));
-        // Open yarns scatter broadly rather than acting like a solid tinted
-        // slab. Keep each layer's angular response bounded; real overlapping
-        // surfaces, not a grazing singularity, make a gathered sheer opaque.
-        float angularDensity = 1.0 + 0.18*pow(1.0-cosine,1.4);
+        float facing = max(0.12, abs(normalize(vNormal).z));
         float hem = 1.0 - smoothstep(0.018, 0.024, vUv.y);
         float tape = smoothstep(0.965, 0.99, vUv.y);
-        float path = (1.0 + hem * 0.65 + tape * 0.45) * angularDensity;
+        float path = (1.0 + hem * 1.2 + tape * 0.8) / facing;
         gl_FragColor = vec4(vec3(path / 12.0), 1.0);
       }`,
     side:THREE.DoubleSide, depthTest:false, depthWrite:false,
@@ -58,19 +46,15 @@ export function createCurtainLighting(
   });
   return {
     shadowMap:shadow.depthTexture, shadowMatrix, densityMap:density.texture,
-    resize: (w, h) => density.setSize(w, h),
     render() {
       const visibility = scene.children.map(object => object.visible);
-      // Open-weave cloth does not cast an opaque shadow onto neighbouring
-      // folds. Transmission handles its optical depth and saves a mobile pass.
-      if (!isSheer) {
-        scene.children.forEach(object => { if (object.renderOrder < 0) object.visible = false; });
-        scene.overrideMaterial = depthMaterial;
-        renderer.setRenderTarget(shadow);
-        renderer.setClearColor(0xffffff, 1);
-        renderer.clear();
-        renderer.render(scene, light);
-      }
+      // Floor contact-shadow decals are receivers, not solid shadow casters.
+      scene.children.forEach(object => { if (object.renderOrder < 0) object.visible = false; });
+      scene.overrideMaterial = depthMaterial;
+      renderer.setRenderTarget(shadow);
+      renderer.setClearColor(0xffffff, 1);
+      renderer.clear();
+      renderer.render(scene, light);
       if (isSheer) {
         scene.children.forEach(object => { object.visible = panels.includes(object as THREE.Mesh); });
         scene.overrideMaterial = densityMaterial;

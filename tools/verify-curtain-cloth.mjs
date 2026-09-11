@@ -5,14 +5,14 @@ import ts from 'typescript';
 const code = ts.transpileModule(readFileSync('src/features/visualiser/curtainCloth.ts','utf8'), {
   compilerOptions: { module:ts.ModuleKind.ESNext, target:ts.ScriptTarget.ES2022 },
 }).outputText;
-const { foldDepth, foldLean, foldSection, FOLD_LEAN, FABRIC_FULLNESS, MIN_FOLD_PITCH } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
+const { foldDepth, foldLean, FOLD_LEAN, FABRIC_FULLNESS, MIN_FOLD_PITCH } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 
 // Independently measure the curve as short line segments. The renderer must
 // gather the same amount of cloth instead of shrinking it as the track opens.
 function measuredLength(pitch, depth, lean) {
   let lastX=0, lastZ=-depth, length=0;
   for(let i=1;i<=4096;i++) {
-    const t=i/4096, z=depth*foldSection(t);
+    const t=i/4096, z=-depth*Math.cos(2*Math.PI*t);
     const x=pitch*t+lean*(z+depth);
     length+=Math.hypot(x-lastX,z-lastZ);
     lastX=x; lastZ=z;

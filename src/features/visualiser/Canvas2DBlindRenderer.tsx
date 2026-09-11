@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { computeHomography, toColumnMajor, windowPlane, Point } from './homography';
+import { computeHomography, toColumnMajor, Point } from './homography';
 import { HARDWARE_HEX } from '../../data/products';
 import { tokens } from '@/ds';
 import { sampleBlindLighting, blindTextureCoordinates, NEUTRAL_BLIND_LIGHT, type BlindLighting } from './blindLighting';
@@ -1097,18 +1097,15 @@ const drawVignette = (
 const drawContactShadow = (
   ctx: CanvasRenderingContext2D,
   fabBL: Point,
-  fabBR: Point,
-  below?: (reach: number) => [Point, Point],
+  fabBR: Point
 ) => {
   const width = Math.hypot(fabBR[0]-fabBL[0],fabBR[1]-fabBL[1]);
   const shadowHeight = scaleToBlind(7,width);
   const {pv} = axesFor(fabBL,fabBR);
   ctx.save();
   multiPassShadow(3, shadowHeight, 0.10, (reach, alpha) => {
-    const [bl, br] = below?.(reach) ?? [
-      [fabBL[0]-pv[0]*reach, fabBL[1]-pv[1]*reach],
-      [fabBR[0]-pv[0]*reach, fabBR[1]-pv[1]*reach],
-    ];
+    const bl: Point = [fabBL[0]-pv[0]*reach, fabBL[1]-pv[1]*reach];
+    const br: Point = [fabBR[0]-pv[0]*reach, fabBR[1]-pv[1]*reach];
     const g = ctx.createLinearGradient(fabBL[0], fabBL[1], bl[0], bl[1]);
     g.addColorStop(0, shadowRgba(alpha));
     g.addColorStop(1, shadowRgba(0));
@@ -1163,8 +1160,7 @@ const drawRailDropShadow = (
   tr: Point,
   railTL: Point,
   railTR: Point,
-  leftH: number,
-  above?: (reach: number) => [Point, Point],
+  leftH: number
 ) => {
   const railShadowH = leftH * 0.012;
   ctx.save();
@@ -1181,10 +1177,9 @@ const drawRailDropShadow = (
   ctx.clip();
 
   multiPassShadow(3, railShadowH, 0.09, (reach, alpha) => {
-    const [a, b] = above?.(reach) ?? [[railTL[0], railTL[1]-reach], [railTR[0], railTR[1]-reach]];
     const g = ctx.createLinearGradient(
       railTL[0], railTL[1],
-      a[0], a[1],
+      railTL[0], railTL[1] - reach,
     );
     g.addColorStop(0, shadowRgba(alpha));
     g.addColorStop(1, shadowRgba(0));
@@ -1192,8 +1187,8 @@ const drawRailDropShadow = (
     ctx.beginPath();
     ctx.moveTo(railTL[0], railTL[1]);
     ctx.lineTo(railTR[0], railTR[1]);
-    ctx.lineTo(b[0], b[1]);
-    ctx.lineTo(a[0], a[1]);
+    ctx.lineTo(railTR[0], railTR[1] - reach);
+    ctx.lineTo(railTL[0], railTL[1] - reach);
     ctx.closePath();
     ctx.fill();
   });
@@ -1457,7 +1452,6 @@ interface RollState {
   blindType: string;
   fabricColor: string;
   lighting?: BlindLighting;
-  plane?: (u: number, v: number) => Point;
 }
 
 const drawCassette = (
@@ -1474,17 +1468,11 @@ const drawCassette = (
   // Diameter tracks the roll: 45mm bare, up to 65mm with the whole drop wound
   // on. Without a roll state (curtain and legacy callers) it stays bare.
   const rollP = roll ? Math.max(0, Math.min(1, roll.p)) : 1;
-  const ratio = cassetteHeightRatio(rollP);
-  const localDiameter = (u: number) => {
-    const a = roll!.plane!(u, -ratio / 2), b = roll!.plane!(u, ratio / 2);
-    return Math.hypot(b[0]-a[0], b[1]-a[1]);
-  };
-  const fullH = roll?.plane ? localDiameter(0) : leftH * ratio;
+  const fullH = leftH * cassetteHeightRatio(rollP);
   const halfH = fullH / 2;
   const { u, pv } = axesFor(tl, tr);
   const lighting = roll?.lighting ?? NEUTRAL_BLIND_LIGHT;
-  const endScale = roll?.plane ? localDiameter(1) / fullH
-    : Math.max(0.7,Math.min(1.4,(3-yRotation)/(3+yRotation)));
+  const endScale = Math.max(0.7,Math.min(1.4,(3-yRotation)/(3+yRotation)));
   const base = litHardwareHex(hardwareBaseHex(hardwareColourName, safeHardwareColor),lighting);
   const top: Point = [tl[0] + pv[0] * halfH, tl[1] + pv[1] * halfH];
   const bot: Point = [tl[0] - pv[0] * halfH, tl[1] - pv[1] * halfH];
@@ -1547,7 +1535,7 @@ const drawCassette = (
     ctx.lineWidth = Math.max(1, scaleToBlind(0.8, avgW));
     ctx.beginPath();
     ctx.moveTo(tl[0] + pv[0] * seam, tl[1] + pv[1] * seam);
-    ctx.lineTo(tr[0] + pv[0] * seam * endScale, tr[1] + pv[1] * seam * endScale);
+    ctx.lineTo(tr[0] + pv[0] * seam, tr[1] + pv[1] * seam);
     ctx.stroke();
 
     // Where the fabric leaves the roll and becomes the hanging drop it turns
@@ -1558,7 +1546,7 @@ const drawCassette = (
     ctx.lineWidth = Math.max(1, scaleToBlind(1, avgW));
     ctx.beginPath();
     ctx.moveTo(tl[0] + pv[0] * tangent, tl[1] + pv[1] * tangent);
-    ctx.lineTo(tr[0] + pv[0] * tangent * endScale, tr[1] + pv[1] * tangent * endScale);
+    ctx.lineTo(tr[0] + pv[0] * tangent, tr[1] + pv[1] * tangent);
     ctx.stroke();
   }
 
@@ -1607,7 +1595,7 @@ const drawCassette = (
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(tl[0] + pv[0] * hi, tl[1] + pv[1] * hi);
-  ctx.lineTo(tr[0] + pv[0] * hi * endScale, tr[1] + pv[1] * hi * endScale);
+  ctx.lineTo(tr[0] + pv[0] * hi, tr[1] + pv[1] * hi);
   ctx.stroke();
 
   // --- BOTTOM SHADOW
@@ -1615,7 +1603,7 @@ const drawCassette = (
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(tl[0] - pv[0] * halfH * 0.85, tl[1] - pv[1] * halfH * 0.85);
-  ctx.lineTo(tr[0] - pv[0] * halfH * 0.85 * endScale, tr[1] - pv[1] * halfH * 0.85 * endScale);
+  ctx.lineTo(tr[0] - pv[0] * halfH * 0.85, tr[1] - pv[1] * halfH * 0.85);
   ctx.stroke();
 
   ctx.restore();
@@ -1645,7 +1633,7 @@ const drawBottomRail = (
   const midL: Point = [(railTL[0] + fabBL[0]) / 2, (railTL[1] + fabBL[1]) / 2];
   const midR: Point = [(railTR[0] + fabBR[0]) / 2, (railTR[1] + fabBR[1]) / 2];
   const halfH = Math.max(1, Math.hypot(fabBL[0] - railTL[0], fabBL[1] - railTL[1]) / 2);
-  const endScale = Math.max(0.1,Math.min(10,Math.hypot(fabBR[0]-railTR[0],fabBR[1]-railTR[1])/(2*halfH)));
+  const endScale = Math.max(0.7,Math.min(1.4,Math.hypot(fabBR[0]-railTR[0],fabBR[1]-railTR[1])/(2*halfH)));
   const base = litHardwareHex(hardwareBaseHex(hardwareColourName, safeHardwareColor),lighting);
 
   ctx.save();
@@ -1716,7 +1704,7 @@ const drawBottomRail = (
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(midL[0] + pv[0] * hi, midL[1] + pv[1] * hi);
-  ctx.lineTo(midR[0] + pv[0] * hi * endScale, midR[1] + pv[1] * hi * endScale);
+  ctx.lineTo(midR[0] + pv[0] * hi, midR[1] + pv[1] * hi);
   ctx.stroke();
 
   ctx.restore();
@@ -1796,12 +1784,23 @@ const drawBlindArea = (
     (leftH - rightH) / (leftH + rightH) * 3
   ));
 
-  // Project every drop and rail from the same physical plane. Screen-space
-  // interpolation makes a half-raised rail aim at the wrong vanishing point.
-  const plane = windowPlane(corners);
-  const leftEdge = (t: number): Point => plane(0, t);
-  const rightEdge = (t: number): Point => plane(1, t);
-  const topEdge = (t: number): Point => plane(t, 0);
+  // Interpolate a point along the left or right edge at fraction t
+  const leftEdge = (t: number): Point => [
+    tl[0] + (bl[0] - tl[0]) * t,
+    tl[1] + (bl[1] - tl[1]) * t,
+  ];
+  const rightEdge = (t: number): Point => [
+    tr[0] + (br[0] - tr[0]) * t,
+    tr[1] + (br[1] - tr[1]) * t,
+  ];
+  const topEdge = (t: number): Point => [
+    tl[0] + (tr[0] - tl[0]) * t,
+    tl[1] + (tr[1] - tl[1]) * t,
+  ];
+  const bottomEdge = (t: number): Point => [
+    bl[0] + (br[0] - bl[0]) * t,
+    bl[1] + (br[1] - bl[1]) * t,
+  ];
 
   // Roller position: fraction of the drop covered by fabric. The fabric
   // shrinks continuously into the cassette as this approaches zero — there
@@ -1880,8 +1879,15 @@ const drawBlindArea = (
         const gap = (avgW * 0.04) / avgW / 2; // as fraction of top edge
         const midT = topEdge(0.5 - gap);
         const midT2 = topEdge(0.5 + gap);
-        const midBp = plane(0.5 - gap, p);
-        const midB2p = plane(0.5 + gap, p);
+        const midB = bottomEdge(0.5 - gap);
+        const midB2 = bottomEdge(0.5 + gap);
+        // Panel bottoms follow the roll position down the drop
+        const lerpP = (a: Point, b: Point): Point => [
+          a[0] + (b[0] - a[0]) * p,
+          a[1] + (b[1] - a[1]) * p,
+        ];
+        const midBp = lerpP(midT, midB);
+        const midB2p = lerpP(midT2, midB2);
         const panelOpts: QuadOptions = {
           tint,
           textureAmount: FABRIC_TEXTURE_AMOUNT,
@@ -1946,7 +1952,7 @@ const drawBlindArea = (
   // white reverse) onto it.
   const cassetteHalfH = drawCassette(
     ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
-    { p, blindType: type, fabricColor, lighting, plane },
+    { p, blindType: type, fabricColor, lighting },
   );
 
   // --- CASSETTE MOUNT SHADOW — the headrail casts a shadow onto the
@@ -1965,8 +1971,7 @@ const drawBlindArea = (
 
     // --- BOTTOM RAIL DROP SHADOW — the rail hangs in space; it casts a
     // shadow up onto the fabric directly behind it. ---
-    drawRailDropShadow(ctx, tl, tr, railTL, railTR, leftH,
-      reach => [leftEdge(railT-reach/leftH), rightEdge(railT-reach/leftH)]);
+    drawRailDropShadow(ctx, tl, tr, railTL, railTR, leftH);
   }
 
   // --- CONTACT SHADOW — cast just below the rail, wherever the rail
@@ -1974,8 +1979,7 @@ const drawBlindArea = (
   // the rail rather than the sill it stays correct at every position, and
   // gating it caused a visible pop partway through the roll. ---
   if (showBlind) {
-    drawContactShadow(ctx, fabBL, fabBR,
-      reach => [leftEdge(p+reach/leftH), rightEdge(p+reach/leftH)]);
+    drawContactShadow(ctx, fabBL, fabBR);
   }
 
   // --- CHAIN — not rendered. showChain/chainSide/controlType are kept as
@@ -2040,9 +2044,8 @@ const drawDualBlindArea = (
     (leftH - rightH) / (leftH + rightH) * 3
   ));
 
-  const plane = windowPlane(corners);
-  const leftEdge = (t: number): Point => plane(0, t);
-  const rightEdge = (t: number): Point => plane(1, t);
+  const leftEdge = (t: number): Point => [tl[0] + (bl[0] - tl[0]) * t, tl[1] + (bl[1] - tl[1]) * t];
+  const rightEdge = (t: number): Point => [tr[0] + (br[0] - tr[0]) * t, tr[1] + (br[1] - tr[1]) * t];
 
   const p = Math.max(0, Math.min(1, rollPosition));
   // Both rollers ride the slider. The sunscreen follows it directly; the
@@ -2165,10 +2168,9 @@ const drawDualBlindArea = (
   // rail's own shadow falls across the near end of it.
   if (showBlind && gapDepth > 0.02) {
     const stripH = Math.min(scaleToBlind(14, avgW), leftH * gapDepth * 0.5);
-    const stripL = leftEdge(frontP+stripH/leftH), stripR = rightEdge(frontP+stripH/leftH);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    const g = ctx.createLinearGradient(...frontBL, ...stripL);
+    const g = ctx.createLinearGradient(frontBL[0], frontBL[1], frontBL[0], frontBL[1] + stripH);
     g.addColorStop(0, 'rgba(255,245,230,0.08)');
     g.addColorStop(0.45, 'rgba(255,245,230,0.03)');
     g.addColorStop(1, 'rgba(255,245,200,0)');
@@ -2176,8 +2178,8 @@ const drawDualBlindArea = (
     ctx.beginPath();
     ctx.moveTo(frontBL[0], frontBL[1]);
     ctx.lineTo(frontBR[0], frontBR[1]);
-    ctx.lineTo(...stripR);
-    ctx.lineTo(...stripL);
+    ctx.lineTo(frontBR[0], frontBR[1] + stripH);
+    ctx.lineTo(frontBL[0], frontBL[1] + stripH);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
@@ -2192,16 +2194,15 @@ const drawDualBlindArea = (
     const gapShadowH = Math.min(scaleToBlind(20, avgW), leftH * gapDepth * 0.6);
     ctx.save();
     multiPassShadow(3, gapShadowH, 0.15, (reach, alpha) => {
-      const shadowL = leftEdge(frontP+reach/leftH), shadowR = rightEdge(frontP+reach/leftH);
-      const g = ctx.createLinearGradient(...frontBL, ...shadowL);
+      const g = ctx.createLinearGradient(frontBL[0], frontBL[1], frontBL[0], frontBL[1] + reach);
       g.addColorStop(0, shadowRgba(alpha));
       g.addColorStop(1, shadowRgba(0));
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.moveTo(frontBL[0], frontBL[1]);
       ctx.lineTo(frontBR[0], frontBR[1]);
-      ctx.lineTo(...shadowR);
-      ctx.lineTo(...shadowL);
+      ctx.lineTo(frontBR[0], frontBR[1] + reach);
+      ctx.lineTo(frontBL[0], frontBL[1] + reach);
       ctx.closePath();
       ctx.fill();
     });
@@ -2232,11 +2233,11 @@ const drawDualBlindArea = (
   // the sunscreen tube as well.
   drawCassette(
     ctx, backCassetteTL, backCassetteTR, leftH * 0.85, hardwareColourName, safeHardwareColor, avgW, yRotation,
-    { p: backP, blindType: 'sunscreen', fabricColor, lighting, plane },
+    { p: backP, blindType: 'sunscreen', fabricColor, lighting },
   );
   const cassetteHalfH = drawCassette(
     ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
-    { p: frontP, blindType: 'blockout', fabricColor, lighting, plane },
+    { p: frontP, blindType: 'blockout', fabricColor, lighting },
   );
 
   if (showBlind) {
@@ -2247,13 +2248,11 @@ const drawDualBlindArea = (
     const railHeight = leftH * RAIL_HEIGHT_RATIO;
     const frontRailT = Math.max(0, frontP - railHeight / leftH);
     drawBottomRail(ctx, leftEdge(frontRailT), rightEdge(frontRailT), frontBL, frontBR, hardwareColourName, safeHardwareColor, avgW, yRotation, lighting);
-    drawRailDropShadow(ctx, tl, tr, leftEdge(frontRailT), rightEdge(frontRailT), leftH,
-      reach => [leftEdge(frontRailT-reach/leftH), rightEdge(frontRailT-reach/leftH)]);
+    drawRailDropShadow(ctx, tl, tr, leftEdge(frontRailT), rightEdge(frontRailT), leftH);
 
     const backRailT = Math.max(0, backP - railHeight / leftH);
     drawBottomRail(ctx, leftEdge(backRailT), rightEdge(backRailT), backBL, backBR, hardwareColourName, safeHardwareColor, avgW, yRotation, lighting);
-    drawContactShadow(ctx, backBL, backBR,
-      reach => [leftEdge(backP+reach/leftH), rightEdge(backP+reach/leftH)]);
+    drawContactShadow(ctx, backBL, backBR);
   }
 };
 
@@ -2992,8 +2991,12 @@ const coveredQuadFor = (area: RenderedArea, rollPosition: number): Point[] => {
     return [tl, tr, br, bl];
   }
   const p = Math.max(0, Math.min(1, rollPosition));
-  const plane = windowPlane(area.corners);
-  return [tl, tr, plane(1, p), plane(0, p)];
+  return [
+    tl,
+    tr,
+    [tr[0] + (br[0] - tr[0]) * p, tr[1] + (br[1] - tr[1]) * p],
+    [tl[0] + (bl[0] - tl[0]) * p, tl[1] + (bl[1] - tl[1]) * p],
+  ];
 };
 
 /** A faint cool-down over everything the blinds are NOT covering.

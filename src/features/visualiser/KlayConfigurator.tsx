@@ -3,7 +3,6 @@ import { radius, tokens, space, type as typeScale } from '@/ds';
 import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from './useVisualiserStore';
 import { usePhotoUpload } from './usePhotoUpload';
 import { WINDOW_ROOMS, defaultWindowRoom, windowRoomFor } from './roomPresets';
-import { RoomPresetPicker } from './RoomPresetPicker';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
 import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
@@ -886,15 +885,10 @@ export default function KlayConfigurator({
   const overlayRef = useRef<CornerPinOverlayHandle>(null);
   const rendererContainerRef = useRef<HTMLDivElement>(null);
 
-  // Supplied rooms are calibrated previews; user uploads still need tracing.
+  // Set once the default window's traced area has been seeded, so a later
+  // real upload/preset selection can be told apart from that initial load.
   const hasSeededDefaultRef = useRef(false);
   const [showUploadPrompt, setShowUploadPrompt] = useState(false);
-  const [selectedRoomUrl, setSelectedRoomUrl] = useState<string | null>(null);
-  const windowRooms = WINDOW_ROOMS[store.productCategory === 'curtain' ? 'curtain' : 'blind'];
-  const selectedRoom = !isJoinery(store.productCategory)
-    ? windowRooms.find(room => room.url === selectedRoomUrl)
-    : undefined;
-  const previewPhotoUrl = selectedRoom?.url ?? defaultPhotoFor(store.productCategory);
 
   // Kick off the default window photo once, on mount — only if the store
   // doesn't already carry a real user photo from earlier in this session.
@@ -913,8 +907,9 @@ export default function KlayConfigurator({
   // The hook owns photo acquisition; only photoUrl needs to live in the
   // shared store (photoBitmap stays local — it's only needed here for
   // pixel dimensions). A new photo always invalidates any existing trace.
-  // Preset selection resets hasSeededDefaultRef before loading, while a real
-  // upload leaves it set and switches to normal corner-pin tracing.
+  // Once the default window has already been seeded once, any further
+  // photo change is a real user upload/preset — that ends default mode and
+  // hands control back to normal corner-pin tracing.
   useEffect(() => {
     store.setPhotoUrl(hookPhotoUrl);
     if (hookPhotoUrl) {
@@ -957,9 +952,9 @@ export default function KlayConfigurator({
     // confirmed area, and the visitor got "Confirm outline" over an alcove
     // instead of the wardrobe rendered in it.
     //
-    // The expected URL is the selected sample, or this category's default.
-    // Waiting for that exact photo prevents seeding an old room during a swap.
-    const expected = previewPhotoUrl;
+    // Comparing against defaultPhotoFor(category) means the seed waits for the
+    // photograph it is actually seeding.
+    const expected = defaultPhotoFor(store.productCategory);
     if (
       store.defaultWindowActive &&
       !hasSeededDefaultRef.current &&
@@ -987,7 +982,7 @@ export default function KlayConfigurator({
           ? alcoveCornersPct(openingMm)
           : isJoinery(useVisualiserStore.getState().productCategory)
             ? DEFAULT_WARDROBE_CORNERS_PCT
-            : (windowRoomFor(expected) ?? defaultWindowRoom(store.productCategory)).corners;
+            : defaultWindowRoom(store.productCategory).corners;
       const corners: Point[] = seed.map(([px, py]) => [
         px * photoBitmap.width,
         py * photoBitmap.height,
@@ -1004,9 +999,11 @@ export default function KlayConfigurator({
       });
       hasSeededDefaultRef.current = true;
     }
-    // Re-seed when the category or selected sample changes.
+    // productCategory is a dependency because `expected` is derived from it:
+    // the effect has to re-run when the category changes, or the guard above is
+    // comparing against the previous category's photograph.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoBitmap, hookPhotoUrl, store.defaultWindowActive, store.tracedAreas.length, store.productCategory, previewPhotoUrl]);
+  }, [photoBitmap, hookPhotoUrl, store.defaultWindowActive, store.tracedAreas.length, store.productCategory]);
 
   const hasPhoto = !!(store.photoUrl && photoBitmap);
   const confirmedArea = store.tracedAreas.find(a => a.confirmed);
@@ -1027,24 +1024,13 @@ export default function KlayConfigurator({
   // Brief, near-instant window while the default photo's bitmap loads —
   // rendered as nothing (not the upload prompt) so there's no empty state.
   const isLoadingDefault = store.defaultWindowActive
-    && (!hasPhoto || hookPhotoUrl !== previewPhotoUrl || !confirmedArea)
+    && (!hasPhoto || hookPhotoUrl !== defaultPhotoFor(store.productCategory) || !confirmedArea)
     && !uploadError && !showUploadPrompt;
 
   const handleChangePhoto = () => {
     clear();
     store.setPhotoUrl(null);
     store.clearTracedAreas();
-  };
-
-  // Supplied rooms already have measured corners, so they can render on one click.
-  const handleSelectRoom = (url: string) => {
-    setShowUploadPrompt(false);
-    if (url === hookPhotoUrl && confirmedArea && store.defaultWindowActive) return;
-    setSelectedRoomUrl(url);
-    hasSeededDefaultRef.current = false;
-    store.setDefaultWindowActive(true);
-    store.clearTracedAreas();
-    loadFromUrl(url);
   };
 
   const handleConfirmTrace = (corners: Point[]) => {
@@ -1185,7 +1171,6 @@ export default function KlayConfigurator({
     if (store.productCategory === seededCategoryRef.current) return;
     seededCategoryRef.current = store.productCategory;
     if (!store.defaultWindowActive) return;
-    setSelectedRoomUrl(null);
     hasSeededDefaultRef.current = false;
     store.clearTracedAreas();
     // AND THE PHOTOGRAPH CHANGES WITH IT. The two categories have different
@@ -1301,7 +1286,6 @@ export default function KlayConfigurator({
           store.setPhotoUrl(null);
           store.clearTracedAreas();
           store.setDefaultWindowActive(true);
-          setSelectedRoomUrl(null);
           hasSeededDefaultRef.current = false;
           loadFromUrl(defaultPhotoFor(store.productCategory));
         }}>Back to preview</Button>
@@ -1408,8 +1392,7 @@ export default function KlayConfigurator({
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'flex-start',
-            overflowY: 'auto',
+            justifyContent: 'center',
             textAlign: 'center',
             padding: space.md,
           }}
@@ -1432,10 +1415,6 @@ export default function KlayConfigurator({
                   type="button"
                   aria-label={`Use ${room.name}`}
                   onClick={() => {
-                    if (!isJoinery(store.productCategory)) {
-                      handleSelectRoom(room.url);
-                      return;
-                    }
                     hasSeededDefaultRef.current = true;
                     store.setDefaultWindowActive(false);
                     setShowUploadPrompt(false);
@@ -1473,7 +1452,6 @@ export default function KlayConfigurator({
             ref={overlayRef}
             imageWidth={photoBitmap!.width}
             imageHeight={photoBitmap!.height}
-            photoUrl={store.photoUrl!}
             onConfirm={handleConfirmTrace}
             initialCornersPct={
               openingWidthFor(hookPhotoUrl) !== null
@@ -1535,8 +1513,10 @@ export default function KlayConfigurator({
               hardwareColour={store.hardwareColour}
               mount={store.curtainMount}
               colour={store.getFabricColor()}
+              // The ordered width, which is what decides how many waves the
+              // heading carries — a 3m track is not a 1.2m track with fatter
+              // folds. See wavesForTrack.
               size={store.curtainSize}
-              dropMm={store.curtainDropMm}
               openness={1 - store.rollPosition}
               canvasWidth={photoBitmap?.width ?? 1}
               canvasHeight={photoBitmap?.height ?? 1}
@@ -1558,10 +1538,6 @@ export default function KlayConfigurator({
       )}
       </div>
 
-      {!isWardrobe && !showUploadState && (
-        <RoomPresetPicker rooms={windowRooms} selectedUrl={hookPhotoUrl} onSelect={handleSelectRoom} />
-      )}
-
       {footerButtons && (
         <div
           style={{
@@ -1575,15 +1551,7 @@ export default function KlayConfigurator({
             borderTop: `1px solid ${tokens.onDarkLine}`,
           }}
         >
-          {showTraceState && !isWardrobe && (
-            <p style={{ width: '100%', margin: 0, textAlign: 'center', fontSize: 12, lineHeight: 1.5, color: tokens.onDarkMuted }}>
-              {store.productCategory === 'curtain'
-                ? 'Place the top corners at the track ends and the bottom corners where the curtains should finish.'
-                : 'Place each corner on the matching corner of your window opening.'}
-              {' Follow the angle in your photo — the dotted lines show the fit.'}
-            </p>
-          )}
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', width: '100%', minWidth: 0, gap: space.sm }}>{footerButtons}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: space.sm }}>{footerButtons}</div>
         </div>
       )}
     </div>
