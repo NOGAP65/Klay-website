@@ -43,13 +43,14 @@ export function createCurtainLighting(
       varying vec2 vUv;
       void main() {
         vec3 viewDirection = curtainViewDirection();
-        float cosine = dot(normalize(vViewNormal), viewDirection);
-        // Fibres scatter over a finite angular lobe. A strict 1/cosine sheet
-        // goes singular at a fold silhouette and looks like a bright wire.
-        float facing = sqrt(cosine*cosine + 0.22*0.22);
+        float cosine = abs(dot(normalize(vViewNormal), viewDirection));
+        // Open yarns scatter broadly rather than acting like a solid tinted
+        // slab. Keep each layer's angular response bounded; real overlapping
+        // surfaces, not a grazing singularity, make a gathered sheer opaque.
+        float angularDensity = 1.0 + 0.18*pow(1.0-cosine,1.4);
         float hem = 1.0 - smoothstep(0.018, 0.024, vUv.y);
         float tape = smoothstep(0.965, 0.99, vUv.y);
-        float path = (1.0 + hem * 1.2 + tape * 0.8) / facing;
+        float path = (1.0 + hem * 0.65 + tape * 0.45) * angularDensity;
         gl_FragColor = vec4(vec3(path / 12.0), 1.0);
       }`,
     side:THREE.DoubleSide, depthTest:false, depthWrite:false,

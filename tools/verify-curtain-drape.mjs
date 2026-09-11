@@ -31,7 +31,7 @@ for (const yaw of [-0.95,0,0.95]) for (const tilt of [-0.3,0,0.3]) for (const ro
     return [width/2+focal*(a*Math.cos(roll)-c*Math.sin(roll))/(distance+d),
       height/2+focal*(a*Math.sin(roll)+c*Math.cos(roll))/(distance+d)];
   };
-  const plane=curtainPlane([project(-1200,1100),project(1200,1100),project(1200,-1100),project(-1200,-1100)],width,height);
+  const plane=curtainPlane([project(-1200,1100),project(1200,1100),project(1200,-1100),project(-1200,-1100)],width,height,focal);
   assert.ok(Math.abs(plane.width/(plane.top-plane.bottom)-2400/2200)<1e-8,
     'Camera roll and yaw must not distort physical width, drop or fold depth');
   const h=plane.homography, depth=plane.projection.depth, metric=plane.width/2400;
@@ -44,8 +44,8 @@ for (const yaw of [-0.95,0,0.95]) for (const tilt of [-0.3,0,0.3]) for (const ro
       'Hem depth projects onto the real horizontal floor at oblique camera angles');
   }
   const pitch=plane.width/24, drop=plane.top-plane.bottom;
-  for (const open of [0,0.5,1]) for (const direction of [-1,1]) {
-    const mesh=createPanelMesh(12);
+  for (const open of [0,0.5,1]) for (const direction of [-1,1]) for (const soft of [false,true]) {
+    const mesh=createPanelMesh(12,soft);
     writePanelMesh(mesh,{layout:panelLayout(12,pitch,open),wallX:direction===1?plane.left:plane.right,
       towardCentre:direction,topY:plane.top,bottomY:plane.bottom,sway:open===0.5?pitch*0.4:0});
     for (let c=0;c<=mesh.cols;c++) {

@@ -1,0 +1,28 @@
+import {chromium} from 'playwright-core';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true,args:['--disable-gpu-sandbox']});
+const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto('http://localhost:5173/');
+await page.locator('#visualiser').scrollIntoViewIfNeeded();
+await page.locator('#visualiser').getByRole('button',{name:'Curtains',exact:true}).click();
+const height=page.getByRole('spinbutton',{name:'Curtain preview height in millimetres'});
+await height.fill('2100');await height.blur();
+assert.equal(await height.inputValue(),'2100');
+await height.fill('1');await height.blur();
+assert.equal(await height.inputValue(),'2100');
+const dimensions=await page.evaluate(()=>({inner:innerWidth,scroll:document.documentElement.scrollWidth}));
+assert.ok(dimensions.scroll<=dimensions.inner+1,'No page overflow at phone width');
+const storeResult=await page.evaluate(async()=>{
+  const {useVisualiserStore:s}=await import('/src/features/visualiser/useVisualiserStore.ts');
+  const base={corners:[[0,0],[100,0],[100,100],[0,100]],blindType:'roller',fabricColor:'white',hardwareColor:'white',controlType:'manual',showChain:false,confirmed:true};
+  s.getState().addTracedArea({...base,id:'qa-first'});s.getState().setActiveArea('qa-first');s.getState().setCurtainDropMm(1200);
+  s.getState().addTracedArea({...base,id:'qa-second'});s.getState().setActiveArea('qa-second');s.getState().setCurtainDropMm(2800);
+  s.getState().setActiveArea('qa-first');const first=s.getState().curtainDropMm;
+  s.getState().setActiveArea('qa-second');const second=s.getState().curtainDropMm;
+  return [first,second];
+});
+assert.deepEqual(storeResult,[1200,2800]);
+await browser.close();
+assert.deepEqual(errors,[]);
+console.log('390px phone: curtain height control, invalid input recovery, per-trace measurements and page width pass.');

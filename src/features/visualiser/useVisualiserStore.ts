@@ -8,6 +8,7 @@ import { DEFAULT_HANDLE_FINISH } from './wardrobeHardware';
 type Point = [number, number];
 
 interface TracedArea {
+  curtainDropMm?: number;
   id: string;
   corners: Point[];
   blindType: string;
@@ -223,6 +224,8 @@ interface VisualiserStore {
   curtainMount: CurtainMount;
   curtainSize: CurtainSize;
   curtainOpenness: number;
+  /** Physical track-to-hem scale for the photo preview, independent of pricing. */
+  curtainDropMm: number;
   /** Built-in or walk-in. Chosen before the layout, because the two are
    * different products drawn from different viewpoints and placed by different
    * rules — see Canvas2DWardrobeRenderer. */
@@ -323,6 +326,7 @@ interface VisualiserStore {
   setCurtainMount: (mount: CurtainMount) => void;
   setCurtainSize: (size: CurtainSize) => void;
   setCurtainOpenness: (openness: number) => void;
+  setCurtainDropMm: (drop: number) => void;
   setPhotoUrl: (url: string | null) => void;
   setRollPosition: (pos: number) => void;
   addTracedArea: (area: TracedArea) => void;
@@ -342,6 +346,12 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   lockedRange: null,
   defaultWindowActive: true,
   curtainOpenness: 0,
+  curtainDropMm: 2400,
+  setCurtainDropMm: (drop) => set(s => {
+    const curtainDropMm = Math.max(400, Math.min(4500, Number.isFinite(drop) ? drop : 2400));
+    return { curtainDropMm, tracedAreas: s.tracedAreas.map(area => area.id === s.activeAreaId
+      ? { ...area, curtainDropMm } : area) };
+  }),
   wardrobeKind: 'built-in',
   wardrobeModel: 'SRSTDH02',
   wardrobeColour: 'Matt Polar White',
@@ -526,11 +536,12 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   setCurtainOpenness: (openness) => set({ curtainOpenness: openness }),
   setPhotoUrl: (url) => set({ photoUrl: url }),
   setRollPosition: (pos) => set({ rollPosition: pos }),
-  addTracedArea: (area) => set(s => ({ tracedAreas: [...s.tracedAreas, area] })),
+  addTracedArea: (area) => set(s => ({ tracedAreas: [...s.tracedAreas, { curtainDropMm: s.curtainDropMm, ...area }] })),
   updateTracedArea: (id, update) => set(s => ({ tracedAreas: s.tracedAreas.map(a => a.id === id ? { ...a, ...update } : a) })),
   removeTracedArea: (id) => set(s => ({ tracedAreas: s.tracedAreas.filter(a => a.id !== id) })),
   clearTracedAreas: () => set({ tracedAreas: [], activeAreaId: null }),
-  setActiveArea: (id) => set({ activeAreaId: id }),
+  setActiveArea: (id) => set(s => ({ activeAreaId: id,
+    curtainDropMm: s.tracedAreas.find(area => area.id === id)?.curtainDropMm ?? s.curtainDropMm })),
   setCompareMode: (mode) => set({ compareMode: mode }),
   setCompareDivider: (divider) => set({ compareDivider: divider }),
 }));

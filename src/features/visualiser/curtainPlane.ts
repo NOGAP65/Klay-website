@@ -2,9 +2,9 @@ import { computeHomography, windowDepthProjection, type Point } from './homograp
 
 /** Recover the opening's metric aspect before giving cloth a depth. A rotated
  * photo's axis-aligned bounding box is not the curtain's physical rectangle. */
-export function curtainPlane(quad: Point[], width: number, height: number) {
+export function curtainPlane(quad: Point[], width: number, height: number, focalHint = Math.max(width,height)*0.8) {
   const unit = computeHomography([[0, 1], [1, 1], [1, 0], [0, 0]], quad);
-  const { focal } = windowDepthProjection(unit, width, height);
+  const { focal } = windowDepthProjection(unit, width, height, focalHint);
   const axisLength = (column: number) => Math.hypot(
     (unit[column] - width * 0.5 * unit[column + 6]) / focal,
     (unit[column + 3] - height * 0.5 * unit[column + 6]) / focal,
@@ -20,7 +20,7 @@ export function curtainPlane(quad: Point[], width: number, height: number) {
   const centreW = raw[6] * cx + raw[7] * cy + raw[8];
   const homography = raw.map(value => value / centreW);
   return { left, right, top, bottom, width: across, homography,
-    projection: windowDepthProjection(homography, width, height) };
+    projection: windowDepthProjection(homography, width, height, focalHint) };
 }
 
 /** An inextensible hanging strip rises slightly when it bows sideways. Its
@@ -28,4 +28,12 @@ export function curtainPlane(quad: Point[], width: number, height: number) {
 export function hangingDrop(segmentLength: number, dx: number, dz: number): number {
   return Math.sqrt(Math.max(segmentLength * segmentLength * 0.01,
     segmentLength * segmentLength - dx * dx - dz * dz));
+}
+
+/** One full front/return wave spans two 80 mm carriers. Scale comes from the
+ * measured drop and rectified aspect, never from the photo's framing. */
+export function curtainScale(width: number, height: number, dropMm = 2400) {
+  const drop = Math.max(400, Math.min(4500, Number.isFinite(dropMm) ? dropMm : 2400));
+  const widthMm = width / height * drop;
+  return { dropMm: drop, widthMm, waves: Math.max(2, Math.min(28, Math.round(widthMm / 320))) };
 }

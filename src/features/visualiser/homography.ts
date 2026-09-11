@@ -23,7 +23,7 @@ export function windowPlane(quad: Point[]) {
  * its two vanishing directions cannot determine it. The traced plane remains
  * exact; the estimate only affects protruding folds and hardware. Coordinates
  * are image pixels with y UP, z towards the room. */
-export function windowDepthProjection(h: number[], width: number, height: number) {
+export function windowDepthProjection(h: number[], width: number, height: number, fallbackFocal = Math.max(width,height)*1.2) {
   const cx = width / 2, cy = height / 2;
   const a = [h[0] - cx * h[6], h[3] - cy * h[6], h[6]];
   const b = [h[1] - cx * h[7], h[4] - cy * h[7], h[7]];
@@ -31,7 +31,7 @@ export function windowDepthProjection(h: number[], width: number, height: number
   const fSquared = Math.abs(a[2] * b[2]) > 1e-14
     ? -(a[0] * b[0] + a[1] * b[1]) / (a[2] * b[2]) : -1;
   const focal = fSquared > (frame * 0.6) ** 2 && fSquared < (frame * 3) ** 2
-    ? Math.sqrt(fSquared) : frame * 1.2;
+    ? Math.sqrt(fSquared) : fallbackFocal;
   const x = [a[0] / focal, a[1] / focal, a[2]];
   const y = [b[0] / focal, b[1] / focal, b[2]];
   const cross = [x[1] * y[2] - x[2] * y[1], x[2] * y[0] - x[0] * y[2], x[0] * y[1] - x[1] * y[0]];
