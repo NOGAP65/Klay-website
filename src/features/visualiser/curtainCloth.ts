@@ -5,11 +5,21 @@ const RELAXED_LEAN = 0.08;
 export const FABRIC_FULLNESS = 2.25;
 export const MIN_FOLD_PITCH = 0.24;
 
+// A hanging S-fold has a broad, rounded face and a narrower return. An equal
+// sine wave gives both the same width and reads as corrugated plastic.
+const FOLD_CROWN = 0.42;
+export function foldSection(turn: number): number {
+  const angle = turn * Math.PI * 2;
+  return -Math.cos(angle + FOLD_CROWN * Math.sin(angle));
+}
+
 export function foldArcLength(pitch: number, amplitude: number, lean = FOLD_LEAN): number {
   const steps = 64;
   let length = 0;
   for (let i = 0; i < steps; i++) {
-    const dz = amplitude * Math.PI * 2 * Math.cos((i + 0.5) / steps * Math.PI * 2);
+    const angle = (i + 0.5) / steps * Math.PI * 2;
+    const dz = amplitude * Math.PI * 2 * Math.sin(angle + FOLD_CROWN*Math.sin(angle))
+      * (1 + FOLD_CROWN*Math.cos(angle));
     length += Math.hypot(pitch + lean * dz, dz) / steps;
   }
   return length;

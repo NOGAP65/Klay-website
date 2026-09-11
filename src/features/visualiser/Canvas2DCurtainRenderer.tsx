@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { computeHomography, windowDepthProjection } from './homography';
-import { foldLean, foldDepth, MIN_FOLD_PITCH } from './curtainCloth';
+import { curtainPlane, hangingDrop } from './curtainPlane';
+import { foldLean, foldDepth, foldSection, MIN_FOLD_PITCH } from './curtainCloth';
 import { createCurtainLighting, type CurtainLighting } from './curtainLighting';
 import { CURTAIN_SCREEN_SPACE_GLSL, curtainDrawingSize } from './curtainScreenSpace';
 
@@ -99,41 +99,10 @@ const FRONT_SOFTNESS = 1.6;
  * pinned to its carrier; below that the fabric is free and a bunched panel
  * splays toward the room. Scaled by how compressed the panel is, so a shut
  * curtain hangs straight and the two panels never cross at the centre. */
-const HEM_SPLAY = 0.16;
+const HEM_SPLAY = 0.045;
 
 /** Extra wave depth at the hem, same reason. */
-const HEM_DEPTH_GAIN = 0.14;
-
-/** Small residual scallop in the relaxed cloth. Camera-angle parallax is
- * handled separately by WINDOW_PROJECTION; this keeps the softly irregular
- * hem shape from the photographed fabric rather than making it ruler-flat. */
-const HEM_DEPTH_SWING = 0.10;
-
-/** The heading gets a swing too, and this is what stops the top of the panel
- * reading as a box.
- *
- * It was zero. The reasoning was sound as far as it went — the fabric is clipped
- * to its carriers, and any swing lifted the back half of each wave above the
- * track as a row of dark specks — but the cost was that the top edge came out as
- * a dead straight horizontal line ruled across a rippling surface. A real wave
- * curtain does not do that: the bays that bow toward the room hang visibly lower
- * than the ones that bow away, so the heading scallops just like the hem, only
- * shallower.
- *
- * The specks are fixed properly by HEADING_SINK below rather than by giving up
- * the scallop. Smaller than HEM_DEPTH_SWING because the projection effect really
- * does grow with distance below the camera axis. */
-const HEADING_DEPTH_SWING = 0.018;
-
-/** Sinks the heading by its own worst upward excursion, so the scallop hangs
- * BELOW the track line instead of straddling it.
- *
- * z swings symmetrically (colZ = amp * sin), so the shear lowers the forward
- * bays and raises the back ones by the same amount. Dropping the whole heading
- * by that amount puts the highest point back on the track line. Slightly over 1
- * so the back bays finish a shade inside the track's band and are occluded by
- * it — the overlap is what removes the seam between fabric and hardware. */
-const HEADING_SINK = 1.12;
+const HEM_DEPTH_GAIN = 0.035;
 
 // ---------------------------------------------------------------------------
 // CLOTH PHYSICS — the hem does not go where the carriers go
@@ -184,7 +153,7 @@ const HEADING_SINK = 1.12;
 
 // Fixed at the tape, individual folds drift and bow gently down the drop.
 // The photo shading travels with the same vertices, preserving the fabric grain.
-const FOLD_WANDER = 0.38;
+const FOLD_WANDER = 0.18;
 const FOLD_WANDER_POWER = 1.35;
 
 /** THE WEIGHTED HEM BAND, which is stiffer than the cloth above it.
@@ -195,7 +164,7 @@ const FOLD_WANDER_POWER = 1.35;
  * the hem was a sawtooth — the sine at full amplitude cut straight across — and
  * a sawtooth hem is a paper fan, not a curtain.
  */
-const HEM_STIFFEN = 0.32;
+const HEM_STIFFEN = 0.045;
 const HEM_STIFFEN_SPAN = 0.08;
 
 /** HOW UNEVEN THE HEM IS, as a fraction of the drop.
@@ -212,7 +181,7 @@ const HEM_STIFFEN_SPAN = 0.08;
  * the term is zero however uneven the hem, because the tape holds the top and
  * only the free end can wander.
  */
-const HEM_UNEVEN = 0.004;
+const HEM_UNEVEN = 0.0012;
 
 /** The doubled hem band, as a fraction of the drop, and how much darker it is.
  *
@@ -235,22 +204,11 @@ const HEM_BAND = 0.035;
  * cloth, rather than painted into the background canvas: it has to move with
  * the panel as the curtain is drawn back, and the background is composited
  * once. */
-/** HOW HARD THE SHEER SCATTERS WHAT IS BEHIND IT.
- *
- * The backdrop is redrawn at this fraction of the photograph's width and
- * sampled back up, which is a blur by resampling — cheap, and the softness
- * scales with the image rather than being a fixed pixel radius that would mean
- * one thing on a 1254px room and another on a 4000px phone photo.
- *
- * A twelfth is a sheer, not frosted glass: at this radius a garden behind the
- * cloth stays a garden — you can see it is green and leafy — but no single leaf
- * survives, which is exactly the line a real sheer draws. */
-const SHEER_DIFFUSION = 1 / 24;
+// Keep the room recognisable through an open weave. Heavy low-resolution blur
+// turns outdoor highlights into broad glossy stripes when mapped through folds.
+const SHEER_DIFFUSION = 1 / 6;
 
 
-
-const SILL_SHADOW_DROP = 0.055;
-const SILL_SHADOW_ALPHA = 0.34;
 
 // ---------------------------------------------------------------------------
 
@@ -497,7 +455,7 @@ const swaySettled = (state: SwayState): boolean =>
  * few thousand vertices, and the fragment cost — which is what actually decides
  * the frame rate — does not move at all, because the panel covers the same
  * pixels either way. */
-const COLS_PER_WAVE = 24;
+const COLS_PER_WAVE = 40;
 const ROWS = 48;
 
 // The detail map covers each panel EXACTLY ONCE — it is not tiled.
@@ -530,8 +488,8 @@ const HARDWARE_HEX: Record<string, string> = {
 // --- Helpers ---------------------------------------------------------------
 
 // Sheer coverage before extra layers from folds, stacking and the doubled hem.
-const SHEER_OPACITY_DARK = 1.35;
-const SHEER_OPACITY_LIGHT = 1.10;
+const SHEER_OPACITY_DARK = 1.05;
+const SHEER_OPACITY_LIGHT = 0.88;
 
 const sheerOpacity = (colour: string): number => {
   const l = luma01(colour);
@@ -755,7 +713,6 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
   const { widths, depths, compressions, span, overall } = layout;
   const { positions, compression, depth, cols, count } = mesh;
   const height = topY - bottomY;
-  const TAU = Math.PI * 2;
 
   let maxDepth = 1e-6;
   for (let i = 0; i < count; i++) if (depths[i] > maxDepth) maxDepth = depths[i];
@@ -798,12 +755,12 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     // boundary where two neighbours were compressed differently.
     const t = p - 0.5;
     const i0 = Math.floor(t);
-    const f = t - i0;
+    const f = smoothstep01(t - i0);
     const lo = i0 < 0 ? 0 : i0 > count - 1 ? count - 1 : i0;
     const hi = i0 + 1 < 0 ? 0 : i0 + 1 > count - 1 ? count - 1 : i0 + 1;
     colAmp[c] = depths[lo] + (depths[hi] - depths[lo]) * f;
 
-    colSection[c] = -colAmp[c] * Math.cos(p * TAU);
+    colSection[c] = colAmp[c] * foldSection(p);
     // Measured from the WALL end so the hem splay reaches further toward the
     // room while the heading stays pinned to its end carrier.
     colX[c] = span - offset;
@@ -842,7 +799,7 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     const p = (c / cols) * count;
     const t = p - 0.5;
     const i0 = Math.floor(t);
-    const f = t - i0;
+    const f = smoothstep01(t - i0);
     const lo = i0 < 0 ? 0 : i0 > count - 1 ? count - 1 : i0;
     const hi = i0 + 1 < 0 ? 0 : i0 + 1 > count - 1 ? count - 1 : i0 + 1;
     const j0 = waveJitter(lo, 2.9);
@@ -862,17 +819,6 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
     // Billow: air trapped in front of a moving panel deepens the folds, and it
     // does so lowest down where the cloth is freest.
     const deepen = 1 + HEM_DEPTH_GAIN * vy * vy + billow * vy;
-
-    // Depth read as height: forward of the track sits lower in frame, and more so
-    // the further down the drop you look. This is what scallops the hem instead of
-    // ruling a straight line under a rippling surface. See HEM_DEPTH_SWING.
-    const swing = HEADING_DEPTH_SWING + (HEM_DEPTH_SWING - HEADING_DEPTH_SWING) * vy;
-
-    // The heading's own drop, tapering out over the top of the panel. Without it
-    // the back half of every wave rises above the track; with it the whole
-    // scallop hangs from the track line instead of straddling it.
-    // See HEADING_SINK.
-    const sink = maxDepth * HEADING_DEPTH_SWING * HEADING_SINK * (1 - vy) * (1 - vy);
 
     // The lag at this height. Zero at the heading, since that is bolted to the
     // carriers, growing superlinearly to the full value at the hem.
@@ -904,12 +850,18 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
       // The drop, per column. Zero deviation at the heading and the full
       // deviation at the hem, so the tape stays straight and only the free end
       // wanders. See HEM_UNEVEN.
-      const y = topY - (height - colShort[c] * vy) * vy;
-
       const relaxedDrift = colWander[c] * driftWeight + colBow[c] * bowWeight;
       positions[i3] = wallX + towardCentre * (colX[c] * splay + lag + relaxedDrift + (z + colAmp[c]) * colLean[c]);
-      positions[i3 + 1] = y - z * swing - sink;
       positions[i3 + 2] = z;
+      if (r === 0) {
+        positions[i3 + 1] = topY;
+      } else {
+        const above = i3 - (cols + 1) * 3;
+        positions[i3 + 1] = positions[above + 1] - hangingDrop(
+          (height - colShort[c]) / ROWS,
+          positions[i3] - positions[above], z - positions[above + 2],
+        );
+      }
 
       compression[v] = colComp[c];
       depth[v] = z / maxDepth;
@@ -924,6 +876,18 @@ function writePanelMesh(mesh: PanelMesh, w: PanelWrite): void {
   (g.attributes.normal as THREE.BufferAttribute).needsUpdate = true;
   (g.attributes.aCompression as THREE.BufferAttribute).needsUpdate = true;
   (g.attributes.aDepth as THREE.BufferAttribute).needsUpdate = true;
+}
+
+// The receiver is a horizontal sill/floor at the traced lower edge. Follow the
+// actual hem in x and depth instead of painting a dark vertical rectangle.
+function writeHemShadow(shadow: THREE.Mesh, cloth: PanelMesh, floorY: number, radius: number) {
+  const positions = shadow.geometry.attributes.position as THREE.BufferAttribute;
+  for (let row=0;row<2;row++) for (let c=0;c<=cloth.cols;c++) {
+    const source = (ROWS*(cloth.cols+1)+c)*3;
+    positions.setXYZ(row*(cloth.cols+1)+c, cloth.positions[source], floorY,
+      cloth.positions[source+2] + (row === 0 ? -radius : radius));
+  }
+  positions.needsUpdate = true;
 }
 
 // --- Shaders --------------------------------------------------------------
@@ -993,51 +957,64 @@ varying vec2 vUv;
 varying float vCompression;
 varying float vDepth;
 
-float shadowTap(vec3 p, vec2 offset) {
-  return step(p.z - 0.00055, texture2D(uShadowMap, p.xy + offset * 0.0013).r);
-}
+// Broad source filtering and receiver slope correction prevent stair-stepped
+// bands on oblique folds. This is deliberately a soft indoor light source.
 float visibility() {
   vec3 p = vShadow.xyz / vShadow.w;
-  float lit = shadowTap(p,vec2(-1.0,-1.0)) + shadowTap(p,vec2(0.0,-1.0)) + shadowTap(p,vec2(1.0,-1.0))
-    + shadowTap(p,vec2(-1.0,0.0)) + shadowTap(p,vec2(0.0,0.0)) + shadowTap(p,vec2(1.0,0.0))
-    + shadowTap(p,vec2(-1.0,1.0)) + shadowTap(p,vec2(0.0,1.0)) + shadowTap(p,vec2(1.0,1.0));
-  return lit / 9.0;
+  if (any(lessThan(p.xy,vec2(0.0))) || any(greaterThan(p.xy,vec2(1.0)))) return 1.0;
+  vec3 dx = dFdx(p), dy = dFdy(p);
+  float determinant = dx.x * dy.y - dx.y * dy.x;
+  vec2 gradient = abs(determinant) > 0.00000001
+    ? vec2(dy.y * dx.z - dx.y * dy.z, dx.x * dy.z - dy.x * dx.z) / determinant : vec2(0.0);
+  float lit = 0.0;
+  for (int i = 0; i < 16; i++) {
+    float angle = float(i) * 2.399963;
+    vec2 offset = vec2(cos(angle),sin(angle)) * sqrt((float(i)+0.5)/16.0) * 0.004;
+    float receiver = p.z + clamp(dot(gradient,offset),-0.004,0.004) - 0.00045;
+    lit += smoothstep(receiver-0.00018,receiver+0.00018,texture2D(uShadowMap,p.xy+offset).r);
+  }
+  return lit / 16.0;
+}
+vec3 toLinear(vec3 c) {
+  return mix(c/12.92,pow((c+0.055)/1.055,vec3(2.4)),step(vec3(0.04045),c));
+}
+vec3 toSrgb(vec3 c) {
+  c = max(c,vec3(0.0));
+  return mix(c*12.92,1.055*pow(c,vec3(1.0/2.4))-0.055,step(vec3(0.0031308),c));
 }
 void main() {
   vec3 N = normalize(vNormal);
-  if (!gl_FrontFacing) N = -N;
   if (N.z < 0.0) N = -N;
-  float tooth = texture2D(uTexture, vUv * uTexRepeat).r - 0.5;
-  vec3 L = normalize(vec3(-0.75, 0.45, 1.0));
-  vec3 viewDirection = curtainViewDirection();
-  float facing = abs(dot(normalize(vViewNormal), viewDirection));
-  float direct = max(dot(N,L), 0.0);
-  // Use the shop photograph's actual fold falloff as the resting light field.
-  // Every photographed valley is registered to one geometric return, so the
-  // light deforms with the cloth instead of tiling unrelated stripes over it.
-  vec3 foldPhoto = texture2D(uFoldPhoto, vec2(mix(vPhotoUv.x,1.0-vPhotoUv.x,uPhotoMirror),vPhotoUv.y)).rgb;
-  float photoLight = dot(foldPhoto,vec3(0.299,0.587,0.114));
-  float cavity = pow(max(0.0, -vDepth), 1.5);
-  float gathered = smoothstep(0.0,1.0,vCompression);
-  float liveLight = (0.78 + 0.22 * direct) * mix(0.72,1.0,visibility());
-  float shade = (0.10 + photoLight) * mix(1.0,liveLight,gathered * 0.75);
-  shade *= 1.0 - cavity * gathered * 0.12;
-  vec3 surface = uColour * uRoomTint * shade * (1.0 + tooth * 0.10) * uRoomExposure;
-  float dark = 1.0 - smoothstep(0.05, 0.5, dot(uColour, vec3(0.299,0.587,0.114)));
-  float fibre = pow(1.0 - facing, 2.0) * direct * 0.04;
-  surface += vec3(fibre * dark);
+  vec3 V = curtainViewDirection();
+  float facing = clamp(abs(dot(normalize(vViewNormal),V)),0.0,1.0);
+  float tooth = texture2D(uTexture,vUv*uTexRepeat).r - 0.5;
+  // The photograph supplies only de-lit cloth detail, never a second set of
+  // painted fold shadows. All broad shading belongs to the real 3D surface.
+  float detail = texture2D(uFoldPhoto,vec2(mix(vPhotoUv.x,1.0-vPhotoUv.x,uPhotoMirror),vPhotoUv.y)).r - 0.5;
+  float key = max(dot(N,normalize(vec3(-0.6,0.65,1.0))),0.0);
+  float fill = max(dot(N,normalize(vec3(0.8,0.2,0.7))),0.0);
+  float cavity = smoothstep(0.0,1.0,-vDepth);
+  float shadow = uIsSheer > 0.5 ? 1.0 : mix(0.80,1.0,visibility());
+  float shade = (0.32 + 0.50*key + 0.18*fill) * shadow;
+  shade *= 1.0 - cavity * (0.035 + smoothstep(0.0,1.0,vCompression)*0.06);
+  vec3 dye = toLinear(uColour);
+  vec3 illumination = toLinear(uRoomTint) * uRoomExposure;
+  vec3 surface = dye * illumination * shade * (1.0 + tooth*0.08 + detail*0.20);
+  // Matte fibres have a soft grazing sheen; they do not become white plastic.
+  surface += dye * illumination * pow(1.0-facing,3.0) * 0.018;
   if (uIsSheer > 0.5) {
-    vec2 vBackdrop = curtainScreenUv();
-    float path = texture2D(uDensity, vBackdrop).r * 12.0;
-    float transmit = exp(-uOpacity * max(1.0, path));
-    vec3 behind = texture2D(uBackdrop, vBackdrop).rgb;
-    // Backlit fibres scatter towards the viewer. This varies with the room's
-    // actual light field; the selected dye still absorbs part of that light.
-    vec3 backlit = mix(uColour, vec3(1.0), 0.18) * (0.80 + 0.20 * behind);
-    vec3 cloth = mix(surface, backlit * (0.55 + photoLight * 0.48), 0.45);
-    surface = cloth * (1.0 - transmit) + behind * transmit;
+    vec2 screenUv = curtainScreenUv();
+    float path = max(1.0,texture2D(uDensity,screenUv).r*12.0);
+    vec3 behind = toLinear(texture2D(uBackdrop,screenUv).rgb);
+    // Absorption uses the actual selected dye in linear light. No white tint
+    // is mixed into coloured sheers, and light is not added twice at overlaps.
+    vec3 transmission = exp(-path * (vec3(uOpacity) + (1.0-dye)*0.48));
+    vec3 scattered = dye * illumination * (0.40 + 0.35*key + 0.16*fill + 0.09*behind)
+      * (1.0 + tooth*0.06 + detail*0.12);
+    vec3 cloth = mix(surface,scattered,0.58);
+    surface = cloth*(1.0-transmission) + behind*transmission;
   }
-  gl_FragColor = vec4(clamp(surface,0.0,1.0),1.0);
+  gl_FragColor = vec4(clamp(toSrgb(surface),0.0,1.0),1.0);
 }
 `;
 
@@ -1057,17 +1034,7 @@ void main() {
 }
 `;
 
-/** THE SILL SHADOW.
- *
- * Black, with an alpha that is strongest at the hem and gone within
- * SILL_SHADOW_DROP of the drop below it. Squared rather than linear, because
- * contact shadow is an occlusion term and occlusion closes up fast: a linear
- * ramp spreads the same darkness evenly and reads as a painted grey band, which
- * is the same mistake the fold shading was making before the references.
- *
- * u carries a taper at the two ends, so the shadow does not stop dead where the
- * panel does — the cloth is not a wall and its shadow has soft ends.
- */
+// A short wall shadow seats the rail in the room.
 const SHADOW_FRAGMENT_SHADER = `
 precision mediump float;
 uniform float uAlpha;
@@ -1077,6 +1044,17 @@ void main() {
   float fall = vUv.y * vUv.y;
   float ends = smoothstep(0.0, 0.10, vUv.x) * smoothstep(0.0, 0.10, 1.0 - vUv.x);
   gl_FragColor = vec4(0.0, 0.0, 0.0, fall * ends * uAlpha);
+}
+`;
+
+const HEM_SHADOW_FRAGMENT_SHADER = `
+precision mediump float;
+uniform float uAlpha;
+varying vec2 vUv;
+void main() {
+  float fall = exp(-pow((vUv.y-0.5)*4.5,2.0)) * sin(3.141593*vUv.y);
+  float ends = smoothstep(0.0,0.04,vUv.x) * smoothstep(0.0,0.04,1.0-vUv.x);
+  gl_FragColor = vec4(0.0,0.0,0.0,fall*ends*uAlpha);
 }
 `;
 
@@ -1211,9 +1189,8 @@ export default function Canvas2DCurtainRenderer({
   const leftMeshRef = useRef<PanelMesh | null>(null);
   const rightMeshRef = useRef<PanelMesh | null>(null);
   const materialsRef = useRef<THREE.ShaderMaterial[]>([]);
-  /** One sill shadow per panel. See SILL_SHADOW_ALPHA. */
+  /** A soft floor receiver follows each panel's actual hem. */
   const shadowMeshesRef = useRef<THREE.Mesh[]>([]);
-  const shadowDropRef = useRef(0);
   const layoutRef = useRef<Layout | null>(null);
 
   // Openness animates at 60fps; everything else changes on a click. Keeping the
@@ -1272,17 +1249,10 @@ export default function Canvas2DCurtainRenderer({
     writePanelMesh(left, { ...common, wallX: windowLeft, towardCentre: 1 });
     writePanelMesh(right, { ...common, wallX: windowRight, towardCentre: -1 });
 
-    // The sill shadow follows the cloth that casts it. A unit plane scaled to
-    // this openness's span, sat immediately under the hem and behind the panel.
     const shadows = shadowMeshesRef.current;
     if (shadows.length === 2) {
-      const drop = shadowDropRef.current;
-      const span = Math.max(1, shaped.span);
-      const top = windowBottom - drop / 2;
-      shadows[0].scale.x = span;
-      shadows[0].position.set(windowLeft + span / 2, top, -1);
-      shadows[1].scale.x = span;
-      shadows[1].position.set(windowRight - span / 2, top, -1);
+      writeHemShadow(shadows[0],left,windowBottom,shutWaveWidth*0.8);
+      writeHemShadow(shadows[1],right,windowBottom,shutWaveWidth*0.8);
     }
 
     const roomFilter = fabricType === 'blockout' ? `brightness(${0.90 + open * 0.10})` : 'none';
@@ -1477,57 +1447,12 @@ export default function Canvas2DCurtainRenderer({
       const blPx = flip(bl);
       const brPx = flip(br);
 
-      const windowLeft = Math.min(tlPx.x, blPx.x);
-      const windowRight = Math.max(trPx.x, brPx.x);
-      const windowTop = Math.max(tlPx.y, trPx.y);
-      const windowBottom = Math.min(blPx.y, brPx.y);
-      const windowWidth = windowRight - windowLeft;
-
-      // THE SLANT. The blind renderer has always drawn onto the traced quad; the
-      // curtain collapsed that quad to its bounding box and drew square inside
-      // it, so on a window photographed in perspective the curtain's track ran
-      // level while the window's head sloped away beneath it, and the hem sat
-      // flat on a sill that did not. It read as a decal on the photo rather than
-      // as cloth in the room.
-      //
-      // The whole scene is still SOLVED square — the cloth simulation wants a
-      // rectangle and the wave pitch means nothing on a trapezium — and is then
-      // mapped onto the quad by this homography in the vertex shaders. Solve
-      // square, draw crooked.
-      //
-      // Corner order matches the quad's: the box's top-left goes to the quad's
-      // top-left. Geometry outside the box (the track above the head, the
-      // panels' overhang past the reveal) extrapolates through the same
-      // transform, which is what keeps the track parallel to the window head
-      // instead of stopping at it.
-      const quadMatrix = (() => {
-        const box: [number, number][] = [
-          [windowLeft, windowTop],
-          [windowRight, windowTop],
-          [windowRight, windowBottom],
-          [windowLeft, windowBottom],
-        ];
-        const quad: [number, number][] = [
-          [tlPx.x, tlPx.y],
-          [trPx.x, trPx.y],
-          [brPx.x, brPx.y],
-          [blPx.x, blPx.y],
-        ];
-        try {
-          const raw = computeHomography(box, quad);
-          const centreW = raw[6] * (windowLeft + windowRight) / 2 + raw[7] * (windowTop + windowBottom) / 2 + raw[8];
-          const h = raw.map(n => n / centreW);
-          // Matrix3.set takes row-major, which is what computeHomography returns.
-          return new THREE.Matrix3().set(h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], h[8]);
-        } catch {
-          // Collinear or coincident corners. An un-warped curtain is wrong; a
-          // missing one is worse, so fall back to drawing it square.
-          return new THREE.Matrix3();
-        }
-      })();
-
-      const h = quadMatrix.clone().transpose().toArray();
-      const projection = windowDepthProjection(h, W, H);
+      const plane = curtainPlane(
+        [[tlPx.x, tlPx.y], [trPx.x, trPx.y], [brPx.x, brPx.y], [blPx.x, blPx.y]], W, H,
+      );
+      const { left: windowLeft, right: windowRight, top: windowTop, bottom: windowBottom,
+        width: windowWidth, homography: h, projection } = plane;
+      const quadMatrix = new THREE.Matrix3().set(h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], h[8]);
       const viewNormal = new THREE.Matrix3().fromArray(projection.basis).transpose().invert().transpose();
       const projectionUniforms = {
         uQuadH: { value: quadMatrix },
@@ -1565,6 +1490,22 @@ export default function Canvas2DCurtainRenderer({
         const j = i % (troughs.length-1);
         atlasCtx.drawImage(foldPhotoImage,troughs[j],57,troughs[j+1]-troughs[j],654,i*64,0,64,1024);
       }
+      const drape = atlasCtx.getImageData(0,0,atlas.width,atlas.height);
+      for (let x=0;x<atlas.width;x++) {
+        let mean=0;
+        for (let y=0;y<atlas.height;y++) {
+          const i=(y*atlas.width+x)*4;
+          mean+=(drape.data[i]+drape.data[i+1]+drape.data[i+2])/3;
+        }
+        mean/=atlas.height;
+        for (let y=0;y<atlas.height;y++) {
+          const i=(y*atlas.width+x)*4;
+          const value=(drape.data[i]+drape.data[i+1]+drape.data[i+2])/3;
+          const residual=Math.max(70,Math.min(186,128+(value-mean)*1.2));
+          drape.data[i]=drape.data[i+1]=drape.data[i+2]=residual;
+        }
+      }
+      atlasCtx.putImageData(drape,0,0);
       foldPhotoTexture = new THREE.CanvasTexture(atlas);
       foldPhotoTexture.colorSpace = THREE.NoColorSpace;
       foldPhotoTexture.minFilter = THREE.LinearMipmapLinearFilter;
@@ -1686,7 +1627,7 @@ export default function Canvas2DCurtainRenderer({
             uShadowMatrix: { value: new THREE.Matrix4() },
             uDensity: { value: null },
             uRoomTint: { value: roomTint },
-            uRoomExposure: { value: 1.0 },
+            uRoomExposure: { value: roomSamples ? Math.max(0.68,Math.min(1.02,brightest/roomSamples/255+0.16)) : 0.9 },
             uColour: { value: colourVec },
             uOpacity: { value: isSheer ? sheerOpacity(colourRef.current) : 1.0 },
             uIsSheer: { value: isSheer ? 1.0 : 0.0 },
@@ -1728,30 +1669,24 @@ export default function Canvas2DCurtainRenderer({
       leftMeshRef.current = leftMesh;
       rightMeshRef.current = rightMesh;
 
-      // --- SILL SHADOW ----------------------------------------------------
-      // One per panel, because each one has to follow its own leading edge as
-      // the curtain is drawn back. A unit plane, scaled and placed in draw()
-      // where the span for this openness is known.
-      //
-      // renderOrder -1 and no depth write: it is composited under the cloth and
-      // over the photograph, and it must never occlude the panel that casts it.
+      // Soft contact follows the actual hem on the horizontal receiver.
       const shadowMaterial = new THREE.ShaderMaterial({
-        uniforms: { ...projectionUniforms, uAlpha: { value: SILL_SHADOW_ALPHA } },
+        uniforms: { ...projectionUniforms, uAlpha: { value: isSheer ? 0.13 : 0.22 } },
         vertexShader: TRACK_VERTEX_SHADER,
-        fragmentShader: SHADOW_FRAGMENT_SHADER,
+        fragmentShader: HEM_SHADOW_FRAGMENT_SHADER,
         transparent: true,
         depthWrite: false,
+        side: THREE.DoubleSide,
       });
-      const shadowDrop = (windowTop - windowBottom) * SILL_SHADOW_DROP;
       const shadows: THREE.Mesh[] = [];
       for (let i = 0; i < 2; i++) {
-        const s = new THREE.Mesh(new THREE.PlaneGeometry(1, shadowDrop), shadowMaterial);
+        const s = new THREE.Mesh(new THREE.PlaneGeometry(1,1,leftMesh.cols,1), shadowMaterial);
         s.renderOrder = -1;
+        s.frustumCulled = false;
         scene.add(s);
         shadows.push(s);
       }
       shadowMeshesRef.current = shadows;
-      shadowDropRef.current = shadowDrop;
 
       // --- TRACK ASSEMBLY -------------------------------------------------
       // The panels hang from something, and it has to look like the thing they

@@ -43,7 +43,10 @@ export function createCurtainLighting(
       varying vec2 vUv;
       void main() {
         vec3 viewDirection = curtainViewDirection();
-        float facing = max(0.12, abs(dot(normalize(vViewNormal), viewDirection)));
+        float cosine = dot(normalize(vViewNormal), viewDirection);
+        // Fibres scatter over a finite angular lobe. A strict 1/cosine sheet
+        // goes singular at a fold silhouette and looks like a bright wire.
+        float facing = sqrt(cosine*cosine + 0.22*0.22);
         float hem = 1.0 - smoothstep(0.018, 0.024, vUv.y);
         float tape = smoothstep(0.965, 0.99, vUv.y);
         float path = (1.0 + hem * 1.2 + tape * 0.8) / facing;
@@ -57,13 +60,16 @@ export function createCurtainLighting(
     resize: (w, h) => density.setSize(w, h),
     render() {
       const visibility = scene.children.map(object => object.visible);
-      // Floor contact-shadow decals are receivers, not solid shadow casters.
-      scene.children.forEach(object => { if (object.renderOrder < 0) object.visible = false; });
-      scene.overrideMaterial = depthMaterial;
-      renderer.setRenderTarget(shadow);
-      renderer.setClearColor(0xffffff, 1);
-      renderer.clear();
-      renderer.render(scene, light);
+      // Open-weave cloth does not cast an opaque shadow onto neighbouring
+      // folds. Transmission handles its optical depth and saves a mobile pass.
+      if (!isSheer) {
+        scene.children.forEach(object => { if (object.renderOrder < 0) object.visible = false; });
+        scene.overrideMaterial = depthMaterial;
+        renderer.setRenderTarget(shadow);
+        renderer.setClearColor(0xffffff, 1);
+        renderer.clear();
+        renderer.render(scene, light);
+      }
       if (isSheer) {
         scene.children.forEach(object => { object.visible = panels.includes(object as THREE.Mesh); });
         scene.overrideMaterial = densityMaterial;
