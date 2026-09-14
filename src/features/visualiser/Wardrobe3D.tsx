@@ -19,13 +19,14 @@
 // is clamped rather than free.
 // ---------------------------------------------------------------------------
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { wardrobeModelById, DEFAULT_WIDTH_MM } from './wardrobes';
 import { buildWardrobeScene, MM, OPENING_HEIGHT_MM, type WardrobeScene } from './wardrobeScene';
 import { onWallColour } from './wallColours';
+import JoineryOrbitControl from './JoineryOrbitControl';
 
 export interface Wardrobe3DProps {
   modelId: string;
@@ -47,6 +48,7 @@ export interface Wardrobe3DProps {
  * the projected pixels on a side return are the front face stretched, which is
  * convincing to about thirty degrees and gone past forty. */
 const MAX_YAW = THREE.MathUtils.degToRad(40);
+const INITIAL_YAW = THREE.MathUtils.degToRad(30);
 
 export default function Wardrobe3D({
   modelId,
@@ -58,6 +60,10 @@ export default function Wardrobe3D({
   wallColour,
 }: Wardrobe3DProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const [angle, setAngle] = useState(30);
+  const [isReady, setIsReady] = useState(false);
+  const moveViewRef = useRef<((degrees: number | null) => void) | null>(null);
+  const viewRef = useRef({ yaw: INITIAL_YAW, polar: Math.PI / 2 - 0.015, zoom: 1 });
   // The live scene, so the two cheap changes below can reach it without the
   // effect that built it having to re-run. See WardrobeScene.setWallColour.
   const builtRef = useRef<WardrobeScene | null>(null);
@@ -69,6 +75,7 @@ export default function Wardrobe3D({
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
+    setIsReady(false);
 
     const model = wardrobeModelById(modelId);
     const widthMm = selectedWidthMm ?? DEFAULT_WIDTH_MM;
@@ -131,7 +138,7 @@ export default function Wardrobe3D({
         // cabinet alone cropped the empty reveal above it — which is the part
         // that says the robe is set into a room rather than filling a hole cut
         // to its own size. See OPENING_HEIGHT_MM.
-        const span = Math.max(widthMm, OPENING_HEIGHT_MM) * MM;
+        const span = Math.max(widthMm / Math.max(camera.aspect, 0.45), OPENING_HEIGHT_MM) * MM;
         // 1.28 AGAINST THE OPENING, not 1.72. The multiplier was set when the
         // subject was the 2016 cabinet; measuring it against a 2700 opening
         // instead made the same number a third further back, and what filled
@@ -147,7 +154,10 @@ export default function Wardrobe3D({
         // centred in frame rather than the unit inside it.
         const aim = built.centre.clone();
         aim.y = (OPENING_HEIGHT_MM / 2) * MM;
-        camera.position.set(aim.x, aim.y + span * 0.03, aim.z + dist);
+        const saved = viewRef.current;
+        camera.position.copy(aim).add(new THREE.Vector3().setFromSpherical(
+          new THREE.Spherical(dist * saved.zoom, saved.polar, saved.yaw),
+        ));
         camera.lookAt(aim);
 
         const controls = new OrbitControls(camera, renderer.domElement);
@@ -185,6 +195,33 @@ export default function Wardrobe3D({
         let dirty = true;
         const invalidate = () => { dirty = true; };
         invalidateRef.current = invalidate;
+        const syncView = () => {
+          const yaw = controls.getAzimuthalAngle();
+          viewRef.current = { yaw, polar: controls.getPolarAngle(), zoom: camera.position.distanceTo(aim) / dist };
+          setAngle(Math.round(THREE.MathUtils.radToDeg(yaw)));
+          renderer.domElement.dataset.viewAngle = String(THREE.MathUtils.radToDeg(yaw));
+        };
+        moveViewRef.current = (degrees) => {
+          // Stop any remaining drag momentum before a button sets the view.
+          controls.enableDamping = false;
+          controls.update();
+          const yaw = degrees === null ? INITIAL_YAW : THREE.MathUtils.clamp(
+            controls.getAzimuthalAngle() + THREE.MathUtils.degToRad(degrees), -MAX_YAW, MAX_YAW,
+          );
+          const distance = degrees === null ? dist : camera.position.distanceTo(aim);
+          const polar = degrees === null ? Math.PI / 2 - 0.015 : controls.getPolarAngle();
+          camera.position.copy(aim).add(new THREE.Vector3().setFromSpherical(new THREE.Spherical(
+            distance, polar, yaw,
+          )));
+          controls.update();
+          controls.enableDamping = true;
+          syncView();
+          invalidate();
+        };
+        controls.addEventListener('change', syncView);
+        syncView();
+        setIsReady(true);
+        renderer.domElement.style.cursor = 'grab';
         // Fires while the pointer drags AND while the damping settles after it
         // is let go, so the easing runs to a stop rather than freezing mid-way.
         controls.addEventListener('change', invalidate);
@@ -204,7 +241,9 @@ export default function Wardrobe3D({
         cleanup = () => {
           builtRef.current = null;
           invalidateRef.current = null;
+          moveViewRef.current = null;
           controls.removeEventListener('change', invalidate);
+          controls.removeEventListener('change', syncView);
           cancelAnimationFrame(raf);
           ro.disconnect();
           controls.dispose();
@@ -256,5 +295,8 @@ export default function Wardrobe3D({
     invalidateRef.current?.();
   }, [handleFinish]);
 
-  return <div ref={hostRef} style={{ width: '100%', height: '100%', minHeight: 420 }} />;
+  return <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0 }}>
+    <div ref={hostRef} aria-label="Interactive 3D product preview" style={{ width: '100%', height: '100%', minHeight: 0 }} />
+    <JoineryOrbitControl angle={angle} isReady={isReady} onRotate={degrees => moveViewRef.current?.(degrees)} onReset={() => moveViewRef.current?.(null)} />
+  </div>;
 }

@@ -2,9 +2,8 @@ import { create } from 'zustand';
 import { ROLLER_HARDWARE, rollerPalette, rollerColour } from '@/features/fabrics';
 import { CURTAIN_COLOURS, HARDWARE_HEX } from '../../data/products';
 import { pricePerBlind, type BlindType } from '../../lib/pricing';
-import { DEFAULT_WIDTH_MM, wardrobeModelById, WARDROBE_MODELS, type WardrobeKind } from './wardrobes';
+import { wardrobeModelById, type WardrobeKind } from './wardrobes';
 import { DEFAULT_WALL_COLOUR } from './wallColours';
-import { DEFAULT_HANDLE_FINISH } from './wardrobeHardware';
 
 type Point = [number, number];
 
@@ -331,6 +330,14 @@ interface VisualiserStore {
   setCompareDivider: (divider: number) => void;
 }
 
+const joineryDefaults = (kind: WardrobeKind) => ({
+  wardrobeKind: kind,
+  wardrobeModel: kind === 'shelving' ? 'LIN02' : kind === 'walk-in' ? '7.0L' : 'SRSTDH02',
+  wardrobeWidthMm: kind === 'walk-in' ? 2400 : 1800,
+  wardrobeColour: 'Matt Polar White',
+  wardrobeHandleFinish: 'Black',
+});
+
 export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   productCategory: 'blind',
   // The flat configuration fields, spread from the same literal that seeds the
@@ -339,14 +346,9 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   lockedRange: null,
   defaultWindowActive: true,
   curtainOpenness: 0,
-  wardrobeKind: 'built-in',
-  wardrobeModel: 'SRSTDH02',
-  wardrobeColour: 'Matt Polar White',
+  ...joineryDefaults('built-in'),
   wardrobeRecessed: true,
   wardrobeWallColour: DEFAULT_WALL_COLOUR,
-  wardrobeHandleFinish: DEFAULT_HANDLE_FINISH,
-  // 3.0's first width, matching wardrobeModel above.
-  wardrobeWidthMm: DEFAULT_WIDTH_MM,
   windows: [following(DEFAULT_WINDOW)],
   activeWindow: 0,
   photoUrl: null,
@@ -416,15 +418,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
     if (isJoinery(cat)) {
       const kind = cat === 'shelving' ? 'shelving' : 'built-in';
       if (s.wardrobeKind !== kind) {
-        const first = WARDROBE_MODELS.filter(m => m.kind === kind)[0];
-        if (first) {
-          return {
-            productCategory: cat,
-            wardrobeKind: kind,
-            wardrobeModel: first.id,
-            wardrobeWidthMm: first.widths[0],
-          };
-        }
+        return { productCategory: cat, ...joineryDefaults(kind) };
       }
       return { productCategory: cat };
     }
@@ -459,11 +453,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   // Switching kind carries the layout with it, because a built-in id is not a
   // walk-in id and leaving the old one selected would show a straight run under
   // a heading that says walk-in. First of the new kind, every time.
-  setWardrobeKind: (kind) =>
-    set({
-      wardrobeKind: kind,
-      wardrobeModel: kind === 'walk-in' ? '7.0L' : 'SRSTDH02',
-    }),
+  setWardrobeKind: (kind) => set(joineryDefaults(kind)),
   // The width follows the layout, because the ranges differ — 2.9 is built at
   // one width, 4.0 at three. Carrying a width across a layout change would
   // leave the configurator holding a size that layout is not made in.

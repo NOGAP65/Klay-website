@@ -763,7 +763,7 @@ export const openingWidthFor = (url: string | null): number | null => {
 };
 
 // Each category loads a photograph with its own measured corners.
-const DEFAULT_WARDROBE_URL = '/images/visualiser/openings/opening-1500.jpeg';
+const DEFAULT_WARDROBE_URL = '/images/visualiser/openings/opening-1800.jpeg';
 const defaultPhotoFor = (category: ProductCategory) =>
   isJoinery(category) ? DEFAULT_WARDROBE_URL : defaultWindowRoom(category).url;
 
@@ -1559,4 +1559,3 @@ export default function KlayConfigurator({
     </div>
   );
 }
-

@@ -1002,7 +1002,9 @@ export function buildCarcass(
     const runW = posts > 0 ? columns[0].widthMm : 0;
     for (let i = 1; i <= posts; i++) {
       boxes.push({
-        x: sx + (runW / (posts + 1)) * i - BOARD_MM / 2, y: 0, z: D - BOARD_MM,
+        // The face bar runs in front of the shelves from floor to top shelf.
+        // Coplanar shelf/post faces hid sections of the upright at angled views.
+        x: sx + (runW / (posts + 1)) * i - BOARD_MM / 2, y: 0, z: D,
         w: BOARD_MM, h: H, d: BOARD_MM,
         plain: true,
       });
@@ -1161,7 +1163,7 @@ export function buildCarcass(
   // back panel at z = -D, so the front lands exactly on the traced quad and
   // everything else recedes behind it — which is also just what looking into an
   // open wardrobe is.
-  for (const box of boxes) box.z -= WARDROBE_DEPTH_MM;
+  for (const box of boxes) box.z -= D;
 
   return { boxes, compartments };
 }
