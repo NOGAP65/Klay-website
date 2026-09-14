@@ -32,7 +32,8 @@
 // is built from them directly rather than from an invented family layer.
 // ---------------------------------------------------------------------------
 
-import { RYNAMIC_COLOURS, CURTAIN_COLOURS, SLAT_COLOURS } from '../../data/products'
+import { fabricPalette } from '@/features/fabrics'
+import { CURTAIN_COLOURS, SLAT_COLOURS } from '../../data/products'
 import { WARDROBE_COLOURS } from '@/features/visualiser'
 
 import { PRODUCTS } from './products'
@@ -356,7 +357,7 @@ export const CATALOGUE: CatalogueItem[] = [
     image: '/images/rooms/room-kitchen.png',
     imagePosition: 'center 34%',
     glyph: 'roller-blinds',
-    colours: RYNAMIC_COLOURS,
+    colours: fabricPalette('roller-blinds', 'blockout'),
     light: ['Blockout', 'Light filter', 'Sunscreen'],
     // Blockout of the four, because it is the one a roller blind is bought for.
     visualise: { category: 'blind', blindType: 'blockout' },
@@ -369,21 +370,8 @@ export const CATALOGUE: CatalogueItem[] = [
     to: enquire('Honeycomb Blinds'),
     glyph: 'honeycomb-blinds',
     image: '/images/shop/honeycomb-blockout.webp',
-    // THE FABRIC BLINDS SHARE THE RYNAMIC CARD, and this is an editorial claim
-    // in the same class as the light values above — worth a commercial check.
-    //
-    // The reasoning: Rynamic is the fabric range Klay already sells rollers in,
-    // and a honeycomb is a fabric product cut from the same kind of cloth.
-    // Saying it comes in nothing was the less accurate of the two available
-    // claims.
-    //
-    // It also makes the range row work. The card's lead control is a colour
-    // swatch where a colour card exists, and repainting the tile's ground with
-    // the chosen colour is the one way a photoless product can SHOW a selection
-    // rather than just record it — see the note on the glyph fallback in RangeGrid.
-    // With colours on rollers and curtains alone, both of which have
-    // photographs, that never fired once.
-    colours: RYNAMIC_COLOURS,
+    // Supplied honeycomb blockout colours; Day & Night also reads its light-filter swatch.
+    colours: fabricPalette('honeycomb-blinds'),
     light: ['Blockout', 'Light filter'],
   },
   {
@@ -393,9 +381,8 @@ export const CATALOGUE: CatalogueItem[] = [
     tagline: 'Horizontal slats that tilt. Aluminium, timber or faux.',
     to: enquire('Venetian Blinds'),
     glyph: 'venetian-blinds',
-    // SOLD BY COLOUR. The slat material is a specification, not something a
-    // customer browses — see SLAT_COLOURS.
-    colours: SLAT_COLOURS,
+    // Each supplied material family has its own colour card.
+    colours: fabricPalette('venetian-blinds'),
     light: ['Blockout', 'Light filter'],
   },
   {

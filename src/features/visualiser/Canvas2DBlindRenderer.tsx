@@ -13,12 +13,13 @@ export interface RenderedArea {
   corners: Point[];
   blindType: string;
   fabricColor: string;
+  fabricTexture?: string;
   hardwareColor: string;
   /** Named hardware finish — drives the side-bracket render (flat shadow/
    * highlight for white/black, metallic gradient for chrome). Optional so
    * older callers passing only a hex `hardwareColor` still render (plain
    * fill, no special shading). */
-  hardwareColourName?: 'white' | 'black' | 'chrome';
+  hardwareColourName?: 'white' | 'black' | 'chrome' | 'cream' | 'platinum';
   controlType: string;
   showChain: boolean;
   // Curtain-specific
@@ -604,10 +605,9 @@ const uploadTexture = (
   path: string
 ): FabricTexture | null => {
   const img = images.get(path);
-  // Only the purpose-shot roller textures are seamless. Derived from the path
-  // rather than passed in, so a caller cannot accidentally declare a legacy
-  // scan tileable and reintroduce the seam.
-  const tileable = ALL_ROLLER_TEXTURES.includes(path);
+  // Mirror the roller scans at tile edges, including the supplied ATLAS samples.
+  // Legacy curtain photos stay clamped.
+  const tileable = ALL_ROLLER_TEXTURES.includes(path) || path.startsWith('/images/fabrics/cw/');
   return img ? getOrUploadTexture(state, path, img, tileable) : null;
 };
 
@@ -1232,7 +1232,7 @@ const shadeHex = (hex: string, f: number): string => {
 
 /** The base hex for a finish, before any shading. */
 const hardwareBaseHex = (
-  hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
+  hardwareColourName: 'white' | 'black' | 'chrome' | 'cream' | 'platinum' | undefined,
   safeHardwareColor: string,
 ): string =>
   hardwareColourName === 'white' || hardwareColourName === 'black'
@@ -1250,7 +1250,7 @@ const litHardwareHex = (hex: string, light: BlindLighting): string => {
  * caps). Chrome still gets its metallic gradient. */
 const setHardwareFill = (
   ctx: CanvasRenderingContext2D,
-  hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
+  hardwareColourName: 'white' | 'black' | 'chrome' | 'cream' | 'platinum' | undefined,
   safeHardwareColor: string,
   gradFrom: Point,
   gradTo: Point,
@@ -1459,7 +1459,7 @@ const drawCassette = (
   tl: Point,
   tr: Point,
   leftH: number,
-  hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
+  hardwareColourName: 'white' | 'black' | 'chrome' | 'cream' | 'platinum' | undefined,
   safeHardwareColor: string,
   avgW: number,
   yRotation = 0, // window rotation for end cap visibility
@@ -1621,7 +1621,7 @@ const drawBottomRail = (
   railTR: Point,
   fabBL: Point,
   fabBR: Point,
-  hardwareColourName: 'white' | 'black' | 'chrome' | undefined,
+  hardwareColourName: 'white' | 'black' | 'chrome' | 'cream' | 'platinum' | undefined,
   safeHardwareColor: string,
   avgW: number,
   yRotation = 0, // window rotation for end cap visibility
@@ -1715,8 +1715,9 @@ interface AreaParams {
   corners: Point[];
   blindType: string;
   fabricColor: string;
+  fabricTexture?: string;
   hardwareColor?: string | null;
-  hardwareColourName?: 'white' | 'black' | 'chrome';
+  hardwareColourName?: 'white' | 'black' | 'chrome' | 'cream' | 'platinum';
   controlType: string;
   showChain?: boolean;
   rollPosition?: number;
@@ -1865,7 +1866,7 @@ const drawBlindArea = (
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
-      const fabricTexture = uploadTexture(state, fabricImgs, getTexturePath(type));
+      const fabricTexture = uploadTexture(state, fabricImgs, params.fabricTexture && fabricImgs.has(params.fabricTexture) ? params.fabricTexture : getTexturePath(type));
       const tint = hexToRgb(fabricColor);
       if (!fabricTexture) return;
 
@@ -2155,7 +2156,7 @@ const drawDualBlindArea = (
 
     // --- FRONT LAYER — blockout on the room side, opaque, drawn on top and
     // stopping short so the sunscreen stays visible beneath it. ---
-    drawFabricLayer(frontP, DUAL_FRONT_TEXTURE, 1, 'blockout');
+    drawFabricLayer(frontP, params.fabricTexture && fabricImgs.has(params.fabricTexture) ? params.fabricTexture : DUAL_FRONT_TEXTURE, 1, 'blockout');
   }
 
   const gapDepth = backP - frontP;
@@ -2643,9 +2644,8 @@ const drawNewCurtainArea = (
     chrome: { base: '#C8C8C8', highlight: '#E8E8E8', edge: '#888888' },
   };
 
-  const colours = hardwareColourName && TRACK_COLOURS[hardwareColourName]
-    ? TRACK_COLOURS[hardwareColourName]
-    : TRACK_COLOURS.white;
+  const curtainHardware = hardwareColourName === 'black' || hardwareColourName === 'chrome' ? hardwareColourName : 'white';
+  const colours = TRACK_COLOURS[curtainHardware];
 
   // Track gradient based on material
   if (hardwareColourName === 'chrome') {
@@ -3038,6 +3038,7 @@ const buildAreaParams = (area: RenderedArea, rollPosition: number): AreaParams =
   corners: area.corners,
   blindType: area.blindType,
   fabricColor: area.fabricColor,
+  fabricTexture: area.fabricTexture,
   hardwareColor: area.hardwareColor,
   hardwareColourName: area.hardwareColourName,
   controlType: area.controlType,
@@ -3129,7 +3130,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
       // blind type can need more than one texture — a dual roller draws a
       // blockout over a sunscreen.
       const uniquePaths = Array.from(new Set([
-        ...confirmedAreas.flatMap(a => texturePathsFor(a.blindType, a.fabricColor)),
+        ...confirmedAreas.flatMap(a => [...texturePathsFor(a.blindType, a.fabricColor), ...(a.fabricTexture ? [a.fabricTexture] : [])]),
         ...(compareMode && compareBlindType
           // The colour only matters for curtains, where it picks a light vs
           // dark texture base; warm white keeps that on the light variant.
@@ -3139,11 +3140,13 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
 
       const [photo, fabricEntries] = await Promise.all([
         loadImage(photoUrl),
-        Promise.all(uniquePaths.map(async path => [path, await loadImage(path)] as const)),
+        Promise.all(uniquePaths.map(async path => {
+          try { return [path, await loadImage(path)] as const; } catch { return null; }
+        })),
       ]);
       if (cancelled) return;
 
-      const fabricImgs: FabricImages = new Map(fabricEntries);
+      const fabricImgs: FabricImages = new Map(fabricEntries.filter((entry): entry is readonly [string, HTMLImageElement] => entry !== null));
 
       const W = photo.naturalWidth;
       const H = photo.naturalHeight;
@@ -3174,6 +3177,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
           const compareParams: AreaParams = {
             ...buildAreaParams(area, rollPosition),
             blindType: compareBlindType ?? area.blindType,
+            fabricTexture: compareBlindType && compareBlindType !== area.blindType ? undefined : area.fabricTexture,
             fabricColor: compareFabricColor ?? area.fabricColor,
           };
           ctx.save();

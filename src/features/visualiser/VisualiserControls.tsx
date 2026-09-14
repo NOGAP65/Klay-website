@@ -1,3 +1,4 @@
+import { ROLLER_HARDWARE, fabricCollections, fabricByName, fabricPalette } from '@/features/fabrics';
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { radius, tokens, space, type as typeScale } from '@/ds';
@@ -273,12 +274,14 @@ function Select<T extends string | number>({
 
 function Swatch({
   hex,
+  texture,
   label,
   active,
   onClick,
   onDark = false,
 }: {
   hex: string;
+  texture?: string;
   label: string;
   active: boolean;
   onClick: () => void;
@@ -294,6 +297,7 @@ function Swatch({
     <button
       aria-label={label}
       title={label}
+      aria-pressed={active}
       onClick={onClick}
       style={{
         width: size,
@@ -302,6 +306,8 @@ function Swatch({
         cursor: 'pointer',
         padding: 0,
         background: hex,
+        backgroundImage: texture ? `url("${texture}")` : undefined,
+        backgroundSize: 'cover',
         border: `1px solid ${sk.edge}`,
         // The inner hairline is what keeps a near-white swatch from dissolving
         // into a cream ground. On black the problem inverts — the pale swatches
@@ -524,7 +530,8 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typeParam, categoryParam]);
 
-  const selectedHardware = HARDWARE_OPTIONS.find(h => h.id === store.hardwareColour);
+  const hardwareOptions = store.productCategory === 'blind' ? ROLLER_HARDWARE : HARDWARE_OPTIONS.map(h => ({ ...h, hex: HARDWARE_HEX[h.id], texture: undefined }));
+  const selectedHardware = hardwareOptions.find(h => h.id === store.hardwareColour);
   const isCurtain = showCurtainControls && store.productCategory === 'curtain';
 
   // The swatch grid is whichever card this category actually offers — blinds and
@@ -532,7 +539,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
   // category rather than `isCurtain`, which is additionally gated on the host
   // passing showCurtainControls, so the swatches can never end up from a
   // different range than the colour the renderer is resolving.
-  const palette = coloursFor(store.productCategory);
+  const palette = coloursFor(store.productCategory, store.blindType, store.fabricColour);
   const selectedColour = palette.find(c => c.name === store.fabricColour);
 
   // WARDROBE CONTROLS, in two groups: what the cabinet IS, then what it looks
@@ -792,6 +799,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                     onDark={onDark}
                     key={c.name}
                     hex={c.hex}
+                    texture={c.texture}
                     label={c.name}
                     active={store.fabricColour === c.name}
                     onClick={() => store.setFabricColour(c.name)}
@@ -807,11 +815,12 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
           <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
             <Field onDark={onDark} label="Hardware" caption={selectedHardware?.label}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
-                {HARDWARE_OPTIONS.map(h => (
+                {hardwareOptions.map(h => (
                   <Swatch
                     onDark={onDark}
                     key={h.id}
-                    hex={HARDWARE_HEX[h.id]}
+                    hex={h.hex}
+                    texture={h.texture}
                     label={h.label}
                     active={store.hardwareColour === h.id}
                     onClick={() => store.setHardwareColour(h.id)}
@@ -887,7 +896,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
         <GroupHeading onDark={onDark}>Your blind</GroupHeading>
         <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
           {!store.lockedRange && (
-            <Field onDark={onDark} label="Type">
+            <Field onDark={onDark} label="Fabric type">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {BLIND_TYPE_OPTIONS.map(t => (
                   <Pill
@@ -902,6 +911,17 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             </Field>
           )}
 
+          {fabricCollections('roller-blinds', store.blindType).length > 1 && (
+            <Field onDark={onDark} label="Fabric range">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+                {fabricCollections('roller-blinds', store.blindType).map(range => (
+                  <Pill key={range} onDark={onDark} label={range}
+                    active={fabricByName(store.fabricColour)?.collection === range}
+                    onClick={() => store.setFabricColour(fabricPalette('roller-blinds', store.blindType, range)[0].name)} />
+                ))}
+              </div>
+            </Field>
+          )}
           <Field onDark={onDark} label="Fabric colour" caption={selectedColour?.name}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
               {palette.map(c => (
@@ -909,6 +929,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                   onDark={onDark}
                   key={c.name}
                   hex={c.hex}
+                  texture={c.texture}
                   label={c.name}
                   active={store.fabricColour === c.name}
                   onClick={() => store.setFabricColour(c.name)}
@@ -925,11 +946,12 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
         <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
           <Field onDark={onDark} label="Hardware" caption={selectedHardware?.label}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
-              {HARDWARE_OPTIONS.map(h => (
+              {hardwareOptions.map(h => (
                 <Swatch
                   onDark={onDark}
                   key={h.id}
-                  hex={HARDWARE_HEX[h.id]}
+                  hex={h.hex}
+                  texture={h.texture}
                   label={h.label}
                   active={store.hardwareColour === h.id}
                   onClick={() => store.setHardwareColour(h.id)}

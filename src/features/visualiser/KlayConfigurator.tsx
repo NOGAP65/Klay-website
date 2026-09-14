@@ -1,3 +1,4 @@
+import { fabricByName } from '@/features/fabrics';
 import { useEffect, useRef, useState } from 'react';
 import { radius, tokens, space, type as typeScale } from '@/ds';
 import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from './useVisualiserStore';
@@ -1187,6 +1188,7 @@ export default function KlayConfigurator({
     ...a,
     blindType: store.blindType,
     fabricColor: store.getFabricColor(),
+    fabricTexture: fabricByName(store.fabricColour)?.renderTexture,
     hardwareColor: store.getHardwareColor(),
     hardwareColourName: store.hardwareColour,
     controlType: store.operation,
@@ -1510,7 +1512,7 @@ export default function KlayConfigurator({
               br={{ x: confirmedArea.corners[2][0], y: confirmedArea.corners[2][1] }}
               bl={{ x: confirmedArea.corners[3][0], y: confirmedArea.corners[3][1] }}
               fabricType={store.curtainType}
-              hardwareColour={store.hardwareColour}
+              hardwareColour={store.hardwareColour === 'cream' || store.hardwareColour === 'platinum' ? 'white' : store.hardwareColour}
               mount={store.curtainMount}
               colour={store.getFabricColor()}
               // The ordered width, which is what decides how many waves the

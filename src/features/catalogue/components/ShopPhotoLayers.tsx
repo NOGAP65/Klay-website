@@ -15,7 +15,7 @@ import { WalkInPhotoLayers } from './WalkInPhotoLayers';
 import { FlyscreenPhotoLayers } from './FlyscreenPhotoLayers';
 import { usePhotoTransition } from './usePhotoTransition';
 
-interface Props { photo: ShopPhoto; colour: string; colourName?: string; hardware: string; hardwareName?: string; width?: string; shape?: string; dimension?: string }
+interface Props { photo: ShopPhoto; colour: string; dayColour?: string; colourName?: string; hardware: string; hardwareName?: string; width?: string; shape?: string; dimension?: string }
 interface ArtworkProps {
   photo: ShopPhoto; id: string; finish: string; isReduced: boolean;
   slice: WidthSlice; index: number; scaleY: number;
@@ -32,11 +32,11 @@ function ColourFilter({ id, colour, material }: { id: string; colour: string; ma
   </feComponentTransfer></filter>;
 }
 
-function PhotoDefinitions({ photo, id, colour, hardware }: Props & { id: string }) {
+function PhotoDefinitions({ photo, id, colour, dayColour, hardware }: Props & { id: string }) {
   return <defs>
     {photo.regions?.map((region, index) => <g key={index}>
       <clipPath id={`${id}-region-${index}`}><path d={region.path} /></clipPath>
-      <ColourFilter id={`${id}-colour-${index}`} colour={colour} material={region.material} />
+      <ColourFilter id={`${id}-colour-${index}`} colour={region.material === 'day' ? dayColour ?? colour : colour} material={region.material} />
     </g>)}
     {photo.metal && <>
       <clipPath id={`${id}-metal`}><path d={photo.metal} /></clipPath>
@@ -97,13 +97,14 @@ function PhotoArtwork(props: ArtworkProps) {
   </>;
 }
 
-function PhotoPreview({ photo, colour, colourName, hardware, width }: Props) {
+function PhotoPreview({ photo, colour, dayColour, colourName, hardware, width }: Props) {
   const id = `shop-photo-${useId().replace(/:/g, '')}`;
   const isReduced = useMediaQuery('(prefers-reduced-motion: reduce)');
   const isInstant = isReduced || !!photo.joinery;
   const model = photo.joinery ? wardrobeModelById(photo.joinery.modelId) : undefined;
   const widthMm = model?.widths.includes(Number(width)) ? Number(width) : model?.widths[0] ?? 0;
   const frame = usePhotoTransition({ colour, hardware }, isInstant);
+  const dayFrame = usePhotoTransition({ colour: dayColour ?? colour, hardware }, isInstant);
   const finish = WARDROBE_COLOURS.find(c => c.name === colourName)?.slug ?? 'white';
   const plan = photo.joinery ? joineryWidthSlices(photo.joinery, widthMm) : {
     slices: [WHOLE], roomSlices: [WHOLE], width: 1024, scaleY: 1,
@@ -113,7 +114,7 @@ function PhotoPreview({ photo, colour, colourName, hardware, width }: Props) {
   return <svg role="img" aria-label={description} viewBox={`0 0 ${plan.width} 1024`}
     data-preview-width={model ? widthMm : undefined} data-preview-height={model ? JOINERY_HEIGHT_MM : undefined}
     style={{ width: '100%', height: '100%', display: 'block' }}>
-    <PhotoDefinitions photo={photo} id={id} colour={frame.colour} hardware={frame.hardware} />
+    <PhotoDefinitions photo={photo} id={id} colour={frame.colour} dayColour={dayFrame.colour} hardware={frame.hardware} />
     {plan.rows.map((row, rowIndex) => <g key={rowIndex}>
       {(photo.joinery && rowIndex !== 1 ? plan.roomSlices : plan.slices).map((slice, index) => <svg key={index} x={slice.x} y={row.y}
         width={slice.width + 6} height={row.height + 6} overflow="hidden" preserveAspectRatio="none"

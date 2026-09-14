@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { CURTAIN_COLOURS, HARDWARE_HEX, RYNAMIC_COLOURS } from '../../data/products';
+import { ROLLER_HARDWARE, rollerPalette, rollerColour } from '@/features/fabrics';
+import { CURTAIN_COLOURS, HARDWARE_HEX } from '../../data/products';
 import { pricePerBlind, type BlindType } from '../../lib/pricing';
 import { DEFAULT_WIDTH_MM, wardrobeModelById, WARDROBE_MODELS, type WardrobeKind } from './wardrobes';
 import { DEFAULT_WALL_COLOUR } from './wallColours';
@@ -22,7 +23,7 @@ interface TracedArea {
 // vocabulary) and re-exported here so the many components importing it from the
 // store keep working.
 export type { BlindType };
-export type HardwareColour = 'white' | 'black' | 'chrome';
+export type HardwareColour = 'white' | 'black' | 'chrome' | 'cream' | 'platinum';
 export type ProductCategory = 'blind' | 'curtain' | 'wardrobe' | 'shelving';
 
 /** Wardrobes and shelving are one renderer, one control panel and one store
@@ -42,13 +43,9 @@ export type CurtainSize = 'small' | 'medium' | 'large' | 'xl';
 /** The colour card for a product category. Blinds and curtains are different
  * cloth from different mills and do not share a range — see products.ts. Every
  * colour lookup goes through here so the two can never be crossed. */
-export const coloursFor = (category: ProductCategory) =>
-  category === 'curtain' ? CURTAIN_COLOURS : RYNAMIC_COLOURS;
-// ^ 'wardrobe' falls to RYNAMIC_COLOURS deliberately. It never reads this card —
-// wardrobe finishes live in wardrobes.ts under their own state — and returning
-// the blind card means switching to wardrobes reconciles fabricColour against
-// the palette it already held, so crossing to wardrobes and back cannot quietly
-// reset the blind the customer configured.
+export const coloursFor = (category: ProductCategory, type = 'blockout', name?: string): { name: string; hex: string; texture?: string }[] =>
+  category === 'curtain' ? CURTAIN_COLOURS : rollerPalette(type, name);
+// Joinery keeps its own finishes and never consumes the fabric palette.
 
 const CURTAIN_BASE_PRICES: Record<CurtainSize, number> = {
   small: 320,
@@ -117,7 +114,7 @@ export interface WindowConfig {
 
 const DEFAULT_WINDOW: WindowConfig = {
   blindType: 'blockout',
-  fabricColour: 'White',
+  fabricColour: 'Essence Ice',
   hardwareColour: 'white',
   windowSize: 'medium',
   operation: 'manual',
@@ -380,14 +377,18 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
 
   getFabricColor: () => {
     const state = get();
-    const palette = coloursFor(state.productCategory);
+    const palette = coloursFor(state.productCategory, state.blindType, state.fabricColour);
     // Falls back to the first colour on the card rather than an invented hex, so
     // an unrecognised name still renders as a real catalogue fabric and the
     // White swatch's value stays defined in exactly one place.
     return palette.find(c => c.name === state.fabricColour)?.hex ?? palette[0].hex;
   },
 
-  getHardwareColor: () => HARDWARE_HEX[get().hardwareColour],
+  getHardwareColor: () => {
+    const s = get();
+    return (s.productCategory === 'blind' ? ROLLER_HARDWARE.find(h => h.id === s.hardwareColour)?.hex : undefined)
+      ?? HARDWARE_HEX[s.hardwareColour === 'cream' || s.hardwareColour === 'platinum' ? 'white' : s.hardwareColour];
+  },
 
   isConfigComplete: () => {
     const state = get();
@@ -427,18 +428,24 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
       }
       return { productCategory: cat };
     }
-    const palette = coloursFor(cat);
-    const reconcile = (name: string) => (palette.some(c => c.name === name) ? name : palette[0].name);
+    const reconcileHardware = (name: HardwareColour): HardwareColour => cat === 'blind'
+      ? name === 'chrome' ? 'platinum' : name
+      : name === 'cream' || name === 'platinum' ? 'white' : name;
+    const reconcile = (name: string, type: string) => {
+      if (cat === 'blind') return rollerColour(type, name);
+      return CURTAIN_COLOURS.some(c => c.name === name) ? name : CURTAIN_COLOURS[0].name;
+    };
     return {
       productCategory: cat,
       ...(s.defaultWindowActive && s.productCategory !== cat
         ? { rollPosition: cat === 'curtain' ? 0.94 : 0.5 } : {}),
-      fabricColour: reconcile(s.fabricColour),
-      windows: s.windows.map(w => ({ ...w, fabricColour: reconcile(w.fabricColour) })),
+      hardwareColour: reconcileHardware(s.hardwareColour),
+      fabricColour: reconcile(s.fabricColour, s.blindType),
+      windows: s.windows.map(w => ({ ...w, hardwareColour: reconcileHardware(w.hardwareColour), fabricColour: reconcile(w.fabricColour, w.blindType) })),
     };
   }),
-  setBlindType: (type) => set(writeThrough({ blindType: type })),
-  setFabricColour: (colour) => set(writeThrough({ fabricColour: colour })),
+  setBlindType: (type) => set(s => writeThrough({ blindType: type, fabricColour: s.productCategory === 'blind' ? rollerColour(type, s.fabricColour) : s.fabricColour })(s)),
+  setFabricColour: (colour) => set(s => writeThrough({ fabricColour: s.productCategory === 'blind' ? rollerColour(s.blindType, colour) : colour })(s)),
   setHardwareColour: (colour) => set(writeThrough({ hardwareColour: colour })),
   setWindowSize: (size) => set(writeThrough({ windowSize: size })),
   setOperation: (op) => set(writeThrough({ operation: op })),

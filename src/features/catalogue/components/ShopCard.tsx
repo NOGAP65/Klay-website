@@ -52,6 +52,8 @@ import type { CatalogueItem } from '../constants';
 import { AwningColourLayer } from './AwningColourLayer';
 import { ProductGlyph } from './ProductGlyph';
 import { RangeConfigurator } from './RangeConfigurator';
+import { fabricByName, honeycombDaySample } from '@/features/fabrics';
+import { FabricWeaveLayer } from './FabricWeaveLayer';
 import { ShopPhotoLayers } from './ShopPhotoLayers';
 
 export interface ShopCardProps {
@@ -127,7 +129,7 @@ const ASSURANCES = [
  * pass wants the true hue, and sheenStrength wants the true luminance. What goes
  * into the multiply is dyePaint below. */
 const dyeColour = (item: CatalogueItem, sel: Selection): string =>
-  item.colours?.find(c => c.name === sel.colour)?.hex ?? '#FFFFFF';
+  fabricByName(sel.colour)?.hex ?? item.colours?.find(c => c.name === sel.colour)?.hex ?? '#FFFFFF';
 
 /** THE COLOUR THE MULTIPLY LAYER IS ACTUALLY PAINTED, given the cloth it will
  * be multiplied through.
@@ -414,7 +416,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
           }}
         >
           {photo ? <ShopPhotoLayers photo={photo} colour={dyeColour(item, sel)}
-            colourName={sel.colour} hardware={hardwareColour(item, sel)} hardwareName={sel.hardware} width={sel.width}
+            colourName={sel.colour} dayColour={honeycombDaySample(sel.colour)?.hex} hardware={hardwareColour(item, sel)} hardwareName={sel.hardware} width={sel.width}
             shape={sel.variant} dimension={sel.dimension} /> : shot || item.image ? (
             <img
               src={shot ? `${FABRIC_SHOT_DIR}/${shot.file}` : item.image}
@@ -503,6 +505,10 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             />
           )}
 
+          {item.id === 'roller-blinds' && shot?.mask && (
+            <FabricWeaveLayer name={sel.colour} mask={FABRIC_SHOT_DIR + '/' + shot.mask}
+              position={item.imagePosition ?? '50% 45%'} lifted={lit} />
+          )}
           {/* THE TINT — THE PART OF A COLOUR THAT COSTS NO LIGHT, and only a
               sheer has one.
 

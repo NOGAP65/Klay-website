@@ -1,3 +1,4 @@
+import { ROLLER_HARDWARE } from '@/features/fabrics';
 // ---------------------------------------------------------------------------
 // 5. The visualiser — the centrepiece, and the only section on the page that
 // does real work.
@@ -454,7 +455,7 @@ export function VisualiserShowcase() {
         type: product?.type ?? 'Roller Blind',
         blindType: w.blindType,
         fabricColour: w.fabricColour,
-        hardwareColour: w.hardwareColour,
+        hardwareColour: ROLLER_HARDWARE.find(h => h.id === w.hardwareColour)?.label ?? w.hardwareColour,
         windowSize: w.windowSize,
         operation: w.operation,
         price: priceWindow(w, 'blind'),

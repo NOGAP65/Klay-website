@@ -42,6 +42,7 @@
 // is to change the deck they came from, not this file.
 // ---------------------------------------------------------------------------
 
+import { ROLLER_HARDWARE, fabricCollections, fabricPalette, rollerColour } from '@/features/fabrics'
 import { HARDWARE_OPTIONS } from '../../data/products'
 import {
   HANDLE_FINISHES,
@@ -89,7 +90,7 @@ import { FLYSCREEN_CONFIGURATIONS, FLYSCREEN_COLOURS, flyscreenSpecifications } 
 // Only the four ids below have a fixed column; these two ride in options and in
 // the line id, so two differently-configured wardrobes stay two lines.
 export type FieldId =
-  | 'variant' | 'colour' | 'hardware' | 'size' | 'operation'
+  | 'collection' | 'variant' | 'colour' | 'hardware' | 'size' | 'operation'
   | 'width'
   | 'dimension'
   | 'glass'
@@ -556,7 +557,9 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
       v('sunscreen', 'Sunscreen'),
       v('dual', 'Dual'),
     ],
-    hardware: true,
+    hardwareChoices: ROLLER_HARDWARE,
+    hardwareLabel: 'Hardware colour',
+    showFinishSelection: true,
     size: true,
     operation: true,
     colourLabel: 'Fabric colour',
@@ -573,10 +576,7 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     size: true,
     operation: true,
   },
-  // NO MATERIAL ROW: A VENETIAN IS SOLD BY COLOUR. It carried
-  // Aluminium / Timber / Faux, which is a substrate rather than a choice a
-  // customer browses — and it was standing in for the colour card the product
-  // should always have had. It has one now; see SLAT_COLOURS.
+  // Material families and their colours come from the supplied sample library.
   'venetian-blinds': {
     size: true,
     operation: true,
@@ -824,14 +824,22 @@ export const fieldsFor = (item: CatalogueItem, sel?: Selection): ConfigField[] =
   // frame is a trim on it. An awning is the exception and says so — see
   // hardwareFirst.
   const colourField = () => {
-    if (!item.colours) return
+    const collections = fabricCollections(item.id, sel?.variant)
+    const collection = collections.includes(sel?.collection ?? '') ? sel?.collection : collections[0]
+    if (collections.length > 1) fields.push({
+      id: 'collection', label: item.id === 'venetian-blinds' ? 'Material' : 'Fabric range',
+      kind: 'chips', choices: collections.map(name => v(name, name)), listed: true,
+    })
+    const supplied = fabricPalette(item.id, sel?.variant, collection)
+    const colours: CatalogueItem['colours'] = supplied.length ? supplied : item.colours
+    if (!colours) return
     fields.push({
       id: 'colour',
       label: options.colourLabel ?? 'Colour',
       kind: options.colourKind ?? 'swatches',
-      choices: item.colours.map(c => ({ id: c.name, label: c.name, hex: c.hex, texture: c.texture, mirror: c.mirror })),
-      showSelection: options.showFinishSelection,
-      defaultChoice: options.defaultColour,
+      choices: colours.map(c => ({ id: c.name, label: c.name, hex: c.hex, texture: c.texture, mirror: c.mirror })),
+      showSelection: supplied.length > 0 || options.showFinishSelection,
+      defaultChoice: item.id === 'roller-blinds' ? rollerColour(sel?.variant ?? 'blockout', sel?.colour) : options.defaultColour,
     })
   }
   // A product supplies its own metalwork list where its metalwork is not a
@@ -973,7 +981,7 @@ export const defaultSelection = (item: CatalogueItem): Selection => {
 export const reconcile = (item: CatalogueItem, sel: Selection): Selection => {
   const next = { ...sel }
   for (const f of fieldsFor(item, next)) {
-    if (next[f.id] !== undefined && !f.choices.some(c => c.id === next[f.id])) {
+    if (!f.choices.some(c => c.id === next[f.id])) {
       next[f.id] = firstChoice(f)
     }
   }
