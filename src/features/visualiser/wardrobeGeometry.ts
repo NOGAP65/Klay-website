@@ -257,19 +257,7 @@ export const LAYOUT_COLUMNS: Record<string, Column[]> = {
  * is the wrong product: it put a white panel between the run and the wall it is
  * fixed to, and on Forma 1 — which is a rail, a shelf and a divider — it
  * invented a carcass the customer is not buying. */
-/** HOW MANY FACE POSTS, which is not the same question as whether there is one.
- *
- * A face post is a front upright carrying the shelves at mid-span. It sits on
- * the FRONT edge rather than running the full depth — a full-depth board would
- * make two cupboards of what is meant to be one open run.
- *
- * Counted off the deck's own elevations rather than its spec table, because the
- * table cannot tell these apart: it calls LIN02, LIN05 and LINBR02 all "4 x
- * 447mm Shelves Face Post", singular, and the drawings show one, two and one.
- * LIN01 is made at 900 and 1200 only and spans without help.
- *
- * The count is what the width needs: a 3600 run on a single post is two 1800
- * spans, which is a shelf that dips. */
+/** Number of shelving dividers. Each divider now spans the full shelf depth, as specified for the current range. */
 export const facePostsFor = (id: string): number =>
   id === 'LIN05' ? 2 : id === 'LIN02' || id === 'LINBR02' ? 1 : 0;
 

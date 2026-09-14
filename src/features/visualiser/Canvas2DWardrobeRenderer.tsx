@@ -1002,10 +1002,9 @@ export function buildCarcass(
     const runW = posts > 0 ? columns[0].widthMm : 0;
     for (let i = 1; i <= posts; i++) {
       boxes.push({
-        // The face bar runs in front of the shelves from floor to top shelf.
-        // Coplanar shelf/post faces hid sections of the upright at angled views.
-        x: sx + (runW / (posts + 1)) * i - BOARD_MM / 2, y: 0, z: D,
-        w: BOARD_MM, h: H, d: BOARD_MM,
+        // A full-depth divider runs from the floor to the underside of the top shelf.
+        x: sx + (runW / (posts + 1)) * i - BOARD_MM / 2, y: 0, z: BOARD_MM,
+        w: BOARD_MM, h: H - BOARD_MM, d: D - BOARD_MM,
         plain: true,
       });
     }
@@ -1148,6 +1147,25 @@ export function buildCarcass(
 
     x += cw + BOARD_MM;
   });
+
+  // Interior shelves meet the dividers instead of passing through them.
+  // Cutting each run at the panel also avoids overlapping front faces at an angle.
+  if (model.kind === 'shelving' && facePostsFor(layoutId) > 0) {
+    const dividers = boxes.filter(b => b.w === BOARD_MM && b.y === 0 && b.h === H - BOARD_MM && b.d === D - BOARD_MM);
+    for (let i = boxes.length - 1; i >= 0; i--) {
+      const board = boxes[i];
+      if (board.h !== BOARD_MM || board.y >= H - BOARD_MM || board.w <= BOARD_MM) continue;
+      let spans = [board];
+      for (const panel of dividers) spans = spans.flatMap(b => {
+        if (panel.x >= b.x + b.w || panel.x + panel.w <= b.x) return [b];
+        const pieces: Box[] = [];
+        if (panel.x > b.x) pieces.push({ ...b, w: panel.x - b.x });
+        if (panel.x + panel.w < b.x + b.w) pieces.push({ ...b, x: panel.x + panel.w, w: b.x + b.w - panel.x - panel.w });
+        return pieces;
+      });
+      boxes.splice(i, 1, ...spans);
+    }
+  }
 
   // THE TRACE IS THE FRONT OF THE WARDROBE, not its back.
   //
