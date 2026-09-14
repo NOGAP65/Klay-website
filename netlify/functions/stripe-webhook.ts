@@ -23,7 +23,7 @@ import { db } from '../lib/db'
 import { env, missing } from '../lib/env'
 import { json, methodNotAllowed, notConfigured, serverError } from '../lib/http'
 import { confirmOrderPaid, notifyOrderPaid } from '../lib/notify'
-import { blindLabel, sizeLabel, type BlindType, type WindowSize } from '../../src/lib/pricing'
+import { blindLabel, sizeLabel, type BlindType, type WindowSize } from '../../shared-core/pricing'
 
 /** Find the order for a session: by session id, falling back to the metadata
  *  order_id in case attaching the session id failed at checkout time. */

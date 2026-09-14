@@ -11,7 +11,6 @@ export interface FabricSample {
   texture: string;
   renderTexture: string;
   weaveTexture: string;
-  source: string;
 }
 
 export const FABRIC_SAMPLES: FabricSample[] = samples;

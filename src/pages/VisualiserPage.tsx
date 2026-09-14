@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { radius, tokens } from '@/ds';
 import { useIsMobile } from '@/shared';
 
-import { bookingLink } from '../lib/bookingLink';
+import { bookingLink } from '@/features/booking';
 import { KlayConfigurator, VisualiserControls, useVisualiserStore, ProductCategory } from '@/features/visualiser';
 
 const CATEGORY_TAB_STYLE = {
@@ -25,10 +25,12 @@ function CategorySwitcher() {
   const tabs: { id: ProductCategory; label: string }[] = [
     { id: 'blind', label: 'Blinds' },
     { id: 'curtain', label: 'Curtains' },
+    { id: 'wardrobe', label: 'Wardrobes' },
+    { id: 'shelving', label: 'Shelving' },
   ];
 
   return (
-    <div style={{ display: 'flex', marginBottom: 20 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', marginBottom: 20 }}>
       {tabs.map(tab => (
         <button
           key={tab.id}
@@ -55,7 +57,7 @@ export default function VisualiserPage() {
   const [searchParams] = useSearchParams();
   const key = searchParams.get('key');
   const hostname = window.location.hostname;
-  const allowedHosts = ['localhost', 'klay-website.netlify.app', 'klay-interiors.netlify.app', 'klayinteriors.com.au', 'www.klayinteriors.com.au'];
+  const allowedHosts = ['localhost', '127.0.0.1', '[::1]', 'klay-website.netlify.app', 'klay-interiors.netlify.app', 'klayinteriors.com.au', 'www.klayinteriors.com.au'];
   const validKeys = ['klay-internal-2026', 'ella-embed-2026'];
   const isAllowed = allowedHosts.includes(hostname) || validKeys.includes(key ?? '');
 

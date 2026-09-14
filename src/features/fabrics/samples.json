@@ -8,8 +8,7 @@
     "hex": "#fffffd",
     "texture": "/images/fabrics/cw/aluminium-frost.webp",
     "renderTexture": "/images/fabrics/cw/aluminium-frost-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/aluminium-frost-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/Aluminium/Colours/blinds-venetians-icons-frost.png"
+    "weaveTexture": "/images/fabrics/cw/aluminium-frost-weave.webp"
   },
   {
     "id": "aluminium-jet-black",
@@ -20,8 +19,7 @@
     "hex": "#000201",
     "texture": "/images/fabrics/cw/aluminium-jet-black.webp",
     "renderTexture": "/images/fabrics/cw/aluminium-jet-black-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/aluminium-jet-black-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/Aluminium/Colours/blinds-venetians-icons-jet-black.png"
+    "weaveTexture": "/images/fabrics/cw/aluminium-jet-black-weave.webp"
   },
   {
     "id": "aluminium-linen",
@@ -32,8 +30,7 @@
     "hex": "#fefbe7",
     "texture": "/images/fabrics/cw/aluminium-linen.webp",
     "renderTexture": "/images/fabrics/cw/aluminium-linen-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/aluminium-linen-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/Aluminium/Colours/blinds-venetians-icons-linen.png"
+    "weaveTexture": "/images/fabrics/cw/aluminium-linen-weave.webp"
   },
   {
     "id": "aluminium-plain-white",
@@ -44,8 +41,7 @@
     "hex": "#fafafa",
     "texture": "/images/fabrics/cw/aluminium-plain-white.webp",
     "renderTexture": "/images/fabrics/cw/aluminium-plain-white-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/aluminium-plain-white-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/Aluminium/Colours/blinds-venetians-icons-plain-white.png"
+    "weaveTexture": "/images/fabrics/cw/aluminium-plain-white-weave.webp"
   },
   {
     "id": "aluminium-platinium",
@@ -56,8 +52,7 @@
     "hex": "#a2a7ad",
     "texture": "/images/fabrics/cw/aluminium-platinium.webp",
     "renderTexture": "/images/fabrics/cw/aluminium-platinium-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/aluminium-platinium-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/Aluminium/Colours/blinds-venetians-icons-platinium.png"
+    "weaveTexture": "/images/fabrics/cw/aluminium-platinium-weave.webp"
   },
   {
     "id": "aluminium-silk",
@@ -68,8 +63,7 @@
     "hex": "#ece4cb",
     "texture": "/images/fabrics/cw/aluminium-silk.webp",
     "renderTexture": "/images/fabrics/cw/aluminium-silk-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/aluminium-silk-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/Aluminium/Colours/blinds-venetians-icons-silk.png"
+    "weaveTexture": "/images/fabrics/cw/aluminium-silk-weave.webp"
   },
   {
     "id": "basswood-cascade",
@@ -80,8 +74,7 @@
     "hex": "#be6310",
     "texture": "/images/fabrics/cw/basswood-cascade.webp",
     "renderTexture": "/images/fabrics/cw/basswood-cascade-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/basswood-cascade-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/Basswood/Colours/blinds-venetians-icons-cascade.png"
+    "weaveTexture": "/images/fabrics/cw/basswood-cascade-weave.webp"
   },
   {
     "id": "basswood-cherry-blossom",
@@ -92,8 +85,7 @@
     "hex": "#7b3f26",
     "texture": "/images/fabrics/cw/basswood-cherry-blossom.webp",
     "renderTexture": "/images/fabrics/cw/basswood-cherry-blossom-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/basswood-cherry-blossom-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/Basswood/Colours/blinds-venetians-icons-cherry-blossom.png"
+    "weaveTexture": "/images/fabrics/cw/basswood-cherry-blossom-weave.webp"
   },
   {
     "id": "basswood-pure-white",
@@ -104,8 +96,7 @@
     "hex": "#f3f3ee",
     "texture": "/images/fabrics/cw/basswood-pure-white.webp",
     "renderTexture": "/images/fabrics/cw/basswood-pure-white-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/basswood-pure-white-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/Basswood/Colours/blinds-venetians-icons-pure-white.png"
+    "weaveTexture": "/images/fabrics/cw/basswood-pure-white-weave.webp"
   },
   {
     "id": "basswood-ultra-white",
@@ -116,8 +107,7 @@
     "hex": "#f8f8f7",
     "texture": "/images/fabrics/cw/basswood-ultra-white.webp",
     "renderTexture": "/images/fabrics/cw/basswood-ultra-white-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/basswood-ultra-white-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/Basswood/Colours/blinds-venetians-icons-ultra-white.png"
+    "weaveTexture": "/images/fabrics/cw/basswood-ultra-white-weave.webp"
   },
   {
     "id": "basswood-walnut",
@@ -128,8 +118,7 @@
     "hex": "#975913",
     "texture": "/images/fabrics/cw/basswood-walnut.webp",
     "renderTexture": "/images/fabrics/cw/basswood-walnut-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/basswood-walnut-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/Basswood/Colours/blinds-venetians-icons-walnut.png"
+    "weaveTexture": "/images/fabrics/cw/basswood-walnut-weave.webp"
   },
   {
     "id": "ultraslat-coastal-white",
@@ -140,8 +129,7 @@
     "hex": "#f2f2f2",
     "texture": "/images/fabrics/cw/ultraslat-coastal-white.webp",
     "renderTexture": "/images/fabrics/cw/ultraslat-coastal-white-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/ultraslat-coastal-white-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/UltraSlat/Colours/blinds-venetians-icons-1-coastal-white3.png"
+    "weaveTexture": "/images/fabrics/cw/ultraslat-coastal-white-weave.webp"
   },
   {
     "id": "ultraslat-timeless-white",
@@ -152,8 +140,7 @@
     "hex": "#eaebec",
     "texture": "/images/fabrics/cw/ultraslat-timeless-white.webp",
     "renderTexture": "/images/fabrics/cw/ultraslat-timeless-white-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/ultraslat-timeless-white-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/UltraSlat/Colours/blinds-venetians-icons-2-timeless-white3.png"
+    "weaveTexture": "/images/fabrics/cw/ultraslat-timeless-white-weave.webp"
   },
   {
     "id": "ultraslat-breeze-white",
@@ -164,8 +151,7 @@
     "hex": "#ebebe8",
     "texture": "/images/fabrics/cw/ultraslat-breeze-white.webp",
     "renderTexture": "/images/fabrics/cw/ultraslat-breeze-white-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/ultraslat-breeze-white-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/UltraSlat/Colours/blinds-venetians-icons-3-breeze-white3.png"
+    "weaveTexture": "/images/fabrics/cw/ultraslat-breeze-white-weave.webp"
   },
   {
     "id": "ultraslat-beachshell",
@@ -176,8 +162,7 @@
     "hex": "#e8e5d9",
     "texture": "/images/fabrics/cw/ultraslat-beachshell.webp",
     "renderTexture": "/images/fabrics/cw/ultraslat-beachshell-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/ultraslat-beachshell-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/UltraSlat/Colours/blinds-venetians-icons-4-beachshell3.png"
+    "weaveTexture": "/images/fabrics/cw/ultraslat-beachshell-weave.webp"
   },
   {
     "id": "ultraslat-manuscript",
@@ -188,8 +173,7 @@
     "hex": "#ddcfc3",
     "texture": "/images/fabrics/cw/ultraslat-manuscript.webp",
     "renderTexture": "/images/fabrics/cw/ultraslat-manuscript-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/ultraslat-manuscript-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/2. Venetian Blinds/UltraSlat/Colours/blinds-venetians-icons-5-manuscript3.png"
+    "weaveTexture": "/images/fabrics/cw/ultraslat-manuscript-weave.webp"
   },
   {
     "id": "honeycomb-blockout-ashira",
@@ -201,8 +185,7 @@
     "hex": "#c0c0c0",
     "texture": "/images/fabrics/cw/honeycomb-blockout-ashira.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-blockout-ashira-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-blockout-ashira-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Blockout/ashira.jpg"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-blockout-ashira-weave.webp"
   },
   {
     "id": "honeycomb-blockout-dunora",
@@ -214,8 +197,7 @@
     "hex": "#f7dcbe",
     "texture": "/images/fabrics/cw/honeycomb-blockout-dunora.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-blockout-dunora-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-blockout-dunora-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Blockout/dunora.jpg"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-blockout-dunora-weave.webp"
   },
   {
     "id": "honeycomb-blockout-frostal",
@@ -227,8 +209,7 @@
     "hex": "#ffffff",
     "texture": "/images/fabrics/cw/honeycomb-blockout-frostal.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-blockout-frostal-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-blockout-frostal-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Blockout/frostal.jpg"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-blockout-frostal-weave.webp"
   },
   {
     "id": "honeycomb-blockout-purelisse",
@@ -240,8 +221,7 @@
     "hex": "#faf9f5",
     "texture": "/images/fabrics/cw/honeycomb-blockout-purelisse.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-blockout-purelisse-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-blockout-purelisse-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Blockout/purelisse.jpg"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-blockout-purelisse-weave.webp"
   },
   {
     "id": "honeycomb-blockout-regal-slate",
@@ -253,8 +233,7 @@
     "hex": "#808080",
     "texture": "/images/fabrics/cw/honeycomb-blockout-regal-slate.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-blockout-regal-slate-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-blockout-regal-slate-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Blockout/regal-slate.jpg"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-blockout-regal-slate-weave.webp"
   },
   {
     "id": "honeycomb-blockout-truffle",
@@ -266,8 +245,7 @@
     "hex": "#dec6a2",
     "texture": "/images/fabrics/cw/honeycomb-blockout-truffle.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-blockout-truffle-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-blockout-truffle-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Blockout/truffle.jpg"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-blockout-truffle-weave.webp"
   },
   {
     "id": "honeycomb-lightfilter-ashira",
@@ -279,8 +257,7 @@
     "hex": "#c0c0c0",
     "texture": "/images/fabrics/cw/honeycomb-lightfilter-ashira.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-lightfilter-ashira-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-lightfilter-ashira-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Light Filtering/ashira.jpg"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-lightfilter-ashira-weave.webp"
   },
   {
     "id": "honeycomb-lightfilter-dunora",
@@ -292,8 +269,7 @@
     "hex": "#f7dcbe",
     "texture": "/images/fabrics/cw/honeycomb-lightfilter-dunora.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-lightfilter-dunora-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-lightfilter-dunora-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Light Filtering/dunora.jpg"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-lightfilter-dunora-weave.webp"
   },
   {
     "id": "honeycomb-lightfilter-frostal",
@@ -305,8 +281,7 @@
     "hex": "#ffffff",
     "texture": "/images/fabrics/cw/honeycomb-lightfilter-frostal.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-lightfilter-frostal-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-lightfilter-frostal-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Light Filtering/frostal.jpg"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-lightfilter-frostal-weave.webp"
   },
   {
     "id": "honeycomb-lightfilter-purelisse",
@@ -318,8 +293,7 @@
     "hex": "#faf9f5",
     "texture": "/images/fabrics/cw/honeycomb-lightfilter-purelisse.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-lightfilter-purelisse-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-lightfilter-purelisse-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Light Filtering/purelisse.jpg"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-lightfilter-purelisse-weave.webp"
   },
   {
     "id": "honeycomb-lightfilter-regal-slate",
@@ -331,8 +305,7 @@
     "hex": "#808080",
     "texture": "/images/fabrics/cw/honeycomb-lightfilter-regal-slate.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-lightfilter-regal-slate-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-lightfilter-regal-slate-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Light Filtering/regal-slate.jpg"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-lightfilter-regal-slate-weave.webp"
   },
   {
     "id": "honeycomb-lightfilter-truffle",
@@ -344,8 +317,7 @@
     "hex": "#dec6a2",
     "texture": "/images/fabrics/cw/honeycomb-lightfilter-truffle.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-lightfilter-truffle-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-lightfilter-truffle-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Light Filtering/truffle.jpg"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-lightfilter-truffle-weave.webp"
   },
   {
     "id": "honeycomb-sheer-ice",
@@ -357,8 +329,7 @@
     "hex": "#fdfdfd",
     "texture": "/images/fabrics/cw/honeycomb-sheer-ice.webp",
     "renderTexture": "/images/fabrics/cw/honeycomb-sheer-ice-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/honeycomb-sheer-ice-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/5. Honeycomb/Fabric Colours/Sheer/ice.png"
+    "weaveTexture": "/images/fabrics/cw/honeycomb-sheer-ice-weave.webp"
   },
   {
     "id": "roller-hardware-black",
@@ -369,8 +340,7 @@
     "hex": "#000000",
     "texture": "/images/fabrics/cw/roller-hardware-black.webp",
     "renderTexture": "/images/fabrics/cw/roller-hardware-black-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/roller-hardware-black-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/6. Roller Blind/bottom rail Colour Black.png"
+    "weaveTexture": "/images/fabrics/cw/roller-hardware-black-weave.webp"
   },
   {
     "id": "roller-hardware-cream",
@@ -381,8 +351,7 @@
     "hex": "#e2dfc2",
     "texture": "/images/fabrics/cw/roller-hardware-cream.webp",
     "renderTexture": "/images/fabrics/cw/roller-hardware-cream-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/roller-hardware-cream-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/6. Roller Blind/bottom rail Colour Cream.png"
+    "weaveTexture": "/images/fabrics/cw/roller-hardware-cream-weave.webp"
   },
   {
     "id": "roller-hardware-platinum",
@@ -393,8 +362,7 @@
     "hex": "#d5d7d8",
     "texture": "/images/fabrics/cw/roller-hardware-platinum.webp",
     "renderTexture": "/images/fabrics/cw/roller-hardware-platinum-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/roller-hardware-platinum-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/6. Roller Blind/bottom rail Colour Platinum.png"
+    "weaveTexture": "/images/fabrics/cw/roller-hardware-platinum-weave.webp"
   },
   {
     "id": "roller-hardware-white",
@@ -405,8 +373,7 @@
     "hex": "#ffffff",
     "texture": "/images/fabrics/cw/roller-hardware-white.webp",
     "renderTexture": "/images/fabrics/cw/roller-hardware-white-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/roller-hardware-white-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/6. Roller Blind/bottom rail colour white.png"
+    "weaveTexture": "/images/fabrics/cw/roller-hardware-white-weave.webp"
   },
   {
     "id": "essence-buttermilk",
@@ -417,8 +384,7 @@
     "hex": "#e5e3cf",
     "texture": "/images/fabrics/cw/essence-buttermilk.webp",
     "renderTexture": "/images/fabrics/cw/essence-buttermilk-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-buttermilk-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Buttermilk.png"
+    "weaveTexture": "/images/fabrics/cw/essence-buttermilk-weave.webp"
   },
   {
     "id": "essence-canyon",
@@ -429,8 +395,7 @@
     "hex": "#9a8d7d",
     "texture": "/images/fabrics/cw/essence-canyon.webp",
     "renderTexture": "/images/fabrics/cw/essence-canyon-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-canyon-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Canyon.png"
+    "weaveTexture": "/images/fabrics/cw/essence-canyon-weave.webp"
   },
   {
     "id": "essence-carbon",
@@ -441,8 +406,7 @@
     "hex": "#242527",
     "texture": "/images/fabrics/cw/essence-carbon.webp",
     "renderTexture": "/images/fabrics/cw/essence-carbon-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-carbon-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Carbon.png"
+    "weaveTexture": "/images/fabrics/cw/essence-carbon-weave.webp"
   },
   {
     "id": "essence-china",
@@ -453,8 +417,7 @@
     "hex": "#e9e7db",
     "texture": "/images/fabrics/cw/essence-china.webp",
     "renderTexture": "/images/fabrics/cw/essence-china-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-china-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence China.png"
+    "weaveTexture": "/images/fabrics/cw/essence-china-weave.webp"
   },
   {
     "id": "essence-cinder",
@@ -465,8 +428,7 @@
     "hex": "#262729",
     "texture": "/images/fabrics/cw/essence-cinder.webp",
     "renderTexture": "/images/fabrics/cw/essence-cinder-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-cinder-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Cinder.png"
+    "weaveTexture": "/images/fabrics/cw/essence-cinder-weave.webp"
   },
   {
     "id": "essence-cyclone",
@@ -477,8 +439,7 @@
     "hex": "#373c42",
     "texture": "/images/fabrics/cw/essence-cyclone.webp",
     "renderTexture": "/images/fabrics/cw/essence-cyclone-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-cyclone-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Cyclone.png"
+    "weaveTexture": "/images/fabrics/cw/essence-cyclone-weave.webp"
   },
   {
     "id": "essence-fog",
@@ -489,8 +450,7 @@
     "hex": "#c1c8ca",
     "texture": "/images/fabrics/cw/essence-fog.webp",
     "renderTexture": "/images/fabrics/cw/essence-fog-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-fog-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Fog.png"
+    "weaveTexture": "/images/fabrics/cw/essence-fog-weave.webp"
   },
   {
     "id": "essence-fossil",
@@ -501,8 +461,7 @@
     "hex": "#bdc2c0",
     "texture": "/images/fabrics/cw/essence-fossil.webp",
     "renderTexture": "/images/fabrics/cw/essence-fossil-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-fossil-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Fossil.png"
+    "weaveTexture": "/images/fabrics/cw/essence-fossil-weave.webp"
   },
   {
     "id": "essence-galacial",
@@ -513,8 +472,7 @@
     "hex": "#eaeff1",
     "texture": "/images/fabrics/cw/essence-galacial.webp",
     "renderTexture": "/images/fabrics/cw/essence-galacial-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-galacial-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Galacial.png"
+    "weaveTexture": "/images/fabrics/cw/essence-galacial-weave.webp"
   },
   {
     "id": "essence-galaxy-grey",
@@ -525,8 +483,7 @@
     "hex": "#585d62",
     "texture": "/images/fabrics/cw/essence-galaxy-grey.webp",
     "renderTexture": "/images/fabrics/cw/essence-galaxy-grey-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-galaxy-grey-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Galaxy Grey.png"
+    "weaveTexture": "/images/fabrics/cw/essence-galaxy-grey-weave.webp"
   },
   {
     "id": "essence-gossamer",
@@ -537,8 +494,7 @@
     "hex": "#e8ebe5",
     "texture": "/images/fabrics/cw/essence-gossamer.webp",
     "renderTexture": "/images/fabrics/cw/essence-gossamer-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-gossamer-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Gossamer.png"
+    "weaveTexture": "/images/fabrics/cw/essence-gossamer-weave.webp"
   },
   {
     "id": "essence-ice",
@@ -549,8 +505,7 @@
     "hex": "#e5e9eb",
     "texture": "/images/fabrics/cw/essence-ice.webp",
     "renderTexture": "/images/fabrics/cw/essence-ice-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-ice-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Ice.png"
+    "weaveTexture": "/images/fabrics/cw/essence-ice-weave.webp"
   },
   {
     "id": "essence-lavendar-haze",
@@ -561,8 +516,7 @@
     "hex": "#b5b6b3",
     "texture": "/images/fabrics/cw/essence-lavendar-haze.webp",
     "renderTexture": "/images/fabrics/cw/essence-lavendar-haze-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-lavendar-haze-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Lavendar Haze.png"
+    "weaveTexture": "/images/fabrics/cw/essence-lavendar-haze-weave.webp"
   },
   {
     "id": "essence-midnight-mist",
@@ -573,8 +527,7 @@
     "hex": "#454545",
     "texture": "/images/fabrics/cw/essence-midnight-mist.webp",
     "renderTexture": "/images/fabrics/cw/essence-midnight-mist-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-midnight-mist-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Midnight Mist.png"
+    "weaveTexture": "/images/fabrics/cw/essence-midnight-mist-weave.webp"
   },
   {
     "id": "essence-nightshadow",
@@ -585,8 +538,7 @@
     "hex": "#364047",
     "texture": "/images/fabrics/cw/essence-nightshadow.webp",
     "renderTexture": "/images/fabrics/cw/essence-nightshadow-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-nightshadow-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Nightshadow.png"
+    "weaveTexture": "/images/fabrics/cw/essence-nightshadow-weave.webp"
   },
   {
     "id": "essence-nutmeg",
@@ -597,8 +549,7 @@
     "hex": "#e7dfc4",
     "texture": "/images/fabrics/cw/essence-nutmeg.webp",
     "renderTexture": "/images/fabrics/cw/essence-nutmeg-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-nutmeg-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Nutmeg.png"
+    "weaveTexture": "/images/fabrics/cw/essence-nutmeg-weave.webp"
   },
   {
     "id": "essence-pastel",
@@ -609,8 +560,7 @@
     "hex": "#e1e3d5",
     "texture": "/images/fabrics/cw/essence-pastel.webp",
     "renderTexture": "/images/fabrics/cw/essence-pastel-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-pastel-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Pastel.png"
+    "weaveTexture": "/images/fabrics/cw/essence-pastel-weave.webp"
   },
   {
     "id": "essence-pavement",
@@ -621,8 +571,7 @@
     "hex": "#b8bfc7",
     "texture": "/images/fabrics/cw/essence-pavement.webp",
     "renderTexture": "/images/fabrics/cw/essence-pavement-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-pavement-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Pavement.png"
+    "weaveTexture": "/images/fabrics/cw/essence-pavement-weave.webp"
   },
   {
     "id": "essence-sable",
@@ -633,8 +582,7 @@
     "hex": "#9d9992",
     "texture": "/images/fabrics/cw/essence-sable.webp",
     "renderTexture": "/images/fabrics/cw/essence-sable-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-sable-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Sable.png"
+    "weaveTexture": "/images/fabrics/cw/essence-sable-weave.webp"
   },
   {
     "id": "essence-sahara",
@@ -645,8 +593,7 @@
     "hex": "#b8b5a8",
     "texture": "/images/fabrics/cw/essence-sahara.webp",
     "renderTexture": "/images/fabrics/cw/essence-sahara-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-sahara-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Sahara.png"
+    "weaveTexture": "/images/fabrics/cw/essence-sahara-weave.webp"
   },
   {
     "id": "essence-sandstone",
@@ -657,8 +604,7 @@
     "hex": "#d6d0ba",
     "texture": "/images/fabrics/cw/essence-sandstone.webp",
     "renderTexture": "/images/fabrics/cw/essence-sandstone-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-sandstone-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Sandstone.png"
+    "weaveTexture": "/images/fabrics/cw/essence-sandstone-weave.webp"
   },
   {
     "id": "essence-smokey",
@@ -669,8 +615,7 @@
     "hex": "#b1b7b7",
     "texture": "/images/fabrics/cw/essence-smokey.webp",
     "renderTexture": "/images/fabrics/cw/essence-smokey-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-smokey-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Smokey.png"
+    "weaveTexture": "/images/fabrics/cw/essence-smokey-weave.webp"
   },
   {
     "id": "essence-stone",
@@ -681,8 +626,7 @@
     "hex": "#aeb5b9",
     "texture": "/images/fabrics/cw/essence-stone.webp",
     "renderTexture": "/images/fabrics/cw/essence-stone-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/essence-stone-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Essence/Essence Stone.png"
+    "weaveTexture": "/images/fabrics/cw/essence-stone-weave.webp"
   },
   {
     "id": "montecarlo-aggregate",
@@ -693,8 +637,7 @@
     "hex": "#535353",
     "texture": "/images/fabrics/cw/montecarlo-aggregate.webp",
     "renderTexture": "/images/fabrics/cw/montecarlo-aggregate-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/montecarlo-aggregate-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Montecarlo/Montecarlo Aggregate.png"
+    "weaveTexture": "/images/fabrics/cw/montecarlo-aggregate-weave.webp"
   },
   {
     "id": "montecarlo-alpine",
@@ -705,8 +648,7 @@
     "hex": "#e5e8eb",
     "texture": "/images/fabrics/cw/montecarlo-alpine.webp",
     "renderTexture": "/images/fabrics/cw/montecarlo-alpine-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/montecarlo-alpine-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Montecarlo/Montecarlo Alpine.png"
+    "weaveTexture": "/images/fabrics/cw/montecarlo-alpine-weave.webp"
   },
   {
     "id": "montecarlo-frosted-silver",
@@ -717,8 +659,7 @@
     "hex": "#aaacaf",
     "texture": "/images/fabrics/cw/montecarlo-frosted-silver.webp",
     "renderTexture": "/images/fabrics/cw/montecarlo-frosted-silver-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/montecarlo-frosted-silver-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Montecarlo/Montecarlo Frosted Silver.png"
+    "weaveTexture": "/images/fabrics/cw/montecarlo-frosted-silver-weave.webp"
   },
   {
     "id": "montecarlo-oak",
@@ -729,8 +670,7 @@
     "hex": "#c2b9b3",
     "texture": "/images/fabrics/cw/montecarlo-oak.webp",
     "renderTexture": "/images/fabrics/cw/montecarlo-oak-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/montecarlo-oak-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Montecarlo/Montecarlo Oak.png"
+    "weaveTexture": "/images/fabrics/cw/montecarlo-oak-weave.webp"
   },
   {
     "id": "montecarlo-optic-white",
@@ -741,8 +681,7 @@
     "hex": "#e4e7e8",
     "texture": "/images/fabrics/cw/montecarlo-optic-white.webp",
     "renderTexture": "/images/fabrics/cw/montecarlo-optic-white-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/montecarlo-optic-white-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Montecarlo/Montecarlo Optic White.png"
+    "weaveTexture": "/images/fabrics/cw/montecarlo-optic-white-weave.webp"
   },
   {
     "id": "montecarlo-phantom",
@@ -753,8 +692,7 @@
     "hex": "#515256",
     "texture": "/images/fabrics/cw/montecarlo-phantom.webp",
     "renderTexture": "/images/fabrics/cw/montecarlo-phantom-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/montecarlo-phantom-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Montecarlo/Montecarlo Phantom.png"
+    "weaveTexture": "/images/fabrics/cw/montecarlo-phantom-weave.webp"
   },
   {
     "id": "panorama-5percent-anthracite",
@@ -765,8 +703,7 @@
     "hex": "#2d2d2e",
     "texture": "/images/fabrics/cw/panorama-5percent-anthracite.webp",
     "renderTexture": "/images/fabrics/cw/panorama-5percent-anthracite-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/panorama-5percent-anthracite-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Panorama 5%/Panorama 5% Anthracite.png"
+    "weaveTexture": "/images/fabrics/cw/panorama-5percent-anthracite-weave.webp"
   },
   {
     "id": "panorama-5percent-birch",
@@ -777,8 +714,7 @@
     "hex": "#d3c5b5",
     "texture": "/images/fabrics/cw/panorama-5percent-birch.webp",
     "renderTexture": "/images/fabrics/cw/panorama-5percent-birch-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/panorama-5percent-birch-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Panorama 5%/Panorama 5% Birch.png"
+    "weaveTexture": "/images/fabrics/cw/panorama-5percent-birch-weave.webp"
   },
   {
     "id": "panorama-5percent-foggy",
@@ -789,8 +725,7 @@
     "hex": "#b1b2b4",
     "texture": "/images/fabrics/cw/panorama-5percent-foggy.webp",
     "renderTexture": "/images/fabrics/cw/panorama-5percent-foggy-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/panorama-5percent-foggy-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Panorama 5%/Panorama 5% Foggy.png"
+    "weaveTexture": "/images/fabrics/cw/panorama-5percent-foggy-weave.webp"
   },
   {
     "id": "panorama-5percent-graphite",
@@ -801,8 +736,7 @@
     "hex": "#494a4d",
     "texture": "/images/fabrics/cw/panorama-5percent-graphite.webp",
     "renderTexture": "/images/fabrics/cw/panorama-5percent-graphite-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/panorama-5percent-graphite-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Panorama 5%/Panorama 5% Graphite.png"
+    "weaveTexture": "/images/fabrics/cw/panorama-5percent-graphite-weave.webp"
   },
   {
     "id": "panorama-5percent-opal",
@@ -813,8 +747,7 @@
     "hex": "#b6b3b2",
     "texture": "/images/fabrics/cw/panorama-5percent-opal.webp",
     "renderTexture": "/images/fabrics/cw/panorama-5percent-opal-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/panorama-5percent-opal-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Panorama 5%/Panorama 5% Opal.png"
+    "weaveTexture": "/images/fabrics/cw/panorama-5percent-opal-weave.webp"
   },
   {
     "id": "panorama-5percent-polar",
@@ -825,8 +758,7 @@
     "hex": "#d5d8da",
     "texture": "/images/fabrics/cw/panorama-5percent-polar.webp",
     "renderTexture": "/images/fabrics/cw/panorama-5percent-polar-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/panorama-5percent-polar-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Panorama 5%/Panorama 5% Polar.png"
+    "weaveTexture": "/images/fabrics/cw/panorama-5percent-polar-weave.webp"
   },
   {
     "id": "panorama-5percent-slate",
@@ -837,8 +769,7 @@
     "hex": "#4e5358",
     "texture": "/images/fabrics/cw/panorama-5percent-slate.webp",
     "renderTexture": "/images/fabrics/cw/panorama-5percent-slate-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/panorama-5percent-slate-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Panorama 5%/Panorama 5% Slate.png"
+    "weaveTexture": "/images/fabrics/cw/panorama-5percent-slate-weave.webp"
   },
   {
     "id": "panorama-5percent-sterling",
@@ -849,8 +780,7 @@
     "hex": "#818084",
     "texture": "/images/fabrics/cw/panorama-5percent-sterling.webp",
     "renderTexture": "/images/fabrics/cw/panorama-5percent-sterling-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/panorama-5percent-sterling-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Panorama 5%/Panorama 5% Sterling.png"
+    "weaveTexture": "/images/fabrics/cw/panorama-5percent-sterling-weave.webp"
   },
   {
     "id": "symphony-ash",
@@ -861,8 +791,7 @@
     "hex": "#cfccc9",
     "texture": "/images/fabrics/cw/symphony-ash.webp",
     "renderTexture": "/images/fabrics/cw/symphony-ash-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/symphony-ash-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Symphony/Symphony Ash.png"
+    "weaveTexture": "/images/fabrics/cw/symphony-ash-weave.webp"
   },
   {
     "id": "symphony-dewy-white",
@@ -873,8 +802,7 @@
     "hex": "#d2d0ce",
     "texture": "/images/fabrics/cw/symphony-dewy-white.webp",
     "renderTexture": "/images/fabrics/cw/symphony-dewy-white-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/symphony-dewy-white-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Symphony/Symphony Dewy White.png"
+    "weaveTexture": "/images/fabrics/cw/symphony-dewy-white-weave.webp"
   },
   {
     "id": "symphony-gunmetal",
@@ -885,8 +813,7 @@
     "hex": "#949292",
     "texture": "/images/fabrics/cw/symphony-gunmetal.webp",
     "renderTexture": "/images/fabrics/cw/symphony-gunmetal-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/symphony-gunmetal-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Symphony/Symphony Gunmetal.png"
+    "weaveTexture": "/images/fabrics/cw/symphony-gunmetal-weave.webp"
   },
   {
     "id": "symphony-mustard",
@@ -897,8 +824,7 @@
     "hex": "#9c8c7f",
     "texture": "/images/fabrics/cw/symphony-mustard.webp",
     "renderTexture": "/images/fabrics/cw/symphony-mustard-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/symphony-mustard-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Symphony/Symphony Mustard.png"
+    "weaveTexture": "/images/fabrics/cw/symphony-mustard-weave.webp"
   },
   {
     "id": "symphony-smoky-quartz",
@@ -909,8 +835,7 @@
     "hex": "#6a6a6c",
     "texture": "/images/fabrics/cw/symphony-smoky-quartz.webp",
     "renderTexture": "/images/fabrics/cw/symphony-smoky-quartz-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/symphony-smoky-quartz-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Symphony/Symphony Smoky Quartz.png"
+    "weaveTexture": "/images/fabrics/cw/symphony-smoky-quartz-weave.webp"
   },
   {
     "id": "symphony-twilight-glint",
@@ -921,8 +846,7 @@
     "hex": "#3b3c3f",
     "texture": "/images/fabrics/cw/symphony-twilight-glint.webp",
     "renderTexture": "/images/fabrics/cw/symphony-twilight-glint-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/symphony-twilight-glint-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Symphony/Symphony Twilight Glint.png"
+    "weaveTexture": "/images/fabrics/cw/symphony-twilight-glint-weave.webp"
   },
   {
     "id": "urbania-brownstone",
@@ -933,8 +857,7 @@
     "hex": "#8a827f",
     "texture": "/images/fabrics/cw/urbania-brownstone.webp",
     "renderTexture": "/images/fabrics/cw/urbania-brownstone-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/urbania-brownstone-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Urbania/Urbania Brownstone.png"
+    "weaveTexture": "/images/fabrics/cw/urbania-brownstone-weave.webp"
   },
   {
     "id": "urbania-dazzle",
@@ -945,8 +868,7 @@
     "hex": "#a39f9e",
     "texture": "/images/fabrics/cw/urbania-dazzle.webp",
     "renderTexture": "/images/fabrics/cw/urbania-dazzle-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/urbania-dazzle-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Urbania/Urbania Dazzle.png"
+    "weaveTexture": "/images/fabrics/cw/urbania-dazzle-weave.webp"
   },
   {
     "id": "urbania-eclipse",
@@ -957,8 +879,7 @@
     "hex": "#4f5052",
     "texture": "/images/fabrics/cw/urbania-eclipse.webp",
     "renderTexture": "/images/fabrics/cw/urbania-eclipse-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/urbania-eclipse-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Urbania/Urbania Eclipse.png"
+    "weaveTexture": "/images/fabrics/cw/urbania-eclipse-weave.webp"
   },
   {
     "id": "urbania-khaki",
@@ -969,8 +890,7 @@
     "hex": "#f5f1eb",
     "texture": "/images/fabrics/cw/urbania-khaki.webp",
     "renderTexture": "/images/fabrics/cw/urbania-khaki-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/urbania-khaki-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Urbania/Urbania Khaki.png"
+    "weaveTexture": "/images/fabrics/cw/urbania-khaki-weave.webp"
   },
   {
     "id": "urbania-night",
@@ -981,8 +901,7 @@
     "hex": "#292c2e",
     "texture": "/images/fabrics/cw/urbania-night.webp",
     "renderTexture": "/images/fabrics/cw/urbania-night-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/urbania-night-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Urbania/Urbania Night.png"
+    "weaveTexture": "/images/fabrics/cw/urbania-night-weave.webp"
   },
   {
     "id": "urbania-parchment",
@@ -993,8 +912,7 @@
     "hex": "#e3ded7",
     "texture": "/images/fabrics/cw/urbania-parchment.webp",
     "renderTexture": "/images/fabrics/cw/urbania-parchment-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/urbania-parchment-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Urbania/Urbania Parchment.png"
+    "weaveTexture": "/images/fabrics/cw/urbania-parchment-weave.webp"
   },
   {
     "id": "urbania-smoky",
@@ -1005,8 +923,7 @@
     "hex": "#c2bfbc",
     "texture": "/images/fabrics/cw/urbania-smoky.webp",
     "renderTexture": "/images/fabrics/cw/urbania-smoky-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/urbania-smoky-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Urbania/Urbania Smoky.png"
+    "weaveTexture": "/images/fabrics/cw/urbania-smoky-weave.webp"
   },
   {
     "id": "urbania-soot",
@@ -1017,8 +934,7 @@
     "hex": "#a8a5a5",
     "texture": "/images/fabrics/cw/urbania-soot.webp",
     "renderTexture": "/images/fabrics/cw/urbania-soot-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/urbania-soot-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Urbania/Urbania Soot.png"
+    "weaveTexture": "/images/fabrics/cw/urbania-soot-weave.webp"
   },
   {
     "id": "urbania-spirit",
@@ -1029,8 +945,7 @@
     "hex": "#f5f3f0",
     "texture": "/images/fabrics/cw/urbania-spirit.webp",
     "renderTexture": "/images/fabrics/cw/urbania-spirit-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/urbania-spirit-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Urbania/Urbania Spirit.png"
+    "weaveTexture": "/images/fabrics/cw/urbania-spirit-weave.webp"
   },
   {
     "id": "urbania-tundra",
@@ -1041,8 +956,7 @@
     "hex": "#e8eaed",
     "texture": "/images/fabrics/cw/urbania-tundra.webp",
     "renderTexture": "/images/fabrics/cw/urbania-tundra-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/urbania-tundra-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Urbania/Urbania Tundra.png"
+    "weaveTexture": "/images/fabrics/cw/urbania-tundra-weave.webp"
   },
   {
     "id": "verve-chalk",
@@ -1053,8 +967,7 @@
     "hex": "#e8e9e3",
     "texture": "/images/fabrics/cw/verve-chalk.webp",
     "renderTexture": "/images/fabrics/cw/verve-chalk-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/verve-chalk-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Verve/Verve Chalk.png"
+    "weaveTexture": "/images/fabrics/cw/verve-chalk-weave.webp"
   },
   {
     "id": "verve-glacier",
@@ -1065,8 +978,7 @@
     "hex": "#e8eaed",
     "texture": "/images/fabrics/cw/verve-glacier.webp",
     "renderTexture": "/images/fabrics/cw/verve-glacier-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/verve-glacier-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Verve/Verve Glacier.png"
+    "weaveTexture": "/images/fabrics/cw/verve-glacier-weave.webp"
   },
   {
     "id": "verve-silver-mist",
@@ -1077,8 +989,7 @@
     "hex": "#d5dadc",
     "texture": "/images/fabrics/cw/verve-silver-mist.webp",
     "renderTexture": "/images/fabrics/cw/verve-silver-mist-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/verve-silver-mist-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Verve/Verve Silver Mist.png"
+    "weaveTexture": "/images/fabrics/cw/verve-silver-mist-weave.webp"
   },
   {
     "id": "verve-steel-gray",
@@ -1089,7 +1000,6 @@
     "hex": "#63676c",
     "texture": "/images/fabrics/cw/verve-steel-gray.webp",
     "renderTexture": "/images/fabrics/cw/verve-steel-gray-texture.webp",
-    "weaveTexture": "/images/fabrics/cw/verve-steel-gray-weave.webp",
-    "source": "/images/fabrics/Cw_fabrics/ATLAS FABRICS/Verve/Verve Steel Gray.png"
+    "weaveTexture": "/images/fabrics/cw/verve-steel-gray-weave.webp"
   }
 ]

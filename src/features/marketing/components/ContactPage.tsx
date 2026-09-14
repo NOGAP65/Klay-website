@@ -7,7 +7,7 @@ import { tokens, eyebrow, headline, motion, space, supporting, type as typeScale
 import { DANGER, Field } from '@/ds';
 import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
 
-import { type FieldErrors } from '../../../lib/api';
+import { type FieldErrors } from '@/features/booking';
 import { sendEnquiry } from '../api/sendEnquiry';
 
 // DARK ('#0f0d09') and PARCHMENT used to be declared here. Contact is a

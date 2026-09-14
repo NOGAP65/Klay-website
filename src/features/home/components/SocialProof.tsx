@@ -104,10 +104,10 @@ const POST: Tile = {
  *
  * When the feed lands, this whole list is what it replaces. */
 const PLACEHOLDERS: Tile[] = [
-  { image: '/images/rooms/room-4.png', to: '/products', objectPosition: 'center 40%', cta: 'Shop the range', alt: '' },
-  { image: '/images/rooms/room-5.png', to: '/products', objectPosition: 'center 40%', cta: 'Shop the range', alt: '' },
-  { image: '/images/rooms/room-3.png', to: '/products?category=sheer-curtains', objectPosition: '62% 45%', cta: 'Shop the range', alt: '' },
-  { image: '/images/rooms/room-kitchen.png', to: '/products', objectPosition: 'center 36%', cta: 'Shop the range', alt: '' },
+  { image: '/images/rooms/room-4.webp', to: '/products', objectPosition: 'center 40%', cta: 'Shop the range', alt: '' },
+  { image: '/images/rooms/room-5.webp', to: '/products', objectPosition: 'center 40%', cta: 'Shop the range', alt: '' },
+  { image: '/images/rooms/room-3.webp', to: '/products?category=sheer-curtains', objectPosition: '62% 45%', cta: 'Shop the range', alt: '' },
+  { image: '/images/rooms/room-kitchen.webp', to: '/products', objectPosition: 'center 36%', cta: 'Shop the range', alt: '' },
   // Cropped hard left, onto the dark timber wardrobe. Centred, this frame is a
   // yellow armchair with no window covering anywhere in it — which is the one
   // thing a strip standing for a furnishings feed cannot show.

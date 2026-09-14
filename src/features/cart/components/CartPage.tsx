@@ -99,7 +99,7 @@ export default function CartPage() {
                           cart store's priceOnMeasure. Printing $0 would read as
                           free, and printing a guess is worse. */}
                       {item.priceOnMeasure ? (
-                        <div style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: tokens.onDark, paddingTop: 8 }}>
+                        <div style={{ fontFamily: tokens.body, fontSize: 11, fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: tokens.inkSoft, paddingTop: 8 }}>
                           Price on measure
                         </div>
                       ) : (
@@ -110,6 +110,7 @@ export default function CartPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12, justifyContent: 'flex-end' }}>
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          aria-label={`Decrease ${item.name} quantity`}
                           style={{
                             width: 28,
                             height: 28,
@@ -129,6 +130,8 @@ export default function CartPage() {
                         </span>
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          aria-label={`Increase ${item.name} quantity`}
+                          disabled={item.quantity >= 40}
                           style={{
                             width: 28,
                             height: 28,
@@ -225,7 +228,7 @@ export default function CartPage() {
                   </p>
 
                   <Link
-                    to={routes.book}
+                    to={`${routes.book}?cart=1`}
                     onMouseEnter={() => setIsBookHovered(true)}
                     onMouseLeave={() => setIsBookHovered(false)}
                     style={{

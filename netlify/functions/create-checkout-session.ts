@@ -21,7 +21,7 @@ import { db } from '../lib/db'
 import { env, missing } from '../lib/env'
 import { badRequest, json, methodNotAllowed, notConfigured, readJson, serverError } from '../lib/http'
 import { checkRateLimit, getClientIp } from '../lib/rateLimit'
-import { blindLabel, sizeLabel } from '../../src/lib/pricing'
+import { blindLabel, sizeLabel } from '../../shared-core/pricing'
 
 export default async (req: Request): Promise<Response> => {
   if (req.method !== 'POST') return methodNotAllowed('POST')
@@ -35,6 +35,7 @@ export default async (req: Request): Promise<Response> => {
 
   const body = await readJson(req)
   if (!body) return badRequest('Expected a JSON body.')
+  if (body.items !== undefined) return badRequest('Basket configurations must be submitted as a quote request.')
 
   const honeypot = checkHoneypot(body)
   if (honeypot) return honeypot

@@ -176,4 +176,4 @@ export const HARDWARE_OPTIONS = [
 // a customer diverging from the price charged is a customer-facing failure, not a
 // code-quality one, so it is re-exported rather than repeated: there is now one
 // place to change the motorisation charge, and this file cannot disagree with it.
-export { MOTORISED_ADDON } from '../lib/pricing'
+export { MOTORISED_ADDON } from '@/core/pricing'

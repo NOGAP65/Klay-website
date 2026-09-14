@@ -3,9 +3,9 @@
 //
 // Run:  node scripts/cut-wardrobe-stickers.mjs
 //
-// Reads  public/images/Textures/wardrobes/Forma Wardrobe *.png
+// Reads  public/images/visualiser/textures/wardrobes/Forma Wardrobe *.png
 // Writes public/images/Textures/wardrobes/<id>-white-<view>.png   (real alpha)
-//        src/visualiser-lab/wardrobeCutouts.ts                    (manifest)
+//        src/features/visualiser/wardrobeCutouts.ts                    (manifest)
 //
 // WHY THIS EXISTS AT ALL. wardrobes.ts used to carry a long note saying these
 // stickers could not be keyed: "the checkerboard that reads as transparency is
@@ -29,195 +29,18 @@
 // un-matted rather than keyed: obs = a*F + (1-a)*B solves for both the coverage
 // and the true colour, so there is no grey fringe left behind.
 //
-// NO DEPENDENCIES. PNG is inflate plus a per-scanline filter, and zlib is in
-// the standard library, so pulling in sharp for one build step that runs when
-// the artwork changes would be the larger cost.
-// ---------------------------------------------------------------------------
+// Image decoding and lossless compression use sharp; the product cut-out geometry stays local.
 
-import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'node:fs';
+import { writeFileSync, readdirSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { inflateSync, deflateSync } from 'node:zlib';
+import sharp from 'sharp';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
 const DIR = join(ROOT, 'public/images/Textures/wardrobes');
 const CONTENTS = join(DIR, 'contents');
 const MANIFEST = join(ROOT, 'src/visualiser-lab/wardrobeCutouts.ts');
-
-// --- PNG ------------------------------------------------------------------
-
-const SIG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-
-const CRC_TABLE = (() => {
-  const t = new Int32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    t[n] = c;
-  }
-  return t;
-})();
-
-function crc32(buf) {
-  let c = -1;
-  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
-  return (c ^ -1) >>> 0;
-}
-
-/** Decodes a non-interlaced 8-bit RGB or RGBA PNG to flat RGBA. */
-function decodePng(buf) {
-  if (!buf.subarray(0, 8).equals(SIG)) throw new Error('not a PNG');
-  let pos = 8;
-  let width = 0, height = 0, colorType = 0, bitDepth = 0;
-  const idat = [];
-
-  while (pos < buf.length) {
-    const len = buf.readUInt32BE(pos);
-    const type = buf.toString('ascii', pos + 4, pos + 8);
-    const data = buf.subarray(pos + 8, pos + 8 + len);
-    if (type === 'IHDR') {
-      width = data.readUInt32BE(0);
-      height = data.readUInt32BE(4);
-      bitDepth = data[8];
-      colorType = data[9];
-      if (data[12] !== 0) throw new Error('interlaced PNG not supported');
-    } else if (type === 'IDAT') {
-      idat.push(data);
-    } else if (type === 'IEND') {
-      break;
-    }
-    pos += 12 + len;
-  }
-
-  if (bitDepth !== 8) throw new Error(`bit depth ${bitDepth} not supported`);
-  const channels = colorType === 6 ? 4 : colorType === 2 ? 3 : 0;
-  if (!channels) throw new Error(`colour type ${colorType} not supported`);
-
-  const raw = inflateSync(Buffer.concat(idat));
-  const stride = width * channels;
-  const out = Buffer.alloc(width * height * 4);
-  const prev = Buffer.alloc(stride);
-  const line = Buffer.alloc(stride);
-
-  let rp = 0;
-  for (let y = 0; y < height; y++) {
-    const filter = raw[rp++];
-    raw.copy(line, 0, rp, rp + stride);
-    rp += stride;
-
-    // Un-filter, per the PNG spec's reconstruction functions.
-    for (let i = 0; i < stride; i++) {
-      const a = i >= channels ? line[i - channels] : 0;
-      const b = prev[i];
-      const c = i >= channels ? prev[i - channels] : 0;
-      let v = line[i];
-      if (filter === 1) v += a;
-      else if (filter === 2) v += b;
-      else if (filter === 3) v += (a + b) >> 1;
-      else if (filter === 4) {
-        const p = a + b - c;
-        const pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
-        v += pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
-      }
-      line[i] = v & 0xff;
-    }
-    line.copy(prev);
-
-    for (let x = 0; x < width; x++) {
-      const s = x * channels;
-      const d = (y * width + x) * 4;
-      out[d] = line[s];
-      out[d + 1] = line[s + 1];
-      out[d + 2] = line[s + 2];
-      out[d + 3] = channels === 4 ? line[s + 3] : 255;
-    }
-  }
-
-  return { width, height, data: out };
-}
-
-function encodePng(width, height, rgba) {
-  const stride = width * 4;
-  const BPP = 4;
-
-  // FULLY TRANSPARENT PIXELS ARE FLATTENED TO ZERO FIRST. A cut-out is mostly
-  // transparent, and under those pixels sits whatever the checkerboard used to
-  // be -- invisible, but still varying, so deflate has to store all of it. The
-  // large empty margins compress to almost nothing once they are actually
-  // uniform.
-  for (let i = 0; i < width * height; i++)
-    if (rgba[i * 4 + 3] === 0) { rgba[i * 4] = 0; rgba[i * 4 + 1] = 0; rgba[i * 4 + 2] = 0; }
-
-  // ADAPTIVE FILTERING, chosen per scanline by the minimum-sum-of-absolute-
-  // differences heuristic the spec itself suggests.
-  //
-  // Filter 0 throughout was the first version, on the reasoning that
-  // photographic data deflates well anyway. It does not: the ten cut-outs came
-  // to 23MB, heavier than the originals they were made from, which is a lot to
-  // send a phone. Predicting each byte from its neighbours leaves deflate a
-  // signal that is mostly near zero, and that is where the saving is.
-  const raw = Buffer.alloc((stride + 1) * height);
-  const prior = Buffer.alloc(stride);
-  const line = Buffer.alloc(stride);
-  const cand = [Buffer.alloc(stride), Buffer.alloc(stride), Buffer.alloc(stride), Buffer.alloc(stride), Buffer.alloc(stride)];
-
-  for (let y = 0; y < height; y++) {
-    rgba.copy(line, 0, y * stride, (y + 1) * stride);
-    let best = 0;
-    let bestScore = Infinity;
-
-    for (let f = 0; f < 5; f++) {
-      const out = cand[f];
-      let score = 0;
-      for (let i = 0; i < stride; i++) {
-        const a = i >= BPP ? line[i - BPP] : 0;
-        const b = prior[i];
-        const c = i >= BPP ? prior[i - BPP] : 0;
-        let v;
-        if (f === 0) v = line[i];
-        else if (f === 1) v = line[i] - a;
-        else if (f === 2) v = line[i] - b;
-        else if (f === 3) v = line[i] - ((a + b) >> 1);
-        else {
-          const p = a + b - c;
-          const pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
-          v = line[i] - (pa <= pb && pa <= pc ? a : pb <= pc ? b : c);
-        }
-        v &= 0xff;
-        out[i] = v;
-        // Signed magnitude: a byte near 0 or near 255 is a small residual.
-        score += v < 128 ? v : 256 - v;
-      }
-      if (score < bestScore) { bestScore = score; best = f; }
-    }
-
-    raw[y * (stride + 1)] = best;
-    cand[best].copy(raw, y * (stride + 1) + 1);
-    line.copy(prior);
-  }
-
-  const chunk = (type, data) => {
-    const out = Buffer.alloc(12 + data.length);
-    out.writeUInt32BE(data.length, 0);
-    out.write(type, 4, 'ascii');
-    data.copy(out, 8);
-    out.writeUInt32BE(crc32(out.subarray(4, 8 + data.length)), 8 + data.length);
-    return out;
-  };
-
-  const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(width, 0);
-  ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8;   // bit depth
-  ihdr[9] = 6;   // RGBA
-  return Buffer.concat([
-    SIG,
-    chunk('IHDR', ihdr),
-    chunk('IDAT', deflateSync(raw, { level: 9 })),
-    chunk('IEND', Buffer.alloc(0)),
-  ]);
-}
 
 // --- the cut --------------------------------------------------------------
 
@@ -598,7 +421,7 @@ const VIEW = {
 // happens to offer both, so the crops take the easy half.
 const CONTENT_CROPS = [
   // Three charcoal coats from 3.0's left-hand run, full drop.
-  { out: 'hanging-long.png', from: '3.0-white-front.png', x0: 0.270, y0: 0.235, x1: 0.398, y1: 0.578, key: true },
+  { out: 'hanging-long.webp', from: '3.0-white-front.webp', x0: 0.270, y0: 0.235, x1: 0.398, y1: 0.578, key: true },
   // 4.0's lower rail -- dark trousers, the short drop of a double-hang.
   // FROM THE SAME SOURCE AS THE LONG RUN, and shortened rather than taken from
   // a different photograph.
@@ -613,13 +436,13 @@ const CONTENT_CROPS = [
   // 3.0's run keys cleanly against bright board, so a short drop is cut from
   // the same coats: the same garments, ending at the height a double-hang rail
   // needs. One clean source is worth more than two poses.
-  { out: 'hanging-short.png', from: '3.0-white-front.png', x0: 0.270, y0: 0.235, x1: 0.398, y1: 0.470, key: true },
+  { out: 'hanging-short.png', from: '3.0-white-front.webp', x0: 0.270, y0: 0.235, x1: 0.398, y1: 0.470, key: true },
   // A folded stack of dark knitwear from 4.0's tower.
-  { out: 'stack.png', from: '4.0-white-front.png', x0: 0.124, y0: 0.352, x1: 0.246, y1: 0.397, key: true },
+  { out: 'stack.png', from: '4.0-white-front.webp', x0: 0.124, y0: 0.352, x1: 0.246, y1: 0.397, key: true },
   // These two already sit against the checkerboard rather than against board,
   // so they came out of the main cut already isolated and need no keying.
-  { out: 'shoes.png', from: '3.0-white-front.png', x0: 0.325, y0: 0.752, x1: 0.432, y1: 0.828, key: false },
-  { out: 'box.png', from: '3.0-white-front.png', x0: 0.296, y0: 0.126, x1: 0.448, y1: 0.196, key: false },
+  { out: 'shoes.png', from: '3.0-white-front.webp', x0: 0.325, y0: 0.752, x1: 0.432, y1: 0.828, key: false },
+  { out: 'box.png', from: '3.0-white-front.webp', x0: 0.296, y0: 0.126, x1: 0.448, y1: 0.196, key: false },
 ];
 
 /** Crops one object out of a finished cut-out.
@@ -694,16 +517,17 @@ function cropContent(src, spec) {
   return { width: tw, height: th, data: trimmed };
 }
 
-const files = readdirSync(DIR).filter(f => /^Forma Wardrobe .+ Sticker\.png$/.test(f));
+const files = readdirSync(DIR).filter(f => /^Forma Wardrobe .+ Sticker\.webp$/.test(f));
 if (!files.length) throw new Error(`no stickers found in ${DIR}`);
 
 const manifest = [];
 for (const file of files) {
-  const id = file.replace(/^Forma Wardrobe /, '').replace(/ Sticker\.png$/, '');
+  const id = file.replace(/^Forma Wardrobe /, '').replace(/ Sticker\.webp$/, '');
   const view = VIEW[id] ?? 'front';
-  const res = cut(decodePng(readFileSync(join(DIR, file))));
-  const name = `${id}-white-${view}.png`;
-  writeFileSync(join(DIR, name), encodePng(res.width, res.height, res.data));
+  const decoded = await sharp(join(DIR, file)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const res = cut({ width: decoded.info.width, height: decoded.info.height, data: decoded.data });
+  const name = `${id}-white-${view}.webp`;
+  writeFileSync(join(DIR, name), await sharp(res.data, {raw:{width:res.width,height:res.height,channels:4}}).webp({lossless:true}).toBuffer());
   manifest.push({ id, view, file: name, ...res.carcass, w: res.width, h: res.height, towerLead: res.towerLead, towerTrail: res.towerTrail });
   const pct = v => (v * 100).toFixed(1);
   console.log(
@@ -715,9 +539,11 @@ for (const file of files) {
 // The contents, cropped out of the cut-outs that were just written.
 mkdirSync(CONTENTS, { recursive: true });
 for (const spec of CONTENT_CROPS) {
-  const src = decodePng(readFileSync(join(DIR, spec.from)));
+  const decoded = await sharp(join(DIR, spec.from)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const src = { width: decoded.info.width, height: decoded.info.height, data: decoded.data };
   const res = cropContent(src, spec);
-  writeFileSync(join(CONTENTS, spec.out), encodePng(res.width, res.height, res.data));
+  const image = sharp(res.data, {raw:{width:res.width,height:res.height,channels:4}});
+  writeFileSync(join(CONTENTS, spec.out), await (spec.out.endsWith('.webp') ? image.webp({lossless:true}) : image.png({compressionLevel:9})).toBuffer());
   console.log(`  content ${spec.out.padEnd(20)} ${res.width}x${res.height}  from ${spec.from}`);
 }
 
@@ -759,7 +585,6 @@ export const cutoutFor = (id: string): WardrobeCutout | undefined =>
 `);
 
 console.log(`\n${manifest.length} cut, manifest -> ${MANIFEST}`);
-
 
 
 

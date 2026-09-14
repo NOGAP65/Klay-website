@@ -19,7 +19,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
-import { buildCarcass } from './Canvas2DWardrobeRenderer';
+import { buildCarcass } from './wardrobeCarcass';
 import {
   FINISH_TEXTURE, FINISH_TILE_MM,
   wardrobeColour, wardrobeColourHex, wardrobeModelById, DEFAULT_WIDTH_MM,

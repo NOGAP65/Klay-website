@@ -45,7 +45,7 @@ export function serverError(where: string, err: unknown): Response {
 export async function readJson(req: Request): Promise<Record<string, unknown> | null> {
   try {
     const body = await req.json()
-    return body && typeof body === 'object' ? (body as Record<string, unknown>) : null
+    return body && typeof body === 'object' && !Array.isArray(body) ? (body as Record<string, unknown>) : null
   } catch {
     return null
   }

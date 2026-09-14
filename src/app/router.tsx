@@ -55,8 +55,8 @@ const CartPage = lazy(() => import('@/features/cart/components/CartPage'));
 const AboutPage = lazy(() => import('@/features/marketing/components/AboutPage'));
 const ContactPage = lazy(() => import('@/features/marketing/components/ContactPage'));
 const HowItWorksPage = lazy(() => import('@/features/marketing/components/HowItWorksPage'));
-const BookingConfirmedPage = lazy(() => import('../pages/BookingConfirmedPage'));
-const BookInstallPage = lazy(() => import('../pages/BookInstallPage'));
+const BookingConfirmedPage = lazy(() => import('@/features/booking/components/BookingConfirmedPage'));
+const BookInstallPage = lazy(() => import('@/features/booking/components/BookInstallPage'));
 const VisualiserPage = lazy(() => import('../pages/VisualiserPage'));
 
 import { RootLayout } from './layouts/RootLayout';

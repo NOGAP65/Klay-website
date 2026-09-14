@@ -16,9 +16,9 @@
 // whether or not the thing it checks is broken. It ran for months and reported
 // zero, and three preset room photographs were broken the whole time:
 //
-//     /images/room-3.png    the files are at /images/rooms/room-N.png
-//     /images/room-4.png
-//     /images/room-5.png
+//     /images/room-3.webp    the files are at /images/rooms/room-N.png
+//     /images/room-4.webp
+//     /images/room-5.webp
 //
 // A page requesting them got HTML, decoded nothing, and showed three empty
 // frames on "Visualise in your own room".

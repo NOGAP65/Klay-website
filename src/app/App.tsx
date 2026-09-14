@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import { AppRoutes } from './router';
@@ -21,22 +21,35 @@ function ScrollToHash() {
   // second card after the first was a no-op here: React Router saw no change in
   // either, so the configuration switched underneath a visitor who was never
   // carried to the section showing it.
-  const { pathname, hash, search } = useLocation();
+  const { pathname, hash } = useLocation();
+  const previousPath = useRef(pathname);
 
   useEffect(() => {
-    if (!hash) return;
-    const id = hash.slice(1);
-    let raf = 0;
-    const timer = window.setTimeout(() => {
-      raf = requestAnimationFrame(() => {
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    }, 120);
+    const changed = previousPath.current !== pathname;
+    previousPath.current = pathname;
+    if (!hash) {
+      if (changed) window.scrollTo({ top: 0, behavior: 'instant' });
+      return;
+    }
+    if (hash === '#top') { window.scrollTo({ top: 0, behavior: 'instant' }); return; }
+    let id: string;
+    try { id = decodeURIComponent(hash.slice(1)); } catch { return; }
+    const scroll = () => {
+      const target = document.getElementById(id);
+      if (!target) return false;
+      target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+      return true;
+    };
+    if (scroll()) return;
+    // A lazy route may arrive after the initial navigation effect.
+    const observer = new MutationObserver(() => { if (scroll()) observer.disconnect(); });
+    observer.observe(document.getElementById('root')!, { childList: true, subtree: true });
+    const timer = window.setTimeout(() => observer.disconnect(), 8000);
     return () => {
       window.clearTimeout(timer);
-      cancelAnimationFrame(raf);
+      observer.disconnect();
     };
-  }, [pathname, hash, search]);
+  }, [pathname, hash]);
 
   return null;
 }

@@ -152,7 +152,7 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
     // No tower, so nothing in the supplied artwork matches it — every render
     // has one. Drawn from the geometry until its own render exists.
     artworkId: null,
-    legacyFile: 'Forma Wardrobe 3.0 Sticker.png',
+    legacyFile: 'Forma Wardrobe 3.0 Sticker.webp',
   },
   {
     id: 'SRSTDH02',
@@ -163,7 +163,7 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
     widths: [1500, 1800, 2100, 2400, 2700],
     // 4.0's render is this product: shelf tower, divider, double-hung bay.
     artworkId: '4.0',
-    legacyFile: 'Forma Wardrobe 4.0 Sticker.png',
+    legacyFile: 'Forma Wardrobe 4.0 Sticker.webp',
   },
   {
     id: 'SRDTDH01',
@@ -174,7 +174,7 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
     widths: [1500, 1800, 2100, 2400, 2700],
     // 6.0's render is this one: drawer tower, divider, double-hung bay.
     artworkId: '6.0',
-    legacyFile: 'Forma Wardrobe 6.0 Sticker.png',
+    legacyFile: 'Forma Wardrobe 6.0 Sticker.webp',
   },
   // --- LINEN SHELVING ------------------------------------------------------
   //
@@ -244,13 +244,13 @@ export const WARDROBE_MODELS: WardrobeModel[] = [
   //
   // THE IDS DO NOT FOLLOW, and here that is not a preference — it is what the
   // files on disk are called. `artworkId` and `legacyFile` name real assets,
-  // wardrobeCutouts.ts carries `7.0L-white-interior.png` and friends,
+  // wardrobeCutouts.ts carries `7.0L-white-interior.webp` and friends,
   // cut-wardrobe-stickers keys its view map by the same strings, and
   // useVisualiserStore defaults a walk-in to '7.0L'. The code is the supplier's
   // and belongs on the order; Forma 4 is what the customer reads.
-  { id: '7.0L', name: 'Forma 4', layout: 'L-shaped walk-in', kind: 'walk-in', widths: [2400, 3000], artworkId: '7.0L', legacyFile: 'Forma Wardrobe 7.0L Sticker.png' },
-  { id: '9.0L', name: 'Forma 5', layout: 'L-shaped walk-in, long run', kind: 'walk-in', widths: [2400], artworkId: '9.0L', legacyFile: 'Forma Wardrobe 9.0L Sticker.png' },
-  { id: '12.0U', name: 'Forma 6', layout: 'U-shaped walk-in', kind: 'walk-in', widths: [2400], artworkId: '12.0U', legacyFile: 'Forma Wardrobe 12.0U Sticker.png' },
+  { id: '7.0L', name: 'Forma 4', layout: 'L-shaped walk-in', kind: 'walk-in', widths: [2400, 3000], artworkId: '7.0L', legacyFile: 'Forma Wardrobe 7.0L Sticker.webp' },
+  { id: '9.0L', name: 'Forma 5', layout: 'L-shaped walk-in, long run', kind: 'walk-in', widths: [2400], artworkId: '9.0L', legacyFile: 'Forma Wardrobe 9.0L Sticker.webp' },
+  { id: '12.0U', name: 'Forma 6', layout: 'U-shaped walk-in', kind: 'walk-in', widths: [2400], artworkId: '12.0U', legacyFile: 'Forma Wardrobe 12.0U Sticker.webp' },
 ];
 
 export const modelsOfKind = (kind: WardrobeKind) => WARDROBE_MODELS.filter(m => m.kind === kind);

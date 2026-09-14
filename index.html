@@ -61,6 +61,12 @@
 
       html {
         scroll-behavior: smooth;
+        color-scheme: light;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
       }
 
       /* #303030, matching tokens.charcoal, which is the value sampled off the

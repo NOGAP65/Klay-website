@@ -2,7 +2,7 @@ import { CtaButton, usePrefersReducedMotion } from '@/ds';
 import { scrollToId } from '@/shared';
 
 const HERO_VIDEO = '/hero_video.mp4';
-const HERO_STILL = '/images/rooms/room-living.png';
+const HERO_STILL = '/images/rooms/room-living.webp';
 
 export function Hero() {
   const shouldReduceMotion = usePrefersReducedMotion();

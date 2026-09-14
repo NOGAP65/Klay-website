@@ -40,7 +40,7 @@ import { PRODUCTS } from './products'
 import { FRAMED_DOOR_MATERIALS, SHAKER_DOOR_MATERIALS } from './lib/slidingDoors'
 import { WALK_IN_COLOURS } from './lib/walkInWardrobes'
 
-import type { BlindType } from '../../lib/pricing'
+import type { BlindType } from '@/core/pricing'
 
 export type Group = 'Indoor' | 'Outdoor' | 'Other'
 
@@ -354,7 +354,7 @@ export const CATALOGUE: CatalogueItem[] = [
     // cards have always worked exactly this way.
     to: enquire('Roller Blinds'),
     priceFrom: ROLLER_FROM,
-    image: '/images/rooms/room-kitchen.png',
+    image: '/images/rooms/room-kitchen.webp',
     imagePosition: 'center 34%',
     glyph: 'roller-blinds',
     colours: fabricPalette('roller-blinds', 'blockout'),

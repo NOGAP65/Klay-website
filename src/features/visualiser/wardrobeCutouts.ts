@@ -27,7 +27,7 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
   {
     id: "12.0U",
     view: "interior",
-    file: "12.0U-white-interior.png",
+    file: "12.0U-white-interior.webp",
     w: 1254,
     h: 1254,
     towerLead: null,
@@ -40,7 +40,7 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
   {
     id: "2.9",
     view: "front",
-    file: "2.9-white-front.png",
+    file: "2.9-white-front.webp",
     w: 1254,
     h: 1254,
     towerLead: 0.3308457711442786,
@@ -53,7 +53,7 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
   {
     id: "3.0",
     view: "front",
-    file: "3.0-white-front.png",
+    file: "3.0-white-front.webp",
     w: 1254,
     h: 1254,
     towerLead: 0.20308250226654578,
@@ -66,7 +66,7 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
   {
     id: "4.0",
     view: "front",
-    file: "4.0-white-front.png",
+    file: "4.0-white-front.webp",
     w: 1265,
     h: 1243,
     towerLead: 0.2051948051948052,
@@ -79,7 +79,7 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
   {
     id: "4.9",
     view: "angle",
-    file: "4.9-white-angle.png",
+    file: "4.9-white-angle.webp",
     w: 1254,
     h: 1254,
     towerLead: 0.3482466747279323,
@@ -92,7 +92,7 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
   {
     id: "5.0",
     view: "front",
-    file: "5.0-white-front.png",
+    file: "5.0-white-front.webp",
     w: 1307,
     h: 1203,
     towerLead: 0.20456466610312765,
@@ -105,7 +105,7 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
   {
     id: "6.0",
     view: "front",
-    file: "6.0-white-front.png",
+    file: "6.0-white-front.webp",
     w: 1254,
     h: 1254,
     towerLead: 0.20936395759717313,
@@ -118,7 +118,7 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
   {
     id: "7.0L",
     view: "interior",
-    file: "7.0L-white-interior.png",
+    file: "7.0L-white-interior.webp",
     w: 1269,
     h: 1240,
     towerLead: 0.1785400175901495,
@@ -131,7 +131,7 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
   {
     id: "8.0",
     view: "front",
-    file: "8.0-white-front.png",
+    file: "8.0-white-front.webp",
     w: 1178,
     h: 1234,
     towerLead: 0.20342034203420342,
@@ -144,7 +144,7 @@ export const WARDROBE_CUTOUTS: WardrobeCutout[] = [
   {
     id: "9.0L",
     view: "interior",
-    file: "9.0L-white-interior.png",
+    file: "9.0L-white-interior.webp",
     w: 1448,
     h: 1086,
     towerLead: null,

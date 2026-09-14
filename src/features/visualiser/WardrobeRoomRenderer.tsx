@@ -30,7 +30,7 @@ import { wardrobeArtwork, wardrobeModelById, WARDROBE_HEIGHT_MM, DEFAULT_WIDTH_M
 import { cameraFromQuad, tracedWidthMm } from './wardrobeGeometry';
 import { buildWardrobeScene, MM } from './wardrobeScene';
 import { profilePhoto, applyGrain } from './wardrobeComposite';
-import { drawWalkIn } from './Canvas2DWardrobeRenderer';
+import { drawWalkIn } from './walkInArtwork';
 
 export interface WardrobeRoomRendererProps {
   photoUrl: string;

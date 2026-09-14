@@ -7,7 +7,8 @@
 // the money from that. See the security note at the top of src/lib/pricing.ts.
 // ---------------------------------------------------------------------------
 
-import { parseOrderConfig, priceOrder, type OrderConfig, type PricedOrder } from '../../src/lib/pricing'
+import { parseOrderConfig, priceOrder, type OrderConfig, type PricedOrder } from '../../shared-core/pricing'
+import { isQuoteItems, quoteItemsSummary, type QuoteItem } from '../../shared-core/quoteItems'
 
 export interface CustomerDetails {
   name: string
@@ -21,6 +22,7 @@ export interface CustomerDetails {
 }
 
 export interface ParsedBooking {
+  items?: QuoteItem[]
   customer: CustomerDetails
   config: OrderConfig
   fabricColour: string | null
@@ -63,6 +65,8 @@ export type ValidationResult =
 
 export function parseBooking(body: Record<string, unknown>): ValidationResult {
   const fields: Record<string, string> = {}
+  if (body.items !== undefined && !isQuoteItems(body.items)) fields.items = 'Please check your basket quantities and options.'
+  const items = isQuoteItems(body.items) ? body.items : undefined
 
   const name = text(body.name, 120)
   if (!name) fields.name = 'Please tell us your name.'
@@ -78,7 +82,8 @@ export function parseBooking(body: Record<string, unknown>): ValidationResult {
   if (postcode && !POSTCODE_RE.test(postcode)) fields.postcode = 'Australian postcodes are four digits.'
 
   const preferredDate = text(body.preferredDate, 20)
-  if (preferredDate && !DATE_RE.test(preferredDate)) {
+  if (preferredDate && (!DATE_RE.test(preferredDate) || Number.isNaN(Date.parse(preferredDate))
+    || new Date(preferredDate).toISOString().slice(0, 10) !== preferredDate)) {
     fields.preferredDate = 'Please pick a date from the calendar.'
   }
 
@@ -96,6 +101,7 @@ export function parseBooking(body: Record<string, unknown>): ValidationResult {
   return {
     ok: true,
     booking: {
+      items,
       customer: {
         // Non-null assertions are safe: the guards above returned early if
         // either was missing.
@@ -106,7 +112,7 @@ export function parseBooking(body: Record<string, unknown>): ValidationResult {
         suburb: text(body.suburb, 120),
         postcode,
         preferredDate,
-        notes: text(body.notes, 2000),
+        notes: [text(body.notes, 2000), items ? `BASKET QUOTE REQUEST\n${quoteItemsSummary(items)}` : null].filter(Boolean).join('\n\n') || null,
       },
       config,
       fabricColour: text(body.fabricColour, 60),

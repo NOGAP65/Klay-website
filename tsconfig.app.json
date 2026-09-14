@@ -27,6 +27,7 @@
        lists must stay in step or an import will typecheck and fail to bundle.
        --------------------------------------------------------------------- */
     "paths": {
+      "@/core/*": ["./shared-core/*"],
       "@/app": ["./src/app/index.ts"],
       "@/app/*": ["./src/app/*"],
       "@/config": ["./src/config/index.ts"],

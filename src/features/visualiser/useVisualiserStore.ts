@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { ROLLER_HARDWARE, rollerPalette, rollerColour } from '@/features/fabrics';
 import { CURTAIN_COLOURS, HARDWARE_HEX } from '../../data/products';
-import { pricePerBlind, type BlindType } from '../../lib/pricing';
+import { pricePerBlind, type BlindType } from '@/core/pricing';
 import { wardrobeModelById, type WardrobeKind } from './wardrobes';
 import { DEFAULT_WALL_COLOUR } from './wallColours';
 

@@ -106,7 +106,7 @@ export function Field({
     background: isFocused && !error ? tokens.accentWash : tokens.card,
     border: `1px solid ${borderColour}`,
     fontFamily: tokens.body,
-    fontSize: 14,
+    fontSize: 16,
     color: tokens.ink,
     outline: 'none',
     boxSizing: 'border-box',

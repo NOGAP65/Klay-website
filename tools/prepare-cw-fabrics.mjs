@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright-core';
 
-const root = path.resolve('public/images/fabrics/Cw_fabrics');
+const root = path.resolve('assets-source/fabrics/cw');
 const output = path.resolve('public/images/fabrics/cw');
 const slug = value => value.toLowerCase().replace(/%/g, 'percent').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const title = value => value.replace(/(^|[- ])\w/g, s => s.toUpperCase()).replace(/-/g, ' ');
@@ -85,8 +85,7 @@ try {
     await fs.writeFile(path.join(output, `${id}-weave.webp`), Buffer.from(generated.weave, 'base64'));
     samples.push({ id, name: `${collection} ${colour}`, colour, collection, product, ...(type ? { type } : {}),
       hex: generated.hex, texture: `/images/fabrics/cw/${id}.webp`, renderTexture: `/images/fabrics/cw/${id}-texture.webp`,
-      weaveTexture: `/images/fabrics/cw/${id}-weave.webp`,
-      source: `/images/fabrics/Cw_fabrics/${relative}` });
+      weaveTexture: `/images/fabrics/cw/${id}-weave.webp` });
   }
   await fs.mkdir('src/features/fabrics', { recursive: true });
   await fs.writeFile('src/features/fabrics/samples.json', JSON.stringify(samples, null, 2) + '\n');

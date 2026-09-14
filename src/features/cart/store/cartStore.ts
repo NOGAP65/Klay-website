@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { MAX_QUANTITY } from '@/core/pricing';
 
 export interface CartItem {
   id: string;
@@ -53,7 +54,7 @@ export const useCartStore = create<CartStore>()(
         if (existingItem) {
           set({
             items: get().items.map(i =>
-              i.id === id ? { ...i, quantity: i.quantity + 1 } : i
+              i.id === id ? { ...i, quantity: Math.min(MAX_QUANTITY, i.quantity + 1) } : i
             ),
           });
         } else {
@@ -68,6 +69,8 @@ export const useCartStore = create<CartStore>()(
       },
 
       updateQuantity: (id, quantity) => {
+        if (!Number.isFinite(quantity)) return;
+        quantity = Math.min(MAX_QUANTITY, Math.floor(quantity));
         if (quantity <= 0) {
           get().removeItem(id);
         } else {

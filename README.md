@@ -1,5 +1,8 @@
 # Klay-website-viz
 
+Current audit checkpoint and next steps: [14 September performance audit](docs/audits/2026-09-14-performance.md).
+Booking lives in `src/features/booking`; shared browser/server pricing lives in `shared-core/pricing`.
+
 [![Open in Bolt](https://bolt.new/static/open-in-bolt.svg)](https://bolt.new/~/sb1-4dduj3fh)
 
 Vite + React + TypeScript. Deployed on Netlify.
@@ -16,10 +19,8 @@ npm run typecheck  # tsc -b, the pre-commit gate (see note below)
 > `npm run typecheck`, which runs `tsc -b` and covers `src`, `vite.config.ts`
 > and the Netlify functions.
 
-`npm run lint` currently crashes on every file: eslint 9.39.5 is installed
-against `typescript-eslint` 8.x, and the `no-unused-expressions` rule signature
-changed between them. Pre-existing, unrelated to booking; fixing it means
-aligning those two versions.
+`npm run lint` runs successfully but still reports the existing architecture warning backlog.
+After `npm run build`, use `npm run test:browser` for the production browser regression suite.
 
 ---
 

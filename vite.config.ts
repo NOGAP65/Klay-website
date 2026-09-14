@@ -16,6 +16,7 @@ import { defineConfig } from 'vite';
 // the aliases are the layer boundary, so each one names a layer.
 // ---------------------------------------------------------------------------
 const alias = {
+  '@/core': fileURLToPath(new URL('./shared-core', import.meta.url)),
   '@/app': fileURLToPath(new URL('./src/app', import.meta.url)),
   '@/config': fileURLToPath(new URL('./src/config', import.meta.url)),
   '@/ds': fileURLToPath(new URL('./src/design-system', import.meta.url)),

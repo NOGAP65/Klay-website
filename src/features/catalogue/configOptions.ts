@@ -51,7 +51,7 @@ import {
   WARDROBE_WIDTHS,
   wardrobeModelById,
 } from '@/features/visualiser'
-import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '../../lib/pricing'
+import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '@/core/pricing'
 
 
 import {

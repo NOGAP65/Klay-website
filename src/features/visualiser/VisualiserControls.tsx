@@ -3,7 +3,7 @@ import { ROLLER_HARDWARE, fabricCollections, fabricByName, fabricPalette } from 
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { radius, tokens, space, type as typeScale } from '@/ds';
-import { formatAUD, isBlindType } from '../../lib/pricing';
+import { formatAUD, isBlindType } from '@/core/pricing';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../../data/products';
 import {
   WARDROBE_COLOURS,

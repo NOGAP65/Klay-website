@@ -1149,7 +1149,7 @@ void main() {
 // Its broad fold lighting is removed; geometry and the shadow pass provide it.
 const FABRIC_SAMPLE: Record<'blockout' | 'sheer', string> = {
   blockout: '/images/fabrics/curtains-blockout.webp',
-  sheer: '/images/visualiser/textures/curtains/sheer_produced.png',
+  sheer: '/images/visualiser/textures/curtains/sheer_produced.webp',
 };
 interface FabricTexture { texture: THREE.Texture }
 const textureCache = new Map<string, Promise<FabricTexture>>();
@@ -1435,7 +1435,7 @@ export default function Canvas2DCurtainRenderer({
         foreground.width = W; foreground.height = H;
         const ctx = foreground.getContext('2d', { willReadFrequently: true })!;
         ctx.clearRect(0,0,W,H);
-        if (photoUrl.endsWith('/curtain-shop-room.webp')) {
+        if (photoUrl.endsWith('/images/visualiser/rooms/curtain-shop-room.webp')) {
           // Foreground objects stay in front of the curtain. The plant matte
           // is restricted to its known area, so outdoor foliage is never cut out.
           ctx.drawImage(photo,0,0);

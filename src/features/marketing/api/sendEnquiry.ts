@@ -1,4 +1,4 @@
-import { requestQuote, type ApiResult } from '../../../lib/api';
+import { requestQuote, type ApiResult } from '@/features/booking';
 
 // ---------------------------------------------------------------------------
 // The contact form's one network operation.

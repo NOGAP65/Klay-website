@@ -294,7 +294,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
             `klay-logo-light.png` is the same artwork with its greyscale part in
             #F8F8F8. The tan leg of the k is untouched in both, so it is the one
             thing that does not change with the ground. Both are generated from
-            public/images/brand/logo_full.png.
+            public/images/brand/logo_full.webp.
 
             HEIGHT-ONLY, NO EXPLICIT WIDTH, AND NO object-fit. The comment this
             replaced set both axes to chase the old gold wordmark's 2.536 ratio

@@ -9,7 +9,7 @@
 
 import { Resend } from 'resend'
 import { env, missing } from './env'
-import { formatAUD, blindLabel, sizeLabel } from '../../src/lib/pricing'
+import { formatAUD, blindLabel, sizeLabel } from '../../shared-core/pricing'
 import type { ParsedBooking } from './booking'
 
 type SendResult = { sent: boolean; reason?: string }
@@ -59,11 +59,11 @@ function detailsTable(b: ParsedBooking): string {
     ${row('Phone', c.phone)}
     ${row('Address', [c.address, c.suburb, c.postcode].filter(Boolean).join(', ') || null)}
     ${row('Preferred date', c.preferredDate)}
-    ${row('Blind', `${blindLabel(b.config.blindType)} — ${sizeLabel(b.config.windowSize)}`)}
-    ${row('Operation', b.config.operation)}
-    ${row('Quantity', String(b.config.quantity))}
-    ${row('Fabric', b.fabricColour)}
-    ${row('Hardware', b.hardwareColour)}
+    ${b.items ? '' : row('Blind', `${blindLabel(b.config.blindType)} — ${sizeLabel(b.config.windowSize)}`)}
+    ${b.items ? '' : row('Operation', b.config.operation)}
+    ${b.items ? '' : row('Quantity', String(b.config.quantity))}
+    ${b.items ? '' : row('Fabric', b.fabricColour)}
+    ${b.items ? '' : row('Hardware', b.hardwareColour)}
     ${row('Notes', c.notes)}
   </table>`
 }
@@ -88,7 +88,7 @@ export function notifyQuoteRequest(b: ParsedBooking, id: string): Promise<SendRe
       'Klay Interiors',
       `${detailsTable(b)}
        <p style="margin:24px 0 0;font-size:14px;color:#1C1810">
-         Estimate shown to the customer: <strong>${formatAUD(b.priced.total)}</strong>
+         ${b.items ? 'Basket quote — pricing to be confirmed after measuring.' : `Estimate shown to the customer: <strong>${formatAUD(b.priced.total)}</strong>`}
        </p>
        <p style="margin:8px 0 0;font-size:12px;color:#8A8580">Reference ${esc(id)}</p>`,
     ),
@@ -111,8 +111,7 @@ export function acknowledgeQuoteRequest(b: ParsedBooking): Promise<SendResult> {
        </p>
        ${detailsTable(b)}
        <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#8A8580">
-         The estimate of ${formatAUD(b.priced.total)} is indicative only — your final
-         quote is confirmed once we've measured.
+         ${b.items ? 'Your basket pricing will be confirmed once we have measured.' : `The estimate of ${formatAUD(b.priced.total)} is indicative only — your final quote is confirmed once we've measured.`}
        </p>`,
     ),
   )

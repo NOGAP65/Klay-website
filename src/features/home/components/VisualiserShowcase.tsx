@@ -44,8 +44,8 @@ import { useCartStore } from '@/features/cart';
 import { productByBlindType } from '@/features/catalogue';
 import { useIsMobile, useInView } from '@/shared';
 
-import { bookingLink } from '../../../lib/bookingLink';
-import { formatAUD } from '../../../lib/pricing';
+import { bookingLink } from '@/features/booking';
+import { formatAUD } from '@/core/pricing';
 import {
   VisualiserControls,
   Field,

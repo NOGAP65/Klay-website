@@ -13,7 +13,7 @@ export function RecommendationBanner() {
   return (
     <section className="home-process" aria-labelledby="home-process-title">
       <div className="home-process-photo">
-        <img src="/images/process/step-1-configure.png" alt="Choosing window coverings online on a laptop"
+        <img src="/images/process/step-1-configure.webp" alt="Choosing window coverings online on a laptop"
           loading="lazy" width="1672" height="941" />
       </div>
       <div className="home-process-content">

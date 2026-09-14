@@ -25,7 +25,9 @@
 // ---------------------------------------------------------------------------
 
 import { Suspense } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { tokens } from '@/ds';
+import { PageErrorBoundary } from '../routes/PageErrorBoundary';
 
 import { Footer } from './Footer';
 import { Nav } from './Nav';
@@ -47,6 +49,7 @@ export interface RootLayoutProps extends NavProps {
 }
 
 export function RootLayout({ banner, ...navProps }: RootLayoutProps) {
+  const location = useLocation();
   return (
     <>
       {banner}
@@ -59,9 +62,11 @@ export function RootLayout({ banner, ...navProps }: RootLayoutProps) {
           ~50ms a local chunk takes reads as a flicker, and every one of these
           chunks is small enough to land inside a single frame budget on a warm
           connection. An empty region is calmer than a flashed spinner. */}
-      <Suspense fallback={null}>
+      <PageErrorBoundary key={location.pathname}>
+      <Suspense fallback={<div role="status" aria-label="Loading page" style={{ minHeight: '65vh', background: tokens.paper }} />}>
         <Outlet />
       </Suspense>
+      </PageErrorBoundary>
       <Footer />
     </>
   );

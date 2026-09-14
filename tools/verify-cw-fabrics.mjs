@@ -10,9 +10,9 @@ assert.equal(new Set(samples.map(s => s.id)).size, samples.length);
 let bytes = 0;
 for (const sample of samples) {
   assert.match(sample.hex, /^#[a-f0-9]{6}$/);
-  for (const key of ['texture', 'renderTexture', 'weaveTexture', 'source']) {
+  for (const key of ['texture', 'renderTexture', 'weaveTexture']) {
     assert(files.has(sample[key]), `Exact asset path missing: ${sample[key]}`);
-    if (key !== 'source') bytes += (await fs.stat(path.join('public', sample[key]))).size;
+    bytes += (await fs.stat(path.join('public', sample[key]))).size;
   }
 }
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
