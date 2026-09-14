@@ -14,12 +14,24 @@ const button: CSSProperties = {
 };
 
 export default function JoineryOrbitControl({ angle, isReady, onRotate, onReset }: Props) {
-  return <div role="group" aria-label="3D view controls" style={{
+  return <>
+    <style>{`
+      .joinery-mobile-hint { display: none; }
+      @container joinery-preview (max-width: 480px) {
+        .joinery-orbit-control { padding: 4px !important; }
+        .joinery-orbit-buttons { flex-direction: column; }
+        .joinery-orbit-buttons button { width: 40px !important; height: 36px !important; }
+        .joinery-orbit-buttons button:nth-child(2) { height: 46px !important; }
+        .joinery-orbit-hint { display: none; }
+        .joinery-mobile-hint { display: block; }
+      }
+    `}</style>
+    <div className="joinery-orbit-control" role="group" aria-label="3D view controls" style={{
     position: 'absolute', zIndex: 3, right: 12, bottom: 12, padding: '7px 4px 8px',
     borderRadius: 28, background: 'rgba(29,29,29,.88)', color: '#fff',
     boxShadow: '0 2px 10px rgba(0,0,0,.15)', fontFamily: tokens.body,
   }}>
-    <div style={{ display: 'flex', alignItems: 'center' }}>
+    <div className="joinery-orbit-buttons" style={{ display: 'flex', alignItems: 'center' }}>
       <button type="button" aria-label="Rotate view left" title="Rotate left" disabled={!isReady || angle <= -40} onClick={() => onRotate(-10)} style={{ ...button, opacity: angle <= -40 ? .3 : 1 }}>
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="m10 5-7 7 7 7M3 12h13"/></svg>
       </button>
@@ -32,7 +44,9 @@ export default function JoineryOrbitControl({ angle, isReady, onRotate, onReset 
       </button>
     </div>
     <div style={{ textAlign: 'center', fontSize: 10, lineHeight: 1.4, paddingTop: 4, color: 'rgba(255,255,255,.82)' }}>
-      Drag to rotate <span aria-hidden="true">·</span> <span aria-label="View angle">{Math.abs(angle)}°</span>
+      <span className="joinery-orbit-hint">Drag to rotate · </span><span aria-label="View angle">{Math.abs(angle)}°</span>
     </div>
-  </div>;
+  </div>
+    <span className="joinery-mobile-hint" style={{ position: 'absolute', bottom: 12, left: 12, zIndex: 2, padding: '5px 8px', borderRadius: 12, background: 'rgba(29,29,29,.8)', color: '#fff', fontFamily: tokens.body, fontSize: 10, pointerEvents: 'none' }}>Drag to rotate</span>
+  </>;
 }

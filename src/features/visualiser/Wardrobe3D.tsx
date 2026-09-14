@@ -295,7 +295,7 @@ export default function Wardrobe3D({
     invalidateRef.current?.();
   }, [handleFinish]);
 
-  return <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0 }}>
+  return <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0, containerType: 'inline-size', containerName: 'joinery-preview' }}>
     <div ref={hostRef} aria-label="Interactive 3D product preview" style={{ width: '100%', height: '100%', minHeight: 0 }} />
     <JoineryOrbitControl angle={angle} isReady={isReady} onRotate={degrees => moveViewRef.current?.(degrees)} onReset={() => moveViewRef.current?.(null)} />
   </div>;
