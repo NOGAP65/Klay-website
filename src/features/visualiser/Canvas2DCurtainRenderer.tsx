@@ -1649,7 +1649,7 @@ export default function Canvas2DCurtainRenderer({
         });
         sceneRef.current.clear();
       }
-      if (rendererRef.current) rendererRef.current.dispose();
+      // Reuse the canvas context when the fabric, hardware or trace changes.
 
       // MSAA back on. It was turned off on the grounds that the only hard edge in
       // the scene was the panel silhouette and that edge was vertical, so the CSS
@@ -1658,7 +1658,7 @@ export default function Canvas2DCurtainRenderer({
       // for aliasing, and the scallop came out as a hard sawtooth. Cheaper than
       // supersampling the whole buffer to fix one edge, and the curtain path has
       // the headroom for it.
-      const renderer = new THREE.WebGLRenderer({
+      const renderer = rendererRef.current ?? new THREE.WebGLRenderer({
         canvas: threeCanvas,
         alpha: true,
         antialias: true,
@@ -1848,7 +1848,7 @@ export default function Canvas2DCurtainRenderer({
       draw(opennessRef.current, 0);
     };
 
-    init();
+    void init().catch(error => { if (!cancelled) console.error('Curtain preview could not load', error); });
 
     return () => {
       cancelled = true;
@@ -1921,7 +1921,11 @@ export default function Canvas2DCurtainRenderer({
         });
       }
       lightingRef.current?.dispose();
-      if (rendererRef.current) rendererRef.current.dispose();
+      if (rendererRef.current) {
+        rendererRef.current.dispose();
+        rendererRef.current.forceContextLoss();
+        rendererRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

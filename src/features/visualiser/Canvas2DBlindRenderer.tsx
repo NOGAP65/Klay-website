@@ -460,6 +460,7 @@ const createGLState = (): GLState | null => {
     preserveDrawingBuffer: true,
   });
   if (!gl) return null;
+  canvas.addEventListener('webglcontextlost', event => event.preventDefault());
 
   const program = gl.createProgram();
   if (!program) return null;
@@ -592,6 +593,10 @@ const getOrUploadTexture = (
   gl.generateMipmap(gl.TEXTURE_2D);
 
   const entry: FabricTexture = { texture, meanLuma };
+  if (state.textures.size >= 12) {
+    const oldest = state.textures.keys().next().value;
+    if (oldest !== undefined) { gl.deleteTexture(state.textures.get(oldest)!.texture); state.textures.delete(oldest); }
+  }
   state.textures.set(key, entry);
   return entry;
 };
@@ -3157,6 +3162,10 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
       if (canvas.width !== W) canvas.width = W;
       if (canvas.height !== H) canvas.height = H;
       ctx.drawImage(photo, 0, 0);
+      if (glStateRef.current?.gl.isContextLost()) {
+        glStateRef.current = null;
+        glUnavailableRef.current = false;
+      }
 
       if (!compareMode) {
         for (const area of confirmedAreas) {

@@ -60,9 +60,12 @@ export default function Wardrobe3D({
   wallColour,
 }: Wardrobe3DProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const [angle, setAngle] = useState(30);
   const [isReady, setIsReady] = useState(false);
   const moveViewRef = useRef<((degrees: number | null) => void) | null>(null);
+  const latest = useRef({ wallColour, background, handleFinish });
+  latest.current = { wallColour, background, handleFinish };
   const viewRef = useRef({ yaw: INITIAL_YAW, polar: Math.PI / 2 - 0.015, zoom: 1 });
   // The live scene, so the two cheap changes below can reach it without the
   // effect that built it having to re-run. See WardrobeScene.setWallColour.
@@ -72,16 +75,12 @@ export default function Wardrobe3D({
   // it without being a dependency of that effect.
   const invalidateRef = useRef<(() => void) | null>(null);
 
+  // One graphics context for this viewer, reused across finish, width and model changes.
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-    setIsReady(false);
-
-    const model = wardrobeModelById(modelId);
-    const widthMm = selectedWidthMm ?? DEFAULT_WIDTH_MM;
-
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+    renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     // The stickers and the decor sheets are already tone-mapped photographs.
     // Running them through a filmic curve a second time greys them.
@@ -91,6 +90,26 @@ export default function Wardrobe3D({
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
     renderer.domElement.style.touchAction = 'none';
+
+    rendererRef.current = renderer;
+    return () => {
+      rendererRef.current = null;
+      renderer.dispose();
+      renderer.forceContextLoss();
+      renderer.domElement.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    setIsReady(false);
+
+    const model = wardrobeModelById(modelId);
+    const widthMm = selectedWidthMm ?? DEFAULT_WIDTH_MM;
+
+    const renderer = rendererRef.current;
+    if (!renderer) return;
 
     const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 100);
 
@@ -110,7 +129,9 @@ export default function Wardrobe3D({
     // comparison useless. `background` stays the fallback for a caller that
     // has not been given a colour.
         builtRef.current = built;
-        built.scene.background = new THREE.Color(wallColour ?? background);
+        built.scene.background = new THREE.Color(latest.current.wallColour ?? latest.current.background);
+        if (latest.current.wallColour) built.setWallColour(latest.current.wallColour);
+        if (latest.current.handleFinish) built.setHandleFinish(latest.current.handleFinish);
 
         const resize = () => {
           const w = host.clientWidth || 800;
@@ -192,8 +213,11 @@ export default function Wardrobe3D({
         // customer turns it, when the box is resized, or when a colour is
         // repainted, and every one of those can say so. Idle now costs nothing,
         // which is what makes it run on a laptop.
-        let dirty = true;
-        const invalidate = () => { dirty = true; };
+        let raf = 0;
+        let stopped = false;
+        const invalidate = () => {
+          if (!stopped && !raf && !document.hidden) raf = requestAnimationFrame(tick);
+        };
         invalidateRef.current = invalidate;
         const syncView = () => {
           const yaw = controls.getAzimuthalAngle();
@@ -226,19 +250,26 @@ export default function Wardrobe3D({
         // is let go, so the easing runs to a stop rather than freezing mid-way.
         controls.addEventListener('change', invalidate);
 
-        let raf = 0;
-        const tick = () => {
-          raf = requestAnimationFrame(tick);
-          // update() drives the damping and emits 'change' while it has work,
-          // so it has to run every frame even when nothing is drawn.
-          controls.update();
-          if (!dirty) return;
-          dirty = false;
-          renderer.render(built.scene, camera);
+        function tick() {
+          raf = 0;
+          if (stopped || document.hidden) return;
+          const moving = controls.update();
+          renderer!.render(built.scene, camera);
+          if (moving) invalidate();
+        }
+        const onVisibility = () => {
+          if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
+          else invalidate();
         };
-        tick();
+        document.addEventListener('visibilitychange', onVisibility);
+        // Orbiting changes the camera, not the static lighting or cabinet geometry.
+        renderer.shadowMap.autoUpdate = false;
+        renderer.shadowMap.needsUpdate = true;
+        invalidate();
 
         cleanup = () => {
+          stopped = true;
+          document.removeEventListener('visibilitychange', onVisibility);
           builtRef.current = null;
           invalidateRef.current = null;
           moveViewRef.current = null;
@@ -257,8 +288,6 @@ export default function Wardrobe3D({
     return () => {
       disposed = true;
       cleanup();
-      renderer.dispose();
-      if (renderer.domElement.parentNode === host) host.removeChild(renderer.domElement);
     };
     // The finish is a dependency because it is a MATERIAL on a scene built
     // once: left off, the picker wrote to the store, the store re-rendered this

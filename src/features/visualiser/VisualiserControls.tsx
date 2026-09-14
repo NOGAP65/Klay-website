@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { ROLLER_HARDWARE, fabricCollections, fabricByName, fabricPalette } from '@/features/fabrics';
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -448,7 +449,7 @@ export function PriceBox({
 
 export default function VisualiserControls({ lockedRange: lockedRangeProp, compact = false, showCurtainControls = false, onDark = false, showPrice = true }: VisualiserControlsProps) {
   const [searchParams] = useSearchParams();
-  const store = useVisualiserStore();
+  const store = useVisualiserStore(useShallow(({ rollPosition: _position, ...settings }) => settings));
   // `sk`, not `s`: the options loops below all bind `s` as their map
   // variable, and a skin called `s` would be shadowed inside every one.
   const sk = skin(onDark);

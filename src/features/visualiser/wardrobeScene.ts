@@ -268,8 +268,10 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // alone, where the intensities mean what they look like they mean and a
   // shadow is something this code can reason about.
   const pmrem = new THREE.PMREMGenerator(renderer);
-  const env = pmrem.fromScene(new RoomEnvironment(), 0.04);
-  disposables.push(env.texture, pmrem);
+  const environment = new RoomEnvironment();
+  const env = pmrem.fromScene(environment, 0.04);
+  environment.dispose();
+  disposables.push(env, pmrem, key.shadow);
 
   // --- the carcass ---------------------------------------------------------
   const { boxes } = buildCarcass(model.id, widthMm, hardwareSpec(handleFinishName), recessed);

@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { fabricByName } from '@/features/fabrics';
 import { useEffect, useRef, useState } from 'react';
 import { radius, tokens, space, type as typeScale } from '@/ds';
@@ -5,8 +6,8 @@ import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from '
 import { usePhotoUpload } from './usePhotoUpload';
 import { WINDOW_ROOMS, defaultWindowRoom, windowRoomFor } from './roomPresets';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
-import Canvas2DBlindRenderer, { RenderedArea } from './Canvas2DBlindRenderer';
-import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
+import type { RenderedArea } from './Canvas2DBlindRenderer';
+import { BlindWindowPreview, CurtainWindowPreview } from './WindowPreview';
 import WardrobeRoomRenderer from './WardrobeRoomRenderer';
 import Wardrobe3D from './Wardrobe3D';
 import WallColourChip from './WallColourChip';
@@ -863,11 +864,19 @@ interface KlayConfiguratorProps {
 // Operation, Price, Book Installation) live in the caller's own layout —
 // see VisualiserControls — since callers place this box differently
 // (VisualiserSection's right column vs VisualiserPage's full-bleed canvas).
+function ConnectedPullControl({ curtain, run }: { curtain: boolean; run: number }) {
+  const value = useVisualiserStore(s => s.rollPosition);
+  const onChange = useVisualiserStore(s => s.setRollPosition);
+  return curtain
+    ? <CurtainCord value={value} onChange={onChange} run={run} />
+    : <BeadChain value={value} onChange={onChange} run={run} />;
+}
+
 export default function KlayConfigurator({
   defaultBlindType,
   mediaMaxVh = MAX_MEDIA_VH,
 }: KlayConfiguratorProps = {}) {
-  const store = useVisualiserStore();
+  const store = useVisualiserStore(useShallow(({ rollPosition: _position, ...settings }) => settings));
 
   // Before anything else, so the seeded trace and the first render both see
   // the right type. The store is module-global and outlives this component,
@@ -1062,8 +1071,7 @@ export default function KlayConfigurator({
   const autoTimeoutRef = useRef<number | null>(null);
   const autoRunningRef = useRef(false);
   const [autoRunning, setAutoRunning] = useState(false);
-  const rollPositionRef = useRef(store.rollPosition);
-  rollPositionRef.current = store.rollPosition;
+
 
   const cancelRollAnimation = () => {
     if (animFrameRef.current !== null) {
@@ -1078,7 +1086,7 @@ export default function KlayConfigurator({
 
   const animateRollTo = (target: number, duration: number, onDone?: () => void) => {
     if (animFrameRef.current !== null) cancelAnimationFrame(animFrameRef.current);
-    const from = rollPositionRef.current;
+    const from = useVisualiserStore.getState().rollPosition;
     const start = performance.now();
     const step = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
@@ -1356,11 +1364,7 @@ export default function KlayConfigurator({
     </div>
   ) : pullRun ? (
     <div style={SIDE_CONTROL_POSITION}>
-      {store.productCategory === 'curtain' ? (
-        <CurtainCord value={store.rollPosition} onChange={v => store.setRollPosition(v)} run={pullRun} />
-      ) : (
-        <BeadChain value={store.rollPosition} onChange={v => store.setRollPosition(v)} run={pullRun} />
-      )}
+      <ConnectedPullControl curtain={store.productCategory === 'curtain'} run={pullRun} />
     </div>
   ) : null;
 
@@ -1506,7 +1510,7 @@ export default function KlayConfigurator({
               wallColour={store.wardrobeWallColour}
             />
           ) : store.productCategory === 'curtain' && confirmedArea ? (
-            <Canvas2DCurtainRenderer
+            <CurtainWindowPreview
               tl={{ x: confirmedArea.corners[0][0], y: confirmedArea.corners[0][1] }}
               tr={{ x: confirmedArea.corners[1][0], y: confirmedArea.corners[1][1] }}
               br={{ x: confirmedArea.corners[2][0], y: confirmedArea.corners[2][1] }}
@@ -1519,17 +1523,15 @@ export default function KlayConfigurator({
               // heading carries — a 3m track is not a 1.2m track with fatter
               // folds. See wavesForTrack.
               size={store.curtainSize}
-              openness={1 - store.rollPosition}
               canvasWidth={photoBitmap?.width ?? 1}
               canvasHeight={photoBitmap?.height ?? 1}
               photoUrl={store.photoUrl!}
             />
           ) : (
-            <Canvas2DBlindRenderer
+            <BlindWindowPreview
               photoUrl={store.photoUrl!}
               tracedAreas={canvasTracedAreas}
               activeAreaId={store.activeAreaId ?? undefined}
-              rollPosition={store.rollPosition}
             />
           )}
 
