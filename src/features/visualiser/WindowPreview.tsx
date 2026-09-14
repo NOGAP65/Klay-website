@@ -1,7 +1,7 @@
 import React from 'react';
 import { useVisualiserStore } from './useVisualiserStore';
 import Canvas2DBlindRenderer from './Canvas2DBlindRenderer';
-import Canvas2DCurtainRenderer from './Canvas2DCurtainRenderer';
+const Canvas2DCurtainRenderer = React.lazy(() => import('./Canvas2DCurtainRenderer'));
 // Opening and closing updates only the preview, without rerendering the options panel.
 export function BlindWindowPreview(props: Omit<React.ComponentProps<typeof Canvas2DBlindRenderer>, 'rollPosition'>) {
   const position = useVisualiserStore(s => s.rollPosition);
@@ -9,5 +9,5 @@ export function BlindWindowPreview(props: Omit<React.ComponentProps<typeof Canva
 }
 export function CurtainWindowPreview(props: Omit<React.ComponentProps<typeof Canvas2DCurtainRenderer>, 'openness'>) {
   const position = useVisualiserStore(s => s.rollPosition);
-  return <Canvas2DCurtainRenderer {...props} openness={1 - position} />;
+  return <React.Suspense fallback={<img src={props.photoUrl} alt="" style={{ display: 'block', width: '100%' }} />}><Canvas2DCurtainRenderer {...props} openness={1 - position} /></React.Suspense>;
 }

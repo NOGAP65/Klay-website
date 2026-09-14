@@ -1,6 +1,6 @@
 import { useShallow } from 'zustand/react/shallow';
 import { fabricByName } from '@/features/fabrics';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type ComponentProps } from 'react';
 import { radius, tokens, space, type as typeScale } from '@/ds';
 import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from './useVisualiserStore';
 import { usePhotoUpload } from './usePhotoUpload';
@@ -8,9 +8,16 @@ import { WINDOW_ROOMS, defaultWindowRoom, windowRoomFor } from './roomPresets';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import type { RenderedArea } from './Canvas2DBlindRenderer';
 import { BlindWindowPreview, CurtainWindowPreview } from './WindowPreview';
-import WardrobeRoomRenderer from './WardrobeRoomRenderer';
-import Wardrobe3D from './Wardrobe3D';
 import WallColourChip from './WallColourChip';
+
+const LazyWardrobeRoomRenderer = lazy(() => import('./WardrobeRoomRenderer'));
+function WardrobeRoomRenderer(props: ComponentProps<typeof LazyWardrobeRoomRenderer>) {
+  return <Suspense fallback={<div role="status" style={{ padding: 24, color: '#F4F1E9' }}>Preparing your preview…</div>}><LazyWardrobeRoomRenderer {...props}/></Suspense>;
+}
+const LazyWardrobe3D = lazy(() => import('./Wardrobe3D'));
+function Wardrobe3D(props: ComponentProps<typeof LazyWardrobe3D>) {
+  return <Suspense fallback={<div role="status" style={{ padding: 24, color: '#F4F1E9' }}>Preparing your preview…</div>}><LazyWardrobe3D {...props}/></Suspense>;
+}
 
 // One radius for every surface in the visualiser. The three files used to
 // disagree (0 here, 12px on the homepage wrapper, 4px on the thumbnails),

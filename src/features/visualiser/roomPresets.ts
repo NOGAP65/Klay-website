@@ -22,7 +22,7 @@ export const WINDOW_ROOMS: Record<'blind' | 'curtain', WindowRoom[]> = {
   ],
   blind: [
     {
-      url: '/images/visualiser/preview.png',
+      url: '/images/visualiser/preview.webp',
       name: 'Original bedroom',
       corners: [[0.1918, 0.1989], [0.5841, 0.2492], [0.5830, 0.6382], [0.1864, 0.6699]],
     },

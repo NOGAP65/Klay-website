@@ -116,8 +116,10 @@ export default function Wardrobe3D({
     let disposed = false;
     let cleanup = () => {};
 
-    buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm, handleFinish, recessed, wallColour })
-      .then(built => {
+    // Skip work cancelled by a remount or another selection before setup begins.
+    Promise.resolve().then(() => disposed ? null : buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm, handleFinish, recessed, wallColour }))
+      .then(async built => {
+        if (!built) return;
         if (disposed) {
           built.dispose();
           return;
@@ -142,8 +144,7 @@ export default function Wardrobe3D({
           invalidateRef.current?.();
         };
         resize();
-        const ro = new ResizeObserver(resize);
-        ro.observe(host);
+
 
         // Backed off far enough that the whole cabinet sits in frame with a
         // little air, whatever width the layout is.
@@ -180,6 +181,21 @@ export default function Wardrobe3D({
           new THREE.Spherical(dist * saved.zoom, saved.polar, saved.yaw),
         ));
         camera.lookAt(aim);
+
+        // Yield while the driver prepares shaders; stop promptly on a new selection.
+        renderer.compile(built.scene, camera);
+        const gl = renderer.getContext();
+        const parallel = gl.getExtension('KHR_parallel_shader_compile');
+        if (parallel) await new Promise<void>(resolve => {
+          const ready = () => {
+            if (disposed || gl.isContextLost() || !renderer.info.programs?.some(program => !gl.getProgramParameter(program.program as WebGLProgram, parallel.COMPLETION_STATUS_KHR))) resolve();
+            else window.setTimeout(ready, 10);
+          };
+          ready();
+        });
+        if (disposed) { if (builtRef.current === built) builtRef.current = null; built.dispose(); return; }
+        const ro = new ResizeObserver(resize);
+        ro.observe(host);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.target.copy(aim);
@@ -254,7 +270,7 @@ export default function Wardrobe3D({
           raf = 0;
           if (stopped || document.hidden) return;
           const moving = controls.update();
-          renderer!.render(built.scene, camera);
+          renderer!.render(built!.scene, camera);
           if (moving) invalidate();
         }
         const onVisibility = () => {

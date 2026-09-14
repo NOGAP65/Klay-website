@@ -1159,14 +1159,14 @@ function buildDetailTexture(path: string): Promise<FabricTexture> {
   const pending = loadImage(path).then(img => {
     const canvas = document.createElement('canvas');
     canvas.width = 512; canvas.height = 1024;
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
     const fromShop = path.includes('/fabrics/');
     if (fromShop) ctx.drawImage(img, 113, 105, 280, 585, 0, 0, 512, 1024);
     else ctx.drawImage(img, 0, 0, 512, 1024);
     const pixels = ctx.getImageData(0,0,512,1024);
     const low = document.createElement('canvas');
     low.width = 512; low.height = 1024;
-    const lowCtx = low.getContext('2d')!;
+    const lowCtx = low.getContext('2d', { willReadFrequently: true })!;
     lowCtx.filter = 'blur(18px)'; lowCtx.drawImage(canvas,0,0);
     const smooth = lowCtx.getImageData(0,0,512,1024).data;
     for (let i=0;i<pixels.data.length;i+=4) {
@@ -1230,6 +1230,7 @@ export default function Canvas2DCurtainRenderer({
   const bgRef = useRef<HTMLCanvasElement>(null);
   const threeRef = useRef<HTMLCanvasElement>(null);
   const foregroundRef = useRef<HTMLCanvasElement>(null);
+  const foregroundPhotoRef = useRef<string | null>(null);
 
   const lightingRef = useRef<CurtainLighting | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -1429,9 +1430,10 @@ export default function Canvas2DCurtainRenderer({
       const bgCtx = bgCanvas.getContext('2d');
       if (bgCtx) bgCtx.drawImage(photo, 0, 0);
       const foreground = foregroundRef.current;
-      if (foreground) {
+      if (foreground && foregroundPhotoRef.current !== photoUrl) {
+        foregroundPhotoRef.current = photoUrl;
         foreground.width = W; foreground.height = H;
-        const ctx = foreground.getContext('2d')!;
+        const ctx = foreground.getContext('2d', { willReadFrequently: true })!;
         ctx.clearRect(0,0,W,H);
         if (photoUrl.endsWith('/curtain-shop-room.webp')) {
           // Foreground objects stay in front of the curtain. The plant matte
@@ -1454,7 +1456,7 @@ export default function Canvas2DCurtainRenderer({
       // and saturated foliage, to match each customer's room colour and light.
       const lightCanvas = document.createElement('canvas');
       lightCanvas.width=32; lightCanvas.height=32;
-      const lightCtx=lightCanvas.getContext('2d')!;
+      const lightCtx=lightCanvas.getContext('2d', { willReadFrequently: true })!;
       lightCtx.drawImage(photo,0,0,32,32);
       const lightPixels=lightCtx.getImageData(0,0,32,32).data;
       const roomRGB=[0,0,0]; let roomSamples=0;
