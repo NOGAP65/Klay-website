@@ -1,6 +1,7 @@
+import { loadImage } from '@/shared';
 import React, { useEffect, useRef } from 'react';
 import { computeHomography, toColumnMajor, Point } from './homography';
-import { HARDWARE_HEX } from '../../data/products';
+import { HARDWARE_HEX } from '@/features/fabrics';
 import { tokens } from '@/ds';
 import { sampleBlindLighting, blindTextureCoordinates, NEUTRAL_BLIND_LIGHT, type BlindLighting } from './blindLighting';
 
@@ -224,25 +225,6 @@ const texturePathsFor = (blindType: string, fabricColor: string): string[] =>
 /** Fabric photos already decoded, keyed by texture path. */
 type FabricImages = Map<string, HTMLImageElement>;
 
-const imageCache = new Map<string, Promise<HTMLImageElement>>();
-
-const loadImage = (src: string): Promise<HTMLImageElement> => {
-  let cached = imageCache.get(src);
-  if (!cached) {
-    cached = new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => resolve(img);
-      img.onerror = () => {
-        imageCache.delete(src);
-        reject(new Error(`Failed to load image: ${src}`));
-      };
-      img.src = src;
-    });
-    imageCache.set(src, cached);
-  }
-  return cached;
-};
 
 // ---------------------------------------------------------------------------
 // WebGL — perspective-correct fabric rendering
@@ -622,6 +604,7 @@ const lightingFor = (photo: CanvasImageSource, W: number, H: number, corners: Po
   let byQuad=roomLightCache.get(photo);
   if (!byQuad) { byQuad=new Map(); roomLightCache.set(photo,byQuad); }
   const key=JSON.stringify(corners);
+  if (byQuad.size >= 32 && !byQuad.has(key)) byQuad.delete(byQuad.keys().next().value!);
   const known=byQuad.get(key);
   if (known) return known;
   try {
@@ -793,8 +776,7 @@ const drawPreFabricDepth = (ctx: CanvasRenderingContext2D, corners: Point[]) => 
 // Keyed by radius to the nearest half pixel, and more than one entry, because a
 // scene with a sunscreen and a light filter needs two different radii in the
 // same frame and a single slot would thrash between them.
-const diffusionCache = new Map<number, HTMLCanvasElement>();
-let diffusionSource: CanvasImageSource | null = null;
+const diffusions = new WeakMap<object, Map<number, HTMLCanvasElement>>();
 
 const diffusedPhoto = (
   photo: CanvasImageSource,
@@ -802,10 +784,8 @@ const diffusedPhoto = (
   H: number,
   radius: number,
 ): HTMLCanvasElement | null => {
-  if (diffusionSource !== photo) {
-    diffusionCache.clear();
-    diffusionSource = photo;
-  }
+  let diffusionCache = diffusions.get(photo);
+  if (!diffusionCache) { diffusionCache = new Map(); diffusions.set(photo, diffusionCache); }
   const key = Math.round(radius * 2) / 2;
   const cached = diffusionCache.get(key);
   if (cached && cached.width === W && cached.height === H) return cached;
@@ -832,6 +812,7 @@ const diffusedPhoto = (
   }
 
   diffusionCache.set(key, canvas);
+  if (diffusionCache.size > 4) diffusionCache.delete(diffusionCache.keys().next().value!);
   return canvas;
 };
 

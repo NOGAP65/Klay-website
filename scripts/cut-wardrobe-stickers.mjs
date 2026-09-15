@@ -5,7 +5,7 @@
 //
 // Reads  public/images/visualiser/textures/wardrobes/Forma Wardrobe *.png
 // Writes public/images/Textures/wardrobes/<id>-white-<view>.png   (real alpha)
-//        src/features/visualiser/wardrobeCutouts.ts                    (manifest)
+//        src/features/joinery/wardrobeCutouts.ts                    (manifest)
 //
 // WHY THIS EXISTS AT ALL. wardrobes.ts used to carry a long note saying these
 // stickers could not be keyed: "the checkerboard that reads as transparency is

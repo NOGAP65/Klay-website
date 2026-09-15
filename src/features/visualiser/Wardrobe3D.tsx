@@ -19,11 +19,11 @@
 // is clamped rather than free.
 // ---------------------------------------------------------------------------
 
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-import { wardrobeModelById, DEFAULT_WIDTH_MM } from './wardrobes';
+import { wardrobeModelById, DEFAULT_WIDTH_MM } from '@/features/joinery';
 import { buildWardrobeScene, MM, OPENING_HEIGHT_MM, type WardrobeScene } from './wardrobeScene';
 import { onWallColour } from './wallColours';
 import JoineryOrbitControl from './JoineryOrbitControl';
@@ -63,9 +63,11 @@ export default function Wardrobe3D({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const [angle, setAngle] = useState(30);
   const [isReady, setIsReady] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [retry, setRetry] = useState(0);
   const moveViewRef = useRef<((degrees: number | null) => void) | null>(null);
   const latest = useRef({ wallColour, background, handleFinish });
-  latest.current = { wallColour, background, handleFinish };
+  useLayoutEffect(() => { latest.current = { wallColour, background, handleFinish }; }, [wallColour, background, handleFinish]);
   const viewRef = useRef({ yaw: INITIAL_YAW, polar: Math.PI / 2 - 0.015, zoom: 1 });
   // The live scene, so the two cheap changes below can reach it without the
   // effect that built it having to re-run. See WardrobeScene.setWallColour.
@@ -104,6 +106,7 @@ export default function Wardrobe3D({
     const host = hostRef.current;
     if (!host) return;
     setIsReady(false);
+    setHasError(false);
 
     const model = wardrobeModelById(modelId);
     const widthMm = selectedWidthMm ?? DEFAULT_WIDTH_MM;
@@ -117,7 +120,7 @@ export default function Wardrobe3D({
     let cleanup = () => {};
 
     // Skip work cancelled by a remount or another selection before setup begins.
-    Promise.resolve().then(() => disposed ? null : buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm, handleFinish, recessed, wallColour }))
+    Promise.resolve().then(() => disposed ? null : buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm, handleFinish: latest.current.handleFinish, recessed, wallColour: latest.current.wallColour }))
       .then(async built => {
         if (!built) return;
         if (disposed) {
@@ -298,7 +301,7 @@ export default function Wardrobe3D({
         };
       })
       .catch(() => {
-        /* a texture failed — leave the panel empty rather than half a cabinet */
+        if (!disposed) setHasError(true);
       });
 
     return () => {
@@ -311,7 +314,7 @@ export default function Wardrobe3D({
     // control that does nothing.
     // NOT wallColour OR handleFinish — those repaint in place, below. Leaving
     // them here rebuilt the entire scene on every click of a swatch.
-  }, [modelId, colourName, selectedWidthMm, background, recessed]);
+  }, [modelId, colourName, selectedWidthMm, background, recessed, retry]);
 
   /** Repaint the room. Two materials and a background — no geometry, no
    * textures, no environment. */
@@ -341,6 +344,10 @@ export default function Wardrobe3D({
   }, [handleFinish]);
 
   return <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0, containerType: 'inline-size', containerName: 'joinery-preview' }}>
+    {hasError && <div role="alert" style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'grid', placeContent: 'center', background, padding: 24 }}>
+      <p>We couldn’t load this preview.</p>
+      <button type="button" onClick={() => setRetry(value => value + 1)}>Try again</button>
+    </div>}
     <div ref={hostRef} aria-label="Interactive 3D product preview" style={{ width: '100%', height: '100%', minHeight: 0 }} />
     <JoineryOrbitControl angle={angle} isReady={isReady} onRotate={degrees => moveViewRef.current?.(degrees)} onReset={() => moveViewRef.current?.(null)} />
   </div>;

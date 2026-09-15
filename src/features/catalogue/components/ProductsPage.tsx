@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { space, tokens, type as typeScale } from '@/ds';
 import { useIsMobile, useMediaQuery } from '@/shared';
 
-import { useKlayStore } from '../../../store';
 import { defaultSelection, withChoice, type Selection } from '../configOptions';
 import type { CatalogueItem } from '../constants';
 import { EMPTY_FACETS, applyFacets, facetCount } from '../lib/facets';
@@ -27,19 +26,13 @@ const RAIL_COLLAPSE = '(max-width: 1100px)';
 export default function ProductsPage() {
   const isMobile = useIsMobile();
   const isNarrow = useMediaQuery(RAIL_COLLAPSE);
-  const setScrollY = useKlayStore(store => store.setScrollY);
   const [searchParams, setSearchParams] = useSearchParams();
   const state = useMemo(() => readBrowseState(searchParams), [searchParams]);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
   // Keep configured products intact when filtering temporarily hides their cards.
   const [sel, setSel] = useState<Record<string, Selection>>({});
-  useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [setScrollY]);
+
   const items = useMemo(() => sortProducts(applyFacets(state.facets, state.query), state.sort), [state]);
   const { displayed, regionRef, isUpdating } = useShopResults(items, state.query, isDrawerOpen && isNarrow, resultsRef);
   const chooseProduct = useCallback((item: CatalogueItem, field: string, choice: string) => {

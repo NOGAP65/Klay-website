@@ -1,4 +1,4 @@
-import samples from './samples.json';
+import samples from './samples.json' with { type: 'json' };
 
 export interface FabricSample {
   id: string;
@@ -17,6 +17,25 @@ export const FABRIC_SAMPLES: FabricSample[] = samples;
 export const ROLLER_COLLECTIONS = ['Essence', 'Montecarlo', 'Symphony', 'Urbania', 'Verve'];
 export const VENETIAN_COLLECTIONS = ['UltraSlat', 'Aluminium', 'Basswood'];
 
+// Built once in O(n). Palette/name reads during dragging and rendering are
+// O(1), with stable arrays instead of a new filtered allocation every frame.
+const palettes = new Map<string, FabricSample[]>();
+const names = new Map<string, FabricSample>();
+const honeycombDays = new Map<string, FabricSample>();
+const honeycombBlockout: FabricSample[] = [];
+const EMPTY_PALETTE: FabricSample[] = [];
+for (const sample of FABRIC_SAMPLES) {
+  const key = `${sample.product}:${sample.collection}`;
+  const palette = palettes.get(key) ?? [];
+  palette.push(sample);
+  palettes.set(key, palette);
+  if (sample.type !== 'lightfilter' && sample.type !== 'sheer' && !names.has(sample.name)) names.set(sample.name, sample);
+  if (sample.product === 'honeycomb-blinds') {
+    if (sample.type === 'blockout') honeycombBlockout.push(sample);
+    if (sample.type === 'lightfilter') honeycombDays.set(sample.name, sample);
+  }
+}
+
 /** ATLAS's roller application and Panorama sunscreen confirmed by the owner.
  * The other ranges' blockout/light-filter availability still needs supplier
  * confirmation; keep the existing light-control configuration independent. */
@@ -29,15 +48,15 @@ export function fabricCollections(product: string, variant?: string): string[] {
 export function fabricPalette(product: string, variant?: string, collection?: string): FabricSample[] {
   if (product === 'honeycomb-blinds') {
     // Day & Night pairs the same named colour in its two labelled fabric types.
-    return FABRIC_SAMPLES.filter(s => s.product === product && s.type === 'blockout');
+    return honeycombBlockout;
   }
   const ranges = fabricCollections(product, variant);
   const selected = ranges.includes(collection ?? '') ? collection : ranges[0];
-  return selected ? FABRIC_SAMPLES.filter(s => s.collection === selected) : [];
+  return selected ? palettes.get(`${product}:${selected}`) ?? EMPTY_PALETTE : EMPTY_PALETTE;
 }
 
 export function fabricByName(name?: string): FabricSample | undefined {
-  return FABRIC_SAMPLES.find(s => s.name === name && s.type !== 'lightfilter' && s.type !== 'sheer');
+  return name ? names.get(name) : undefined;
 }
 
 export function rollerPalette(type: string, name?: string): FabricSample[] {
@@ -48,11 +67,11 @@ export function rollerColour(type: string, name?: string): string {
   const palette = rollerPalette(type, name);
   return palette.find(s => s.name === name)?.name
     ?? palette.find(s => ['Ice', 'Polar', 'Optic White', 'Dewy White', 'Dazzle', 'Chalk'].includes(s.colour))?.name
-    ?? palette[0].name;
+    ?? palette[0]?.name ?? 'Essence Ice';
 }
 
 export function honeycombDaySample(name?: string): FabricSample | undefined {
-  return FABRIC_SAMPLES.find(s => s.product === 'honeycomb-blinds' && s.name === name && s.type === 'lightfilter');
+  return name ? honeycombDays.get(name) : undefined;
 }
 
 export const ROLLER_HARDWARE = ['White', 'Black', 'Cream', 'Platinum'].map(label => {

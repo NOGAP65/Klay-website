@@ -19,9 +19,10 @@ export default defineConfig({
   reporter: [['list'], ['json', { outputFile: 'test-results/results.json' }], ['html', { open: 'never' }]],
   use: { baseURL: process.env.TEST_URL ?? 'http://127.0.0.1:4173', actionTimeout: 12_000, navigationTimeout: 25_000, screenshot: 'only-on-failure', trace: 'retain-on-failure' },
   projects: [
-    { name: 'domain', testMatch: '**/domain.spec.ts' },
+    { name: 'performance', testMatch: '**/performance.spec.ts', use: { ...variants[0].settings, reducedMotion: 'reduce' } },
+    { name: 'domain', testMatch: ['**/domain.spec.ts', '**/architecture.spec.ts', '**/joinery.spec.ts', '**/fabrics.spec.ts'] },
     ...variants.flatMap(({name, settings}) => (['light','dark'] as const).map(colorScheme => ({
-      name: `${name}-${colorScheme}`, testMatch: '**/site.spec.ts', use: { ...settings, colorScheme },
+      name: `${name}-${colorScheme}`, testMatch: ['**/site.spec.ts', '**/visualiser.spec.ts'], use: { ...settings, colorScheme },
     }))),
   ],
 });

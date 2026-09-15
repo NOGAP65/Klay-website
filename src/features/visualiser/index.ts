@@ -42,20 +42,4 @@ export {
   type ProductCategory,
 } from './useVisualiserStore';
 
-// Read by the catalogue to build its wardrobe configuration options: the
-// finishes, the model list by kind, and the width and colour tables. These are
-// data, not components — the catalogue asks the visualiser what a wardrobe can
-// be, rather than keeping a second copy of the answer.
-export {
-  modelsOfKind,
-  wardrobeModelById,
-  WARDROBE_WIDTHS,
-  SHELVING_WIDTHS,
-  WALKIN_WIDTHS,
-  WARDROBE_COLOURS,
-  FINISH_TEXTURE,
-  FINISH_TILE_MM,
-} from './wardrobes';
-export { HANDLE_FINISHES } from './wardrobeHardware';
-// Shop width previews share the same fixed modules and bay proportions.
-export { BOARD_MM, columnsFor, sidePanelsFor } from './wardrobeGeometry';
+export { selectQuoteConfig, visualiserQuoteItems } from './quoteConfiguration';

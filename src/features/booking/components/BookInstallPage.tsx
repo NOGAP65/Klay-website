@@ -9,6 +9,7 @@ import { createCheckoutSession, requestQuote, type BookingPayload, type FieldErr
 import { useCartStore } from '@/features/cart';
 import { isQuoteItems } from '@/core/quoteItems';
 import { cartQuoteItems } from '../cartQuote';
+import { quoteItemsFromLink } from '../quoteLink';
 import {
   MAX_QUANTITY,
   blindLabel,
@@ -53,9 +54,11 @@ const sectionHeading: React.CSSProperties = {
 
 export default function BookInstallPage() {
   const [searchParams] = useSearchParams();
-  const isBasketQuote = searchParams.get('cart') === '1';
+  const isLinkedQuote = searchParams.has('items');
+  const isBasketQuote = searchParams.get('cart') === '1' || isLinkedQuote;
   const cartItems = useCartStore(state => state.items);
-  const items = useMemo(() => cartQuoteItems(cartItems), [cartItems]);
+  const items = useMemo(() => isLinkedQuote
+    ? quoteItemsFromLink(searchParams.get('items')) : cartQuoteItems(cartItems), [cartItems, isLinkedQuote, searchParams]);
 
   // Config is derived from the URL and never edited here — quantity is the one
   // thing the customer can change on this page, so it is the only piece held in
@@ -362,7 +365,7 @@ export default function BookInstallPage() {
                 top: 110,
               }}
             >
-              <h2 style={sectionHeading}>{isBasketQuote ? 'Your basket' : 'Your configuration'}</h2>
+              <h2 style={sectionHeading}>{isBasketQuote && !isLinkedQuote ? 'Your basket' : 'Your configuration'}</h2>
 
               {isBasketQuote ? <>
                 {items.length ? items.map((item, index) => <div key={index} style={{ color: tokens.ink, marginBottom: 20 }}>
@@ -370,8 +373,8 @@ export default function BookInstallPage() {
                   <dl style={{ fontSize: 12, color: tokens.inkSoft, marginTop: 8 }}>
                     {item.options.map(option => <div key={option.label}><dt style={{ display: 'inline' }}>{option.label}: </dt><dd style={{ display: 'inline' }}>{option.value}</dd></div>)}
                   </dl>
-                </div>) : <p style={{ color: tokens.ink }}>Your basket is empty. <Link to="/products">Choose your products</Link>.</p>}
-                <Link to="/cart" style={{ color: tokens.ink, fontSize: 13 }}>Edit basket</Link>
+                </div>) : <p style={{ color: tokens.ink }}>{isLinkedQuote ? 'This configuration link is incomplete.' : 'Your basket is empty.'} <Link to="/products">Choose your products</Link>.</p>}
+                <Link to={isLinkedQuote ? '/visualiser' : '/cart'} style={{ color: tokens.ink, fontSize: 13 }}>{isLinkedQuote ? 'Back to visualiser' : 'Edit basket'}</Link>
               </> : <>
 
               <p

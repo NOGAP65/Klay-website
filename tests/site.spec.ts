@@ -25,6 +25,11 @@ test('all public pages render, images decode, layouts fit and navigation works',
       expect(await img.evaluate((el: HTMLImageElement) => el.naturalWidth), `${route}: ${await img.getAttribute('src')}`).toBeGreaterThan(0);
     }
     if (['/', '/book', '/visualiser'].includes(route)) await page.screenshot({path: info.outputPath(`${route.replaceAll('/','') || 'home'}.png`)});
+    if (route === '/') {
+      await page.getByRole('heading',{name:'From the feed',exact:true}).scrollIntoViewIfNeeded();
+      const galleryPhoto=page.getByAltText('Meet Klay — complete interior solutions designed to transform the way you live.');
+      await expect.poll(()=>galleryPhoto.evaluate((img:HTMLImageElement)=>img.naturalWidth)).toBeGreaterThan(0);
+    }
   }
   expect(errors).toEqual([]);
   await page.goto('/blinds');

@@ -1,4 +1,4 @@
-import { FINISH_TEXTURE, WARDROBE_COLOURS } from '../../visualiser/wardrobes';
+import { FINISH_TEXTURE, WARDROBE_COLOURS } from '@/features/joinery';
 
 /** PDF layouts retained; finishes follow Stegbar's website at the user's request. */
 export const WALK_IN_LAYOUTS = [

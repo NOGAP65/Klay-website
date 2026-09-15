@@ -1,5 +1,7 @@
 # Klay Interiors — Architecture Specification
 
+Current implementation supplement: [ADR-027 — bounded resources and enforced dependencies](decisions/027-bounded-resources-and-enforced-dependencies.md), 16 September 2026. This records the current module locations, resource ownership and executable verification gates; dated migration notes below remain historical.
+
 **Version:** 2.0
 **Date:** 31 August 2026 (v1.0), amended 31 Aug (v1.1, v1.2), 1 Sep 2026 (v1.3–v1.8), 3 Sep 2026 (v1.9, v2.0)
 **Amendments:** ADR-014 (§2, §3), ADR-015 (§3, §7), ADR-016 (§11), ADR-017 (§9), ADR-018 (§11), ADR-019 (§2), ADR-020 (§12), ADR-022 (§11), ADR-023 (§11, §12), ADR-024 (§5), ADR-025 (§3, §9), ADR-026 (records only). v2.0: §2 denominator, §12 permanence and owners, §11 the test

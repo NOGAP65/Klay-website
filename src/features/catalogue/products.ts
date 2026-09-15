@@ -1,33 +1,7 @@
-// ---------------------------------------------------------------------------
-// THE FOUR ROLLER PRODUCTS — the SKUs, the ranges, and the counts over them.
-//
-// SPLIT OUT OF src/data/products.ts at P4-5, decision H, PARTIALLY. Everything
-// here has zero consumers inside the visualiser, so it could move; the fabric
-// colour cards and the hardware map could not, and stayed behind. See the
-// header of src/data/products.ts for what remains there and why.
-//
-// ---------------------------------------------------------------------------
-// PRODUCTS is the catalogue the /products section reads. One entry per
-// product the customer can actually buy — four, matching the four blind types
-// the visualiser renders.
-//
-// `slug` is the product URL (/products/dusk). `blindType` is the visualiser's
-// own identifier for the same thing, which is a separate vocabulary because
-// the renderer, the store and Canvas2DBlindRenderer all key off it. The two
-// are mapped here, once, so nothing downstream has to hardcode the pairing.
-//
-// NO IMAGE PATHS AT ALL NOW, and the note that used to be here went with them.
-// It tracked two rounds of work on three product photographs — %20-encoding
-// them, then renaming them to phoenix-blockout, soleil-sunscreen and
-// eclipse-dual-roller so they sat beside the .webp cut-outs.
-//
-// ProductDetailPage was the only thing that ever rendered them. With it gone the
-// `image` field was dead data on sixteen entries, so the field and the three
-// 6.3 MB photographs went together on 7 September 2026. A path in a data file
-// that nothing renders is worse than no path: it looks maintained.
-// ---------------------------------------------------------------------------
+// Roller product identities map public slugs to the shared blind types.
+// Supplier fabrics and hardware are owned by features/fabrics.
 
-import { RYNAMIC_COLOURS } from '../../data/products'
+import { RYNAMIC_COLOURS } from '@/features/fabrics'
 
 export type ProductSlug = 'dusk' | 'veil' | 'duo' | 'haze'
 export type ProductBlindType = 'blockout' | 'sunscreen' | 'dual' | 'lightfilter'

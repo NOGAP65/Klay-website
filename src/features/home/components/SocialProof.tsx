@@ -60,7 +60,7 @@ import { Link } from 'react-router-dom';
 import * as site from '@/config/site';
 
 import { tokens, space, type as typeScale, SectionBand, useHover } from '@/ds';
-import { useIsMobile } from '@/shared';
+import { useIsMobile, useInView } from '@/shared';
 
 import { TILE_GAP } from '../furniture';
 
@@ -118,6 +118,7 @@ const TILES: Tile[] = [POST, ...PLACEHOLDERS];
 
 function Shot({ shot, isMobile }: { shot: Tile; isMobile: boolean }) {
   const { isHovered, bind } = useHover();
+  const { ref, hasBeenInView } = useInView<HTMLAnchorElement>('200px');
   // A route gets <Link> — a bare href there would tear down the SPA and refetch
   // the bundle just to move to a product page. Instagram is not a route, so it
   // gets a real anchor and a new tab: the one tile that leaves the site should
@@ -147,7 +148,9 @@ function Shot({ shot, isMobile }: { shot: Tile; isMobile: boolean }) {
   const inner = (
     <>
       <img
-        src={shot.image}
+        src={hasBeenInView ? shot.image : undefined}
+        loading="lazy"
+        decoding="async"
         alt={shot.alt}
         style={{
           position: 'absolute',
@@ -194,11 +197,11 @@ function Shot({ shot, isMobile }: { shot: Tile; isMobile: boolean }) {
   // it. Everything else gets <Link> — a bare href there would tear down the SPA
   // and refetch the bundle just to move to a product page.
   return shot.href ? (
-    <a {...bind} href={shot.href} target="_blank" rel="noreferrer noopener" style={frame}>
+    <a ref={ref} {...bind} href={shot.href} target="_blank" rel="noreferrer noopener" style={frame}>
       {inner}
     </a>
   ) : (
-    <Link {...bind} to={shot.to ?? '/products'} style={frame}>
+    <Link ref={ref} {...bind} to={shot.to ?? '/products'} style={frame}>
       {inner}
     </Link>
   );

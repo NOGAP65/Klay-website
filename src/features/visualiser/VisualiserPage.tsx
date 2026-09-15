@@ -1,10 +1,11 @@
+import { useShallow } from 'zustand/react/shallow';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { radius, tokens } from '@/ds';
 import { useIsMobile } from '@/shared';
 
-import { bookingLink } from '@/features/booking';
-import { KlayConfigurator, VisualiserControls, useVisualiserStore, ProductCategory } from '@/features/visualiser';
+import { quoteLink } from '@/features/booking';
+import { KlayConfigurator, VisualiserControls, useVisualiserStore, selectQuoteConfig, visualiserQuoteItems, ProductCategory } from '@/features/visualiser';
 
 const CATEGORY_TAB_STYLE = {
   flex: 1,
@@ -20,7 +21,8 @@ const CATEGORY_TAB_STYLE = {
 };
 
 function CategorySwitcher() {
-  const { productCategory, setProductCategory } = useVisualiserStore();
+  const productCategory = useVisualiserStore(s => s.productCategory);
+  const setProductCategory = useVisualiserStore(s => s.setProductCategory);
 
   const tabs: { id: ProductCategory; label: string }[] = [
     { id: 'blind', label: 'Blinds' },
@@ -61,12 +63,7 @@ export default function VisualiserPage() {
   const validKeys = ['klay-internal-2026', 'ella-embed-2026'];
   const isAllowed = allowedHosts.includes(hostname) || validKeys.includes(key ?? '');
 
-  // The whole configuration goes into the /book link, so what the customer
-  // configured here is what gets quoted or paid for there. Each traced window
-  // is one blind, which seeds the quantity; before anything is traced it is 1.
-  const { blindType, windowSize, operation, fabricColour, hardwareColour, tracedAreas } =
-    useVisualiserStore();
-  const confirmedWindows = tracedAreas.filter((a) => a.confirmed).length;
+  const quoteConfig = useVisualiserStore(useShallow(selectQuoteConfig));
 
   if (!isAllowed) {
     return (
@@ -111,14 +108,7 @@ export default function VisualiserPage() {
           <CategorySwitcher />
           <VisualiserControls showCurtainControls />
           <Link
-            to={bookingLink({
-              blindType,
-              windowSize,
-              operation,
-              quantity: Math.max(confirmedWindows, 1),
-              fabricColour,
-              hardwareColour,
-            })}
+            to={quoteLink(visualiserQuoteItems(quoteConfig))}
             style={{
               display: 'block',
               width: '100%',
@@ -138,7 +128,7 @@ export default function VisualiserPage() {
               boxSizing: 'border-box',
             }}
           >
-            Book Installation →
+            Request a quote →
           </Link>
         </div>
         {/* alignItems via the parent would stretch this column; instead the

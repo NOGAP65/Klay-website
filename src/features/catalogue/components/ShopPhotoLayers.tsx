@@ -3,7 +3,7 @@ import { useEffect, useId, useState } from 'react';
 import { grainTransform, joineryWidthSlices, JOINERY_HEIGHT_MM, type WidthSlice } from '@/features/catalogue/lib/joineryPhotoWidth';
 import { photoColourCurves } from '@/features/catalogue/lib/photoColour';
 import type { PhotoMaterial, ShopPhoto } from '@/features/catalogue/shopPhotos';
-import { FINISH_TEXTURE, FINISH_TILE_MM, WARDROBE_COLOURS, wardrobeModelById } from '@/features/visualiser';
+import { FINISH_TEXTURE, FINISH_TILE_MM, WARDROBE_COLOURS, wardrobeModelById } from '@/features/joinery';
 import { useMediaQuery } from '@/shared';
 
 import { ShowerPhotoLayers } from './ShowerPhotoLayers';

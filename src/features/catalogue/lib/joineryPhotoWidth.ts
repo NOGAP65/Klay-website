@@ -1,4 +1,4 @@
-import { BOARD_MM, columnsFor, sidePanelsFor } from '@/features/visualiser';
+import { BOARD_MM, columnsFor, sidePanelsFor } from '@/features/joinery';
 
 interface PhotoColumn {
   /** Photographed boundary at the centre of a shared divider. */

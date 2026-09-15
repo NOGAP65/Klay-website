@@ -1,6 +1,6 @@
-import { wardrobeModelById, wardrobeHeight, wardrobeDepth } from './wardrobes';
+import { wardrobeModelById, wardrobeHeight, wardrobeDepth } from '@/features/joinery';
 import { columnsFor, sidePanelsFor, facePostsFor, BOARD_MM, RAIL_DROP_MM } from './wardrobeGeometry';
-import { DEFAULT_HANDLE_FINISH, hardwareSpec, type HardwareSpec } from './wardrobeHardware';
+import { DEFAULT_HANDLE_FINISH, hardwareSpec, type HardwareSpec } from '@/features/joinery';
 
 export interface Box {
   x: number; y: number; z: number;

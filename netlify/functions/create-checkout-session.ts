@@ -56,6 +56,11 @@ export default async (req: Request): Promise<Response> => {
   // a zero-amount session would fail at Stripe with a far worse message.
   if (priced.totalCents <= 0) return serverError('checkout:zero-amount', { priced })
 
+  const cancelParams = new URLSearchParams({ type: config.blindType, size: config.windowSize,
+    op: config.operation, qty: String(config.quantity), cancelled: '1' });
+  if (booking.fabricColour) cancelParams.set('fabric', booking.fabricColour);
+  if (booking.hardwareColour) cancelParams.set('hw', booking.hardwareColour);
+
   const summary = `${blindLabel(config.blindType)} — ${sizeLabel(config.windowSize)} × ${config.quantity}`
 
   try {
@@ -105,10 +110,10 @@ export default async (req: Request): Promise<Response> => {
         metadata: { order_id: order.id },
       },
       success_url: `${e.siteUrl}/booking/confirmed?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${e.siteUrl}/book?cancelled=1`,
+      cancel_url: `${e.siteUrl}/book?${cancelParams}`,
       // All prices in the catalogue are GST-inclusive AU retail.
       submit_type: 'pay',
-    })
+    }, { idempotencyKey: `checkout:${order.id}` })
 
     if (!session.url) return serverError('checkout:no-url', { sessionId: session.id })
 

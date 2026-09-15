@@ -41,7 +41,6 @@
 // ---------------------------------------------------------------------------
 
 // --- routed pages (mounted by the app layer) --------------------------------
-export { default as ProductsPage } from './components/ProductsPage';
 
 // --- the four roller products, split out of data/products at P4-5 -----------
 // productByBlindType is read by VisualiserShowcase (feature:home, P4-6);

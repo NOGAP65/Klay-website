@@ -32,14 +32,14 @@
 
 import { ESLint } from 'eslint';
 
+// Import visibility and layer direction are verified by the resolved graph and
+// negative fixtures in check-architecture.mjs, not lexical path restrictions.
 /** Rules that must report against tools/rule-fixtures/. */
 const EXPECTED = [
   'klay/no-hardcoded-style-values',
   'klay/no-pure-black',
   'klay/no-direct-env-access',
-  'import/no-internal-modules',
   'import/order',
-  'no-restricted-imports',
   'max-lines',
   'max-lines-per-function',
   'complexity',

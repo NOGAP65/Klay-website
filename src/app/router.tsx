@@ -57,7 +57,7 @@ const ContactPage = lazy(() => import('@/features/marketing/components/ContactPa
 const HowItWorksPage = lazy(() => import('@/features/marketing/components/HowItWorksPage'));
 const BookingConfirmedPage = lazy(() => import('@/features/booking/components/BookingConfirmedPage'));
 const BookInstallPage = lazy(() => import('@/features/booking/components/BookInstallPage'));
-const VisualiserPage = lazy(() => import('../pages/VisualiserPage'));
+const VisualiserPage = lazy(() => import('@/features/visualiser/VisualiserPage'));
 
 import { RootLayout } from './layouts/RootLayout';
 import { LegacyBlindTypeRedirect, LegacyCategoryRedirect, LEGACY_CATEGORY_SLUGS } from './routes/legacyRedirects';

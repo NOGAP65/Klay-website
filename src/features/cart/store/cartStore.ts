@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { MAX_QUANTITY } from '@/core/pricing';
+import { persistedCartItems } from './persistedCart';
 
 export interface CartItem {
   id: string;
@@ -96,6 +97,8 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'klay-cart',
+      partialize: state => ({ items: state.items }),
+      merge: (persisted, current) => ({ ...current, items: persistedCartItems(persisted) }),
     }
   )
 );

@@ -26,7 +26,7 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-import { wardrobeArtwork, wardrobeModelById, WARDROBE_HEIGHT_MM, DEFAULT_WIDTH_MM } from './wardrobes';
+import { wardrobeArtwork, wardrobeModelById, WARDROBE_HEIGHT_MM, DEFAULT_WIDTH_MM } from '@/features/joinery';
 import { cameraFromQuad, tracedWidthMm } from './wardrobeGeometry';
 import { buildWardrobeScene, MM } from './wardrobeScene';
 import { profilePhoto, applyGrain } from './wardrobeComposite';

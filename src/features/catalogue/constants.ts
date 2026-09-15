@@ -33,8 +33,8 @@
 // ---------------------------------------------------------------------------
 
 import { fabricPalette } from '@/features/fabrics'
-import { CURTAIN_COLOURS, SLAT_COLOURS } from '../../data/products'
-import { WARDROBE_COLOURS } from '@/features/visualiser'
+import { CURTAIN_COLOURS, SLAT_COLOURS } from '@/features/fabrics'
+import { WARDROBE_COLOURS } from '@/features/joinery'
 
 import { PRODUCTS } from './products'
 import { FRAMED_DOOR_MATERIALS, SHAKER_DOOR_MATERIALS } from './lib/slidingDoors'

@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { ROLLER_HARDWARE, rollerPalette, rollerColour } from '@/features/fabrics';
-import { CURTAIN_COLOURS, HARDWARE_HEX } from '../../data/products';
+import { CURTAIN_COLOURS, HARDWARE_HEX } from '@/features/fabrics';
 import { pricePerBlind, type BlindType } from '@/core/pricing';
-import { wardrobeModelById, type WardrobeKind } from './wardrobes';
+import { wardrobeModelById, type WardrobeKind } from '@/features/joinery';
 import { DEFAULT_WALL_COLOUR } from './wallColours';
 
 type Point = [number, number];

@@ -43,12 +43,12 @@ const MUST_REFUSE = [
 const MUST_ALLOW = [
   'src/features/visualiser/Canvas2DBlindRenderer.tsx',
   'src/features/visualiser/homography.ts',
-  'src/features/visualiser/wardrobes.ts',
-  'src/pages/VisualiserPage.tsx',
-  'src/lib/pricing.ts',
-  'src/data/products.ts',
-  'src/theme.ts',
-  'src/components/Nav.tsx',
+  'src/features/joinery/wardrobes.ts',
+  'src/features/visualiser/VisualiserPage.tsx',
+  'src/features/catalogue/constants.ts',
+  'src/features/fabrics/colourCards.ts',
+  'src/design-system/tokens.ts',
+  'src/app/layouts/Nav.tsx',
   'src/features/cart/components/CartPage.tsx',
   'src/design-system/primitives/useHover.ts',
 ];

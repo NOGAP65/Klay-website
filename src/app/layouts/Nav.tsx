@@ -44,7 +44,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 import * as routes from '@/config/routes';
 
@@ -52,7 +52,7 @@ import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds
 import { CartPopover, useCartStore } from '@/features/cart';
 import { useIsMobile, useMediaQuery } from '@/shared';
 
-import { useKlayStore } from '../../store';
+import { useNavScroll } from './useNavScroll';
 
 /** WHERE THE BAR BECOMES A DRAWER.
  *
@@ -208,7 +208,8 @@ export interface NavProps {
 }
 
 export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps = {}) {
-  const scrollY = useKlayStore((s) => s.scrollY);
+  const { pathname } = useLocation();
+  const scrollY = useNavScroll(stickBelow, pathname === '/' || pathname === '/products');
   const cartItemCount = useCartStore((s) => s.getItemCount());
   const isCompressed = scrollY > 60;
 
@@ -239,9 +240,7 @@ export function Nav({ onLight = false, solid = true, stickBelow = 0 }: NavProps 
   const isOnDarkGround = isMenuOpen || (!isSolidBar && !onLight);
   const linkColor = isOnDarkGround ? tokens.paper : tokens.ink;
 
-  // scrollY is only published by pages that install the listener (the
-  // homepage); everywhere else it stays 0, which resolves to stickBelow — and
-  // stickBelow is only passed by the homepage. Both defaults agree on 0.
+  // Only ticker-backed routes need a scroll offset; useNavScroll owns its listener.
   const top = Math.max(0, stickBelow - scrollY);
 
   return (

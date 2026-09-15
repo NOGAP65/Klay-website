@@ -19,85 +19,20 @@
 
 import type { Config } from '@netlify/functions'
 import Stripe from 'stripe'
-import { db } from '../lib/db'
+import { applyCheckoutEvent, type PaymentOrder } from '../lib/paymentEvents'
+import { paymentRepository } from '../lib/paymentRepository'
 import { env, missing } from '../lib/env'
 import { json, methodNotAllowed, notConfigured, serverError } from '../lib/http'
 import { confirmOrderPaid, notifyOrderPaid } from '../lib/notify'
 import { blindLabel, sizeLabel, type BlindType, type WindowSize } from '../../shared-core/pricing'
 
-/** Find the order for a session: by session id, falling back to the metadata
- *  order_id in case attaching the session id failed at checkout time. */
-async function findOrderId(session: Stripe.Checkout.Session): Promise<string | null> {
-  const metadataId = session.metadata?.order_id ?? session.client_reference_id
-  if (metadataId) return metadataId
-
-  const { data } = await db().from('orders').select('id').eq('stripe_session_id', session.id).maybeSingle()
-  return data?.id ?? null
-}
-
-async function handlePaid(session: Stripe.Checkout.Session): Promise<void> {
-  const orderId = await findOrderId(session)
-  if (!orderId) {
-    console.error('[webhook] paid session with no matching order', session.id)
-    return
-  }
-
-  const paymentIntent =
-    typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id ?? null
-
-  // `.neq('status','paid')` is the idempotency guard: a duplicate delivery
-  // matches no rows, so `updated` comes back empty and no second email is sent.
-  const { data: updated, error } = await db()
-    .from('orders')
-    .update({
-      status: 'paid',
-      paid_at: new Date().toISOString(),
-      stripe_session_id: session.id,
-      stripe_payment_intent: paymentIntent,
-    })
-    .eq('id', orderId)
-    .neq('status', 'paid')
-    .select('id, name, email, amount_cents, quantity, blind_type, window_size')
-
-  if (error) {
-    console.error('[webhook] could not mark order paid', error)
-    return
-  }
-  if (!updated || updated.length === 0) {
-    console.log(`[webhook] order ${orderId} already settled — ignoring duplicate`)
-    return
-  }
-
-  const order = updated[0]
-  const summary = `${blindLabel(order.blind_type as BlindType)} — ${sizeLabel(
-    order.window_size as WindowSize,
-  )} × ${order.quantity}`
-
+async function notifyPaid(order: PaymentOrder): Promise<void> {
+  const summary = `${blindLabel(order.blind_type as BlindType)} — ${sizeLabel(order.window_size as WindowSize)} × ${order.quantity}`;
   await Promise.allSettled([
-    notifyOrderPaid({
-      id: order.id,
-      name: order.name,
-      email: order.email,
-      amountCents: order.amount_cents,
-      quantity: order.quantity,
-      summary,
-    }),
-    confirmOrderPaid({
-      name: order.name,
-      email: order.email,
-      amountCents: order.amount_cents,
-      summary,
-    }),
-  ])
-}
-
-/** Abandoned or failed sessions, so the orders table does not fill up with
- *  pending rows that will never settle. */
-async function handleClosed(session: Stripe.Checkout.Session, status: 'expired' | 'failed'): Promise<void> {
-  const orderId = await findOrderId(session)
-  if (!orderId) return
-  // Only ever downgrade something still pending — never touch a paid order.
-  await db().from('orders').update({ status }).eq('id', orderId).eq('status', 'pending_payment')
+    notifyOrderPaid({ id: order.id, name: order.name, email: order.email,
+      amountCents: order.amount_cents, quantity: order.quantity, summary }),
+    confirmOrderPaid({ name: order.name, email: order.email, amountCents: order.amount_cents, summary }),
+  ]);
 }
 
 export default async (req: Request): Promise<Response> => {
@@ -125,26 +60,9 @@ export default async (req: Request): Promise<Response> => {
   }
 
   try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object
-        // With card payments this is already settled; async methods may not be.
-        if (session.payment_status === 'paid') await handlePaid(session)
-        break
-      }
-      case 'checkout.session.async_payment_succeeded':
-        await handlePaid(event.data.object)
-        break
-      case 'checkout.session.async_payment_failed':
-        await handleClosed(event.data.object, 'failed')
-        break
-      case 'checkout.session.expired':
-        await handleClosed(event.data.object, 'expired')
-        break
-      default:
-        // Everything else is subscribed-to noise; acknowledge so Stripe stops
-        // retrying rather than 400-ing on events we simply do not need.
-        break
+    if (['checkout.session.completed', 'checkout.session.async_payment_succeeded',
+      'checkout.session.async_payment_failed', 'checkout.session.expired'].includes(event.type)) {
+      await applyCheckoutEvent(event.type, event.data.object as Stripe.Checkout.Session, paymentRepository, notifyPaid);
     }
     return json({ received: true })
   } catch (err) {

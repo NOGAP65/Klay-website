@@ -74,3 +74,4 @@ export { Turnstile, useTurnstileEnabled } from './components/Turnstile';
 export { Honeypot } from './components/Honeypot';
 export { isValidEmail } from './lib/validate';
 export { scrollToId } from './utils/scrollToId';
+export { loadImage } from './lib/imageResources';

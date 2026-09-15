@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useLayoutEffect, useEffect, useRef, useCallback } from 'react';
 
 import { turnstileSiteKey, isTurnstileEnabled } from '@/config';
 
@@ -81,8 +81,7 @@ export function Turnstile({ onVerify, onError, theme = 'light' }: TurnstileProps
   const onVerifyRef = useRef(onVerify);
   const onErrorRef = useRef(onError);
 
-  onVerifyRef.current = onVerify;
-  onErrorRef.current = onError;
+  useLayoutEffect(() => { onVerifyRef.current = onVerify; onErrorRef.current = onError; }, [onVerify, onError]);
 
   const handleVerify = useCallback((token: string) => {
     onVerifyRef.current(token);

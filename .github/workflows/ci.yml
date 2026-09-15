@@ -1,128 +1,44 @@
 name: CI
-
-# ---------------------------------------------------------------------------
-# Phase 1.4 of the architecture migration, and the first CI this repository has
-# ever had.
-#
-# WHY THIS IS THE PRIORITY ITEM. Until this file existed, nothing outside a
-# developer's own terminal had ever typechecked this codebase:
-#
-#   - netlify.toml runs `npm run build`, which is `vite build`, which never
-#     invokes tsc. Vite transforms src/ only; netlify/ is bundled separately by
-#     Netlify's own esbuild at deploy time.
-#   - There was no .github directory and no CI configuration of any kind.
-#
-# So a type error in the payment path could reach production unchallenged, and
-# the only thing standing between a broken Netlify function and a customer was
-# whoever last remembered to run `npm run typecheck` by hand.
-#
-# THE COMMAND MATTERS. It is `npm run typecheck` (tsc -b), NEVER `tsc --noEmit`.
-# The root tsconfig.json is `{ files: [], references: [...] }`, and plain
-# `tsc --noEmit` does not walk project references — it exits 0 having read no
-# files at all. `tsc -b` builds all three projects: app, node, and functions
-# (which covers every netlify/** file plus src/lib/pricing.ts).
-# ---------------------------------------------------------------------------
-
 on:
   push:
     branches: ['**']
   pull_request:
     branches: ['**']
-
-# A second push to the same branch cancels the first — no point burning minutes
-# proving a commit that has already been superseded.
+permissions:
+  contents: read
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   verify:
-    name: typecheck · build · lint
+    name: architecture, performance and browser checks
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          # 22, matching .nvmrc, netlify.toml and the engines floor. It was '20',
-          # which resolves to the latest 20.x and so happens to clear vite 8's
-          # ^20.19 boundary — but only by accident of what GitHub ships that
-          # week. Naming the same major everywhere removes the coincidence.
           node-version: '22'
           cache: npm
-
-      # `npm ci` rather than `npm install`: the lockfile is committed and the
-      # build must be reproducible. This also matches what Netlify's default
-      # install step does, so CI and deploy install the same tree.
-      - name: Install
-        run: npm ci
-
-      # ---- BLOCKING ----------------------------------------------------
-      # SUPPLY CHAIN FIRST, BECAUSE NOTHING WAS WATCHING IT.
-      #
-      # OWASP promoted this to A03:2025 — Software Supply Chain Failures — and
-      # this workflow gated typecheck, build and lint while a HIGH-severity CSRF
-      # advisory sat in react-router (GHSA-qwww-vcr4-c8h2) for as long as it took
-      # somebody to run `npm audit` by hand. A dependency is code you ship
-      # without reading it.
-      #
-      # WHY --omit=dev, WHICH IS THE WHOLE DESIGN OF THIS GATE. Auditing
-      # everything at --audit-level=high fails today, and not on anything that
-      # reaches a customer: the two open advisories are vite and esbuild, both
-      # devDependencies, and both are DEV-SERVER vulnerabilities — a malicious
-      # site reading from localhost:5173, path traversal in the optimised-deps
-      # handler, an NTLM disclosure on Windows. None of it exists in the
-      # deployed artifact, which is static files on a CDN with no vite in them.
-      #
-      # So the blocking gate is what actually ships, and it is clean at zero.
-      # Gating on --audit-level=critical instead would have been the wrong fix:
-      # the advisory that prompted this was HIGH, so critical would have let
-      # exactly the thing this exists to catch straight through.
-      - name: Audit production dependencies (high and above)
+      - run: npm ci
+      - name: Audit deployed dependencies
         run: npm audit --omit=dev --audit-level=high
-
-      - name: Typecheck (app + node + netlify functions)
-        run: npm run typecheck
-
-      - name: Build
-        run: npm run build
-
-      # The three custom architecture rules, exercised against RuleTester.
-      # This runs today and is blocking, because unlike `npm run lint` it works.
-      - name: Custom lint rules — self-test
-        run: npm run lint:rules
-
-      # Blocking as of Phase 1.2. It was `continue-on-error` while eslint
-      # crashed on the first file it touched — typescript-eslint 8.8.1 against
-      # eslint 9.39.5, whose `no-unused-expressions` schema had changed
-      # underneath it. Aligning to typescript-eslint 8.68.0 fixed that.
-      #
-      # This blocks on ERRORS ONLY, and there are currently none: every rule in
-      # eslint.config.js is `warn`, per SPECIFICATION.md §11. `eslint .`
-      # therefore exits 0 with 1,033 warnings.
-      #
-      # SO THIS STEP DOES NOT HOLD THE LINE ON ITS OWN. The baseline in
-      # docs/architecture/LINT_BASELINE.md does: a rule's count may go down and
-      # may not go up. Until Phase 6.1 flips zeroed rules to `error`, that
-      # contract is enforced by reading the diff, not by this job.
-      - name: Lint
-        run: npm run lint
-
-      # ---- VISIBLE, NOT BLOCKING ---------------------------------------
-      # Everything, dev dependencies included. It reads ZERO as of the vite 8
-      # upgrade — the two dev-server advisories this step was written to keep
-      # visible are gone.
-      #
-      # IT STAYS NON-BLOCKING ANYWAY, and the reason is the same one that made
-      # it a separate step rather than a stricter flag on the gate above: a
-      # vulnerability in the dev server is the developer's machine, not the
-      # customer's browser, and the deployed artifact is static files on a CDN
-      # with no dev server in them. A dev-only advisory should be seen on the
-      # next run and fixed deliberately; it should not stop a deploy that cannot
-      # possibly carry it.
-      #
-      # Anything that is NOT dev-only is caught by the blocking gate above
-      # before this step ever runs.
-      - name: Audit everything, including dev (advisory only)
-        run: npm audit || true
+      - name: Typecheck, architecture, lint regression, assets and production budget
+        run: npm run verify
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium webkit
+      - name: Domain and desktop, Android, iOS browser tests in light and dark
+        run: npm run test:browser
+      - name: Preserve reports and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-results
+          path: |
+            artifacts/
+            playwright-report/
+            test-results/
+          retention-days: 14
+      - name: Audit development dependencies (advisory)
+        run: npm audit
         continue-on-error: true

@@ -133,6 +133,8 @@ export function Footer() {
           <div style={{ gridColumn: isMobile ? 'span 2' : undefined }}>
             <img
               src="/images/brand/klay-logo-light.png"
+              loading="lazy"
+              decoding="async"
               alt="Klay Interiors"
               // The light variant, because the footer ground is tokens.ink.
               // Height-only: the asset is cropped to its own bounding box, so

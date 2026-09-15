@@ -4,12 +4,12 @@ import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { radius, tokens, space, type as typeScale } from '@/ds';
 import { formatAUD, isBlindType } from '@/core/pricing';
-import { HARDWARE_HEX, HARDWARE_OPTIONS } from '../../data/products';
+import { HARDWARE_HEX, HARDWARE_OPTIONS } from '@/features/fabrics';
 import {
   WARDROBE_COLOURS,
   modelsOfKind, wardrobeModelById, wardrobeHeight, wardrobeDepth,
-} from './wardrobes';
-import { HANDLE_FINISHES, handleFinish } from './wardrobeHardware';
+} from '@/features/joinery';
+import { HANDLE_FINISHES, handleFinish } from '@/features/joinery';
 import { coloursFor, isJoinery, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {

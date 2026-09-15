@@ -20,7 +20,7 @@ export default function CartPage() {
 
   return (
     <>
-      <div style={{ background: tokens.paper, minHeight: '100vh', paddingTop: isMobile ? 80 : 100 }}>
+      <main style={{ background: tokens.paper, minHeight: '100vh', paddingTop: isMobile ? 80 : 100 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '24px' : '40px 60px' }}>
 
           <h1 style={{ fontFamily: tokens.display, fontSize: isMobile ? 36 : 48, fontWeight: 300, color: tokens.ink, margin: 0 }}>
@@ -262,7 +262,7 @@ export default function CartPage() {
           )}
         </div>
 
-      </div>
+      </main>
     </>
   );
 }

@@ -1,152 +1,95 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const MAX_DIMENSION = 1600;
-const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
+import { preparePhoto, type PhotoResource } from './photoResource';
 
 export interface UsePhotoUploadResult {
   photoUrl: string | null;
   photoBitmap: ImageBitmap | null;
   uploadError: string | null;
-  /** Opens the photo gallery/file picker (no `capture` attribute). */
   handleUpload: () => void;
-  /** Opens the device camera directly on mobile (`capture="environment"`);
-   * on desktop `capture` is ignored so this just opens the file picker. */
   handleTakePhoto: () => void;
   loadFromUrl: (url: string) => void;
   clear: () => void;
 }
 
-const downscale = async (bitmap: ImageBitmap): Promise<{ bitmap: ImageBitmap; url: string }> => {
-  const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
-  const width = Math.round(bitmap.width * scale);
-  const height = Math.round(bitmap.height * scale);
-
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas 2D context unavailable');
-  ctx.drawImage(bitmap, 0, 0, width, height);
-
-  const [resizedBitmap, url] = await Promise.all([
-    createImageBitmap(canvas),
-    Promise.resolve(canvas.toDataURL('image/jpeg', 0.9)),
-  ]);
-
-  return { bitmap: resizedBitmap, url };
-};
-
 export const usePhotoUpload = (): UsePhotoUploadResult => {
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [photoBitmap, setPhotoBitmap] = useState<ImageBitmap | null>(null);
+  const [photo, setPhoto] = useState<PhotoResource | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const loadVersion = useRef(0);
-  useEffect(() => () => { loadVersion.current++; }, []);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const current = useRef<PhotoResource | null>(null);
+  const version = useRef(0);
+  const pending = useRef<AbortController | null>(null);
+  const inputs = useRef<Partial<Record<'gallery' | 'camera', HTMLInputElement>>>({});
 
-  const processFile = useCallback(async (file: File) => {
-    const version = ++loadVersion.current;
+  const cancel = useCallback(() => {
+    version.current++;
+    pending.current?.abort();
+    pending.current = null;
+  }, []);
+
+  useEffect(() => () => {
+    cancel();
+    current.current?.dispose();
+    current.current = null;
+    for (const input of Object.values(inputs.current)) input.onchange = null;
+    inputs.current = {};
+  }, [cancel]);
+
+  const load = useCallback(async (source: File | string) => {
+    cancel();
+    const revision = version.current;
+    const controller = new AbortController();
+    pending.current = controller;
+    setUploadError(null);
     try {
-      if (file.size > MAX_FILE_SIZE) {
-        throw new Error('Photo is too large. Please use an image under 15MB.');
-      }
-
-      if (!file.type.startsWith('image/')) {
-        throw new Error('Please upload an image file (JPG, PNG, etc.)');
-      }
-
-      const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
-      const { bitmap: resizedBitmap, url } = await downscale(bitmap);
-      bitmap.close();
-      if (version !== loadVersion.current) { resizedBitmap.close(); return; }
-
-      setUploadError(null);
-      setPhotoBitmap(prev => { prev?.close(); return resizedBitmap; });
-      setPhotoUrl(url);
+      let blob: Blob;
+      if (typeof source === 'string') {
+        const response = await fetch(source, { signal: controller.signal });
+        if (!response.ok) throw new Error('Failed to load room photo. Please try again.');
+        blob = await response.blob();
+      } else blob = source;
+      if (revision !== version.current) return;
+      const resource = await preparePhoto(blob, typeof source === 'string' ? source : undefined);
+      if (revision !== version.current) { resource.dispose(); return; }
+      current.current?.dispose();
+      current.current = resource;
+      setPhoto(resource);
     } catch (error) {
-      if (version !== loadVersion.current) return;
-      const message = error instanceof Error
-        ? error.message
-        : 'Failed to load photo. Please try again.';
-      setUploadError(message);
+      if (revision === version.current) setUploadError(error instanceof Error
+        ? error.message : 'Failed to load photo. Please try again.');
+    } finally {
+      if (revision === version.current) pending.current = null;
     }
-  }, []);
+  }, [cancel]);
 
-  const handleUpload = useCallback(() => {
-    if (!inputRef.current) {
-      const input = document.createElement('input');
+  const choose = useCallback((kind: 'gallery' | 'camera') => {
+    let input = inputs.current[kind];
+    if (!input) {
+      input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
-      // No `capture` attribute — setting it forces camera-only on some
-      // Android devices; leaving it off lets the browser offer both the
-      // camera and the photo gallery natively.
-      input.addEventListener('change', () => {
-        const file = input.files?.[0];
-        if (file) processFile(file);
-        input.value = '';
-      });
-      inputRef.current = input;
+      if (kind === 'camera') input.capture = 'environment';
+      input.onchange = () => {
+        const file = input!.files?.[0];
+        if (file) void load(file);
+        input!.value = '';
+      };
+      inputs.current[kind] = input;
     }
-    inputRef.current.click();
-  }, [processFile]);
-
-  const handleTakePhoto = useCallback(() => {
-    if (!cameraInputRef.current) {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      // capture="environment" opens the rear camera directly on mobile;
-      // desktop browsers ignore it and just show the file picker.
-      input.capture = 'environment';
-      input.addEventListener('change', () => {
-        const file = input.files?.[0];
-        if (file) processFile(file);
-        input.value = '';
-      });
-      cameraInputRef.current = input;
-    }
-    cameraInputRef.current.click();
-  }, [processFile]);
-
-  // Loads a preset room photo. Presets are local files in public/ (all under
-  // the 1600px cap), so no fetch or downscale is needed — the image loads via
-  // Image() so the bitmap dimensions are known before the corner pins appear,
-  // and photoUrl is set to the same path the canvas will load, keeping the
-  // preset flow identical to an upload from the renderer's point of view.
-  const loadFromUrl = useCallback((url: string) => {
-    const version = ++loadVersion.current;
-    const img = new Image();
-    img.onload = async () => {
-      try {
-        const bitmap = await createImageBitmap(img);
-        if (version !== loadVersion.current) { bitmap.close(); return; }
-        setUploadError(null);
-        setPhotoBitmap(prev => {
-          prev?.close();
-          return bitmap;
-        });
-        setPhotoUrl(url);
-      } catch {
-        if (version !== loadVersion.current) return;
-        setUploadError('Failed to load room photo. Please try again.');
-      }
-    };
-    img.onerror = () => {
-      if (version === loadVersion.current) setUploadError('Failed to load room photo. Please try again.');
-    };
-    img.src = url;
-  }, []);
+    input.click();
+  }, [load]);
 
   const clear = useCallback(() => {
-    loadVersion.current++;
-    setPhotoUrl(null);
+    cancel();
+    current.current?.dispose();
+    current.current = null;
+    setPhoto(null);
     setUploadError(null);
-    setPhotoBitmap(prev => {
-      prev?.close();
-      return null;
-    });
-  }, []);
-
-  return { photoUrl, photoBitmap, uploadError, handleUpload, handleTakePhoto, loadFromUrl, clear };
+  }, [cancel]);
+  const handleUpload = useCallback(() => choose('gallery'), [choose]);
+  const handleTakePhoto = useCallback(() => choose('camera'), [choose]);
+  const loadFromUrl = useCallback((url: string) => { void load(url); }, [load]);
+  return {
+    photoUrl: photo?.url ?? null, photoBitmap: photo?.bitmap ?? null, uploadError,
+    handleUpload, handleTakePhoto, loadFromUrl, clear,
+  };
 };

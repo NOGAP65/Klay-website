@@ -24,12 +24,12 @@ import {
   FINISH_TEXTURE, FINISH_TILE_MM,
   wardrobeColour, wardrobeColourHex, wardrobeModelById, DEFAULT_WIDTH_MM,
   wardrobeHeight, wardrobeDepth,
-} from './wardrobes';
-import { cutoutFor } from './wardrobeCutouts';
+} from '@/features/joinery';
+import { cutoutFor } from '@/features/joinery';
 import { buildSliceMap, sliceMapper } from './wardrobeSlices';
 import { sampleBoardColour } from './wardrobeComposite';
 import { makeWhiteBoardMaps, WHITE_TILE_MM } from './whiteBoardTexture';
-import { DEFAULT_HANDLE_FINISH, handleFinish, hardwareSpec } from './wardrobeHardware';
+import { DEFAULT_HANDLE_FINISH, handleFinish, hardwareSpec } from '@/features/joinery';
 import { DEFAULT_WALL_COLOUR } from './wallColours';
 
 /** Millimetres to metres, so the scene is in real units and a shadow camera

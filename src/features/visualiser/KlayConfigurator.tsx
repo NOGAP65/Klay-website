@@ -910,7 +910,7 @@ export default function KlayConfigurator({
   // Kick off the default window photo once, on mount — only if the store
   // doesn't already carry a real user photo from earlier in this session.
   useEffect(() => {
-    if (store.defaultWindowActive) {
+    if (store.defaultWindowActive || !useVisualiserStore.getState().photoUrl) {
       // THE CATEGORY IS READ FRESH, not captured. This runs once on mount, and
       // the store may already say 'wardrobe' — a visitor who left the tab there,
       // or a host that mounts with it set. Loading the window photo first and
@@ -918,6 +918,14 @@ export default function KlayConfigurator({
       // flight, and whichever image decoded last won.
       loadFromUrl(defaultPhotoFor(useVisualiserStore.getState().productCategory));
     }
+    // Photo resources belong to this mounted visualiser. Do not leave a stale
+    // blob URL or trace in the global store after its owner releases it.
+    return () => {
+      const state = useVisualiserStore.getState();
+      state.setPhotoUrl(null);
+      state.clearTracedAreas();
+      state.setDefaultWindowActive(true);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1224,7 +1232,7 @@ export default function KlayConfigurator({
   // like tracing your own window was a required step before anything rendered.
   // Holding the loading state through the gap means it goes straight from
   // blank to the rendered blind.
-  const awaitingDefaultSeed = store.defaultWindowActive && !hasSeededDefaultRef.current;
+  const awaitingDefaultSeed = store.defaultWindowActive && !confirmedArea;
 
   // The three canvas states, resolved once so the canvas area and the
   // persistent footer below it can never disagree about which one is showing.
@@ -1395,6 +1403,7 @@ export default function KlayConfigurator({
         boxShadow: '0 16px 40px rgba(29,29,29,0.22)',
       }}
     >
+      {uploadError && <p role="alert" style={{ padding: 16, margin: 0, color: tokens.onDark }}>{uploadError}</p>}
       <div ref={mediaBoxRef} style={{ position: 'relative', width: '100%', aspectRatio: String(photoRatio), minHeight: showUploadState ? 310 : undefined }}>
       {isLoadingDefault ? null : showUploadState ? (
         /* STATE 1 — no photo yet, or the user asked to visualise their own room */

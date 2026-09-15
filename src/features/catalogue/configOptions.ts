@@ -43,14 +43,14 @@
 // ---------------------------------------------------------------------------
 
 import { ROLLER_HARDWARE, fabricCollections, fabricPalette, rollerColour } from '@/features/fabrics'
-import { HARDWARE_OPTIONS } from '../../data/products'
+import { HARDWARE_OPTIONS } from '@/features/fabrics'
 import {
   HANDLE_FINISHES,
   modelsOfKind,
   SHELVING_WIDTHS,
   WARDROBE_WIDTHS,
   wardrobeModelById,
-} from '@/features/visualiser'
+} from '@/features/joinery'
 import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '@/core/pricing'
 
 

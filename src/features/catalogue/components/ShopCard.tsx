@@ -46,7 +46,7 @@ import { flyscreenConfiguration, flyscreenDimensions } from '../lib/pleatedFlysc
 import { fabricShot, FABRIC_SHOT_DIR, type FabricShot } from '../fabricShots';
 // Relative, like the feature's other three importers of this file — see the
 // note at its head on why it has not moved.
-import { HARDWARE_HEX } from '../../../data/products';
+import { HARDWARE_HEX } from '@/features/fabrics';
 import type { CatalogueItem } from '../constants';
 
 import { AwningColourLayer } from './AwningColourLayer';

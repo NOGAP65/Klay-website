@@ -3,3 +3,5 @@ export {
   fabricCollections, fabricPalette, fabricByName, rollerPalette, rollerColour, honeycombDaySample,
 } from './library';
 export type { FabricSample } from './library';
+
+export { RYNAMIC_COLOURS, CURTAIN_COLOURS, SLAT_COLOURS, HARDWARE_HEX, HARDWARE_OPTIONS } from './colourCards';

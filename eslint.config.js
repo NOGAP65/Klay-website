@@ -381,4 +381,24 @@ export default tseslint.config(
       'max-lines-per-function': 'off',
     },
   },
+  // The AST architecture gate resolves actual targets and permits relative
+  // imports within a feature. These lexical rules incorrectly reject those
+  // imports and server modules; check:architecture enforces their real intent.
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
+      'import/no-internal-modules': 'off',
+      'boundaries/dependencies': 'error',
+      'react-hooks/rules-of-hooks': 'error',
+      'import/no-self-import': 'error',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    files: ['public/font-loader.js', 'tools/cut-fabric-mask.mjs', 'tools/prepare-cw-fabrics.mjs',
+      'tools/render-baseline.mjs', 'tools/square-shot.mjs', 'tools/verify-cw-fabrics.mjs'],
+    // These tooling files contain Playwright evaluate callbacks executed in a browser.
+    languageOptions: { globals: globals.browser },
+  },
 );

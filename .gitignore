@@ -82,3 +82,4 @@ playwright-report/
 /*.xlsx
 /*.docx
 /*.pptx
+artifacts/

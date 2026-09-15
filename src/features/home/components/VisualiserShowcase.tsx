@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { ROLLER_HARDWARE } from '@/features/fabrics';
 // ---------------------------------------------------------------------------
 // 5. The visualiser — the centrepiece, and the only section on the page that
@@ -34,7 +35,7 @@ import { ROLLER_HARDWARE } from '@/features/fabrics';
 // could put them.
 // ---------------------------------------------------------------------------
 
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import * as routes from '@/config/routes';
@@ -44,9 +45,10 @@ import { useCartStore } from '@/features/cart';
 import { productByBlindType } from '@/features/catalogue';
 import { useIsMobile, useInView } from '@/shared';
 
-import { bookingLink } from '@/features/booking';
+import { quoteLink } from '@/features/booking';
 import { formatAUD } from '@/core/pricing';
 import {
+  KlayConfigurator, selectQuoteConfig, visualiserQuoteItems,
   VisualiserControls,
   Field,
   GroupHeading,
@@ -66,13 +68,13 @@ import {
  * be the one place on the site that pretends otherwise — and CartItem could not
  * describe the order anyway, since it has no mount, no wave-fold heading and a
  * windowSize that stops at large where curtains go to XL. */
-const CURTAIN_ENQUIRY = routes.contact;
+
 
 /** Where a wardrobe enquiry goes, and it is the same door for a stronger
  * reason. A curtain is unbuyable because the cart cannot describe it; a wardrobe
  * is unbuyable because nobody knows what it costs until it has been measured —
  * it is cut to an opening, and the opening is in someone's house. */
-const WARDROBE_ENQUIRY = routes.contact;
+
 
 /** The selected lozenge on THIS card. Every control in this file sits on the ink
  * card and nowhere else, so unlike VisualiserControls' skin() there is no light
@@ -109,7 +111,8 @@ const SELECTED = {
  * and clicked, and 0.16em still reads as the same small-caps language as the
  * group headings under it. */
 function CategoryTabs() {
-  const { productCategory, setProductCategory } = useVisualiserStore();
+  const productCategory = useVisualiserStore(s => s.productCategory);
+  const setProductCategory = useVisualiserStore(s => s.setProductCategory);
   const tabs: { id: ProductCategory; label: string }[] = [
     { id: 'blind', label: 'Blinds' },
     { id: 'curtain', label: 'Curtains' },
@@ -378,7 +381,6 @@ function WindowPicker({
  * makes barrels re-exports only, and the strategy is per-consumer.
  * VisualiserPage imports the eager export, because there the configurator IS
  * the page and deferring it would buy a spinner and nothing else. */
-const KlayConfiguratorLazy = lazy(() => import('@/features/visualiser/KlayConfigurator'));
 
 /** What stands in the configurator's place until its chunk lands.
  *
@@ -409,23 +411,14 @@ export function VisualiserShowcase() {
   const navigate = useNavigate();
 
   const addItem = useCartStore(s => s.addItem);
-  const {
-    // The flat fields are the ACTIVE window — see the store's own note. They are
-    // what the booking link travels on.
-    blindType,
-    fabricColour,
-    hardwareColour,
-    windowSize,
-    operation,
-    productCategory,
-    windows,
-    activeWindow,
-    setWindowCount,
-    setActiveWindow,
-    applyActiveToAll,
-    windowsMatch,
-    getJobTotal,
-  } = useVisualiserStore();
+  const state = useVisualiserStore(useShallow(s => ({
+    ...selectQuoteConfig(s), activeWindow: s.activeWindow,
+    setWindowCount: s.setWindowCount, setActiveWindow: s.setActiveWindow,
+    applyActiveToAll: s.applyActiveToAll, windowsMatch: s.windowsMatch, getJobTotal: s.getJobTotal,
+  })));
+  const { productCategory, windows, activeWindow, setWindowCount,
+    setActiveWindow, applyActiveToAll, windowsMatch, getJobTotal } = state;
+  const enquiryUrl = quoteLink(visualiserQuoteItems(state));
 
   const isCurtain = productCategory === 'curtain';
   // Shelving is joinery too: no price, no window count, an enquiry rather than
@@ -488,7 +481,7 @@ export function VisualiserShowcase() {
     // The join this was guarding is still guarded: the install strip below is
     // warm white and the range row above is warm white, so parchment separates
     // from both. No two adjacent sections share a ground.
-    <section id="visualiser" style={{ background: tokens.band }}>
+    <section style={{ background: tokens.band }}>
       {/* The same band as the category and range sections, from the same
           component, so the page's three big sections are introduced identically
           rather than in three slightly different voices. It supplies this
@@ -708,11 +701,11 @@ export function VisualiserShowcase() {
                   desktop column it is the button that is measured, not the
                   layout. */}
               {isWardrobe ? (
-                <CtaLink to={WARDROBE_ENQUIRY} style={{ width: '100%' }}>
-                  Enquire about this wardrobe
+                <CtaLink to={enquiryUrl} style={{ width: '100%' }}>
+                  Enquire about this {productCategory === 'shelving' ? 'shelving' : 'wardrobe'}
                 </CtaLink>
               ) : isCurtain ? (
-                <CtaLink to={CURTAIN_ENQUIRY} style={{ width: '100%' }}>
+                <CtaLink to={enquiryUrl} style={{ width: '100%' }}>
                   Enquire — from {formatAUD(jobTotal)}
                 </CtaLink>
               ) : (
@@ -726,25 +719,12 @@ export function VisualiserShowcase() {
                       a near-black ground. Centred under the button rather than
                       beside it — there is no room for a row in this column.
 
-                      /book quotes ONE configuration, so a job whose windows
-                      differ travels as the window on screen times the window
-                      count. That is the honest limit of a shareable URL of four
-                      short params, and it is a measure appointment at the other
-                      end — the installer prices what they measure. The common
-                      case is unaffected: growing the job clones window 1, so the
-                      windows match unless one was deliberately changed. */}
+                      Every window travels with its own configuration. */}
                   <div style={{ textAlign: 'center' }}>
                     <TextLink
                       onDark
                       accent
-                      to={bookingLink({
-                        blindType,
-                        windowSize,
-                        operation,
-                        quantity: count,
-                        fabricColour,
-                        hardwareColour,
-                      })}
+                      to={enquiryUrl}
                     >
                       or get a free quote →
                     </TextLink>
@@ -789,7 +769,7 @@ export function VisualiserShowcase() {
             <div ref={configuratorRef} style={{ width: '100%', minWidth: 0 }}>
               {hasBeenInView ? (
                 <Suspense fallback={<ConfiguratorPlaceholder />}>
-                  <KlayConfiguratorLazy mediaMaxVh={84} />
+                  <KlayConfigurator mediaMaxVh={84} />
                 </Suspense>
               ) : (
                 <ConfiguratorPlaceholder />

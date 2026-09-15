@@ -37,7 +37,4 @@
 // becomes a feature in Phase 6, that import becomes `@/features/booking`.
 // ---------------------------------------------------------------------------
 
-export { default as AboutPage } from './components/AboutPage';
-export { default as HowItWorksPage } from './components/HowItWorksPage';
-export { default as ContactPage } from './components/ContactPage';
 export { STEPS, type Step } from './constants';

@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { loadImage } from '@/shared';
+import { useLayoutEffect, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { computeHomography } from './homography';
 import { foldLean, foldDepth, MIN_FOLD_PITCH } from './curtainCloth';
@@ -574,15 +575,6 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   return { r: isNaN(r) ? 200 : r, g: isNaN(g) ? 200 : g, b: isNaN(b) ? 200 : b };
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = src;
-  });
-}
 
 const clamp01 = (t: number): number => Math.min(1, Math.max(0, t));
 const smoothstep01 = (t: number): number => {
@@ -1249,7 +1241,7 @@ export default function Canvas2DCurtainRenderer({
   // as a dependency and tearing down the renderer on every animation frame,
   // which is what the previous version did.
   const opennessRef = useRef(openness);
-  opennessRef.current = openness;
+  useLayoutEffect(() => { opennessRef.current = openness; }, [openness]);
 
   // One cloth state serves both panels. They are mirror images pulled at the same
   // rate, so their spans and therefore their dynamics are identical in panel-local
@@ -1267,7 +1259,7 @@ export default function Canvas2DCurtainRenderer({
   /** `nowSec` is only passed from the solver loop. A static draw — a fresh trace,
    *  a colour change — has no history to read and every row uses `sway`. */
   const colourRef = useRef(colour);
-  colourRef.current = colour;
+  useLayoutEffect(() => { colourRef.current = colour; }, [colour]);
 
   const draw = (open: number, sway: number, nowSec?: number) => {
     const layout = layoutRef.current;
