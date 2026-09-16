@@ -2,7 +2,7 @@ import { blindLabel, sizeLabel } from '@/core/pricing';
 import type { QuoteItem } from '@/core/quoteItems';
 
 import { isJoinery, type useVisualiserStore } from './useVisualiserStore';
-import { wardrobeModelById, wardrobeHeight } from '@/features/joinery';
+import { wardrobeModelById, wardrobeHeight, walkInSpecifications, handleFinish } from '@/features/joinery';
 
 type State = ReturnType<typeof useVisualiserStore.getState>;
 export type VisualiserQuoteConfig = Pick<State, 'productCategory' | 'windows' | 'wardrobeModel'
@@ -19,6 +19,14 @@ export function selectQuoteConfig(state: State): VisualiserQuoteConfig {
 export function visualiserQuoteItems(state: VisualiserQuoteConfig): QuoteItem[] {
   if (isJoinery(state.productCategory)) {
     const model = wardrobeModelById(state.wardrobeModel);
+    if (model.kind === 'walk-in') {
+      const hardware = handleFinish(state.wardrobeHandleFinish);
+      return [{ name: `Walk-in wardrobe — ${model.name}`, quantity: 1, options: [
+        ...walkInSpecifications(model.id),
+        { label: 'Finish', value: state.wardrobeColour },
+        { label: 'Hardware', value: `${hardware.code} ${hardware.name}` },
+      ] }];
+    }
     return [{ name: `${state.productCategory === 'shelving' ? 'Shelving' : 'Wardrobe'} — ${model.name}`, quantity: 1,
       options: [
         { label: 'Width', value: `${state.wardrobeWidthMm} mm` },

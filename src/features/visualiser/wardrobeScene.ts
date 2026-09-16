@@ -25,7 +25,8 @@ import {
   wardrobeHeight, wardrobeDepth,
 } from '@/features/joinery';
 import { cutoutFor } from '@/features/joinery';
-import { DEFAULT_HANDLE_FINISH, handleFinish, hardwareSpec } from '@/features/joinery';
+import { DEFAULT_HANDLE_FINISH, handleFinish, hardwareSpec, WALK_IN_FOOTPRINT_MM } from '@/features/joinery';
+import { createWalkInSurround } from './walkInSurround';
 import { loadImage } from '@/shared';
 
 import { DEFAULT_WALL_COLOUR } from './wallColours';
@@ -200,7 +201,7 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   const centre = new THREE.Vector3(
     (widthMm / 2) * MM,
     (H / 2) * MM,
-    (-D / 2) * MM,
+    (-(model.kind === 'walk-in' ? WALK_IN_FOOTPRINT_MM : D) / 2) * MM,
   );
 
   // AND NOW THE ONLY THING LIGHTING THE BOARD, which is why these numbers look
@@ -611,7 +612,10 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // painted into the traced opening — putting a modelled wall in front of that
   // would be a second wall over the first. This is for the turntable, which has
   // nothing behind it at all.
-  if (!opts.forRoom) buildSurround();
+  if (!opts.forRoom) {
+    if (model.kind === 'walk-in') createWalkInSurround(root, model.id, surroundMat, disposables);
+    else buildSurround();
+  }
 
   function buildSurround() {
 

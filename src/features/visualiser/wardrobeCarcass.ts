@@ -1,6 +1,8 @@
 import { wardrobeModelById, wardrobeHeight, wardrobeDepth } from '@/features/joinery';
-import { columnsFor, sidePanelsFor, facePostsFor, BOARD_MM, RAIL_DROP_MM } from './wardrobeGeometry';
 import { DEFAULT_HANDLE_FINISH, hardwareSpec, type HardwareSpec } from '@/features/joinery';
+
+import { createWalkInCarcass } from './walkInCarcass';
+import { columnsFor, sidePanelsFor, facePostsFor, BOARD_MM, RAIL_DROP_MM } from './wardrobeGeometry';
 
 export interface Box {
   x: number; y: number; z: number;
@@ -70,6 +72,7 @@ export function buildCarcass(
   // read the range constant. Asked through the helpers so no call site has to
   // know which family it is holding.
   const model = wardrobeModelById(layoutId);
+  if (model.kind === 'walk-in') return createWalkInCarcass(model.id, hardware);
   const D = wardrobeDepth(model);
   const H = wardrobeHeight(model);
   const boxes: Box[] = [];

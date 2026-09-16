@@ -8,8 +8,55 @@ import { CATALOGUE } from '../src/features/catalogue/constants';
 import { joineryWidthSlices, JOINERY_HEIGHT_MM, grainTransform } from '../src/features/catalogue/lib/joineryPhotoWidth';
 import { WALK_IN_LAYOUTS, WALK_IN_HARDWARE, WALK_IN_COLOURS } from '../src/features/catalogue/lib/walkInWardrobes';
 import { SHOP_PHOTOS, shopPhoto } from '../src/features/catalogue/shopPhotos';
+import { modelsOfKind, wardrobeHeight, wardrobeDepth, hardwareSpec } from '../src/features/joinery';
 import { columnsFor, facePostsFor, MODULE_WIDTH_MM, BOARD_MM } from '../src/features/joinery/layout';
 import { wardrobeModelById, WARDROBE_COLOURS } from '../src/features/joinery/wardrobes';
+import { visualiserQuoteItems } from '../src/features/visualiser/quoteConfiguration';
+import { useVisualiserStore } from '../src/features/visualiser/useVisualiserStore';
+import { buildCarcass, type Box } from '../src/features/visualiser/wardrobeCarcass';
+
+function assertWalkInBounds(box: Box) {
+  assert.ok([box.x, box.y, box.z, box.w, box.h, box.d].every(Number.isFinite));
+  for (const [start, length, min, max] of [[box.x, box.w, 0, 2400], [box.y, box.h, 0, 2000], [box.z, box.d, -2400, 0]]) {
+    assert.ok(length > 0);
+    assert.ok(start >= min);
+    assert.ok(start + length <= max);
+  }
+}
+
+test('walk-in 3D layouts match both shop products, dimensions, drawers and quote details', () => {
+  assert.deepEqual(modelsOfKind('walk-in').map(model => model.id), ['LS01', 'US01']);
+  useVisualiserStore.getState().setWardrobeKind('walk-in');
+  useVisualiserStore.getState().setProductCategory('wardrobe');
+  useVisualiserStore.getState().setWardrobeKind('walk-in');
+  assert.equal(useVisualiserStore.getState().wardrobeModel, 'LS01');
+  assert.equal(useVisualiserStore.getState().wardrobeHandleFinish, 'Brushed Matt Black');
+  for (const layout of WALK_IN_LAYOUTS) {
+    const model = wardrobeModelById(layout.id);
+    assert.deepEqual([wardrobeHeight(model), wardrobeDepth(model), ...model.widths], [2000, 447, 2400]);
+    const { boxes } = buildCarcass(layout.id, 2400, hardwareSpec('Brushed Matt Black'));
+    boxes.forEach(assertWalkInBounds);
+    assert.equal(boxes.filter(box => box.metal && box.h === 14).length, layout.drawers);
+    // Full-depth returns must actually turn the corner, not reuse a flat run.
+    const tops = boxes.filter(box => box.y === 1982);
+    assert.equal(tops.length, layout.id === 'LS01' ? 2 : 3);
+    assert.ok(tops.some(box => box.w === 447 && box.d === 1953));
+    for (const [index, a] of tops.entries()) for (const b of tops.slice(index + 1)) {
+      assert.ok(a.x + a.w <= b.x || b.x + b.w <= a.x || a.z + a.d <= b.z || b.z + b.d <= a.z);
+    }
+    for (const hardware of WALK_IN_HARDWARE) {
+      const store = useVisualiserStore.getState();
+      store.setWardrobeModel(layout.id);
+      store.setWardrobeHandleFinish(hardware.name);
+      const quote = visualiserQuoteItems(useVisualiserStore.getState())[0];
+      assert.equal(quote.name, `Walk-in wardrobe — ${layout.name}`);
+      assert.deepEqual(Object.fromEntries(quote.options.map(option => [option.label, option.value])), {
+        Layout: layout.shape, Footprint: '2400 × 2400 mm', Height: '2000 mm', 'Shelf depth': '447 mm',
+        Finish: 'Matt Polar White', Hardware: hardware.id,
+      });
+    }
+  }
+});
 
 test('joinery width geometry preserves fixed heights and photo proportions', () => {
 const close = (a: number, b: number, message: string) => assert.ok(Math.abs(a - b) < 1e-7, `${message}: ${a} vs ${b}`);

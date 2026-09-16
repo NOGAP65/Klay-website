@@ -37,6 +37,65 @@ async function checkWallColour(viewer: Locator, canvas: Locator) {
 }
 
 for (const surface of [{ name: 'visualiser', url: '/visualiser' }, { name: 'homepage', url: '/#visualiser' }]) {
+  test(`${surface.name}: both walk-in layouts rotate and update board and hardware finishes`, async ({ page }, info) => {
+    test.setTimeout(180_000);
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(surface.url);
+    const viewer = page.locator(surface.name === 'homepage' ? '#visualiser' : 'body');
+    await viewer.getByRole('button', { name: 'Wardrobes', exact: true }).click();
+    await viewer.getByRole('button', { name: 'Walk-in', exact: true }).click();
+    const host = viewer.getByLabel('Interactive 3D product preview', { exact: true });
+    const canvas = host.locator('canvas');
+    const ready = async () => {
+      await expect(host).toHaveAttribute('data-preview-loading', 'false');
+      await expect.poll(async () => (await frame(canvas)).deviation).toBeGreaterThan(20);
+    };
+    await ready();
+    await canvas.evaluate(element => { element.dataset.testIdentity = 'walk-in'; });
+    await expect(viewer.getByRole('button', { name: /^Forma / })).toHaveCount(2);
+    await expect(viewer.getByRole('button', { name: 'In a recess', exact: true })).toHaveCount(0);
+    await expect(viewer.getByText('2400 × 2400 mm', { exact: true })).toBeVisible();
+    await expect(viewer.getByText('2000 mm', { exact: true })).toBeVisible();
+    let previousLayout: Buffer | undefined;
+    for (const layout of ['Forma 4', 'Forma 5']) {
+      await viewer.getByRole('button', { name: layout, exact: true }).click();
+      await viewer.getByRole('button', { name: 'Matt Polar White', exact: true }).click();
+      await ready();
+      await viewer.getByRole('button', { name: 'Reset 3D view to 0 degrees' }).click();
+      const white = await frame(canvas);
+      if (previousLayout) expect((await finishChange(previousLayout, white.png)).proportion).toBeGreaterThan(.03);
+      previousLayout = white.png;
+      await canvas.screenshot({ path: info.outputPath(`${layout}-white.png`) });
+      await viewer.getByRole('button', { name: 'Woodmatt Black Ply', exact: true }).click();
+      await ready();
+      const black = await frame(canvas);
+      expect((await finishChange(white.png, black.png)).delta).toBeLessThan(-25);
+      await viewer.getByRole('button', { name: 'Matt Natural Oak', exact: true }).click();
+      await ready();
+      expect((await finishChange(black.png, (await frame(canvas)).png)).delta).toBeGreaterThan(25);
+      await canvas.screenshot({ path: info.outputPath(`${layout}-oak.png`) });
+      for (const finish of ['Inox (T23)', 'Brushed Brass (T25)', 'Brushed Matt Black (T24)']) {
+        const previous = await frame(canvas);
+        await viewer.getByRole('button', { name: finish, exact: true }).click();
+        await expect.poll(async () => (await frame(canvas)).png.equals(previous.png)).toBe(false);
+      }
+      await viewer.getByRole('button', { name: 'Rotate view left' }).click();
+      await ready();
+    }
+    await checkWallColour(viewer, canvas);
+    await viewer.getByRole('button', { name: 'Reset 3D view to 0 degrees' }).click();
+    await expect.poll(async () => Number(await canvas.getAttribute('data-view-angle'))).toBeCloseTo(0, 3);
+    await viewer.getByRole('button', { name: 'Built-in', exact: true }).click();
+    await ready();
+    await expect(viewer.getByRole('button', { name: 'Forma 2', exact: true })).toBeVisible();
+    await expect(canvas).toHaveAttribute('data-test-identity', 'walk-in');
+    expect(errors).toEqual([]);
+  });
+}
+
+for (const surface of [{ name: 'visualiser', url: '/visualiser' }, { name: 'homepage', url: '/#visualiser' }]) {
 for (const product of ['Wardrobes', 'Shelving']) {
   test(`${surface.name}: ${product} keep visible geometry and correct finishes after scene replacements`, async ({ page }, info) => {
     test.setTimeout(180_000);

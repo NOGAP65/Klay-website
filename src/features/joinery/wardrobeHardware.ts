@@ -56,8 +56,19 @@ export const HANDLE_FINISHES: HandleFinish[] = [
 
 export const DEFAULT_HANDLE_FINISH = 'Silver';
 
+export const WALK_IN_HANDLE_FINISHES: HandleFinish[] = [
+  { code: 'T23', name: 'Inox', hex: '#C5C6C4', metalness: 0.93, roughness: 0.28 },
+  { code: 'T24', name: 'Brushed Matt Black', hex: '#292929', metalness: 0.05, roughness: 0.72 },
+  { code: 'T25', name: 'Brushed Brass', hex: '#B8A080', metalness: 0.88, roughness: 0.40 },
+];
+
+export const WALK_IN_HARDWARE = WALK_IN_HANDLE_FINISHES.map(finish => ({
+  id: `${finish.code} ${finish.name}`, name: finish.name, hex: finish.hex,
+}));
+
 export const handleFinish = (name: string): HandleFinish =>
-  HANDLE_FINISHES.find(f => f.name === name) ?? HANDLE_FINISHES[0];
+  HANDLE_FINISHES.find(f => f.name === name)
+  ?? WALK_IN_HANDLE_FINISHES.find(f => f.name === name) ?? HANDLE_FINISHES[0];
 
 /** What the carcass builder needs to draw the metalwork: the colour to fill it
  * with in the flat-shaded 2D path. The 3D scene reads the finish itself so it

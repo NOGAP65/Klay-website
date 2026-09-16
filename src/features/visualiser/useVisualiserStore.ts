@@ -332,10 +332,10 @@ interface VisualiserStore {
 
 const joineryDefaults = (kind: WardrobeKind) => ({
   wardrobeKind: kind,
-  wardrobeModel: kind === 'shelving' ? 'LIN02' : kind === 'walk-in' ? '7.0L' : 'SRSTDH02',
+  wardrobeModel: kind === 'shelving' ? 'LIN02' : kind === 'walk-in' ? 'LS01' : 'SRSTDH02',
   wardrobeWidthMm: kind === 'walk-in' ? 2400 : 1800,
   wardrobeColour: 'Matt Polar White',
-  wardrobeHandleFinish: 'Black',
+  wardrobeHandleFinish: kind === 'walk-in' ? 'Brushed Matt Black' : 'Black',
 });
 
 export const useVisualiserStore = create<VisualiserStore>((set, get) => ({

@@ -11,7 +11,7 @@ import {
   WARDROBE_COLOURS,
   modelsOfKind, wardrobeModelById, wardrobeHeight, wardrobeDepth,
 } from '@/features/joinery';
-import { HANDLE_FINISHES, handleFinish } from '@/features/joinery';
+import { HANDLE_FINISHES, WALK_IN_HANDLE_FINISHES, handleFinish, walkInSpecifications, walkInLayout } from '@/features/joinery';
 
 import { coloursFor, isJoinery, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
@@ -606,7 +606,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 VISUALISER ONLY. The range card does not ask it — the same SKU
                 goes in either way, and this is a fact about the customer's room
                 rather than a variant to shop for. */}
-            <Field
+            {store.wardrobeKind !== 'walk-in' && <Field
               onDark={onDark}
               label="Fitting"
               caption={store.wardrobeRecessed ? 'Open to the walls' : 'Panels both ends'}
@@ -625,7 +625,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                   />
                 ))}
               </div>
-            </Field>
+            </Field>}
 
             {/* COLOUR SITS THIRD, under Type and Fitting. It is the question people
                 arrive with — a customer knows they want white or walnut long
@@ -659,7 +659,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 chosen is one of three names. The arrangement is still on the
                 model (WardrobeModel.layout) and still belongs on a spec sheet;
                 it is not what this control is asking. */}
-            <Field onDark={onDark} label="Model">
+            <Field onDark={onDark} label="Model" caption={store.wardrobeKind === 'walk-in' ? walkInLayout(store.wardrobeModel).shape : undefined}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {modelsOfKind(store.wardrobeKind).map(m => (
                   <Pill
@@ -697,7 +697,17 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 The select carries the full dimensions in each option rather
                 than only in the caption, so the fixed 2016 × 500 is visible at
                 the moment of choosing rather than after. */}
-            <Field onDark={onDark} label="Width">
+            {store.wardrobeKind === 'walk-in' ? (
+              <Field onDark={onDark} label="Dimensions">
+                <dl style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: space.xs, margin: 0 }}>
+                  {walkInSpecifications(store.wardrobeModel).filter(spec => spec.label !== 'Layout').map(spec => (
+                    <div key={spec.label} style={{ display: 'contents' }}>
+                      <dt>{spec.label}</dt><dd style={{ margin: 0 }}>{spec.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </Field>
+            ) : <Field onDark={onDark} label="Width">
               <Select
                 onDark={onDark}
                 value={store.wardrobeWidthMm}
@@ -711,7 +721,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                   label: `${w} × ${wardrobeHeight(wardrobeModelById(store.wardrobeModel))} × ${wardrobeDepth(wardrobeModelById(store.wardrobeModel))} mm`,
                 }))}
               />
-            </Field>
+            </Field>}
 
           </div>
         </section>
@@ -757,7 +767,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               caption={`${handleFinish(store.wardrobeHandleFinish).name} · ${handleFinish(store.wardrobeHandleFinish).code}`}
             >
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
-                {HANDLE_FINISHES.map(f => (
+                {(store.wardrobeKind === 'walk-in' ? WALK_IN_HANDLE_FINISHES : HANDLE_FINISHES).map(f => (
                   <Swatch
                     onDark={onDark}
                     key={f.code}

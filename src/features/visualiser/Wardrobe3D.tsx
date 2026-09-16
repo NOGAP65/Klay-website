@@ -52,6 +52,12 @@ export interface Wardrobe3DProps {
 const MAX_YAW = THREE.MathUtils.degToRad(40);
 const INITIAL_YAW = THREE.MathUtils.degToRad(30);
 
+const initialView = (isWalkIn: boolean) => ({
+  yaw: isWalkIn ? 0 : INITIAL_YAW,
+  polar: isWalkIn ? THREE.MathUtils.degToRad(85) : Math.PI / 2 - 0.015,
+  zoom: 1,
+});
+
 export default function Wardrobe3D({
   modelId,
   colourName,
@@ -61,6 +67,7 @@ export default function Wardrobe3D({
   recessed,
   wallColour,
 }: Wardrobe3DProps) {
+  const isWalkIn = wardrobeModelById(modelId).kind === 'walk-in';
   const hostRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const [angle, setAngle] = useState(30);
@@ -70,7 +77,8 @@ export default function Wardrobe3D({
   const moveViewRef = useRef<((degrees: number | null) => void) | null>(null);
   const latest = useRef({ wallColour, background, handleFinish });
   useLayoutEffect(() => { latest.current = { wallColour, background, handleFinish }; }, [wallColour, background, handleFinish]);
-  const viewRef = useRef({ yaw: INITIAL_YAW, polar: Math.PI / 2 - 0.015, zoom: 1 });
+  const viewRef = useRef(initialView(isWalkIn));
+  const viewKindRef = useRef(isWalkIn);
   // The live scene, so the two cheap changes below can reach it without the
   // effect that built it having to re-run. See WardrobeScene.setWallColour.
   const builtRef = useRef<WardrobeScene | null>(null);
@@ -117,12 +125,20 @@ export default function Wardrobe3D({
     setHasError(false);
 
     const model = wardrobeModelById(modelId);
+    // An interior starts through its entrance. Keep the customer's orbit when
+    // changing finishes/layouts, but reframe when switching product families.
+    if (viewKindRef.current !== isWalkIn) {
+      viewRef.current = initialView(isWalkIn);
+      viewKindRef.current = isWalkIn;
+    }
     const widthMm = selectedWidthMm ?? DEFAULT_WIDTH_MM;
 
     const renderer = rendererRef.current;
     if (!renderer) { setHasError(true); return; }
 
-    const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 100);
+    // A wider interior lens reveals the side runs instead of flattening them
+    // behind their end panels. Straight units keep their existing product lens.
+    const camera = new THREE.PerspectiveCamera(isWalkIn ? 70 : 32, 1, 0.05, 100);
 
     let disposed = false;
     let cleanup = () => {};
@@ -171,7 +187,7 @@ export default function Wardrobe3D({
         // cabinet alone cropped the empty reveal above it — which is the part
         // that says the robe is set into a room rather than filling a hole cut
         // to its own size. See OPENING_HEIGHT_MM.
-        const span = Math.max(widthMm / Math.max(camera.aspect, 0.45), OPENING_HEIGHT_MM) * MM;
+        const span = Math.max(widthMm * (isWalkIn ? Math.SQRT2 : 1) / Math.max(camera.aspect, 0.45), OPENING_HEIGHT_MM) * MM;
         // 1.28 AGAINST THE OPENING, not 1.72. The multiplier was set when the
         // subject was the 2016 cabinet; measuring it against a 2700 opening
         // instead made the same number a third further back, and what filled
@@ -182,11 +198,11 @@ export default function Wardrobe3D({
         // 2700 x 1.28 lands within a few millimetres of where 2016 x 1.72 did,
         // so the opening is framed the way it was while still being what the
         // framing is measured from.
-        const dist = (span / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))) * 1.28;
+        const dist = (span / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))) * (isWalkIn ? 1.42 : 1.28);
         // Aimed a little above the cabinet's own middle, so the opening is
         // centred in frame rather than the unit inside it.
         const aim = built.centre.clone();
-        aim.y = (OPENING_HEIGHT_MM / 2) * MM;
+        if (!isWalkIn) aim.y = (OPENING_HEIGHT_MM / 2) * MM;
         const saved = viewRef.current;
         camera.position.copy(aim).add(new THREE.Vector3().setFromSpherical(
           new THREE.Spherical(dist * saved.zoom, saved.polar, saved.yaw),
@@ -258,11 +274,11 @@ export default function Wardrobe3D({
           // Stop any remaining drag momentum before a button sets the view.
           controls.enableDamping = false;
           controls.update();
-          const yaw = degrees === null ? INITIAL_YAW : THREE.MathUtils.clamp(
+          const yaw = degrees === null ? initialView(isWalkIn).yaw : THREE.MathUtils.clamp(
             controls.getAzimuthalAngle() + THREE.MathUtils.degToRad(degrees), -MAX_YAW, MAX_YAW,
           );
           const distance = degrees === null ? dist : camera.position.distanceTo(aim);
-          const polar = degrees === null ? Math.PI / 2 - 0.015 : controls.getPolarAngle();
+          const polar = degrees === null ? initialView(isWalkIn).polar : controls.getPolarAngle();
           camera.position.copy(aim).add(new THREE.Vector3().setFromSpherical(new THREE.Spherical(
             distance, polar, yaw,
           )));
@@ -332,7 +348,7 @@ export default function Wardrobe3D({
     // control that does nothing.
     // NOT wallColour OR handleFinish — those repaint in place, below. Leaving
     // them here rebuilt the entire scene on every click of a swatch.
-  }, [modelId, colourName, selectedWidthMm, background, recessed, retry]);
+  }, [modelId, colourName, selectedWidthMm, background, recessed, retry, isWalkIn]);
 
   /** Repaint the room. Two materials and a background — no geometry, no
    * textures, no environment. */
@@ -367,6 +383,6 @@ export default function Wardrobe3D({
       <button type="button" onClick={() => setRetry(value => value + 1)}>Try again</button>
     </div>}
     <div ref={hostRef} data-preview-loading={!isReady && !hasError} aria-label="Interactive 3D product preview" style={{ width: '100%', height: '100%', minHeight: 0 }} />
-    <JoineryOrbitControl angle={angle} isReady={isReady} onRotate={degrees => moveViewRef.current?.(degrees)} onReset={() => moveViewRef.current?.(null)} />
+    <JoineryOrbitControl angle={angle} isReady={isReady} resetAngle={isWalkIn ? 0 : 30} onRotate={degrees => moveViewRef.current?.(degrees)} onReset={() => moveViewRef.current?.(null)} />
   </div>;
 }
