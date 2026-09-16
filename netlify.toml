@@ -1,5 +1,8 @@
 [build]
-  command = "npm run verify"
+  # This Netlify team shares a legacy HubSpot browser token across projects.
+  # Klay does not use HubSpot. Exclude that credential before any build process
+  # starts; retain every verification/security check and other sites' settings.
+  command = "env -u VITE_HUBSPOT_ACCESS_TOKEN npm run verify"
   publish = "dist"
 
 [build.environment]

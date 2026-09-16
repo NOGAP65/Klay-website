@@ -32,3 +32,19 @@ Chromium and iOS WebKit profiles in light and dark schemes (joinery, loading and
 form validation); all 61 domain tests passed. Production build, type checks,
 architecture, lint-regression, assets, performance budgets and security scanning
 passed. Android shelving and iOS wardrobe screenshots were also inspected.
+
+Follow-up coverage adds the embedded homepage viewer and shop photographs.
+The tests rotate before changing finishes, preserve the chosen angle, and check
+every built-in wardrobe/shelving model at its minimum and maximum shop width.
+All 24 added homepage/shop cases passed across the same six browser profiles.
+Mobile captures centre the photograph so sticky navigation cannot contaminate
+the compared product pixels. WebKit's full model/width sweep has a larger test
+time budget; individual loading expectations remain bounded.
+
+The production site still served the earlier build because Netlify rejected
+deployments at the security gate: its team account injects the unused shared
+`VITE_HUBSPOT_ACCESS_TOKEN`. Both a retry and a clean-cache deploy reproduced
+that failure. Klay has no HubSpot integration. Its Netlify build command now
+unsets that single inherited credential before running the complete `verify`
+pipeline. The security scanner and all its rules are unchanged, and no shared
+team setting or credential was edited.
