@@ -11,7 +11,6 @@
 //   useIsMobile     a 768px convention over the above.
 //   Turnstile       Cloudflare plumbing. Knows nothing about blinds.
 //   Honeypot        a hidden input named `website`. Generic anti-spam.
-//   isValidEmail    one @, no spaces, a dot. Was three copies.
 //
 // WHAT WAS KEPT OUT, and why, because the list is the more useful half:
 //
@@ -73,6 +72,5 @@ export { useInView } from './hooks/useInView';
 export { useErrorFocus } from './hooks/useErrorFocus';
 export { Turnstile, useTurnstileEnabled } from './components/Turnstile';
 export { Honeypot } from './components/Honeypot';
-export { isValidEmail } from './lib/validate';
 export { scrollToId } from './utils/scrollToId';
 export { loadImage } from './lib/imageResources';

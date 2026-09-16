@@ -28,6 +28,7 @@ test('enquiries work without the newer AbortSignal.timeout browser feature', asy
   await page.goto('/contact');
   await page.getByRole('textbox', { name: /^Name/ }).fill('Test Customer');
   await page.getByRole('textbox', { name: /^Email/ }).fill('test@example.com');
+  await page.getByRole('textbox', { name: /^Message/ }).fill('Please help me choose curtains.');
   await page.getByRole('button', { name: 'Send Message', exact: true }).click();
   await expect(page.getByText(/Thanks — we'll be in touch/i).first()).toBeVisible();
 });

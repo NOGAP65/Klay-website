@@ -31,6 +31,7 @@ test('expired and spent captcha tokens cannot be reused, and retry preserves cus
   await expect(page.getByText('Mock verification widget')).toBeVisible();
   await page.getByRole('textbox', { name: /^Name/ }).fill('Security Test');
   await page.getByRole('textbox', { name: /^Email/ }).fill('test@example.com');
+  await page.getByRole('textbox', { name: /^Message/ }).fill('Please help me choose curtains.');
   await page.evaluate(() => { window.securityWidget.callback('first-token'); window.securityWidget['expired-callback'](); });
   await page.getByRole('button', { name: 'Send Message', exact: true }).click();
   await expect(page.getByText('Please complete the verification challenge.')).toBeVisible();

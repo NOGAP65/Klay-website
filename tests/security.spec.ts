@@ -19,6 +19,7 @@ const originalFetch = globalThis.fetch;
 const originalError = console.error;
 const origin = 'https://klay-website.netlify.app';
 const valid = { name: "Chloë O'Connor", email: 'customer@example.com', phone: '+61 412 345 678',
+  address: '2/18 Smith Street', suburb: 'Epping', postcode: '3076',
   blindType: 'dual', windowSize: 'large', operation: 'motorised', quantity: 2 };
 const request = (body: unknown = valid, path = '/api/request-quote', headers: Record<string, string> = {}) =>
   new Request(origin + path, { method: 'POST', headers: { origin, 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
@@ -222,7 +223,7 @@ test('a verified enquiry stores only approved columns and escapes customer text 
     }
     throw new Error('Unexpected network destination');
   };
-  const result = await quote(request({ ...valid, name: '<img src=x onerror=alert(1)>', notes: '<script>alert(1)</script>',
+  const result = await quote(request({ ...valid, notes: '<script>alert(1)</script>',
     turnstileToken: 'unit-token', handled: true, internal_notes: 'forged' }), { ip: '203.0.113.55' });
   expect(result.status).toBe(200);
   expect(stored).not.toHaveProperty('handled');

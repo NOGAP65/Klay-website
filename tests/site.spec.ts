@@ -114,6 +114,10 @@ test('shop search, sort, filters, choices and persisted multi-product quote', as
   await expect(page.getByRole('button',{name:/^Pay /})).toHaveCount(0);
   await page.getByRole('textbox',{name:/^Name/}).fill('Test Customer');
   await page.getByRole('textbox',{name:/^Email/}).fill('test@example.com');
+  await page.getByRole('textbox',{name:/^Phone/}).fill('0412 345 678');
+  await page.getByRole('textbox',{name:/^Street address/}).fill('2/18 Smith Street');
+  await page.getByRole('textbox',{name:/^Suburb/}).fill('Epping');
+  await page.getByRole('textbox',{name:/^Postcode/}).fill('3076');
   let submitted: Record<string,unknown> | undefined;
   await page.route('**/api/request-quote', route => { submitted = route.request().postDataJSON(); return route.fulfill({json:{id:'test-quote'}}); });
   await page.getByRole('button',{name:'Request a quote',exact:true}).click();

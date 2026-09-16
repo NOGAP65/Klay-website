@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 
+import { bookingDateBounds, validateCustomer, type CustomerField } from '@/core/customerValidation';
 import {
   MAX_QUANTITY,
   blindLabel,
@@ -11,13 +12,14 @@ import {
 } from '@/core/pricing';
 import { isQuoteItems } from '@/core/quoteItems';
 
-import { radius, tokens, eyebrow, headline, motion, layout } from '@/ds';
+import { radius, tokens, eyebrow, headline, motion, layout, type as typeScale } from '@/ds';
 import { Field, DANGER } from '@/ds';
 import { useCartStore } from '@/features/cart';
 import { useErrorFocus } from '@/shared';
-import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
+import { Honeypot, Turnstile, useTurnstileEnabled } from '@/shared';
 
 import { createCheckoutSession, requestQuote, type BookingPayload, type FieldErrors } from '../api';
+import { validateInstallationForm } from '../api/customerValidation';
 import { cartQuoteItems } from '../cartQuote';
 import { quoteItemsFromLink } from '../quoteLink';
 
@@ -38,13 +40,6 @@ import { quoteItemsFromLink } from '../quoteLink';
 // ---------------------------------------------------------------------------
 
 type Mode = 'quote' | 'pay';
-
-/** Tomorrow, as yyyy-mm-dd — a measure-up cannot be booked for today. */
-function tomorrowISO(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 const sectionHeading: React.CSSProperties = {
   fontFamily: tokens.body,
@@ -95,12 +90,19 @@ export default function BookInstallPage() {
     preferredDate: '',
     notes: '',
   });
-  const set = (key: keyof typeof form) => (value: string) =>
+  const set = (key: keyof typeof form) => (value: string) => {
+    setSubmitValidation(false);
     setForm((f) => ({ ...f, [key]: value }));
+    setFieldErrors(previous => {
+      if (!previous[key]) return previous;
+      const next = { ...previous }; delete next[key]; return next;
+    });
+  };
 
   const [busy, setBusy] = useState<Mode | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const formRef = useErrorFocus(fieldErrors);
+  const [isSubmitValidation, setSubmitValidation] = useState(false);
+  const formRef = useErrorFocus(fieldErrors, isSubmitValidation);
   const [formError, setFormError] = useState<string | null>(null);
   const [isQuoteSent, setQuoteSent] = useState(false);
 
@@ -108,8 +110,20 @@ export default function BookInstallPage() {
   const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileReset, setTurnstileReset] = useState(0);
   const isTurnstileEnabled = useTurnstileEnabled();
+  const dateBounds = bookingDateBounds();
+  const blur = (key: CustomerField) => (event: React.FocusEvent) => {
+    // A submit click validates the whole form. Do not shift its target during
+    // pointer-down, especially on touch browsers where buttons do not focus.
+    if (!(event.relatedTarget instanceof HTMLInputElement || event.relatedTarget instanceof HTMLTextAreaElement)) return;
+    setSubmitValidation(false);
+    const error = validateCustomer(form, 'installation')[key];
+    // Basic blur checks must not erase a server/locality error or move the
+    // submit button between pointer-down and click. Clear errors on edit.
+    if (error) setFieldErrors(previous => previous[key] === error ? previous : { ...previous, [key]: error });
+  };
 
   const payload = (): BookingPayload => ({
+    enquiryType: 'installation',
     ...(isBasketQuote ? { items } : {}),
     ...form,
     blindType: config.blindType,
@@ -122,22 +136,6 @@ export default function BookInstallPage() {
     turnstileToken,
   });
 
-  /** Cheap pre-flight so an obviously incomplete form does not need a round
-   *  trip. The server validates independently — this is courtesy, not the
-   *  boundary. */
-  function localErrors(): FieldErrors {
-    const errors: FieldErrors = {};
-    if (!form.name.trim()) errors.name = 'Please tell us your name.';
-    if (!form.email.trim()) errors.email = 'We need an email to reply to.';
-    else if (!isValidEmail(form.email)) {
-      errors.email = "That email doesn't look right.";
-    }
-    if (form.postcode.trim() && !/^\d{4}$/.test(form.postcode.trim())) {
-      errors.postcode = 'Australian postcodes are four digits.';
-    }
-    return errors;
-  }
-
   async function submit(mode: Mode) {
     if (busy) return;
     setFormError(null);
@@ -146,14 +144,18 @@ export default function BookInstallPage() {
       return;
     }
 
-    const errors = localErrors();
+    setBusy(mode);
+    const errors = await validateInstallationForm(form);
+    setSubmitValidation(true);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
+      setBusy(null);
       return;
     }
     setFieldErrors({});
     if (isTurnstileEnabled && !turnstileToken) {
       setFormError('Please complete the verification challenge.');
+      setBusy(null);
       return;
     }
     setBusy(mode);
@@ -275,11 +277,13 @@ export default function BookInstallPage() {
             <div style={{ flex: '1 1 420px', minWidth: 0 }}>
               <h2 style={sectionHeading}>Your details</h2>
 
-              <form ref={formRef} onSubmit={(e) => e.preventDefault()} noValidate>
+              <form ref={formRef} onSubmit={(e) => { e.preventDefault(); void submit('quote'); }} noValidate>
                 <Field
                   label="Name"
                   value={form.name}
                   onChange={set('name')}
+                  onBlur={blur('name')}
+                  placeholder="First and last name"
                   required
                   autoComplete="name"
                   error={fieldErrors.name}
@@ -290,6 +294,7 @@ export default function BookInstallPage() {
                   type="email"
                   value={form.email}
                   onChange={set('email')}
+                  onBlur={blur('email')}
                   required
                   autoComplete="email"
                   inputMode="email"
@@ -301,6 +306,9 @@ export default function BookInstallPage() {
                   type="tel"
                   value={form.phone}
                   onChange={set('phone')}
+                  onBlur={blur('phone')}
+                  required
+                  placeholder="0412 345 678 or 03 9123 4567"
                   autoComplete="tel"
                   inputMode="tel"
                   error={fieldErrors.phone}
@@ -310,6 +318,9 @@ export default function BookInstallPage() {
                   label="Street address"
                   value={form.address}
                   onChange={set('address')}
+                  onBlur={blur('address')}
+                  required
+                  placeholder="e.g. Unit 2, 18 Smith Street"
                   autoComplete="street-address"
                   error={fieldErrors.address}
                   maxLength={240}
@@ -321,6 +332,8 @@ export default function BookInstallPage() {
                       label="Suburb"
                       value={form.suburb}
                       onChange={set('suburb')}
+                      onBlur={blur('suburb')}
+                      required
                       autoComplete="address-level2"
                       error={fieldErrors.suburb}
                       maxLength={120}
@@ -331,6 +344,8 @@ export default function BookInstallPage() {
                       label="Postcode"
                       value={form.postcode}
                       onChange={set('postcode')}
+                      onBlur={blur('postcode')}
+                      required
                       autoComplete="postal-code"
                       inputMode="numeric"
                       error={fieldErrors.postcode}
@@ -339,18 +354,25 @@ export default function BookInstallPage() {
                   </div>
                 </div>
 
+                <p style={{ color: tokens.inkSoft, fontSize: typeScale.micro.fontSize, marginTop: 0, marginBottom: 20 }}>
+                  Suburb and postcode must match. Locality data: <a href="https://www.geonames.org/" target="_blank" rel="noreferrer">GeoNames</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>).
+                </p>
+
                 <Field
                   label="Preferred date"
                   type="date"
                   value={form.preferredDate}
                   onChange={set('preferredDate')}
-                  min={tomorrowISO()}
+                  onBlur={blur('preferredDate')}
+                  min={dateBounds.min}
+                  max={dateBounds.max}
                   error={fieldErrors.preferredDate}
                 />
                 <Field
                   label="Anything we should know?"
                   value={form.notes}
                   onChange={set('notes')}
+                  onBlur={blur('notes')}
                   textarea
                   placeholder="Access, parking, number of windows, timing…"
                   error={fieldErrors.notes}

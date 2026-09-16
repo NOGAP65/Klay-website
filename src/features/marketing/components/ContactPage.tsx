@@ -4,10 +4,12 @@ import { useSearchParams } from 'react-router-dom';
 
 import * as site from '@/config/site';
 
+import { validateCustomer, type CustomerField } from '@/core/customerValidation';
+
 import { tokens, eyebrow, headline, motion, space, supporting, type as typeScale, useHover } from '@/ds';
 import { DANGER, Field } from '@/ds';
 import { type FieldErrors } from '@/features/booking';
-import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
+import { Honeypot, Turnstile, useTurnstileEnabled } from '@/shared';
 import { useErrorFocus } from '@/shared';
 
 import { sendEnquiry } from '../api/sendEnquiry';
@@ -59,29 +61,38 @@ export default function ContactPage() {
       notes: product ? `I'd like a quote for: ${product}\n\n` : '',
     };
   });
-  const set = (key: keyof typeof form) => (value: string) =>
+  const set = (key: keyof typeof form) => (value: string) => {
+    setSubmitValidation(false);
     setForm((f) => ({ ...f, [key]: value }));
+    setFieldErrors(previous => {
+      if (!previous[key]) return previous;
+      const next = { ...previous }; delete next[key]; return next;
+    });
+  };
 
   const [isBusy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const formRef = useErrorFocus(fieldErrors);
+  const [isSubmitValidation, setSubmitValidation] = useState(false);
+  const formRef = useErrorFocus(fieldErrors, isSubmitValidation);
   const [formError, setFormError] = useState<string | null>(null);
 
   const [honeypot, setHoneypot] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
   const [turnstileReset, setTurnstileReset] = useState(0);
   const isTurnstileEnabled = useTurnstileEnabled();
+  const blur = (key: CustomerField) => (event: React.FocusEvent) => {
+    if (!(event.relatedTarget instanceof HTMLInputElement || event.relatedTarget instanceof HTMLTextAreaElement)) return;
+    setSubmitValidation(false);
+    const error = validateCustomer(form, 'contact')[key];
+    if (error) setFieldErrors(previous => previous[key] === error ? previous : { ...previous, [key]: error });
+  };
 
   async function handleSubmit() {
     if (isBusy) return;
     setFormError(null);
 
-    const errors: FieldErrors = {};
-    if (!form.name.trim()) errors.name = 'Please tell us your name.';
-    if (!form.email.trim()) errors.email = 'We need an email to reply to.';
-    else if (!isValidEmail(form.email)) {
-      errors.email = "That email doesn't look right.";
-    }
+    const errors = validateCustomer(form, 'contact');
+    setSubmitValidation(true);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -180,6 +191,8 @@ export default function ContactPage() {
                   label="Name"
                   value={form.name}
                   onChange={set('name')}
+                  onBlur={blur('name')}
+                  placeholder="First and last name"
                   required
                   autoComplete="name"
                   error={fieldErrors.name}
@@ -190,6 +203,7 @@ export default function ContactPage() {
                   type="email"
                   value={form.email}
                   onChange={set('email')}
+                  onBlur={blur('email')}
                   required
                   autoComplete="email"
                   inputMode="email"
@@ -201,6 +215,8 @@ export default function ContactPage() {
                   type="tel"
                   value={form.phone}
                   onChange={set('phone')}
+                  onBlur={blur('phone')}
+                  placeholder="Australian mobile or landline (optional)"
                   autoComplete="tel"
                   inputMode="tel"
                   error={fieldErrors.phone}
@@ -210,6 +226,9 @@ export default function ContactPage() {
                   label="Message"
                   value={form.notes}
                   onChange={set('notes')}
+                  onBlur={blur('notes')}
+                  required
+                  placeholder="Tell us what you need (at least 10 characters)"
                   textarea
                   rows={5}
                   error={fieldErrors.notes}

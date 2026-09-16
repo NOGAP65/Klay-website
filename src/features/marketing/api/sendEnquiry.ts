@@ -37,10 +37,6 @@ const NO_CONFIGURATION = {
   quantity: 1,
 } as const;
 
-/** Said in `notes` when the visitor left the message empty, so the row is never
- *  a name and an address with no indication of what was wanted. */
-const NO_MESSAGE = 'Sent via the contact form (no configuration).';
-
 export interface EnquiryInput {
   name: string;
   email: string;
@@ -53,10 +49,11 @@ export interface EnquiryInput {
 
 export function sendEnquiry(input: EnquiryInput): Promise<ApiResult<{ id: string }>> {
   return requestQuote({
+    enquiryType: 'contact',
     name: input.name,
     email: input.email,
     phone: input.phone,
-    notes: input.notes || NO_MESSAGE,
+    notes: input.notes,
     website: input.website,
     turnstileToken: input.turnstileToken,
     ...NO_CONFIGURATION,

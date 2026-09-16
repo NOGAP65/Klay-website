@@ -12,6 +12,7 @@ import type { BlindType, Operation, WindowSize } from '@/core/pricing'
 import type { QuoteItem } from '@/core/quoteItems'
 
 export interface BookingPayload {
+  enquiryType?: 'contact' | 'installation'
   items?: QuoteItem[]
   name: string
   email: string

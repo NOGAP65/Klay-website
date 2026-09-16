@@ -51,6 +51,7 @@ export interface FieldProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: React.FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;
   type?: string;
   required?: boolean;
   textarea?: boolean;
@@ -61,6 +62,7 @@ export interface FieldProps {
   error?: string;
   /** Native constraint, e.g. a date that must not be in the past. */
   min?: string;
+  max?: string;
   inputMode?: 'text' | 'tel' | 'numeric' | 'email';
   maxLength?: number;
 }
@@ -69,6 +71,7 @@ export function Field({
   label,
   value,
   onChange,
+  onBlur,
   type = 'text',
   required,
   textarea,
@@ -77,6 +80,7 @@ export function Field({
   autoComplete,
   error,
   min,
+  max,
   inputMode,
   maxLength,
 }: FieldProps) {
@@ -123,7 +127,7 @@ export function Field({
     'aria-invalid': error ? true : undefined,
     'aria-describedby': error ? errorId : undefined,
     onFocus: () => setFocused(true),
-    onBlur: () => setFocused(false),
+    onBlur: (event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { setFocused(false); onBlur?.(event); },
   } as const;
 
   return (
@@ -145,6 +149,7 @@ export function Field({
           {...shared}
           type={type}
           min={min}
+          max={max}
           inputMode={inputMode}
           onChange={(e) => onChange(e.target.value)}
           style={style}

@@ -273,6 +273,11 @@ export default function Wardrobe3D({
         };
         controls.addEventListener('change', syncView);
         syncView();
+        // The renderer survives scene replacements, but their shadow maps do
+        // not. Refresh them BEFORE the first draw; otherwise the new materials
+        // are initialized with missing shadows and only the background shows.
+        renderer.shadowMap.autoUpdate = false;
+        renderer.shadowMap.needsUpdate = true;
         renderer.render(built.scene, camera);
         setIsReady(true);
         renderer.domElement.style.cursor = 'grab';
@@ -292,9 +297,7 @@ export default function Wardrobe3D({
           else invalidate();
         };
         document.addEventListener('visibilitychange', onVisibility);
-        // Orbiting changes the camera, not the static lighting or cabinet geometry.
-        renderer.shadowMap.autoUpdate = false;
-        renderer.shadowMap.needsUpdate = true;
+        // Orbiting changes the camera, so subsequent frames reuse these shadows.
         invalidate();
 
         cleanup = () => {

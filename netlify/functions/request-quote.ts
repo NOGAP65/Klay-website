@@ -8,7 +8,7 @@
 // ---------------------------------------------------------------------------
 
 import { checkHoneypot, verifyTurnstile } from '../lib/antispam'
-import { bookingRow, parseBooking } from '../lib/booking'
+import { bookingRow, parseQuoteBooking } from '../lib/booking'
 import { db } from '../lib/db'
 import { env, missing } from '../lib/env'
 import { badRequest, checkSameOrigin, json, methodNotAllowed, notConfigured, readJson, serverError } from '../lib/http'
@@ -31,7 +31,7 @@ export default async (req: Request, context?: Pick<Context, 'ip'>): Promise<Resp
   const honeypot = checkHoneypot(body)
   if (honeypot) return honeypot
 
-  const parsed = parseBooking(body)
+  const parsed = parseQuoteBooking(body)
   if (!parsed.ok) return badRequest(parsed.message, parsed.fields)
   const booking = parsed.booking
 
