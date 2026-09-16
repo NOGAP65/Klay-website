@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, useTransition, type RefObject } from 'reac
 
 import type { CatalogueItem } from '../constants';
 
-/** Paint a static placeholder before preparing the next list; controls remain responsive. */
-export function useShopResults(items: CatalogueItem[], query: string, isPaused: boolean, anchor: RefObject<HTMLDivElement>) {
+/** Keep the current products visible while React prepares the next result list. */
+export function useShopResults(items: CatalogueItem[], isPaused: boolean, anchor: RefObject<HTMLDivElement>) {
   const [displayed, setDisplayed] = useState(items);
   const [isPending, startTransition] = useTransition();
   const regionRef = useRef<HTMLDivElement>(null);
@@ -13,16 +13,12 @@ export function useShopResults(items: CatalogueItem[], query: string, isPaused: 
 
   useEffect(() => {
     if (isPaused || key === displayedKey) return;
-    // Give the placeholder a paint and coalesce typing. Cleanup discards superseded searches.
-    const timer = window.setTimeout(() => {
-      const top = anchor.current?.getBoundingClientRect().top;
-      if (top !== undefined && top < 80) {
-        window.scrollTo({ top: Math.max(0, window.scrollY + top - 80), behavior: 'instant' });
-      }
-      startTransition(() => setDisplayed(items));
-    }, 160);
-    return () => window.clearTimeout(timer);
-  }, [items, key, displayedKey, query, isPaused, anchor]);
+    const top = anchor.current?.getBoundingClientRect().top;
+    if (top !== undefined && top < 80) {
+      window.scrollTo({ top: Math.max(0, window.scrollY + top - 80), behavior: 'instant' });
+    }
+    startTransition(() => setDisplayed(items));
+  }, [items, key, displayedKey, isPaused, anchor]);
 
   return { displayed, regionRef, isUpdating };
 }

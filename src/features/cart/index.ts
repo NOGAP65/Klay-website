@@ -51,3 +51,5 @@
 // --- the basket itself ------------------------------------------------------
 export { useCartStore, type CartItem } from './store/cartStore';
 export { CartPopover } from './components/CartPopover';
+export { CartFeedback } from './components/CartFeedback';
+export { CartRecovery } from './components/CartRecovery';

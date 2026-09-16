@@ -9,3 +9,5 @@ export { ctaBase, ctaFill, type CtaVariant } from './cta';
 export { CtaLink } from './CtaLink';
 export { CtaButton } from './CtaButton';
 export { TextLink } from './TextLink';
+export { LoadingPlaceholder } from './LoadingPlaceholder';
+export { Dialog } from './Dialog';

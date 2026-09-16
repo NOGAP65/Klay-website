@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -5,9 +6,10 @@ import * as site from '@/config/site';
 
 import { tokens, eyebrow, headline, motion, space, supporting, type as typeScale, useHover } from '@/ds';
 import { DANGER, Field } from '@/ds';
-import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
-
 import { type FieldErrors } from '@/features/booking';
+import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
+import { useErrorFocus } from '@/shared';
+
 import { sendEnquiry } from '../api/sendEnquiry';
 
 // DARK ('#0f0d09') and PARCHMENT used to be declared here. Contact is a
@@ -62,6 +64,7 @@ export default function ContactPage() {
 
   const [isBusy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const formRef = useErrorFocus(fieldErrors);
   const [formError, setFormError] = useState<string | null>(null);
 
   const [honeypot, setHoneypot] = useState('');
@@ -69,6 +72,7 @@ export default function ContactPage() {
   const isTurnstileEnabled = useTurnstileEnabled();
 
   async function handleSubmit() {
+    if (isBusy) return;
     setFormError(null);
 
     const errors: FieldErrors = {};
@@ -77,15 +81,15 @@ export default function ContactPage() {
     else if (!isValidEmail(form.email)) {
       errors.email = "That email doesn't look right.";
     }
-    if (isTurnstileEnabled && !turnstileToken) {
-      setFormError('Please complete the verification challenge.');
-      return;
-    }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
     setFieldErrors({});
+    if (isTurnstileEnabled && !turnstileToken) {
+      setFormError('Please complete the verification challenge.');
+      return;
+    }
     setBusy(true);
 
     // A contact enquiry is a quote request without a configuration: same
@@ -162,7 +166,7 @@ export default function ContactPage() {
                 Thanks — we'll be in touch within one business day.
               </p>
             ) : (
-              <form
+              <form ref={formRef}
                 noValidate
                 onSubmit={(e) => {
                   e.preventDefault();

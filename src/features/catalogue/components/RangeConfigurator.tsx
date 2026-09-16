@@ -21,7 +21,7 @@
 // rather than to a component.
 // ---------------------------------------------------------------------------
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
@@ -727,6 +727,8 @@ export function RangeConfigurator({
    * did nothing. Then it reverts: two of the same window is a real order, so the
    * row has to stay addable. */
   const [justAdded, setJustAdded] = useState(false);
+  const feedbackTimer = useRef<number>();
+  useEffect(() => () => window.clearTimeout(feedbackTimer.current), []);
 
   /** HOW MANY OF THIS EXACT CONFIGURATION.
    *
@@ -746,16 +748,13 @@ export function RangeConfigurator({
 
   const addToCart = () => {
     onInteract?.();
-    // The cart keys a line by its configuration and increments when it sees the
-    // same one again, so adding n is adding once, n times. That keeps the
-    // quantity where it belongs — in the cart — rather than teaching this panel
-    // a second way to say the same thing.
     const line = configuredLine(item, sel);
-    for (let i = 0; i < qty; i++) addItem(line);
-    setQtyAdded(qty);
+    const added = addItem(line, qty);
+    setQtyAdded(added);
     setQty(1);
-    setJustAdded(true);
-    window.setTimeout(() => setJustAdded(false), 2000);
+    setJustAdded(added > 0);
+    window.clearTimeout(feedbackTimer.current);
+    feedbackTimer.current = window.setTimeout(() => setJustAdded(false), 2000);
   };
 
   return (

@@ -1,0 +1,14 @@
+.klay-dialog { inset: 0; margin: auto; padding: 0; border: 1px solid var(--dialog-line); border-radius: 12px; width: min(600px, calc(100vw - 40px)); max-width: none; max-height: calc(100dvh - 48px); color: var(--dialog-ink); background: var(--dialog-paper); font-family: var(--dialog-body); box-shadow: 0 20px 80px rgb(0 0 0 / 20%); overscroll-behavior: contain; }
+.klay-dialog::backdrop { background: rgb(29 29 29 / 48%); }
+.klay-dialog[open] { animation: dialog-appear 180ms ease-out; }
+.klay-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; position: sticky; top: 0; background: var(--dialog-paper); padding: 24px 24px 16px; z-index: 1; border-bottom: 1px solid var(--dialog-line); }
+.klay-dialog-header h2 { font-family: var(--dialog-display); font-size: clamp(26px, 4vw, 34px); line-height: 1.12; font-weight: 400; margin: 0; outline: 0; }
+.klay-dialog-header button { flex: 0 0 44px; width: 44px; height: 44px; border: 1px solid var(--dialog-line); background: var(--dialog-paper); border-radius: 50%; color: var(--dialog-ink); font: inherit; font-size: 24px; cursor: pointer; }
+.klay-dialog-content { padding: 24px; }
+.klay-dialog :is(a, button):focus-visible { outline: 2px solid var(--dialog-accent); outline-offset: 3px; }
+@keyframes dialog-appear { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (max-width: 600px) {
+  .klay-dialog { inset: auto 0 0; margin: 0; width: 100%; max-height: calc(100dvh - 24px); border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+  .klay-dialog-header, .klay-dialog-content { padding: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { .klay-dialog[open] { animation: none; } }

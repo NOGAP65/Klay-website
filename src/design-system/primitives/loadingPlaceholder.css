@@ -1,0 +1,27 @@
+.loading-placeholder { min-height: 720px; padding: 48px 24px; background: var(--loading-paper); }
+.loading-placeholder-page { min-height: 80vh; padding-top: 128px; }
+.loading-placeholder-content { max-width: 1120px; margin: auto; animation: loading-reveal 160ms ease 250ms both; }
+.loading-placeholder-content :is(.loading-placeholder-heading, .loading-placeholder-caption, .loading-placeholder-image, .loading-placeholder-fields > div) { position: relative; overflow: hidden; border-radius: 4px; background: var(--loading-shape); }
+.loading-placeholder-heading { width: min(65%, 440px); height: 40px; margin-bottom: 18px; }
+.loading-placeholder-caption { width: min(80%, 560px); height: 14px; margin-bottom: 36px; }
+.loading-placeholder-body { display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; }
+.loading-placeholder-image { aspect-ratio: 4 / 3; }
+.loading-placeholder-fields { display: grid; align-content: start; gap: 24px; }
+.loading-placeholder-fields > div { height: 46px; }
+.loading-placeholder-fields > .loading-placeholder-action { width: 58%; height: 48px; margin-top: 20px; }
+.loading-placeholder-fields > div::after, .loading-placeholder-image::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--loading-highlight), transparent); opacity: .5; transform: translateX(-100%); animation: loading-sweep 1800ms ease-in-out 500ms infinite; }
+.loading-placeholder-rows .loading-placeholder-body, .loading-placeholder-text .loading-placeholder-body { grid-template-columns: 1fr; }
+.loading-placeholder-rows .loading-placeholder-fields > div { height: 92px; }
+.loading-placeholder-text { max-width: 760px; }
+.loading-placeholder-text .loading-placeholder-fields > div { height: 20px; }
+@keyframes loading-reveal { from { opacity: 0; } to { opacity: 1; } }
+@keyframes loading-sweep { to { transform: translateX(100%); } }
+@media (max-width: 600px) {
+  .loading-placeholder { padding-inline: 20px; }
+  .loading-placeholder-body { grid-template-columns: 1fr; gap: 24px; }
+  .loading-placeholder-heading { height: 32px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-placeholder-content { animation-duration: 1ms; }
+  .loading-placeholder-fields > div::after, .loading-placeholder-image::after { animation: none; display: none; }
+}

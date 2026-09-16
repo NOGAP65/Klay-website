@@ -8,6 +8,8 @@ import { useIsMobile } from '@/shared';
 
 import { useCartStore } from '../store/cartStore';
 
+import './cartPage.css';
+
 export default function CartPage() {
   const isMobile = useIsMobile();
   const { items, removeItem, updateQuantity, getTotal } = useCartStore();
@@ -20,12 +22,15 @@ export default function CartPage() {
 
   return (
     <>
-      <main style={{ background: tokens.paper, minHeight: '100vh', paddingTop: isMobile ? 80 : 100 }}>
+      <main className="cart-page" style={{ background: tokens.paper, minHeight: '100vh', paddingTop: isMobile ? 80 : 100 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '24px' : '40px 60px' }}>
 
           <h1 style={{ fontFamily: tokens.display, fontSize: isMobile ? 36 : 48, fontWeight: 300, color: tokens.ink, margin: 0 }}>
             Your Cart
           </h1>
+          {items.length > 0 && <p style={{ fontFamily: tokens.body, fontSize: typeScale.body.fontSize, color: tokens.inkSoft, marginTop: space.item }}>
+            Your choices are saved in this browser. You can come back to them before requesting your measure.
+          </p>}
 
           {items.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '80px 24px' }}>
@@ -48,7 +53,7 @@ export default function CartPage() {
                   borderRadius: 6,
                 }}
               >
-                Browse Blinds
+                Browse products
               </Link>
             </div>
           ) : (
@@ -80,7 +85,7 @@ export default function CartPage() {
                           was actually asked; one from the visualiser prints the
                           configurator's four fixed fields. See the cart store's
                           `options` for why the two differ. */}
-                      <div style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkFaint, marginTop: 12, lineHeight: 1.8 }}>
+                      <div style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkSoft, marginTop: 12, lineHeight: 1.8 }}>
                         {item.options
                           ? item.options.map(o => <div key={o.label}>{o.label}: {o.value}</div>)
                           : (
@@ -109,11 +114,10 @@ export default function CartPage() {
                       )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12, justifyContent: 'flex-end' }}>
                         <button
+                          className="cart-quantity-control"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           aria-label={`Decrease ${item.name} quantity`}
                           style={{
-                            width: 28,
-                            height: 28,
                             border: `1px solid ${tokens.lineStrong}`,
                             background: 'transparent',
                             borderRadius: 4,
@@ -129,12 +133,11 @@ export default function CartPage() {
                           {item.quantity}
                         </span>
                         <button
+                          className="cart-quantity-control"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           aria-label={`Increase ${item.name} quantity`}
                           disabled={item.quantity >= 40}
                           style={{
-                            width: 28,
-                            height: 28,
                             border: `1px solid ${tokens.lineStrong}`,
                             background: 'transparent',
                             borderRadius: 4,
@@ -148,6 +151,8 @@ export default function CartPage() {
                         </button>
                       </div>
                       <button
+                        className="cart-remove-control"
+                        aria-label={`Remove ${item.name}`}
                         onClick={() => removeItem(item.id)}
                         style={{
                           marginTop: 12,
@@ -155,7 +160,7 @@ export default function CartPage() {
                           border: 'none',
                           fontFamily: tokens.body,
                           fontSize: 12,
-                          color: tokens.inkFaint,
+                          color: tokens.inkSoft,
                           cursor: 'pointer',
                           textDecoration: 'underline',
                         }}
@@ -172,21 +177,18 @@ export default function CartPage() {
                     measured, and that is what the row says. */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 0', borderBottom: `2px solid ${tokens.ink}` }}>
                   <span style={{ fontFamily: tokens.body, fontSize: 14, fontWeight: 600, color: tokens.ink, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                    {/* SUBTOTAL only when the basket is mixed, because that is
-                        the only case where the figure beside it is a part
-                        rather than the whole. */}
-                    {measureCount > 0 && measureCount < items.length ? 'Subtotal' : 'Total'}
+                    {measureCount === items.length ? 'Your quote' : 'Product subtotal'}
                   </span>
                   <span style={{ fontFamily: tokens.display, fontSize: 32, fontWeight: 300, color: tokens.ink }}>
                     {measureCount === items.length ? 'On measure' : `$${total}`}
                   </span>
                 </div>
-                <p style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkFaint, marginTop: 8 }}>
+                <p style={{ fontFamily: tokens.body, fontSize: 12, color: tokens.inkSoft, marginTop: 8 }}>
                   {measureCount > 0 && measureCount < items.length
-                    ? `+ installation across Australia. ${measureCount} ${measureCount === 1 ? 'item is' : 'items are'} priced at measure.`
+                    ? `Installation is additional and confirmed at measure. ${measureCount} ${measureCount === 1 ? 'item is' : 'items are'} also priced at measure.`
                     : measureCount === items.length
                       ? 'Every item here is made to measure. We quote once we have measured.'
-                      : '+ installation across Australia'}
+                      : 'Installation is additional and confirmed at measure.'}
                 </p>
               </div>
 
@@ -223,8 +225,8 @@ export default function CartPage() {
                   <div style={{ ...eyebrow, marginBottom: space.group }}>Next step</div>
 
                   <p style={{ fontFamily: tokens.body, fontSize: typeScale.lead.fontSize, color: tokens.ink, lineHeight: 1.7, margin: 0 }}>
-                    Every blind is made to measure, so the quote is settled at the
-                    appointment rather than here.
+                    We confirm your products, dimensions and final quote at your
+                    professional check measure.
                   </p>
 
                   <Link
@@ -254,7 +256,7 @@ export default function CartPage() {
                   </Link>
 
                   <p style={{ fontFamily: tokens.body, fontSize: typeScale.label.fontSize, color: tokens.inkFaint, marginTop: space.item, textAlign: 'center', lineHeight: 1.6 }}>
-                    Bring this list to the appointment — we confirm each line on site.
+                    Your chosen products and finishes are included in your request.
                   </p>
                 </div>
               </div>

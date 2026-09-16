@@ -4,7 +4,7 @@ import * as routes from '@/config/routes';
 import { scrollToId } from '@/shared';
 
 const PROCESS_STEPS = [
-  { title: 'Buy online', detail: 'Choose your product. Installation included.' },
+  { title: 'Buy online', detail: 'Choose your product, size and finish.' },
   { title: 'Check measure', detail: 'We visit to confirm every detail.' },
   { title: 'Installation', detail: 'Made to measure. Professionally fitted.' },
 ];

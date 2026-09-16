@@ -26,7 +26,10 @@
 
 import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { tokens } from '@/ds';
+
+import { LoadingPlaceholder } from '@/ds';
+import { CartFeedback } from '@/features/cart';
+
 import { PageErrorBoundary } from '../routes/PageErrorBoundary';
 
 import { Footer } from './Footer';
@@ -58,16 +61,16 @@ export function RootLayout({ banner, ...navProps }: RootLayoutProps) {
           than above the layout so the nav and footer stay mounted while a page
           chunk arrives; only the page region waits.
 
-          THE FALLBACK IS DELIBERATELY EMPTY. A spinner that appears for the
-          ~50ms a local chunk takes reads as a flicker, and every one of these
-          chunks is small enough to land inside a single frame budget on a warm
-          connection. An empty region is calmer than a flashed spinner. */}
+          The skeleton reserves space immediately but only appears on slower
+          connections, without delaying ready content. */}
       <PageErrorBoundary key={location.pathname}>
-      <Suspense fallback={<div role="status" aria-label="Loading page" style={{ minHeight: '65vh', background: tokens.paper }} />}>
+      <Suspense fallback={<main><LoadingPlaceholder isPage label="Loading page"
+        layout={location.pathname === '/cart' ? 'rows' : ['/products', '/book', '/visualiser', '/'].includes(location.pathname) ? 'split' : 'text'} /></main>}>
         <Outlet />
       </Suspense>
       </PageErrorBoundary>
       <Footer />
+      <CartFeedback />
     </>
   );
 }

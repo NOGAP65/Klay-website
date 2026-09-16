@@ -70,6 +70,7 @@
 export { useMediaQuery } from './hooks/useMediaQuery';
 export { useIsMobile } from './hooks/useIsMobile';
 export { useInView } from './hooks/useInView';
+export { useErrorFocus } from './hooks/useErrorFocus';
 export { Turnstile, useTurnstileEnabled } from './components/Turnstile';
 export { Honeypot } from './components/Honeypot';
 export { isValidEmail } from './lib/validate';

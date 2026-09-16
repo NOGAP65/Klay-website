@@ -1,0 +1,4 @@
+.cart-quantity-control { width: 44px; height: 44px; }
+.cart-remove-control { min-height: 44px; padding-inline: 8px; }
+.cart-quantity-control:disabled { opacity: .5; cursor: default; }
+.cart-page :is(button, a):focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }

@@ -1,15 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 
-import { radius, tokens, eyebrow, headline, motion, layout } from '@/ds';
-import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
-
-import { Field, DANGER } from '@/ds';
-import { createCheckoutSession, requestQuote, type BookingPayload, type FieldErrors } from '../api';
-import { useCartStore } from '@/features/cart';
-import { isQuoteItems } from '@/core/quoteItems';
-import { cartQuoteItems } from '../cartQuote';
-import { quoteItemsFromLink } from '../quoteLink';
 import {
   MAX_QUANTITY,
   blindLabel,
@@ -18,6 +9,18 @@ import {
   priceOrder,
   sizeLabel,
 } from '@/core/pricing';
+import { isQuoteItems } from '@/core/quoteItems';
+
+import { radius, tokens, eyebrow, headline, motion, layout } from '@/ds';
+import { Field, DANGER } from '@/ds';
+import { useCartStore } from '@/features/cart';
+import { useErrorFocus } from '@/shared';
+import { Honeypot, Turnstile, isValidEmail, useTurnstileEnabled } from '@/shared';
+
+import { createCheckoutSession, requestQuote, type BookingPayload, type FieldErrors } from '../api';
+import { cartQuoteItems } from '../cartQuote';
+import { quoteItemsFromLink } from '../quoteLink';
+
 
 // ---------------------------------------------------------------------------
 // /book — the one page where a configuration turns into either an enquiry or a
@@ -97,6 +100,7 @@ export default function BookInstallPage() {
 
   const [busy, setBusy] = useState<Mode | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const formRef = useErrorFocus(fieldErrors);
   const [formError, setFormError] = useState<string | null>(null);
   const [isQuoteSent, setQuoteSent] = useState(false);
 
@@ -142,15 +146,15 @@ export default function BookInstallPage() {
     }
 
     const errors = localErrors();
-    if (isTurnstileEnabled && !turnstileToken) {
-      setFormError('Please complete the verification challenge.');
-      return;
-    }
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
     setFieldErrors({});
+    if (isTurnstileEnabled && !turnstileToken) {
+      setFormError('Please complete the verification challenge.');
+      return;
+    }
     setBusy(mode);
 
     if (mode === 'quote') {
@@ -266,7 +270,7 @@ export default function BookInstallPage() {
             <div style={{ flex: '1 1 420px', minWidth: 0 }}>
               <h2 style={sectionHeading}>Your details</h2>
 
-              <form onSubmit={(e) => e.preventDefault()} noValidate>
+              <form ref={formRef} onSubmit={(e) => e.preventDefault()} noValidate>
                 <Field
                   label="Name"
                   value={form.name}

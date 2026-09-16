@@ -1,0 +1,17 @@
+.shop-guide-prompt { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; column-gap: 16px; margin-bottom: 8px; font-size: 12px; color: var(--shop-muted); }
+.shop-guide-prompt button { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; border: 0; padding: 0; background: transparent; color: var(--shop-ink); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+.shop-guide-tabs { display: flex; gap: 8px; }
+.shop-guide-tabs button { flex: 1; min-height: 44px; padding: 10px 8px; border: 1px solid var(--dialog-line); border-radius: 4px; background: var(--dialog-paper); color: var(--dialog-ink); font: inherit; font-size: 12px; cursor: pointer; }
+.shop-guide-tabs button[aria-pressed="true"] { background: var(--dialog-ink); color: var(--dialog-paper); }
+.shop-guide-options > p, .shop-guide-measure > p { margin: 24px 0 16px; font-size: 14px; line-height: 1.6; }
+.shop-guide-options > button { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 16px; padding: 18px 0; border: 0; border-bottom: 1px solid var(--dialog-line); background: var(--dialog-paper); color: var(--dialog-ink); text-align: left; font: inherit; cursor: pointer; }
+.shop-guide-options > button > span:first-child { display: grid; gap: 5px; }
+.shop-guide-options strong { font-size: 15px; font-weight: 500; }
+.shop-guide-options button span span { color: var(--dialog-muted); font-size: 12px; line-height: 1.5; }
+.shop-guide-options > button:hover strong { text-decoration: underline; text-underline-offset: 4px; }
+.shop-guide-measure ol { padding-left: 20px; margin: 0 0 24px; }
+.shop-guide-measure li { padding-left: 8px; margin: 16px 0; font-size: 13px; line-height: 1.6; }
+.shop-guide-measure li span { display: block; color: var(--dialog-muted); margin-top: 4px; }
+.shop-guide-measure > a { display: inline-flex; align-items: center; gap: 16px; min-height: 44px; color: var(--dialog-ink); font-size: 13px; text-underline-offset: 4px; }
+.shop-guide-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; margin-top: 20px; padding-top: 12px; color: var(--dialog-muted); font-size: 12px; }
+.shop-guide-footer a { display: inline-flex; align-items: center; min-height: 44px; color: var(--dialog-ink); text-underline-offset: 4px; }

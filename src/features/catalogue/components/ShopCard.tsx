@@ -115,7 +115,7 @@ export const COLUMN_GAP = 28;
  *
  * Ella puts the same three in the same place, which is what suggested it. */
 const ASSURANCES = [
-  'Professional installation included',
+  'Professional installation',
   '5-year warranty',
   'Made in Australia',
 ];

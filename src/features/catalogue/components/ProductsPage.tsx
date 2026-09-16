@@ -2,10 +2,10 @@ import { useCallback, useMemo, useRef, useState, type CSSProperties } from 'reac
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { space, tokens, type as typeScale } from '@/ds';
+import { CartRecovery } from '@/features/cart';
 import { useIsMobile, useMediaQuery } from '@/shared';
 
 import { defaultSelection, withChoice, type Selection } from '../configOptions';
-import type { CatalogueItem } from '../constants';
 import { EMPTY_FACETS, applyFacets, facetCount } from '../lib/facets';
 import { readBrowseState, writeBrowseState, type BrowseState } from '../lib/shopBrowseState';
 import { sortProducts } from '../lib/sortProducts';
@@ -13,10 +13,12 @@ import { sortProducts } from '../lib/sortProducts';
 import { FilterDrawer } from './FilterDrawer';
 import { FilterRail } from './FilterRail';
 import { COLUMN_GAP, COLUMN_MIN } from './ShopCard';
+import { ShopGuide } from './ShopGuide';
 import { ShopProductCard } from './ShopProductCard';
-import { ShopResultsSkeleton } from './ShopResultsSkeleton';
 import { ShopToolbar } from './ShopToolbar';
 import { useShopResults } from './useShopResults';
+
+import type { CatalogueItem } from '../constants';
 import './shopBrowsing.css';
 
 const PAGE_MAX = 1600;
@@ -34,7 +36,7 @@ export default function ProductsPage() {
   const [sel, setSel] = useState<Record<string, Selection>>({});
 
   const items = useMemo(() => sortProducts(applyFacets(state.facets, state.query), state.sort), [state]);
-  const { displayed, regionRef, isUpdating } = useShopResults(items, state.query, isDrawerOpen && isNarrow, resultsRef);
+  const { displayed, regionRef, isUpdating } = useShopResults(items, isDrawerOpen && isNarrow, resultsRef);
   const chooseProduct = useCallback((item: CatalogueItem, field: string, choice: string) => {
     setSel(current => ({ ...current, [item.id]: withChoice(item, current[item.id] ?? defaultSelection(item), field, choice) }));
   }, []);
@@ -147,11 +149,13 @@ export default function ProductsPage() {
             <FilterRail facets={state.facets} query={state.query} onChange={facets => updateBrowse({ facets })} />
           </aside>}
           <div ref={resultsRef} style={{ flex: 1, minWidth: 0 }}>
+            <CartRecovery onDismiss={() => resultsRef.current?.querySelector<HTMLButtonElement>('.shop-guide-prompt button')?.focus({ preventScroll: true })} />
+            <ShopGuide onChoose={facets => updateBrowse({ facets, query: '', sort: 'featured' })} />
             <ShopToolbar state={state} count={items.length} isNarrow={isNarrow} onChange={updateBrowse}
               onOpenFilters={() => setDrawerOpen(true)} />
             <div ref={regionRef} className="shop-results" aria-busy={isUpdating}>
-            {isUpdating && <ShopResultsSkeleton count={items.length} />}
-            <div style={{ visibility: isUpdating ? 'hidden' : undefined }} aria-hidden={isUpdating || undefined}>
+            {isUpdating && <span className="shop-update-status" role="status">Updating products…</span>}
+            <div>
             {displayed.length > 0 ? <div style={{ display: 'grid',
               gridTemplateColumns: isNarrow ? 'repeat(1, 1fr)' : `repeat(auto-fill, minmax(${COLUMN_MIN}px, 1fr))`,
               columnGap: isNarrow ? 12 : COLUMN_GAP, rowGap: isNarrow ? 12 : COLUMN_GAP }}>

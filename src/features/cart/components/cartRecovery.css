@@ -1,0 +1,8 @@
+.cart-recovery { display: flex; align-items: center; gap: 16px; position: relative; padding: 20px 52px 20px 20px; margin-bottom: 16px; background: var(--recovery-paper); border: 1px solid var(--recovery-line); border-left: 3px solid var(--recovery-accent); border-radius: 6px; color: var(--recovery-ink); font-family: var(--recovery-body); }
+.cart-recovery > div { flex: 1; }
+.cart-recovery strong { font-size: 14px; font-weight: 500; }
+.cart-recovery p { font-size: 12px; color: var(--recovery-muted); line-height: 1.6; margin: 4px 0 0; }
+.cart-recovery a { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; color: var(--recovery-ink); font-size: 12px; white-space: nowrap; text-underline-offset: 4px; }
+.cart-recovery button { position: absolute; top: 4px; right: 4px; width: 44px; height: 44px; border: 0; background: transparent; color: var(--recovery-ink); font: inherit; font-size: 22px; cursor: pointer; }
+.cart-recovery :is(a, button):focus-visible { outline: 2px solid var(--recovery-accent); outline-offset: 2px; }
+@media (max-width: 700px) { .cart-recovery { align-items: flex-start; flex-direction: column; gap: 2px; } }
