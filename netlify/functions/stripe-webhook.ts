@@ -17,14 +17,16 @@
 //      changed something.
 // ---------------------------------------------------------------------------
 
-import type { Config } from '@netlify/functions'
 import Stripe from 'stripe'
+
+import { blindLabel, sizeLabel, type BlindType, type WindowSize } from '../../shared-core/pricing'
+import { env, missing } from '../lib/env'
+import { json, methodNotAllowed, notConfigured, readBody, serverError } from '../lib/http'
+import { confirmOrderPaid, notifyOrderPaid } from '../lib/notify'
 import { applyCheckoutEvent, type PaymentOrder } from '../lib/paymentEvents'
 import { paymentRepository } from '../lib/paymentRepository'
-import { env, missing } from '../lib/env'
-import { json, methodNotAllowed, notConfigured, serverError } from '../lib/http'
-import { confirmOrderPaid, notifyOrderPaid } from '../lib/notify'
-import { blindLabel, sizeLabel, type BlindType, type WindowSize } from '../../shared-core/pricing'
+
+import type { Config } from '@netlify/functions'
 
 async function notifyPaid(order: PaymentOrder): Promise<void> {
   const summary = `${blindLabel(order.blind_type as BlindType)} — ${sizeLabel(order.window_size as WindowSize)} × ${order.quantity}`;
@@ -38,24 +40,24 @@ async function notifyPaid(order: PaymentOrder): Promise<void> {
 export default async (req: Request): Promise<Response> => {
   if (req.method !== 'POST') return methodNotAllowed('POST')
 
+  const signature = req.headers.get('stripe-signature')
+  if (!signature || signature.length > 2048) return json({ error: 'Missing or invalid stripe-signature header.' }, 400)
+
+  // RAW body — must be read before, and instead of, any JSON parsing.
+  const raw = await readBody(req)
+  if (raw instanceof Response) return raw
   const e = env()
   const gaps = [...missing(e, 'database'), ...missing(e, 'payments'), ...missing(e, 'webhook')]
   if (gaps.length > 0) return notConfigured(gaps)
-
-  const signature = req.headers.get('stripe-signature')
-  if (!signature) return json({ error: 'Missing stripe-signature header.' }, 400)
-
-  // RAW body — must be read before, and instead of, any JSON parsing.
-  const raw = await req.text()
 
   const stripe = new Stripe(e.stripeSecretKey)
   let event: Stripe.Event
   try {
     event = await stripe.webhooks.constructEventAsync(raw, signature, e.stripeWebhookSecret)
-  } catch (err) {
+  } catch {
     // A bad signature is either a misconfigured secret or someone poking at
     // the endpoint. Either way: 400, and never process the payload.
-    console.error('[webhook] signature verification failed', err)
+    console.error('[webhook] signature verification failed')
     return json({ error: 'Signature verification failed.' }, 400)
   }
 

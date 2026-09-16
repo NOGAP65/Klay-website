@@ -106,6 +106,7 @@ export default function BookInstallPage() {
 
   const [honeypot, setHoneypot] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileReset, setTurnstileReset] = useState(0);
   const isTurnstileEnabled = useTurnstileEnabled();
 
   const payload = (): BookingPayload => ({
@@ -159,6 +160,8 @@ export default function BookInstallPage() {
 
     if (mode === 'quote') {
       const result = await requestQuote(payload());
+      setTurnstileToken('');
+      setTurnstileReset(value => value + 1);
       setBusy(null);
       if (result.ok) {
         setQuoteSent(true);
@@ -170,6 +173,8 @@ export default function BookInstallPage() {
     }
 
     const result = await createCheckoutSession(payload());
+    setTurnstileToken('');
+    setTurnstileReset(value => value + 1);
     if (result.ok) {
       // Hand off to Stripe. Deliberately not clearing `busy` — the button stays
       // disabled through the redirect so an impatient second click cannot open
@@ -353,7 +358,7 @@ export default function BookInstallPage() {
                 />
 
                 <Honeypot value={honeypot} onChange={setHoneypot} />
-                <Turnstile onVerify={setTurnstileToken} />
+                <Turnstile onVerify={setTurnstileToken} resetKey={turnstileReset} />
               </form>
             </div>
 

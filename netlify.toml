@@ -38,10 +38,23 @@
   [headers.values]
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
+    X-DNS-Prefetch-Control = "off"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co https://api.stripe.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com https://js.stripe.com; object-src 'none'; base-uri 'self'; form-action 'self';"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'self'; upgrade-insecure-requests;"
+
+# Never cache API responses or leak checkout session IDs through referrers.
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-store"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/booking/*"
+  [headers.values]
+    Referrer-Policy = "no-referrer"
 
 # Vite filenames contain content hashes; unversioned public images do not.
 [[headers]]
@@ -50,27 +63,8 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 # --- routing -----------------------------------------------------------------
-# Only the four implemented API endpoints are mapped. Unknown API paths do not
-# fall through to the app. Each handler also declares its Functions 2.0 path.
-[[redirects]]
-  from = "/api/request-quote"
-  to = "/.netlify/functions/request-quote"
-  status = 200
-
-[[redirects]]
-  from = "/api/create-checkout-session"
-  to = "/.netlify/functions/create-checkout-session"
-  status = 200
-
-[[redirects]]
-  from = "/api/order-status"
-  to = "/.netlify/functions/order-status"
-  status = 200
-
-[[redirects]]
-  from = "/api/stripe-webhook"
-  to = "/.netlify/functions/stripe-webhook"
-  status = 200
+# The four Functions 2.0 handlers own their exact /api/ paths and edge limits.
+# Custom function paths disable the default /.netlify/functions/ aliases.
 
 # Build metadata is used by local verification, never by the public app.
 [[redirects]]

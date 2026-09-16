@@ -98,5 +98,9 @@ export const requestQuote = (payload: BookingPayload) =>
 export const createCheckoutSession = (payload: BookingPayload) =>
   post<{ url: string; orderId: string }>('/api/create-checkout-session', payload, body => {
     if (typeof body.url !== 'string' || typeof body.orderId !== 'string') return false
-    try { return new URL(body.url).protocol === 'https:' } catch { return false }
+    try {
+      const url = new URL(body.url)
+      return url.protocol === 'https:' && url.hostname === 'checkout.stripe.com'
+        && !url.username && !url.password && !url.port
+    } catch { return false }
   })

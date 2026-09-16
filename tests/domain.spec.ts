@@ -44,7 +44,10 @@ test('customer validation rejects malformed dates, emails and phone numbers', ()
 });
 
 test('HTTP parser accepts only JSON objects', async () => {
-  const request = (value: string) => new Request('https://example.com', {method:'POST',body:value});
-  for (const value of ['[]','null','false','"text"','not json']) expect(await readJson(request(value))).toBeNull();
+  const request = (value: string) => new Request('https://example.com', {method:'POST',body:value,headers:{'content-type':'application/json'}});
+  for (const value of ['[]','null','false','"text"','not json']) {
+    const result = await readJson(request(value));
+    expect(result instanceof Response && result.status).toBe(400);
+  }
   expect(await readJson(request('{"name":"Test"}'))).toEqual({name:'Test'});
 });

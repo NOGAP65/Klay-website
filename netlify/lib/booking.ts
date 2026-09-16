@@ -7,7 +7,8 @@
 // the money from that. See the security note at the top of src/lib/pricing.ts.
 // ---------------------------------------------------------------------------
 
-import { parseOrderConfig, priceOrder, type OrderConfig, type PricedOrder } from '../../shared-core/pricing'
+import { hasControlCharacters } from '../../shared-core/plainText'
+import { isBlindType, isOperation, isWindowSize, MAX_QUANTITY, parseOrderConfig, priceOrder, type OrderConfig, type PricedOrder } from '../../shared-core/pricing'
 import { isQuoteItems, quoteItemsSummary, type QuoteItem } from '../../shared-core/quoteItems'
 
 export interface CustomerDetails {
@@ -30,24 +31,13 @@ export interface ParsedBooking {
   priced: PricedOrder
 }
 
-/** Strip HTML tags to prevent stored XSS in downstream systems (admin panels,
- *  CRM imports, etc). This is defence in depth — email templates already escape,
- *  but data that lands in the database should be clean too. */
-function stripHtml(s: string): string {
-  return s.replace(/<[^>]*>/g, '')
-}
-
-/** Trim, collapse whitespace, strip HTML, and cap length so a hostile payload
- *  cannot store a megabyte of text or inject scripts. */
-function text(value: unknown, maxLength: number): string | null {
-  if (typeof value !== 'string') return null
-  const cleaned = stripHtml(value).replace(/\s+/g, ' ').trim().slice(0, maxLength)
-  return cleaned.length > 0 ? cleaned : null
-}
+/** Store plain text; escape at HTML sinks. Regex tag stripping is not an XSS defence. */
+const text = (value: unknown): string | null =>
+  typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() || null : null
 
 /** Deliberately permissive: one @, no spaces, a dot in the domain. Anything
  *  stricter starts rejecting addresses that genuinely deliver. */
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const EMAIL_RE = /^[^\s@<>"\\,;:()[\]]+@[^\s@<>"\\,;:()[\]]+\.[^\s@<>"\\,;:()[\]]+$/
 
 /** AU postcodes are exactly four digits. */
 const POSTCODE_RE = /^\d{4}$/
@@ -63,25 +53,51 @@ export type ValidationResult =
   | { ok: true; booking: ParsedBooking }
   | { ok: false; message: string; fields: Record<string, string> }
 
-export function parseBooking(body: Record<string, unknown>): ValidationResult {
+function validateInputShape(body: Record<string, unknown>): Record<string, string> {
   const fields: Record<string, string> = {}
-  if (body.items !== undefined && !isQuoteItems(body.items)) fields.items = 'Please check your basket quantities and options.'
-  const items = isQuoteItems(body.items) ? body.items : undefined
+  const limits: Record<string, number> = { name: 120, email: 200, phone: 40, address: 240,
+    suburb: 120, postcode: 8, preferredDate: 20, notes: 2000, fabricColour: 60, hardwareColour: 40,
+    website: 240, turnstileToken: 2048 }
+  for (const [key, max] of Object.entries(limits)) {
+    const value = body[key]
+    if (value === undefined || value === null) continue
+    if (typeof value !== 'string' || value.length > max || hasControlCharacters(value, key === 'notes')) {
+      fields[key] = `Please use text of ${max} characters or fewer.`
+    }
+  }
+  return { ...fields, ...validateConfiguration(body) }
+}
 
-  const name = text(body.name, 120)
+function validateConfiguration(body: Record<string, unknown>): Record<string, string> {
+  const fields: Record<string, string> = {}
+  if (body.blindType !== undefined && !isBlindType(body.blindType)) fields.blindType = 'Please choose a valid blind type.'
+  if (body.windowSize !== undefined && !isWindowSize(body.windowSize)) fields.windowSize = 'Please choose a valid size.'
+  if (body.operation !== undefined && !isOperation(body.operation)) fields.operation = 'Please choose a valid operation.'
+  if (body.quantity !== undefined && (typeof body.quantity !== 'number' || !Number.isInteger(body.quantity)
+    || body.quantity < 1 || body.quantity > MAX_QUANTITY)) fields.quantity = `Please choose a quantity from 1 to ${MAX_QUANTITY}.`
+  return fields
+}
+
+export function parseBooking(body: Record<string, unknown>): ValidationResult {
+  const fields = validateInputShape(body)
+  if (body.items !== undefined && !isQuoteItems(body.items)) fields.items = 'Please check your basket quantities and options.'
+  const items = isQuoteItems(body.items) ? body.items.map(item => ({ name: item.name.trim(), quantity: item.quantity,
+    options: item.options.map(option => ({ label: option.label.trim(), value: option.value.trim() })) })) : undefined
+
+  const name = text(body.name)
   if (!name) fields.name = 'Please tell us your name.'
 
-  const email = text(body.email, 200)?.toLowerCase() ?? null
+  const email = text(body.email)?.toLowerCase() ?? null
   if (!email) fields.email = 'We need an email to reply to.'
   else if (!EMAIL_RE.test(email)) fields.email = "That email doesn't look right."
 
-  const phone = text(body.phone, 40)
-  if (phone && !PHONE_RE.test(phone)) fields.phone = 'Please enter a valid phone number.'
+  const phone = text(body.phone)
+  if (phone && (!PHONE_RE.test(phone) || !/^\d{7,15}$/.test(phone.replace(/\D/g, '')))) fields.phone = 'Please enter a valid phone number.'
 
-  const postcode = text(body.postcode, 8)
+  const postcode = text(body.postcode)
   if (postcode && !POSTCODE_RE.test(postcode)) fields.postcode = 'Australian postcodes are four digits.'
 
-  const preferredDate = text(body.preferredDate, 20)
+  const preferredDate = text(body.preferredDate)
   if (preferredDate && (!DATE_RE.test(preferredDate) || Number.isNaN(Date.parse(preferredDate))
     || new Date(preferredDate).toISOString().slice(0, 10) !== preferredDate)) {
     fields.preferredDate = 'Please pick a date from the calendar.'
@@ -108,15 +124,15 @@ export function parseBooking(body: Record<string, unknown>): ValidationResult {
         name: name!,
         email: email!,
         phone,
-        address: text(body.address, 240),
-        suburb: text(body.suburb, 120),
+        address: text(body.address),
+        suburb: text(body.suburb),
         postcode,
         preferredDate,
-        notes: [text(body.notes, 2000), items ? `BASKET QUOTE REQUEST\n${quoteItemsSummary(items)}` : null].filter(Boolean).join('\n\n') || null,
+        notes: [text(body.notes), items ? `BASKET QUOTE REQUEST\n${quoteItemsSummary(items)}` : null].filter(Boolean).join('\n\n') || null,
       },
       config,
-      fabricColour: text(body.fabricColour, 60),
-      hardwareColour: text(body.hardwareColour, 40),
+      fabricColour: text(body.fabricColour),
+      hardwareColour: text(body.hardwareColour),
       priced: priceOrder(config),
     },
   }

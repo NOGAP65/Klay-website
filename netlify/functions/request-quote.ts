@@ -7,41 +7,38 @@
 // over a misconfigured mail key would be the worse outcome by far.
 // ---------------------------------------------------------------------------
 
-import type { Config } from '@netlify/functions'
 import { checkHoneypot, verifyTurnstile } from '../lib/antispam'
 import { bookingRow, parseBooking } from '../lib/booking'
 import { db } from '../lib/db'
 import { env, missing } from '../lib/env'
-import { badRequest, json, methodNotAllowed, notConfigured, readJson, serverError } from '../lib/http'
+import { badRequest, checkSameOrigin, json, methodNotAllowed, notConfigured, readJson, serverError } from '../lib/http'
 import { acknowledgeQuoteRequest, notifyQuoteRequest } from '../lib/notify'
 import { checkRateLimit, getClientIp } from '../lib/rateLimit'
 
-export default async (req: Request): Promise<Response> => {
-  if (req.method !== 'POST') return methodNotAllowed('POST')
+import type { Config, Context } from '@netlify/functions'
 
-  const rateLimited = checkRateLimit(req)
+export default async (req: Request, context?: Pick<Context, 'ip'>): Promise<Response> => {
+  if (req.method !== 'POST') return methodNotAllowed('POST')
+  const originError = checkSameOrigin(req)
+  if (originError) return originError
+  const clientIp = getClientIp(req, context?.ip)
+  const rateLimited = checkRateLimit(req, clientIp)
   if (rateLimited) return rateLimited
 
-  const gaps = missing(env(), 'database')
-  if (gaps.length > 0) return notConfigured(gaps)
-
   const body = await readJson(req)
-  if (!body) return badRequest('Expected a JSON body.')
+  if (body instanceof Response) return body
 
   const honeypot = checkHoneypot(body)
   if (honeypot) return honeypot
 
-  // OPEN, and this is the deliberate asymmetry with create-checkout-session.
-  // Nothing is charged here — it is a customer asking for a quote. If Cloudflare
-  // is unreachable, taking the enquiry and letting a little spam through beats
-  // turning away a real customer who will simply go somewhere else. The honeypot
-  // and the rate limiter both still apply, so this is not unguarded.
-  const turnstileError = await verifyTurnstile(body, getClientIp(req), 'open')
-  if (turnstileError) return turnstileError
-
   const parsed = parseBooking(body)
   if (!parsed.ok) return badRequest(parsed.message, parsed.fields)
   const booking = parsed.booking
+
+  const turnstileError = await verifyTurnstile(body, clientIp, req)
+  if (turnstileError) return turnstileError
+  const gaps = missing(env(), 'database')
+  if (gaps.length > 0) return notConfigured(gaps)
 
   try {
     const { data, error } = await db()
@@ -67,4 +64,7 @@ export default async (req: Request): Promise<Response> => {
   }
 }
 
-export const config: Config = { path: '/api/request-quote' }
+export const config: Config = {
+  path: '/api/request-quote',
+  rateLimit: { windowLimit: 10, windowSize: 60, aggregateBy: ['ip', 'domain'] },
+}

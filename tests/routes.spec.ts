@@ -42,16 +42,16 @@ test('hosting serves the app only for the exact pages mounted by the router', ()
 test('only implemented APIs are mapped; missing paths and private build metadata return 404', () => {
   const functions = readdirSync('netlify/functions').filter(file => file.endsWith('.ts')).map(file => file.slice(0, -3)).sort();
   const apiRules = rules.filter(rule => rule.from?.startsWith('/api/'));
-  expect(apiRules.map(rule => rule.from?.slice(5)).sort()).toEqual(functions);
-  for (const rule of apiRules) {
-    const name = rule.from!.slice(5);
-    expect(rule.to).toBe(`/.netlify/functions/${name}`);
-    expect(rule.status).toBe(200);
-    expect(readFileSync(`netlify/functions/${name}.ts`, 'utf8')).toContain(`path: '/api/${name}'`);
+  expect(apiRules).toEqual([]);
+  expect(functions).toEqual(['create-checkout-session', 'order-status', 'request-quote', 'stripe-webhook']);
+  for (const name of functions) {
+    const handler = readFileSync(`netlify/functions/${name}.ts`, 'utf8');
+    expect(handler).toContain(`path: '/api/${name}'`);
+    if (name !== 'stripe-webhook') expect(handler).toContain('rateLimit:');
   }
   expect(rules.at(-1)).toEqual({ from: '/*', to: '/404.html', status: 404, force: false });
   expect(rules.find(rule => rule.from === '/.vite/*')).toEqual({ from: '/.vite/*', to: '/404.html', status: 404, force: true });
-  expect(rules.filter(rule => rule.status === 200)).toHaveLength(pagePaths.length + functions.length);
+  expect(rules.filter(rule => rule.status === 200)).toHaveLength(pagePaths.length);
   // The payment return is an integration route even though it isn't in the nav.
   expect(readFileSync('netlify/functions/create-checkout-session.ts', 'utf8')).toContain(routes.bookingConfirmed);
 });

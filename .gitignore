@@ -23,6 +23,11 @@ playwright-report/
 *.sln
 *.sw?
 .env
+.env.*
+!.env.example
+.netlify/
+*.pem
+*.key
 
 # tsc -b incremental build cache (the typecheck gate)
 *.tsbuildinfo

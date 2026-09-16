@@ -50,6 +50,10 @@ export const usePhotoUpload = (): UsePhotoUploadResult => {
     try {
       let blob: Blob;
       if (typeof source === 'string') {
+        const url = new URL(source, window.location.origin);
+        if (url.origin !== window.location.origin || !url.pathname.startsWith('/images/')) {
+          throw new Error('Please choose one of the room photos or upload your own.');
+        }
         const response = await fetch(source, { signal: controller.signal });
         if (!response.ok) throw new Error('Failed to load room photo. Please try again.');
         blob = await response.blob();

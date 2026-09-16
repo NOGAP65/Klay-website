@@ -31,7 +31,8 @@
     "check:architecture": "node tools/check-architecture.mjs",
     "check:performance": "node tools/check-performance.mjs",
     "check:lint": "node tools/check-lint.mjs",
-    "verify": "npm run typecheck && npm run check:architecture && npm run lint:rules && npm run verify:rules && npm run check:lint && npm run check:asset-paths && npm run check:wardrobe-assets && npm run check:fabric-shots && npm run build && npm run check:performance",
+    "check:security": "node tools/check-security.mjs",
+    "verify": "npm run typecheck && npm run check:architecture && npm run lint:rules && npm run verify:rules && npm run check:lint && npm run check:asset-paths && npm run check:wardrobe-assets && npm run check:fabric-shots && npm run build && npm run check:performance && npm run check:security",
     "test:domain": "playwright test --project=domain"
   },
   "dependencies": {

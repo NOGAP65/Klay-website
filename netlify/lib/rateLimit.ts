@@ -1,68 +1,44 @@
-// ---------------------------------------------------------------------------
-// Simple in-memory rate limiter for POST endpoints.
-//
-// Netlify functions are stateless across invocations, so this uses a time-decay
-// approach: store the timestamp of each request in a map, and reject if too many
-// fall within the window. The map is scoped to a single function instance, which
-// means it resets on cold starts — but that is acceptable for abuse prevention
-// (not authentication), and avoids the complexity of an external store.
-//
-// For production high-traffic sites, consider Netlify's built-in rate limiting
-// or an external service like Upstash Redis.
-// ---------------------------------------------------------------------------
+import { isIP } from 'node:net'
 
+import { json } from './http'
+
+/** A bounded per-instance backstop; distributed limits live in function config. */
 const WINDOW_MS = 60_000
-const MAX_REQUESTS = 5
+const MAX_CLIENTS = 5000
+const requests = new Map<string, { count: number; expires: number }>()
+let nextSweep = 0
 
-const requests = new Map<string, number[]>()
-
-/** Returns the client IP from the request, falling back to a default. */
-export function getClientIp(req: Request): string {
-  return (
-    req.headers.get('x-nf-client-connection-ip') ||
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    'unknown'
-  )
+/** Never use client-controlled X-Forwarded-For to identify a rate-limit bucket. */
+export function getClientIp(req: Request, platformIp?: string): string {
+  const ip = platformIp || req.headers.get('x-nf-client-connection-ip') || ''
+  return isIP(ip) ? ip : ''
 }
 
-/** Check if a request should be rate-limited. Returns null if allowed, or a
- *  Response with 429 and Retry-After header if blocked. */
-export function checkRateLimit(req: Request): Response | null {
-  const ip = getClientIp(req)
+function clearExpired(now: number): void {
+  if (now >= nextSweep) {
+    for (const [key, entry] of requests) if (entry.expires <= now) requests.delete(key)
+    nextSweep = now + WINDOW_MS
+  }
+}
+
+function tooManyRequests(retryAt: number, now: number): Response {
+  const response = json({ error: 'Too many requests. Please wait a moment and try again.' }, 429)
+  response.headers.set('retry-after', String(Math.max(1, Math.ceil((retryAt - now) / 1000))))
+  return response
+}
+
+export function checkRateLimit(req: Request, platformIp?: string, limit = 10): Response | null {
   const now = Date.now()
-
-  const timestamps = requests.get(ip) ?? []
-  const recent = timestamps.filter((t) => now - t < WINDOW_MS)
-
-  if (recent.length >= MAX_REQUESTS) {
-    const oldestInWindow = Math.min(...recent)
-    const retryAfter = Math.ceil((oldestInWindow + WINDOW_MS - now) / 1000)
-    return new Response(
-      JSON.stringify({
-        error: 'Too many requests. Please wait a moment and try again.',
-      }),
-      {
-        status: 429,
-        headers: {
-          'content-type': 'application/json; charset=utf-8',
-          'retry-after': String(Math.max(1, retryAfter)),
-          'cache-control': 'no-store',
-        },
-      },
-    )
+  clearExpired(now)
+  const key = `${new URL(req.url).pathname}:${getClientIp(req, platformIp) || 'unknown'}`
+  let entry = requests.get(key)
+  if (entry && entry.expires <= now) { requests.delete(key); entry = undefined }
+  if (!entry) {
+    if (requests.size >= MAX_CLIENTS) return tooManyRequests(now + WINDOW_MS, now)
+    entry = { count: 0, expires: now + WINDOW_MS }
   }
-
-  recent.push(now)
-  requests.set(ip, recent)
-
-  if (requests.size > 10_000) {
-    const cutoff = now - WINDOW_MS
-    for (const [k, v] of requests) {
-      const live = v.filter((t) => t > cutoff)
-      if (live.length === 0) requests.delete(k)
-      else requests.set(k, live)
-    }
-  }
-
+  if (entry.count >= limit) return tooManyRequests(entry.expires, now)
+  entry.count++
+  requests.set(key, entry)
   return null
 }

@@ -69,6 +69,7 @@ export default function ContactPage() {
 
   const [honeypot, setHoneypot] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileReset, setTurnstileReset] = useState(0);
   const isTurnstileEnabled = useTurnstileEnabled();
 
   async function handleSubmit() {
@@ -105,6 +106,8 @@ export default function ContactPage() {
       turnstileToken,
     });
 
+    setTurnstileToken('');
+    setTurnstileReset(value => value + 1);
     setBusy(false);
     if (result.ok) {
       setSubmitted(true);
@@ -214,7 +217,7 @@ export default function ContactPage() {
                 />
 
                 <Honeypot value={honeypot} onChange={setHoneypot} />
-                <Turnstile onVerify={setTurnstileToken} />
+                <Turnstile onVerify={setTurnstileToken} resetKey={turnstileReset} />
 
                 {formError && (
                   <p

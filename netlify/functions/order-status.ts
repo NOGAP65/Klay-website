@@ -11,23 +11,26 @@
 // read someone's home address back out.
 // ---------------------------------------------------------------------------
 
-import type { Config } from '@netlify/functions'
 import { db } from '../lib/db'
 import { env, missing } from '../lib/env'
 import { badRequest, json, methodNotAllowed, notConfigured, serverError } from '../lib/http'
+import { checkRateLimit } from '../lib/rateLimit'
 
-export default async (req: Request): Promise<Response> => {
+import type { Config, Context } from '@netlify/functions'
+
+export default async (req: Request, context?: Pick<Context, 'ip'>): Promise<Response> => {
   if (req.method !== 'GET') return methodNotAllowed('GET')
-
-  const gaps = missing(env(), 'database')
-  if (gaps.length > 0) return notConfigured(gaps)
+  const rateLimited = checkRateLimit(req, context?.ip, 120)
+  if (rateLimited) return rateLimited
 
   const sessionId = new URL(req.url).searchParams.get('session_id')
   // Shape-check before hitting the database — Stripe session ids are prefixed,
   // so anything else is not worth a query.
-  if (!sessionId || !sessionId.startsWith('cs_') || sessionId.length > 200) {
+  if (!sessionId || !/^cs_(?:test_|live_)?[a-zA-Z0-9]{16,180}$/.test(sessionId)) {
     return badRequest('A valid session_id is required.')
   }
+  const gaps = missing(env(), 'database')
+  if (gaps.length > 0) return notConfigured(gaps)
 
   try {
     const { data, error } = await db()
@@ -50,4 +53,7 @@ export default async (req: Request): Promise<Response> => {
   }
 }
 
-export const config: Config = { path: '/api/order-status' }
+export const config: Config = {
+  path: '/api/order-status',
+  rateLimit: { windowLimit: 120, windowSize: 60, aggregateBy: ['ip', 'domain'] },
+}

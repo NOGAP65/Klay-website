@@ -8,8 +8,11 @@
 // ---------------------------------------------------------------------------
 
 import { Resend } from 'resend'
-import { env, missing } from './env'
+
 import { formatAUD, blindLabel, sizeLabel } from '../../shared-core/pricing'
+
+import { env, missing } from './env'
+
 import type { ParsedBooking } from './booking'
 
 type SendResult = { sent: boolean; reason?: string }
@@ -18,7 +21,7 @@ async function send(to: string, subject: string, html: string, replyTo?: string)
   const e = env()
   const gaps = missing(e, 'email')
   if (gaps.length > 0) {
-    console.warn(`[notify] skipped "${subject}" — ${gaps.join(', ')} not set`)
+    console.warn(`[notify] skipped — ${gaps.join(', ')} not set`)
     return { sent: false, reason: 'not configured' }
   }
   try {
@@ -31,12 +34,12 @@ async function send(to: string, subject: string, html: string, replyTo?: string)
       ...(replyTo ? { replyTo } : {}),
     })
     if (error) {
-      console.error('[notify] resend rejected the send', error)
-      return { sent: false, reason: error.message }
+      console.error('[notify] email provider rejected the send')
+      return { sent: false, reason: 'rejected' }
     }
     return { sent: true }
-  } catch (err) {
-    console.error('[notify] send threw', err)
+  } catch {
+    console.error('[notify] email provider unavailable')
     return { sent: false, reason: 'threw' }
   }
 }
