@@ -59,8 +59,6 @@ export {
   productByBlindType,
   COLOUR_COUNT,
   PRODUCT_COUNT,
-  type Product,
-  type ProductSlug,
 } from './products';
 
 // --- consumed by feature:home (P4-6) ----------------------------------------

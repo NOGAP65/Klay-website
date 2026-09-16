@@ -20,7 +20,7 @@ export default defineConfig({
   use: { baseURL: process.env.TEST_URL ?? 'http://127.0.0.1:4173', actionTimeout: 12_000, navigationTimeout: 25_000, screenshot: 'only-on-failure', trace: 'retain-on-failure' },
   projects: [
     { name: 'performance', testMatch: '**/performance.spec.ts', use: { ...variants[0].settings, reducedMotion: 'reduce' } },
-    { name: 'domain', testMatch: ['**/domain.spec.ts', '**/architecture.spec.ts', '**/joinery.spec.ts', '**/fabrics.spec.ts', '**/cart.spec.ts'] },
+    { name: 'domain', testMatch: ['**/domain.spec.ts', '**/architecture.spec.ts', '**/joinery.spec.ts', '**/fabrics.spec.ts', '**/cart.spec.ts', '**/routes.spec.ts'] },
     { name: 'basic-android', testMatch: '**/visualiser-compatibility.spec.ts', use: { ...variants[1].settings, viewport: { width: 320, height: 640 }, deviceScaleFactor: 1, colorScheme: 'dark' } },
     { name: 'forced-dark-android', testMatch: ['**/visualiser-compatibility.spec.ts', '**/forced-dark.spec.ts'], use: { ...variants[1].settings, colorScheme: 'dark' } },
     ...variants.flatMap(({name, settings}) => (['light','dark'] as const).map(colorScheme => ({

@@ -1,5 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 
+import * as routes from '../src/config/routes';
+
+const activePagePaths = Object.values(routes).filter(value => typeof value === 'string');
+
 test.beforeEach(async ({page}) => {
   // No automated test can email a customer, create a live order or charge a card.
   await page.route(/^https?:\/\/[^/]+\/api\//, route => route.fulfill({status:503,json:{error:'Test service unavailable'}}));
@@ -18,6 +22,15 @@ test('all public pages render, images decode, layouts fit and navigation works',
     if (route === '/visualiser') await expect(page.locator('canvas[data-render-surface="blind"]')).toBeVisible();
     else await expect(page.locator('h1').first()).toBeVisible();
     await noOverflow(page);
+    const internalLinks = await page.locator('a[href]').evaluateAll(links => links.map(link => {
+      const href = link.getAttribute('href')!;
+      const url = new URL(href, location.href);
+      return { href, local: url.origin === location.origin, pathname: url.pathname };
+    }));
+    for (const link of internalLinks) {
+      expect(link.href, `${route}: empty or placeholder link`).not.toMatch(/^(?:#?$|javascript:)/i);
+      if (link.local) expect(activePagePaths, `${route}: ${link.href}`).toContain(link.pathname);
+    }
     const images = page.locator('img:visible');
     for (const img of await images.all()) {
       if (await img.getAttribute('loading') === 'lazy') continue;
@@ -32,14 +45,37 @@ test('all public pages render, images decode, layouts fit and navigation works',
     }
   }
   expect(errors).toEqual([]);
-  await page.goto('/blinds');
-  await expect(page).toHaveURL(/\/products/);
+  await page.goto('/products');
   const menu = page.getByRole('button',{name:'Open menu'});
   if (await menu.isVisible()) {
     await menu.click();
     await page.getByRole('button',{name:'Close menu'}).click();
     await expect(menu).toBeVisible();
   }
+});
+
+test('retired and unknown URLs stay unavailable instead of redirecting to the shop', async ({ page }) => {
+  for (const route of ['/products/dusk', '/products/veil', '/products/duo', '/products/haze', '/products/dusk-white',
+    '/blinds', '/blinds/roller-blinds', '/indoor', '/outdoor', '/wardrobes', '/visualizer', '/unknown-page']) {
+    await page.goto(route);
+    await expect(page.getByRole('heading', { name: "This page doesn't exist.", exact: true })).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(route);
+    await expect(page.locator('.shop-result-card')).toHaveCount(0);
+    await expect(page.locator('meta[name="robots"][content="noindex, nofollow"]')).toHaveCount(1);
+  }
+  await page.getByRole('link', { name: 'Back to Klay', exact: false }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator('meta[name="robots"][content="noindex, nofollow"]')).toHaveCount(0);
+});
+
+test('hosted not-found page is script-free and offers working recovery links', async ({ page }) => {
+  await page.goto('/404.html');
+  await expect(page.getByRole('heading', { name: "This page doesn't exist.", exact: true })).toBeVisible();
+  await expect(page.locator('script')).toHaveCount(0);
+  await noOverflow(page);
+  await page.getByRole('link', { name: 'Shop the range', exact: true }).click();
+  await expect(page.getByRole('searchbox', { name: 'Search products' })).toBeVisible();
+  await expect(page.getByRole('contentinfo').getByRole('link', { name: /^(Privacy|Terms|Warranty)$/ })).toHaveCount(0);
 });
 
 test('shop search, sort, filters, choices and persisted multi-product quote', async ({page}) => {

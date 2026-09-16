@@ -202,13 +202,6 @@ export function Footer() {
                 entity. */}
             © {new Date().getFullYear()} {site.brand} · {site.tradingEntity}
           </span>
-          <div style={{ display: 'flex', gap: space.item }}>
-            {['Privacy', 'Terms', 'Warranty'].map(l => (
-              <FooterLink key={l} to={routes.contact}>
-                <span style={{ ...typeScale.body, lineHeight: 1 }}>{l}</span>
-              </FooterLink>
-            ))}
-          </div>
         </div>
       </div>
     </footer>

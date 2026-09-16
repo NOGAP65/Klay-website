@@ -50,20 +50,84 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 # --- routing -----------------------------------------------------------------
-# ORDER MATTERS. Netlify evaluates redirects top-down, and the SPA catch-all
-# below would otherwise swallow /api/* and hand back index.html — the classic
-# "my function returns HTML" symptom on a single-page app.
-#
-# Each function also declares its own `config.path` (Functions 2.0), which the
-# routing layer matches ahead of redirects. This rule is the belt to that
-# braces: whichever mechanism wins, /api/<name> reaches the same handler.
+# Only the four implemented API endpoints are mapped. Unknown API paths do not
+# fall through to the app. Each handler also declares its Functions 2.0 path.
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  from = "/api/request-quote"
+  to = "/.netlify/functions/request-quote"
   status = 200
 
-# SPA fallback — must stay last.
 [[redirects]]
-  from = "/*"
+  from = "/api/create-checkout-session"
+  to = "/.netlify/functions/create-checkout-session"
+  status = 200
+
+[[redirects]]
+  from = "/api/order-status"
+  to = "/.netlify/functions/order-status"
+  status = 200
+
+[[redirects]]
+  from = "/api/stripe-webhook"
+  to = "/.netlify/functions/stripe-webhook"
+  status = 200
+
+# Build metadata is used by local verification, never by the public app.
+[[redirects]]
+  from = "/.vite/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Exact customer routes only. Tests check these against src/config/routes.ts.
+[[redirects]]
+  from = "/"
   to = "/index.html"
   status = 200
+
+[[redirects]]
+  from = "/products"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/visualiser"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/about"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/contact"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/how-it-works"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/cart"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/book"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/booking/confirmed"
+  to = "/index.html"
+  status = 200
+
+# Retired pages and missing files return an actual 404 without loading the app.
+# Existing static assets still win through Netlify's normal file shadowing.
+[[redirects]]
+  from = "/*"
+  to = "/404.html"
+  status = 404

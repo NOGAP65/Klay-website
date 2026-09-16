@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { tokens, motion, supporting, useHover } from '@/ds';
@@ -7,6 +8,15 @@ import { tokens, motion, supporting, useHover } from '@/ds';
 
 export default function NotFoundPage() {
   const ctaHover = useHover();
+  useEffect(() => {
+    const previousTitle = document.title;
+    const robots = document.createElement('meta');
+    robots.name = 'robots';
+    robots.content = 'noindex, nofollow';
+    document.head.appendChild(robots);
+    document.title = 'Page not found | Klay Interiors';
+    return () => { robots.remove(); document.title = previousTitle; };
+  }, []);
 
   return (
     <>

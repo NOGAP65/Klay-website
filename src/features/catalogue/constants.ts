@@ -345,13 +345,7 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Roller Blinds',
     group: 'Indoor',
     tagline: 'Clean lines. Blockout, sunscreen, light filter and dual.',
-    // THE ENQUIRY FORM, like every other card. It went to /products/dusk, the
-    // one product page in the range — and that page is gone, because this card
-    // now carries the configurator, the live price and Add to cart itself.
-    //
-    // Nothing is lost by pointing the picture at the enquiry form instead: the
-    // buying path is the panel beside it, not this link, and the other eleven
-    // cards have always worked exactly this way.
+    // Configuration and purchasing live on the shop card; enquiries use Contact.
     to: enquire('Roller Blinds'),
     priceFrom: ROLLER_FROM,
     image: '/images/rooms/room-kitchen.webp',

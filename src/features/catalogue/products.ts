@@ -1,124 +1,24 @@
-// Roller product identities map public slugs to the shared blind types.
-// Supplier fabrics and hardware are owned by features/fabrics.
-
+// Roller identities used by the visualiser basket and shop starting price.
+// These are product metadata, not individually routed product pages.
 import { RYNAMIC_COLOURS } from '@/features/fabrics'
 
-export type ProductSlug = 'dusk' | 'veil' | 'duo' | 'haze'
-export type ProductBlindType = 'blockout' | 'sunscreen' | 'dual' | 'lightfilter'
-
-export interface Product {
-  slug: ProductSlug
-  /** Visualiser blind type — what KlayConfigurator and the store call it. */
+type ProductBlindType = 'blockout' | 'sunscreen' | 'dual' | 'lightfilter'
+interface Product {
   blindType: ProductBlindType
   name: string
-  /** Display type label, e.g. 'Blockout Roller'. */
   type: string
-  tagline: string
-  description: string
   priceFrom: number
 }
 
 export const PRODUCTS: Product[] = [
-  {
-    slug: 'dusk',
-    blindType: 'blockout',
-    name: 'Dusk',
-    type: 'Blockout Roller',
-    tagline: 'Complete darkness. Total privacy.',
-    description: 'Fully opaque fabric that stops light penetration completely — the standard choice for bedrooms, nurseries and home theatres.',
-    priceFrom: 220,
-  },
-  {
-    slug: 'veil',
-    blindType: 'sunscreen',
-    name: 'Veil',
-    type: 'Sunscreen Roller',
-    tagline: 'Soften the light. Keep the view.',
-    description: 'An open-weave mesh that cuts glare and UV while keeping your view to the outside intact.',
-    priceFrom: 220,
-  },
-  {
-    slug: 'duo',
-    blindType: 'dual',
-    name: 'Duo',
-    type: 'Dual Roller',
-    tagline: 'Day and night in one blind.',
-    description: 'A sunscreen layer and a blockout layer on the same roller system, so one window can do both jobs.',
-    priceFrom: 320,
-  },
-  {
-    // PLACEHOLDER IMAGERY — there is no light-filter photograph in
-    // public/images yet, so this reuses the Sunscreen shot. That is also the
-    // stand-in the canvas renderer uses for its light-filter texture.
-    slug: 'haze',
-    blindType: 'lightfilter',
-    name: 'Haze',
-    type: 'Light Filter Roller',
-    tagline: 'Daylight, quietly diffused.',
-    description: 'Softens harsh sun to an even glow while keeping the room bright and the privacy intact.',
-    priceFrom: 220,
-  },
+  { blindType: 'blockout', name: 'Dusk', type: 'Blockout Roller', priceFrom: 220 },
+  { blindType: 'sunscreen', name: 'Veil', type: 'Sunscreen Roller', priceFrom: 220 },
+  { blindType: 'dual', name: 'Duo', type: 'Dual Roller', priceFrom: 320 },
+  { blindType: 'lightfilter', name: 'Haze', type: 'Light Filter Roller', priceFrom: 220 },
 ]
 
-/* NO productBySlug. It existed to turn /products/:slug into a product, and
- * there is no such route any more — ProductDetailPage was its only caller.
- * productByBlindType below survives because the visualiser looks a product up
- * by what it IS, not by what its URL was. */
-
-/** Reverse map, so the old /products/blockout style URLs can be redirected
- * to the product they became rather than dead-ending. */
 export const productByBlindType = (blindType: string | undefined): Product | undefined =>
-  PRODUCTS.find(p => p.blindType === blindType)
+  PRODUCTS.find(product => product.blindType === blindType)
 
-export const SKU_CATALOGUE = [
-  { sku: 'BR-01', name: 'Dusk White', type: 'BLOCKOUT ROLLER', hardware: 'White', price: { small: 220, medium: 260, large: 330 }, slug: 'dusk-white' },
-  { sku: 'BR-02', name: 'Dusk Noir', type: 'BLOCKOUT ROLLER', hardware: 'Black', price: { small: 220, medium: 260, large: 330 }, slug: 'dusk-noir' },
-  { sku: 'BR-03', name: 'Dusk Chrome', type: 'BLOCKOUT ROLLER', hardware: 'Chrome', price: { small: 220, medium: 260, large: 330 }, slug: 'dusk-chrome' },
-  { sku: 'SR-01', name: 'Veil White', type: 'SUNSCREEN ROLLER', hardware: 'White', price: { small: 220, medium: 260, large: 330 }, slug: 'veil-white' },
-  { sku: 'SR-02', name: 'Veil Noir', type: 'SUNSCREEN ROLLER', hardware: 'Black', price: { small: 220, medium: 260, large: 330 }, slug: 'veil-noir' },
-  { sku: 'SR-03', name: 'Veil Chrome', type: 'SUNSCREEN ROLLER', hardware: 'Chrome', price: { small: 220, medium: 260, large: 330 }, slug: 'veil-chrome' },
-  { sku: 'DR-01', name: 'Duo White', type: 'DUAL ROLLER', hardware: 'White', price: { small: 320, medium: 380, large: 480 }, slug: 'duo-white' },
-  { sku: 'DR-02', name: 'Duo Black', type: 'DUAL ROLLER', hardware: 'Black', price: { small: 320, medium: 380, large: 480 }, slug: 'duo-black' },
-  { sku: 'DR-03', name: 'Duo Chrome', type: 'DUAL ROLLER', hardware: 'Chrome', price: { small: 320, medium: 380, large: 480 }, slug: 'duo-chrome' },
-  // PLACEHOLDER DATA — Light Filter is the fourth blind type the visualiser
-  // already renders, but it has no confirmed pricing or imagery yet: pricing
-  // mirrors Sunscreen (as BASE_PRICE in useVisualiserStore already does) and
-  // the imagery reuses the Sunscreen shot.
-  { sku: 'LF-01', name: 'Haze White', type: 'LIGHT FILTER ROLLER', hardware: 'White', price: { small: 220, medium: 260, large: 330 }, slug: 'haze-white' },
-  { sku: 'LF-02', name: 'Haze Noir', type: 'LIGHT FILTER ROLLER', hardware: 'Black', price: { small: 220, medium: 260, large: 330 }, slug: 'haze-noir' },
-  { sku: 'LF-03', name: 'Haze Chrome', type: 'LIGHT FILTER ROLLER', hardware: 'Chrome', price: { small: 220, medium: 260, large: 330 }, slug: 'haze-chrome' },
-]
-
-/** Derived from PRODUCTS rather than written out again, so the name, tagline,
- * price and imagery of a range can never disagree with the product page it
- * links to. `slug` stays the blind type here — that is what the visualiser's
- * ?range= param and the legacy category URLs expect — and `productSlug` is
- * the /products/:slug the card actually navigates to. */
-export const RANGES = PRODUCTS.map(p => ({
-  name: p.name,
-  range: p.type,
-  tagline: p.tagline,
-  description: p.description,
-  price: `from $${p.priceFrom}`,
-  slug: p.blindType,
-  productSlug: p.slug,
-  skus: SKU_CATALOGUE.filter(s => s.type === p.type.toUpperCase()),
-}))
-
-/** Total configurable products, so copy like "view all N" can't drift out of
- * step with the catalogue the way a hardcoded count did. */
-export const SKU_COUNT = SKU_CATALOGUE.length
-
-/** Products in the collection — four. Used by the /products header copy. */
 export const PRODUCT_COUNT = PRODUCTS.length
-
-/** Fabric colours offered — cited in marketing copy on the homepage and the
- * collection page. Derived rather than written down twice: a literal would go
- * stale the first time a colour is added or retired, and a marketing figure
- * that contradicts the swatch grid below it is worse than no figure.
- *
- * Blinds only, because the figure is labelled as the Rynamic range where it is
- * quoted. Summing the two cards would inflate it and imply one card of 31. */
 export const COLOUR_COUNT = RYNAMIC_COLOURS.length
-
-export const PRICING_NOTE = 'All prices include professional installation across Australia. Motorised upgrade available on all products.'
