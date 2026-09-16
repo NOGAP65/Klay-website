@@ -52,7 +52,7 @@ test('photo validation, EXIF rotation, downscaling, tracing, export and resource
   await upload(page,Buffer.alloc(15*1024*1024+1));
   await expect(page.getByRole('alert')).toContainText('under 15MB');
   await upload(page,Buffer.from('not an image'),'text/plain');
-  await expect(page.getByRole('alert')).toContainText('image file');
+  await expect(page.getByRole('alert')).toContainText('Please use a JPG, PNG, WebP, GIF, AVIF or HEIC photo.');
   await upload(page,Buffer.from('invalid jpeg'));
   await expect(page.getByRole('alert')).toBeVisible();
   // Landscape sensor pixels with portrait EXIF orientation, like a phone camera.

@@ -48,3 +48,17 @@ that failure. Klay has no HubSpot integration. Its Netlify build command now
 unsets that single inherited credential before running the complete `verify`
 pipeline. The security scanner and all its rules are unchanged, and no shared
 team setting or credential was edited.
+
+Commit `6479520` was published successfully by Netlify (deploy
+`6aaa307f11ba490008ccd7a7`). Both the repository security scan and Netlify's
+secrets scan passed. A process-isolation probe confirmed the inherited token
+is removed while a different public secret still fails the unchanged scanner.
+All 12 live-site homepage/shop preview cases passed on desktop Chromium,
+Android Chromium and iOS WebKit profiles; the six additional standalone and
+delayed-selection cases also passed locally.
+
+The preceding full CI run identified two stale checks: upload validation still
+expected the former generic error wording, and the iOS gallery test scrolled
+to the heading rather than the lazy image. The tests now verify the current
+explicit supported-format error and scroll the image itself into view. The
+application's upload validation and lazy-loading behaviour are unchanged.
