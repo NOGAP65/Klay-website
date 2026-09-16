@@ -43,3 +43,4 @@ export {
 } from './useVisualiserStore';
 
 export { selectQuoteConfig, visualiserQuoteItems } from './quoteConfiguration';
+export { VisualiserCartActions } from './VisualiserCartActions';

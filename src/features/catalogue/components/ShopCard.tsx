@@ -480,7 +480,7 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
                 transition: 'border-color 0.2s ease',
               }}
             >
-              Not ready to buy? Enquire now
+              Get a free quote
             </Link>
           </div>
         </div>

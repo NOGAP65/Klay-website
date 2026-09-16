@@ -990,19 +990,11 @@ export function RangeConfigurator({
             transition: motion.button,
           }}
         >
-          {/* Says what the click DOES, which is now all it does — it no longer
-              goes anywhere. The old label promised checkout because the click
-              took you there; a button that says Checkout and stays put would be
-              worse than one that says Add and stays put.
-
-              The quote wording survives because the distinction survives: an
-              unpriced line goes into the same cart but leaves with a request
-              rather than a total. */}
+          {/* All configurations enter the basket; the price row identifies
+              products whose price will be confirmed at measure. */}
           {justAdded
             ? `Added${qtyAdded > 1 ? ` ${qtyAdded}` : ''}`
-            : price !== null
-            ? `Add ${qty > 1 ? `${qty} ` : ''}to cart`
-            : `Add ${qty > 1 ? `${qty} ` : ''}for quote`}
+            : `Add ${qty > 1 ? `${qty} ` : ''}to cart`}
         </button>
       </div>
     </div>

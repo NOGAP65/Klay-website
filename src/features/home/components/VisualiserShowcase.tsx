@@ -1,5 +1,4 @@
 import { useShallow } from 'zustand/react/shallow';
-import { ROLLER_HARDWARE } from '@/features/fabrics';
 // ---------------------------------------------------------------------------
 // 5. The visualiser — the centrepiece, and the only section on the page that
 // does real work.
@@ -36,45 +35,23 @@ import { ROLLER_HARDWARE } from '@/features/fabrics';
 // ---------------------------------------------------------------------------
 
 import { Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
 
-import * as routes from '@/config/routes';
 
-import { radius, tokens, layout, motion, space, type as typeScale, shadow, CtaButton, CtaLink, SectionBand, TextLink, useHover } from '@/ds';
-import { useCartStore } from '@/features/cart';
-import { productByBlindType } from '@/features/catalogue';
+import { radius, tokens, layout, motion, space, type as typeScale, shadow, SectionBand, useHover } from '@/ds';
 import { useIsMobile, useInView } from '@/shared';
 
-import { quoteLink } from '@/features/booking';
-import { formatAUD } from '@/core/pricing';
 import {
-  KlayConfigurator, selectQuoteConfig, visualiserQuoteItems,
+  KlayConfigurator, selectQuoteConfig, VisualiserCartActions,
   VisualiserControls,
   Field,
   GroupHeading,
   PriceBox,
   MAX_WINDOWS,
   type JobWindow,
-  priceWindow,
   useVisualiserStore,
   isJoinery,
   type ProductCategory,
 } from '@/features/visualiser';
-
-/** Where a curtain enquiry goes. Curtains are configurable here and in the
- * visualiser page, but they are not buyable anywhere on the site: every curtain
- * subcategory in data/categories.ts is available:false, and ProductsPage already
- * resolves all of them to this same form. Sending them to the cart instead would
- * be the one place on the site that pretends otherwise — and CartItem could not
- * describe the order anyway, since it has no mount, no wave-fold heading and a
- * windowSize that stops at large where curtains go to XL. */
-
-
-/** Where a wardrobe enquiry goes, and it is the same door for a stronger
- * reason. A curtain is unbuyable because the cart cannot describe it; a wardrobe
- * is unbuyable because nobody knows what it costs until it has been measured —
- * it is cut to an opening, and the opening is in someone's house. */
-
 
 /** The selected lozenge on THIS card. Every control in this file sits on the ink
  * card and nowhere else, so unlike VisualiserControls' skin() there is no light
@@ -408,9 +385,7 @@ export function VisualiserShowcase() {
   const isMobile = useIsMobile();
   // Deferred until scrolled to — see the mount site at the foot of this file.
   const { ref: configuratorRef, hasBeenInView } = useInView<HTMLDivElement>();
-  const navigate = useNavigate();
 
-  const addItem = useCartStore(s => s.addItem);
   const state = useVisualiserStore(useShallow(s => ({
     ...selectQuoteConfig(s), activeWindow: s.activeWindow,
     setWindowCount: s.setWindowCount, setActiveWindow: s.setActiveWindow,
@@ -418,11 +393,7 @@ export function VisualiserShowcase() {
   })));
   const { productCategory, windows, activeWindow, setWindowCount,
     setActiveWindow, applyActiveToAll, windowsMatch, getJobTotal } = state;
-  const enquiryUrl = quoteLink(visualiserQuoteItems(state));
 
-  const isCurtain = productCategory === 'curtain';
-  // Shelving is joinery too: no price, no window count, an enquiry rather than
-  // a Buy Now. See isJoinery.
   const isWardrobe = isJoinery(productCategory);
   const count = windows.length;
   // The whole job, each window on its own configuration and its own category's
@@ -430,37 +401,6 @@ export function VisualiserShowcase() {
   // while every window matches — and they no longer have to.
   const jobTotal = getJobTotal();
 
-  const handleBuyNow = () => {
-    // One cart line per window, each described and priced from ITS OWN config.
-    // The cart keys lines by configuration and increments, so three matching
-    // windows still land as one line of quantity 3 while a differently
-    // configured fourth gets a line of its own.
-    //
-    // 'blind' is not a guess: this button only renders for blinds, because a
-    // curtain is enquiry-only — see CURTAIN_ENQUIRY.
-    windows.forEach(w => {
-      // The catalogue entry for the configured blind type — the cart line needs a
-      // product name and a display type, and this is where the visualiser's
-      // vocabulary maps back onto the four things Klay actually sells.
-      const product = productByBlindType(w.blindType);
-      addItem({
-        name: product?.name ?? 'Custom Blind',
-        type: product?.type ?? 'Roller Blind',
-        blindType: w.blindType,
-        fabricColour: w.fabricColour,
-        hardwareColour: ROLLER_HARDWARE.find(h => h.id === w.hardwareColour)?.label ?? w.hardwareColour,
-        windowSize: w.windowSize,
-        operation: w.operation,
-        price: priceWindow(w, 'blind'),
-      });
-    });
-    // Straight to the cart, because the button says Buy Now. When it read "Add to
-    // Cart" the right behaviour was the opposite — confirm in place and leave the
-    // customer on a configuration they might still want to adjust — but a Buy Now
-    // that silently banks the order and leaves you looking at the same screen
-    // reads as a button that did nothing.
-    navigate(routes.cart);
-  };
 
   return (
     // INVERTED. This was ink — the page's one near-black ground — carrying a
@@ -654,83 +594,22 @@ export function VisualiserShowcase() {
                 marginTop: isMobile ? undefined : 'auto',
               }}
             >
-              {/* NO PRICE ON A WARDROBE, and this is the important half of the
-                  wardrobe's arrival on this card.
-
-                  priceWindow falls through to pricePerBlind for anything that is
-                  not a curtain, so leaving the box in would have quoted a
-                  wardrobe at a roller blind's price — a real number, in dollars,
-                  attached to the wrong product. The Forma range is quoted on
-                  measure and the business has not set a figure for it, which is
-                  the same reason VisualiserControls gives no price box in the
-                  wardrobe branch.
-
-                  A missing box rather than a "POA": the enquiry button
-                  underneath already says how the number is got. */}
+              {/* Joinery pricing is confirmed at measure. */}
               {!isWardrobe && (
                 <PriceBox
                   onDark
                   amount={jobTotal}
                   note={
-                    count === 1
+                    productCategory === 'curtain'
+                      ? 'Guide price · confirmed at measure, plus installation'
+                      : count === 1
                       ? '+ installation across Australia'
                       : `${count} windows + installation across Australia`
                   }
                 />
               )}
 
-              {/* The action splits by category, because only one of the three
-                  can be bought. A curtain gets an enquiry — see CURTAIN_ENQUIRY
-                  — and no second link under it, since a quote link below a quote
-                  button is the same destination twice. A wardrobe is the same
-                  case for a different reason: it is joinery, cut to an opening
-                  someone has to come and measure, so there is no configuration
-                  of it that has a price without a visit.
-
-                  Blinds are unchanged: Buy Now, the same words as every tile on
-                  the page, with the price on the label because this is the only
-                  one of them that knows what the thing costs — a bare "Buy Now"
-                  under a configured render would hide the number the customer
-                  just built.
-
-                  FULL WIDTH, not minWidth 280. In a 30% column 280px is wider
-                  than the space at some breakpoints, and `whiteSpace: nowrap` on
-                  ctaBase means it would not have wrapped — it would have pushed
-                  the column open and thrown the card's two-column split out.
-                  100% lets the label set the constraint instead: at the narrowest
-                  desktop column it is the button that is measured, not the
-                  layout. */}
-              {isWardrobe ? (
-                <CtaLink to={enquiryUrl} style={{ width: '100%' }}>
-                  Enquire about this {productCategory === 'shelving' ? 'shelving' : 'wardrobe'}
-                </CtaLink>
-              ) : isCurtain ? (
-                <CtaLink to={enquiryUrl} style={{ width: '100%' }}>
-                  Enquire — from {formatAUD(jobTotal)}
-                </CtaLink>
-              ) : (
-                <>
-                  <CtaButton onClick={handleBuyNow} style={{ width: '100%' }}>
-                    Buy Now — {formatAUD(jobTotal)}
-                  </CtaButton>
-                  {/* onDark, AND IT IS NOT OPTIONAL NOW. This link was on the
-                      parchment under the card and took the light treatment; on
-                      the ink card the same default resolves to near-black text on
-                      a near-black ground. Centred under the button rather than
-                      beside it — there is no room for a row in this column.
-
-                      Every window travels with its own configuration. */}
-                  <div style={{ textAlign: 'center' }}>
-                    <TextLink
-                      onDark
-                      accent
-                      to={enquiryUrl}
-                    >
-                      or get a free quote →
-                    </TextLink>
-                  </div>
-                </>
-              )}
+              <VisualiserCartActions config={state} onDark />
             </div>
           </div>
 

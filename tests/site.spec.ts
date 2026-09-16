@@ -102,7 +102,7 @@ test('shop search, sort, filters, choices and persisted multi-product quote', as
   await roller.getByRole('button',{name:'Add to cart',exact:true}).click();
   await search.fill('shelving');
   const shelving = page.locator('.shop-result-card').first();
-  await shelving.getByRole('button',{name:'Add for quote',exact:true}).click();
+  await shelving.getByRole('button',{name:'Add to cart',exact:true}).click();
   await page.goto('/cart');
   await expect(page.getByRole('heading',{name:'Roller Blinds',exact:true})).toBeVisible();
   await expect(page.getByRole('heading',{name:'Shelving',exact:true})).toBeVisible();

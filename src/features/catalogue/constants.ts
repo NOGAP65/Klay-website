@@ -395,12 +395,7 @@ export const CATALOGUE: CatalogueItem[] = [
     name: 'Curtains',
     group: 'Indoor',
     tagline: 'Sheer, blockout and lined. S-fold, pinch pleat or wave.',
-    // The enquiry form, unchanged. Curtains get no product page and no Add to
-    // Cart anywhere on the site — they are not in PRODUCTS, every curtain
-    // subcategory is available:false, and CartItem could not describe one anyway
-    // (no mount, no wave-fold heading, and a windowSize that stops at large where
-    // curtains go to XL). There is no configure-and-buy screen to send them to,
-    // so this stays the enquiry it has always been.
+    // The optional quote link; the configurator adds these choices to the cart.
     to: enquire('Curtains'),
     // The bedroom frame carrying sheers AND heavy drapes in one shot, which is
     // the right picture for a tile standing for the whole curtain range rather

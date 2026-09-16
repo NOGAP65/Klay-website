@@ -76,10 +76,8 @@ export const MAX_WINDOWS = 12;
 // all read the flat fields, and not one of them has to learn that a job can
 // hold more than one window.
 //
-// `productCategory` is deliberately NOT per-window. Blinds and curtains leave
-// the site down different paths — curtains are enquiry-only everywhere, see
-// CURTAIN_ENQUIRY in VisualiserShowcase — so a job mixing them could not be
-// priced or bought as one thing.
+// A visualiser job configures one product category at a time. Different
+// categories can be combined by adding each finished configuration to the cart.
 //
 // WINDOW 1 LEADS; THE REST FOLLOW UNTIL TOUCHED.
 //

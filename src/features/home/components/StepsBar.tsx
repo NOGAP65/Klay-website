@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import * as routes from '@/config/routes';
 
 const BAR_STEPS = [
-  { label: 'Buy now', body: 'Choose your product', to: routes.products },
+  { label: 'Add to cart', body: 'Choose your product', to: routes.products },
   { label: 'Professional check measure', body: 'We confirm every detail', to: routes.howItWorks },
   { label: 'Professional installation', body: 'Installed by our professionals', to: routes.howItWorks },
 ];

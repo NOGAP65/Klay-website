@@ -1,11 +1,10 @@
 import { useShallow } from 'zustand/react/shallow';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
-import { radius, tokens } from '@/ds';
+import { tokens } from '@/ds';
 import { useIsMobile } from '@/shared';
 
-import { quoteLink } from '@/features/booking';
-import { KlayConfigurator, VisualiserControls, useVisualiserStore, selectQuoteConfig, visualiserQuoteItems, ProductCategory } from '@/features/visualiser';
+import { KlayConfigurator, VisualiserControls, useVisualiserStore, selectQuoteConfig, VisualiserCartActions, ProductCategory } from '@/features/visualiser';
 
 const CATEGORY_TAB_STYLE = {
   flex: 1,
@@ -107,29 +106,7 @@ export default function VisualiserPage() {
         <div style={{ width: isMobile ? '100%' : 348, flexShrink: 0, boxSizing: 'border-box', padding: isMobile ? 16 : 28, overflowY: isMobile ? 'visible' : 'auto', position: 'relative', display: 'flex', flexDirection: 'column', gap: 28 }}>
           <CategorySwitcher />
           <VisualiserControls showCurtainControls />
-          <Link
-            to={quoteLink(visualiserQuoteItems(quoteConfig))}
-            style={{
-              display: 'block',
-              width: '100%',
-              padding: '15px 16px',
-              background: tokens.fillStrong,
-              color: tokens.onFillStrong,
-              fontFamily: tokens.body,
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              border: 'none',
-              borderRadius: radius.md,
-              cursor: 'pointer',
-              textAlign: 'center',
-              textDecoration: 'none',
-              boxSizing: 'border-box',
-            }}
-          >
-            Request a quote →
-          </Link>
+          <VisualiserCartActions config={quoteConfig} />
         </div>
         {/* alignItems via the parent would stretch this column; instead the
             configurator sizes itself to the photo and this scrolls if the

@@ -17,7 +17,7 @@ test('failed shop photography can be retried without losing the configuration', 
   await card.getByRole('button', { name: 'Retry photo' }).click();
   await expect(card.getByRole('alert')).toHaveCount(0);
   await expect(card.locator('.loading-indicator')).toHaveCount(0);
-  await card.getByRole('button', { name: 'Add for quote', exact: true }).click();
+  await card.getByRole('button', { name: 'Add to cart', exact: true }).click();
   await page.goto('/cart');
   await expect(page.locator('main')).toContainText('Shelving');
 });

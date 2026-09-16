@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 import { useCartStore } from '../src/features/cart/store/cartStore';
+import { persistedCartItems } from '../src/features/cart/store/persistedCart';
+import { visualiserCartItems } from '../src/features/visualiser/cartConfiguration';
+import { useVisualiserStore } from '../src/features/visualiser/useVisualiserStore';
 
 const line = { name: 'Roller Blinds', type: 'Roller Blind', blindType: 'blockout', fabricColour: 'Essence Ice',
   hardwareColour: 'White', windowSize: 'small' as const, operation: 'manual' as const, price: 220,
@@ -39,4 +42,54 @@ test('undo restores the full configuration once and stale undo cannot override a
   cart.clearCart();
   cart.undoRemoval(useCartStore.getState().feedbackRevision);
   expect(useCartStore.getState().items).toEqual([]);
+});
+
+test('visualiser cart lines preserve curtain and joinery choices without inventing prices', () => {
+  useVisualiserStore.setState(useVisualiserStore.getInitialState(), true);
+  const state = useVisualiserStore.getState;
+  const add = () => visualiserCartItems(state()).forEach(item => useCartStore.getState().addItem(item));
+  state().setProductCategory('curtain');
+  state().setCurtainSize('xl');
+  state().setCurtainMount('ceiling');
+  add();
+  state().setCurtainMount('window');
+  add();
+  state().setProductCategory('wardrobe');
+  add();
+  state().setWardrobeKind('walk-in');
+  for (const model of ['LS01', 'US01']) {
+    state().setWardrobeModel(model);
+    state().setWardrobeColour('Matt Natural Oak');
+    add();
+  }
+  state().setProductCategory('shelving');
+  add();
+  const items = useCartStore.getState().items;
+  expect(items).toHaveLength(6);
+  expect(new Set(items.map(item => item.id)).size).toBe(6);
+  expect(items.every(item => item.priceOnMeasure && item.price === 0)).toBe(true);
+  expect(items[0].options).toEqual(expect.arrayContaining([{ label: 'Size', value: 'xl' }, { label: 'Mount', value: 'ceiling' }]));
+  expect(items[1].options).toContainEqual({ label: 'Mount', value: 'window' });
+  expect(items[4].name).toBe('Walk-in wardrobe — Forma 5');
+  expect(items[4].options).toEqual(expect.arrayContaining([
+    { label: 'Layout', value: 'U-shaped' }, { label: 'Footprint', value: '2400 × 2400 mm' },
+    { label: 'Finish', value: 'Matt Natural Oak' },
+  ]));
+  expect(persistedCartItems({ items })).toEqual(items);
+});
+
+test('multiple visualiser windows merge matching blinds but retain distinct fabrics and prices', () => {
+  useVisualiserStore.setState(useVisualiserStore.getInitialState(), true);
+  const state = useVisualiserStore.getState;
+  state().setWindowCount(3);
+  state().setActiveWindow(2);
+  state().setFabricColour('Essence Carbon');
+  visualiserCartItems(state()).forEach(item => useCartStore.getState().addItem(item));
+  const items = useCartStore.getState().items;
+  expect(items).toHaveLength(2);
+  expect(items.map(item => item.quantity)).toEqual([2, 1]);
+  expect(items[1].fabricColour).toBe('Essence Carbon');
+  expect(items.every(item => !item.priceOnMeasure)).toBe(true);
+  expect(useCartStore.getState().getTotal()).toBe(state().getJobTotal());
+  expect(persistedCartItems({ items })).toEqual(items);
 });

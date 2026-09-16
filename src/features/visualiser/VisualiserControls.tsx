@@ -899,7 +899,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
           </div>
         </section>
 
-        {showPrice && <PriceBox onDark={onDark} amount={store.getCurtainPrice()} />}
+        {showPrice && <PriceBox onDark={onDark} amount={store.getCurtainPrice()} note="Guide price · confirmed at measure, plus installation" />}
       </div>
     );
   }

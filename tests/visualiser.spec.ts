@@ -11,6 +11,43 @@ async function upload(page:Page, buffer:Buffer, mimeType='image/jpeg') {
   await (await chooser).setFiles({name:mimeType==='image/jpeg'?'room.jpg':'invalid.txt',mimeType,buffer});
 }
 
+for (const surface of [{ url: '/visualiser', selector: 'body' }, { url: '/#visualiser', selector: '#visualiser' }]) {
+  test(`${surface.url}: every visualiser category adds to cart in place and survives reload`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(surface.url);
+    const panel = page.locator(surface.selector);
+    const cart = () => page.evaluate(() => JSON.parse(localStorage.getItem('klay-cart')!).state.items);
+    const add = async (count: number) => {
+      await panel.getByRole('button', { name: 'Add to cart', exact: true }).click();
+      await expect.poll(async () => (await cart()).length).toBe(count);
+      await expect(page).not.toHaveURL(/\/(cart|contact|book)/);
+      await expect(page.locator('.cart-feedback-announcement')).toContainText('Added to your cart');
+      await page.getByRole('button', { name: 'Dismiss cart confirmation', exact: true }).click();
+      await expect(panel.getByRole('link', { name: 'or get a free quote →', exact: true })).toHaveAttribute('href', /^\/book\?items=/);
+    };
+    await add(1);
+    await panel.getByRole('button', { name: 'Curtains', exact: true }).click();
+    await add(2);
+    await panel.getByRole('button', { name: 'Wardrobes', exact: true }).click();
+    await add(3);
+    await panel.getByRole('button', { name: 'Walk-in', exact: true }).click();
+    await panel.getByRole('button', { name: 'Forma 5', exact: true }).click();
+    await add(4);
+    await panel.getByRole('button', { name: 'Shelving', exact: true }).click();
+    await add(5);
+    const saved = await cart();
+    await page.goto('/cart');
+    await page.reload();
+    expect(await cart()).toEqual(saved);
+    await expect(page.locator('main')).toContainText('Walk-in wardrobe — Forma 5');
+    await expect(page.locator('main')).toContainText('2400 × 2400 mm');
+    await expect(page.locator('main')).toContainText('Price on measure');
+    expect(errors).toEqual([]);
+  });
+}
+
 test('fabric preview recovers from a missing texture and real fabric choices persist', async ({page}) => {
   const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/visualiser');
@@ -94,7 +131,7 @@ test('curtain and shelving quote links retain their configuration on reload',asy
   for(const category of ['Curtains','Shelving']){
     await page.goto('/visualiser');
     await page.getByRole('button',{name:category,exact:true}).click();
-    await page.getByRole('link',{name:'Request a quote →',exact:true}).click();
+    await page.getByRole('link',{name:'or get a free quote →',exact:true}).click();
     await expect(page).toHaveURL(/\/book\?items=/);
     await page.reload();
     await expect(page.locator('aside')).toContainText(category);
