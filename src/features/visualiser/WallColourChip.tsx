@@ -24,6 +24,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { ColourSample } from '@/ds';
+
 import { WALL_COLOURS, wallColourName, publishWallColour } from './wallColours';
 
 export interface WallColourChipProps {
@@ -117,13 +119,14 @@ export default function WallColourChip({ value, onChange }: WallColourChipProps)
           aria-hidden="true"
           style={{
             width: 12, height: 12, flex: '0 0 auto',
+            position: 'relative',
             borderRadius: 2,
             background: live,
             // A pale swatch on a dark chip needs no ring; a dark one would
             // vanish without it.
             border: '1px solid rgba(248,248,248,0.35)',
           }}
-        />
+        ><ColourSample colour={live} /></span>
         <span style={{ opacity: 0.72 }}>Wall</span>
         <span style={{ marginLeft: 'auto', whiteSpace: 'nowrap' }}>{wallColourName(live)}</span>
         <span
@@ -157,6 +160,7 @@ export default function WallColourChip({ value, onChange }: WallColourChipProps)
                   aria-pressed={active}
                   style={{
                     height: 26,
+                    position: 'relative',
                     borderRadius: 3,
                     background: c.hex,
                     cursor: 'pointer',
@@ -167,7 +171,7 @@ export default function WallColourChip({ value, onChange }: WallColourChipProps)
                     outline: active ? `1px solid ${INK}` : 'none',
                     outlineOffset: -2,
                   }}
-                />
+                ><ColourSample colour={c.hex} /></button>
               );
             })}
           </div>

@@ -1,15 +1,18 @@
-import { useShallow } from 'zustand/react/shallow';
-import { ROLLER_HARDWARE, fabricCollections, fabricByName, fabricPalette } from '@/features/fabrics';
 import { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { radius, tokens, space, type as typeScale } from '@/ds';
+import { useShallow } from 'zustand/react/shallow';
+
 import { formatAUD, isBlindType } from '@/core/pricing';
+
+import { ColourSample, radius, tokens, space, type as typeScale } from '@/ds';
+import { ROLLER_HARDWARE, fabricCollections, fabricByName, fabricPalette, fabricScanInset } from '@/features/fabrics';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '@/features/fabrics';
 import {
   WARDROBE_COLOURS,
   modelsOfKind, wardrobeModelById, wardrobeHeight, wardrobeDepth,
 } from '@/features/joinery';
 import { HANDLE_FINISHES, handleFinish } from '@/features/joinery';
+
 import { coloursFor, isJoinery, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 
 interface VisualiserControlsProps {
@@ -307,7 +310,7 @@ function Swatch({
         cursor: 'pointer',
         padding: 0,
         backgroundColor: hex,
-        backgroundImage: texture ? `url("${texture}")` : undefined,
+        position: 'relative',
         backgroundSize: 'cover',
         border: `1px solid ${sk.edge}`,
         // The inner hairline is what keeps a near-white swatch from dissolving
@@ -324,7 +327,9 @@ function Swatch({
           : `inset 0 0 0 1px ${onDark ? 'rgba(248,248,248,0.14)' : tokens.lineFaint}`,
         transition: 'box-shadow 0.2s ease',
       }}
-    />
+    >
+      <ColourSample colour={hex} texture={texture} insetTop={fabricScanInset(texture)} />
+    </button>
   );
 }
 

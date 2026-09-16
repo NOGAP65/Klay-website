@@ -1,9 +1,11 @@
 import { loadImage } from '@/shared';
 import React, { useEffect, useRef } from 'react';
 import { computeHomography, toColumnMajor, Point } from './homography';
-import { HARDWARE_HEX } from '@/features/fabrics';
+import { HARDWARE_HEX, fabricScanInset } from '@/features/fabrics';
 import { tokens } from '@/ds';
 import { sampleBlindLighting, blindTextureCoordinates, NEUTRAL_BLIND_LIGHT, type BlindLighting } from './blindLighting';
+import { PreviewStatus } from './PreviewStatus';
+import { usePreviewLoad } from './usePreviewLoad';
 
 /** One traced, confirmed window area to render — the shape VisualizerConfigurator
  * maps its (store-owned) TracedArea + linked WindowCard into before passing it
@@ -538,7 +540,8 @@ const getOrUploadTexture = (
   potCanvas.height = POT_SIZE;
   const potCtx = potCanvas.getContext('2d', { willReadFrequently: true });
   if (!potCtx) throw new Error('Failed to create texture resampling context');
-  potCtx.drawImage(img, 0, 0, POT_SIZE, POT_SIZE);
+  const inset = fabricScanInset(key) * img.naturalHeight;
+  potCtx.drawImage(img, 0, inset, img.naturalWidth, img.naturalHeight - inset, 0, 0, POT_SIZE, POT_SIZE);
   const meanLuma = measureMeanLuma(potCtx);
 
   const texture = gl.createTexture();
@@ -3092,6 +3095,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
   // not on every parent re-render (tracedAreas is typically a fresh array
   // reference from the caller on most renders).
   const tracedAreasKey = JSON.stringify(tracedAreas);
+  const preview = usePreviewLoad(JSON.stringify([photoUrl, tracedAreasKey, compareMode, compareBlindType, compareFabricColor]));
 
   useEffect(() => {
     if (!photoUrl) return;
@@ -3104,7 +3108,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
       const canvas = canvasRef.current;
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      if (!ctx) throw new Error('Canvas unavailable');
 
       // At most one area is ever unconfirmed at a time — the one currently
       // being traced (activeAreaId). Everything else is confirmed and gets
@@ -3248,9 +3252,8 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
       }
     };
 
-    render().catch(() => {
-      /* image failed to load — leave the previous frame in place */
-    });
+    render().then(() => { if (!cancelled) { canvasRef.current?.setAttribute('data-render-ready', 'true'); preview.ready(); } })
+      .catch(() => { if (!cancelled) preview.fail(); });
 
     return () => {
       cancelled = true;
@@ -3258,18 +3261,22 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
     // Intentionally limited deps: only these inputs change what's worth
     // repainting. tracedAreasKey stands in for tracedAreas (see comment above).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoUrl, tracedAreasKey, activeAreaId, rollPosition, compareMode, compareDivider, compareBlindType, compareFabricColor]);
+  }, [photoUrl, tracedAreasKey, activeAreaId, rollPosition, compareMode, compareDivider, compareBlindType, compareFabricColor, preview.attempt]);
 
   return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
     <canvas
       ref={canvasRef}
       data-render-surface="blind"
+      data-render-ready={!preview.loading && !preview.failed ? 'true' : 'false'}
       style={{
         width: '100%',
         height: 'auto',
         display: 'block',
       }}
     />
+    <PreviewStatus {...preview} label="Loading blinds" />
+    </div>
   );
 };
 

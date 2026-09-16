@@ -23,10 +23,12 @@ import { useLayoutEffect, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
+import { LoadingIndicator } from '@/ds';
 import { wardrobeModelById, DEFAULT_WIDTH_MM } from '@/features/joinery';
-import { buildWardrobeScene, MM, OPENING_HEIGHT_MM, type WardrobeScene } from './wardrobeScene';
-import { onWallColour } from './wallColours';
+
 import JoineryOrbitControl from './JoineryOrbitControl';
+import { onWallColour } from './wallColours';
+import { buildWardrobeScene, MM, OPENING_HEIGHT_MM, type WardrobeScene } from './wardrobeScene';
 
 export interface Wardrobe3DProps {
   modelId: string;
@@ -81,7 +83,10 @@ export default function Wardrobe3D({
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    let isActive = true;
+    let renderer: THREE.WebGLRenderer;
+    try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false }); }
+    catch { void Promise.resolve().then(() => { if (isActive) setHasError(true); }); return () => { isActive = false; }; }
     renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     // The stickers and the decor sheets are already tone-mapped photographs.
@@ -94,13 +99,16 @@ export default function Wardrobe3D({
     renderer.domElement.style.touchAction = 'none';
 
     rendererRef.current = renderer;
+    const onLost = (event: Event) => { event.preventDefault(); setIsReady(false); setHasError(true); };
+    renderer.domElement.addEventListener('webglcontextlost', onLost);
     return () => {
+      renderer.domElement.removeEventListener('webglcontextlost', onLost);
       rendererRef.current = null;
       renderer.dispose();
       renderer.forceContextLoss();
       renderer.domElement.remove();
     };
-  }, []);
+  }, [retry]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -112,7 +120,7 @@ export default function Wardrobe3D({
     const widthMm = selectedWidthMm ?? DEFAULT_WIDTH_MM;
 
     const renderer = rendererRef.current;
-    if (!renderer) return;
+    if (!renderer) { setHasError(true); return; }
 
     const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 100);
 
@@ -189,8 +197,10 @@ export default function Wardrobe3D({
         renderer.compile(built.scene, camera);
         const gl = renderer.getContext();
         const parallel = gl.getExtension('KHR_parallel_shader_compile');
-        if (parallel) await new Promise<void>(resolve => {
+        if (parallel) await new Promise<void>((resolve, reject) => {
+          const started = performance.now();
           const ready = () => {
+            if (performance.now() - started > 15_000) { reject(new Error('Graphics did not become ready')); return; }
             if (disposed || gl.isContextLost() || !renderer.info.programs?.some(program => !gl.getProgramParameter(program.program as WebGLProgram, parallel.COMPLETION_STATUS_KHR))) resolve();
             else window.setTimeout(ready, 10);
           };
@@ -263,6 +273,7 @@ export default function Wardrobe3D({
         };
         controls.addEventListener('change', syncView);
         syncView();
+        renderer.render(built.scene, camera);
         setIsReady(true);
         renderer.domElement.style.cursor = 'grab';
         // Fires while the pointer drags AND while the damping settles after it
@@ -301,7 +312,11 @@ export default function Wardrobe3D({
         };
       })
       .catch(() => {
-        if (!disposed) setHasError(true);
+        if (!disposed) {
+          builtRef.current?.dispose();
+          builtRef.current = null;
+          setHasError(true);
+        }
       });
 
     return () => {
@@ -329,7 +344,6 @@ export default function Wardrobe3D({
   // The committed colour, and the one a freshly-built scene has to catch up to.
   useEffect(() => {
     if (wallColour) paint(wallColour);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wallColour, modelId, colourName, selectedWidthMm, recessed]);
 
   // AND THE DRAG, which never reaches React at all — see publishWallColour.
@@ -344,6 +358,7 @@ export default function Wardrobe3D({
   }, [handleFinish]);
 
   return <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0, containerType: 'inline-size', containerName: 'joinery-preview' }}>
+    {!isReady && !hasError && <LoadingIndicator overlay label="Loading 3D preview" />}
     {hasError && <div role="alert" style={{ position: 'absolute', inset: 0, zIndex: 2, display: 'grid', placeContent: 'center', background, padding: 24 }}>
       <p>We couldn’t load this preview.</p>
       <button type="button" onClick={() => setRetry(value => value + 1)}>Try again</button>

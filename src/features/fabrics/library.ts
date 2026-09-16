@@ -59,6 +59,12 @@ export function fabricByName(name?: string): FabricSample | undefined {
   return name ? names.get(name) : undefined;
 }
 
+/** The Cyclone supplier scan includes a paper header. Sample only the cloth,
+ * consistently across swatches, the shop weave and the perspective renderer. */
+export function fabricScanInset(texture?: string): number {
+  return texture && /\/essence-cyclone(?:-texture|-weave)?\.webp$/.test(texture) ? 0.04 : 0;
+}
+
 export function rollerPalette(type: string, name?: string): FabricSample[] {
   return fabricPalette('roller-blinds', type, fabricByName(name)?.collection);
 }

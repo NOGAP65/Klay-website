@@ -23,8 +23,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
+import { ColourSample, radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
+import { fabricScanInset } from '@/features/fabrics';
+
 // MOVED HERE FROM features/home, and this is where it belonged all along: it
 // is built from the catalogue's own configOptions, priced by the catalogue's
 // priceFor, and turns into a catalogue cart line. It lived in home only because
@@ -268,18 +270,16 @@ function Swatch({
         borderRadius: radius.sm,
         cursor: 'pointer',
         backgroundColor: choice.hex,
-        backgroundImage: [
-          choice.mirror === 'mixed' ? 'linear-gradient(110deg, #c2ccca 0%, #f6f8f6 28%, #a6b3b1 49%, transparent 50%)'
-            : choice.mirror === 'all' ? 'linear-gradient(110deg, #c2ccca, #f6f8f6 45%, #a6b3b1)' : '',
-          choice.texture ? `url("${choice.texture}")` : '',
-        ].filter(Boolean).join(', ') || undefined,
-        backgroundSize: 'cover',
+        position: 'relative',
         border: `1px solid ${tokens.line}`,
         outline: selected ? `1.5px solid ${tokens.line}` : isHovered ? `1.5px solid ${tokens.lineStrong}` : 'none',
         outlineOffset: 2,
         transition: 'outline-color 0.2s ease',
       }}
-    />
+    >
+      <ColourSample colour={choice.hex} texture={choice.texture} mirror={choice.mirror}
+        insetTop={fabricScanInset(choice.texture)} />
+    </button>
   );
 }
 

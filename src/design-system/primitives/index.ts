@@ -10,4 +10,6 @@ export { CtaLink } from './CtaLink';
 export { CtaButton } from './CtaButton';
 export { TextLink } from './TextLink';
 export { LoadingPlaceholder } from './LoadingPlaceholder';
+export { LoadingIndicator } from './LoadingIndicator';
 export { Dialog } from './Dialog';
+export { ColourSample } from './ColourSample';

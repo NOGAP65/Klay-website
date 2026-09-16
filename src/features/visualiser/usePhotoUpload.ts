@@ -4,8 +4,10 @@ import { preparePhoto, type PhotoResource } from './photoResource';
 
 export interface UsePhotoUploadResult {
   photoUrl: string | null;
-  photoBitmap: ImageBitmap | null;
+  photoBitmap: PhotoResource['bitmap'] | null;
   uploadError: string | null;
+  isLoadingPhoto: boolean;
+  retryPhoto: () => void;
   handleUpload: () => void;
   handleTakePhoto: () => void;
   loadFromUrl: (url: string) => void;
@@ -15,6 +17,8 @@ export interface UsePhotoUploadResult {
 export const usePhotoUpload = (): UsePhotoUploadResult => {
   const [photo, setPhoto] = useState<PhotoResource | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isLoadingPhoto, setIsLoadingPhoto] = useState(false);
+  const sourceRef = useRef<File | string | null>(null);
   const current = useRef<PhotoResource | null>(null);
   const version = useRef(0);
   const pending = useRef<AbortController | null>(null);
@@ -39,7 +43,10 @@ export const usePhotoUpload = (): UsePhotoUploadResult => {
     const revision = version.current;
     const controller = new AbortController();
     pending.current = controller;
+    sourceRef.current = source;
+    setIsLoadingPhoto(true);
     setUploadError(null);
+    const timeout = window.setTimeout(() => controller.abort(), 25_000);
     try {
       let blob: Blob;
       if (typeof source === 'string') {
@@ -54,10 +61,11 @@ export const usePhotoUpload = (): UsePhotoUploadResult => {
       current.current = resource;
       setPhoto(resource);
     } catch (error) {
-      if (revision === version.current) setUploadError(error instanceof Error
+      if (revision === version.current) setUploadError(controller.signal.aborted ? 'This photo is taking too long to load. Please try again.' : error instanceof TypeError ? 'Could not load this photo. Check your connection and try again.' : error instanceof Error
         ? error.message : 'Failed to load photo. Please try again.');
     } finally {
-      if (revision === version.current) pending.current = null;
+      window.clearTimeout(timeout);
+      if (revision === version.current) { pending.current = null; setIsLoadingPhoto(false); }
     }
   }, [cancel]);
 
@@ -84,12 +92,15 @@ export const usePhotoUpload = (): UsePhotoUploadResult => {
     current.current = null;
     setPhoto(null);
     setUploadError(null);
+    setIsLoadingPhoto(false);
+    sourceRef.current = null;
   }, [cancel]);
   const handleUpload = useCallback(() => choose('gallery'), [choose]);
   const handleTakePhoto = useCallback(() => choose('camera'), [choose]);
   const loadFromUrl = useCallback((url: string) => { void load(url); }, [load]);
+  const retryPhoto = useCallback(() => { if (sourceRef.current) void load(sourceRef.current); }, [load]);
   return {
-    photoUrl: photo?.url ?? null, photoBitmap: photo?.bitmap ?? null, uploadError,
+    photoUrl: photo?.url ?? null, photoBitmap: photo?.bitmap ?? null, uploadError, isLoadingPhoto, retryPhoto,
     handleUpload, handleTakePhoto, loadFromUrl, clear,
   };
 };

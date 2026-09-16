@@ -43,14 +43,17 @@ export type ApiResult<T> =
 
 async function post<T>(path: string, payload: BookingPayload, valid: (body: Record<string, unknown>) => boolean): Promise<ApiResult<T>> {
   let response: Response
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 20_000)
   try {
     response = await fetch(path, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(20_000),
+      signal: controller.signal,
     })
   } catch {
+    clearTimeout(timeout)
     // Offline, DNS, or the request never left the machine.
     return { ok: false, message: 'Could not reach the server. Check your connection and try again.' }
   }
@@ -59,6 +62,7 @@ async function post<T>(path: string, payload: BookingPayload, valid: (body: Reco
   // `vite` alone rather than `netlify dev`), which is worth saying plainly
   // instead of surfacing a JSON parse error.
   if (response.status === 404) {
+    clearTimeout(timeout)
     return { ok: false, message: 'Booking is not available on this environment yet.' }
   }
 
@@ -67,6 +71,8 @@ async function post<T>(path: string, payload: BookingPayload, valid: (body: Reco
     body = await response.json()
   } catch {
     return { ok: false, message: 'The server sent back something unexpected. Please try again.' }
+  } finally {
+    clearTimeout(timeout)
   }
 
   if (!body || typeof body !== 'object' || Array.isArray(body)) {

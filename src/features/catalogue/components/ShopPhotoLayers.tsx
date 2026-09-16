@@ -1,19 +1,21 @@
 import { useEffect, useId, useState } from 'react';
 
+import { LoadingIndicator, space, tokens } from '@/ds';
 import { grainTransform, joineryWidthSlices, JOINERY_HEIGHT_MM, type WidthSlice } from '@/features/catalogue/lib/joineryPhotoWidth';
 import { photoColourCurves } from '@/features/catalogue/lib/photoColour';
-import type { PhotoMaterial, ShopPhoto } from '@/features/catalogue/shopPhotos';
 import { FINISH_TEXTURE, FINISH_TILE_MM, WARDROBE_COLOURS, wardrobeModelById } from '@/features/joinery';
-import { useMediaQuery } from '@/shared';
+import { loadImage, useMediaQuery } from '@/shared';
 
-import { ShowerPhotoLayers } from './ShowerPhotoLayers';
-import { SemiScreenPhotoLayers } from './SemiScreenPhotoLayers';
-import { MirrorPhotoLayers } from './MirrorPhotoLayers';
 import { CabinetMirrorPhotoLayers } from './CabinetMirrorPhotoLayers';
-import { SlidingDoorPhotoLayers } from './SlidingDoorPhotoLayers';
-import { WalkInPhotoLayers } from './WalkInPhotoLayers';
 import { FlyscreenPhotoLayers } from './FlyscreenPhotoLayers';
+import { MirrorPhotoLayers } from './MirrorPhotoLayers';
+import { SemiScreenPhotoLayers } from './SemiScreenPhotoLayers';
+import { ShowerPhotoLayers } from './ShowerPhotoLayers';
+import { SlidingDoorPhotoLayers } from './SlidingDoorPhotoLayers';
 import { usePhotoTransition } from './usePhotoTransition';
+import { WalkInPhotoLayers } from './WalkInPhotoLayers';
+
+import type { PhotoMaterial, ShopPhoto } from '@/features/catalogue/shopPhotos';
 
 interface Props { photo: ShopPhoto; colour: string; dayColour?: string; colourName?: string; hardware: string; hardwareName?: string; width?: string; shape?: string; dimension?: string }
 interface ArtworkProps {
@@ -129,20 +131,29 @@ function PhotoPreview({ photo, colour, dayColour, colourName, hardware, width }:
 
 /** Decode a changed model before replacing both the image and its masks. */
 export function ShopPhotoLayers({ photo: selectedPhoto, ...selection }: Props) {
-  const [photo, setPhoto] = useState(selectedPhoto);
+  const [loaded, setLoaded] = useState<ShopPhoto | null>(null);
+  const [failure, setFailure] = useState<ShopPhoto | null>(null);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let isCancelled = false;
     const sources = [selectedPhoto.src, selectedPhoto.shower?.background,
       selectedPhoto.semi?.background, selectedPhoto.semi?.reflections].filter((src): src is string => !!src);
-    void Promise.all(sources.map(src => {
-      const next = new Image();
-      next.src = src;
-      return next.decode();
-    })).then(() => {
-      if (!isCancelled) setPhoto(selectedPhoto);
-    }).catch(() => { /* Retain the last complete preview on a failed request. */ });
+    void Promise.all(sources.map(src => loadImage(src))).then(() => {
+      if (!isCancelled) setLoaded(selectedPhoto);
+    }).catch(() => { if (!isCancelled) setFailure(selectedPhoto); });
     return () => { isCancelled = true; };
-  }, [selectedPhoto]);
+  }, [selectedPhoto, attempt]);
+  const hasFailed = failure === selectedPhoto;
+  return <div style={{ position: 'absolute', inset: 0 }} aria-busy={loaded !== selectedPhoto && !hasFailed}>
+    {loaded && <LoadedPhotoLayers photo={loaded} {...selection} />}
+    {hasFailed ? <div role="alert" style={{ position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', padding: space.group, gap: space.item, background: tokens.charcoal, color: tokens.onDark, textAlign: 'center' }}>
+      <p>This photo couldn’t load.</p>
+      <button type="button" onClick={() => { setFailure(null); setAttempt(value => value + 1); }} style={{ minHeight: 44, background: tokens.accent, color: tokens.onAccent, padding: `${space.snug}px ${space.group}px` }}>Retry photo</button>
+    </div> : loaded !== selectedPhoto && <LoadingIndicator overlay delayed={!!loaded} label="Loading product" />}
+  </div>;
+}
+
+function LoadedPhotoLayers({ photo, ...selection }: Props) {
   if (photo.slidingDoor) return <SlidingDoorPhotoLayers src={photo.src} style={photo.slidingDoor}
     panels={selection.shape} dimension={selection.dimension} materialName={selection.colourName} hardware={selection.hardware} />;
   if (photo.walkIn) return <WalkInPhotoLayers src={photo.src} layoutId={photo.walkIn}

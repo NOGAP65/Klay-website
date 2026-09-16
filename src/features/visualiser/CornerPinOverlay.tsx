@@ -284,6 +284,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', touchAction: 'none' }}
           onPointerMove={handleSvgPointerMove}
           onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
           onPointerLeave={handlePointerUp}
           onTouchMove={handleSvgTouchMove}
           onTouchEnd={handlePointerUp}

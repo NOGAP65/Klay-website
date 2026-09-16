@@ -37,24 +37,26 @@ import { Link } from 'react-router-dom';
 
 import { radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 import { shopPhoto } from '@/features/catalogue/shopPhotos';
+import { HARDWARE_HEX } from '@/features/fabrics';
+import { fabricByName, honeycombDaySample } from '@/features/fabrics';
 import { useIsMobile } from '@/shared';
 
 import { hardwareHex, type Selection } from '../configOptions';
+import { fabricShot, FABRIC_SHOT_DIR } from '../fabricShots';
 import { cabinetMirrorSize } from '../lib/cabinetMirror';
-import { walkInLayout, WALK_IN_FOOTPRINT_MM, WALK_IN_HEIGHT_MM } from '../lib/walkInWardrobes';
 import { flyscreenConfiguration, flyscreenDimensions } from '../lib/pleatedFlyscreens';
-import { fabricShot, FABRIC_SHOT_DIR, type FabricShot } from '../fabricShots';
+import { walkInLayout, WALK_IN_FOOTPRINT_MM, WALK_IN_HEIGHT_MM } from '../lib/walkInWardrobes';
 // Relative, like the feature's other three importers of this file — see the
 // note at its head on why it has not moved.
-import { HARDWARE_HEX } from '@/features/fabrics';
-import type { CatalogueItem } from '../constants';
 
 import { AwningColourLayer } from './AwningColourLayer';
+import { FabricPhoto } from './FabricPhoto';
 import { ProductGlyph } from './ProductGlyph';
+import { ProductPhoto } from './ProductPhoto';
 import { RangeConfigurator } from './RangeConfigurator';
-import { fabricByName, honeycombDaySample } from '@/features/fabrics';
-import { FabricWeaveLayer } from './FabricWeaveLayer';
 import { ShopPhotoLayers } from './ShopPhotoLayers';
+
+import type { CatalogueItem } from '../constants';
 
 export interface ShopCardProps {
   item: CatalogueItem;
@@ -130,78 +132,6 @@ const ASSURANCES = [
  * into the multiply is dyePaint below. */
 const dyeColour = (item: CatalogueItem, sel: Selection): string =>
   fabricByName(sel.colour)?.hex ?? item.colours?.find(c => c.name === sel.colour)?.hex ?? '#FFFFFF';
-
-/** THE COLOUR THE MULTIPLY LAYER IS ACTUALLY PAINTED, given the cloth it will
- * be multiplied through.
- *
- * THE COMMENT ABOVE USED TO SAY THE PHOTOGRAPH HAD BEEN NORMALISED SO THAT
- * MULTIPLYING BY THE SWATCH LANDS ON THE RIGHT CLOTH. It had not been. Measured
- * under each product's own mask, the cloth runs from 240,235,228 down to
- * 200,191,176, and every shot is warmer than it is blue — the roller blockout by
- * 12, its dual by 24. Multiply is per-channel, so that cast went straight onto
- * whatever the customer chose, in proportion to how pale it was. Sampled out of
- * the rendered card, White came back 222,216,207 against a swatch of
- * 242,240,236: an error of -20,-24,-29, which does not read as "a little dark",
- * it reads as cream. Fourteen colours averaged 24 off.
- *
- * SO DIVIDE THE CLOTH OUT FIRST. Multiplying by swatch x 255/white lands on the
- * swatch exactly, and for every colour with headroom — which is most of the card
- * — that is the end of it.
- *
- * WHERE THERE IS NOT ENOUGH HEADROOM, SCALE THE WHOLE TRIPLE. A pale swatch on a
- * dark cloth asks for more than 255 in some channel, and clamping channels
- * independently would reintroduce exactly the cast this removes — the channel
- * that clips stops rising while the others carry on. Scaling all three by one
- * factor keeps the ratios, so the colour comes out the right HUE and only as
- * bright as the photograph can carry. White on the roller blockout lands
- * 216,215,211 instead of 222,216,207: a shade darker, and neutral instead of
- * cream. Lifting the pale end further needs the photograph brightened, not the
- * paint.
- *
- * No white point means an undyed shot or one not yet measured, and the swatch
- * goes through untouched — which is what every card did before this existed. */
-const dyePaint = (hex: string, white: FabricShot['white']): string => {
-  if (!white) return hex;
-  const channel = (i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
-  const wanted = [0, 1, 2].map(i => (channel(i) * 255) / white[i]);
-  const headroom = Math.max(...wanted, 255) / 255;
-  const [r, g, b] = wanted.map(v => Math.round(v / headroom));
-  return `rgb(${r}, ${g}, ${b})`;
-};
-
-/** HOW MUCH OF THE CLOTH'S OWN MODELLING HAS TO GO BACK ON TOP, 0..1.
- *
- * MULTIPLYING BY A DARK COLOUR DOES NOT DARKEN A PHOTOGRAPH, IT FLATTENS IT.
- * The curtain's folds run 157 to 225 in the shot. Multiply by Black — 19, 20, 21
- * — and they come out 12 to 17: a five-level range, which is a black rectangle
- * with a curtain's outline. Every fold, every pleat and the whole hang of the
- * cloth is gone, and the darker the colour the more of the product disappears
- * with it. That is wrong about the fabric and wrong about the photograph.
- *
- * What is missing is sheen. A black curtain in that room still catches the light
- * off the window, and the highlight it catches is a reflection off the surface —
- * it is not the dye, so nothing should have multiplied it away. Painting the
- * shot back over itself in soft-light restores it: bright where the cloth was
- * bright, dark where it was dark, in the cloth's own shape.
- *
- * SCALED BY HOW DARK THE COLOUR IS, because that is exactly how much was lost.
- * White multiplies to 0.9 of the original and needs nothing back; Black
- * multiplies to 0.08 and needs nearly all of it. So the strength is the shot's
- * own `sheen` times one minus the swatch's luminance — which leaves the pale end
- * of every colour card exactly as it renders today.
- *
- * PER SHOT RATHER THAN EVERYWHERE, and the venetian is why. Its slats photograph
- * at a median of 227 against the curtain's 200, and soft-light lifts everything
- * above mid-grey — so the same pass that gives a black curtain its folds turns a
- * charcoal venetian into a mid-grey one. A cloth that is already near-white has
- * little modelling in the shadows to restore and a great deal of lift to gain,
- * which is the wrong trade. See SHEEN in tools/generate-fabric-shots.mjs. */
-const sheenStrength = (shot: { sheen: number } | undefined, hex: string): number => {
-  if (!shot?.sheen) return 0;
-  const v = (i: number) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255;
-  const luma = 0.2126 * v(0) + 0.7152 * v(1) + 0.0722 * v(2);
-  return shot.sheen * (1 - luma);
-};
 
 /** THE COLOUR THE HEADRAIL AND BOTTOM BAR ARE PAINTED. The same three the
  * visualiser uses, so a blind specified here and a blind specified there are the
@@ -417,8 +347,12 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
         >
           {photo ? <ShopPhotoLayers photo={photo} colour={dyeColour(item, sel)}
             colourName={sel.colour} dayColour={honeycombDaySample(sel.colour)?.hex} hardware={hardwareColour(item, sel)} hardwareName={sel.hardware} width={sel.width}
-            shape={sel.variant} dimension={sel.dimension} /> : shot || item.image ? (
-            <img
+            shape={sel.variant} dimension={sel.dimension} /> : shot && !isPhotographicAwning ? (
+            <FabricPhoto shot={shot} colour={dyeColour(item, sel)} hardware={hardwareColour(item, sel)}
+              weave={item.id === 'roller-blinds' ? fabricByName(sel.colour)?.weaveTexture : undefined}
+              alt={item.name + ' — ' + item.group} position={item.imagePosition ?? '50% 45%'} lifted={lit} />
+          ) : shot || item.image ? (
+            <ProductPhoto
               src={shot ? `${FABRIC_SHOT_DIR}/${shot.file}` : item.image}
               alt={`${item.name} — ${item.group}`}
               style={{
@@ -464,184 +398,6 @@ export function ShopCard({ item, sel, onChange }: ShopCardProps) {
             <AwningColourLayer file={shot.file}
               colour={hardwareColour(item, sel)} position={item.imagePosition ?? '50% 45%'} hardware />
           )}
-          {/* THE DYE. A flat colour multiplied through the blind's own mask,
-              over a photograph whose fabric has been normalised to white — which
-              between them ARE dyed cloth, because multiplying is what dyeing
-              does. The weave, the folds and the falloff all survive as
-              proportions of the colour.
-
-              Only where the shot carries a mask: timber is timber-coloured and
-              has nothing to dye. */}
-          {shot?.mask && !isPhotographicAwning && (
-            <div
-              aria-hidden="true"
-              style={{
-                position: 'absolute',
-                inset: 0,
-                // THROUGH dyePaint, not the raw swatch — the cloth's own white
-                // point is divided out here so the multiply lands on the colour
-                // the customer picked rather than on a warmed version of it.
-                background: dyePaint(dyeColour(item, sel), shot.white),
-                mixBlendMode: 'multiply',
-                // A SHEER TAKES LESS DYE THAN A BLOCKOUT, and at full strength
-                // the fabric row appeared to do nothing on exactly the colours
-                // where it matters most: Black blockout and Black sheer landed
-                // on the same near-black, when in a real window one is opaque
-                // and the other is mostly daylight. The photograph underneath
-                // shows through in proportion — see `dye` in fabricShots.
-                opacity: shot.dye,
-                WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
-                maskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
-                WebkitMaskSize: 'cover',
-                maskSize: 'cover',
-                WebkitMaskPosition: item.imagePosition ?? '50% 45%',
-                maskPosition: item.imagePosition ?? '50% 45%',
-                pointerEvents: 'none',
-                // The picture scales under the pointer; the dye has to scale
-                // with it or the colour slides off the cloth.
-                transform: lit && !isPhotographicAwning ? 'scale(1.04)' : 'scale(1)',
-                transition: 'transform 0.7s ease, background 0.25s ease',
-              }}
-            />
-          )}
-
-          {item.id === 'roller-blinds' && shot?.mask && (
-            <FabricWeaveLayer name={sel.colour} mask={FABRIC_SHOT_DIR + '/' + shot.mask}
-              position={item.imagePosition ?? '50% 45%'} lifted={lit} />
-          )}
-          {/* THE TINT — THE PART OF A COLOUR THAT COSTS NO LIGHT, and only a
-              sheer has one.
-
-              Nearly everything you see in a sheer is daylight coming THROUGH it,
-              and the multiply above dims that as hard as it dims the cloth. Its
-              fabric photographs at a median of 234, so any dye heavy enough to
-              tell Ivory from Truffle also drags the whole window down and turns
-              a lit sheer into a murky linen with the garden going out behind it.
-              No single multiply is both, which is what two passes on `dye`
-              established the slow way.
-
-              A `color` blend takes the swatch's hue and chroma and leaves the
-              luminosity underneath alone. So the colour arrives in two parts:
-              `dye`, small, for the value a real sheer does lose, and this for
-              the colour itself. An opaque cloth takes none of it — a blockout's
-              colour IS its value, and Black should be black rather than a
-              black-hued photograph. See `tint` in fabricShots. */}
-          {shot?.mask && !isPhotographicAwning && shot.tint > 0 && (
-            <div
-              aria-hidden="true"
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: dyeColour(item, sel),
-                mixBlendMode: 'color',
-                opacity: shot.tint,
-                WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
-                maskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
-                WebkitMaskSize: 'cover',
-                maskSize: 'cover',
-                WebkitMaskPosition: item.imagePosition ?? '50% 45%',
-                maskPosition: item.imagePosition ?? '50% 45%',
-                pointerEvents: 'none',
-                transform: lit && !isPhotographicAwning ? 'scale(1.04)' : 'scale(1)',
-                transition: 'transform 0.7s ease, background 0.25s ease',
-              }}
-            />
-          )}
-
-          {/* THE SHEEN, PUT BACK. The dye above flattens the cloth in proportion
-              to how dark the colour is, and this returns the same proportion of
-              the photograph's own modelling — see sheenStrength for why a black
-              curtain without it is a black rectangle. Nothing is drawn where the
-              shot has no sheen or the colour is pale enough not to have lost
-              any. */}
-          {shot?.mask && !isPhotographicAwning && sheenStrength(shot, dyeColour(item, sel)) > 0.01 && (
-            <div
-              aria-hidden="true"
-              style={{
-                position: 'absolute',
-                inset: 0,
-                backgroundImage: `url(${FABRIC_SHOT_DIR}/${shot.file})`,
-                backgroundSize: 'cover',
-                backgroundPosition: item.imagePosition ?? '50% 45%',
-                mixBlendMode: 'soft-light',
-                opacity: sheenStrength(shot, dyeColour(item, sel)),
-                WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
-                maskImage: `url(${FABRIC_SHOT_DIR}/${shot.mask})`,
-                WebkitMaskSize: 'cover',
-                maskSize: 'cover',
-                WebkitMaskPosition: item.imagePosition ?? '50% 45%',
-                maskPosition: item.imagePosition ?? '50% 45%',
-                pointerEvents: 'none',
-                transform: lit && !isPhotographicAwning ? 'scale(1.04)' : 'scale(1)',
-                transition: 'transform 0.7s ease, opacity 0.25s ease',
-              }}
-            />
-          )}
-
-          {/* THE HARDWARE, PAINTED RATHER THAN DYED — and the distinction is
-              real. Cloth is dyed, so the colour goes through the weave and
-              multiply is right. Metal is anodised or powder-coated: the surface
-              IS the colour, and a highlight on chrome is not a lighter chrome,
-              it is a reflection. So this paints the swatch at full strength and
-              a soft-light pass puts the original's specular back over it, which
-              keeps the tube reading as a tube. */}
-          {shot?.hardware && !isPhotographicAwning && (
-            <>
-              <div
-                aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: hardwareColour(item, sel),
-                  WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.hardware})`,
-                  maskImage: `url(${FABRIC_SHOT_DIR}/${shot.hardware})`,
-                  WebkitMaskSize: 'cover',
-                  maskSize: 'cover',
-                  WebkitMaskPosition: item.imagePosition ?? '50% 45%',
-                  maskPosition: item.imagePosition ?? '50% 45%',
-                  pointerEvents: 'none',
-                  transform: lit && !isPhotographicAwning ? 'scale(1.04)' : 'scale(1)',
-                  transition: 'transform 0.7s ease, background 0.25s ease',
-                }}
-              />
-              {/* The specular, back on top. Without it a chrome tube is a flat
-                  grey rectangle and the blind stops looking photographed. */}
-              <div
-                aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  backgroundImage: `url(${FABRIC_SHOT_DIR}/${shot.file})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: item.imagePosition ?? '50% 45%',
-                  mixBlendMode: 'soft-light',
-                  // PER SHOT, BECAUSE IT IS ABOUT WHAT THE METAL IS. 0.4 is the
-                  // roller's, and it is about a chrome tube: a headrail
-                  // photographs bright, so soft-lighting it over a dark swatch
-                  // lifts the dark badly — at 0.85, Black (#303030, rgb 48) came
-                  // out rgb 99, grey and barely separable from chrome. An
-                  // awning's cassette and arms are large matte extrusions and
-                  // need most of their shading back or they read as cut-out
-                  // shapes. See `spec` in fabricShots.
-                  opacity: shot.spec,
-                  WebkitMaskImage: `url(${FABRIC_SHOT_DIR}/${shot.hardware})`,
-                  maskImage: `url(${FABRIC_SHOT_DIR}/${shot.hardware})`,
-                  WebkitMaskSize: 'cover',
-                  maskSize: 'cover',
-                  WebkitMaskPosition: item.imagePosition ?? '50% 45%',
-                  maskPosition: item.imagePosition ?? '50% 45%',
-                  pointerEvents: 'none',
-                  transform: lit && !isPhotographicAwning ? 'scale(1.04)' : 'scale(1)',
-                  transition: 'transform 0.7s ease',
-                }}
-              />
-            </>
-          )}
-
-          {/* NO SCRIM. The vignette existed to give the photograph an edge
-              against the white card behind it; there is no card behind it now,
-              so all it did was put up to a fifth of ink over the product. Both
-              references darken their product shots by nothing at all. */}
         </div>
 
         {item.id === 'pleated-flyscreens' && <p style={{ ...typeScale.micro, color: tokens.inkSoft,

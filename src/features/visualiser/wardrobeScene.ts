@@ -19,18 +19,22 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
-import { buildCarcass } from './wardrobeCarcass';
 import {
   FINISH_TEXTURE, FINISH_TILE_MM,
   wardrobeColour, wardrobeColourHex, wardrobeModelById, DEFAULT_WIDTH_MM,
   wardrobeHeight, wardrobeDepth,
 } from '@/features/joinery';
 import { cutoutFor } from '@/features/joinery';
-import { buildSliceMap, sliceMapper } from './wardrobeSlices';
-import { sampleBoardColour } from './wardrobeComposite';
-import { makeWhiteBoardMaps, WHITE_TILE_MM } from './whiteBoardTexture';
 import { DEFAULT_HANDLE_FINISH, handleFinish, hardwareSpec } from '@/features/joinery';
+import { loadImage } from '@/shared';
+
 import { DEFAULT_WALL_COLOUR } from './wallColours';
+import { buildCarcass } from './wardrobeCarcass';
+import { sampleBoardColour } from './wardrobeComposite';
+import { buildSliceMap, sliceMapper } from './wardrobeSlices';
+import { makeWhiteBoardMaps, WHITE_TILE_MM } from './whiteBoardTexture';
+
+
 
 /** Millimetres to metres, so the scene is in real units and a shadow camera
  * sized in metres means something. */
@@ -301,11 +305,13 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
     return [u, v];
   };
 
-  const loader = new THREE.TextureLoader();
-  const load = (url: string) =>
-    new Promise<THREE.Texture | null>(resolve => {
-      loader.load(url, t => resolve(t), undefined, () => resolve(null));
-    });
+  const load = async (url: string): Promise<THREE.Texture | null> => {
+    try {
+      const texture = new THREE.Texture(await loadImage(url));
+      texture.needsUpdate = true;
+      return texture;
+    } catch { return null; }
+  };
 
   // ONLY THE FINISH THAT WAS PHOTOGRAPHED. All ten renders are Matt Wardrobe
   // White, so projecting one under a walnut swatch would be the configurator

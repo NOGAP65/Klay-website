@@ -9,6 +9,8 @@ import { hasCorruptCurtainFrame } from './curtainFrameHealth';
 import { createCurtainLighting, type CurtainLighting } from './curtainLighting';
 import { computeHomography } from './homography';
 import { PREVIEW_CAPTURE_EVENT } from './previewExport';
+import { PreviewStatus } from './PreviewStatus';
+import { usePreviewLoad } from './usePreviewLoad';
 
 // ---------------------------------------------------------------------------
 // WAVE FOLD CURTAINS
@@ -1238,6 +1240,7 @@ function WebGLCurtainRenderer({
   photoUrl,
   onUnavailable,
 }: Canvas2DCurtainRendererProps & { onUnavailable: () => void }) {
+  const preview = usePreviewLoad(JSON.stringify([photoUrl, canvasWidth, canvasHeight, tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y, mount, fabricType, hardwareColour]));
   const containerRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLCanvasElement>(null);
   const threeRef = useRef<HTMLCanvasElement>(null);
@@ -1863,6 +1866,7 @@ function WebGLCurtainRenderer({
       }
       draw(opennessRef.current, 0);
       if (hasCorruptCurtainFrame(renderer.getContext(), colourRef.current, H, [tl.y, tr.y, br.y, bl.y])) onUnavailable();
+      else preview.ready();
     };
 
     void init().catch(() => { if (!cancelled) onUnavailable(); });
@@ -1967,7 +1971,7 @@ function WebGLCurtainRenderer({
   }, []);
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+    <div ref={containerRef} style={{ position: 'relative', width: '100%', aspectRatio: `${canvasWidth} / ${canvasHeight}` }}>
       {/* Photo, cloth and foreground are separate registered surfaces. */}
       <canvas
         ref={bgRef}
@@ -1977,6 +1981,7 @@ function WebGLCurtainRenderer({
       <canvas
         ref={threeRef}
         data-render-surface="curtain"
+        data-render-ready={!preview.loading && !preview.failed ? 'true' : 'false'}
         data-render-mode="webgl"
         style={{
           position: 'absolute',
@@ -1989,6 +1994,7 @@ function WebGLCurtainRenderer({
       />
       <canvas ref={foregroundRef} data-render-surface="curtain-foreground"
         style={{position:'absolute',inset:0,width:'100%',height:'auto',pointerEvents:'none'}} />
+      <PreviewStatus {...preview} label="Loading curtains" />
     </div>
   );
 }

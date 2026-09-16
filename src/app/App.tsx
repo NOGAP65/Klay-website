@@ -21,7 +21,7 @@ function ScrollToHash() {
   // second card after the first was a no-op here: React Router saw no change in
   // either, so the configuration switched underneath a visitor who was never
   // carried to the section showing it.
-  const { pathname, hash } = useLocation();
+  const { pathname, hash, search } = useLocation();
   const previousPath = useRef(pathname);
 
   useEffect(() => {
@@ -49,7 +49,7 @@ function ScrollToHash() {
       window.clearTimeout(timer);
       observer.disconnect();
     };
-  }, [pathname, hash]);
+  }, [pathname, hash, search]);
 
   return null;
 }

@@ -1,5 +1,7 @@
 # Mobile visualiser compatibility
 
+Follow-up: the customer subsequently reproduced shop colour changes with Chrome forced dark. The original metadata-only protection below was insufficient for that report. See [the reliability follow-up](2026-09-16-reliability.md) for pixel-based swatches/previews and tests that deliberately bypass the page opt-out.
+
 The reported S21 Ultra screenshots show opaque black curtain bands, inconsistent colours in dark mode and clipped portrait-photo actions. The same user reports the S26 Ultra working. The specific S21 GPU/browser combination was not available locally; its exact failure cannot be certified from desktop emulation.
 
 ## Findings and changes

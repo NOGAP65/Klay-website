@@ -9,8 +9,14 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   const load = () => new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
     image.crossOrigin = 'anonymous';
-    image.onload = () => { image.onload = image.onerror = null; resolve(image); };
+    const timeout = window.setTimeout(() => {
+      image.onload = image.onerror = null;
+      image.src = '';
+      reject(new Error('The preview image took too long to load. Please try again.'));
+    }, 25_000);
+    image.onload = () => { window.clearTimeout(timeout); image.onload = image.onerror = null; resolve(image); };
     image.onerror = () => {
+      window.clearTimeout(timeout);
       image.onload = image.onerror = null;
       reject(new Error('Could not load the preview image.'));
     };

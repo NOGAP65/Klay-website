@@ -1,11 +1,12 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ComponentProps } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { radius, tokens, space, type as typeScale } from '@/ds';
+import { LoadingIndicator, radius, tokens, space, type as typeScale } from '@/ds';
 import { fabricByName } from '@/features/fabrics';
 
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import { exportPreview } from './previewExport';
+import { isValidTrace } from './traceValidation';
 import { WINDOW_ROOMS, defaultWindowRoom, windowRoomFor } from './roomPresets';
 import { usePhotoUpload } from './usePhotoUpload';
 import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from './useVisualiserStore';
@@ -18,11 +19,11 @@ import './configurator.css';
 
 const LazyWardrobeRoomRenderer = lazy(() => import('./WardrobeRoomRenderer'));
 function WardrobeRoomRenderer(props: ComponentProps<typeof LazyWardrobeRoomRenderer>) {
-  return <Suspense fallback={<div role="status" style={{ padding: 24, color: '#F4F1E9' }}>Preparing your preview…</div>}><LazyWardrobeRoomRenderer {...props}/></Suspense>;
+  return <Suspense fallback={<LoadingIndicator overlay label="Loading preview" />}><LazyWardrobeRoomRenderer {...props}/></Suspense>;
 }
 const LazyWardrobe3D = lazy(() => import('./Wardrobe3D'));
 function Wardrobe3D(props: ComponentProps<typeof LazyWardrobe3D>) {
-  return <Suspense fallback={<div role="status" style={{ padding: 24, color: '#F4F1E9' }}>Preparing your preview…</div>}><LazyWardrobe3D {...props}/></Suspense>;
+  return <Suspense fallback={<LoadingIndicator overlay label="Loading preview" />}><LazyWardrobe3D {...props}/></Suspense>;
 }
 
 // One radius for every surface in the visualiser. The three files used to
@@ -904,7 +905,7 @@ export default function KlayConfigurator({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultBlindType]);
 
-  const { photoUrl: hookPhotoUrl, photoBitmap, uploadError, handleUpload, handleTakePhoto, loadFromUrl, clear } = usePhotoUpload();
+  const { photoUrl: hookPhotoUrl, photoBitmap, uploadError, isLoadingPhoto, retryPhoto, handleUpload, handleTakePhoto, loadFromUrl, clear } = usePhotoUpload();
 
   const overlayRef = useRef<CornerPinOverlayHandle>(null);
   const rendererContainerRef = useRef<HTMLDivElement>(null);
@@ -913,6 +914,8 @@ export default function KlayConfigurator({
   // real upload/preset selection can be told apart from that initial load.
   const hasSeededDefaultRef = useRef(false);
   const [showUploadPrompt, setShowUploadPrompt] = useState(false);
+  const [traceError, setTraceError] = useState('');
+  const [downloadError, setDownloadError] = useState('');
 
   // Kick off the default window photo once, on mount — only if the store
   // doesn't already carry a real user photo from earlier in this session.
@@ -1053,8 +1056,7 @@ export default function KlayConfigurator({
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  // Brief, near-instant window while the default photo's bitmap loads —
-  // rendered as nothing (not the upload prompt) so there's no empty state.
+  // Keep feedback visible until both the default photo and its trace are ready.
   const isLoadingDefault = store.defaultWindowActive
     && (!hasPhoto || hookPhotoUrl !== defaultPhotoFor(store.productCategory) || !confirmedArea)
     && !uploadError && !showUploadPrompt;
@@ -1066,6 +1068,11 @@ export default function KlayConfigurator({
   };
 
   const handleConfirmTrace = (corners: Point[]) => {
+    if (!photoBitmap || !isValidTrace(corners, photoBitmap.width, photoBitmap.height)) {
+      setTraceError('Keep the four corners inside your photo and the outline uncrossed. Then confirm again.');
+      return;
+    }
+    setTraceError('');
     store.addTracedArea({
       id: crypto.randomUUID(),
       corners,
@@ -1081,8 +1088,18 @@ export default function KlayConfigurator({
   const handleDownload = () => {
     const container = rendererContainerRef.current;
     if (!container) return;
-    const preview = exportPreview(container);
-    if (!preview) return;
+    if (isLoadingPhoto || container.querySelector('.loading-indicator, .preview-error')) {
+      setDownloadError('Wait for your preview to finish loading, then download.');
+      return;
+    }
+    let preview: string | null;
+    try { preview = exportPreview(container); }
+    catch { preview = null; }
+    if (!preview) {
+      setDownloadError('Your preview could not be downloaded. Try again once the picture is ready.');
+      return;
+    }
+    setDownloadError('');
     const colourSlug = store.fabricColour.toLowerCase().replace(/\s+/g, '-');
     const link = document.createElement('a');
     const isCurtain = store.productCategory === 'curtain';
@@ -1183,9 +1200,9 @@ export default function KlayConfigurator({
   // Leaving motorised must stop a running demo, whichever product's operation
   // field was the one that changed.
   useEffect(() => {
-    if (activeOperation !== 'motorised') stopAuto();
+    stopAuto();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeOperation]);
+  }, [activeOperation, store.productCategory]);
 
   useEffect(() => () => stopAuto(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1383,7 +1400,7 @@ export default function KlayConfigurator({
         transmitting={motorRunning}
         onOpen={() => { stopAuto(); runMotor(0); }}
         onShut={() => { stopAuto(); runMotor(1); }}
-        onStop={() => { stopAuto(); setMotorRunning(false); }}
+        onStop={stopAuto}
         onToggleAuto={() => (autoRunning ? stopAuto() : startAuto())}
       />
     </div>
@@ -1413,9 +1430,12 @@ export default function KlayConfigurator({
         boxShadow: '0 16px 40px rgba(29,29,29,0.22)',
       }}
     >
-      {uploadError && <p role="alert" style={{ padding: 16, margin: 0, color: tokens.onDark }}>{uploadError}</p>}
+      {uploadError && <div role="alert" style={{ padding: 16, color: tokens.onDark }}><p>{uploadError}</p><Button onClick={retryPhoto}>Try again</Button></div>}
+      {showTraceState && traceError && <p role="alert" style={{ padding: space.item, color: tokens.onDark }}>{traceError}</p>}
+      {downloadError && <p role="status" style={{ padding: space.item, color: tokens.onDark }}>{downloadError}</p>}
       <div ref={mediaBoxRef} style={{ position: 'relative', width: '100%', aspectRatio: String(photoRatio), minHeight: showUploadState ? 310 : undefined }}>
-      {isLoadingDefault ? null : showUploadState ? (
+      {isLoadingPhoto && !isLoadingDefault && <LoadingIndicator overlay label="Loading room" />}
+      {isLoadingDefault ? <LoadingIndicator overlay label={`Loading ${store.productCategory === 'curtain' ? 'curtains' : store.productCategory === 'blind' ? 'blinds' : 'preview'}`} /> : showUploadState ? (
         /* STATE 1 — no photo yet, or the user asked to visualise their own room */
         <div
           style={{
