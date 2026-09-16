@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { test } from '@playwright/test';
+import * as THREE from 'three';
 
 import { fieldsFor, defaultSelection, withChoice, configuredLine } from '../src/features/catalogue/configOptions';
 import { CATALOGUE } from '../src/features/catalogue/constants';
@@ -13,7 +14,28 @@ import { columnsFor, facePostsFor, MODULE_WIDTH_MM, BOARD_MM } from '../src/feat
 import { wardrobeModelById, WARDROBE_COLOURS } from '../src/features/joinery/wardrobes';
 import { visualiserQuoteItems } from '../src/features/visualiser/quoteConfiguration';
 import { useVisualiserStore } from '../src/features/visualiser/useVisualiserStore';
+import { createWalkInSurround } from '../src/features/visualiser/walkInSurround';
 import { buildCarcass, type Box } from '../src/features/visualiser/wardrobeCarcass';
+
+test('walk-in room encloses the cabinet on all sides except its entrance', () => {
+  const root = new THREE.Group(), wall = new THREE.MeshStandardMaterial();
+  const disposables: { dispose(): void }[] = [wall];
+  createWalkInSurround(root, wall, disposables);
+  root.updateMatrixWorld(true);
+  const origin = new THREE.Vector3(1.2, 1.2, -1.2);
+  for (const [direction, surface] of [
+    [[-1, 0, 0], 'Room left wall'], [[1, 0, 0], 'Room right wall'],
+    [[0, 0, -1], 'Room back wall'], [[0, 1, 0], 'Room ceiling'], [[0, -1, 0], 'Room floor'],
+  ] as const) {
+    const hits = new THREE.Raycaster(origin, new THREE.Vector3(...direction)).intersectObjects(root.children);
+    assert.equal(hits[0]?.object.name, surface);
+  }
+  const entrance = new THREE.Raycaster(origin, new THREE.Vector3(0, 0, 1));
+  assert.equal(entrance.intersectObjects(root.children).length, 0);
+  entrance.ray.origin.y = 2.5;
+  assert.equal(entrance.intersectObjects(root.children)[0]?.object.name, 'Entrance head');
+  for (const object of disposables) object.dispose();
+});
 
 function assertWalkInBounds(box: Box) {
   assert.ok([box.x, box.y, box.z, box.w, box.h, box.d].every(Number.isFinite));

@@ -1048,7 +1048,7 @@ const drawLightLeak = (
  * the tube's own centreline, so stroking it draws a hard dark line straight
  * across the middle of the roll. The stroke is meant to be the shadow where
  * fabric meets frame, and along that edge there is no such join — the fabric
- * disappears behind a tube sitting in front of it. It only became visible once
+ * feeds down in front of the tube. It only became visible once
  * the tube grew with the roll; at the old fixed diameter the line fell close
  * enough to the tube's lower edge to pass for the shadow beneath it. */
 const drawVignette = (
@@ -1106,35 +1106,6 @@ const drawContactShadow = (
     ctx.lineTo(bl[0], bl[1]);
     ctx.closePath();
     ctx.fill();
-  });
-  ctx.restore();
-};
-
-/** Soft contact shadow following the roller's angle inside the opening. */
-const drawCassetteMountShadow = (
-  ctx: CanvasRenderingContext2D,
-  tl: Point,
-  tr: Point,
-  fabBL: Point,
-  fabBR: Point,
-  tubeHeight: number,
-  leftH: number,
-  avgW: number
-) => {
-  const reachMax = Math.min(scaleToBlind(9,avgW),leftH*0.06);
-  const {pv}=axesFor(tl,tr);
-  const a: Point=[tl[0]-pv[0]*tubeHeight,tl[1]-pv[1]*tubeHeight];
-  const b: Point=[tr[0]-pv[0]*tubeHeight,tr[1]-pv[1]*tubeHeight];
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(...tl);ctx.lineTo(...tr);ctx.lineTo(...fabBR);ctx.lineTo(...fabBL);ctx.closePath();ctx.clip();
-  multiPassShadow(3,reachMax,0.12,(reach,alpha)=>{
-    const c: Point=[b[0]-pv[0]*reach,b[1]-pv[1]*reach];
-    const d: Point=[a[0]-pv[0]*reach,a[1]-pv[1]*reach];
-    const gradient=ctx.createLinearGradient(...a,...d);
-    gradient.addColorStop(0,shadowRgba(alpha));gradient.addColorStop(1,shadowRgba(0));
-    ctx.fillStyle=gradient;
-    ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.lineTo(...c);ctx.lineTo(...d);ctx.closePath();ctx.fill();
   });
   ctx.restore();
 };
@@ -1300,31 +1271,8 @@ const rollDiameterMm = (p: number): number => {
 const cassetteHeightRatio = (p: number): number =>
   CASSETTE_HEIGHT_RATIO * (rollDiameterMm(p) / TUBE_BARE_MM);
 
-// ---------------------------------------------------------------------------
-// What the roll shows — and it is not always the selected colour
-//
-// Blockout is a BOTTOM ROLL: the fabric comes off the barrel at the back and
-// hangs down the far side, so what faces the room on the roll is the fabric's
-// REVERSE. Every blockout in the range is backed white for heat reflection, so
-// a charcoal blockout has a WHITE roll sitting on the tube. This is the detail
-// people most often get wrong when they picture one, and getting it wrong in a
-// visualiser sets the wrong expectation before the blind is even ordered.
-//
-// Sunscreen and light filter roll over the top, so the fabric's FACE is what
-// wraps outward and the roll reads in the selected colour.
-// ---------------------------------------------------------------------------
-
-/** The white acrylic backing on every blockout in the range. Not pure white —
- * it is a warm off-white, and pure #FFF next to a photographed room reads as a
- * blown-out hole rather than as fabric. */
-const BLOCKOUT_BACKING_HEX = '#EDEDED';
-
-/** Which way a fabric rolls, and therefore what colour its roll is. */
-const rollsFaceOut = (blindType: string): boolean =>
-  blindType === 'sunscreen' || blindType === 'lightfilter';
-
-const rollFaceHex = (blindType: string, fabricColor: string): string =>
-  rollsFaceOut(blindType) ? fabricColor : BLOCKOUT_BACKING_HEX;
+// All roller fabrics feed over the front of the barrel, showing the chosen
+// face colour continuously from the roll into the hanging drop.
 
 /** Unit direction along tl->tr plus its perpendicular. */
 const axesFor = (tl: Point, tr: Point): { u: Point; pv: Point } => {
@@ -1337,15 +1285,7 @@ const axesFor = (tl: Point, tr: Point): { u: Point; pv: Point } => {
   return { u, pv };
 };
 
-/** Cassette (top roller housing) — a 49mm aluminium cylinder with a prominent
- * horizontal highlight band in the upper third (matching real product photos).
- * Fixed height regardless of roll position. Returns the half-height so callers
- * can position the cassette-mount shadow right below it. One shared cassette
- * also covers both layers of a dual blind — real twin-roller blinds mount both
- * rolls in a single housing. */
-
-/** Traces a true cylindrical tube profile: straight vertical sides with
- * semicircular end caps. This matches the real 49mm aluminium roller tube. */
+/** Cylindrical roller profile, scaled to the current amount of wound fabric. */
 const traceCylinderBody = (
   ctx: CanvasRenderingContext2D,
   a: Point,
@@ -1443,6 +1383,9 @@ interface RollState {
   lighting?: BlindLighting;
 }
 
+/** Front roll: the hanging fabric occludes the lower half of its own barrel.
+ * Paint only the exposed upper curve, then the hardware at the ends. There is
+ * no white reverse or tube shadow across the room-facing fabric. */
 const drawCassette = (
   ctx: CanvasRenderingContext2D,
   tl: Point,
@@ -1451,159 +1394,60 @@ const drawCassette = (
   hardwareColourName: 'white' | 'black' | 'chrome' | 'cream' | 'platinum' | undefined,
   safeHardwareColor: string,
   avgW: number,
-  yRotation = 0, // window rotation for end cap visibility
+  yRotation = 0,
   roll?: RollState,
-): number => {
-  // Diameter tracks the roll: 45mm bare, up to 65mm with the whole drop wound
-  // on. Without a roll state (curtain and legacy callers) it stays bare.
+): void => {
   const rollP = roll ? Math.max(0, Math.min(1, roll.p)) : 1;
-  const fullH = leftH * cassetteHeightRatio(rollP);
-  const halfH = fullH / 2;
+  const halfH = leftH * cassetteHeightRatio(rollP) / 2;
   const { u, pv } = axesFor(tl, tr);
   const lighting = roll?.lighting ?? NEUTRAL_BLIND_LIGHT;
-  const endScale = Math.max(0.7,Math.min(1.4,(3-yRotation)/(3+yRotation)));
-  const base = litHardwareHex(hardwareBaseHex(hardwareColourName, safeHardwareColor),lighting);
-  const top: Point = [tl[0] + pv[0] * halfH, tl[1] + pv[1] * halfH];
-  const bot: Point = [tl[0] - pv[0] * halfH, tl[1] - pv[1] * halfH];
-
+  const endScale = Math.max(0.7, Math.min(1.4, (3-yRotation)/(3+yRotation)));
+  const hardware = litHardwareHex(hardwareBaseHex(hardwareColourName, safeHardwareColor), lighting);
+  const face = roll ? litHardwareHex(roll.fabricColor, lighting) : hardware;
+  const point = (origin: Point, along: number, up: number): Point =>
+    [origin[0] + u[0]*along + pv[0]*up, origin[1] + u[1]*along + pv[1]*up];
+  // Smoothly reveal the underside at the fully raised position; no visual pop
+  // where a short drop first passes the roller's centreline.
+  const lower = roll ? Math.max(0, halfH - leftH * rollP) : halfH;
   ctx.save();
-
-  // --- BODY: tube runs full width from tl to tr, connecting to brackets
-  traceCylinderBody(ctx, tl, tr, halfH, u, pv, endScale);
-  if (hardwareColourName === 'chrome') {
-    setHardwareFill(ctx, hardwareColourName, safeHardwareColor, top, bot, lighting);
-  } else {
-    const grad = ctx.createLinearGradient(top[0], top[1], bot[0], bot[1]);
-    grad.addColorStop(0, shadeHex(base, -0.10));
-    grad.addColorStop(0.24, shadeHex(base, 0.035));
-    grad.addColorStop(0.48, shadeHex(base, 0.01));
-    grad.addColorStop(0.6, base);
-    grad.addColorStop(1, shadeHex(base, -0.20));
-    ctx.fillStyle = grad;
-  }
-  ctx.fill();
-
-  // Everything below is clipped to the body so no detail escapes the outline.
-  ctx.save();
-  traceCylinderBody(ctx, tl, tr, halfH, u, pv, endScale);
+  ctx.beginPath();
+  ctx.moveTo(...point(tl, -halfH*2, halfH*2));
+  ctx.lineTo(...point(tr, halfH*2, halfH*2*endScale));
+  ctx.lineTo(...point(tr, halfH*2, -lower*endScale));
+  ctx.lineTo(...point(tl, -halfH*2, -lower));
+  ctx.closePath();
   ctx.clip();
+  const top = point(tl, 0, halfH);
+  const bottom = point(tl, 0, -halfH);
+  const gradient = ctx.createLinearGradient(...top, ...bottom);
+  gradient.addColorStop(0, shadeHex(face, -.12));
+  gradient.addColorStop(.25, shadeHex(face, .02));
+  gradient.addColorStop(.5, face);
+  gradient.addColorStop(1, shadeHex(face, -.18));
+  ctx.fillStyle = gradient;
+  traceCylinderBody(ctx, tl, tr, halfH, u, pv, endScale);
+  ctx.fill();
+  ctx.restore();
 
-  // --- FABRIC WOUND ON THE TUBE
-  //
-  // Once there is fabric on the barrel it wraps the whole circumference, so
-  // what you see is the fabric, not the tube — in the reverse's white for a
-  // bottom-rolling blockout, or in the selected colour for a sunscreen or light
-  // filter that rolls face-out. See rollFaceHex.
-  //
-  // Coverage ramps in over the first 15% of travel rather than switching on,
-  // for two reasons: a hard swap from hardware finish to fabric partway through
-  // a smooth motorised sweep is the kind of pop that reads as a bug, and at
-  // fully-closed the barrel genuinely is near-bare, which is also the one
-  // position where the customer can still see which hardware finish they picked.
-  const coverage = roll ? Math.max(0, Math.min(1, (1 - rollP) / 0.15)) : 0;
-  if (coverage > 0) {
-    const face = litHardwareHex(rollFaceHex(roll!.blindType, roll!.fabricColor),lighting);
-    // Same top-lit relationship as the hardware body above, so a wrapped tube
-    // and a bare one are lit by the same imagined window.
-    const wrapGrad = ctx.createLinearGradient(top[0], top[1], bot[0], bot[1]);
-    wrapGrad.addColorStop(0, shadeHex(face, -0.08));
-    wrapGrad.addColorStop(0.28, shadeHex(face, 0.025));
-    wrapGrad.addColorStop(0.62, face);
-    wrapGrad.addColorStop(1, shadeHex(face, -0.22));
-    ctx.globalAlpha = coverage;
-    ctx.fillStyle = wrapGrad;
-    traceCylinderBody(ctx, tl, tr, halfH, u, pv, endScale);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-
-    // The layer edge where the outermost wrap laps over the one beneath. One
-    // faint line low on the roll is enough to read as wound layers; a stack of
-    // them turns the tube into a set of stripes.
-    const seam = halfH * -0.45;
-    ctx.strokeStyle = shadowRgba(0.055 * coverage);
-    ctx.lineWidth = Math.max(1, scaleToBlind(0.8, avgW));
-    ctx.beginPath();
-    ctx.moveTo(tl[0] + pv[0] * seam, tl[1] + pv[1] * seam);
-    ctx.lineTo(tr[0] + pv[0] * seam, tr[1] + pv[1] * seam);
-    ctx.stroke();
-
-    // Where the fabric leaves the roll and becomes the hanging drop it turns
-    // through a tight radius and self-shadows. Without this the wrap and the
-    // fabric below it merge into one flat shape at the same colour.
-    const tangent = halfH * -0.82;
-    ctx.strokeStyle = shadowRgba(0.10 * coverage);
-    ctx.lineWidth = Math.max(1, scaleToBlind(1, avgW));
-    ctx.beginPath();
-    ctx.moveTo(tl[0] + pv[0] * tangent, tl[1] + pv[1] * tangent);
-    ctx.lineTo(tr[0] + pv[0] * tangent, tr[1] + pv[1] * tangent);
-    ctx.stroke();
-  }
-
-  // --- END CAPS: Only visible on the NEAR side (toward viewer)
-  // TRUE 3D PERSPECTIVE:
-  // yRot > 0 (viewer to LEFT): see LEFT end cap, right end hidden
-  // yRot < 0 (viewer to RIGHT): see RIGHT end cap, left end hidden
-  // yRot ≈ 0 (flat): both caps show as small ellipses
-  //
-  // BEFORE: showLeftCap = yRotation < -0.05 || isFlat (WRONG - backwards)
-  // AFTER:  showLeftCap = yRotation > 0.05 || isFlat (viewer to LEFT sees left)
-  const capW = Math.max(3, scaleToBlind(6, avgW));
-  const capColor = litHardwareHex('#F2F1EF',lighting);
-  const isFlat = Math.abs(yRotation) < 0.05;
-  const showLeftCap = yRotation > 0.05 || isFlat;   // viewer to LEFT sees left end
-  const showRightCap = yRotation < -0.05 || isFlat; // viewer to RIGHT sees right end
-
-  // End cap width scales with viewing angle — bigger when more visible
-  const depthScale = Math.abs(yRotation);
-  const capScale = isFlat ? 0.4 : Math.min(1.0, 0.3 + depthScale * 1.5);
-
-  ctx.fillStyle = capColor;
-  if (showLeftCap) {
-    traceEndCapOval(ctx, tl, halfH * 0.92, capW * capScale, u, pv);
-    ctx.fill();
-  }
-  if (showRightCap) {
-    traceEndCapOval(ctx, tr, halfH * 0.92 * endScale, capW * capScale, u, pv);
-    ctx.fill();
-  }
-  // Subtle shadow on the inner edge of each cap
-  ctx.strokeStyle = shadowRgba(0.08);
+  const isFlat = Math.abs(yRotation) < .05;
+  const capScale = isFlat ? .4 : Math.min(1, .3 + Math.abs(yRotation)*1.5);
+  const capWidth = Math.max(3, scaleToBlind(6, avgW)) * capScale;
+  ctx.save();
+  ctx.fillStyle = hardware;
+  ctx.strokeStyle = shadowRgba(.08);
   ctx.lineWidth = 1;
-  if (showLeftCap) {
-    traceEndCapOval(ctx, tl, halfH * 0.92, capW * capScale * 0.7, u, pv);
+  for (const [centre, radius, visible] of [
+    [tl, halfH, yRotation > .05 || isFlat],
+    [tr, halfH*endScale, yRotation < -.05 || isFlat],
+  ] as const) {
+    if (!visible) continue;
+    traceEndCapOval(ctx, centre, radius * .92, capWidth, u, pv);
+    ctx.fill();
     ctx.stroke();
   }
-  if (showRightCap) {
-    traceEndCapOval(ctx, tr, halfH * 0.92 * endScale, capW * capScale * 0.7, u, pv);
-    ctx.stroke();
-  }
-
-  // --- TOP HIGHLIGHT
-  const hi = halfH * 0.75;
-  ctx.strokeStyle = 'rgba(255,255,255,0.09)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(tl[0] + pv[0] * hi, tl[1] + pv[1] * hi);
-  ctx.lineTo(tr[0] + pv[0] * hi, tr[1] + pv[1] * hi);
-  ctx.stroke();
-
-  // --- BOTTOM SHADOW
-  ctx.strokeStyle = shadowRgba(0.12);
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(tl[0] - pv[0] * halfH * 0.85, tl[1] - pv[1] * halfH * 0.85);
-  ctx.lineTo(tr[0] - pv[0] * halfH * 0.85, tr[1] - pv[1] * halfH * 0.85);
-  ctx.stroke();
-
   ctx.restore();
-  ctx.restore();
-
-  return halfH;
 };
 
-/** Bottom rail — a cylindrical bar with a horizontal highlight band and
- * WHITE end caps (always white regardless of rail color, matching product
- * photo Bottom_bar.jpg). Height is 1.8% of blind height per spec. */
 const drawBottomRail = (
   ctx: CanvasRenderingContext2D,
   railTL: Point,
@@ -1935,21 +1779,11 @@ const drawBlindArea = (
     drawLightLeak(ctx, type, tl, tr, fabBL, fabBR, avgW);
   } // end showBlind (depth + fabric)
 
-  // --- CASSETTE — always drawn (not gated on showBlind) since
-  // the hardware itself is always present regardless of roll position. ---
-  // The roll state is what makes the tube thicken from 45mm to 65mm as the
-  // fabric winds on, and what puts the fabric's own colour (or a blockout's
-  // white reverse) onto it.
-  const cassetteHalfH = drawCassette(
+  // The selected fabric covers the front of the roller at every drop length.
+  drawCassette(
     ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
     { p, blindType: type, fabricColor, lighting },
   );
-
-  // --- CASSETTE MOUNT SHADOW — the headrail casts a shadow onto the
-  // fabric below it, like a physical bracket blocking light. ---
-  if (showBlind) {
-    drawCassetteMountShadow(ctx, tl, tr, fabBL, fabBR, cassetteHalfH, leftH, avgW);
-  }
 
   // --- BOTTOM RAIL (Canvas 2D overlay) — rides the fabric bottom ---
   if (showBlind && type !== 'sheer') {
@@ -2215,24 +2049,17 @@ const drawDualBlindArea = (
   const cassetteOffset = scaleToBlind(4, avgW);
   const backCassetteTL: Point = [tl[0] + cassettePv[0] * cassetteOffset, tl[1] + cassettePv[1] * cassetteOffset];
   const backCassetteTR: Point = [tr[0] + cassettePv[0] * cassetteOffset, tr[1] + cassettePv[1] * cassetteOffset];
-  //
-  // The two tubes wind different fabrics different ways, and each tracks its own
-  // roller's position: the back one carries the sunscreen face-out and takes the
-  // selected colour, the front one carries the blockout and shows its white
-  // reverse. Passing one shared roll state would have put a blockout's white on
-  // the sunscreen tube as well.
+  // Each front-facing roll follows its own drop while retaining the chosen fabric.
   drawCassette(
     ctx, backCassetteTL, backCassetteTR, leftH * 0.85, hardwareColourName, safeHardwareColor, avgW, yRotation,
     { p: backP, blindType: 'sunscreen', fabricColor, lighting },
   );
-  const cassetteHalfH = drawCassette(
+  drawCassette(
     ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
     { p: frontP, blindType: 'blockout', fabricColor, lighting },
   );
 
   if (showBlind) {
-    drawCassetteMountShadow(ctx, tl, tr, frontBL, frontBR, cassetteHalfH, leftH, avgW);
-
     // --- RAILS — the front layer's rail sits higher; the back layer's rail
     // rides its own bottom edge. Both wind up with their layer. ---
     const railHeight = leftH * RAIL_HEIGHT_RATIO;

@@ -198,11 +198,11 @@ export default function Wardrobe3D({
         // 2700 x 1.28 lands within a few millimetres of where 2016 x 1.72 did,
         // so the opening is framed the way it was while still being what the
         // framing is measured from.
-        const dist = (span / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))) * (isWalkIn ? 1.42 : 1.28);
+        const dist = (span / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))) * (isWalkIn ? 1.58 : 1.28);
         // Aimed a little above the cabinet's own middle, so the opening is
         // centred in frame rather than the unit inside it.
         const aim = built.centre.clone();
-        if (!isWalkIn) aim.y = (OPENING_HEIGHT_MM / 2) * MM;
+        aim.y = isWalkIn ? 1.25 : (OPENING_HEIGHT_MM / 2) * MM;
         const saved = viewRef.current;
         camera.position.copy(aim).add(new THREE.Vector3().setFromSpherical(
           new THREE.Spherical(dist * saved.zoom, saved.polar, saved.yaw),

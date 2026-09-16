@@ -222,8 +222,8 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // The composite adds a little on top as well — relightRender's `lighter` pass
   // puts about nine counts back on every channel — so the render lands below
   // the top with that still to come.
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b2a8, 1.0));
-  const key = new THREE.DirectionalLight(0xffffff, 2.6);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b2a8, model.kind === 'walk-in' ? 1.35 : 1.0));
+  const key = new THREE.DirectionalLight(0xffffff, model.kind === 'walk-in' ? 1.7 : 2.6);
   key.position.set(centre.x + 1.1, centre.y + 1.5, centre.z + 2.6);
   key.target.position.copy(centre);
   scene.add(key);
@@ -613,7 +613,7 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // would be a second wall over the first. This is for the turntable, which has
   // nothing behind it at all.
   if (!opts.forRoom) {
-    if (model.kind === 'walk-in') createWalkInSurround(root, model.id, surroundMat, disposables);
+    if (model.kind === 'walk-in') createWalkInSurround(root, surroundMat, disposables);
     else buildSurround();
   }
 
