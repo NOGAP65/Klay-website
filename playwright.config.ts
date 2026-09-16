@@ -24,7 +24,7 @@ export default defineConfig({
     { name: 'basic-android', testMatch: '**/visualiser-compatibility.spec.ts', use: { ...variants[1].settings, viewport: { width: 320, height: 640 }, deviceScaleFactor: 1, colorScheme: 'dark' } },
     { name: 'forced-dark-android', testMatch: ['**/visualiser-compatibility.spec.ts', '**/forced-dark.spec.ts'], use: { ...variants[1].settings, colorScheme: 'dark' } },
     ...variants.flatMap(({name, settings}) => (['light','dark'] as const).map(colorScheme => ({
-      name: `${name}-${colorScheme}`, testMatch: ['**/site.spec.ts', '**/visualiser.spec.ts', '**/visualiser-compatibility.spec.ts', '**/shopping-experience.spec.ts', '**/reliability.spec.ts'], use: { ...settings, colorScheme },
+      name: `${name}-${colorScheme}`, testMatch: ['**/site.spec.ts', '**/visualiser.spec.ts', '**/visualiser-compatibility.spec.ts', '**/shopping-experience.spec.ts', '**/reliability.spec.ts', '**/loading.spec.ts'], use: { ...settings, colorScheme },
     }))),
   ],
 });

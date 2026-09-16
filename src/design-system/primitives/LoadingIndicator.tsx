@@ -13,7 +13,7 @@ const LOADING_ICONS = [
 /** Honest progress feedback: mounted only while work is pending. */
 export function LoadingIndicator({ label = 'Loading', overlay = false, delayed = false }: { label?: string; overlay?: boolean; delayed?: boolean }) {
   return <div className={`loading-indicator${overlay ? ' loading-indicator-overlay' : ''}${delayed ? ' loading-indicator-delayed' : ''}`}
-    role="status" aria-label={label} style={{ background: tokens.charcoal, color: tokens.onDark, fontFamily: tokens.body }}>
+    role="status" aria-label={label} style={{ background: overlay ? undefined : tokens.charcoal, color: tokens.onDark, fontFamily: tokens.body }}>
     <div className="loading-indicator-content">
       <div className="loading-indicator-mark" aria-hidden="true">
         {LOADING_ICONS.map((icon, index) => <svg key={icon.name} className="loading-indicator-icon"

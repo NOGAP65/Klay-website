@@ -145,7 +145,9 @@ export function ShopPhotoLayers({ photo: selectedPhoto, ...selection }: Props) {
   }, [selectedPhoto, attempt]);
   const hasFailed = failure === selectedPhoto;
   return <div style={{ position: 'absolute', inset: 0 }} aria-busy={loaded !== selectedPhoto && !hasFailed}>
-    {loaded && <LoadedPhotoLayers photo={loaded} {...selection} />}
+    {loaded && <div data-preview-loading={loaded !== selectedPhoto && !hasFailed} style={{ position: 'absolute', inset: 0 }}>
+      <LoadedPhotoLayers photo={loaded} {...selection} />
+    </div>}
     {hasFailed ? <div role="alert" style={{ position: 'absolute', inset: 0, display: 'grid', placeContent: 'center', padding: space.group, gap: space.item, background: tokens.charcoal, color: tokens.onDark, textAlign: 'center' }}>
       <p>This photo couldn’t load.</p>
       <button type="button" onClick={() => { setFailure(null); setAttempt(value => value + 1); }} style={{ minHeight: 44, background: tokens.accent, color: tokens.onAccent, padding: `${space.snug}px ${space.group}px` }}>Retry photo</button>

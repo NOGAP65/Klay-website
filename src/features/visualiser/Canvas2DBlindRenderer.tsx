@@ -3268,6 +3268,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
     <canvas
       ref={canvasRef}
       data-render-surface="blind"
+      data-preview-loading={preview.loading}
       data-render-ready={!preview.loading && !preview.failed ? 'true' : 'false'}
       style={{
         width: '100%',

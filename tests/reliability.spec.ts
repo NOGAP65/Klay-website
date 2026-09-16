@@ -8,76 +8,6 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ body: '', contentType: 'text/css' }));
 });
 
-test('room loading is visible, respects reduced motion and recovers from network failure', async ({ page }, info) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  let release!: () => void;
-  const gate = new Promise<void>(resolve => { release = resolve; });
-  await page.route('**/images/visualiser/preview.webp', async route => { await gate; await route.abort(); });
-  try {
-    await page.goto('/visualiser', { waitUntil: 'domcontentloaded' });
-    const loading = page.getByRole('status', { name: 'Loading blinds', exact: true });
-    await expect(loading).toBeVisible();
-    await expect(loading).toHaveCSS('background-color', 'rgb(48, 48, 48)');
-    await expect(loading.locator('.loading-indicator-icon').first()).toHaveCSS('animation-name', 'none');
-    await expect(loading.locator('.loading-indicator-icon').first()).toHaveCSS('opacity', '1');
-    await expect(loading.locator('.loading-indicator-icon').nth(1)).toHaveCSS('opacity', '0');
-    await page.screenshot({ path: info.outputPath('gold-loader.png') });
-    release();
-    await expect(page.getByRole('alert')).toContainText('load');
-    await page.unroute('**/images/visualiser/preview.webp');
-    await page.getByRole('button', { name: 'Try again', exact: true }).click();
-    await expect(page.locator('canvas[data-render-surface="blind"]')).toHaveAttribute('data-render-ready', 'true');
-    await expect(page.locator('.loading-indicator')).toHaveCount(0);
-  } finally { release(); }
-});
-
-test('render loading cycles through four product icons and stops as soon as the room is ready', async ({ page }, info) => {
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  let release!: () => void;
-  const gate = new Promise<void>(resolve => { release = resolve; });
-  await page.route('**/images/visualiser/preview.webp', async route => { await gate; await route.continue(); });
-  try {
-    await page.goto('/visualiser', { waitUntil: 'domcontentloaded' });
-    const loading = page.getByRole('status', { name: 'Loading blinds', exact: true });
-    await expect(loading).toBeVisible();
-    const icons = loading.locator('.loading-indicator-icon');
-    await expect(icons).toHaveCount(4);
-    const observed = new Set<string>();
-    await expect.poll(async () => {
-      for (const name of await icons.evaluateAll(elements => elements
-        .filter(element => Number(getComputedStyle(element).opacity) > .9)
-        .map(element => element.getAttribute('data-loading-icon')!))) observed.add(name);
-      return [...observed].sort();
-    }, { timeout: 9_000, intervals: [100] }).toEqual(['Blinds', 'Curtains', 'Shelving', 'Wardrobes']);
-    await page.screenshot({ path: info.outputPath('cycling-product-loader.png') });
-    release();
-    await expect(page.locator('canvas[data-render-surface="blind"]')).toHaveAttribute('data-render-ready', 'true');
-    await expect(loading).toHaveCount(0);
-  } finally { release(); }
-});
-
-test('curtain code download and rapid category changes finish with the chosen preview', async ({ page }) => {
-  const errors: string[] = [];
-  page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/visualiser');
-  await expect(page.locator('canvas[data-render-surface="blind"]')).toHaveAttribute('data-render-ready', 'true');
-  let release!: () => void;
-  const gate = new Promise<void>(resolve => { release = resolve; });
-  await page.route(/\/assets\/Canvas2DCurtainRenderer-[^/]+\.js/, async route => { await gate; await route.continue(); });
-  try {
-    await page.getByRole('button', { name: 'Curtains', exact: true }).click();
-    await expect(page.getByRole('status', { name: 'Loading curtains', exact: true })).toBeVisible();
-    release();
-    await expect(page.locator('canvas[data-render-surface="curtain"]')).toBeVisible();
-    await expect(page.locator('.loading-indicator')).toHaveCount(0);
-    for (const name of ['Blinds', 'Curtains', 'Blinds', 'Curtains']) await page.getByRole('button', { name, exact: true }).click();
-    await expect(page.locator('canvas[data-render-surface="curtain"]')).toBeVisible();
-    await expect(page.locator('.loading-indicator')).toHaveCount(0);
-    await expect(page.getByText('Preparing your preview…', { exact: true })).toHaveCount(0);
-    expect(errors).toEqual([]);
-  } finally { release(); }
-});
-
 test('failed shop photography can be retried without losing the configuration', async ({ page }) => {
   await page.route(/\/images\/shop\//, route => route.abort());
   await page.goto('/products?q=shelving');
@@ -114,13 +44,14 @@ test('a missing fabric mask offers retry instead of a blank or incorrectly colou
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
-test('download cannot export an old frame while the selected fabric is still loading', async ({ page }) => {
+test('download cannot export an old frame while the selected fabric is still loading', async ({ page }, info) => {
   await page.goto('/visualiser');
   await page.getByRole('button', { name: 'Visualise in your own room', exact: true }).click();
   await page.getByRole('button', { name: 'Use Coastal bedroom', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm outline', exact: true }).click();
   const canvas = page.locator('canvas[data-render-surface="blind"]');
   await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+  const previousFrame = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
   await page.route('**/essence-cyclone-texture.webp', async route => { await gate; await route.continue(); });
@@ -128,12 +59,17 @@ test('download cannot export an old frame while the selected fabric is still loa
   page.on('download', () => { downloads++; });
   try {
     await page.getByRole('button', { name: 'Essence Cyclone', exact: true }).click();
-    await expect(page.getByRole('status', { name: 'Loading blinds', exact: true })).toBeVisible();
+    const loading = page.getByRole('status', { name: 'Loading blinds', exact: true });
+    await expect(loading).toBeVisible();
+    await expect(canvas).toHaveCSS('filter', 'blur(4px)');
+    expect(await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL()) === previousFrame).toBe(true);
+    await page.screenshot({ path: info.outputPath('blind-photo-loading.png') });
     await page.getByRole('button', { name: 'Download', exact: true }).click();
     await expect(page.getByText('Wait for your preview to finish loading, then download.')).toBeVisible();
     expect(downloads).toBe(0);
     release();
     await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+    await expect(canvas).toHaveCSS('filter', 'none');
     const downloaded = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Download', exact: true }).click();
     expect((await downloaded).suggestedFilename()).toContain('cyclone');

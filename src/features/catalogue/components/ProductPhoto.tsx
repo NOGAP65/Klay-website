@@ -15,7 +15,7 @@ export function ProductPhoto({ src, alt, style }: { src?: string; alt: string; s
     return () => { isActive = false; };
   }, [src, attempt]);
   return <>
-    {loaded && <img src={loaded} alt={alt} style={style} />}
+    {loaded && <img src={loaded} alt={alt} style={style} data-preview-loading={loaded !== src && failed !== src} />}
     {failed === src ? <div role="alert" style={{ position: 'absolute', inset: 0, zIndex: 26, display: 'grid', placeContent: 'center', gap: space.item, padding: space.group, background: tokens.charcoal, color: tokens.onDark }}>
       <p>This photo couldn’t load.</p>
       <button type="button" onClick={() => { setFailed(''); setAttempt(value => value + 1); }} style={{ minHeight: 44 }}>Retry photo</button>

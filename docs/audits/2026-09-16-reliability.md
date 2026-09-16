@@ -29,6 +29,14 @@ Final production-build run: **215 passed, 2 intentionally skipped, 0 failed**, a
 
 Screenshots inspected include the gold loading state, Cyclone shop fabric, forced-dark roller fabric/hardware, 320px Android layout and landscape WebKit layout. The report, traces and screenshots remain in the ignored `test-results/` and `playwright-report/` directories; the source regression tests are versionable. No production push was performed during this audit.
 
+## Photo-preserving loading follow-up
+
+Loading now uses a lightly dimmed, blurred photograph with a compact charcoal and gold icon panel. Existing shop and visualiser canvases retain their previous frame while new assets arrive; a decoded room backdrop remains visible during category changes and lazy renderer downloads. The blur is applied directly to the image surfaces because the mobile WebKit screenshot did not consistently show backdrop filtering. Completed product surfaces have no blur, and loading has no minimum display duration. The icons remain static for reduced-motion users.
+
+A slow preset-room change also exposed an outline-confirmation race: confirmation is now disabled while a replacement photo is pending or not yet synchronised with the trace state.
+
+Final targeted production-build checks: **18 passed** across desktop Chromium, Android dark-mode emulation and iPhone/WebKit dark-mode emulation. These cover held room, code and fabric requests; picture retention; clearing blur and loaders when ready; four cycling icons; reduced motion; network retry; rapid category changes; and blocking downloads/outline confirmation for pending selections. Desktop and mobile screenshots were inspected. Type checking, the lint regression gate, production build and performance budgets pass.
+
 ## Limits
 
 This is a local production-build audit using Chromium/Edge and Playwright WebKit, desktop/Android/iPhone metrics, light/dark preferences, automatic darkening, narrow/landscape/tablet viewports and simulated missing graphics/browser APIs. It is not physical-device certification for every Android GPU or iOS version. Retest the reported phone with the deployed build. OS-wide colour inversion, display filters and screen calibration are outside website control. WebKit emulation is not the installed Safari application on an iPhone. No live payment, order or email was sent; API requests are intercepted in browser tests. Stripe integration and the cybersecurity audit remain separate work.

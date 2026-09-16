@@ -363,7 +363,7 @@ export default function Wardrobe3D({
       <p>We couldn’t load this preview.</p>
       <button type="button" onClick={() => setRetry(value => value + 1)}>Try again</button>
     </div>}
-    <div ref={hostRef} aria-label="Interactive 3D product preview" style={{ width: '100%', height: '100%', minHeight: 0 }} />
+    <div ref={hostRef} data-preview-loading={!isReady && !hasError} aria-label="Interactive 3D product preview" style={{ width: '100%', height: '100%', minHeight: 0 }} />
     <JoineryOrbitControl angle={angle} isReady={isReady} onRotate={degrees => moveViewRef.current?.(degrees)} onReset={() => moveViewRef.current?.(null)} />
   </div>;
 }

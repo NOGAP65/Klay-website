@@ -1068,6 +1068,7 @@ export default function KlayConfigurator({
   };
 
   const handleConfirmTrace = (corners: Point[]) => {
+    if (isLoadingPhoto || hookPhotoUrl !== store.photoUrl) return;
     if (!photoBitmap || !isValidTrace(corners, photoBitmap.width, photoBitmap.height)) {
       setTraceError('Keep the four corners inside your photo and the outline uncrossed. Then confirm again.');
       return;
@@ -1301,7 +1302,7 @@ export default function KlayConfigurator({
     // top of the photo and could cover the very corner pins being dragged.
     <>
       <Button onClick={handleChangePhoto}>Change photo</Button>
-      <Button variant="primary" onClick={() => overlayRef.current?.confirm()}>
+      <Button variant="primary" disabled={isLoadingPhoto || hookPhotoUrl !== store.photoUrl} onClick={() => overlayRef.current?.confirm()}>
         Confirm outline
       </Button>
     </>
@@ -1433,7 +1434,11 @@ export default function KlayConfigurator({
       {uploadError && <div role="alert" style={{ padding: 16, color: tokens.onDark }}><p>{uploadError}</p><Button onClick={retryPhoto}>Try again</Button></div>}
       {showTraceState && traceError && <p role="alert" style={{ padding: space.item, color: tokens.onDark }}>{traceError}</p>}
       {downloadError && <p role="status" style={{ padding: space.item, color: tokens.onDark }}>{downloadError}</p>}
-      <div ref={mediaBoxRef} style={{ position: 'relative', width: '100%', aspectRatio: String(photoRatio), minHeight: showUploadState ? 310 : undefined }}>
+      <div ref={mediaBoxRef} style={{ position: 'relative', width: '100%', aspectRatio: String(photoRatio), minHeight: showUploadState ? 310 : undefined, background: showUploadState ? undefined : tokens.paper }}>
+      {/* Keep the decoded room visible while a category or lazy renderer changes.
+          Existing canvases retain their last frame during fabric loading. */}
+      {hookPhotoUrl && !showUploadState && <img src={hookPhotoUrl} alt="" aria-hidden="true" data-preview-backdrop="" data-preview-loading="true"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />}
       {isLoadingPhoto && !isLoadingDefault && <LoadingIndicator overlay label="Loading room" />}
       {isLoadingDefault ? <LoadingIndicator overlay label={`Loading ${store.productCategory === 'curtain' ? 'curtains' : store.productCategory === 'blind' ? 'blinds' : 'preview'}`} /> : showUploadState ? (
         /* STATE 1 — no photo yet, or the user asked to visualise their own room */

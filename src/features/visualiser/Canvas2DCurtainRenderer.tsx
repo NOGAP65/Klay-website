@@ -1976,11 +1976,13 @@ function WebGLCurtainRenderer({
       <canvas
         ref={bgRef}
         data-render-surface="curtain-backdrop"
+        data-preview-loading={preview.loading}
         style={{ width: '100%', height: 'auto', display: 'block' }}
       />
       <canvas
         ref={threeRef}
         data-render-surface="curtain"
+        data-preview-loading={preview.loading}
         data-render-ready={!preview.loading && !preview.failed ? 'true' : 'false'}
         data-render-mode="webgl"
         style={{
@@ -1993,6 +1995,7 @@ function WebGLCurtainRenderer({
         }}
       />
       <canvas ref={foregroundRef} data-render-surface="curtain-foreground"
+        data-preview-loading={preview.loading}
         style={{position:'absolute',inset:0,width:'100%',height:'auto',pointerEvents:'none'}} />
       <PreviewStatus {...preview} label="Loading curtains" />
     </div>

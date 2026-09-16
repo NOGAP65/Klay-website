@@ -49,6 +49,7 @@ export function FabricPhoto({ shot, colour, hardware, weave, alt, position, lift
   useEffect(() => () => { if (layer.current) layer.current.width = layer.current.height = 0; }, []);
   return <>
     <canvas ref={canvas} role="img" aria-label={alt} data-fabric-photo={shot.product}
+      data-preview-loading={ready !== key && failed !== key}
       data-fabric-texture={weave} data-fabric-inset={fabricScanInset(weave) || undefined}
       data-render-ready={ready === key ? 'true' : 'false'}
       style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', objectPosition: position,

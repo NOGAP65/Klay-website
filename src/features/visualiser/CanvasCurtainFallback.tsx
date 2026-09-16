@@ -33,7 +33,7 @@ export default function CanvasCurtainFallback({ tl, tr, br, bl, fabricType, hard
     return () => { isCancelled = true; };
   }, [photoUrl, colour, fabricType, hardwareColour, mount, openness, corners, attempt, ready, fail]);
   return <div style={{ position: 'relative', width: '100%', aspectRatio: `${canvasWidth} / ${canvasHeight}` }}>
-    <canvas ref={canvasRef} data-render-surface="curtain" data-render-mode="canvas2d" data-render-ready={!preview.loading && !preview.failed ? 'true' : 'false'} style={{ width: '100%', height: 'auto', display: 'block' }} />
+    <canvas ref={canvasRef} data-preview-loading={preview.loading} data-render-surface="curtain" data-render-mode="canvas2d" data-render-ready={!preview.loading && !preview.failed ? 'true' : 'false'} style={{ width: '100%', height: 'auto', display: 'block' }} />
     <PreviewStatus {...preview} label="Loading curtains" />
   </div>;
 }
