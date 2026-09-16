@@ -247,7 +247,7 @@ function Select<T extends string | number>({
         border: `1px solid ${sk.edgeActive}`,
         // The chosen width IS the value, so the box wears the selected pill's
         // treatment rather than an unselected one's — it is never empty.
-        background: sk.fillActive,
+        backgroundColor: sk.fillActive,
         color: sk.onFillActive,
         ...typeScale.label,
         letterSpacing: 'normal',
@@ -306,7 +306,7 @@ function Swatch({
         borderRadius: radius.sm,
         cursor: 'pointer',
         padding: 0,
-        background: hex,
+        backgroundColor: hex,
         backgroundImage: texture ? `url("${texture}")` : undefined,
         backgroundSize: 'cover',
         border: `1px solid ${sk.edge}`,

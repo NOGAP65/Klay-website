@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="color-scheme" content="only light" />
     <link rel="icon" type="image/png" href="/images/brand/klay-mark.png" />
     <meta name="theme-color" content="#303030" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -61,7 +62,8 @@
 
       html {
         scroll-behavior: smooth;
-        color-scheme: light;
+        /* Fabric samples and room previews must retain their actual colours. */
+        color-scheme: only light;
       }
 
       @media (prefers-reduced-motion: reduce) {

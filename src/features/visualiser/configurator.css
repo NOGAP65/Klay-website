@@ -1,0 +1,20 @@
+.visualiser-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+.visualiser-actions .visualiser-action {
+  min-height: 44px;
+  max-width: 100%;
+  height: auto !important;
+  white-space: normal !important;
+  line-height: 1.35 !important;
+  padding: 10px 12px !important;
+}
+@media (max-width: 480px) {
+  .visualiser-actions .visualiser-action { flex: 1 1 110px; }
+}

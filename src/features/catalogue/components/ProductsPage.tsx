@@ -41,7 +41,11 @@ export default function ProductsPage() {
     setSel(current => ({ ...current, [item.id]: withChoice(item, current[item.id] ?? defaultSelection(item), field, choice) }));
   }, []);
   const updateBrowse = (next: Partial<BrowseState>, shouldReplace = false) => {
-    setSearchParams(current => writeBrowseState(current, { ...readBrowseState(current), ...next }),
+    // BrowserRouter updates history before its concurrent React render commits.
+    // Read that current URL so a fast search/sort cannot resurrect cleared filters
+    // from the previous render. setSearchParams callbacks are not queued like setState.
+    const current = new URLSearchParams(window.location.search);
+    setSearchParams(writeBrowseState(current, { ...readBrowseState(current), ...next }),
       { replace: shouldReplace, preventScrollReset: true });
   };
   const clearAll = () => updateBrowse({ facets: EMPTY_FACETS, query: '' });

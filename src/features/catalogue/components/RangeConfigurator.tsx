@@ -267,7 +267,7 @@ function Swatch({
         padding: 0,
         borderRadius: radius.sm,
         cursor: 'pointer',
-        background: choice.hex,
+        backgroundColor: choice.hex,
         backgroundImage: [
           choice.mirror === 'mixed' ? 'linear-gradient(110deg, #c2ccca 0%, #f6f8f6 28%, #a6b3b1 49%, transparent 50%)'
             : choice.mirror === 'all' ? 'linear-gradient(110deg, #c2ccca, #f6f8f6 45%, #a6b3b1)' : '',

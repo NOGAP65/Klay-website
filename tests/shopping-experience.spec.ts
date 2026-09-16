@@ -5,6 +5,23 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ body: '', contentType: 'text/css' }));
 });
 
+test('clearing filters and typing before React commits never restores the old category', async ({ page }) => {
+  await page.goto('/products?area=Outdoor');
+  await expect(page.locator('.shop-result-card')).toHaveCount(4);
+  // Deliver both real DOM events in one task, modelling input arriving while a
+  // slower phone is still preparing the cleared result list.
+  await page.evaluate(() => {
+    const clear = [...document.querySelectorAll('button')].find(button => button.textContent === 'Clear all');
+    clear!.click();
+    const search = document.querySelector<HTMLInputElement>('input[type="search"]')!;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(search, 'roller blinds');
+    search.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(page).not.toHaveURL(/area=Outdoor/);
+  await expect(page.locator('.shop-result-card')).toHaveCount(1);
+  await expect(page.getByRole('heading', { name: 'Roller Blinds', exact: true })).toBeVisible();
+});
+
 test('requested guidance contains focus, explains measuring and applies the right product filters', async ({ page }, info) => {
   await page.goto('/products');
   const trigger = page.getByRole('button', { name: 'Help me choose' });

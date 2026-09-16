@@ -1,9 +1,14 @@
-import { loadImage } from '@/shared';
-import { useLayoutEffect, useEffect, useRef } from 'react';
+import { useLayoutEffect, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { computeHomography } from './homography';
+
+import { loadImage } from '@/shared';
+
+import CanvasCurtainFallback from './CanvasCurtainFallback';
 import { foldLean, foldDepth, MIN_FOLD_PITCH } from './curtainCloth';
+import { hasCorruptCurtainFrame } from './curtainFrameHealth';
 import { createCurtainLighting, type CurtainLighting } from './curtainLighting';
+import { computeHomography } from './homography';
+import { PREVIEW_CAPTURE_EVENT } from './previewExport';
 
 // ---------------------------------------------------------------------------
 // WAVE FOLD CURTAINS
@@ -41,7 +46,7 @@ interface Point {
   y: number;
 }
 
-interface Canvas2DCurtainRendererProps {
+export interface Canvas2DCurtainRendererProps {
   tl: Point;
   tr: Point;
   br: Point;
@@ -1017,26 +1022,30 @@ float visibility() {
   return lit / 9.0;
 }
 void main() {
-  vec3 N = normalize(vNormal);
+  vec3 N = vNormal * inversesqrt(max(dot(vNormal, vNormal), 0.000001));
   if (!gl_FrontFacing) N = -N;
   if (N.z < 0.0) N = -N;
   float tooth = texture2D(uTexture, vUv * uTexRepeat).r - 0.5;
   vec3 L = normalize(vec3(-0.75, 0.45, 1.0));
-  float facing = max(N.z, 0.0);
+  float facing = clamp(N.z, 0.0, 1.0);
   float direct = max(dot(N,L), 0.0);
   // Use the shop photograph's actual fold falloff as the resting light field.
   // Every photographed valley is registered to one geometric return, so the
   // light deforms with the cloth instead of tiling unrelated stripes over it.
   vec3 foldPhoto = texture2D(uFoldPhoto, vec2(mix(vPhotoUv.x,1.0-vPhotoUv.x,uPhotoMirror),vPhotoUv.y)).rgb;
   float photoLight = dot(foldPhoto,vec3(0.299,0.587,0.114));
-  float cavity = pow(max(0.0, -vDepth), 1.5);
+  float depth = max(0.0, -vDepth);
+  float cavity = depth * sqrt(depth);
   float gathered = smoothstep(0.0,1.0,vCompression);
   float liveLight = (0.78 + 0.22 * direct) * mix(0.72,1.0,visibility());
   float shade = (0.10 + photoLight) * mix(1.0,liveLight,gathered * 0.75);
   shade *= 1.0 - cavity * gathered * 0.12;
   vec3 surface = uColour * uRoomTint * shade * (1.0 + tooth * 0.10) * uRoomExposure;
   float dark = 1.0 - smoothstep(0.05, 0.5, dot(uColour, vec3(0.299,0.587,0.114)));
-  float fibre = pow(1.0 - facing, 2.0) * direct * 0.04;
+  // GLSL pow is undefined for negative bases, even with exponent 2. Normal
+  // rounding on mobile GPUs can produce NaNs and black fold stripes here.
+  float grazing = 1.0 - facing;
+  float fibre = grazing * grazing * direct * 0.04;
   surface += vec3(fibre * dark);
   if (uIsSheer > 0.5) {
     float path = texture2D(uDensity, vBackdrop).r * 12.0;
@@ -1114,7 +1123,8 @@ void main() {
   float slot = 1.0 - smoothstep(0.035,0.13,y);
   float diffuse = 0.89 + upper * 0.09 - lower * 0.16 - slot * 0.22;
   float spec = 0.018 + upper * 0.038;
-  float reflectedBand = exp(-pow((y-0.70)/0.16,2.0));
+  float bandDistance = (y-0.70)/0.16;
+  float reflectedBand = exp(-bandDistance * bandDistance);
   spec += uIsChrome * (0.12 * reflectedBand + 0.06 * upper);
   vec3 col = uColour * uRoomTint * diffuse + vec3(spec);
   gl_FragColor = vec4(clamp(col,0.0,1.0),1.0);
@@ -1157,10 +1167,12 @@ function buildDetailTexture(path: string): Promise<FabricTexture> {
     else ctx.drawImage(img, 0, 0, 512, 1024);
     const pixels = ctx.getImageData(0,0,512,1024);
     const low = document.createElement('canvas');
-    low.width = 512; low.height = 1024;
+    low.width = 24; low.height = 48;
     const lowCtx = low.getContext('2d', { willReadFrequently: true })!;
-    lowCtx.filter = 'blur(18px)'; lowCtx.drawImage(canvas,0,0);
-    const smooth = lowCtx.getImageData(0,0,512,1024).data;
+    // Resampling works on older Safari too; Canvas2D.filter is not universal.
+    lowCtx.drawImage(canvas, 0, 0, low.width, low.height);
+    ctx.drawImage(low, 0, 0, 512, 1024);
+    const smooth = ctx.getImageData(0, 0, 512, 1024).data;
     for (let i=0;i<pixels.data.length;i+=4) {
       const value = (pixels.data[i]+pixels.data[i+1]+pixels.data[i+2]) / 3;
       const base = (smooth[i]+smooth[i+1]+smooth[i+2]) / 3;
@@ -1207,7 +1219,14 @@ interface Layout {
   shutPanelWidth: number;
 }
 
-export default function Canvas2DCurtainRenderer({
+export default function Canvas2DCurtainRenderer(props: Canvas2DCurtainRendererProps) {
+  const [isFallback, setFallback] = useState(false);
+  return isFallback
+    ? <CanvasCurtainFallback {...props} />
+    : <WebGLCurtainRenderer {...props} onUnavailable={() => setFallback(true)} />;
+}
+
+function WebGLCurtainRenderer({
   tl, tr, br, bl,
   fabricType,
   hardwareColour,
@@ -1217,7 +1236,8 @@ export default function Canvas2DCurtainRenderer({
   canvasWidth,
   canvasHeight,
   photoUrl,
-}: Canvas2DCurtainRendererProps) {
+  onUnavailable,
+}: Canvas2DCurtainRendererProps & { onUnavailable: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLCanvasElement>(null);
   const threeRef = useRef<HTMLCanvasElement>(null);
@@ -1659,6 +1679,8 @@ export default function Canvas2DCurtainRenderer({
         powerPreference: 'low-power',
       });
       renderer.setPixelRatio(1);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.debug.onShaderError = () => onUnavailable();
       renderer.setSize(threeCanvas.width, threeCanvas.height, false);
       renderer.setClearColor(0x000000, 0);
       rendererRef.current = renderer;
@@ -1840,9 +1862,10 @@ export default function Canvas2DCurtainRenderer({
         material.uniforms.uDensity.value = lighting.densityMap;
       }
       draw(opennessRef.current, 0);
+      if (hasCorruptCurtainFrame(renderer.getContext(), colourRef.current, H, [tl.y, tr.y, br.y, bl.y])) onUnavailable();
     };
 
-    void init().catch(error => { if (!cancelled) console.error('Curtain preview could not load', error); });
+    void init().catch(() => { if (!cancelled) onUnavailable(); });
 
     return () => {
       cancelled = true;
@@ -1896,7 +1919,27 @@ export default function Canvas2DCurtainRenderer({
       if (isSheer) material.uniforms.uOpacity.value = sheerOpacity(colour);
     }
     renderer.render(scene, camera);
+    if (hasCorruptCurtainFrame(renderer.getContext(), colour, canvasHeight, [tl.y, tr.y, br.y, bl.y])) onUnavailable();
+    // Trace changes rebuild and validate the scene in init; this effect only recolours it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colour, fabricType]);
+
+  useEffect(() => {
+    const canvas = threeRef.current;
+    const capture = () => {
+      const renderer = rendererRef.current, scene = sceneRef.current, camera = cameraRef.current;
+      if (renderer && scene && camera) renderer.render(scene, camera);
+    };
+    // A released GPU context must not leave an unresponsive or striped preview.
+    // The photograph-based renderer keeps working without any WebGL support.
+    const lost = (event: Event) => { event.preventDefault(); onUnavailable(); };
+    canvas?.addEventListener(PREVIEW_CAPTURE_EVENT, capture);
+    canvas?.addEventListener('webglcontextlost', lost);
+    return () => {
+      canvas?.removeEventListener(PREVIEW_CAPTURE_EVENT, capture);
+      canvas?.removeEventListener('webglcontextlost', lost);
+    };
+  }, [onUnavailable]);
 
   useEffect(() => {
     return () => {
@@ -1921,7 +1964,6 @@ export default function Canvas2DCurtainRenderer({
         rendererRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -1935,6 +1977,7 @@ export default function Canvas2DCurtainRenderer({
       <canvas
         ref={threeRef}
         data-render-surface="curtain"
+        data-render-mode="webgl"
         style={{
           position: 'absolute',
           top: 0,

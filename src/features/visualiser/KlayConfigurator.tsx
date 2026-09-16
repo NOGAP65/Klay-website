@@ -1,14 +1,20 @@
-import { useShallow } from 'zustand/react/shallow';
-import { fabricByName } from '@/features/fabrics';
 import { lazy, Suspense, useEffect, useRef, useState, type ComponentProps } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+
 import { radius, tokens, space, type as typeScale } from '@/ds';
-import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from './useVisualiserStore';
-import { usePhotoUpload } from './usePhotoUpload';
-import { WINDOW_ROOMS, defaultWindowRoom, windowRoomFor } from './roomPresets';
+import { fabricByName } from '@/features/fabrics';
+
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
-import type { RenderedArea } from './Canvas2DBlindRenderer';
-import { BlindWindowPreview, CurtainWindowPreview } from './WindowPreview';
+import { exportPreview } from './previewExport';
+import { WINDOW_ROOMS, defaultWindowRoom, windowRoomFor } from './roomPresets';
+import { usePhotoUpload } from './usePhotoUpload';
+import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from './useVisualiserStore';
 import WallColourChip from './WallColourChip';
+import { BlindWindowPreview, CurtainWindowPreview } from './WindowPreview';
+
+import type { RenderedArea } from './Canvas2DBlindRenderer';
+
+import './configurator.css';
 
 const LazyWardrobeRoomRenderer = lazy(() => import('./WardrobeRoomRenderer'));
 function WardrobeRoomRenderer(props: ComponentProps<typeof LazyWardrobeRoomRenderer>) {
@@ -110,6 +116,7 @@ function Button({
   const fill = VARIANT_FILL[variant];
   return (
     <button
+      className="visualiser-action"
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
       aria-label={ariaLabel}
@@ -1072,12 +1079,15 @@ export default function KlayConfigurator({
   };
 
   const handleDownload = () => {
-    const canvas = rendererContainerRef.current?.querySelector('canvas');
-    if (!canvas) return;
+    const container = rendererContainerRef.current;
+    if (!container) return;
+    const preview = exportPreview(container);
+    if (!preview) return;
     const colourSlug = store.fabricColour.toLowerCase().replace(/\s+/g, '-');
     const link = document.createElement('a');
-    link.download = `klay-blind-${store.blindType}-${colourSlug}-${store.windowSize}.jpg`;
-    link.href = canvas.toDataURL('image/jpeg', 0.95);
+    const isCurtain = store.productCategory === 'curtain';
+    link.download = `klay-${isCurtain ? 'curtain' : 'blind'}-${isCurtain ? store.curtainType : store.blindType}-${colourSlug}-${isCurtain ? store.curtainSize : store.windowSize}.jpg`;
+    link.href = preview;
     link.click();
   };
 
@@ -1571,7 +1581,7 @@ export default function KlayConfigurator({
             borderTop: `1px solid ${tokens.onDarkLine}`,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: space.sm }}>{footerButtons}</div>
+          <div className="visualiser-actions">{footerButtons}</div>
         </div>
       )}
     </div>
