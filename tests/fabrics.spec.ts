@@ -32,6 +32,8 @@ test('front-feed cloth stays on the barrel circumference and the weight never re
       assert.ok(distance(g.hemL, g.tangentL) > 2 * g.radius * g.leftH, 'Hem remains outside the barrel');
       assert.ok(Math.abs(distance(g.hemL, g.railL) - railHeight) < .15, 'Weight retains its thickness at initial opening');
       assert.ok(g.radius <= previous.radius, 'Roll shrinks as cloth is paid out');
+      assert.ok(Math.abs(g.radius * g.hubScale - previous.radius * previous.hubScale) < 1e-10,
+        'Only wound cloth changes diameter; the hardware hub cannot inflate');
       assert.ok(distance(g.hemL, opening[3]) <= distance(previous.hemL, opening[3]), 'Hem lowers continuously');
       previous = g;
     }

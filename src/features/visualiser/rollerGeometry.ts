@@ -22,13 +22,14 @@ export function rollerGeometry(corners: Point[], position: number) {
   // changing the diameter (45 mm bare tube, 65 mm with the drop wound on).
   const radius = Math.sqrt(45 ** 2 + (65 ** 2 - 45 ** 2) * (1 - p)) / 3600;
   const crownAngle = -Math.atan2(1, VIEW_PITCH);
-  const circle = (side: 0 | 1, angle: number): Point => {
+  const circle = (side: 0 | 1, angle: number, radialScale = 1): Point => {
     const origin = side === 0 ? tl : tr, bottom = side === 0 ? bl : br;
     const height = side === 0 ? leftH : rightH;
     const down = Math.sin(angle) - VIEW_PITCH * Math.cos(angle);
-    const front = .9 * yaw * Math.cos(angle) * radius * height;
-    return [origin[0] + (bottom[0] - origin[0]) * radius * down + along[0] * front,
-      origin[1] + (bottom[1] - origin[1]) * radius * down + along[1] * front];
+    const currentRadius = radius * radialScale;
+    const front = .9 * yaw * Math.cos(angle) * currentRadius * height;
+    return [origin[0] + (bottom[0] - origin[0]) * currentRadius * down + along[0] * front,
+      origin[1] + (bottom[1] - origin[1]) * currentRadius * down + along[1] * front];
   };
   const tangentL = circle(0, 0), tangentR = circle(1, 0);
   const crownL = circle(0, crownAngle), crownR = circle(1, crownAngle);
@@ -42,7 +43,10 @@ export function rollerGeometry(corners: Point[], position: number) {
   const cloth: Point[] = [tangentL, tangentR, hemR, hemL];
   const crown: Point[] = [crownL, crownR, tangentR, tangentL];
   const coverage: Point[] = [crownL, crownR, tangentR, hemR, hemL, tangentL];
-  return { p, radius, yaw, leftH, rightH, drop, crownAngle, circle,
+  // A small fixed hub sits inside the cloth-wrapped end, rather than a white
+  // disc expanding to the changing outer diameter of the wound fabric.
+  const hubScale = (31.5 / 3600) / radius;
+  return { p, radius, hubScale, yaw, leftH, rightH, drop, crownAngle, circle,
     tangentL, tangentR, crownL, crownR, hemL, hemR, railL, railR, cloth, crown, coverage };
 }
 

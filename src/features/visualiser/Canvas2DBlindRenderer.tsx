@@ -1298,19 +1298,20 @@ const drawCassette = (
   for (const point of [g.crownR, bottomR, bottomL]) ctx.lineTo(...point);
   ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = hardware;
-  ctx.strokeStyle = shadeHex(hardware, -.12);
-  ctx.lineWidth = .7;
   for (const side of [0, 1] as const) {
     if (Math.abs(g.yaw) > .05 && (side === 0 ? g.yaw < 0 : g.yaw > 0)) continue;
-    ctx.beginPath();
-    for (let i = 0; i <= 32; i++) {
-      const point = g.circle(side, i / 32 * Math.PI * 2);
-      if (i === 0) ctx.moveTo(...point); else ctx.lineTo(...point);
+    // Wound fabric surrounds a fixed hardware hub. Painting the whole end in
+    // hardware white made the roll look like a separate white cassette.
+    for (const [radialScale, colour] of [[1, shadeHex(face, -.08)], [g.hubScale, hardware]] as const) {
+      ctx.beginPath();
+      for (let i = 0; i <= 32; i++) {
+        const point = g.circle(side, i / 32 * Math.PI * 2, radialScale);
+        if (i === 0) ctx.moveTo(...point); else ctx.lineTo(...point);
+      }
+      ctx.closePath();
+      ctx.fillStyle = colour;
+      ctx.fill();
     }
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
   }
   ctx.restore();
 };

@@ -1,5 +1,7 @@
 import { fabricScanInset } from '@/features/fabrics';
 
+import { paintRollerFront } from './paintRollerFront';
+
 import type { FabricShot } from '../fabricShots';
 
 export interface FabricPhotoImages {
@@ -64,4 +66,5 @@ export function paintFabricPhoto(canvas: HTMLCanvasElement, layer: HTMLCanvasEle
   pass(images.mask, 'soft-light', shot.sheen * (1 - luma), images.photo);
   pass(images.hardware, 'source-over', 1, hardware);
   pass(images.hardware, 'soft-light', shot.spec, images.photo);
+  if (shot.product === 'roller-blinds') paintRollerFront(ctx, layer, { hardware, isDual: shot.fabric === 'dual' });
 }
