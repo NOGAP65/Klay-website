@@ -3,7 +3,7 @@ import sharp from 'sharp';
 
 import { rollerGeometry } from '../src/features/visualiser/rollerGeometry';
 
-import { portrait, rollBand } from './helpers/visualiserPhoto';
+import { portrait, rollBand, bracketPixels } from './helpers/visualiserPhoto';
 
 import type { Point } from '../src/features/visualiser/homography';
 
@@ -22,6 +22,43 @@ test.beforeEach(async ({ page }, info) => {
     const session = await page.context().newCDPSession(page);
     await session.send('Emulation.setAutoDarkModeOverride', { enabled: true });
   }
+});
+
+test('roller brackets follow the trace and hardware finish without moving as fabric unwinds', async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/visualiser');
+  const corners = await portrait(page, true);
+  const canvas = page.locator('canvas[data-render-surface="blind"]');
+  const slider = page.getByRole('slider');
+  const samples = () => bracketPixels(canvas, corners);
+  for (const type of ['Blockout', 'Dual']) {
+    await page.getByRole('button', { name: type, exact: true }).click();
+    await selectedColour(page, 'Essence Carbon');
+    let initial: number[][] | undefined;
+    for (const position of ['Home', 'End']) {
+      await slider.press(position);
+      await selectedColour(page, 'White');
+      await expect.poll(() => rollBand(canvas, corners)).toBeLessThan(90);
+      await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+      await expect.poll(async () => Math.min(...(await samples()).map(patch => patch.filter(value => value > 200).length))).toBeGreaterThan(4);
+      const white = await samples();
+      await selectedColour(page, 'Black');
+      await expect.poll(async () => {
+        const black = await samples();
+        return Math.min(...white.map((patch, side) => patch.filter((value, index) => value - black[side][index] > 60).length));
+      }).toBeGreaterThan(4);
+      const black = await samples();
+      const mask = white.map((patch, side) => patch.map((value, index) => value - black[side][index] > 60 ? 1 : 0));
+      if (initial) for (let side = 0; side < 2; side++) {
+        const overlap = mask[side].filter((value, index) => value && initial![side][index]).length;
+        expect(overlap / Math.max(1, initial[side].filter(Boolean).length)).toBeGreaterThan(.8);
+      }
+      else initial = mask;
+      await canvas.screenshot({ path: info.outputPath(`${type}-brackets-${position}.png`) });
+    }
+  }
+  expect(errors).toEqual([]);
 });
 
 test('front-roll starts unfolding with continuous cloth and a full-size hem outside the barrel', async ({ page }, info) => {

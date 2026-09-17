@@ -43,3 +43,18 @@ export async function rollBand(canvas: Locator, corners: number[][], offset = -.
   }, { corners, offset });
 }
 
+export async function bracketPixels(canvas: Locator, corners: number[][]) {
+  return canvas.evaluate((source: HTMLCanvasElement, quad) => {
+    const ctx = source.getContext('2d')!;
+    // Fixed photo-space patches above both axle ends, away from the cloth and
+    // weight. A disappearing, moving or fabric-coloured support fails here.
+    return [0, 1].map(side => {
+      const [x, y] = quad[side], bottom = quad[side === 0 ? 3 : 2];
+      const height = Math.hypot(bottom[0] - x, bottom[1] - y);
+      const radius = height * 65 / 3600;
+      const data = ctx.getImageData(Math.floor(x - radius * 1.5), Math.floor(y - radius * 2),
+        Math.ceil(radius * 3), Math.ceil(radius * .9)).data;
+      return Array.from(data).filter((_, index) => index % 4 === 0);
+    });
+  }, corners);
+}

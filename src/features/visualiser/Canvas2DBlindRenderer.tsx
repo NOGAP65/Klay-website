@@ -7,6 +7,7 @@ import { loadImage } from '@/shared';
 import { sampleBlindLighting, blindTextureCoordinates, NEUTRAL_BLIND_LIGHT, type BlindLighting } from './blindLighting';
 import { computeHomography, toColumnMajor, Point } from './homography';
 import { PreviewStatus } from './PreviewStatus';
+import { drawRollerBrackets } from './rollerBrackets';
 import { rollerGeometry, type RollerGeometry } from './rollerGeometry';
 import { normaliseRollerWeave } from './rollerWeave';
 import { usePreviewLoad } from './usePreviewLoad';
@@ -1524,6 +1525,7 @@ const drawBlindArea = (
     // --- DEPTH (pre-fabric) ---
     drawPreFabricDepth(ctx, fabricQuad);
 
+    drawRollerBrackets(ctx, corners, litHardwareHex(hardwareBaseHex(hardwareColourName, safeHardwareColor), lighting));
     drawCassette(ctx, geometry, hardwareColourName, safeHardwareColor, fabricColor, lighting);
 
     // --- FABRIC via WebGL (perspective-correct texture mapping) ---
@@ -1709,6 +1711,7 @@ const drawDualBlindArea = (
   drawBackgroundDiffusion(ctx, photo, W, H, fabricQuad, scaleToBlind(sunscreenDiffusionPx(fabricColor), avgW));
   drawPreFabricDepth(ctx, fabricQuad);
 
+  drawRollerBrackets(ctx, corners, litHardwareHex(hardwareBaseHex(hardwareColourName, safeHardwareColor), lighting), true);
 
   // Paint each complete roller back-to-front, including its weight.
   const drawFabricLayer = (
