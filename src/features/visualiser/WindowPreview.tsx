@@ -9,7 +9,8 @@ const Canvas2DCurtainRenderer = React.lazy(() => import('./Canvas2DCurtainRender
 export function BlindWindowPreview(props: Omit<React.ComponentProps<typeof Canvas2DBlindRenderer>, 'rollPosition'>) {
   const position = useVisualiserStore(s => s.rollPosition);
   const dayPosition = useVisualiserStore(s => s.honeycombDayPosition);
-  return <Canvas2DBlindRenderer {...props} rollPosition={position} honeycombDayPosition={dayPosition} />;
+  const tilt = useVisualiserStore(s => s.slatTilt);
+  return <Canvas2DBlindRenderer {...props} rollPosition={position} honeycombDayPosition={dayPosition} slatTilt={tilt} />;
 }
 export function CurtainWindowPreview(props: Omit<React.ComponentProps<typeof Canvas2DCurtainRenderer>, 'openness'>) {
   const position = useVisualiserStore(s => s.rollPosition);

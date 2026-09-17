@@ -1,13 +1,15 @@
 import { blindLabel, sizeLabel } from '@/core/pricing';
 
-import { HONEYCOMB_TYPES } from '@/features/fabrics';
+import { HONEYCOMB_TYPES, fabricByName } from '@/features/fabrics';
 import { wardrobeModelById, wardrobeHeight, walkInSpecifications, handleFinish } from '@/features/joinery';
 
 import { isJoinery, type useVisualiserStore } from './useVisualiserStore';
+import { isUnpricedBlind } from './windowProducts';
 
 import type { QuoteItem } from '@/core/quoteItems';
 
 type State = ReturnType<typeof useVisualiserStore.getState>;
+const productNames = { honeycomb: 'Honeycomb Blinds', venetian: 'Venetian Blinds', plantation: 'Plantation Shutters' };
 export type VisualiserQuoteConfig = Pick<State, 'productCategory' | 'windows' | 'wardrobeModel'
   | 'wardrobeWidthMm' | 'wardrobeColour' | 'wardrobeHandleFinish'>;
 
@@ -42,13 +44,14 @@ export function visualiserQuoteItems(state: VisualiserQuoteConfig): QuoteItem[] 
     const isCurtain = state.productCategory === 'curtain';
     const isHoneycomb = state.productCategory === 'honeycomb';
     return {
-      name: isCurtain ? `${window.curtainType === 'sheer' ? 'Sheer' : 'Blockout'} Curtains` : isHoneycomb ? 'Honeycomb Blinds' : blindLabel(window.blindType),
+      name: isCurtain ? `${window.curtainType === 'sheer' ? 'Sheer' : 'Blockout'} Curtains` : productNames[state.productCategory as keyof typeof productNames] ?? blindLabel(window.blindType),
       quantity: 1,
       options: [
         { label: 'Window', value: String(index + 1) },
         ...(isHoneycomb ? [{ label: 'Fabric type', value: HONEYCOMB_TYPES.find(type => type.id === window.honeycombType)!.label }] : []),
         { label: 'Fabric', value: window.fabricColour },
-        ...(!isHoneycomb ? [{ label: 'Hardware', value: window.hardwareColour }] : []),
+        ...(state.productCategory === 'venetian' ? [{ label: 'Material', value: fabricByName(window.fabricColour)?.collection ?? 'UltraSlat' }] : []),
+        ...(!isUnpricedBlind(state.productCategory) ? [{ label: 'Hardware', value: window.hardwareColour }] : []),
         { label: 'Size', value: isCurtain ? window.curtainSize : sizeLabel(window.windowSize) },
         { label: 'Operation', value: isCurtain ? window.curtainOperation : window.operation },
         ...(isCurtain ? [{ label: 'Mount', value: window.curtainMount }] : []),

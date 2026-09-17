@@ -2,55 +2,8 @@ import { useSearchParams } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 
 import { tokens } from '@/ds';
-import { KlayConfigurator, VisualiserControls, useVisualiserStore, selectQuoteConfig, VisualiserCartActions, ProductCategory } from '@/features/visualiser';
+import { KlayConfigurator, VisualiserControls, useVisualiserStore, selectQuoteConfig, VisualiserCartActions, VisualiserCategories } from '@/features/visualiser';
 import { useIsMobile } from '@/shared';
-
-
-const CATEGORY_TAB_STYLE = {
-  flex: 1,
-  padding: '12px 16px',
-  fontFamily: tokens.body,
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: '0.2em',
-  textTransform: 'uppercase' as const,
-  border: 'none',
-  cursor: 'pointer',
-  transition: 'background 0.2s ease, color 0.2s ease',
-};
-
-function CategorySwitcher() {
-  const productCategory = useVisualiserStore(s => s.productCategory);
-  const activeTab = productCategory === 'honeycomb' ? 'blind' : productCategory;
-  const setProductCategory = useVisualiserStore(s => s.setProductCategory);
-
-  const tabs: { id: ProductCategory; label: string }[] = [
-    { id: 'blind', label: 'Blinds' },
-    { id: 'curtain', label: 'Curtains' },
-    { id: 'wardrobe', label: 'Wardrobes' },
-    { id: 'shelving', label: 'Shelving' },
-  ];
-
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', marginBottom: 20 }}>
-      {tabs.map(tab => (
-        <button
-          key={tab.id}
-          aria-pressed={activeTab === tab.id}
-          onClick={() => { if (activeTab !== tab.id) setProductCategory(tab.id); }}
-          style={{
-            ...CATEGORY_TAB_STYLE,
-            background: activeTab === tab.id ? '#1D1D1D' : 'transparent',
-            color: activeTab === tab.id ? '#F8F8F8' : '#1D1D1D',
-            border: activeTab === tab.id ? 'none' : '1px solid rgba(29,29,29,0.2)',
-          }}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export default function VisualiserPage() {
   // Decides whether the panel sits beside the stage or under it — see the note
@@ -106,7 +59,7 @@ export default function VisualiserPage() {
         {/* Matches VisualiserSection's rhythm so the same panel doesn't read
             differently on the homepage and here. */}
         <div style={{ width: isMobile ? '100%' : 348, flexShrink: 0, boxSizing: 'border-box', padding: isMobile ? 16 : 28, overflowY: isMobile ? 'visible' : 'auto', position: 'relative', display: 'flex', flexDirection: 'column', gap: 28 }}>
-          <CategorySwitcher />
+          <VisualiserCategories />
           <VisualiserControls showCurtainControls />
           <VisualiserCartActions config={quoteConfig} />
         </div>

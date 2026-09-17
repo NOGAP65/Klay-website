@@ -2,11 +2,13 @@ import { ROLLER_HARDWARE } from '@/features/fabrics';
 
 import { visualiserQuoteItems, type VisualiserQuoteConfig } from './quoteConfiguration';
 import { priceWindow } from './useVisualiserStore';
+import { isUnpricedBlind } from './windowProducts';
 
 import type { CartItem } from '@/features/cart';
 
 const hardwareLabel = (name: string) => ROLLER_HARDWARE.find(hardware => hardware.id === name)?.label ?? name;
 const cartTypes = { blind: 'Roller Blind', honeycomb: 'Honeycomb Blinds', curtain: 'Curtains',
+  venetian: 'Venetian Blinds', plantation: 'Plantation Shutters',
   wardrobe: 'Made to measure', shelving: 'Made to measure' };
 
 /** The basket and direct quote carry the same configuration. Only roller
@@ -15,10 +17,10 @@ export function visualiserCartItems(state: VisualiserQuoteConfig): Omit<CartItem
   return visualiserQuoteItems(state).map((item, index) => {
     const window = state.windows[index];
     const isBlind = state.productCategory === 'blind';
-    const isHoneycomb = state.productCategory === 'honeycomb';
+    const isUnpriced = isUnpricedBlind(state.productCategory);
     const isCurtain = state.productCategory === 'curtain';
-    const hasFabric = isBlind || isHoneycomb || isCurtain;
-    const isLiftBlind = isBlind || isHoneycomb;
+    const hasFabric = isBlind || isUnpriced || isCurtain;
+    const isLiftBlind = isBlind || isUnpriced;
     // Identical windows can share a quantity without a misleading window number.
     const options = item.options.filter(option => option.label !== 'Window');
     const value = (label: string) => options.find(option => option.label === label)?.value ?? 'Chosen at measure';

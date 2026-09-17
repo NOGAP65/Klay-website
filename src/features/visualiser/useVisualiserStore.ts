@@ -1,16 +1,18 @@
 import { create } from 'zustand';
 
 
-import { ROLLER_HARDWARE, rollerPalette, rollerColour, fabricPalette, honeycombColour, type HoneycombType } from '@/features/fabrics';
-import { CURTAIN_COLOURS, HARDWARE_HEX } from '@/features/fabrics';
+import { ROLLER_HARDWARE, rollerColour, HARDWARE_HEX, type HoneycombType } from '@/features/fabrics';
 import { wardrobeModelById, type WardrobeKind } from '@/features/joinery';
 
 import { DEFAULT_WALL_COLOUR } from './wallColours';
 import { priceWindow } from './windowPricing';
+import { coloursFor, windowColour, isUnpricedBlind, type ProductCategory } from './windowProducts';
 
 import type { BlindType } from '@/core/pricing';
 
 export { priceWindow } from './windowPricing';
+export { coloursFor } from './windowProducts';
+export type { ProductCategory } from './windowProducts';
 
 type Point = [number, number];
 
@@ -30,7 +32,6 @@ interface TracedArea {
 // store keep working.
 export type { BlindType };
 export type HardwareColour = 'white' | 'black' | 'chrome' | 'cream' | 'platinum';
-export type ProductCategory = 'blind' | 'honeycomb' | 'curtain' | 'wardrobe' | 'shelving';
 
 /** Wardrobes and shelving are one renderer, one control panel and one store
  * shape — they differ in which SKUs they offer and how tall those are. Every
@@ -49,8 +50,6 @@ export type CurtainSize = 'small' | 'medium' | 'large' | 'xl';
 /** The colour card for a product category. Blinds and curtains are different
  * cloth from different mills and do not share a range — see products.ts. Every
  * colour lookup goes through here so the two can never be crossed. */
-export const coloursFor = (category: ProductCategory, type = 'blockout', name?: string): { name: string; hex: string; texture?: string }[] =>
-  category === 'curtain' ? CURTAIN_COLOURS : category === 'honeycomb' ? fabricPalette('honeycomb-blinds') : rollerPalette(type, name);
 // Joinery keeps its own finishes and never consumes the fabric palette.
 
 /** UI cap on the size of a job. `MAX_QUANTITY` in lib/pricing is the money
@@ -192,6 +191,8 @@ interface VisualiserStore {
   blindType: BlindType;
   honeycombType: HoneycombType;
   honeycombDayPosition: number;
+  slatTilt: number;
+  setSlatTilt: (position: number) => void;
   setHoneycombType: (type: HoneycombType) => void;
   setHoneycombDayPosition: (position: number) => void;
   fabricColour: string;         // Rynamic colour name, e.g. 'White'
@@ -337,6 +338,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   // job's first window — writing the defaults twice is how the two drift.
   ...DEFAULT_WINDOW,
   honeycombDayPosition: .5,
+  slatTilt: .42,
   lockedRange: null,
   defaultWindowActive: true,
   curtainOpenness: 0,
@@ -382,7 +384,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
 
   getHardwareColor: () => {
     const s = get();
-    if (s.productCategory === 'honeycomb') return HARDWARE_HEX.white;
+    if (isUnpricedBlind(s.productCategory)) return HARDWARE_HEX.white;
     return (s.productCategory === 'blind' ? ROLLER_HARDWARE.find(h => h.id === s.hardwareColour)?.hex : undefined)
       ?? HARDWARE_HEX[s.hardwareColour === 'cream' || s.hardwareColour === 'platinum' ? 'white' : s.hardwareColour];
   },
@@ -419,17 +421,13 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
     }
     const reconcileHardware = (name: HardwareColour): HardwareColour => cat === 'blind'
       ? name === 'chrome' ? 'platinum' : name
-      : cat === 'honeycomb' ? 'white'
+      : isUnpricedBlind(cat) ? 'white'
       : name === 'cream' || name === 'platinum' ? 'white' : name;
-    const reconcile = (name: string, type: string) => {
-      if (cat === 'blind') return rollerColour(type, name);
-      if (cat === 'honeycomb') return honeycombColour(name);
-      return CURTAIN_COLOURS.some(c => c.name === name) ? name : CURTAIN_COLOURS[0].name;
-    };
+    const reconcile = (name: string, type: string) => windowColour(cat, type, name);
     return {
       productCategory: cat,
       ...(s.defaultWindowActive && s.productCategory !== cat
-        ? { rollPosition: cat === 'curtain' ? 0.94 : cat === 'honeycomb' ? 1 : 0.5 } : {}),
+        ? { rollPosition: cat === 'curtain' ? 0.94 : ['honeycomb', 'venetian'].includes(cat) ? 1 : 0.5 } : {}),
       hardwareColour: reconcileHardware(s.hardwareColour),
       fabricColour: reconcile(s.fabricColour, s.blindType),
       windows: s.windows.map(w => ({ ...w, hardwareColour: reconcileHardware(w.hardwareColour), fabricColour: reconcile(w.fabricColour, w.blindType) })),
@@ -438,7 +436,8 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   setBlindType: (type) => set(s => writeThrough({ blindType: type, fabricColour: s.productCategory === 'blind' ? rollerColour(type, s.fabricColour) : s.fabricColour })(s)),
   setHoneycombType: (type) => { if (type === 'blockout' || type === 'daynight') set(writeThrough({ honeycombType: type })); },
   setHoneycombDayPosition: (position) => { if (Number.isFinite(position)) set({ honeycombDayPosition: Math.max(0, Math.min(1, position)) }); },
-  setFabricColour: (colour) => set(s => writeThrough({ fabricColour: s.productCategory === 'blind' ? rollerColour(s.blindType, colour) : s.productCategory === 'honeycomb' ? honeycombColour(colour) : colour })(s)),
+  setSlatTilt: (position) => { if (Number.isFinite(position)) set({ slatTilt: Math.max(0, Math.min(1, position)) }); },
+  setFabricColour: (colour) => set(s => writeThrough({ fabricColour: windowColour(s.productCategory, s.blindType, colour) })(s)),
   setHardwareColour: (colour) => set(writeThrough({ hardwareColour: colour })),
   setWindowSize: (size) => set(writeThrough({ windowSize: size })),
   setOperation: (op) => set(writeThrough({ operation: op })),

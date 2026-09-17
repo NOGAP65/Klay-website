@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { formatAUD, isBlindType } from '@/core/pricing';
 
 import { ColourSample, radius, tokens, space, type as typeScale } from '@/ds';
-import { ROLLER_HARDWARE, HONEYCOMB_TYPES, fabricCollections, fabricByName, fabricPalette, fabricScanInset } from '@/features/fabrics';
+import { ROLLER_HARDWARE, HONEYCOMB_TYPES, VENETIAN_COLLECTIONS, fabricCollections, fabricByName, fabricPalette, fabricScanInset } from '@/features/fabrics';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '@/features/fabrics';
 import {
   WARDROBE_COLOURS,
@@ -14,6 +14,7 @@ import {
 import { HANDLE_FINISHES, WALK_IN_HANDLE_FINISHES, handleFinish, walkInSpecifications, walkInLayout } from '@/features/joinery';
 
 import { coloursFor, isJoinery, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
+import { WINDOW_STYLES, isSlatted, isUnpricedBlind } from './windowProducts';
 
 interface VisualiserControlsProps {
   lockedRange?: string; // if passed, hides the blind type row — customer can only configure this type
@@ -454,7 +455,7 @@ export function PriceBox({
 
 export default function VisualiserControls({ lockedRange: lockedRangeProp, compact = false, showCurtainControls = false, onDark = false, showPrice = true }: VisualiserControlsProps) {
   const [searchParams] = useSearchParams();
-  const store = useVisualiserStore(useShallow(({ rollPosition: _position, honeycombDayPosition: _dayPosition, ...settings }) => settings));
+  const store = useVisualiserStore(useShallow(({ rollPosition: _position, honeycombDayPosition: _dayPosition, slatTilt: _tilt, ...settings }) => settings));
   // `sk`, not `s`: the options loops below all bind `s` as their map
   // variable, and a skin called `s` would be shadowed inside every one.
   const sk = skin(onDark);
@@ -533,6 +534,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
       store.setBlindType(typeParam);
     }
     if (categoryParam === 'curtain') store.setProductCategory('curtain');
+    if (categoryParam === 'venetian' || categoryParam === 'plantation') store.setProductCategory(categoryParam);
     if (categoryParam === 'honeycomb') {
       store.setProductCategory('honeycomb');
       if (typeParam === 'daynight' || typeParam === 'blockout') store.setHoneycombType(typeParam);
@@ -914,12 +916,12 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
     <div style={{ display: 'flex', flexDirection: 'column', gap: groupGap }}>
       {/* --- TIER 1: the decisions that change what you see ---------------- */}
       <section>
-        <GroupHeading onDark={onDark}>Your blind</GroupHeading>
+        <GroupHeading onDark={onDark}>{store.productCategory === 'plantation' ? 'Your shutters' : 'Your blind'}</GroupHeading>
         <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
           {!store.lockedRange && <Field onDark={onDark} label="Blind style">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
-              <Pill onDark={onDark} label="Roller" active={!isHoneycomb} onClick={() => store.setProductCategory('blind')} />
-              <Pill onDark={onDark} label="Honeycomb" active={isHoneycomb} onClick={() => store.setProductCategory('honeycomb')} />
+              {WINDOW_STYLES.map(style => <Pill key={style.id} onDark={onDark} label={style.label}
+                active={store.productCategory === style.id} onClick={() => store.setProductCategory(style.id)} />)}
             </div>
           </Field>}
           {isHoneycomb && <Field onDark={onDark} label="Fabric type">
@@ -928,7 +930,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 active={store.honeycombType === t.id} onClick={() => store.setHoneycombType(t.id)} />)}
             </div>
           </Field>}
-          {!isHoneycomb && !store.lockedRange && (
+          {store.productCategory === 'blind' && !store.lockedRange && (
             <Field onDark={onDark} label="Fabric type">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {BLIND_TYPE_OPTIONS.map(t => (
@@ -944,7 +946,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             </Field>
           )}
 
-          {!isHoneycomb && fabricCollections('roller-blinds', store.blindType).length > 1 && (
+          {store.productCategory === 'blind' && fabricCollections('roller-blinds', store.blindType).length > 1 && (
             <Field onDark={onDark} label="Fabric range">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {fabricCollections('roller-blinds', store.blindType).map(range => (
@@ -955,7 +957,14 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               </div>
             </Field>
           )}
-          <Field onDark={onDark} label="Fabric colour" caption={selectedColour?.name}>
+          {store.productCategory === 'venetian' && <Field onDark={onDark} label="Material">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+              {VENETIAN_COLLECTIONS.map(material => <Pill key={material} onDark={onDark} label={material}
+                active={fabricByName(store.fabricColour)?.collection === material}
+                onClick={() => store.setFabricColour(fabricPalette('venetian-blinds', undefined, material)[0].name)} />)}
+            </div>
+          </Field>}
+          <Field onDark={onDark} label={isSlatted(store.productCategory) ? 'Slat colour' : 'Fabric colour'} caption={selectedColour?.name}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
               {palette.map(c => (
                 <Swatch
@@ -977,7 +986,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
       <section>
         <GroupHeading onDark={onDark}>Details</GroupHeading>
         <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
-          {!isHoneycomb && <Field onDark={onDark} label="Hardware" caption={selectedHardware?.label}>
+          {store.productCategory === 'blind' && <Field onDark={onDark} label="Hardware" caption={selectedHardware?.label}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
               {hardwareOptions.map(h => (
                 <Swatch
@@ -1014,7 +1023,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 <Pill
                   onDark={onDark}
                   key={o.id}
-                  label={isHoneycomb && o.id === 'motorised' ? 'Motorised' : o.label}
+                  label={isUnpricedBlind(store.productCategory) && o.id === 'motorised' ? 'Motorised' : o.label}
                   active={store.operation === o.id}
                   onClick={() => store.setOperation(o.id)}
                 />
@@ -1025,7 +1034,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
       </section>
 
       {/* --- PRICE: last, and only when the host isn't placing its own ------ */}
-      {showPrice && (isHoneycomb
+      {showPrice && (isUnpricedBlind(store.productCategory)
         ? <p style={{ ...typeScale.body, color: sk.quiet }}>Price confirmed at measure.</p>
         : <PriceBox onDark={onDark} amount={store.getCurrentPrice()} />)}
     </div>

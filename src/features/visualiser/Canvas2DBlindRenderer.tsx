@@ -6,6 +6,7 @@ import { loadImage } from '@/shared';
 
 import { sampleBlindLighting, blindTextureCoordinates, NEUTRAL_BLIND_LIGHT, type BlindLighting } from './blindLighting';
 import { drawHoneycomb } from './drawHoneycomb';
+import { drawSlattedCovering } from './drawSlattedCovering';
 import { computeHomography, toColumnMajor, Point } from './homography';
 import { honeycombGeometry } from './honeycombGeometry';
 import { HONEYCOMB_MATERIAL_PHOTO, honeycombMaterial } from './honeycombMaterial';
@@ -14,7 +15,9 @@ import { PreviewStatus } from './PreviewStatus';
 import { drawRollerBrackets } from './rollerBrackets';
 import { rollerGeometry, type RollerGeometry } from './rollerGeometry';
 import { normaliseRollerWeave } from './rollerWeave';
+import { slattedPlane, venetianSlats } from './slattedGeometry';
 import { usePreviewLoad } from './usePreviewLoad';
+import { isSlatted, type ProductCategory } from './windowProducts';
 
 /** One traced, confirmed window area to render — the shape VisualizerConfigurator
  * maps its (store-owned) TracedArea + linked WindowCard into before passing it
@@ -27,6 +30,7 @@ export interface RenderedArea {
   fabricColor: string;
   fabricTexture?: string;
   dayColor?: string;
+  material?: string;
   dayTexture?: string;
   windowSize?: string;
   hardwareColor: string;
@@ -38,7 +42,7 @@ export interface RenderedArea {
   controlType: string;
   showChain: boolean;
   // Curtain-specific
-  productCategory?: 'blind' | 'honeycomb' | 'curtain' | 'wardrobe' | 'shelving';
+  productCategory?: ProductCategory;
   curtainType?: 'blockout' | 'sheer';
   curtainOperation?: 'manual' | 'motorised';
   curtainMount?: 'ceiling' | 'window';
@@ -56,6 +60,7 @@ interface Props {
    * Applies globally to every rendered area. */
   rollPosition: number;
   honeycombDayPosition?: number;
+  slatTilt?: number;
   /** Compare mode — splits EVERY confirmed area's quad into two halves via
    * one shared divider, each half with its own blind type/colour. */
   compareMode?: boolean;
@@ -229,7 +234,7 @@ const DUAL_BACK_TEXTURE = getTexturePath('sunscreen');
 /** Every texture path a blind type needs, so the caller can preload them all
  * before drawing. Dual is the only type that needs two. */
 const texturePathsFor = (blindType: string, fabricColor: string): string[] =>
-  blindType.startsWith('honeycomb-') ? [HONEYCOMB_MATERIAL_PHOTO] : blindType === 'dual'
+  isSlatted(blindType) ? [] : blindType.startsWith('honeycomb-') ? [HONEYCOMB_MATERIAL_PHOTO] : blindType === 'dual'
     ? [DUAL_FRONT_TEXTURE, DUAL_BACK_TEXTURE]
     : [getTexturePath(textureKeyFor(blindType, fabricColor))];
 
@@ -1430,6 +1435,8 @@ interface AreaParams {
   dayTexture?: string;
   windowSize?: string;
   honeycombDayPosition?: number;
+  slatTilt?: number;
+  material?: string;
   hardwareColor?: string | null;
   hardwareColourName?: 'white' | 'black' | 'chrome' | 'cream' | 'platinum';
   controlType: string;
@@ -1438,7 +1445,7 @@ interface AreaParams {
   baseRailShape?: string;
   chainSide?: string;
   // Curtain-specific
-  productCategory?: 'blind' | 'honeycomb' | 'curtain' | 'wardrobe' | 'shelving';
+  productCategory?: ProductCategory;
   curtainType?: 'blockout' | 'sheer';
   curtainOperation?: 'manual' | 'motorised';
   curtainMount?: 'ceiling' | 'window';
@@ -1457,6 +1464,11 @@ const drawBlindArea = (
 ) => {
   const { blindType, productCategory } = params;
 
+  if (isSlatted(blindType)) {
+    drawSlattedCovering(ctx, { ...params, lighting: lightingFor(photo, W, H, params.corners),
+      texture: params.fabricTexture ? fabricImgs.get(params.fabricTexture) : undefined });
+    return;
+  }
   if (blindType.startsWith('honeycomb-')) {
     const lighting = lightingFor(photo, W, H, params.corners);
     if (blindType === 'honeycomb-daynight') {
@@ -2608,6 +2620,8 @@ const coveredQuadFor = (area: RenderedArea, rollPosition: number): Point[] => {
     return [tl, tr, br, bl];
   }
   if (area.blindType.startsWith('honeycomb-')) return honeycombGeometry(area.corners, rollPosition, { dayNight: area.blindType === 'honeycomb-daynight', size: area.windowSize }).coverage;
+  if (area.blindType === 'plantation') return area.corners;
+  if (area.blindType === 'venetian') return venetianSlats(slattedPlane(area.corners, area.windowSize), { position: rollPosition, tilt: 0, material: area.material ?? 'UltraSlat' }).coverage;
   return rollerGeometry(area.corners, rollPosition).coverage;
 };
 
@@ -2646,7 +2660,7 @@ const drawRoomDimming = (
   ctx.restore();
 };
 
-const buildAreaParams = (area: RenderedArea, rollPosition: number, honeycombDayPosition: number): AreaParams => ({
+const buildAreaParams = (area: RenderedArea, rollPosition: number, honeycombDayPosition: number, slatTilt: number): AreaParams => ({
   corners: area.corners,
   blindType: area.blindType,
   fabricColor: area.fabricColor,
@@ -2655,6 +2669,8 @@ const buildAreaParams = (area: RenderedArea, rollPosition: number, honeycombDayP
   dayTexture: area.dayTexture,
   windowSize: area.windowSize,
   honeycombDayPosition,
+  slatTilt,
+  material: area.material,
   hardwareColor: area.hardwareColor,
   hardwareColourName: area.hardwareColourName,
   controlType: area.controlType,
@@ -2675,6 +2691,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
   activeAreaId,
   rollPosition = 1,
   honeycombDayPosition = .5,
+  slatTilt = .42,
   compareMode = false,
   compareDivider = 0.5,
   compareBlindType,
@@ -2790,7 +2807,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
 
       if (!compareMode) {
         for (const area of confirmedAreas) {
-          drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, buildAreaParams(area, rollPosition, honeycombDayPosition), fabricImgs, photo);
+          drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, buildAreaParams(area, rollPosition, honeycombDayPosition, slatTilt), fabricImgs, photo);
         }
       } else {
         // Every confirmed area splits across the same shared divider.
@@ -2801,11 +2818,11 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
           ctx.beginPath();
           ctx.rect(0, 0, W * divider, H);
           ctx.clip();
-          drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, buildAreaParams(area, rollPosition, honeycombDayPosition), fabricImgs, photo);
+          drawBlindArea(ctx, glStateRef, glUnavailableRef, W, H, buildAreaParams(area, rollPosition, honeycombDayPosition, slatTilt), fabricImgs, photo);
           ctx.restore();
 
           const compareParams: AreaParams = {
-            ...buildAreaParams(area, rollPosition, honeycombDayPosition),
+            ...buildAreaParams(area, rollPosition, honeycombDayPosition, slatTilt),
             blindType: compareBlindType ?? area.blindType,
             fabricTexture: compareBlindType && compareBlindType !== area.blindType ? undefined : area.fabricTexture,
             fabricColor: compareFabricColor ?? area.fabricColor,
@@ -2852,7 +2869,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
         W,
         H,
         confirmedAreas.map(a => coveredQuadFor(a, rollPosition)),
-        rollPosition * (confirmedAreas.some(a => a.blindType === 'honeycomb-daynight') ? 1 - .7 * honeycombDayPosition : 1),
+        rollPosition * (confirmedAreas.some(a => a.blindType === 'honeycomb-daynight') ? 1 - .7 * honeycombDayPosition : confirmedAreas.some(a => a.blindType === 'venetian') ? .15 + .85 * slatTilt : 1),
       );
 
       // Active area (being traced) — subtle dashed teal outline, no fabric.
@@ -2897,14 +2914,14 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
     // Intentionally limited deps: only these inputs change what's worth
     // repainting. tracedAreasKey stands in for tracedAreas (see comment above).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [photoUrl, tracedAreasKey, activeAreaId, rollPosition, honeycombDayPosition, compareMode, compareDivider, compareBlindType, compareFabricColor, preview.attempt]);
+  }, [photoUrl, tracedAreasKey, activeAreaId, rollPosition, honeycombDayPosition, slatTilt, compareMode, compareDivider, compareBlindType, compareFabricColor, preview.attempt]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
     <canvas
       ref={canvasRef}
       data-render-surface="blind"
-      data-blind-product={tracedAreas.some(area => area.blindType.startsWith('honeycomb-')) ? 'honeycomb' : 'roller'}
+      data-blind-product={tracedAreas.some(area => area.blindType.startsWith('honeycomb-')) ? 'honeycomb' : tracedAreas.find(area => isSlatted(area.blindType))?.blindType ?? 'roller'}
       data-preview-loading={preview.loading}
       data-render-ready={!preview.loading && !preview.failed ? 'true' : 'false'}
       style={{

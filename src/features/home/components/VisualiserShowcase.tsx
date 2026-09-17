@@ -48,7 +48,7 @@ import {
   type JobWindow,
   useVisualiserStore,
   isJoinery,
-  type ProductCategory,
+  VisualiserCategories,
 } from '@/features/visualiser';
 import { useIsMobile, useInView } from '@/shared';
 
@@ -66,70 +66,6 @@ const SELECTED = {
   color: tokens.ink,
   border: tokens.paper,
 } as const;
-
-/** Blinds / Curtains / Wardrobes, at the top of the control panel.
- *
- * VisualiserPage has its own version of this and keeps it: that one is written
- * for a cream sidebar and fills the active tab with ink, which on this card
- * would be an invisible tab on an identical ground. This one uses the panel's
- * own selection language instead — SELECTED for the active tab, hairline and
- * muted text for the other — so it reads as the first field of the form rather
- * than as a widget above it.
- *
- * It has to exist for curtains and wardrobes to be reachable at all.
- * VisualiserControls only renders its curtain branch when the store's category
- * is already 'curtain', and its wardrobe branch likewise; nothing on the
- * homepage could set either before this.
- *
- * THE LETTERSPACING COMES OFF AT THREE. At 0.3em, "WARDROBES" is nine tracked
- * characters in a third of the panel and it wraps — and two tabs that fit
- * beside one that does not is a row of different heights. Tracking is the right
- * thing to spend here: it is decoration on a label whose job is to be legible
- * and clicked, and 0.16em still reads as the same small-caps language as the
- * group headings under it. */
-function CategoryTabs() {
-  const productCategory = useVisualiserStore(s => s.productCategory);
-  const setProductCategory = useVisualiserStore(s => s.setProductCategory);
-  const tabs: { id: ProductCategory; label: string }[] = [
-    { id: 'blind', label: 'Blinds' },
-    { id: 'curtain', label: 'Curtains' },
-    { id: 'wardrobe', label: 'Wardrobes' },
-    { id: 'shelving', label: 'Shelving' },
-  ];
-
-  return (
-    <div style={{ display: 'flex', gap: space.hairline }}>
-      {tabs.map(tab => {
-        const isActive = productCategory === tab.id || (tab.id === 'blind' && productCategory === 'honeycomb');
-        return (
-          <button
-            key={tab.id}
-            aria-pressed={isActive}
-            onClick={() => { if (!isActive) setProductCategory(tab.id); }}
-            style={{
-              flex: 1,
-              padding: `${space.snug}px ${space.hairline}px`,
-              borderRadius: radius.md,
-              fontFamily: tokens.body,
-              fontSize: 10,
-              fontWeight: 500,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              whiteSpace: 'nowrap',
-              cursor: 'pointer',
-              border: `1px solid ${isActive ? SELECTED.border : tokens.onDarkEdge}`,
-              background: isActive ? SELECTED.background : 'transparent',
-              color: isActive ? SELECTED.color : tokens.onDarkMuted,
-              transition: motion.button,
-            }}
-          >
-            {tab.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 /** Square stepper button. Same selection language as the configurator's own
  * pills — hairline at rest, the SELECTED lozenge on hover — so the row reads as
@@ -532,7 +468,7 @@ export function VisualiserShowcase() {
               gap: space.group,
             }}
           >
-            <CategoryTabs />
+            <VisualiserCategories onDark />
 
             {/* THE JOB, FIRST. How many windows decides how many times every
                 question below it gets asked, so it cannot come after them — and
@@ -595,7 +531,7 @@ export function VisualiserShowcase() {
               }}
             >
               {/* Joinery pricing is confirmed at measure. */}
-              {!isWardrobe && productCategory !== 'honeycomb' && (
+              {!isWardrobe && ['blind', 'curtain'].includes(productCategory) && (
                 <PriceBox
                   onDark
                   amount={jobTotal}
