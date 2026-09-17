@@ -103,6 +103,34 @@ test('front-roll follows a tilted traced opening without a white backing band', 
   await expect.poll(() => rollBand(canvas, corners)).toBeGreaterThan(160);
 });
 
+test('front-roll fabric has no bright seam or separate bar at the front tangent', async ({ page }, info) => {
+  await page.goto('/visualiser');
+  const corners = await portrait(page, true);
+  const canvas = page.locator('canvas[data-render-surface="blind"]');
+  await page.getByRole('slider').press('End');
+  for (const colour of ['Essence Carbon', 'Essence Ice']) {
+    await selectedColour(page, colour);
+    if (colour === 'Essence Carbon') await expect.poll(() => rollBand(canvas, corners, .01)).toBeLessThan(90);
+    else await expect.poll(() => rollBand(canvas, corners, .01)).toBeGreaterThan(160);
+    await expect.poll(async () => {
+      const bands = await Promise.all([-.002, -.001, 0, .001, .002, .004].map(offset => rollBand(canvas, corners, offset)));
+      return Math.max(...bands) - Math.min(...bands);
+    }).toBeLessThan(8);
+    const edgeGlow = await canvas.evaluate((source: HTMLCanvasElement, quad) => {
+      const context = source.getContext('2d')!;
+      const [left, right, bottomRight, bottomLeft] = quad;
+      const sample = (u: number) => {
+        const x = (left[0] + bottomLeft[0]) / 2 * (1 - u) + (right[0] + bottomRight[0]) / 2 * u;
+        const y = (left[1] + bottomLeft[1]) / 2 * (1 - u) + (right[1] + bottomRight[1]) / 2 * u;
+        return context.getImageData(Math.round(x), Math.round(y), 1, 1).data[0];
+      };
+      return sample(-.012) - sample(-.07);
+    }, corners);
+    expect(edgeGlow).toBeLessThanOrEqual(2); // no invented white frame on the neutral photograph
+    await canvas.screenshot({ path: info.outputPath(`${colour}-continuous-front-roll.png`) });
+  }
+});
+
 async function pixels(canvas: Locator) {
   return canvas.evaluate((source: HTMLCanvasElement) => {
     source.dispatchEvent(new Event('klay:capture-preview'));

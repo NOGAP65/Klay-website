@@ -7,7 +7,26 @@ import { test } from '@playwright/test';
 import { fieldsFor, withChoice, defaultSelection, configuredLine, priceFor, type Selection } from '../src/features/catalogue/configOptions';
 import { CATALOGUE } from '../src/features/catalogue/constants';
 import { fabricByName, fabricCollections, type FabricSample } from '../src/features/fabrics';
+import { normaliseRollerWeave } from '../src/features/visualiser/rollerWeave';
 import { useVisualiserStore as store } from '../src/features/visualiser/useVisualiserStore';
+
+test('roller weave keeps yarn detail without baking scan lighting into the fabric', () => {
+  const width = 240, height = 160;
+  const scan = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const offset = (y * width + x) * 4;
+    const value = 65 + x * .55 + (x % 2 ? 9 : -9);
+    scan.set([value, value, value, 255], offset);
+  }
+  normaliseRollerWeave(scan, width, height);
+  for (const x of [30, 100, 200]) {
+    const offset = (80 * width + x) * 4;
+    const mean = (scan[offset] + scan[offset + 4]) / 2;
+    assert.ok(Math.abs(mean - 128) <= 2, 'Lighting gradient must not change the dye');
+    assert.ok(scan[offset + 4] - scan[offset] >= 14, 'Fine yarn texture must remain');
+    assert.equal(scan[offset + 3], 255);
+  }
+});
 
 
 test('supplied fabric assets have unique identities and exact deployed paths', async () => {

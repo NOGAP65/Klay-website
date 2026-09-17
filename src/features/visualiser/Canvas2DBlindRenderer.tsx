@@ -1,10 +1,13 @@
-import { loadImage } from '@/shared';
 import React, { useEffect, useRef } from 'react';
-import { computeHomography, toColumnMajor, Point } from './homography';
-import { HARDWARE_HEX, fabricScanInset } from '@/features/fabrics';
+
 import { tokens } from '@/ds';
+import { HARDWARE_HEX, fabricScanInset } from '@/features/fabrics';
+import { loadImage } from '@/shared';
+
 import { sampleBlindLighting, blindTextureCoordinates, NEUTRAL_BLIND_LIGHT, type BlindLighting } from './blindLighting';
+import { computeHomography, toColumnMajor, Point } from './homography';
 import { PreviewStatus } from './PreviewStatus';
+import { normaliseRollerWeave } from './rollerWeave';
 import { usePreviewLoad } from './usePreviewLoad';
 
 /** One traced, confirmed window area to render — the shape VisualizerConfigurator
@@ -106,10 +109,6 @@ const luma01 = (hex: string): number => {
 /** Warm shadow. Never pure black — 20,16,10 keeps a shadow reading as an
  * absence of light in a warm room rather than as a grey overlay. */
 const shadowRgba = (a: number): string => `rgba(20,16,10,${a})`;
-
-/** Daylight leaking around an opaque fabric — the warm cast of sun through a
- * window rather than neutral white. */
-const leakRgba = (a: number): string => `rgba(255,242,210,${a})`;
 
 /** Fills a gradient band in N passes at a fraction of the target opacity
  * instead of one hard fill. Overlapping low-alpha passes accumulate into a
@@ -267,6 +266,7 @@ uniform float u_opacity;
 uniform vec2 u_uvScale;
 uniform float u_uvOffset;
 uniform float u_dropFraction;
+uniform float u_frontRoll;
 uniform vec3 u_roomTint;
 uniform float u_roomExposure;
 uniform vec4 u_daylight;
@@ -277,18 +277,29 @@ varying vec2 v_pixel;
 void main() {
   vec3 uvw = u_pixelToUv * vec3(v_pixel,1.0);
   vec2 uv = uvw.xy / uvw.z;
-  vec2 fabricUv = uv*u_uvScale + vec2(0.0,u_uvOffset);
+  vec2 clothUv = uv;
+  float bend = 0.0;
+  if (u_frontRoll > 0.0) {
+    // One continuous sheet: arc length around the crown meets the vertical
+    // drop at the front tangent. Texture, dye and lighting share that join.
+    float y = uv.y*(u_dropFraction+u_frontRoll)-u_frontRoll;
+    bend = clamp(-y/u_frontRoll,0.0,1.0);
+    float clothY = y < 0.0 ? -u_frontRoll*asin(bend) : y;
+    clothUv.y = clothY/max(u_dropFraction,0.0001);
+  }
+  vec2 fabricUv = clothUv*u_uvScale + vec2(0.0,u_uvOffset);
   float texel = dot(texture2D(u_texture,fabricUv).rgb,vec3(0.299,0.587,0.114));
   float detail = clamp(texel-u_textureMean,-0.30,0.30);
   vec3 col = u_tintColor.rgb * (1.0 + detail*u_textureAmount) + vec3(detail*u_textureAmount*0.035);
   float dyeLuma = dot(u_tintColor.rgb,vec3(0.299,0.587,0.114));
-  float roomV = uv.y*u_dropFraction;
+  float roomV = max(0.0,clothUv.y*u_dropFraction);
   float daylight = mix(mix(u_daylight.x,u_daylight.y,uv.x),mix(u_daylight.w,u_daylight.z,uv.x),roomV);
   col *= u_roomTint*u_roomExposure;
   // Taut cloth has a broad, very shallow bow between the roller and weight.
   // This is a matte surface variation, without a plastic centre highlight.
-  float bow = sin(uv.x*3.141593)*sin(uv.y*3.141593);
-  col *= 0.985 + 0.018*bow - 0.010*uv.y;
+  float clothV = clamp(clothUv.y,0.0,1.0);
+  float bow = sin(uv.x*3.141593)*sin(clothV*3.141593);
+  col *= (0.985 + 0.018*bow - 0.010*clothV)*(1.0-0.065*bend*bend);
   if (u_blindType > 0.5 && u_blindType < 1.5) {
     col += vec3(0.015*daylight*dyeLuma);
   } else if (u_blindType > 1.5 && u_blindType < 2.5) {
@@ -327,6 +338,7 @@ interface GLState {
     uvScale: WebGLUniformLocation | null;
     uvOffset: WebGLUniformLocation | null;
     dropFraction: WebGLUniformLocation | null;
+    frontRoll: WebGLUniformLocation | null;
     roomTint: WebGLUniformLocation | null;
     roomExposure: WebGLUniformLocation | null;
     daylight: WebGLUniformLocation | null;
@@ -479,6 +491,7 @@ const createGLState = (): GLState | null => {
       uvScale: gl.getUniformLocation(program, 'u_uvScale'),
       uvOffset: gl.getUniformLocation(program, 'u_uvOffset'),
       dropFraction: gl.getUniformLocation(program, 'u_dropFraction'),
+      frontRoll: gl.getUniformLocation(program, 'u_frontRoll'),
       roomTint: gl.getUniformLocation(program, 'u_roomTint'),
       roomExposure: gl.getUniformLocation(program, 'u_roomExposure'),
       daylight: gl.getUniformLocation(program, 'u_daylight'),
@@ -542,6 +555,11 @@ const getOrUploadTexture = (
   if (!potCtx) throw new Error('Failed to create texture resampling context');
   const inset = fabricScanInset(key) * img.naturalHeight;
   potCtx.drawImage(img, 0, inset, img.naturalWidth, img.naturalHeight - inset, 0, 0, POT_SIZE, POT_SIZE);
+  if (tileable) {
+    const scan = potCtx.getImageData(0, 0, POT_SIZE, POT_SIZE);
+    normaliseRollerWeave(scan.data, POT_SIZE, POT_SIZE);
+    potCtx.putImageData(scan, 0, 0);
+  }
   const meanLuma = measureMeanLuma(potCtx);
 
   const texture = gl.createTexture();
@@ -690,6 +708,7 @@ interface QuadOptions {
   lighting?: BlindLighting;
   uvOffset?: number;
   dropFraction?: number;
+  frontRoll?: number;
 }
 
 /** Renders one fabric quad. Corner order: [tl, tr, br, bl] in photo pixels. */
@@ -710,6 +729,7 @@ const drawQuad = (
   gl.uniform2f(loc.uvScale, opts.uvScale[0], opts.uvScale[1]);
   gl.uniform1f(loc.uvOffset, opts.uvOffset ?? 0);
   gl.uniform1f(loc.dropFraction, opts.dropFraction ?? 1);
+  gl.uniform1f(loc.frontRoll, opts.frontRoll ?? 0);
   const light = opts.lighting ?? NEUTRAL_BLIND_LIGHT;
   gl.uniform3f(loc.roomTint,...light.tint);
   gl.uniform1f(loc.roomExposure,light.exposure);
@@ -933,115 +953,6 @@ const drawAmbientOcclusion = (
   ctx.restore();
 };
 
-// ---------------------------------------------------------------------------
-// Light leak — daylight escaping around the fabric's edges.
-//
-// This is the single strongest cue for how opaque a blind is. A blockout stops
-// the light dead, so all of it escapes around the sides and under the rail as
-// a bright warm rim; a sunscreen passes most of it through the weave, so
-// almost nothing spills at the edge. Rendering the leak differently per type
-// is what makes the three fabrics distinguishable at a glance even when the
-// selected colour is identical.
-//
-// Necessarily Canvas2D: the leak falls OUTSIDE the fabric quad, on the frame
-// and wall, and the shader can only write pixels inside the quad it rasterises.
-// ---------------------------------------------------------------------------
-
-interface LeakEdge {
-  /** Outward reach in reference px, and peak alpha. */
-  reach: number;
-  alpha: number;
-}
-
-/** Left and right are specified separately, not mirrored. The light source is
- * top-left throughout this renderer, so more spills down the near side than
- * the far one; a symmetric pair reads as a glowing outline rather than as a
- * lit room. */
-interface LeakSpec {
-  left: LeakEdge;
-  right: LeakEdge;
-  bottom: LeakEdge;
-  top: LeakEdge;
-}
-
-const LEAK_BY_TYPE: Record<string, LeakSpec> = {
-  // Opaque, so every photon that reaches the window escapes at the perimeter.
-  // This is the strongest leak of the three and the main cue that the fabric
-  // is stopping light rather than passing it.
-  blockout: {
-    left: { reach: 10, alpha: 0.18 },
-    right: { reach: 8, alpha: 0.14 },
-    top: { reach: 4, alpha: 0.12 },
-    bottom: { reach: 6, alpha: 0.1 },
-  },
-  // Transmits most light through the weave and seals better at the edge, so
-  // there is very little left over to spill.
-  sunscreen: {
-    left: { reach: 4, alpha: 0.06 },
-    right: { reach: 3, alpha: 0.05 },
-    top: { reach: 2, alpha: 0.04 },
-    bottom: { reach: 3, alpha: 0.05 },
-  },
-  // Between the two.
-  lightfilter: {
-    left: { reach: 6, alpha: 0.14 },
-    right: { reach: 5, alpha: 0.11 },
-    top: { reach: 3, alpha: 0.08 },
-    bottom: { reach: 5, alpha: 0.12 },
-  },
-};
-
-/** Warm daylight spilling around the fabric. `tl`/`tr` are the blind's top
- * corners; `fabBL`/`fabBR` its current bottom edge, so the side glow shortens
- * with the fabric as the blind rolls up instead of glowing over open glass. */
-const drawLightLeak = (
-  ctx: CanvasRenderingContext2D,
-  blindType: string,
-  tl: Point,
-  tr: Point,
-  fabBL: Point,
-  fabBR: Point,
-  avgW: number,
-) => {
-  const spec = LEAK_BY_TYPE[blindType];
-  if (!spec) return;
-
-  const { u, pv } = axesFor(tl, tr);
-  const [ux, uy] = u;
-  const [px, py] = pv;
-
-  ctx.save();
-  // 'lighter' so overlapping glows accumulate as light does, rather than the
-  // later one painting over the earlier at partial alpha.
-  ctx.globalCompositeOperation = 'lighter';
-
-  /** One glow band running from `a` to `b`, fading outward along `dx,dy`. */
-  const band = (a: Point, b: Point, dx: number, dy: number, reach: number, alpha: number) => {
-    if (reach < 0.5 || alpha <= 0) return;
-    const a2: Point = [a[0] + dx * reach, a[1] + dy * reach];
-    const b2: Point = [b[0] + dx * reach, b[1] + dy * reach];
-    const g = ctx.createLinearGradient(a[0], a[1], a2[0], a2[1]);
-    g.addColorStop(0, leakRgba(alpha));
-    g.addColorStop(0.5, leakRgba(alpha * 0.35));
-    g.addColorStop(1, leakRgba(0));
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.moveTo(a[0], a[1]);
-    ctx.lineTo(b[0], b[1]);
-    ctx.lineTo(b2[0], b2[1]);
-    ctx.lineTo(a2[0], a2[1]);
-    ctx.closePath();
-    ctx.fill();
-  };
-
-  band(tl, fabBL, -ux, -uy, scaleToBlind(spec.left.reach, avgW), spec.left.alpha);
-  band(tr, fabBR, ux, uy, scaleToBlind(spec.right.reach, avgW), spec.right.alpha);
-  band(fabBL, fabBR, -px, -py, scaleToBlind(spec.bottom.reach, avgW), spec.bottom.alpha);
-  band(tl, tr, px, py, scaleToBlind(spec.top.reach, avgW), spec.top.alpha);
-
-  ctx.restore();
-};
-
 /** Perimeter stroke around the quad, grounding the fabric in the frame.
  *
  * `skipTopEdge` omits the tl->tr run. On a roller the fabric quad's top edge is
@@ -1206,6 +1117,26 @@ const litHardwareHex = (hex: string, light: BlindLighting): string => {
   return '#'+[rgb.r,rgb.g,rgb.b].map((c,i)=>Math.round(Math.max(0,Math.min(255,c*light.tint[i]*light.exposure))).toString(16).padStart(2,'0')).join('');
 };
 
+/** Same continuous crown and room tint when a phone has no usable WebGL. */
+const drawRollerFallback = (
+  ctx: CanvasRenderingContext2D, quad: Point[], tangent: Point,
+  fabric: { colour: string; opacity: number; lighting: BlindLighting },
+) => {
+  const colour = litHardwareHex(fabric.colour, fabric.lighting);
+  const gradient = ctx.createLinearGradient(...quad[0], ...tangent);
+  gradient.addColorStop(0, rgba(darken(colour, 6.5), fabric.opacity));
+  gradient.addColorStop(.5, rgba(darken(colour, 1.6), fabric.opacity));
+  gradient.addColorStop(1, rgba(colour, fabric.opacity));
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(...quad[0]);
+  quad.slice(1).forEach(point => ctx.lineTo(...point));
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+  ctx.restore();
+};
+
 /** Flat fill — for faces that must not read as curved (bracket plates, end
  * caps). Chrome still gets its metallic gradient. */
 const setHardwareFill = (
@@ -1230,7 +1161,7 @@ const setHardwareFill = (
 // The cassette and rail both use traceCylinderBody with metallic gradients
 // that include prominent highlight bands matching the real product photos.
 
-const CASSETTE_HEIGHT_RATIO = 0.04; // ~4% of blind height — the BARE 45mm tube
+const CASSETTE_HEIGHT_RATIO = 0.025; // 45mm barrel against a typical 1800mm drop
 const RAIL_HEIGHT_RATIO = 0.018; // ~1.8% of blind height — per product photo spec
 
 // ---------------------------------------------------------------------------
@@ -1244,7 +1175,7 @@ const RAIL_HEIGHT_RATIO = 0.018; // ~1.8% of blind height — per product photo 
 //
 // There is no mm-to-pixel scale anywhere in this renderer — the geometry comes
 // from four traced corner pins, not from measurements — so CASSETTE_HEIGHT_RATIO
-// is the anchor: 4% of the blind's height IS 45mm, and every other diameter is
+// is the anchor: a typical 1800mm drop carries a 45mm tube; other diameters are
 // quoted as a ratio against that.
 // ---------------------------------------------------------------------------
 
@@ -1383,9 +1314,8 @@ interface RollState {
   lighting?: BlindLighting;
 }
 
-/** Front roll: the hanging fabric occludes the lower half of its own barrel.
- * Paint only the exposed upper curve, then the hardware at the ends. There is
- * no white reverse or tube shadow across the room-facing fabric. */
+/** Rear fittings and wound material. Draw BEFORE the continuous front sheet,
+ * so the fabric hides the barrel and the inner faces of the end fittings. */
 const drawCassette = (
   ctx: CanvasRenderingContext2D,
   tl: Point,
@@ -1421,7 +1351,7 @@ const drawCassette = (
   const bottom = point(tl, 0, -halfH);
   const gradient = ctx.createLinearGradient(...top, ...bottom);
   gradient.addColorStop(0, shadeHex(face, -.12));
-  gradient.addColorStop(.25, shadeHex(face, .02));
+  gradient.addColorStop(.25, face);
   gradient.addColorStop(.5, face);
   gradient.addColorStop(1, shadeHex(face, -.18));
   ctx.fillStyle = gradient;
@@ -1646,6 +1576,9 @@ const drawBlindArea = (
   const showBlind = fabricDrop >= 1;
   const fabBL = leftEdge(p);
   const fabBR = rightEdge(p);
+  const rollRadius = cassetteHeightRatio(p) / 2;
+  const faceTL = leftEdge(-rollRadius);
+  const faceTR = rightEdge(-rollRadius);
 
   // Everything that shades, lights or outlines the fabric works off THIS
   // quad, never the full window quad. Using `corners` meant a half-raised
@@ -1675,6 +1608,9 @@ const drawBlindArea = (
 
     // --- DEPTH (pre-fabric) ---
     drawPreFabricDepth(ctx, fabricQuad);
+
+    drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
+      { p, blindType: type, fabricColor, lighting });
 
     // --- FABRIC via WebGL (perspective-correct texture mapping) ---
     if (!glStateRef.current && !glUnavailableRef.current) {
@@ -1736,7 +1672,7 @@ const drawBlindArea = (
         // Blockout reflects room light; light filter passes soft silhouettes
         // through a woven surface. Sunscreen retains colour-dependent
         // visibility through the mesh.
-        drawQuad(state, [tl, tr, fabBR, fabBL], fabricTexture, {
+        drawQuad(state, [faceTL, faceTR, fabBR, fabBL], fabricTexture, {
           tint,
           textureAmount: type === 'sunscreen'
             ? sunscreenTextureAmount(surface.textureAmount, fabricColor)
@@ -1746,41 +1682,26 @@ const drawBlindArea = (
           shade: true,
           folds: 0,
           shaderType: shaderTypeFor(type),
-          lighting, uvOffset, dropFraction:p,
+          lighting, uvOffset, dropFraction:p, frontRoll:rollRadius,
         });
       }
 
       ctx.drawImage(state.canvas, 0, 0);
     } else {
-      // WebGL unavailable — flat-colour fallback so the preview still works
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(tl[0], tl[1]);
-      ctx.lineTo(tr[0], tr[1]);
-      ctx.lineTo(fabBR[0], fabBR[1]);
-      ctx.lineTo(fabBL[0], fabBL[1]);
-      ctx.closePath();
-      // Opacities come from the same table the WebGL path uses — blockout is
-      // fully opaque so the selected colour renders as itself, not blended
-      // with the darkened window opening underneath.
-      ctx.fillStyle = rgba(fabricColor, fabricOpacityFor(type, fabricColor));
-      ctx.fill();
-      ctx.restore();
+      drawRollerFallback(ctx, [faceTL, faceTR, fabBR, fabBL], tl,
+        { colour: fabricColor, opacity: fabricOpacityFor(type, fabricColor), lighting });
     }
 
     // The shader carries the fabric lighting. Only a narrow frame contact
     // shadow is added here; repeated broad overlays made the blind bevelled.
     drawAmbientOcclusion(ctx, tl, tr, fabBR, fabBL);
 
-    // --- LIGHT LEAK — warm daylight escaping the fabric's perimeter, at the
-    // intensity this fabric's opacity implies. Drawn after the AO so the
-    // glow sits over the shadow band at the edge, which is the real
-    // relationship: the leak is in front of the recess, not behind it.
-    drawLightLeak(ctx, type, tl, tr, fabBL, fabBR, avgW);
+    // The photograph supplies the light in the side gaps. An additive glow
+    // here invented a white frame even on an unlit, plain wall.
   } // end showBlind (depth + fabric)
 
-  // The selected fabric covers the front of the roller at every drop length.
-  drawCassette(
+  // With no hanging drop, only the wound material and fittings remain visible.
+  if (!showBlind) drawCassette(
     ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
     { p, blindType: type, fabricColor, lighting },
   );
@@ -1894,6 +1815,27 @@ const drawDualBlindArea = (
     drawPreFabricDepth(ctx, fabricQuad);
   }
 
+  // --- TWIN CASSETTES + BRACKETS — a dual roller carries two tubes, and
+  // drawing one housing for both was the last thing making it read as a
+  // single blind. The back tube is drawn first, slightly higher and behind;
+  // the front sits 4px toward the room and overlaps it, so the pair reads as
+  // two rollers on one bracket. Always drawn: the hardware stays put however
+  // far the fabric is wound up. ---
+  const { pv: cassettePv } = axesFor(tl, tr);
+  const cassetteOffset = scaleToBlind(4, avgW);
+  const backCassetteTL: Point = [tl[0] + cassettePv[0] * cassetteOffset, tl[1] + cassettePv[1] * cassetteOffset];
+  const backCassetteTR: Point = [tr[0] + cassettePv[0] * cassetteOffset, tr[1] + cassettePv[1] * cassetteOffset];
+  // Each front-facing roll follows its own drop while retaining the chosen fabric.
+  drawCassette(
+    ctx, backCassetteTL, backCassetteTR, leftH * 0.85, hardwareColourName, safeHardwareColor, avgW, yRotation,
+    { p: backP, blindType: 'sunscreen', fabricColor, lighting },
+  );
+  drawCassette(
+    ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
+    { p: frontP, blindType: 'blockout', fabricColor, lighting },
+  );
+
+
   /** Draws one roller's fabric quad plus its fold-line texture. The two
    * layers share the selected colour but not the fabric: `texturePath` and
    * `opacity` are what make the back read as sunscreen mesh and the front as
@@ -1910,6 +1852,9 @@ const drawDualBlindArea = (
     const layerBL = leftEdge(dropP);
     const layerBR = rightEdge(dropP);
     const surface = surfaceFor(surfaceType);
+    const rollRadius = cassetteHeightRatio(dropP) / 2;
+    const faceTL = leftEdge(-rollRadius);
+    const faceTR = rightEdge(-rollRadius);
 
     if (!glStateRef.current && !glUnavailableRef.current) {
       try {
@@ -1937,7 +1882,7 @@ const drawDualBlindArea = (
       const tint = hexToRgb(fabricColor);
       const {uvScale,uvOffset} = blindTextureCoordinates(surface.tileX,avgW,leftH,dropP);
       if (fabricTexture) {
-        drawQuad(state, [tl, tr, layerBR, layerBL], fabricTexture, {
+        drawQuad(state, [faceTL, faceTR, layerBR, layerBL], fabricTexture, {
           tint,
           textureAmount: surfaceType === 'sunscreen'
             ? sunscreenTextureAmount(surface.textureAmount, fabricColor)
@@ -1947,21 +1892,13 @@ const drawDualBlindArea = (
           shade: true,
           folds: 0,
           shaderType: shaderTypeFor(surfaceType),
-          lighting, uvOffset, dropFraction:dropP,
+          lighting, uvOffset, dropFraction:dropP, frontRoll:rollRadius,
         });
         ctx.drawImage(state.canvas, 0, 0);
       }
     } else {
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(tl[0], tl[1]);
-      ctx.lineTo(tr[0], tr[1]);
-      ctx.lineTo(layerBR[0], layerBR[1]);
-      ctx.lineTo(layerBL[0], layerBL[1]);
-      ctx.closePath();
-      ctx.fillStyle = rgba(fabricColor, opacity);
-      ctx.fill();
-      ctx.restore();
+      drawRollerFallback(ctx, [faceTL, faceTR, layerBR, layerBL], tl,
+        { colour: fabricColor, opacity, lighting });
     }
   };
 
@@ -2039,25 +1976,6 @@ const drawDualBlindArea = (
     drawAmbientOcclusion(ctx, tl, tr, backBR, backBL);
   }
 
-  // --- TWIN CASSETTES + BRACKETS — a dual roller carries two tubes, and
-  // drawing one housing for both was the last thing making it read as a
-  // single blind. The back tube is drawn first, slightly higher and behind;
-  // the front sits 4px toward the room and overlaps it, so the pair reads as
-  // two rollers on one bracket. Always drawn: the hardware stays put however
-  // far the fabric is wound up. ---
-  const { pv: cassettePv } = axesFor(tl, tr);
-  const cassetteOffset = scaleToBlind(4, avgW);
-  const backCassetteTL: Point = [tl[0] + cassettePv[0] * cassetteOffset, tl[1] + cassettePv[1] * cassetteOffset];
-  const backCassetteTR: Point = [tr[0] + cassettePv[0] * cassetteOffset, tr[1] + cassettePv[1] * cassetteOffset];
-  // Each front-facing roll follows its own drop while retaining the chosen fabric.
-  drawCassette(
-    ctx, backCassetteTL, backCassetteTR, leftH * 0.85, hardwareColourName, safeHardwareColor, avgW, yRotation,
-    { p: backP, blindType: 'sunscreen', fabricColor, lighting },
-  );
-  drawCassette(
-    ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
-    { p: frontP, blindType: 'blockout', fabricColor, lighting },
-  );
 
   if (showBlind) {
     // --- RAILS — the front layer's rail sits higher; the back layer's rail
@@ -2807,9 +2725,10 @@ const coveredQuadFor = (area: RenderedArea, rollPosition: number): Point[] => {
     return [tl, tr, br, bl];
   }
   const p = Math.max(0, Math.min(1, rollPosition));
+  const radius = cassetteHeightRatio(p) / 2;
   return [
-    tl,
-    tr,
+    [tl[0] + (tl[0] - bl[0]) * radius, tl[1] + (tl[1] - bl[1]) * radius],
+    [tr[0] + (tr[0] - br[0]) * radius, tr[1] + (tr[1] - br[1]) * radius],
     [tr[0] + (br[0] - tr[0]) * p, tr[1] + (br[1] - tr[1]) * p],
     [tl[0] + (bl[0] - tl[0]) * p, tl[1] + (bl[1] - tl[1]) * p],
   ];
