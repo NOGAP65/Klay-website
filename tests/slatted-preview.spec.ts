@@ -153,10 +153,10 @@ test('plantation fills the sash opening without covering the photographed recess
       original.drawImage(photo, 0, 0, reference.width, reference.height);
       // Landmarks measured on the 1254px source photo, independently of the
       // preset quad: the reveal must remain, but the old sash must be covered.
-      const trim = [[194, 150], [194, 450], [194, 795], [300, 99], [650, 129], [990, 161],
-        [1050, 220], [1050, 450], [1050, 772], [280, 822], [650, 805], [995, 789]];
-      const sash = [[215, 160], [214, 450], [213, 760], [300, 125], [600, 152], [960, 185],
-        [1026, 250], [1026, 480], [1026, 730], [280, 807], [650, 790], [985, 775]];
+      const trim = [[174, 220], [174, 450], [174, 790], [300, 140], [650, 140], [990, 140],
+        [1080, 220], [1080, 450], [1080, 790], [280, 834], [650, 834], [995, 834]];
+      const sash = [[198, 220], [198, 450], [198, 780], [300, 161], [600, 161], [960, 161],
+        [1056, 250], [1056, 480], [1056, 730], [280, 820], [650, 820], [985, 820]];
       const delta = ([u, v]: number[]) => {
         const x = Math.round(u / 1254 * surface.width), y = Math.round(v / 1254 * surface.height);
         const a = original.getImageData(x, y, 1, 1).data, b = rendered.getImageData(x, y, 1, 1).data;
@@ -171,8 +171,8 @@ test('plantation fills the sash opening without covering the photographed recess
     const source = await canvas.evaluate((surface: HTMLCanvasElement) => surface.toDataURL().split(',')[1]);
     const bitmap = sharp(Buffer.from(source, 'base64'));
     const { width = 1254, height = 1254 } = await bitmap.metadata();
-    await bitmap.extract({ left: Math.round(170 / 1254 * width), top: Math.round(65 / 1254 * height),
-      width: Math.round(930 / 1254 * width), height: Math.round(780 / 1254 * height) })
+    await bitmap.extract({ left: Math.round(145 / 1254 * width), top: Math.round(115 / 1254 * height),
+      width: Math.round(970 / 1254 * width), height: Math.round(735 / 1254 * height) })
       .png().toFile(info.outputPath(`plantation-recess-${name}.png`));
   };
   await checkTrim();

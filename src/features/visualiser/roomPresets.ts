@@ -34,12 +34,12 @@ const WINDOW_ROOMS: Record<'blind' | 'curtain' | 'slatted', WindowRoom[]> = {
   ],
   slatted: [
     {
-      url: '/images/visualiser/rooms/slatted-living-room.webp',
+      url: '/images/visualiser/rooms/slatted-living-room-front.webp',
       name: 'Living room',
-      // Back of the reveal on the 1254px source. Cover the existing sash,
+      // Front-on view, back of the reveal on the 1254px source. Cover the sash,
       // preserving the full photographed jambs and sill outside this plane.
-      corners: [[210 / 1254, 112 / 1254], [1030 / 1254, 186 / 1254],
-        [1030 / 1254, 776 / 1254], [209 / 1254, 814 / 1254]],
+      corners: [[193 / 1254, 156 / 1254], [1061 / 1254, 156 / 1254],
+        [1061 / 1254, 825 / 1254], [193 / 1254, 825 / 1254]],
     },
   ],
 };

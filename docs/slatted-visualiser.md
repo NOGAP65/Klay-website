@@ -30,7 +30,7 @@ panel divisions and product compatibility remain subject to measure.
 
 The traced perimeter anchors the front installation plane. Frames no longer
 move away from it when depth is added; blades tuck behind the frame. Venetians
-and plantations share `slatted-living-room.webp`, a clear living-room opening
+and plantations share `slatted-living-room-front.webp`, a front-on living-room opening
 with all four corners unobstructed. Its trace follows the back of the reveal,
 covering the existing sash while leaving the photographed jambs and sill visible.
 The room picker and default preview resolve the same corners; uploaded photos
@@ -79,12 +79,12 @@ Mirrors & shower screens link explicitly to their filtered shop ranges.
 
 ## Room image provenance
 
-The new room was generated with the built-in image-generation tool, then encoded
-as sRGB WebP (1254 × 1254, 150,906 bytes) at
-`public/images/visualiser/rooms/slatted-living-room.webp`. The generated image
+The room was edited with the built-in image-generation tool to give both products
+a straight-on view, then encoded as sRGB WebP (1254 × 1254, 185,932 bytes) at
+`public/images/visualiser/rooms/slatted-living-room-front.webp`. The generated image
 contains only the room; all coverings remain interactive Canvas 2D geometry.
-The original bedroom image remains in use by other products.
+The superseded angled image was removed. Other products retain their room photos.
 
-Final generation prompt:
+Final edit prompt:
 
-> Use case: photorealistic-natural. Asset type: bare room photograph for Klay's interactive Venetian blinds and plantation shutters visualiser. Create one square architectural interior photograph, 1536 x 1536. A restrained contemporary Australian living room in soft daylight: warm off-white plaster walls, light oak floor, just the edge of a low linen sofa below the window and a small side table off to the far right. The main subject is a large simple rectangular white-painted window opening with a clear 100mm-deep plaster recess. The ENTIRE window, its complete frame, all four inner recess corners, and the bottom sill must be fully visible with a generous clear wall margin around every edge. Window fills about 68% of image width and 68% height, centered; bottom sill well above the sofa. Nothing overlaps the window or its corners. Camera at window mid-height with a mild 15-degree oblique view, straight verticals and realistic coherent perspective, enough to clearly see one recess jamb and the sill. Simple thin white window frame at the BACK of the recess, two tall panes separated by one narrow central vertical mullion, no horizontal mullions, no handles sticking forward. Through the glass: a quiet, slightly soft Australian garden with lawn, a fence and distant small shrubs. Restrained natural exposure, visible indoor painted trim detail, soft directional daylight and real contact shadows. No curtains, no blinds, no shutters, no fabric, no pelmets, no people, no text or logos, no interior plant or furniture obscuring any of the four corners. This is a genuine-looking real-estate architectural photo, not a 3D illustration, not a close crop of the window. Make the four corners at the back of the reveal visually unambiguous so a shutter frame can later be overlaid snugly inside it.
+> Use case: photorealistic-natural. Edit target: this bare living-room photo used underneath interactive window coverings. Change the CAMERA VIEW to precisely straight-on, square to the window wall, absolutely no side angle or camera roll. The sensor plane is parallel to the window wall; optical axis passes through the exact centre of the window. Window top and bottom are perfectly horizontal, both side jambs vertical, left and right edges the same height, no trapezoid or converging lines. Keep the warm neutral Australian living-room style, oak floor, linen seating only at the bottom corners, soft natural daylight and garden outside. Photograph the entire bare rectangular window and full 100mm-deep white reveal with all FOUR corners clearly visible and unobstructed. Keep a generous clear wall margin all the way around it. Centre the WINDOW in the square image, horizontally and vertically, filling approximately 70 percent of image width and 65 percent of height. Thin white window frame at the back of the reveal, two equal panes divided by one thin vertical centre mullion, no horizontal mullions. From this centred frontal camera, the white reveal is visible equally on the left and right, with top and bottom depth naturally visible. Real architectural photography, natural painted surface texture, subtle contact shadows, accurate exposure. No blinds, shutters, curtains, pelmets, fabric or objects overlapping the window. No text, logos or graphics. The precise front-facing viewpoint is the most important change.
