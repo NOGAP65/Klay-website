@@ -72,7 +72,7 @@ import { CABINET_MIRROR_SHAPES, cabinetMirrorSpecifications } from './lib/cabine
 import { mirrorShapes, mirrorDimensions, MIRROR_FRAME_COLOURS } from './lib/mirrorPhoto'
 import { FLYSCREEN_CONFIGURATIONS, FLYSCREEN_COLOURS, flyscreenSpecifications } from './lib/pleatedFlyscreens'
 import { FRONT_RETURN_SIZES, frontReturnSizeLabel } from './lib/semiScreenPhoto'
-import { slidingOpenings, defaultSlidingOpening, slidingMetals, type SlidingDoorStyle } from './lib/slidingDoors'
+import { slidingOpenings, defaultSlidingOpening, slidingMetals, type SlidingDoorStyle } from '@/features/joinery'
 import { WALK_IN_LAYOUTS, WALK_IN_HARDWARE, walkInSpecifications } from './lib/walkInWardrobes'
 
 import type { CartItem } from '@/features/cart'

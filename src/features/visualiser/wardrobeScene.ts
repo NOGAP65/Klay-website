@@ -17,7 +17,6 @@
 // ---------------------------------------------------------------------------
 
 import * as THREE from 'three';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 import {
   FINISH_TEXTURE, FINISH_TILE_MM,
@@ -30,6 +29,7 @@ import { createWalkInSurround } from './walkInSurround';
 import { loadImage } from '@/shared';
 
 import { DEFAULT_WALL_COLOUR } from './wallColours';
+import { joineryEnvironment } from './joineryEnvironment';
 import { buildCarcass } from './wardrobeCarcass';
 import { sampleBoardColour } from './wardrobeComposite';
 import { buildSliceMap, sliceMapper } from './wardrobeSlices';
@@ -137,23 +137,6 @@ function flattenOntoBoard(tex: THREE.Texture, board: THREE.Color): THREE.Texture
 }
 
 // The metal reflections are identical across widths and finishes in one viewer.
-const environments = new WeakMap<THREE.WebGLRenderer, THREE.WebGLRenderTarget>();
-function wardrobeEnvironment(renderer: THREE.WebGLRenderer): THREE.WebGLRenderTarget {
-  const cached = environments.get(renderer);
-  if (cached) return cached;
-  const generator = new THREE.PMREMGenerator(renderer);
-  const room = new RoomEnvironment();
-  const target = generator.fromScene(room, 0.04);
-  room.dispose();
-  generator.dispose();
-  environments.set(renderer, target);
-  renderer.domElement.addEventListener('webglcontextlost', () => {
-    target.dispose();
-    environments.delete(renderer);
-  }, { once: true });
-  return target;
-}
-
 export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<WardrobeScene> {
   const { renderer, modelId, colourName, widthMm } = opts;
   const handleFinishName = opts.handleFinish ?? DEFAULT_HANDLE_FINISH;
@@ -290,7 +273,7 @@ export async function buildWardrobeScene(opts: WardrobeSceneOpts): Promise<Wardr
   // So it goes on the one material that needs it. The board is lit by the lamps
   // alone, where the intensities mean what they look like they mean and a
   // shadow is something this code can reason about.
-  const env = wardrobeEnvironment(renderer);
+  const env = joineryEnvironment(renderer);
   disposables.push(key.shadow);
 
   // --- the carcass ---------------------------------------------------------

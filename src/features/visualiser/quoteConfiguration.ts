@@ -1,7 +1,7 @@
 import { blindLabel, sizeLabel } from '@/core/pricing';
 
 import { HONEYCOMB_TYPES } from '@/features/fabrics';
-import { wardrobeModelById, wardrobeHeight, walkInSpecifications, handleFinish } from '@/features/joinery';
+import { wardrobeModelById, wardrobeHeight, walkInSpecifications, handleFinish, slidingDoorName, slidingOpening } from '@/features/joinery';
 
 import { isJoinery, type useVisualiserStore } from './useVisualiserStore';
 import { isUnpricedBlind } from './windowProducts';
@@ -11,17 +11,26 @@ import type { QuoteItem } from '@/core/quoteItems';
 type State = ReturnType<typeof useVisualiserStore.getState>;
 const productNames = { honeycomb: 'Honeycomb Blinds', venetian: 'Venetian Blinds', plantation: 'Plantation Shutters' };
 export type VisualiserQuoteConfig = Pick<State, 'productCategory' | 'windows' | 'wardrobeModel'
-  | 'wardrobeWidthMm' | 'wardrobeColour' | 'wardrobeHandleFinish'>;
+  | 'wardrobeWidthMm' | 'wardrobeColour' | 'wardrobeHandleFinish' | 'wardrobeSliding' | 'slidingDoor'>;
 
 export function selectQuoteConfig(state: State): VisualiserQuoteConfig {
   return {
     productCategory: state.productCategory, windows: state.windows,
     wardrobeModel: state.wardrobeModel, wardrobeWidthMm: state.wardrobeWidthMm,
     wardrobeColour: state.wardrobeColour, wardrobeHandleFinish: state.wardrobeHandleFinish,
+    wardrobeSliding: state.wardrobeSliding, slidingDoor: state.slidingDoor,
   };
 }
 
 export function visualiserQuoteItems(state: VisualiserQuoteConfig): QuoteItem[] {
+  if (state.productCategory === 'wardrobe' && state.wardrobeSliding) {
+    const door = state.slidingDoor;
+    return [{ name: slidingDoorName(door.style), quantity: 1, options: [
+      { label: 'Doors', value: door.panels === 'three' ? 'Three doors' : 'Two doors' },
+      { label: 'Finish', value: door.material }, { label: 'Hardware', value: door.hardware },
+      { label: 'Opening', value: slidingOpening(door.style, door.panels, door.opening).label },
+    ] }];
+  }
   if (isJoinery(state.productCategory)) {
     const model = wardrobeModelById(state.wardrobeModel);
     if (model.kind === 'walk-in') {

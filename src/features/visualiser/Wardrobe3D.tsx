@@ -27,10 +27,14 @@ import { LoadingIndicator } from '@/ds';
 import { wardrobeModelById, DEFAULT_WIDTH_MM } from '@/features/joinery';
 
 import JoineryOrbitControl from './JoineryOrbitControl';
+import { createSlidingDoorScene } from './slidingDoorScene';
 import { onWallColour } from './wallColours';
 import { buildWardrobeScene, MM, OPENING_HEIGHT_MM, type WardrobeScene } from './wardrobeScene';
 
+import type { SlidingDoorConfig } from '@/features/joinery';
+
 export interface Wardrobe3DProps {
+  sliding?: SlidingDoorConfig;
   modelId: string;
   colourName: string;
   /** Which width in the layout's range. Defaults to the layout's first. */
@@ -66,8 +70,9 @@ export default function Wardrobe3D({
   handleFinish,
   recessed,
   wallColour,
+  sliding,
 }: Wardrobe3DProps) {
-  const isWalkIn = wardrobeModelById(modelId).kind === 'walk-in';
+  const isWalkIn = !sliding && wardrobeModelById(modelId).kind === 'walk-in';
   const hostRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const [angle, setAngle] = useState(30);
@@ -124,7 +129,6 @@ export default function Wardrobe3D({
     setIsReady(false);
     setHasError(false);
 
-    const model = wardrobeModelById(modelId);
     // An interior starts through its entrance. Keep the customer's orbit when
     // changing finishes/layouts, but reframe when switching product families.
     if (viewKindRef.current !== isWalkIn) {
@@ -132,9 +136,11 @@ export default function Wardrobe3D({
       viewKindRef.current = isWalkIn;
     }
     const widthMm = selectedWidthMm ?? DEFAULT_WIDTH_MM;
+    const framingHeight = sliding ? 2200 : OPENING_HEIGHT_MM;
 
     const renderer = rendererRef.current;
     if (!renderer) { setHasError(true); return; }
+    renderer.toneMapping = sliding ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
 
     // A wider interior lens reveals the side runs instead of flattening them
     // behind their end panels. Straight units keep their existing product lens.
@@ -144,7 +150,9 @@ export default function Wardrobe3D({
     let cleanup = () => {};
 
     // Skip work cancelled by a remount or another selection before setup begins.
-    Promise.resolve().then(() => disposed ? null : buildWardrobeScene({ renderer, modelId: model.id, colourName, widthMm, handleFinish: latest.current.handleFinish, recessed, wallColour: latest.current.wallColour }))
+    Promise.resolve().then(() => disposed ? null : sliding
+      ? createSlidingDoorScene({ renderer, config: sliding, wallColour: latest.current.wallColour })
+      : buildWardrobeScene({ renderer, modelId, colourName, widthMm, handleFinish: latest.current.handleFinish, recessed, wallColour: latest.current.wallColour }))
       .then(async built => {
         if (!built) return;
         if (disposed) {
@@ -187,7 +195,7 @@ export default function Wardrobe3D({
         // cabinet alone cropped the empty reveal above it — which is the part
         // that says the robe is set into a room rather than filling a hole cut
         // to its own size. See OPENING_HEIGHT_MM.
-        const span = Math.max(widthMm * (isWalkIn ? Math.SQRT2 : 1) / Math.max(camera.aspect, 0.45), OPENING_HEIGHT_MM) * MM;
+        const span = Math.max(widthMm * (isWalkIn ? Math.SQRT2 : 1) / Math.max(camera.aspect, 0.45), framingHeight) * MM;
         // 1.28 AGAINST THE OPENING, not 1.72. The multiplier was set when the
         // subject was the 2016 cabinet; measuring it against a 2700 opening
         // instead made the same number a third further back, and what filled
@@ -202,7 +210,7 @@ export default function Wardrobe3D({
         // Aimed a little above the cabinet's own middle, so the opening is
         // centred in frame rather than the unit inside it.
         const aim = built.centre.clone();
-        aim.y = isWalkIn ? 1.25 : (OPENING_HEIGHT_MM / 2) * MM;
+        aim.y = isWalkIn ? 1.25 : (framingHeight / 2) * MM;
         const saved = viewRef.current;
         camera.position.copy(aim).add(new THREE.Vector3().setFromSpherical(
           new THREE.Spherical(dist * saved.zoom, saved.polar, saved.yaw),
@@ -348,7 +356,7 @@ export default function Wardrobe3D({
     // control that does nothing.
     // NOT wallColour OR handleFinish — those repaint in place, below. Leaving
     // them here rebuilt the entire scene on every click of a swatch.
-  }, [modelId, colourName, selectedWidthMm, background, recessed, retry, isWalkIn]);
+  }, [modelId, colourName, selectedWidthMm, background, recessed, retry, isWalkIn, sliding]);
 
   /** Repaint the room. Two materials and a background — no geometry, no
    * textures, no environment. */

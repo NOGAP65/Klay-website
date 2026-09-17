@@ -58,13 +58,13 @@ export interface SlidingOpening {
   maxWidth: number;
 }
 export function slidingOpenings(style: SlidingDoorStyle, panels?: string): SlidingOpening[] {
-  const three = panels === 'three';
-  if (style === 'framed') return (three ? [2700, 3000, 3300, 3600] : [1200, 1500, 1800, 2100, 2400]).map(width => ({
+  const hasThree = panels === 'three';
+  if (style === 'framed') return (hasThree ? [2700, 3000, 3300, 3600] : [1200, 1500, 1800, 2100, 2400]).map(width => ({
     id: `2160x${width}`, label: `H2160 × W${width} mm`,
     minHeight: 2160, maxHeight: 2160, minWidth: width, maxWidth: width,
   }));
   const heights = [[440, 2440]];
-  const widths = three ? [[2371, 2740], [2741, 3490]] : [[900, 1470], [1471, 1870], [1871, 2370]];
+  const widths = hasThree ? [[2371, 2740], [2741, 3490]] : [[900, 1470], [1471, 1870], [1871, 2370]];
   return heights.flatMap(([minHeight, maxHeight]) => widths.map(([minWidth, maxWidth]) => ({
     id: `${minHeight}-${maxHeight}x${minWidth}-${maxWidth}`,
     label: `H${minHeight}–${maxHeight} × W${minWidth}–${maxWidth} mm`,
@@ -86,4 +86,33 @@ export function slidingOpening(style: SlidingDoorStyle, panels?: string, dimensi
   const options = slidingOpenings(style, panels);
   return options.find(option => option.id === dimension)
     ?? options.find(option => option.id === defaultSlidingOpening(style, panels))!;
+}
+
+export interface SlidingDoorConfig {
+  style: SlidingDoorStyle;
+  panels: 'two' | 'three';
+  material: string;
+  hardware: string;
+  opening: string;
+}
+export const DEFAULT_SLIDING_DOOR: SlidingDoorConfig = {
+  style: 'framed', panels: 'two', material: 'MDF Natural Oak', hardware: 'Matt Black', opening: '2160x2100',
+};
+export function reconcileSlidingDoor(current: SlidingDoorConfig, patch: Partial<SlidingDoorConfig>): SlidingDoorConfig {
+  const style = patch.style === 'framed' || patch.style === 'shaker' ? patch.style : current.style;
+  const panels = patch.panels === 'two' || patch.panels === 'three' ? patch.panels : current.panels;
+  const next = { style, panels,
+    material: slidingMaterial(style, patch.material ?? current.material).name,
+    hardware: slidingMetals(style).find(colour => colour.name === (patch.hardware ?? current.hardware))?.name ?? slidingMetals(style)[0].name,
+    opening: slidingOpening(style, panels, patch.opening ?? current.opening).id,
+  };
+  // Re-selecting the active swatch must not rebuild a ready scene.
+  return (Object.keys(next) as (keyof SlidingDoorConfig)[]).every(key => next[key] === current[key]) ? current : next;
+}
+export const slidingDoorName = (style: SlidingDoorStyle) => `${style === 'framed' ? 'Framed' : 'Shaker'} Sliding Wardrobe Doors`;
+export function slidingPreviewDimensions(config: SlidingDoorConfig) {
+  const opening = slidingOpening(config.style, config.panels, config.opening);
+  // Display height stays at 2 m, matching the shop. Order limits stay in the
+  // opening label and cart; a width-range selection is shown at its midpoint.
+  return { widthMm: (opening.minWidth + opening.maxWidth) / 2, heightMm: 2000, count: config.panels === 'three' ? 3 : 2 };
 }

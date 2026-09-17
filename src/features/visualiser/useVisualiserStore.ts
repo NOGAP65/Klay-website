@@ -2,8 +2,9 @@ import { create } from 'zustand';
 
 
 import { ROLLER_HARDWARE, rollerColour, HARDWARE_HEX, type HoneycombType } from '@/features/fabrics';
-import { wardrobeModelById, type WardrobeKind } from '@/features/joinery';
+import { wardrobeModelById, DEFAULT_SLIDING_DOOR, reconcileSlidingDoor, type SlidingDoorConfig, type WardrobeKind } from '@/features/joinery';
 
+import { joineryDefaults } from './joineryDefaults';
 import { DEFAULT_WALL_COLOUR } from './wallColours';
 import { priceWindow } from './windowPricing';
 import { coloursFor, windowColour, isUnpricedBlind, type ProductCategory } from './windowProducts';
@@ -186,6 +187,10 @@ const writeThrough =
   };
 
 interface VisualiserStore {
+  wardrobeSliding: boolean;
+  slidingDoor: SlidingDoorConfig;
+  showSlidingDoors: () => void;
+  setSlidingDoor: (patch: Partial<SlidingDoorConfig>) => void;
   // Product selection
   productCategory: ProductCategory;
   blindType: BlindType;
@@ -324,15 +329,11 @@ interface VisualiserStore {
   setCompareDivider: (divider: number) => void;
 }
 
-const joineryDefaults = (kind: WardrobeKind) => ({
-  wardrobeKind: kind,
-  wardrobeModel: kind === 'shelving' ? 'LIN02' : kind === 'walk-in' ? 'LS01' : 'SRSTDH02',
-  wardrobeWidthMm: kind === 'walk-in' ? 2400 : 1800,
-  wardrobeColour: 'Matt Polar White',
-  wardrobeHandleFinish: kind === 'walk-in' ? 'Brushed Matt Black' : 'Black',
-});
-
 export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
+  wardrobeSliding: false,
+  slidingDoor: DEFAULT_SLIDING_DOOR,
+  showSlidingDoors: () => set({ productCategory: 'wardrobe', wardrobeSliding: true }),
+  setSlidingDoor: (patch) => set(state => ({ slidingDoor: reconcileSlidingDoor(state.slidingDoor, patch) })),
   productCategory: 'blind',
   // The flat configuration fields, spread from the same literal that seeds the
   // job's first window — writing the defaults twice is how the two drift.
@@ -451,7 +452,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   // Switching kind carries the layout with it, because a built-in id is not a
   // walk-in id and leaving the old one selected would show a straight run under
   // a heading that says walk-in. First of the new kind, every time.
-  setWardrobeKind: (kind) => set(joineryDefaults(kind)),
+  setWardrobeKind: (kind) => set({ ...joineryDefaults(kind), wardrobeSliding: false }),
   // The width follows the layout, because the ranges differ — 2.9 is built at
   // one width, 4.0 at three. Carrying a width across a layout change would
   // leave the configurator holding a size that layout is not made in.

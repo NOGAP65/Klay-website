@@ -1,8 +1,11 @@
 import { useId } from 'react';
+
+import { slidingMaterial, slidingMaterials, type SlidingDoorStyle } from '@/features/joinery';
 import { useMediaQuery } from '@/shared';
+
 import { photoColourCurves } from '../lib/photoColour';
 import { slidingDoorPhotoPlan, type PhotoRect, type PhotoSlice } from '../lib/slidingDoorPhoto';
-import { slidingMaterial, slidingMaterials, type SlidingDoorStyle } from '../lib/slidingDoors';
+
 import { usePhotoTransition } from './usePhotoTransition';
 
 const rectPath = (r: PhotoRect) => `M${r.x} ${r.y}h${r.w}v${r.h}h${-r.w}Z`;

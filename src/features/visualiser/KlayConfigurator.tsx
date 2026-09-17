@@ -25,6 +25,7 @@ function WardrobeRoomRenderer(props: ComponentProps<typeof LazyWardrobeRoomRende
   return <Suspense fallback={<LoadingIndicator overlay label="Loading preview" />}><LazyWardrobeRoomRenderer {...props}/></Suspense>;
 }
 const LazyWardrobe3D = lazy(() => import('./Wardrobe3D'));
+const LazySlidingDoorStage = lazy(() => import('./SlidingDoorStage'));
 function Wardrobe3D(props: ComponentProps<typeof LazyWardrobe3D>) {
   return <Suspense fallback={<LoadingIndicator overlay label="Loading preview" />}><LazyWardrobe3D {...props}/></Suspense>;
 }
@@ -890,7 +891,14 @@ function ConnectedPullControl({ curtain, run }: { curtain: boolean; run: number 
     : <BeadChain value={value} onChange={onChange} run={run} />;
 }
 
-export default function KlayConfigurator({
+export default function KlayConfigurator(props: KlayConfiguratorProps = {}) {
+  const isSliding = useVisualiserStore(state => state.productCategory === 'wardrobe' && state.wardrobeSliding);
+  return isSliding
+    ? <Suspense fallback={<LoadingIndicator label="Loading 3D preview" />}><LazySlidingDoorStage mediaMaxVh={props.mediaMaxVh} /></Suspense>
+    : <PhotoConfigurator {...props} />;
+}
+
+function PhotoConfigurator({
   defaultBlindType,
   mediaMaxVh = MAX_MEDIA_VH,
 }: KlayConfiguratorProps = {}) {

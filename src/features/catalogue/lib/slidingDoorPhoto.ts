@@ -1,4 +1,4 @@
-import { slidingOpening, slidingPanelMirrors, type SlidingDoorStyle } from './slidingDoors';
+import { slidingOpening, slidingPanelMirrors, type SlidingDoorStyle } from '@/features/joinery';
 
 export interface PhotoRect { x: number; y: number; w: number; h: number }
 export interface PhotoSlice { source: PhotoRect; target: PhotoRect }

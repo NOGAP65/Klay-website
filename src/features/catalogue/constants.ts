@@ -35,10 +35,10 @@
 import { fabricPalette } from '@/features/fabrics'
 import { CURTAIN_COLOURS, SLAT_COLOURS } from '@/features/fabrics'
 import { WARDROBE_COLOURS } from '@/features/joinery'
+import { FRAMED_DOOR_MATERIALS, SHAKER_DOOR_MATERIALS } from '@/features/joinery'
 
-import { PRODUCTS } from './products'
-import { FRAMED_DOOR_MATERIALS, SHAKER_DOOR_MATERIALS } from './lib/slidingDoors'
 import { WALK_IN_COLOURS } from './lib/walkInWardrobes'
+import { PRODUCTS } from './products'
 
 import type { BlindType } from '@/core/pricing'
 

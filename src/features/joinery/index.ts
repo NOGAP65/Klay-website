@@ -4,3 +4,4 @@ export * from './wardrobeHardware';
 export * from './walkInWardrobes';
 export * from './layout';
 export { cutoutFor } from './wardrobeCutouts';
+export * from './slidingDoors';

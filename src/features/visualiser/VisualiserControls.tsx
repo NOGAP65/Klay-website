@@ -13,7 +13,9 @@ import {
 } from '@/features/joinery';
 import { HANDLE_FINISHES, WALK_IN_HANDLE_FINISHES, handleFinish, walkInSpecifications, walkInLayout } from '@/features/joinery';
 
+import SlidingDoorControls from './SlidingDoorControls';
 import { coloursFor, isJoinery, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
+import WardrobeTypePicker from './WardrobeTypePicker';
 import { WINDOW_STYLES, isSlatted, isUnpricedBlind } from './windowProducts';
 
 interface VisualiserControlsProps {
@@ -533,10 +535,12 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
       store.setProductCategory('blind');
       store.setBlindType(typeParam);
     }
-    if (categoryParam === 'curtain') store.setProductCategory('curtain');
-    if (categoryParam === 'venetian' || categoryParam === 'plantation') store.setProductCategory(categoryParam);
+    const category = (['curtain', 'wardrobe', 'shelving', 'venetian', 'plantation', 'honeycomb'] as const).find(value => value === categoryParam);
+    if (category) store.setProductCategory(category);
+    if (categoryParam === 'wardrobe' && (typeParam === 'framed' || typeParam === 'shaker')) {
+      store.showSlidingDoors(); store.setSlidingDoor({ style: typeParam });
+    }
     if (categoryParam === 'honeycomb') {
-      store.setProductCategory('honeycomb');
       if (typeParam === 'daynight' || typeParam === 'blockout') store.setHoneycombType(typeParam);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -562,6 +566,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
   // to drive, it is built to an opening rather than sold in small/medium/large,
   // and it is quoted on measure — so a price box here would be inventing a
   // number the business has not set.
+  if (store.productCategory === 'wardrobe' && store.wardrobeSliding) return <SlidingDoorControls onDark={onDark} />;
   if (isJoinery(store.productCategory)) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: groupGap }}>
@@ -586,24 +591,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 different viewpoints, and the models on offer depend on which,
                 so asking in this order is what makes the Model row mean
                 something. */}
-            {store.productCategory === 'wardrobe' && (
-              <Field onDark={onDark} label="Type">
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
-                  {([
-                    ['built-in', 'Built-in'],
-                    ['walk-in', 'Walk-in'],
-                  ] as const).map(([id, label]) => (
-                    <Pill
-                      onDark={onDark}
-                      key={id}
-                      label={label}
-                      active={store.wardrobeKind === id}
-                      onClick={() => store.setWardrobeKind(id)}
-                    />
-                  ))}
-                </div>
-              </Field>
-            )}
+            {store.productCategory === 'wardrobe' && <WardrobeTypePicker onDark={onDark} />}
 
             {/* WHERE IT GOES, and it is the second question because it changes
                 the product rather than the picture: off a recess the run gains
