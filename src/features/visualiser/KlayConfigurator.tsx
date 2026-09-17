@@ -1524,7 +1524,7 @@ export default function KlayConfigurator({
             initialCornersPct={
               openingWidthFor(hookPhotoUrl) !== null
                 ? (alcoveCornersPct(openingWidthFor(hookPhotoUrl)!) as Point[])
-                : windowRoomFor(hookPhotoUrl)?.corners
+                : windowRoomFor(hookPhotoUrl, store.productCategory)?.corners
             }
           />
           {/* Confirm / Change photo live in the footer — see footerButtons. */}

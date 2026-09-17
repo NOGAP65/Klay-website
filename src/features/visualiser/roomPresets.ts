@@ -34,14 +34,25 @@ export const WINDOW_ROOMS: Record<'blind' | 'curtain', WindowRoom[]> = {
   ],
 };
 
-// Slatted products follow the opening, including the recessed right jamb.
+// Venetians follow the opening, including the recessed right jamb.
 // Its top and bottom sit at different horizontal positions in this photo.
-const SLATTED_ROOM: WindowRoom = {
+const VENETIAN_ROOM: WindowRoom = {
   ...WINDOW_ROOMS.blind[0],
   corners: [[.1826, .198], [.5780, .2530], [.5730, .6430], [.1802, .674]],
 };
-export const defaultWindowRoom = (category: ProductCategory): WindowRoom =>
-  category === 'venetian' || category === 'plantation' ? SLATTED_ROOM : WINDOW_ROOMS[category === 'curtain' ? 'curtain' : 'blind'][0];
+// The shutter's frame fits at the back of the reveal, inside all four edges.
+// Preserve the photographed architrave, jamb depth and sill around it.
+const PLANTATION_ROOM: WindowRoom = {
+  ...WINDOW_ROOMS.blind[0],
+  corners: [[.1915, .2135], [.5675, .2585], [.5640, .6340], [.1875, .6580]],
+};
+export function defaultWindowRoom(category: ProductCategory): WindowRoom {
+  if (category === 'plantation') return PLANTATION_ROOM;
+  if (category === 'venetian') return VENETIAN_ROOM;
+  return WINDOW_ROOMS[category === 'curtain' ? 'curtain' : 'blind'][0];
+}
 
-export const windowRoomFor = (url: string | null): WindowRoom | undefined =>
-  Object.values(WINDOW_ROOMS).flat().find(room => room.url === url);
+export function windowRoomFor(url: string | null, category: ProductCategory): WindowRoom | undefined {
+  const preset = defaultWindowRoom(category);
+  return url === preset.url ? preset : Object.values(WINDOW_ROOMS).flat().find(room => room.url === url);
+}

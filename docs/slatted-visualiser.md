@@ -30,7 +30,10 @@ panel divisions and product compatibility remain subject to measure.
 
 The traced perimeter anchors the front installation plane. Frames no longer
 move away from it when depth is added; blades tuck behind the frame. The default
-slatted preview has a front-recess trace separate from the roller-fabric trace.
+Venetian preview has its own opening trace. Plantation shutters have a separate
+inset trace at the back of the photographed reveal, leaving the original trim,
+jambs and sill visible. Sample-photo tracing resolves the same product-specific
+corners as the default preview; uploaded photos keep the customer's own trace.
 The photo centre and a focal estimate of 0.9 times its longest side extend the
 exact traced plane into depth. The front boundary still matches all four pins.
 This is an uncalibrated camera estimate, not recovery of a photo's real lens or

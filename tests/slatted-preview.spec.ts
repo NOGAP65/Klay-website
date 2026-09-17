@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+import { defaultWindowRoom } from '../src/features/visualiser/roomPresets';
 import { slattedPlane, venetianSlats, plantationPanels } from '../src/features/visualiser/slattedGeometry';
 
 import { portrait } from './helpers/visualiserPhoto';
@@ -135,6 +136,48 @@ test('UltraSlat colours, tilt and stacking work on a tilted uploaded opening', a
   await expect(page.locator('main')).toContainText('UltraSlat Manuscript');
   await expect(page.locator('main')).toContainText('Price on measure');
   expect(errors).toEqual([]);
+});
+
+test('plantation stays inside the photographed recess on default and retraced presets', async ({ page }, info) => {
+  await page.goto('/visualiser?category=plantation');
+  const canvas = page.locator('canvas[data-blind-product="plantation"]');
+  const preset = defaultWindowRoom('plantation');
+  await page.getByRole('button', { name: 'Walnut', exact: true }).click();
+  const checkTrim = async () => {
+    await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+    const difference = await canvas.evaluate(async (surface: HTMLCanvasElement, url) => {
+      const photo = new Image(); photo.src = url; await photo.decode();
+      const reference = document.createElement('canvas'); reference.width = surface.width; reference.height = surface.height;
+      const original = reference.getContext('2d')!, rendered = surface.getContext('2d')!;
+      original.drawImage(photo, 0, 0, reference.width, reference.height);
+      // Photographed trim and reveal around all four edges. A dark shutter
+      // painted over these points must fail, even if it fits a guessed quad.
+      const trim = [[.185, .35], [.185, .55], [.184, .648], [.215, .207], [.4, .230], [.55, .251],
+        [.574, .36], [.572, .53], [.575, .62], [.23, .663], [.4, .65], [.54, .639]];
+      return Math.max(...trim.flatMap(([u, v]) => {
+        const x = Math.round(u * surface.width), y = Math.round(v * surface.height);
+        const a = original.getImageData(x, y, 1, 1).data, b = rendered.getImageData(x, y, 1, 1).data;
+        return [0, 1, 2].map(i => Math.abs(a[i] - b[i]));
+      }));
+    }, preset.url);
+    expect(difference, 'The photographed recess stays visible; only the existing 8% room dimming is allowed').toBeLessThan(26);
+  };
+  await checkTrim();
+  await canvas.screenshot({ path: info.outputPath('plantation-inset-walnut.png') });
+  await page.getByRole('button', { name: 'Visualise in your own room', exact: true }).click();
+  await page.getByRole('button', { name: 'Use Original bedroom', exact: true }).click();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const pins = page.locator('svg circle[fill="transparent"]');
+    await expect(pins.first()).toBeVisible();
+    const corners = await pins.evaluateAll(elements => elements.slice(0, 4).map(element => {
+      const box = (element as SVGCircleElement).ownerSVGElement!.viewBox.baseVal;
+      return [Number(element.getAttribute('cx')) / box.width, Number(element.getAttribute('cy')) / box.height];
+    }));
+    corners.forEach((point, i) => point.forEach((value, axis) => expect(value).toBeCloseTo(preset.corners[i][axis], 5)));
+    await page.getByRole('button', { name: 'Confirm outline', exact: true }).click();
+    await checkTrim();
+    if (attempt === 0) await page.getByRole('button', { name: 'Retrace', exact: true }).click();
+  }
 });
 
 test('plantation louvers tilt inside their frame and selections survive cart and theme changes', async ({ page }, info) => {
