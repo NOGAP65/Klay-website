@@ -18,6 +18,31 @@ for (const name of Object.keys(process.env)) {
     failures.push(`environment: ${name} must not have a public VITE_ prefix`);
   }
 }
+
+// --- runtime secrets must not be readable by the BUILD ----------------------
+// THE SUPPLY-CHAIN QUESTION, ASKED WHERE IT CAN BE ANSWERED. Installing this
+// project runs lifecycle scripts from the whole transitive dependency tree on
+// the build machine. One compromised package — the failure mode behind most
+// recent registry incidents — reads process.env and posts it somewhere. What it
+// finds there is decided entirely by Netlify's variable SCOPES, which no file in
+// this repository controls, so the only way to know is to look at build time.
+//
+// Not a hard failure yet, because flipping it on would break the next deploy
+// rather than inform it. Scope the variables, confirm this banner is gone, then
+// change `warn` to `failures.push` and it can never silently come back.
+const RUNTIME_ONLY = ['SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET',
+  'RESEND_API_KEY', 'TURNSTILE_SECRET_KEY'];
+const exposedToBuild = RUNTIME_ONLY.filter(name => (process.env[name] ?? '').trim() !== '');
+if (exposedToBuild.length > 0 && process.env.NETLIFY === 'true') {
+  console.warn(`
+!! ${exposedToBuild.length} runtime secret(s) are readable by this BUILD: ${exposedToBuild.join(', ')}
+!!
+!! These are only needed by the functions at request time. While they are in
+!! scope for the build, every postinstall script in node_modules can read them.
+!! Fix: Netlify -> Site configuration -> Environment variables -> edit each one
+!! and set Scopes to "Functions" only (clear Builds and Post processing).
+`);
+}
 const secretNames = ['TURNSTILE_SECRET_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'STRIPE_SECRET_KEY',
   'STRIPE_WEBHOOK_SECRET', 'RESEND_API_KEY'];
 function scan(file) {

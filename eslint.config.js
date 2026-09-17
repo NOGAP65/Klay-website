@@ -373,7 +373,8 @@ export default tseslint.config(
 
   // --- tooling and config files ---------------------------------------------
   {
-    files: ['tests/security.spec.ts', 'tests/security-widget.spec.ts', 'playwright.config.ts'],
+    files: ['tests/security.spec.ts', 'tests/security-hardening.spec.ts',
+      'tests/security-widget.spec.ts', 'playwright.config.ts'],
     // These tests run in Node and deliberately vary server configuration.
     // The browser environment boundary still applies to every production src file.
     rules: { 'klay/no-direct-env-access': 'off' },

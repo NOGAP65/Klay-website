@@ -27,7 +27,7 @@ export default defineConfig({
     { name: 'security-widget-android', testMatch: '**/security-widget.spec.ts', use: { ...variants[1].settings } },
     { name: 'security-widget-ios', testMatch: '**/security-widget.spec.ts', use: { ...variants[2].settings } },
     { name: 'performance', testMatch: '**/performance.spec.ts', use: { ...variants[0].settings, reducedMotion: 'reduce' } },
-    { name: 'domain', testMatch: ['**/domain.spec.ts', '**/architecture.spec.ts', '**/joinery.spec.ts', '**/fabrics.spec.ts', '**/cart.spec.ts', '**/routes.spec.ts', '**/security.spec.ts', '**/customer-validation.spec.ts'] },
+    { name: 'domain', testMatch: ['**/domain.spec.ts', '**/architecture.spec.ts', '**/joinery.spec.ts', '**/fabrics.spec.ts', '**/cart.spec.ts', '**/routes.spec.ts', '**/security.spec.ts', '**/security-hardening.spec.ts', '**/customer-validation.spec.ts'] },
     { name: 'basic-android', testMatch: ['**/visualiser-compatibility.spec.ts', '**/roller-preview.spec.ts'], use: { ...variants[1].settings, viewport: { width: 320, height: 640 }, deviceScaleFactor: 1, colorScheme: 'dark' } },
     { name: 'forced-dark-android', testMatch: ['**/visualiser-compatibility.spec.ts', '**/forced-dark.spec.ts', '**/roller-preview.spec.ts'], use: { ...variants[1].settings, colorScheme: 'dark' } },
     ...variants.flatMap(({name, settings}) => (['light','dark'] as const).map(colorScheme => ({

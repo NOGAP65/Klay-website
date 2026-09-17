@@ -75,13 +75,25 @@ function tooManyRequests(retryAt: number, now: number): Response {
   return response
 }
 
+/** THE PATHNAME IS NOT PART OF THE KEY, AND MUST NOT BECOME PART OF IT AGAIN.
+ *
+ *  It used to be, and that was a bypass: the request path is attacker-supplied
+ *  text, so `/API/request-quote`, `/api/request-quote/` and
+ *  `/api/request-quote//` each minted a FRESH counter for the same caller —
+ *  verified, three of four tried variants sailed past an exhausted limit. Any
+ *  hop that routes case-insensitively or tolerates a trailing slash turns the
+ *  limit off for whoever noticed.
+ *
+ *  Nothing is lost by dropping it. Netlify's esbuild bundles each function
+ *  separately, so this module — and this Map — already exist once per function,
+ *  and the path was never distinguishing anything within one of them. */
 export function checkRateLimit(req: Request, platformIp?: string, limit = 10): Response | null {
   const now = Date.now()
   const client = getClientIp(req, platformIp)
   // An unidentifiable caller shares one bucket with every other unidentifiable
   // caller. That is deliberately harsh: it cannot be widened by withholding the
   // address, which is the only thing an attacker could do to reach this branch.
-  const key = `${new URL(req.url).pathname}:${client ? rateLimitKey(client) : 'unknown'}`
+  const key = client ? rateLimitKey(client) : 'unknown'
   let entry = requests.get(key)
   if (entry && entry.expires <= now) { requests.delete(key); entry = undefined }
   if (!entry) {

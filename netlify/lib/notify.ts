@@ -79,6 +79,50 @@ function detailsTable(b: ParsedBooking): string {
   </table>`
 }
 
+/** What the CUSTOMER acknowledgement is allowed to echo back.
+ *
+ *  THIS IS AN ANTI-RELAY CONTROL, NOT A FORMATTING CHOICE. /api/request-quote
+ *  is unauthenticated and takes the recipient address from the request body, so
+ *  anything it echoes into that email is text an attacker chose, delivered to an
+ *  inbox an attacker chose, over Klay's SPF/DKIM/DMARC alignment. That is a
+ *  phishing relay wearing a legitimate domain — and it burns the sending
+ *  reputation that real customer mail depends on.
+ *
+ *  So the acknowledgement carries only values drawn from FIXED VOCABULARIES:
+ *  blind type, size, operation and quantity come from enums, and the reference
+ *  is a server-generated id. Deliberately excluded:
+ *
+ *    notes / basket   free text, up to ~31KB once basket items are counted —
+ *                     measured, not estimated. This was the payload.
+ *    fabric/hardware  free text to 60 and 40 characters. Short, but a URL fits.
+ *    address, phone   the customer's own details are not worth reflecting to an
+ *                     address nobody has verified belongs to them.
+ *
+ *  The internal alert keeps every field — see notifyQuoteRequest. Klay needs the
+ *  whole enquiry; it goes to a known inbox, not an attacker-nominated one.
+ *
+ *  The remaining attacker-influenced value is the first name in the greeting,
+ *  and validCustomerName() restricts it to letters, marks, spaces, hyphens and
+ *  apostrophes — no colon or slash, so no link can be built out of it. */
+function customerSummary(b: ParsedBooking): string {
+  return `<table cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+    ${b.items
+    ? row('Request', `Basket quote — ${b.items.length} item${b.items.length === 1 ? '' : 's'}`)
+    : `${row('Blind', `${blindLabel(b.config.blindType)} — ${sizeLabel(b.config.windowSize)}`)}
+       ${row('Operation', b.config.operation)}
+       ${row('Quantity', String(b.config.quantity))}`}
+  </table>`
+}
+
+/** Standard anti-abuse footer. Anyone can type someone else's address into a
+ *  public form, so the acknowledgement says why it arrived and promises nothing
+ *  that would reward acting on it. */
+const UNSOLICITED_NOTICE = `<p style="margin:24px 0 0;font-size:12px;line-height:1.6;color:#8A8580">
+  You received this because this address was entered into an enquiry form on the
+  Klay Interiors website. If that was not you, no action is needed and nothing
+  has been ordered — you can ignore this message.
+</p>`
+
 const shell = (heading: string, kicker: string, inner: string) => `
 <div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;background:#F5F2ED;padding:32px">
   <div style="max-width:560px;margin:0 auto;background:#fff;padding:32px;border-top:3px solid #C8973A">
@@ -118,12 +162,13 @@ export function acknowledgeQuoteRequest(b: ParsedBooking): Promise<SendResult> {
       'Klay Interiors',
       `<p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#1C1810">
          We've got your request and we'll be in touch within one business day to
-         arrange a measure-up. Here's what you sent through:
+         arrange a measure-up.
        </p>
-       ${detailsTable(b)}
+       ${customerSummary(b)}
        <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#8A8580">
          ${b.items ? 'Your basket pricing will be confirmed once we have measured.' : `The estimate of ${formatAUD(b.priced.total)} is indicative only — your final quote is confirmed once we've measured.`}
-       </p>`,
+       </p>
+       ${UNSOLICITED_NOTICE}`,
     ),
   )
 }
