@@ -7,8 +7,38 @@ import { test } from '@playwright/test';
 import { fieldsFor, withChoice, defaultSelection, configuredLine, priceFor, type Selection } from '../src/features/catalogue/configOptions';
 import { CATALOGUE } from '../src/features/catalogue/constants';
 import { fabricByName, fabricCollections, type FabricSample } from '../src/features/fabrics';
+import { rollerGeometry } from '../src/features/visualiser/rollerGeometry';
 import { normaliseRollerWeave } from '../src/features/visualiser/rollerWeave';
 import { useVisualiserStore as store } from '../src/features/visualiser/useVisualiserStore';
+
+import type { Point } from '../src/features/visualiser/homography';
+
+
+test('front-feed cloth stays on the barrel circumference and the weight never retracts through it', () => {
+  const openings: Point[][] = [
+    [[100, 100], [700, 100], [700, 900], [100, 900]],
+    [[150, 80], [670, 170], [650, 780], [120, 920]],
+    [[100, 180], [640, 90], [670, 900], [120, 780]],
+  ];
+  const distance = (a: Point, b: Point) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  for (const opening of openings) {
+    let previous = rollerGeometry(opening, 0);
+    const railHeight = distance(previous.hemL, previous.railL);
+    for (let step = 0; step <= 100; step++) {
+      const g = rollerGeometry(opening, step / 100);
+      assert.ok(distance(g.tangentL, opening[0]) > 2, 'Fabric must leave the circumference, not the axle');
+      assert.deepEqual(g.cloth[0], g.circle(0, 0), 'Front cloth is physically attached to the end-cap rim');
+      assert.deepEqual(g.crown[3], g.cloth[0], 'Crown and drop cannot separate during unwinding');
+      assert.ok(distance(g.hemL, g.tangentL) > 2 * g.radius * g.leftH, 'Hem remains outside the barrel');
+      assert.ok(Math.abs(distance(g.hemL, g.railL) - railHeight) < .15, 'Weight retains its thickness at initial opening');
+      assert.ok(g.radius <= previous.radius, 'Roll shrinks as cloth is paid out');
+      assert.ok(distance(g.hemL, opening[3]) <= distance(previous.hemL, opening[3]), 'Hem lowers continuously');
+      previous = g;
+    }
+    assert.deepEqual(previous.hemL, opening[3], 'Closed blind still reaches the traced bottom');
+    assert.deepEqual(previous.hemR, opening[2]);
+  }
+});
 
 test('roller weave keeps yarn detail without baking scan lighting into the fabric', () => {
   const width = 240, height = 160;

@@ -1,6 +1,12 @@
 import { test, expect, type Page, type Locator } from '@playwright/test';
 import sharp from 'sharp';
 
+import { rollerGeometry } from '../src/features/visualiser/rollerGeometry';
+
+import { portrait, rollBand } from './helpers/visualiserPhoto';
+
+import type { Point } from '../src/features/visualiser/homography';
+
 test.beforeEach(async ({ page }, info) => {
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ body: '', contentType: 'text/css' }));
   if (info.project.name === 'basic-android') {
@@ -18,47 +24,42 @@ test.beforeEach(async ({ page }, info) => {
   }
 });
 
-async function portrait(page: Page, tilted = false) {
-  await page.getByRole('button', { name: 'Visualise in your own room', exact: true }).click();
-  const chooser = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: 'Upload photo', exact: true }).click();
-  const buffer = await sharp({ create: { width: 800, height: 1200, channels: 3, background: '#b4b4b4' } }).jpeg().toBuffer();
-  await (await chooser).setFiles({ name: 'portrait-room.jpg', mimeType: 'image/jpeg', buffer });
-  await expect(page.locator('svg circle[fill="transparent"]').first()).toBeVisible();
-  if (tilted) {
-    const pin = page.locator('svg circle[fill="transparent"]').nth(1);
-    await pin.scrollIntoViewIfNeeded();
-    const bounds = await pin.boundingBox();
-    expect(bounds).not.toBeNull();
-    const x = bounds!.x + bounds!.width / 2, y = bounds!.y + bounds!.height / 2;
-    await page.mouse.move(x, y);
-    await page.mouse.down();
-    await page.mouse.move(x - 12, y + 24, { steps: 4 });
-    await page.mouse.up();
-  }
-  const corners = await page.locator('svg circle[fill="transparent"]').evaluateAll(elements =>
-    elements.slice(0, 4).map(element => [Number(element.getAttribute('cx')), Number(element.getAttribute('cy'))]));
-  await page.getByRole('button', { name: 'Confirm outline', exact: true }).click();
-  return corners;
-}
-
-async function rollBand(canvas: Locator, corners: number[][], offset = -.006) {
-  return canvas.evaluate((source: HTMLCanvasElement, { corners, offset }) => {
-    const [left, right, , bottom] = corners;
-    const width = Math.hypot(right[0]-left[0], right[1]-left[1]);
-    const height = Math.hypot(bottom[0]-left[0], bottom[1]-left[1]);
-    const context = source.getContext('2d')!;
-    let total = 0;
-    for (let i = 0; i < 60; i++) {
-      const u = .15 + .7 * i / 59;
-      const x = Math.round(left[0] + (right[0]-left[0])*u - (right[1]-left[1])/width*height*offset);
-      const y = Math.round(left[1] + (right[1]-left[1])*u + (right[0]-left[0])/width*height*offset);
-      const data = context.getImageData(x, y, 1, 1).data;
-      total += (data[0] + data[1] + data[2]) / 3;
+test('front-roll starts unfolding with continuous cloth and a full-size hem outside the barrel', async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/visualiser');
+  const corners = await portrait(page, true) as Point[];
+  const canvas = page.locator('canvas[data-render-surface="blind"]');
+  const slider = page.getByRole('slider');
+  for (const type of ['Blockout', 'Dual']) {
+    await page.getByRole('button', { name: type, exact: true }).click();
+    await selectedColour(page, 'Essence Carbon');
+    await slider.press('Home');
+    for (let position = 0; position <= 10; position += 2) {
+      if (position) await slider.press('ArrowDown');
+      await expect(slider).toHaveAttribute('aria-valuenow', String(position));
+      const geometry = rollerGeometry(corners, position / 100 * (type === 'Dual' ? .7 : 1));
+      await expect.poll(async () => canvas.evaluate((source: HTMLCanvasElement, g) => {
+        const ctx = source.getContext('2d')!;
+        const sample = (left: number[], right: number[]) => {
+          let total = 0;
+          for (let i = 0; i < 30; i++) {
+            const t = .2 + .6 * i / 29;
+            const pixel = ctx.getImageData(Math.round(left[0] + (right[0] - left[0]) * t), Math.round(left[1] + (right[1] - left[1]) * t), 1, 1).data;
+            total += (pixel[0] + pixel[1] + pixel[2]) / 3;
+          }
+          return total / 30;
+        };
+        const mid = (a: number[], b: number[]) => a.map((v, i) => (v + b[i]) / 2);
+        const cloth = sample(mid(g.tangentL, g.railL), mid(g.tangentR, g.railR));
+        const weight = sample(mid(g.railL, g.hemL), mid(g.railR, g.hemR));
+        return cloth < 90 && weight > 170;
+      }, { tangentL: geometry.tangentL, tangentR: geometry.tangentR, railL: geometry.railL, railR: geometry.railR, hemL: geometry.hemL, hemR: geometry.hemR })).toBe(true);
+      if ([0, 2, 10].includes(position)) await canvas.screenshot({ path: info.outputPath(`${type}-initial-${position}.png`) });
     }
-    return total / 60;
-  }, { corners, offset });
-}
+  }
+  expect(errors).toEqual([]);
+});
 
 test('front-roll blinds show the selected face on the roll at every opening position', async ({ page }, info) => {
   const errors: string[] = [];

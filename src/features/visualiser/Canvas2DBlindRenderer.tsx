@@ -7,6 +7,7 @@ import { loadImage } from '@/shared';
 import { sampleBlindLighting, blindTextureCoordinates, NEUTRAL_BLIND_LIGHT, type BlindLighting } from './blindLighting';
 import { computeHomography, toColumnMajor, Point } from './homography';
 import { PreviewStatus } from './PreviewStatus';
+import { rollerGeometry, type RollerGeometry } from './rollerGeometry';
 import { normaliseRollerWeave } from './rollerWeave';
 import { usePreviewLoad } from './usePreviewLoad';
 
@@ -266,7 +267,7 @@ uniform float u_opacity;
 uniform vec2 u_uvScale;
 uniform float u_uvOffset;
 uniform float u_dropFraction;
-uniform float u_frontRoll;
+uniform float u_rollArc;
 uniform vec3 u_roomTint;
 uniform float u_roomExposure;
 uniform vec4 u_daylight;
@@ -279,13 +280,12 @@ void main() {
   vec2 uv = uvw.xy / uvw.z;
   vec2 clothUv = uv;
   float bend = 0.0;
-  if (u_frontRoll > 0.0) {
-    // One continuous sheet: arc length around the crown meets the vertical
-    // drop at the front tangent. Texture, dye and lighting share that join.
-    float y = uv.y*(u_dropFraction+u_frontRoll)-u_frontRoll;
-    bend = clamp(-y/u_frontRoll,0.0,1.0);
-    float clothY = y < 0.0 ? -u_frontRoll*asin(bend) : y;
-    clothUv.y = clothY/max(u_dropFraction,0.0001);
+  if (u_rollArc > 0.0) {
+    // Invert the projected cylinder to sample by physical arc length.
+    // The last texel of this wrap is the first texel of the hanging cloth.
+    float angle = acos(clamp(1.0-uv.y*(1.0-cos(u_rollArc)),0.0,1.0));
+    clothUv.y = angle/u_rollArc;
+    bend = sin(u_rollArc-angle);
   }
   vec2 fabricUv = clothUv*u_uvScale + vec2(0.0,u_uvOffset);
   float texel = dot(texture2D(u_texture,fabricUv).rgb,vec3(0.299,0.587,0.114));
@@ -297,7 +297,7 @@ void main() {
   col *= u_roomTint*u_roomExposure;
   // Taut cloth has a broad, very shallow bow between the roller and weight.
   // This is a matte surface variation, without a plastic centre highlight.
-  float clothV = clamp(clothUv.y,0.0,1.0);
+  float clothV = u_rollArc > 0.0 ? 0.0 : clamp(clothUv.y,0.0,1.0);
   float bow = sin(uv.x*3.141593)*sin(clothV*3.141593);
   col *= (0.985 + 0.018*bow - 0.010*clothV)*(1.0-0.065*bend*bend);
   if (u_blindType > 0.5 && u_blindType < 1.5) {
@@ -338,7 +338,7 @@ interface GLState {
     uvScale: WebGLUniformLocation | null;
     uvOffset: WebGLUniformLocation | null;
     dropFraction: WebGLUniformLocation | null;
-    frontRoll: WebGLUniformLocation | null;
+    rollArc: WebGLUniformLocation | null;
     roomTint: WebGLUniformLocation | null;
     roomExposure: WebGLUniformLocation | null;
     daylight: WebGLUniformLocation | null;
@@ -491,7 +491,7 @@ const createGLState = (): GLState | null => {
       uvScale: gl.getUniformLocation(program, 'u_uvScale'),
       uvOffset: gl.getUniformLocation(program, 'u_uvOffset'),
       dropFraction: gl.getUniformLocation(program, 'u_dropFraction'),
-      frontRoll: gl.getUniformLocation(program, 'u_frontRoll'),
+      rollArc: gl.getUniformLocation(program, 'u_rollArc'),
       roomTint: gl.getUniformLocation(program, 'u_roomTint'),
       roomExposure: gl.getUniformLocation(program, 'u_roomExposure'),
       daylight: gl.getUniformLocation(program, 'u_daylight'),
@@ -708,7 +708,7 @@ interface QuadOptions {
   lighting?: BlindLighting;
   uvOffset?: number;
   dropFraction?: number;
-  frontRoll?: number;
+  rollArc?: number;
 }
 
 /** Renders one fabric quad. Corner order: [tl, tr, br, bl] in photo pixels. */
@@ -729,7 +729,7 @@ const drawQuad = (
   gl.uniform2f(loc.uvScale, opts.uvScale[0], opts.uvScale[1]);
   gl.uniform1f(loc.uvOffset, opts.uvOffset ?? 0);
   gl.uniform1f(loc.dropFraction, opts.dropFraction ?? 1);
-  gl.uniform1f(loc.frontRoll, opts.frontRoll ?? 0);
+  gl.uniform1f(loc.rollArc, opts.rollArc ?? 0);
   const light = opts.lighting ?? NEUTRAL_BLIND_LIGHT;
   gl.uniform3f(loc.roomTint,...light.tint);
   gl.uniform1f(loc.roomExposure,light.exposure);
@@ -752,6 +752,21 @@ const drawQuad = (
   gl.enableVertexAttribArray(loc.position);
   gl.vertexAttribPointer(loc.position, 2, gl.FLOAT, false, 0, 0);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
+};
+
+/** A wrapped crown and a hanging sheet share their front tangent and weave
+ * coordinates. Two quads keep this inexpensive on phones without clipping a
+ * cylinder in half or growing a flat block out of its axis. */
+const drawRollerSheet = (state: GLState, geometry: RollerGeometry, fabric: FabricTexture, opts: QuadOptions) => {
+  const fullScale = opts.uvScale[1] / geometry.drop;
+  const arcScale = fullScale * geometry.radius * -geometry.crownAngle;
+  drawQuad(state, geometry.crown, fabric, {
+    ...opts, opacity: 1, shade: false, shaderType: 3,
+    uvScale: [opts.uvScale[0], arcScale],
+    uvOffset: (opts.uvOffset ?? 0) - arcScale,
+    dropFraction: 0, rollArc: -geometry.crownAngle,
+  });
+  drawQuad(state, geometry.cloth, fabric, opts);
 };
 
 // ---------------------------------------------------------------------------
@@ -1119,21 +1134,23 @@ const litHardwareHex = (hex: string, light: BlindLighting): string => {
 
 /** Same continuous crown and room tint when a phone has no usable WebGL. */
 const drawRollerFallback = (
-  ctx: CanvasRenderingContext2D, quad: Point[], tangent: Point,
+  ctx: CanvasRenderingContext2D, geometry: RollerGeometry,
   fabric: { colour: string; opacity: number; lighting: BlindLighting },
 ) => {
   const colour = litHardwareHex(fabric.colour, fabric.lighting);
-  const gradient = ctx.createLinearGradient(...quad[0], ...tangent);
-  gradient.addColorStop(0, rgba(darken(colour, 6.5), fabric.opacity));
-  gradient.addColorStop(.5, rgba(darken(colour, 1.6), fabric.opacity));
-  gradient.addColorStop(1, rgba(colour, fabric.opacity));
+  const gradient = ctx.createLinearGradient(...geometry.crownL, ...geometry.tangentL);
+  gradient.addColorStop(0, darken(colour, 6.5));
+  gradient.addColorStop(.5, darken(colour, 1.6));
+  gradient.addColorStop(1, colour);
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(...quad[0]);
-  quad.slice(1).forEach(point => ctx.lineTo(...point));
-  ctx.closePath();
-  ctx.fillStyle = gradient;
-  ctx.fill();
+  for (const [quad, fill] of [[geometry.crown, gradient], [geometry.cloth, rgba(colour, fabric.opacity)]] as const) {
+    ctx.beginPath();
+    ctx.moveTo(...quad[0]);
+    quad.slice(1).forEach(point => ctx.lineTo(...point));
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
   ctx.restore();
 };
 
@@ -1157,53 +1174,6 @@ const setHardwareFill = (
     ctx.fillStyle = safeHardwareColor;
   }
 };
-
-// The cassette and rail both use traceCylinderBody with metallic gradients
-// that include prominent highlight bands matching the real product photos.
-
-const CASSETTE_HEIGHT_RATIO = 0.025; // 45mm barrel against a typical 1800mm drop
-const RAIL_HEIGHT_RATIO = 0.018; // ~1.8% of blind height — per product photo spec
-
-// ---------------------------------------------------------------------------
-// Roll diameter — the tube gets fatter as the blind goes up
-//
-// A roller blind's visible barrel is not a fixed object. Bare, it is a 45mm
-// aluminium tube; fully raised, the entire drop is wound around it and it
-// measures about 65mm. The renderer used to draw one fixed cylinder at every
-// position, so a blind rolled to the top had all its fabric vanish into a tube
-// the same size as when it was fully down.
-//
-// There is no mm-to-pixel scale anywhere in this renderer — the geometry comes
-// from four traced corner pins, not from measurements — so CASSETTE_HEIGHT_RATIO
-// is the anchor: a typical 1800mm drop carries a 45mm tube; other diameters are
-// quoted as a ratio against that.
-// ---------------------------------------------------------------------------
-
-const TUBE_BARE_MM = 45;  // aluminium barrel, nothing wound on it
-const TUBE_FULL_MM = 65;  // the whole drop wound on, blind at the top
-
-/** Diameter of the roll in mm at roll position `p` (1 = fully down, 0 = fully
- * raised).
- *
- * Wound fabric occupies a cross-section, not a length: π(R² − r²) = L·t for a
- * wound length L of thickness t. Solving for R gives a square root, so the
- * diameter climbs steeply over the first turns and flattens as the roll fattens
- * — which is why a blind visibly thickens the moment you start raising it and
- * then changes little over the last third. A linear ramp gets both ends wrong. */
-const rollDiameterMm = (p: number): number => {
-  const wound = 1 - Math.max(0, Math.min(1, p));
-  const r = TUBE_BARE_MM / 2;
-  const R = TUBE_FULL_MM / 2;
-  return 2 * Math.sqrt(r * r + (R * R - r * r) * wound);
-};
-
-/** The bare tube's height as a fraction of blind height, scaled to whatever
- * diameter the current roll position implies. */
-const cassetteHeightRatio = (p: number): number =>
-  CASSETTE_HEIGHT_RATIO * (rollDiameterMm(p) / TUBE_BARE_MM);
-
-// All roller fabrics feed over the front of the barrel, showing the chosen
-// face colour continuously from the roll into the hanging drop.
 
 /** Unit direction along tl->tr plus its perpendicular. */
 const axesFor = (tl: Point, tr: Point): { u: Point; pv: Point } => {
@@ -1305,73 +1275,40 @@ const traceEndCapOval = (
   ctx.closePath();
 };
 
-/** The wound fabric on the barrel: which fabric, and how far the blind is up. */
-interface RollState {
-  /** Roll position, 1 = fully down, 0 = fully raised. */
-  p: number;
-  blindType: string;
-  fabricColor: string;
-  lighting?: BlindLighting;
-}
-
-/** Rear fittings and wound material. Draw BEFORE the continuous front sheet,
- * so the fabric hides the barrel and the inner faces of the end fittings. */
+/** Complete barrel and end fittings behind the room-facing fabric. The same
+ * projected circle supplies both the end cap and the fabric departure point. */
 const drawCassette = (
-  ctx: CanvasRenderingContext2D,
-  tl: Point,
-  tr: Point,
-  leftH: number,
+  ctx: CanvasRenderingContext2D, geometry: RollerGeometry,
   hardwareColourName: 'white' | 'black' | 'chrome' | 'cream' | 'platinum' | undefined,
-  safeHardwareColor: string,
-  avgW: number,
-  yRotation = 0,
-  roll?: RollState,
+  safeHardwareColor: string, fabricColor: string, lighting: BlindLighting,
 ): void => {
-  const rollP = roll ? Math.max(0, Math.min(1, roll.p)) : 1;
-  const halfH = leftH * cassetteHeightRatio(rollP) / 2;
-  const { u, pv } = axesFor(tl, tr);
-  const lighting = roll?.lighting ?? NEUTRAL_BLIND_LIGHT;
-  const endScale = Math.max(0.7, Math.min(1.4, (3-yRotation)/(3+yRotation)));
+  const g = geometry;
   const hardware = litHardwareHex(hardwareBaseHex(hardwareColourName, safeHardwareColor), lighting);
-  const face = roll ? litHardwareHex(roll.fabricColor, lighting) : hardware;
-  const point = (origin: Point, along: number, up: number): Point =>
-    [origin[0] + u[0]*along + pv[0]*up, origin[1] + u[1]*along + pv[1]*up];
-  // Smoothly reveal the underside at the fully raised position; no visual pop
-  // where a short drop first passes the roller's centreline.
-  const lower = roll ? Math.max(0, halfH - leftH * rollP) : halfH;
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(...point(tl, -halfH*2, halfH*2));
-  ctx.lineTo(...point(tr, halfH*2, halfH*2*endScale));
-  ctx.lineTo(...point(tr, halfH*2, -lower*endScale));
-  ctx.lineTo(...point(tl, -halfH*2, -lower));
-  ctx.closePath();
-  ctx.clip();
-  const top = point(tl, 0, halfH);
-  const bottom = point(tl, 0, -halfH);
-  const gradient = ctx.createLinearGradient(...top, ...bottom);
+  const face = litHardwareHex(fabricColor, lighting);
+  const bottomL = g.circle(0, g.crownAngle + Math.PI);
+  const bottomR = g.circle(1, g.crownAngle + Math.PI);
+  const gradient = ctx.createLinearGradient(...g.crownL, ...bottomL);
   gradient.addColorStop(0, shadeHex(face, -.12));
-  gradient.addColorStop(.25, face);
-  gradient.addColorStop(.5, face);
+  gradient.addColorStop(.4, face);
   gradient.addColorStop(1, shadeHex(face, -.18));
-  ctx.fillStyle = gradient;
-  traceCylinderBody(ctx, tl, tr, halfH, u, pv, endScale);
-  ctx.fill();
-  ctx.restore();
-
-  const isFlat = Math.abs(yRotation) < .05;
-  const capScale = isFlat ? .4 : Math.min(1, .3 + Math.abs(yRotation)*1.5);
-  const capWidth = Math.max(3, scaleToBlind(6, avgW)) * capScale;
   ctx.save();
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.moveTo(...g.crownL);
+  for (const point of [g.crownR, bottomR, bottomL]) ctx.lineTo(...point);
+  ctx.closePath();
+  ctx.fill();
   ctx.fillStyle = hardware;
-  ctx.strokeStyle = shadowRgba(.08);
-  ctx.lineWidth = 1;
-  for (const [centre, radius, visible] of [
-    [tl, halfH, yRotation > .05 || isFlat],
-    [tr, halfH*endScale, yRotation < -.05 || isFlat],
-  ] as const) {
-    if (!visible) continue;
-    traceEndCapOval(ctx, centre, radius * .92, capWidth, u, pv);
+  ctx.strokeStyle = shadeHex(hardware, -.12);
+  ctx.lineWidth = .7;
+  for (const side of [0, 1] as const) {
+    if (Math.abs(g.yaw) > .05 && (side === 0 ? g.yaw < 0 : g.yaw > 0)) continue;
+    ctx.beginPath();
+    for (let i = 0; i <= 32; i++) {
+      const point = g.circle(side, i / 32 * Math.PI * 2);
+      if (i === 0) ctx.moveTo(...point); else ctx.lineTo(...point);
+    }
+    ctx.closePath();
     ctx.fill();
     ctx.stroke();
   }
@@ -1548,15 +1485,6 @@ const drawBlindArea = (
     (leftH - rightH) / (leftH + rightH) * 3
   ));
 
-  // Interpolate a point along the left or right edge at fraction t
-  const leftEdge = (t: number): Point => [
-    tl[0] + (bl[0] - tl[0]) * t,
-    tl[1] + (bl[1] - tl[1]) * t,
-  ];
-  const rightEdge = (t: number): Point => [
-    tr[0] + (br[0] - tr[0]) * t,
-    tr[1] + (br[1] - tr[1]) * t,
-  ];
   const topEdge = (t: number): Point => [
     tl[0] + (tr[0] - tl[0]) * t,
     tl[1] + (tr[1] - tl[1]) * t,
@@ -1566,27 +1494,13 @@ const drawBlindArea = (
     bl[1] + (br[1] - bl[1]) * t,
   ];
 
-  // Roller position: fraction of the drop covered by fabric. The fabric
-  // shrinks continuously into the cassette as this approaches zero — there
-  // is no threshold below which the blind pops out of existence. The only
-  // thing skipped is a sub-pixel drop, where the quad has no height left to
-  // build a homography from.
   const p = Math.max(0, Math.min(1, rollPosition));
-  const fabricDrop = leftH * p;
-  const showBlind = fabricDrop >= 1;
-  const fabBL = leftEdge(p);
-  const fabBR = rightEdge(p);
-  const rollRadius = cassetteHeightRatio(p) / 2;
-  const faceTL = leftEdge(-rollRadius);
-  const faceTR = rightEdge(-rollRadius);
+  const geometry = rollerGeometry(corners, p);
+  const { hemL: fabBL, hemR: fabBR, cloth: fabricQuad } = geometry;
+  const fabricDrop = leftH * geometry.drop;
+  const hasHangingFabric = type !== 'sheer' || leftH * p >= 1; // keep the roller weight outside its barrel
 
-  // Everything that shades, lights or outlines the fabric works off THIS
-  // quad, never the full window quad. Using `corners` meant a half-raised
-  // blind still washed the whole opening in shadow and stroked a border
-  // around the empty glass below it.
-  const fabricQuad: Point[] = [tl, tr, fabBR, fabBL];
-
-  if (showBlind) {
+  if (hasHangingFabric) {
     // --- DIFFUSION (pre-fabric) — only the fabrics that actually transmit an
     // image. Blockout passes no light at all, so there is nothing behind it
     // to soften; sunscreen scatters the view into a ghost, and light filter
@@ -1609,8 +1523,7 @@ const drawBlindArea = (
     // --- DEPTH (pre-fabric) ---
     drawPreFabricDepth(ctx, fabricQuad);
 
-    drawCassette(ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
-      { p, blindType: type, fabricColor, lighting });
+    drawCassette(ctx, geometry, hardwareColourName, safeHardwareColor, fabricColor, lighting);
 
     // --- FABRIC via WebGL (perspective-correct texture mapping) ---
     if (!glStateRef.current && !glUnavailableRef.current) {
@@ -1642,7 +1555,7 @@ const drawBlindArea = (
       // Preserve weave scale and keep the cloth attached to its bottom rail
       // while it winds into the roller. Mirrored sampling avoids tile seams.
       const surface = surfaceFor(type);
-      const {uvScale,uvOffset} = blindTextureCoordinates(surface.tileX,avgW,leftH,p);
+      const {uvScale,uvOffset} = blindTextureCoordinates(surface.tileX,avgW,leftH,geometry.drop);
 
       if (type === 'sheer') {
         // Two panels with a centre gap, like a pair of sheer curtains
@@ -1672,7 +1585,7 @@ const drawBlindArea = (
         // Blockout reflects room light; light filter passes soft silhouettes
         // through a woven surface. Sunscreen retains colour-dependent
         // visibility through the mesh.
-        drawQuad(state, [faceTL, faceTR, fabBR, fabBL], fabricTexture, {
+        drawRollerSheet(state, geometry, fabricTexture, {
           tint,
           textureAmount: type === 'sunscreen'
             ? sunscreenTextureAmount(surface.textureAmount, fabricColor)
@@ -1682,36 +1595,28 @@ const drawBlindArea = (
           shade: true,
           folds: 0,
           shaderType: shaderTypeFor(type),
-          lighting, uvOffset, dropFraction:p, frontRoll:rollRadius,
+          lighting, uvOffset, dropFraction:geometry.drop,
         });
       }
 
       ctx.drawImage(state.canvas, 0, 0);
     } else {
-      drawRollerFallback(ctx, [faceTL, faceTR, fabBR, fabBL], tl,
+      drawRollerFallback(ctx, geometry,
         { colour: fabricColor, opacity: fabricOpacityFor(type, fabricColor), lighting });
     }
 
     // The shader carries the fabric lighting. Only a narrow frame contact
     // shadow is added here; repeated broad overlays made the blind bevelled.
-    drawAmbientOcclusion(ctx, tl, tr, fabBR, fabBL);
+    drawAmbientOcclusion(ctx, geometry.tangentL, geometry.tangentR, fabBR, fabBL);
 
     // The photograph supplies the light in the side gaps. An additive glow
     // here invented a white frame even on an unlit, plain wall.
-  } // end showBlind (depth + fabric)
-
-  // With no hanging drop, only the wound material and fittings remain visible.
-  if (!showBlind) drawCassette(
-    ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
-    { p, blindType: type, fabricColor, lighting },
-  );
+  } // end hasHangingFabric (depth + fabric)
 
   // --- BOTTOM RAIL (Canvas 2D overlay) — rides the fabric bottom ---
-  if (showBlind && type !== 'sheer') {
-    const railHeight = leftH * RAIL_HEIGHT_RATIO;
-    const railT = Math.max(0, p - railHeight / leftH);
-    const railTL = leftEdge(railT);
-    const railTR = rightEdge(railT);
+  if (hasHangingFabric && type !== 'sheer') {
+    const railTL = geometry.railL;
+    const railTR = geometry.railR;
     drawBottomRail(ctx, railTL, railTR, fabBL, fabBR, hardwareColourName, safeHardwareColor, avgW, yRotation, lighting);
 
     // --- BOTTOM RAIL DROP SHADOW — the rail hangs in space; it casts a
@@ -1723,7 +1628,7 @@ const drawBlindArea = (
   // currently sits. No roll-position threshold: now that it is anchored to
   // the rail rather than the sill it stays correct at every position, and
   // gating it caused a visible pop partway through the roll. ---
-  if (showBlind) {
+  if (hasHangingFabric) {
     drawContactShadow(ctx, fabBL, fabBR);
   }
 
@@ -1733,7 +1638,7 @@ const drawBlindArea = (
   void showChain;
   void controlType;
 
-  if (showBlind && type === 'sheer') drawVignette(ctx, fabricQuad, true);
+  if (hasHangingFabric && type === 'sheer') drawVignette(ctx, fabricQuad, true);
 };
 
 // ---------------------------------------------------------------------------
@@ -1789,72 +1694,30 @@ const drawDualBlindArea = (
     (leftH - rightH) / (leftH + rightH) * 3
   ));
 
-  const leftEdge = (t: number): Point => [tl[0] + (bl[0] - tl[0]) * t, tl[1] + (bl[1] - tl[1]) * t];
-  const rightEdge = (t: number): Point => [tr[0] + (br[0] - tr[0]) * t, tr[1] + (br[1] - tr[1]) * t];
-
   const p = Math.max(0, Math.min(1, rollPosition));
-  // Both rollers ride the slider. The sunscreen follows it directly; the
-  // blockout stays proportionally short of it so the pair reads at every
-  // position and closes only when fully raised. (The back layer used to be
-  // pinned at 1, which meant a dual could never be rolled up at all.)
-  const backP = p;
-  const frontP = p * FRONT_LAYER_MAX_DROP;
-  const fabricDrop = leftH * backP;
-  const showBlind = fabricDrop >= 1;
-
-  const backBLEdge = leftEdge(backP);
-  const backBREdge = rightEdge(backP);
-  // Scoped to the back layer (the lower of the two), never the full window
-  // quad — otherwise a raised dual blind shades and outlines empty glass.
-  const fabricQuad: Point[] = [tl, tr, backBREdge, backBLEdge];
+  const backP = p, frontP = p * FRONT_LAYER_MAX_DROP;
+  const { pv } = axesFor(tl, tr);
+  const offset = scaleToBlind(4, avgW);
+  const behind = (point: Point): Point => [point[0] + pv[0] * offset, point[1] + pv[1] * offset];
+  const back = rollerGeometry([behind(tl), behind(tr), br, bl], backP);
+  const front = rollerGeometry(corners, frontP);
+  const fabricQuad = back.cloth;
 
   // Diffusion before depth — it re-draws the untouched photo inside the quad,
   // so it has to run before anything else paints there. See drawBlindArea.
-  if (showBlind) {
-    drawBackgroundDiffusion(ctx, photo, W, H, fabricQuad, scaleToBlind(sunscreenDiffusionPx(fabricColor), avgW));
-    drawPreFabricDepth(ctx, fabricQuad);
-  }
-
-  // --- TWIN CASSETTES + BRACKETS — a dual roller carries two tubes, and
-  // drawing one housing for both was the last thing making it read as a
-  // single blind. The back tube is drawn first, slightly higher and behind;
-  // the front sits 4px toward the room and overlaps it, so the pair reads as
-  // two rollers on one bracket. Always drawn: the hardware stays put however
-  // far the fabric is wound up. ---
-  const { pv: cassettePv } = axesFor(tl, tr);
-  const cassetteOffset = scaleToBlind(4, avgW);
-  const backCassetteTL: Point = [tl[0] + cassettePv[0] * cassetteOffset, tl[1] + cassettePv[1] * cassetteOffset];
-  const backCassetteTR: Point = [tr[0] + cassettePv[0] * cassetteOffset, tr[1] + cassettePv[1] * cassetteOffset];
-  // Each front-facing roll follows its own drop while retaining the chosen fabric.
-  drawCassette(
-    ctx, backCassetteTL, backCassetteTR, leftH * 0.85, hardwareColourName, safeHardwareColor, avgW, yRotation,
-    { p: backP, blindType: 'sunscreen', fabricColor, lighting },
-  );
-  drawCassette(
-    ctx, tl, tr, leftH, hardwareColourName, safeHardwareColor, avgW, yRotation,
-    { p: frontP, blindType: 'blockout', fabricColor, lighting },
-  );
+  drawBackgroundDiffusion(ctx, photo, W, H, fabricQuad, scaleToBlind(sunscreenDiffusionPx(fabricColor), avgW));
+  drawPreFabricDepth(ctx, fabricQuad);
 
 
-  /** Draws one roller's fabric quad plus its fold-line texture. The two
-   * layers share the selected colour but not the fabric: `texturePath` and
-   * `opacity` are what make the back read as sunscreen mesh and the front as
-   * solid blockout. */
-  /** `surfaceType` names which fabric this layer actually IS, so each half of
-   * a dual gets its own weave density and deviation amount — the front is a
-   * blockout and the back a sunscreen, and they are tuned differently. */
+  // Paint each complete roller back-to-front, including its weight.
   const drawFabricLayer = (
-    dropP: number,
+    geometry: RollerGeometry,
     texturePath: string,
     opacity: number,
     surfaceType: string,
   ) => {
-    const layerBL = leftEdge(dropP);
-    const layerBR = rightEdge(dropP);
     const surface = surfaceFor(surfaceType);
-    const rollRadius = cassetteHeightRatio(dropP) / 2;
-    const faceTL = leftEdge(-rollRadius);
-    const faceTR = rightEdge(-rollRadius);
+    drawCassette(ctx, geometry, hardwareColourName, safeHardwareColor, fabricColor, lighting);
 
     if (!glStateRef.current && !glUnavailableRef.current) {
       try {
@@ -1880,9 +1743,9 @@ const drawDualBlindArea = (
 
       const fabricTexture = uploadTexture(state, fabricImgs, texturePath);
       const tint = hexToRgb(fabricColor);
-      const {uvScale,uvOffset} = blindTextureCoordinates(surface.tileX,avgW,leftH,dropP);
+      const {uvScale,uvOffset} = blindTextureCoordinates(surface.tileX,avgW,leftH,geometry.drop);
       if (fabricTexture) {
-        drawQuad(state, [faceTL, faceTR, layerBR, layerBL], fabricTexture, {
+        drawRollerSheet(state, geometry, fabricTexture, {
           tint,
           textureAmount: surfaceType === 'sunscreen'
             ? sunscreenTextureAmount(surface.textureAmount, fabricColor)
@@ -1892,32 +1755,30 @@ const drawDualBlindArea = (
           shade: true,
           folds: 0,
           shaderType: shaderTypeFor(surfaceType),
-          lighting, uvOffset, dropFraction:dropP, frontRoll:rollRadius,
+          lighting, uvOffset, dropFraction:geometry.drop,
         });
         ctx.drawImage(state.canvas, 0, 0);
       }
     } else {
-      drawRollerFallback(ctx, [faceTL, faceTR, layerBR, layerBL], tl,
+      drawRollerFallback(ctx, geometry,
         { colour: fabricColor, opacity, lighting });
     }
   };
 
-  const backBL = backBLEdge;
-  const backBR = backBREdge;
-  const frontBL = leftEdge(frontP);
-  const frontBR = rightEdge(frontP);
+  const { hemL: backBL, hemR: backBR } = back;
+  const { hemL: frontBL, hemR: frontBR } = front;
 
-  if (showBlind) {
-    // --- BACK LAYER — sunscreen against the glass, translucent. Drawn first
-    // and hanging lower, so its exposed portion sits below the blockout. The
-    // view behind it was diffused above, for the same reason a standalone
-    // sunscreen's is: through a mesh it is a ghost, not a sharp image. ---
-    drawFabricLayer(backP, DUAL_BACK_TEXTURE, dualBackOpacity(fabricColor), 'sunscreen');
+  // --- BACK LAYER — sunscreen against the glass, translucent. Drawn first
+  // and hanging lower, so its exposed portion sits below the blockout. The
+  // view behind it was diffused above, for the same reason a standalone
+  // sunscreen's is: through a mesh it is a ghost, not a sharp image. ---
+  drawFabricLayer(back, DUAL_BACK_TEXTURE, dualBackOpacity(fabricColor), 'sunscreen');
+  drawBottomRail(ctx, back.railL, back.railR, backBL, backBR, hardwareColourName, safeHardwareColor, avgW, yRotation, lighting);
 
-    // --- FRONT LAYER — blockout on the room side, opaque, drawn on top and
-    // stopping short so the sunscreen stays visible beneath it. ---
-    drawFabricLayer(frontP, params.fabricTexture && fabricImgs.has(params.fabricTexture) ? params.fabricTexture : DUAL_FRONT_TEXTURE, 1, 'blockout');
-  }
+  // --- FRONT LAYER — blockout on the room side, opaque, drawn on top and
+  // stopping short so the sunscreen stays visible beneath it. ---
+  drawFabricLayer(front, params.fabricTexture && fabricImgs.has(params.fabricTexture) ? params.fabricTexture : DUAL_FRONT_TEXTURE, 1, 'blockout');
+
 
   const gapDepth = backP - frontP;
 
@@ -1927,7 +1788,7 @@ const drawDualBlindArea = (
   // the two layers read as being at different depths rather than as one
   // printed sheet with a line across it. Drawn before the gap shadow so the
   // rail's own shadow falls across the near end of it.
-  if (showBlind && gapDepth > 0.02) {
+  if (gapDepth > 0.02) {
     const stripH = Math.min(scaleToBlind(14, avgW), leftH * gapDepth * 0.5);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -1951,7 +1812,7 @@ const drawDualBlindArea = (
   // shadow down onto the fabric behind. 20px, multi-pass, over the light
   // strip above so the strip is brightest a little below the rail rather
   // than hard against it. ---
-  if (showBlind && gapDepth > 0.02) {
+  if (gapDepth > 0.02) {
     const gapShadowH = Math.min(scaleToBlind(20, avgW), leftH * gapDepth * 0.6);
     ctx.save();
     multiPassShadow(3, gapShadowH, 0.15, (reach, alpha) => {
@@ -1972,23 +1833,16 @@ const drawDualBlindArea = (
 
   // --- LIGHTING — over the back layer, which is the lower of the two, so
   // the fabric-only AO band spans exactly the fabric that is showing ---
-  if (showBlind) {
-    drawAmbientOcclusion(ctx, tl, tr, backBR, backBL);
-  }
+  drawAmbientOcclusion(ctx, back.tangentL, back.tangentR, backBR, backBL);
 
 
-  if (showBlind) {
-    // --- RAILS — the front layer's rail sits higher; the back layer's rail
-    // rides its own bottom edge. Both wind up with their layer. ---
-    const railHeight = leftH * RAIL_HEIGHT_RATIO;
-    const frontRailT = Math.max(0, frontP - railHeight / leftH);
-    drawBottomRail(ctx, leftEdge(frontRailT), rightEdge(frontRailT), frontBL, frontBR, hardwareColourName, safeHardwareColor, avgW, yRotation, lighting);
-    drawRailDropShadow(ctx, tl, tr, leftEdge(frontRailT), rightEdge(frontRailT), leftH);
 
-    const backRailT = Math.max(0, backP - railHeight / leftH);
-    drawBottomRail(ctx, leftEdge(backRailT), rightEdge(backRailT), backBL, backBR, hardwareColourName, safeHardwareColor, avgW, yRotation, lighting);
-    drawContactShadow(ctx, backBL, backBR);
-  }
+  // --- RAILS — the front layer's rail sits higher; the back layer's rail
+  // rides its own bottom edge. Both wind up with their layer. ---
+  drawBottomRail(ctx, front.railL, front.railR, frontBL, frontBR, hardwareColourName, safeHardwareColor, avgW, yRotation, lighting);
+  drawRailDropShadow(ctx, front.tangentL, front.tangentR, front.railL, front.railR, leftH);
+  drawContactShadow(ctx, backBL, backBR);
+
 };
 
 // ---------------------------------------------------------------------------
@@ -2724,14 +2578,7 @@ const coveredQuadFor = (area: RenderedArea, rollPosition: number): Point[] => {
   if (area.blindType === 'sheer-curtains' || area.blindType === 'blockout-curtains') {
     return [tl, tr, br, bl];
   }
-  const p = Math.max(0, Math.min(1, rollPosition));
-  const radius = cassetteHeightRatio(p) / 2;
-  return [
-    [tl[0] + (tl[0] - bl[0]) * radius, tl[1] + (tl[1] - bl[1]) * radius],
-    [tr[0] + (tr[0] - br[0]) * radius, tr[1] + (tr[1] - br[1]) * radius],
-    [tr[0] + (br[0] - tr[0]) * p, tr[1] + (br[1] - tr[1]) * p],
-    [tl[0] + (bl[0] - tl[0]) * p, tl[1] + (bl[1] - tl[1]) * p],
-  ];
+  return rollerGeometry(area.corners, rollPosition).coverage;
 };
 
 /** A faint cool-down over everything the blinds are NOT covering.
