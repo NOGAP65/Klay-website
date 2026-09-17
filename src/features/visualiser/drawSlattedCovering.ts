@@ -26,7 +26,8 @@ function blades(scene: Scene, slats: Slat[], x: number, width: number) {
   const isUpperInFront = Math.sin(middle.angle) * view[2] - Math.cos(middle.angle) * view[1] >= 0;
   const indexed = slats.map((slat, index) => ({ slat, index }));
   if (isUpperInFront) indexed.reverse();
-  for (const { slat, index } of indexed) blade(scene, slat, { x, width, index });
+  for (const { slat, index } of indexed) blade(scene, slat, { x, width, index,
+    neighbours: scene.isPlantation ? slats.slice(Math.max(0, index - 1), index).concat(slats.slice(index + 1, index + 2)) : undefined });
 }
 
 function venetian(scene: Scene, options: Options) {
@@ -67,7 +68,7 @@ export function drawSlattedCovering(ctx: CanvasRenderingContext2D, options: Opti
   const plane = slattedPlane(options.corners, options.windowSize, [ctx.canvas.width, ctx.canvas.height]);
   const colour = [1, 3, 5].map((offset, index) => parseInt(options.fabricColor.slice(offset, offset + 2), 16)
     * options.lighting.tint[index] * options.lighting.exposure);
-  const scene = { ctx, plane, colour, texture: options.texture };
+  const scene = { ctx, plane, colour, texture: options.texture, isPlantation: options.blindType === 'plantation' };
   ctx.save(); path(ctx, options.corners); ctx.clip();
   if (options.blindType === 'plantation') plantation(scene, options);
   else venetian(scene, options);

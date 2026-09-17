@@ -26,6 +26,7 @@ export function slattedPlane(corners: Point[], size = 'medium', photoSize?: Poin
 }
 export type SlattedPlane = ReturnType<typeof slattedPlane>;
 export interface Slat { centre: number; angle: number; widthMm: number; thicknessMm: number }
+export const SLAT_PIVOT_DEPTH_MM = 14;
 
 export function venetianSlats(plane: SlattedPlane, options: { position: number; tilt: number }) {
   const widthMm = 50, thicknessMm = 2.8;
@@ -58,7 +59,7 @@ export function plantationPanels(plane: SlattedPlane, tilt: number) {
       const rows = Math.max(3, Math.ceil((bottom - top) * plane.heightMm / 78));
       return { top, bottom, slats: Array.from({ length: rows }, (_, row): Slat => ({
         centre: top + (row + .5) * (bottom - top) / rows,
-        angle: unitPosition(tilt) * 1.48, widthMm: (bottom - top) * plane.heightMm / rows + 7, thicknessMm: 10,
+        angle: unitPosition(tilt) * 1.48, widthMm: (bottom - top) * plane.heightMm / rows + 7, thicknessMm: 14,
       })) };
     }),
   }));
@@ -67,16 +68,16 @@ export function plantationPanels(plane: SlattedPlane, tilt: number) {
 
 /** Elliptical shutter blades / crowned metal and timber slats. Both front and
  * back faces rotate around a stationary centre; no scaling of a flat sticker. */
-export function slatProfile(plane: SlattedPlane, slat: Slat) {
+export function slatProfile(plane: SlattedPlane, slat: Slat, segments = 32) {
   const sine = Math.sin(slat.angle), cosine = Math.cos(slat.angle);
-  return Array.from({ length: 33 }, (_, index) => {
-    const phase = index / 32 * Math.PI * 2;
+  return Array.from({ length: segments + 1 }, (_, index) => {
+    const phase = index / segments * Math.PI * 2;
     const across = Math.cos(phase) * slat.widthMm / 2;
     const thickness = Math.sin(phase) * slat.thicknessMm / 2;
     const a = Math.cos(phase) / slat.widthMm, b = Math.sin(phase) / slat.thicknessMm;
     const magnitude = Math.hypot(a, b);
     return { y: slat.centre + (across * sine + thickness * cosine) / plane.heightMm,
-      depth: across * cosine - thickness * sine + 14,
+      depth: across * cosine - thickness * sine + SLAT_PIVOT_DEPTH_MM,
       normal: [0, (a * sine + b * cosine) / magnitude, (a * cosine - b * sine) / magnitude] as [number, number, number] };
   });
 }

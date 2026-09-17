@@ -1,3 +1,4 @@
+import { plantationBladeLighting } from './plantationLighting';
 import { dot3 } from './slattedCamera';
 import { slatProfile } from './slattedGeometry';
 import { surfaceGradient, surfacePath } from './slattedSurface';
@@ -6,7 +7,7 @@ import type { Point } from './homography';
 import type { Vector3 } from './slattedCamera';
 import type { SlattedPlane, Slat } from './slattedGeometry';
 
-export type SlattedScene = { ctx: CanvasRenderingContext2D; plane: SlattedPlane; colour: number[]; texture?: HTMLImageElement };
+export type SlattedScene = { ctx: CanvasRenderingContext2D; plane: SlattedPlane; colour: number[]; texture?: HTMLImageElement; isPlantation?: boolean };
 export const slattedPaint = (colour: number[], level: number, bounce = 0) =>
   `rgb(${colour.map(value => Math.round(Math.min(255, Math.max(0, value * level + bounce)))).join(',')})`;
 export function fillSlattedFace(ctx: CanvasRenderingContext2D, points: Point[], colour: string | CanvasGradient) {
@@ -47,9 +48,14 @@ function grain(scene: SlattedScene, points: Point[], seed: number) {
 
 /** Render the visible curved surface, not a gradient pasted across its bounds.
  * Each normal and depth belongs to the same rotating rigid cross-section. */
-export function drawSlattedBlade(scene: SlattedScene, slat: Slat, span: { x: number; width: number; index: number }) {
-  const { ctx, plane, colour } = scene, profile = slatProfile(plane, slat);
+export function drawSlattedBlade(scene: SlattedScene, slat: Slat, span: { x: number; width: number; index: number; neighbours?: Slat[] }) {
+  const { ctx, plane, colour } = scene, profile = slatProfile(plane, slat, scene.isPlantation ? 48 : 32);
   const view = plane.viewAt(span.x + span.width / 2, slat.centre);
+  const lighting = scene.isPlantation ? plantationBladeLighting(plane, span.neighbours ?? []) : null;
+  const colours = profile.map(point => {
+    const surface = lighting?.(point, view);
+    return slattedPaint(colour, surface?.level ?? lightLevel(scene, point.normal), 1 + (surface?.shine ?? 0));
+  });
   const end = (x: number) => profile.map(p => plane.project(x, p.y, p.depth));
   const left = end(span.x), right = end(span.x + span.width);
   // Opaque underpaint prevents the photo leaking through antialiased joins
@@ -62,8 +68,7 @@ export function drawSlattedBlade(scene: SlattedScene, slat: Slat, span: { x: num
     const normal = a.normal.map((n, axis) => (n + b.normal[axis]) / 2) as Vector3;
     if (dot3(normal, view) <= 0) continue;
     const face = [left[i], right[i], right[i + 1], left[i + 1]];
-    const gradient = surfaceGradient(ctx, face, [[0, slattedPaint(colour, lightLevel(scene, a.normal), 1)],
-      [1, slattedPaint(colour, lightLevel(scene, b.normal), 1)]]);
+    const gradient = surfaceGradient(ctx, face, [[0, colours[i]], [1, colours[i + 1]]]);
     fillSlattedFace(ctx, face, gradient);
     // Subpixel overlap joins curved patches without translucent mesh seams.
     ctx.strokeStyle = gradient; ctx.lineWidth = .45; ctx.stroke();
@@ -72,6 +77,12 @@ export function drawSlattedBlade(scene: SlattedScene, slat: Slat, span: { x: num
   const order = left.map((point, i) => ({ i, y: point[0] * (down[0] - up[0]) + point[1] * (down[1] - up[1]) })).sort((a, b) => a.y - b.y);
   const top = order[0].i, bottom = order[order.length - 1].i;
   grain(scene, [left[top], right[top], right[bottom], left[bottom]], span.index);
+  if (scene.isPlantation) {
+    const shadow = ctx.createLinearGradient(...plane.project(span.x, slat.centre), ...plane.project(span.x + span.width, slat.centre));
+    const reach = Math.min(.12, 22 / (span.width * plane.widthMm));
+    for (const [stop, alpha] of [[0, .2], [reach, 0], [1 - reach, 0], [1, .2]]) shadow.addColorStop(stop, `rgba(28,24,20,${alpha})`);
+    fillSlattedFace(ctx, outline, shadow);
+  }
   const side = view[0] < 0 ? -1 : 1;
   if (Math.abs(view[0]) > .015) fillSlattedFace(ctx, side < 0 ? left : right, slattedPaint(colour, lightLevel(scene, [side, 0, 0])));
   ctx.restore();

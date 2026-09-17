@@ -4,6 +4,7 @@ import { test, expect } from '@playwright/test';
 
 import { SLAT_COLOURS, VENETIAN_COLLECTIONS, fabricPalette, fabricByName } from '../src/features/fabrics';
 import { visualiserCartItems } from '../src/features/visualiser/cartConfiguration';
+import { plantationBladeLighting } from '../src/features/visualiser/plantationLighting';
 import { selectQuoteConfig } from '../src/features/visualiser/quoteConfiguration';
 import { slattedPlane, venetianSlats, plantationPanels, slatProfile } from '../src/features/visualiser/slattedGeometry';
 import { surfaceGradient } from '../src/features/visualiser/slattedSurface';
@@ -139,4 +140,28 @@ test('every slatted material and colour agrees with the shop, and independent wi
     }
     state().setWindowCount(1);
   }
+});
+
+test('plantation sections stay elliptical and cast softer overlap shadows as they close', () => {
+  const plane = slattedPlane([[100, 100], [900, 100], [900, 900], [100, 900]], 'medium', [1000, 1000]);
+  const shadowDepth: number[] = [];
+  for (const tilt of [0, .5, 1]) {
+    const slats = plantationPanels(plane, tilt).panels[0].sections[0].slats;
+    const slat = slats[3], profile = slatProfile(plane, slat, 48);
+    const unblocked = plantationBladeLighting(plane, []);
+    const occluded = plantationBladeLighting(plane, [slats[2], slats[4]]);
+    const view = plane.viewAt(.25, slat.centre);
+    for (const point of profile) {
+      const y = (point.y - slat.centre) * plane.heightMm, z = point.depth - 14;
+      const across = y * Math.sin(slat.angle) + z * Math.cos(slat.angle);
+      const thickness = y * Math.cos(slat.angle) - z * Math.sin(slat.angle);
+      expect((across / (slat.widthMm / 2)) ** 2 + (thickness / 7) ** 2).toBeCloseTo(1, 8);
+      expect(Math.hypot(...point.normal)).toBeCloseTo(1, 8);
+      expect(occluded(point, view).level).toBeGreaterThan(.49);
+      expect(occluded(point, view).level).toBeLessThanOrEqual(unblocked(point, view).level);
+    }
+    shadowDepth.push(Math.max(...profile.map(point => unblocked(point, view).level - occluded(point, view).level)));
+  }
+  expect(shadowDepth[0], 'Fully separated horizontal blades have no neighbour shadow').toBeLessThan(.01);
+  expect(shadowDepth[2], 'Closed overlaps must cast a visible contact shadow').toBeGreaterThan(.1);
 });

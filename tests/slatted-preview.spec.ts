@@ -143,7 +143,6 @@ test('plantation fills the sash opening without covering the photographed recess
   await page.goto('/visualiser?category=plantation');
   const canvas = page.locator('canvas[data-blind-product="plantation"]');
   const preset = defaultWindowRoom('plantation');
-  await page.getByRole('button', { name: 'Walnut', exact: true }).click();
   const checkTrim = async () => {
     await expect(canvas).toHaveAttribute('data-render-ready', 'true');
     const difference = await canvas.evaluate(async (surface: HTMLCanvasElement, url) => {
@@ -175,6 +174,9 @@ test('plantation fills the sash opening without covering the photographed recess
       width: Math.round(970 / 1254 * width), height: Math.round(735 / 1254 * height) })
       .png().toFile(info.outputPath(`plantation-recess-${name}.png`));
   };
+  await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+  await closeup('half-open');
+  await page.getByRole('button', { name: 'Walnut', exact: true }).click();
   await checkTrim();
   for (const [colour, tilt, name] of [['White', 'Home', 'open'], ['White', 'End', 'closed'], ['Walnut', 'End', 'walnut']]) {
     await page.getByRole('button', { name: colour, exact: true }).click();

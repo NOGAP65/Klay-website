@@ -23,7 +23,7 @@ A customer supplies a photo and a size band, not surveyed dimensions or camera
 calibration. Nominal widths are 900/1800/2700 mm; the traced homography and
 estimated camera axes determine drop (bounded to 600–3600 mm), accounting for
 side-view foreshortening. UltraSlat preview slats are nominally 50 mm.
-Plantation blades use approximately 78 mm pitch,
+Plantation blades use a 14 mm elliptical thickness and approximately 78 mm pitch,
 48 mm stiles and 70 mm rails, with a divider rail above 1750 mm drop. These are
 rendering assumptions, not added purchasable specifications. Actual dimensions,
 panel divisions and product compatibility remain subject to measure.
@@ -48,10 +48,19 @@ Matte shading uses those surface normals and the sampled room colour/exposure.
 Opaque silhouette underpainting prevents the photo bleeding through joins
 between subpixel curved patches. This remains Canvas 2D, with no GPU dependency.
 
+Plantations use 48 cross-section facets, a restrained satin highlight, and five
+samples across a broad room light. Rays intersect the neighbouring elliptical
+blades, giving overlaps a soft shadow that moves with tilt. Ambient illumination
+remains in shadow. Short contact shading at the blade ends seats them behind the
+stiles; it is clipped to each blade, never painted over the room. This finish is
+plantation-only; Venetian geometry, lighting and texture rendering are unchanged.
+The 14 mm thickness is a visualisation assumption, not a new sale specification.
+
 Reference mechanisms: [Luxaflex aluminium Venetians](https://www.luxaflex.com.au/products/venetians/aluminium-venetians),
 [Luxaflex plantation shutters](https://www.luxaflex.com.au/products/shutters/plantation-shutters),
 [timber shutters](https://luxaflex.co.nz/timber-shutters), and
-[timber Venetians](https://luxaflex.co.nz/timber-venetian-blinds).
+[timber Venetians](https://luxaflex.co.nz/timber-venetian-blinds), and
+[Norman's elliptical louvre specifications](https://orders.normanaustralia.com.au/documents/Specifications/Normandy%20Shutter%20Specifications%202024.pdf).
 These inform the mechanisms; Klay's existing catalogue remains the source of
 available colours, materials, operation options and price-on-measure behavior.
 
