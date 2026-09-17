@@ -20,8 +20,9 @@ drives louvre tilt. Hinged panel opening is not simulated.
 ## Geometry assumptions
 
 A customer supplies a photo and a size band, not surveyed dimensions or camera
-calibration. Nominal widths are 900/1800/2700 mm; traced aspect ratio estimates
-drop (bounded to 600–3600 mm). UltraSlat preview slats are nominally 50 mm.
+calibration. Nominal widths are 900/1800/2700 mm; the traced homography and
+estimated camera axes determine drop (bounded to 600–3600 mm), accounting for
+side-view foreshortening. UltraSlat preview slats are nominally 50 mm.
 Plantation blades use approximately 78 mm pitch,
 48 mm stiles and 70 mm rails, with a divider rail above 1750 mm drop. These are
 rendering assumptions, not added purchasable specifications. Actual dimensions,
@@ -30,9 +31,18 @@ panel divisions and product compatibility remain subject to measure.
 The traced perimeter anchors the front installation plane. Frames no longer
 move away from it when depth is added; blades tuck behind the frame. The default
 slatted preview has a front-recess trace separate from the roller-fabric trace.
-Surface gradients follow each slat's perpendicular and perspective taper, rather
-than screen axes. Short overlapping strips prevent diagonal shading wedges and
-anti-alias seams without adding a GPU dependency.
+The photo centre and a focal estimate of 0.9 times its longest side extend the
+exact traced plane into depth. The front boundary still matches all four pins.
+This is an uncalibrated camera estimate, not recovery of a photo's real lens or
+surveyed dimensions. Cropped photos and irregular traces remain approximations.
+
+Each blade is an extruded elliptical cross-section with visible curved faces,
+surface normals and end caps. The view direction determines the visible faces
+and blade overlap order. Solid frame returns show their side or underside at
+oblique angles, with a small eased edge instead of a symmetric bevel gradient.
+Matte shading uses those surface normals and the sampled room colour/exposure.
+Opaque silhouette underpainting prevents the photo bleeding through joins
+between subpixel curved patches. This remains Canvas 2D, with no GPU dependency.
 
 Reference mechanisms: [Luxaflex aluminium Venetians](https://www.luxaflex.com.au/products/venetians/aluminium-venetians),
 [Luxaflex plantation shutters](https://www.luxaflex.com.au/products/shutters/plantation-shutters),
@@ -44,7 +54,8 @@ available colours, materials, operation options and price-on-measure behavior.
 ## Verification
 
 `slatted-geometry.spec.ts` checks fixed counts, monotonically moving rails,
-stack clearances, stable shutter pivots, closed blade overlap, all supplied
+stack clearances, camera-correct depth at opposite yaw/pitch angles, stable
+shutter pivots, closed blade overlap, all supplied
 colours, independently configured windows and cart prices. Browser checks cover
 room photos, tilted customer traces, lift, tilt, material and colour changes,
 motor controls, downloads, cart persistence and theme changes. Profiles include

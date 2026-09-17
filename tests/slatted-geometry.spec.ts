@@ -19,6 +19,31 @@ const traces: Point[][] = [
 test.beforeEach(() => store.setState(store.getInitialState(), true));
 const cases = traces.flatMap(trace => ['small', 'medium', 'large'].map(size => slattedPlane(trace, size)));
 
+test('depth matches a pinhole camera at opposite side angles and from above and below', () => {
+  for (const yaw of [-.7, 0, .7]) for (const pitch of [-.25, 0, .25]) {
+    const project = (x: number, y: number, depth: number): Point => {
+      const dx = (x - .5) * 1800, dy = (y - .5) * 2000, dz = depth - 26;
+      const px = Math.cos(yaw) * dx + Math.sin(yaw) * dz;
+      const forward = Math.sin(yaw) * dx - Math.cos(yaw) * dz;
+      const py = Math.cos(pitch) * dy - Math.sin(pitch) * forward;
+      const pz = 4200 + Math.sin(pitch) * dy + Math.cos(pitch) * forward;
+      return [500 + 900 * px / pz, 500 + 900 * py / pz];
+    };
+    const trace = [[0, 0], [1, 0], [1, 1], [0, 1]].map(([x, y]) => project(x, y, 26));
+    const plane = slattedPlane(trace, 'medium', [1000, 1000]);
+    expect(plane.heightMm).toBeCloseTo(2000, 6);
+    for (const depth of [-30, 0, 26, 55]) for (const [x, y] of [[0, 0], [.25, .3], [.8, .75], [1, 1]]) {
+      const expected = project(x, y, depth), actual = plane.project(x, y, depth);
+      expect(actual[0]).toBeCloseTo(expected[0], 6);
+      expect(actual[1]).toBeCloseTo(expected[1], 6);
+    }
+    // Side returns must swap when the viewing direction swaps, not simply
+    // shear a front-on picture; a centred frontal camera has neither side.
+    expect(plane.viewAt(.5, .5)[0]).toBeCloseTo(-Math.sin(yaw) * Math.cos(pitch), 6);
+    if (yaw) expect(Math.abs(plane.project(.5, .5, -18)[0] - 500)).toBeGreaterThan(5);
+  }
+});
+
 test('retired Venetian colours cannot re-enter the current configuration', () => {
   store.getState().setProductCategory('venetian');
   for (const colour of ['Basswood Walnut', 'Aluminium Frost']) {

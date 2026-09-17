@@ -18,19 +18,3 @@ export function surfaceGradient(ctx: CanvasRenderingContext2D, quad: Point[], st
   for (const [stop, colour] of stops) gradient.addColorStop(stop, colour);
   return gradient;
 }
-
-/** Small overlapping strips follow perspective taper without a GPU or a
- * per-pixel photo pass. One clip and undercoat prevent anti-alias hairlines. */
-export function shadeSurface(ctx: CanvasRenderingContext2D, quad: Point[], stops: [number, string][]) {
-  const [tl, tr, br, bl] = quad;
-  const length = Math.max(1, Math.hypot(tr[0] - tl[0], tr[1] - tl[1]));
-  const count = Math.min(12, Math.max(1, Math.ceil(length / 80)));
-  ctx.save(); surfacePath(ctx, quad); ctx.clip();
-  ctx.fillStyle = surfaceGradient(ctx, quad, stops); ctx.fill();
-  for (let i = 0; i < count; i++) {
-    const from = Math.max(0, i / count - .5 / length), to = Math.min(1, (i + 1) / count + .5 / length);
-    const strip = [along(tl, tr, from), along(tl, tr, to), along(bl, br, to), along(bl, br, from)];
-    surfacePath(ctx, strip); ctx.fillStyle = surfaceGradient(ctx, strip, stops); ctx.fill();
-  }
-  ctx.restore();
-}

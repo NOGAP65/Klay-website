@@ -2612,14 +2612,14 @@ const drawCurtainArea = (
  * the room and not on the fabric that is causing it. Curtains use their full
  * opening: their panels slide rather than roll, and an 8% wash does not
  * warrant reproducing the panel geometry. */
-const coveredQuadFor = (area: RenderedArea, rollPosition: number): Point[] => {
+const coveredQuadFor = (area: RenderedArea, rollPosition: number, photoSize: Point): Point[] => {
   const [tl, tr, br, bl] = area.corners;
   if (area.blindType === 'sheer-curtains' || area.blindType === 'blockout-curtains') {
     return [tl, tr, br, bl];
   }
   if (area.blindType.startsWith('honeycomb-')) return honeycombGeometry(area.corners, rollPosition, { dayNight: area.blindType === 'honeycomb-daynight', size: area.windowSize }).coverage;
   if (area.blindType === 'plantation') return area.corners;
-  if (area.blindType === 'venetian') return venetianSlats(slattedPlane(area.corners, area.windowSize), { position: rollPosition, tilt: 0 }).coverage;
+  if (area.blindType === 'venetian') return venetianSlats(slattedPlane(area.corners, area.windowSize, photoSize), { position: rollPosition, tilt: 0 }).coverage;
   return rollerGeometry(area.corners, rollPosition).coverage;
 };
 
@@ -2865,7 +2865,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
         ctx,
         W,
         H,
-        confirmedAreas.map(a => coveredQuadFor(a, rollPosition)),
+        confirmedAreas.map(a => coveredQuadFor(a, rollPosition, [W, H])),
         rollPosition * (confirmedAreas.some(a => a.blindType === 'honeycomb-daynight') ? 1 - .7 * honeycombDayPosition : confirmedAreas.some(a => a.blindType === 'venetian') ? .15 + .85 * slatTilt : 1),
       );
 

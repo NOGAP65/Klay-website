@@ -1,4 +1,5 @@
-import { applyHomography, computeHomography } from './homography';
+import { computeHomography } from './homography';
+import { slattedCamera } from './slattedCamera';
 
 import type { Point } from './homography';
 
@@ -7,29 +8,21 @@ const distance = (a: Point, b: Point) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
 /** Measured order dimensions are unavailable in a size-band preview. These
  * nominal dimensions scale rigid profiles consistently against the trace. */
-export function slattedPlane(corners: Point[], size = 'medium') {
+export function slattedPlane(corners: Point[], size = 'medium', photoSize?: Point) {
   const [tl, tr, br, bl] = corners;
   const width = Math.max(1, (distance(tl, tr) + distance(bl, br)) / 2);
   const height = Math.max(1, (distance(tl, bl) + distance(tr, br)) / 2);
   const widthMm = size === 'small' ? 900 : size === 'large' ? 2700 : 1800;
-  const heightMm = Math.max(600, Math.min(3600, widthMm * height / width));
   const transform = computeHomography([[0, 0], [1, 0], [1, 1], [0, 1]], corners);
-  const yaw = Math.max(-1, Math.min(1, (distance(tl, bl) - distance(tr, br)) / height * 1.5));
-  const project = (x: number, y: number, depth = 26): Point => {
-    const p = applyHomography(transform, [x, y]);
-    const left = applyHomography(transform, [0, y]), right = applyHomography(transform, [1, y]);
-    const top = applyHomography(transform, [x, 0]), bottom = applyHomography(transform, [x, 1]);
-    // The traced perimeter is the FRONT installation plane. Recess the slats
-    // behind it; do not move the outer frame away from the user's four pins.
-    const inset = depth - 26;
-    return [p[0] + (right[0] - left[0]) * yaw * inset / widthMm - (bottom[0] - top[0]) * .16 * inset / heightMm,
-      p[1] + (right[1] - left[1]) * yaw * inset / widthMm - (bottom[1] - top[1]) * .16 * inset / heightMm];
-  };
+  const camera = slattedCamera(transform, corners, widthMm, photoSize);
+  const { project, viewAt, light } = camera;
+  const heightMm = Math.max(600, Math.min(3600, camera.heightMm));
+  const view = viewAt(.5, .5), yaw = view[0] / Math.max(.25, view[2]);
   const quad = (box: [number, number, number, number], depth = 26): Point[] => {
     const [x, y, w, h] = box;
     return [project(x, y, depth), project(x + w, y, depth), project(x + w, y + h, depth), project(x, y + h, depth)];
   };
-  return { width, height, widthMm, heightMm, yaw, project, quad };
+  return { width, height, widthMm, heightMm, yaw, viewAt, light, project, quad };
 }
 export type SlattedPlane = ReturnType<typeof slattedPlane>;
 export interface Slat { centre: number; angle: number; widthMm: number; thicknessMm: number }
@@ -74,13 +67,16 @@ export function plantationPanels(plane: SlattedPlane, tilt: number) {
 
 /** Elliptical shutter blades / crowned metal and timber slats. Both front and
  * back faces rotate around a stationary centre; no scaling of a flat sticker. */
-export function slatProfile(plane: SlattedPlane, slat: Slat): { y: number; depth: number }[] {
+export function slatProfile(plane: SlattedPlane, slat: Slat) {
   const sine = Math.sin(slat.angle), cosine = Math.cos(slat.angle);
-  return Array.from({ length: 13 }, (_, index) => {
-    const phase = index / 12 * Math.PI * 2;
+  return Array.from({ length: 33 }, (_, index) => {
+    const phase = index / 32 * Math.PI * 2;
     const across = Math.cos(phase) * slat.widthMm / 2;
     const thickness = Math.sin(phase) * slat.thicknessMm / 2;
+    const a = Math.cos(phase) / slat.widthMm, b = Math.sin(phase) / slat.thicknessMm;
+    const magnitude = Math.hypot(a, b);
     return { y: slat.centre + (across * sine + thickness * cosine) / plane.heightMm,
-      depth: across * cosine - thickness * sine + 14 };
+      depth: across * cosine - thickness * sine + 14,
+      normal: [0, (a * sine + b * cosine) / magnitude, (a * cosine - b * sine) / magnitude] as [number, number, number] };
   });
 }

@@ -27,11 +27,14 @@ test('side views keep their fitted edges and shade uniformly along each slat', a
   ]) {
     await page.goto('/visualiser?category=venetian');
     const traced = await portrait(page, false, { corners, background: '#b400b4' }) as Point[];
-    const plane = slattedPlane(traced);
+    const photoSize = await page.locator('canvas[data-blind-product="venetian"]').evaluate((surface: HTMLCanvasElement) => [surface.width, surface.height] as Point);
+    const plane = slattedPlane(traced, 'medium', photoSize);
     for (const category of ['venetian', 'plantation']) {
       if (category === 'plantation') await page.getByRole('button', { name: 'Plantation shutters', exact: true }).click();
       const canvas = page.locator(`canvas[data-blind-product="${category}"]`);
       await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+      await page.getByRole('slider', { name: 'Slat tilt' }).press('Home');
+      await canvas.screenshot({ path: info.outputPath(`${category}-${corners[0][1]}-open-angled.png`) });
       await page.getByRole('slider', { name: 'Slat tilt' }).press('End');
       if (category === 'venetian') await page.getByRole('slider', { name: 'Venetian lift' }).press('End');
       await canvas.screenshot({ path: info.outputPath(`${category}-${corners[0][1]}-angled.png`) });
@@ -41,14 +44,47 @@ test('side views keep their fitted edges and shade uniformly along each slat', a
       const points = [
         ...[.2, .4, .6, .8].flatMap(y => [plane.project(.006, y), plane.project(.994, y)]),
         ...[.2, .4, .6, .8].flatMap(x => [plane.project(x, .006), plane.project(x, .994)]),
-        ...[.21, .31, .41, .61, .71, .81].map(x => plane.project(x, middle.centre, 14)),
+        ...[.21, .31, .41, .61, .71, .81].map(x => plane.project(x, middle.centre, 14 + middle.thicknessMm / 2)),
       ];
       const greens = await canvas.evaluate((surface: HTMLCanvasElement, coordinates) => coordinates.map(([x, y]) =>
         surface.getContext('2d')!.getImageData(Math.round(x), Math.round(y), 1, 1).data[1]), points);
       expect(Math.min(...greens.slice(0, 16)), 'No uncovered strip at the perimeter').toBeGreaterThan(45);
       const slat = greens.slice(16);
       expect(Math.max(...slat) - Math.min(...slat), 'No diagonal lighting wedge along the slat').toBeLessThan(24);
+      const interior = Array.from({ length: 48 * 60 }, (_, i) =>
+        plane.project(.06 + (i % 48) / 47 * .88, .06 + Math.floor(i / 48) / 59 * .88));
+      const holes = await canvas.evaluate((surface: HTMLCanvasElement, coordinates) => {
+        const ctx = surface.getContext('2d')!;
+        return coordinates.filter(([x, y]) => ctx.getImageData(Math.round(x), Math.round(y), 1, 1).data[1] < 45).length;
+      }, interior);
+      expect(holes, 'Closed rigid blades must not leak the magenta photo through mesh seams').toBe(0);
     }
+  }
+});
+
+test('front-on slats retain their clean appearance and respond without a GPU', async ({ page }, info) => {
+  const session = info.project.name === 'basic-android' ? await page.context().newCDPSession(page) : null;
+  if (session) await session.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  await page.goto('/visualiser?category=plantation');
+  await portrait(page, false, { corners: [[.15, .15], [.85, .15], [.85, .8], [.15, .8]], background: '#b4b4b4' });
+  for (const category of ['plantation', 'venetian']) {
+    if (category === 'venetian') await page.getByRole('button', { name: 'Venetian', exact: true }).click();
+    const canvas = page.locator(`canvas[data-blind-product="${category}"]`);
+    await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+    await page.getByRole('slider', { name: 'Slat tilt' }).press('Home');
+    await canvas.screenshot({ path: info.outputPath(`${category}-frontal-open.png`) });
+    const fingerprint = () => canvas.evaluate((el: HTMLCanvasElement) => {
+      const pixels = el.getContext('2d')!.getImageData(0, 0, el.width, el.height).data;
+      let hash = 0;
+      for (let i = 0; i < pixels.length; i += 64) hash = (Math.imul(hash, 31) + pixels[i]) | 0;
+      return hash;
+    });
+    const before = await fingerprint();
+    const start = Date.now();
+    await page.getByRole('slider', { name: 'Slat tilt' }).press('End');
+    await expect.poll(fingerprint).not.toBe(before);
+    expect(Date.now() - start, 'Tilt should respond promptly on the basic-phone profile').toBeLessThan(2500);
+    await canvas.screenshot({ path: info.outputPath(`${category}-frontal-closed.png`) });
   }
 });
 
