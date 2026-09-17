@@ -177,6 +177,8 @@ test('Venetian room preview uses photographed materials without a roller underne
   const canvas = page.locator('canvas[data-blind-product="venetian"]');
   await expect(canvas).toHaveAttribute('data-render-ready', 'true');
   await canvas.screenshot({ path: info.outputPath('venetian-room.png') });
+  await page.getByRole('slider', { name: 'Slat tilt' }).press('End');
+  await canvas.screenshot({ path: info.outputPath('venetian-room-closed.png') });
   await page.getByRole('button', { name: 'UltraSlat Manuscript', exact: true }).click();
   await expect(canvas).toHaveAttribute('data-render-ready', 'true');
   await canvas.screenshot({ path: info.outputPath('venetian-manuscript-room.png') });
