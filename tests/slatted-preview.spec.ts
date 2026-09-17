@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import sharp from 'sharp';
 
 import { defaultWindowRoom } from '../src/features/visualiser/roomPresets';
 import { slattedPlane, venetianSlats, plantationPanels } from '../src/features/visualiser/slattedGeometry';
@@ -138,7 +139,7 @@ test('UltraSlat colours, tilt and stacking work on a tilted uploaded opening', a
   expect(errors).toEqual([]);
 });
 
-test('plantation stays inside the photographed recess on default and retraced presets', async ({ page }, info) => {
+test('plantation fills the sash opening without covering the photographed recess', async ({ page }, info) => {
   await page.goto('/visualiser?category=plantation');
   const canvas = page.locator('canvas[data-blind-product="plantation"]');
   const preset = defaultWindowRoom('plantation');
@@ -150,22 +151,39 @@ test('plantation stays inside the photographed recess on default and retraced pr
       const reference = document.createElement('canvas'); reference.width = surface.width; reference.height = surface.height;
       const original = reference.getContext('2d')!, rendered = surface.getContext('2d')!;
       original.drawImage(photo, 0, 0, reference.width, reference.height);
-      // Photographed trim and reveal around all four edges. A dark shutter
-      // painted over these points must fail, even if it fits a guessed quad.
-      const trim = [[.185, .35], [.185, .55], [.184, .648], [.215, .207], [.4, .230], [.55, .251],
-        [.574, .36], [.572, .53], [.575, .62], [.23, .663], [.4, .65], [.54, .639]];
-      return Math.max(...trim.flatMap(([u, v]) => {
-        const x = Math.round(u * surface.width), y = Math.round(v * surface.height);
+      // Landmarks measured on the 1254px source photo, independently of the
+      // preset quad: the reveal must remain, but the old sash must be covered.
+      const trim = [[194, 150], [194, 450], [194, 795], [300, 99], [650, 129], [990, 161],
+        [1050, 220], [1050, 450], [1050, 772], [280, 822], [650, 805], [995, 789]];
+      const sash = [[215, 160], [214, 450], [213, 760], [300, 125], [600, 152], [960, 185],
+        [1026, 250], [1026, 480], [1026, 730], [280, 807], [650, 790], [985, 775]];
+      const delta = ([u, v]: number[]) => {
+        const x = Math.round(u / 1254 * surface.width), y = Math.round(v / 1254 * surface.height);
         const a = original.getImageData(x, y, 1, 1).data, b = rendered.getImageData(x, y, 1, 1).data;
-        return [0, 1, 2].map(i => Math.abs(a[i] - b[i]));
-      }));
+        return Math.max(...[0, 1, 2].map(i => Math.abs(a[i] - b[i])));
+      };
+      return { trim: trim.map(delta), sash: sash.map(delta) };
     }, preset.url);
-    expect(difference, 'The photographed recess stays visible; only the existing 8% room dimming is allowed').toBeLessThan(26);
+    expect(Math.max(...difference.trim), 'The photographed recess stays visible; only the existing 8% room dimming is allowed').toBeLessThan(26);
+    expect(Math.min(...difference.sash), 'The dark shutter must cover every old sash edge, including left/bottom strips').toBeGreaterThan(40);
+  };
+  const closeup = async (name: string) => {
+    const source = await canvas.evaluate((surface: HTMLCanvasElement) => surface.toDataURL().split(',')[1]);
+    const bitmap = sharp(Buffer.from(source, 'base64'));
+    const { width = 1254, height = 1254 } = await bitmap.metadata();
+    await bitmap.extract({ left: Math.round(170 / 1254 * width), top: Math.round(65 / 1254 * height),
+      width: Math.round(930 / 1254 * width), height: Math.round(780 / 1254 * height) })
+      .png().toFile(info.outputPath(`plantation-recess-${name}.png`));
   };
   await checkTrim();
-  await canvas.screenshot({ path: info.outputPath('plantation-inset-walnut.png') });
+  for (const [colour, tilt, name] of [['White', 'Home', 'open'], ['White', 'End', 'closed'], ['Walnut', 'End', 'walnut']]) {
+    await page.getByRole('button', { name: colour, exact: true }).click();
+    await page.getByRole('slider', { name: 'Slat tilt' }).press(tilt);
+    await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+    await closeup(name);
+  }
   await page.getByRole('button', { name: 'Visualise in your own room', exact: true }).click();
-  await page.getByRole('button', { name: 'Use Original bedroom', exact: true }).click();
+  await page.getByRole('button', { name: 'Use Living room', exact: true }).click();
   for (let attempt = 0; attempt < 2; attempt++) {
     const pins = page.locator('svg circle[fill="transparent"]');
     await expect(pins.first()).toBeVisible();
@@ -232,9 +250,22 @@ test('homepage grouped navigation switches window products and opens the correct
   const panel = page.locator('#visualiser');
   const navigation = panel.getByRole('navigation', { name: 'Visualiser products' });
   await expect(navigation.getByRole('group', { name: 'Indoor window coverings' })).toBeVisible();
-  for (const [name, category] of [['Venetian', 'venetian'], ['Plantation shutters', 'plantation'], ['Honeycomb', 'honeycomb']]) {
+  for (const [name, category] of [['Venetian', 'venetian'], ['Plantation shutters', 'plantation'], ['Honeycomb', 'honeycomb']] as const) {
     await panel.getByRole('button', { name, exact: true }).click();
-    await expect(panel.locator(`canvas[data-blind-product="${category}"]`)).toHaveAttribute('data-render-ready', 'true');
+    const canvas = panel.locator(`canvas[data-blind-product="${category}"]`);
+    await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+    const roomDifference = () => canvas.evaluate(async (surface: HTMLCanvasElement, url) => {
+      const photo = new Image(); photo.src = url; await photo.decode();
+      const reference = document.createElement('canvas'); reference.width = surface.width; reference.height = surface.height;
+      const original = reference.getContext('2d')!, rendered = surface.getContext('2d')!;
+      original.drawImage(photo, 0, 0, reference.width, reference.height);
+      return Math.max(...[[.07, .4], [.9, .9], [.4, .9]].flatMap(([u, v]) => {
+        const x = Math.round(u * surface.width), y = Math.round(v * surface.height);
+        const a = original.getImageData(x, y, 1, 1).data, b = rendered.getImageData(x, y, 1, 1).data;
+        return [0, 1, 2].map(i => Math.abs(a[i] - b[i]));
+      }));
+    }, defaultWindowRoom(category).url);
+    await expect.poll(roomDifference, { message: 'Switching products must load their matching room and trace together' }).toBeLessThan(26);
   }
   await navigation.getByRole('button', { name: 'Curtains', exact: true }).click();
   await expect(panel.locator('canvas[data-render-surface="curtain"]')).toHaveAttribute('data-render-ready', 'true');

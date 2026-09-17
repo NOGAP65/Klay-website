@@ -7,7 +7,7 @@ import { fabricByName, honeycombDaySample } from '@/features/fabrics';
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import { HoneycombLiftControls } from './HoneycombLiftControls';
 import { exportPreview } from './previewExport';
-import { WINDOW_ROOMS, defaultWindowRoom, windowRoomFor } from './roomPresets';
+import { windowRoomsFor, defaultWindowRoom, windowRoomFor } from './roomPresets';
 import { SlattedLiftControls } from './SlattedLiftControls';
 import { isValidTrace } from './traceValidation';
 import { usePhotoUpload } from './usePhotoUpload';
@@ -762,7 +762,7 @@ const PRESET_ROOMS_WARDROBE: WardrobeRoom[] = [
 const presetRoomsFor = (category: ProductCategory) =>
   isJoinery(category)
     ? PRESET_ROOMS_WARDROBE.map(room => ({ ...room, name: `${room.openingMm}mm opening` }))
-    : WINDOW_ROOMS[category === 'curtain' ? 'curtain' : 'blind'];
+    : windowRoomsFor(category);
 
 /** The opening width a wardrobe sample was shot at, if this is one of them.
  *

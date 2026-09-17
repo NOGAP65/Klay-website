@@ -29,11 +29,12 @@ rendering assumptions, not added purchasable specifications. Actual dimensions,
 panel divisions and product compatibility remain subject to measure.
 
 The traced perimeter anchors the front installation plane. Frames no longer
-move away from it when depth is added; blades tuck behind the frame. The default
-Venetian preview has its own opening trace. Plantation shutters have a separate
-inset trace at the back of the photographed reveal, leaving the original trim,
-jambs and sill visible. Sample-photo tracing resolves the same product-specific
-corners as the default preview; uploaded photos keep the customer's own trace.
+move away from it when depth is added; blades tuck behind the frame. Venetians
+and plantations share `slatted-living-room.webp`, a clear living-room opening
+with all four corners unobstructed. Its trace follows the back of the reveal,
+covering the existing sash while leaving the photographed jambs and sill visible.
+The room picker and default preview resolve the same corners; uploaded photos
+keep the customer's own trace. Roller and honeycomb previews keep their rooms.
 The photo centre and a focal estimate of 0.9 times its longest side extend the
 exact traced plane into depth. The front boundary still matches all four pins.
 This is an uncalibrated camera estimate, not recovery of a photo's real lens or
@@ -66,6 +67,24 @@ desktop, Android and WebKit iPhone emulation in light/dark modes, forced dark,
 and a 320px basic-phone profile with WebGL disabled. Emulation does not replace
 physical device verification or a measured installation.
 
+The recess regression compares independent photo landmarks at all four edges:
+the original sash must be covered and the surrounding reveal must remain visible.
+Native-resolution open/closed/wood-finish crops make edge alignment inspectable
+without relying on downscaled whole-room screenshots. Homepage category switches
+also verify the rendered room matches the selected product's preset.
+
 Navigation is shared between homepage and visualiser. Available room previews
 are grouped as Indoor window coverings and Wardrobes & shelving. Outdoor and
 Mirrors & shower screens link explicitly to their filtered shop ranges.
+
+## Room image provenance
+
+The new room was generated with the built-in image-generation tool, then encoded
+as sRGB WebP (1254 × 1254, 150,906 bytes) at
+`public/images/visualiser/rooms/slatted-living-room.webp`. The generated image
+contains only the room; all coverings remain interactive Canvas 2D geometry.
+The original bedroom image remains in use by other products.
+
+Final generation prompt:
+
+> Use case: photorealistic-natural. Asset type: bare room photograph for Klay's interactive Venetian blinds and plantation shutters visualiser. Create one square architectural interior photograph, 1536 x 1536. A restrained contemporary Australian living room in soft daylight: warm off-white plaster walls, light oak floor, just the edge of a low linen sofa below the window and a small side table off to the far right. The main subject is a large simple rectangular white-painted window opening with a clear 100mm-deep plaster recess. The ENTIRE window, its complete frame, all four inner recess corners, and the bottom sill must be fully visible with a generous clear wall margin around every edge. Window fills about 68% of image width and 68% height, centered; bottom sill well above the sofa. Nothing overlaps the window or its corners. Camera at window mid-height with a mild 15-degree oblique view, straight verticals and realistic coherent perspective, enough to clearly see one recess jamb and the sill. Simple thin white window frame at the BACK of the recess, two tall panes separated by one narrow central vertical mullion, no horizontal mullions, no handles sticking forward. Through the glass: a quiet, slightly soft Australian garden with lawn, a fence and distant small shrubs. Restrained natural exposure, visible indoor painted trim detail, soft directional daylight and real contact shadows. No curtains, no blinds, no shutters, no fabric, no pelmets, no people, no text or logos, no interior plant or furniture obscuring any of the four corners. This is a genuine-looking real-estate architectural photo, not a 3D illustration, not a close crop of the window. Make the four corners at the back of the reveal visually unambiguous so a shutter frame can later be overlaid snugly inside it.
