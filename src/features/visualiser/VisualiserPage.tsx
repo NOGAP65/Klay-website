@@ -1,10 +1,10 @@
-import { useShallow } from 'zustand/react/shallow';
 import { useSearchParams } from 'react-router-dom';
+import { useShallow } from 'zustand/react/shallow';
 
 import { tokens } from '@/ds';
+import { KlayConfigurator, VisualiserControls, useVisualiserStore, selectQuoteConfig, VisualiserCartActions, ProductCategory } from '@/features/visualiser';
 import { useIsMobile } from '@/shared';
 
-import { KlayConfigurator, VisualiserControls, useVisualiserStore, selectQuoteConfig, VisualiserCartActions, ProductCategory } from '@/features/visualiser';
 
 const CATEGORY_TAB_STYLE = {
   flex: 1,
@@ -21,6 +21,7 @@ const CATEGORY_TAB_STYLE = {
 
 function CategorySwitcher() {
   const productCategory = useVisualiserStore(s => s.productCategory);
+  const activeTab = productCategory === 'honeycomb' ? 'blind' : productCategory;
   const setProductCategory = useVisualiserStore(s => s.setProductCategory);
 
   const tabs: { id: ProductCategory; label: string }[] = [
@@ -35,12 +36,13 @@ function CategorySwitcher() {
       {tabs.map(tab => (
         <button
           key={tab.id}
-          onClick={() => setProductCategory(tab.id)}
+          aria-pressed={activeTab === tab.id}
+          onClick={() => { if (activeTab !== tab.id) setProductCategory(tab.id); }}
           style={{
             ...CATEGORY_TAB_STYLE,
-            background: productCategory === tab.id ? '#1D1D1D' : 'transparent',
-            color: productCategory === tab.id ? '#F8F8F8' : '#1D1D1D',
-            border: productCategory === tab.id ? 'none' : '1px solid rgba(29,29,29,0.2)',
+            background: activeTab === tab.id ? '#1D1D1D' : 'transparent',
+            color: activeTab === tab.id ? '#F8F8F8' : '#1D1D1D',
+            border: activeTab === tab.id ? 'none' : '1px solid rgba(29,29,29,0.2)',
           }}
         >
           {tab.label}

@@ -6,6 +6,8 @@ import { priceWindow } from './useVisualiserStore';
 import type { CartItem } from '@/features/cart';
 
 const hardwareLabel = (name: string) => ROLLER_HARDWARE.find(hardware => hardware.id === name)?.label ?? name;
+const cartTypes = { blind: 'Roller Blind', honeycomb: 'Honeycomb Blinds', curtain: 'Curtains',
+  wardrobe: 'Made to measure', shelving: 'Made to measure' };
 
 /** The basket and direct quote carry the same configuration. Only roller
  * blinds have published prices; other products retain price-on-measure. */
@@ -13,20 +15,23 @@ export function visualiserCartItems(state: VisualiserQuoteConfig): Omit<CartItem
   return visualiserQuoteItems(state).map((item, index) => {
     const window = state.windows[index];
     const isBlind = state.productCategory === 'blind';
+    const isHoneycomb = state.productCategory === 'honeycomb';
     const isCurtain = state.productCategory === 'curtain';
+    const hasFabric = isBlind || isHoneycomb || isCurtain;
+    const isLiftBlind = isBlind || isHoneycomb;
     // Identical windows can share a quantity without a misleading window number.
     const options = item.options.filter(option => option.label !== 'Window');
     const value = (label: string) => options.find(option => option.label === label)?.value ?? 'Chosen at measure';
     return {
       name: item.name,
-      type: isBlind ? 'Roller Blind' : isCurtain ? 'Curtains' : 'Made to measure',
+      type: cartTypes[state.productCategory],
       blindType: isBlind ? window.blindType : JSON.stringify([item.name, options]),
-      fabricColour: value(isBlind || isCurtain ? 'Fabric' : 'Finish'),
-      hardwareColour: isBlind || isCurtain
+      fabricColour: value(hasFabric ? 'Fabric' : 'Finish'),
+      hardwareColour: hasFabric
         ? hardwareLabel(window.hardwareColour)
         : value('Hardware'),
-      windowSize: isBlind ? window.windowSize : 'medium',
-      operation: isBlind ? window.operation : isCurtain ? window.curtainOperation : 'manual',
+      windowSize: isLiftBlind ? window.windowSize : 'medium',
+      operation: isLiftBlind ? window.operation : isCurtain ? window.curtainOperation : 'manual',
       price: isBlind ? priceWindow(window, 'blind') : 0,
       priceOnMeasure: !isBlind,
       options,

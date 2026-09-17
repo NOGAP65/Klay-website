@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { formatAUD, isBlindType } from '@/core/pricing';
 
 import { ColourSample, radius, tokens, space, type as typeScale } from '@/ds';
-import { ROLLER_HARDWARE, fabricCollections, fabricByName, fabricPalette, fabricScanInset } from '@/features/fabrics';
+import { ROLLER_HARDWARE, HONEYCOMB_TYPES, fabricCollections, fabricByName, fabricPalette, fabricScanInset } from '@/features/fabrics';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '@/features/fabrics';
 import {
   WARDROBE_COLOURS,
@@ -454,7 +454,7 @@ export function PriceBox({
 
 export default function VisualiserControls({ lockedRange: lockedRangeProp, compact = false, showCurtainControls = false, onDark = false, showPrice = true }: VisualiserControlsProps) {
   const [searchParams] = useSearchParams();
-  const store = useVisualiserStore(useShallow(({ rollPosition: _position, ...settings }) => settings));
+  const store = useVisualiserStore(useShallow(({ rollPosition: _position, honeycombDayPosition: _dayPosition, ...settings }) => settings));
   // `sk`, not `s`: the options loops below all bind `s` as their map
   // variable, and a skin called `s` would be shadowed inside every one.
   const sk = skin(onDark);
@@ -533,12 +533,17 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
       store.setBlindType(typeParam);
     }
     if (categoryParam === 'curtain') store.setProductCategory('curtain');
+    if (categoryParam === 'honeycomb') {
+      store.setProductCategory('honeycomb');
+      if (typeParam === 'daynight' || typeParam === 'blockout') store.setHoneycombType(typeParam);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typeParam, categoryParam]);
 
   const hardwareOptions = store.productCategory === 'blind' ? ROLLER_HARDWARE : HARDWARE_OPTIONS.map(h => ({ ...h, hex: HARDWARE_HEX[h.id], texture: undefined }));
   const selectedHardware = hardwareOptions.find(h => h.id === store.hardwareColour);
   const isCurtain = showCurtainControls && store.productCategory === 'curtain';
+  const isHoneycomb = store.productCategory === 'honeycomb';
 
   // The swatch grid is whichever card this category actually offers — blinds and
   // curtains are different cloth and different ranges. Keyed off the store's own
@@ -911,7 +916,19 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
       <section>
         <GroupHeading onDark={onDark}>Your blind</GroupHeading>
         <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
-          {!store.lockedRange && (
+          {!store.lockedRange && <Field onDark={onDark} label="Blind style">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+              <Pill onDark={onDark} label="Roller" active={!isHoneycomb} onClick={() => store.setProductCategory('blind')} />
+              <Pill onDark={onDark} label="Honeycomb" active={isHoneycomb} onClick={() => store.setProductCategory('honeycomb')} />
+            </div>
+          </Field>}
+          {isHoneycomb && <Field onDark={onDark} label="Fabric type">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
+              {HONEYCOMB_TYPES.map(t => <Pill key={t.id} onDark={onDark} label={t.label}
+                active={store.honeycombType === t.id} onClick={() => store.setHoneycombType(t.id)} />)}
+            </div>
+          </Field>}
+          {!isHoneycomb && !store.lockedRange && (
             <Field onDark={onDark} label="Fabric type">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {BLIND_TYPE_OPTIONS.map(t => (
@@ -927,7 +944,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             </Field>
           )}
 
-          {fabricCollections('roller-blinds', store.blindType).length > 1 && (
+          {!isHoneycomb && fabricCollections('roller-blinds', store.blindType).length > 1 && (
             <Field onDark={onDark} label="Fabric range">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
                 {fabricCollections('roller-blinds', store.blindType).map(range => (
@@ -960,7 +977,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
       <section>
         <GroupHeading onDark={onDark}>Details</GroupHeading>
         <div style={{ display: 'flex', flexDirection: 'column', gap: space.md }}>
-          <Field onDark={onDark} label="Hardware" caption={selectedHardware?.label}>
+          {!isHoneycomb && <Field onDark={onDark} label="Hardware" caption={selectedHardware?.label}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
               {hardwareOptions.map(h => (
                 <Swatch
@@ -974,7 +991,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 />
               ))}
             </div>
-          </Field>
+          </Field>}
 
           <Field onDark={onDark} label="Window size">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
@@ -997,7 +1014,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 <Pill
                   onDark={onDark}
                   key={o.id}
-                  label={o.label}
+                  label={isHoneycomb && o.id === 'motorised' ? 'Motorised' : o.label}
                   active={store.operation === o.id}
                   onClick={() => store.setOperation(o.id)}
                 />
@@ -1008,7 +1025,9 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
       </section>
 
       {/* --- PRICE: last, and only when the host isn't placing its own ------ */}
-      {showPrice && <PriceBox onDark={onDark} amount={store.getCurrentPrice()} />}
+      {showPrice && (isHoneycomb
+        ? <p style={{ ...typeScale.body, color: sk.quiet }}>Price confirmed at measure.</p>
+        : <PriceBox onDark={onDark} amount={store.getCurrentPrice()} />)}
     </div>
   );
 }

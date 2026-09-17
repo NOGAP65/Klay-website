@@ -8,7 +8,8 @@ const Canvas2DCurtainRenderer = React.lazy(() => import('./Canvas2DCurtainRender
 // Opening and closing updates only the preview, without rerendering the options panel.
 export function BlindWindowPreview(props: Omit<React.ComponentProps<typeof Canvas2DBlindRenderer>, 'rollPosition'>) {
   const position = useVisualiserStore(s => s.rollPosition);
-  return <Canvas2DBlindRenderer {...props} rollPosition={position} />;
+  const dayPosition = useVisualiserStore(s => s.honeycombDayPosition);
+  return <Canvas2DBlindRenderer {...props} rollPosition={position} honeycombDayPosition={dayPosition} />;
 }
 export function CurtainWindowPreview(props: Omit<React.ComponentProps<typeof Canvas2DCurtainRenderer>, 'openness'>) {
   const position = useVisualiserStore(s => s.rollPosition);

@@ -80,6 +80,15 @@ export function honeycombDaySample(name?: string): FabricSample | undefined {
   return name ? honeycombDays.get(name) : undefined;
 }
 
+export const HONEYCOMB_TYPES = [
+  { id: 'blockout', label: 'Blockout' },
+  { id: 'daynight', label: 'Day & Night' },
+] as const;
+export type HoneycombType = typeof HONEYCOMB_TYPES[number]['id'];
+export function honeycombColour(name?: string): string {
+  return honeycombBlockout.find(sample => sample.name === name)?.name ?? honeycombBlockout[0].name;
+}
+
 export const ROLLER_HARDWARE = ['White', 'Black', 'Cream', 'Platinum'].map(label => {
   const sample = FABRIC_SAMPLES.find(s => s.product === 'roller-hardware' && s.colour === label)!;
   return { id: label.toLowerCase() as 'white' | 'black' | 'cream' | 'platinum', label, hex: sample.hex, texture: sample.texture };

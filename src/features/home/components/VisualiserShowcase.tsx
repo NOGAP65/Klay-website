@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 // ---------------------------------------------------------------------------
 // 5. The visualiser — the centrepiece, and the only section on the page that
@@ -34,12 +35,9 @@ import { useShallow } from 'zustand/react/shallow';
 // could put them.
 // ---------------------------------------------------------------------------
 
-import { Suspense } from 'react';
 
 
 import { radius, tokens, layout, motion, space, type as typeScale, shadow, SectionBand, useHover } from '@/ds';
-import { useIsMobile, useInView } from '@/shared';
-
 import {
   KlayConfigurator, selectQuoteConfig, VisualiserCartActions,
   VisualiserControls,
@@ -52,6 +50,8 @@ import {
   isJoinery,
   type ProductCategory,
 } from '@/features/visualiser';
+import { useIsMobile, useInView } from '@/shared';
+
 
 /** The selected lozenge on THIS card. Every control in this file sits on the ink
  * card and nowhere else, so unlike VisualiserControls' skin() there is no light
@@ -100,12 +100,12 @@ function CategoryTabs() {
   return (
     <div style={{ display: 'flex', gap: space.hairline }}>
       {tabs.map(tab => {
-        const isActive = productCategory === tab.id;
+        const isActive = productCategory === tab.id || (tab.id === 'blind' && productCategory === 'honeycomb');
         return (
           <button
             key={tab.id}
             aria-pressed={isActive}
-            onClick={() => setProductCategory(tab.id)}
+            onClick={() => { if (!isActive) setProductCategory(tab.id); }}
             style={{
               flex: 1,
               padding: `${space.snug}px ${space.hairline}px`,
@@ -595,7 +595,7 @@ export function VisualiserShowcase() {
               }}
             >
               {/* Joinery pricing is confirmed at measure. */}
-              {!isWardrobe && (
+              {!isWardrobe && productCategory !== 'honeycomb' && (
                 <PriceBox
                   onDark
                   amount={jobTotal}

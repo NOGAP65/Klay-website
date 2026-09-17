@@ -9,7 +9,36 @@ const line = { name: 'Roller Blinds', type: 'Roller Blind', blindType: 'blockout
   hardwareColour: 'White', windowSize: 'small' as const, operation: 'manual' as const, price: 220,
   options: [{ label: 'Location', value: 'Bedroom 2' }, { label: 'Fabric', value: 'Essence Ice' }] };
 
-test.beforeEach(() => { useCartStore.getState().clearCart(); });
+test.beforeEach(() => {
+  useCartStore.getState().clearCart();
+  useVisualiserStore.setState(useVisualiserStore.getInitialState(), true);
+});
+test.afterEach(() => { useVisualiserStore.setState(useVisualiserStore.getInitialState(), true); });
+
+test('honeycomb follows per-window choices and carries its own types and unpriced configuration into cart', () => {
+  useVisualiserStore.setState(useVisualiserStore.getInitialState(), true);
+  const state = useVisualiserStore.getState;
+  state().setProductCategory('honeycomb');
+  state().setWindowCount(3);
+  state().setHoneycombType('daynight');
+  state().setFabricColour('Honeycomb Truffle');
+  state().setOperation('motorised');
+  state().setActiveWindow(2);
+  state().setHoneycombType('blockout');
+  state().setFabricColour('Honeycomb Regal Slate');
+  const items = visualiserCartItems(state());
+  expect(items[0]).toMatchObject({ name: 'Honeycomb Blinds', fabricColour: 'Honeycomb Truffle', priceOnMeasure: true, price: 0, operation: 'motorised' });
+  expect(items[0].options).toContainEqual({ label: 'Fabric type', value: 'Day & Night' });
+  expect(items[2].options).toContainEqual({ label: 'Fabric type', value: 'Blockout' });
+  items.forEach(item => useCartStore.getState().addItem(item));
+  expect(useCartStore.getState().items.map(item => item.quantity)).toEqual([2, 1]);
+  expect(persistedCartItems({ items: useCartStore.getState().items })).toEqual(useCartStore.getState().items);
+  state().setProductCategory('blind');
+  expect(state().fabricColour).toBe('Essence Ice');
+  expect(state().getCurrentPrice()).toBeGreaterThan(0);
+  state().setProductCategory('honeycomb');
+  expect(state().fabricColour.startsWith('Honeycomb ')).toBe(true);
+});
 
 test('adding a quantity is atomic, reports the real addition and respects the limit', () => {
   const cart = useCartStore.getState();

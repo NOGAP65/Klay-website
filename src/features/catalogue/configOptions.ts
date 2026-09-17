@@ -42,7 +42,9 @@
 // is to change the deck they came from, not this file.
 // ---------------------------------------------------------------------------
 
-import { ROLLER_HARDWARE, fabricCollections, fabricPalette, rollerColour } from '@/features/fabrics'
+import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '@/core/pricing'
+
+import { ROLLER_HARDWARE, HONEYCOMB_TYPES, fabricCollections, fabricPalette, rollerColour } from '@/features/fabrics'
 import { HARDWARE_OPTIONS } from '@/features/fabrics'
 import {
   HANDLE_FINISHES,
@@ -51,7 +53,6 @@ import {
   WARDROBE_WIDTHS,
   wardrobeModelById,
 } from '@/features/joinery'
-import { pricePerBlind, isBlindType, isWindowSize, isOperation } from '@/core/pricing'
 
 
 import {
@@ -67,13 +68,14 @@ import {
   SEMI_SCREEN_WIDTHS,
   type CatalogueItem,
 } from './constants'
-import type { CartItem } from '@/features/cart'
+import { CABINET_MIRROR_SHAPES, cabinetMirrorSpecifications } from './lib/cabinetMirror'
+import { mirrorShapes, mirrorDimensions, MIRROR_FRAME_COLOURS } from './lib/mirrorPhoto'
+import { FLYSCREEN_CONFIGURATIONS, FLYSCREEN_COLOURS, flyscreenSpecifications } from './lib/pleatedFlyscreens'
 import { FRONT_RETURN_SIZES, frontReturnSizeLabel } from './lib/semiScreenPhoto'
 import { slidingOpenings, defaultSlidingOpening, slidingMetals, type SlidingDoorStyle } from './lib/slidingDoors'
-import { mirrorShapes, mirrorDimensions, MIRROR_FRAME_COLOURS } from './lib/mirrorPhoto'
-import { CABINET_MIRROR_SHAPES, cabinetMirrorSpecifications } from './lib/cabinetMirror'
 import { WALK_IN_LAYOUTS, WALK_IN_HARDWARE, walkInSpecifications } from './lib/walkInWardrobes'
-import { FLYSCREEN_CONFIGURATIONS, FLYSCREEN_COLOURS, flyscreenSpecifications } from './lib/pleatedFlyscreens'
+
+import type { CartItem } from '@/features/cart'
 
 // SEVEN SLOTS NOW, AND THE TWO NEW ONES ARE NOT WINDOW FIELDS.
 //
@@ -572,7 +574,7 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
   // product a customer is choosing between, not a shade of translucency.
   'honeycomb-blinds': {
     variantLabel: 'Fabric type',
-    variants: [v('blockout', 'Blockout'), v('daynight', 'Day & Night')],
+    variants: HONEYCOMB_TYPES.map(type => v(type.id, type.label)),
     size: true,
     operation: true,
   },

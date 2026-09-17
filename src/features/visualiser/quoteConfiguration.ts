@@ -1,8 +1,11 @@
 import { blindLabel, sizeLabel } from '@/core/pricing';
-import type { QuoteItem } from '@/core/quoteItems';
+
+import { HONEYCOMB_TYPES } from '@/features/fabrics';
+import { wardrobeModelById, wardrobeHeight, walkInSpecifications, handleFinish } from '@/features/joinery';
 
 import { isJoinery, type useVisualiserStore } from './useVisualiserStore';
-import { wardrobeModelById, wardrobeHeight, walkInSpecifications, handleFinish } from '@/features/joinery';
+
+import type { QuoteItem } from '@/core/quoteItems';
 
 type State = ReturnType<typeof useVisualiserStore.getState>;
 export type VisualiserQuoteConfig = Pick<State, 'productCategory' | 'windows' | 'wardrobeModel'
@@ -37,13 +40,15 @@ export function visualiserQuoteItems(state: VisualiserQuoteConfig): QuoteItem[] 
   }
   return state.windows.map((window, index) => {
     const isCurtain = state.productCategory === 'curtain';
+    const isHoneycomb = state.productCategory === 'honeycomb';
     return {
-      name: isCurtain ? `${window.curtainType === 'sheer' ? 'Sheer' : 'Blockout'} Curtains` : blindLabel(window.blindType),
+      name: isCurtain ? `${window.curtainType === 'sheer' ? 'Sheer' : 'Blockout'} Curtains` : isHoneycomb ? 'Honeycomb Blinds' : blindLabel(window.blindType),
       quantity: 1,
       options: [
         { label: 'Window', value: String(index + 1) },
+        ...(isHoneycomb ? [{ label: 'Fabric type', value: HONEYCOMB_TYPES.find(type => type.id === window.honeycombType)!.label }] : []),
         { label: 'Fabric', value: window.fabricColour },
-        { label: 'Hardware', value: window.hardwareColour },
+        ...(!isHoneycomb ? [{ label: 'Hardware', value: window.hardwareColour }] : []),
         { label: 'Size', value: isCurtain ? window.curtainSize : sizeLabel(window.windowSize) },
         { label: 'Operation', value: isCurtain ? window.curtainOperation : window.operation },
         ...(isCurtain ? [{ label: 'Mount', value: window.curtainMount }] : []),

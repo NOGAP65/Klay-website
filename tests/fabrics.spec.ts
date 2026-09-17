@@ -7,11 +7,49 @@ import { test } from '@playwright/test';
 import { fieldsFor, withChoice, defaultSelection, configuredLine, priceFor, type Selection } from '../src/features/catalogue/configOptions';
 import { CATALOGUE } from '../src/features/catalogue/constants';
 import { fabricByName, fabricCollections, type FabricSample } from '../src/features/fabrics';
+import { honeycombCells, honeycombGeometry } from '../src/features/visualiser/honeycombGeometry';
 import { rollerGeometry } from '../src/features/visualiser/rollerGeometry';
 import { normaliseRollerWeave } from '../src/features/visualiser/rollerWeave';
 import { useVisualiserStore as store } from '../src/features/visualiser/useVisualiserStore';
 
 import type { Point } from '../src/features/visualiser/homography';
+
+test.beforeEach(() => { store.setState(store.getInitialState(), true); });
+
+function assertCells(g: ReturnType<typeof honeycombGeometry>, isDayNight: boolean) {
+  for (const [start, length] of [[g.nightStart, g.nightLength], ...(isDayNight ? [[g.head, g.dayLength]] : [])]) {
+    const cells = honeycombCells(start, length, g);
+    assert.equal(cells.length, g.count);
+    assert.ok(Math.abs(cells.at(-1)!.end - (start + length)) < 1e-8, 'Cloth stays connected to its rail');
+    assert.ok(cells.every((cell, index) => cell.end > cell.start && (!index || cell.start === cells[index - 1].end)));
+    assert.ok(cells[0].opening >= cells.at(-1)!.opening, 'Closed cells collect on the lifting rail');
+  }
+}
+
+test('honeycomb conserves its cells and rail clearances throughout lift and day/night travel', () => {
+  const traces: Point[][] = [
+    [[100, 100], [700, 100], [700, 900], [100, 900]],
+    [[120, 90], [680, 170], [640, 780], [100, 950]],
+    [[150, 190], [640, 70], [690, 950], [170, 820]],
+  ];
+  const cases = traces.flatMap(trace => [false, true].flatMap(isDayNight =>
+    ['small', 'medium', 'large'].map(size => ({ trace, isDayNight, size }))));
+  for (const { trace, isDayNight, size } of cases) {
+    const full = honeycombGeometry(trace, 1, { dayNight: isDayNight, dayPosition: .5, size });
+    let previousBottom = 0;
+    for (let step = 0; step <= 20; step++) {
+      for (const day of [0, .5, 1]) {
+        const g = honeycombGeometry(trace, step / 20, { dayNight: isDayNight, dayPosition: day, size });
+        assert.equal(g.count, full.count, 'Moving the blind cannot change its cell count');
+        assert.ok(g.bottom + g.rail <= 1.00000001, 'Rails stay within the traced drop');
+        assert.ok(g.bottom >= previousBottom - 1e-8, 'Lift is monotonic');
+        assertCells(g, isDayNight);
+        previousBottom = g.bottom;
+      }
+    }
+    assert.ok(Math.abs(full.bottom + full.rail - 1) < 1e-8);
+  }
+});
 
 
 test('front-feed cloth stays on the barrel circumference and the weight never retracts through it', () => {

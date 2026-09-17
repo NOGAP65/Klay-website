@@ -2,12 +2,13 @@ import { lazy, Suspense, useEffect, useRef, useState, type ComponentProps } from
 import { useShallow } from 'zustand/react/shallow';
 
 import { LoadingIndicator, radius, tokens, space, type as typeScale } from '@/ds';
-import { fabricByName } from '@/features/fabrics';
+import { fabricByName, honeycombDaySample } from '@/features/fabrics';
 
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
+import { HoneycombLiftControls } from './HoneycombLiftControls';
 import { exportPreview } from './previewExport';
-import { isValidTrace } from './traceValidation';
 import { WINDOW_ROOMS, defaultWindowRoom, windowRoomFor } from './roomPresets';
+import { isValidTrace } from './traceValidation';
 import { usePhotoUpload } from './usePhotoUpload';
 import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from './useVisualiserStore';
 import WallColourChip from './WallColourChip';
@@ -759,7 +760,7 @@ const PRESET_ROOMS_WARDROBE: WardrobeRoom[] = [
 const presetRoomsFor = (category: ProductCategory) =>
   isJoinery(category)
     ? PRESET_ROOMS_WARDROBE.map(room => ({ ...room, name: `${room.openingMm}mm opening` }))
-    : WINDOW_ROOMS[category];
+    : WINDOW_ROOMS[category === 'curtain' ? 'curtain' : 'blind'];
 
 /** The opening width a wardrobe sample was shot at, if this is one of them.
  *
@@ -891,7 +892,7 @@ export default function KlayConfigurator({
   defaultBlindType,
   mediaMaxVh = MAX_MEDIA_VH,
 }: KlayConfiguratorProps = {}) {
-  const store = useVisualiserStore(useShallow(({ rollPosition: _position, ...settings }) => settings));
+  const store = useVisualiserStore(useShallow(({ rollPosition: _position, honeycombDayPosition: _dayPosition, ...settings }) => settings));
 
   // Before anything else, so the seeded trace and the first render both see
   // the right type. The store is module-global and outlives this component,
@@ -1101,10 +1102,11 @@ export default function KlayConfigurator({
       return;
     }
     setDownloadError('');
+    const product = store.productCategory === 'honeycomb' ? 'honeycomb' : store.productCategory === 'curtain' ? 'curtain' : 'blind';
     const colourSlug = store.fabricColour.toLowerCase().replace(/\s+/g, '-');
     const link = document.createElement('a');
     const isCurtain = store.productCategory === 'curtain';
-    link.download = `klay-${isCurtain ? 'curtain' : 'blind'}-${isCurtain ? store.curtainType : store.blindType}-${colourSlug}-${isCurtain ? store.curtainSize : store.windowSize}.jpg`;
+    link.download = `klay-${product}-${isCurtain ? store.curtainType : store.productCategory === 'honeycomb' ? store.honeycombType : store.blindType}-${colourSlug}-${isCurtain ? store.curtainSize : store.windowSize}.jpg`;
     link.href = preview;
     link.click();
   };
@@ -1221,7 +1223,9 @@ export default function KlayConfigurator({
   const seededCategoryRef = useRef(store.productCategory);
   useEffect(() => {
     if (store.productCategory === seededCategoryRef.current) return;
+    const previousCategory = seededCategoryRef.current;
     seededCategoryRef.current = store.productCategory;
+    if (defaultPhotoFor(previousCategory) === defaultPhotoFor(store.productCategory)) return;
     if (!store.defaultWindowActive) return;
     hasSeededDefaultRef.current = false;
     store.clearTracedAreas();
@@ -1237,9 +1241,12 @@ export default function KlayConfigurator({
 
   const canvasTracedAreas: RenderedArea[] = store.tracedAreas.map(a => ({
     ...a,
-    blindType: store.blindType,
+    blindType: store.productCategory === 'honeycomb' ? `honeycomb-${store.honeycombType}` : store.blindType,
     fabricColor: store.getFabricColor(),
-    fabricTexture: fabricByName(store.fabricColour)?.renderTexture,
+    fabricTexture: store.productCategory === 'honeycomb' ? fabricByName(store.fabricColour)?.weaveTexture : fabricByName(store.fabricColour)?.renderTexture,
+    dayColor: honeycombDaySample(store.fabricColour)?.hex,
+    dayTexture: store.productCategory === 'honeycomb' && store.honeycombType === 'daynight' ? honeycombDaySample(store.fabricColour)?.weaveTexture : undefined,
+    windowSize: store.windowSize,
     hardwareColor: store.getHardwareColor(),
     hardwareColourName: store.hardwareColour,
     controlType: store.operation,
@@ -1405,7 +1412,7 @@ export default function KlayConfigurator({
         onToggleAuto={() => (autoRunning ? stopAuto() : startAuto())}
       />
     </div>
-  ) : pullRun ? (
+  ) : pullRun && store.productCategory !== 'honeycomb' ? (
     <div style={SIDE_CONTROL_POSITION}>
       <ConnectedPullControl curtain={store.productCategory === 'curtain'} run={pullRun} />
     </div>
@@ -1592,6 +1599,9 @@ export default function KlayConfigurator({
         </div>
       )}
       </div>
+
+      {showRenderState && store.productCategory === 'honeycomb' && <HoneycombLiftControls
+        showLift={activeOperation === 'manual'} showDay={store.honeycombType === 'daynight'} onInteract={stopAuto} />}
 
       {footerButtons && (
         <div
