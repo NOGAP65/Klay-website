@@ -5,6 +5,11 @@ const responseHeaders = {
   'cache-control': 'no-store',
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'no-referrer',
+  // An API response is data, never a document. If a bug — or a proxy — ever
+  // causes one of these bodies to be treated as HTML, this denies it every
+  // capability it would need to matter: no script, no subresources, no framing.
+  'content-security-policy': "default-src 'none'; frame-ancestors 'none'; sandbox",
+  'x-frame-options': 'DENY',
 }
 
 export const json = (body: unknown, status = 200): Response =>
@@ -30,12 +35,40 @@ export function serverError(where: string, _err: unknown): Response {
   return json({ error: 'Something went wrong on our end. Please try again.', ref }, 500)
 }
 
+/** Origins this deployment will accept form posts from.
+ *
+ *  DERIVED FROM CONFIGURATION, NOT FROM THE REQUEST. Comparing `Origin` against
+ *  `new URL(req.url).origin` alone is a Host-header trust: `req.url` is built
+ *  from the incoming Host (or X-Forwarded-Host), so an attacker who can get a
+ *  forged Host through any hop makes the two sides of the comparison agree with
+ *  each other and the check passes on a request that came from their page.
+ *  Pinning to the site's own configured addresses removes the request from both
+ *  sides of the comparison. Netlify sets URL and DEPLOY_PRIME_URL itself, so
+ *  branch and preview deploys keep working without anyone widening this.
+ *
+ *  The request's own origin is used only when nothing is configured at all,
+ *  which is the local `netlify dev` case. */
+function allowedOrigins(req: Request): Set<string> {
+  const origins = new Set<string>()
+  for (const key of ['SITE_URL', 'URL', 'DEPLOY_PRIME_URL', 'DEPLOY_URL']) {
+    const configured = process.env[key]?.trim()
+    if (!configured) continue
+    try { origins.add(new URL(configured).origin) } catch { /* Unparseable configuration grants nothing. */ }
+  }
+  if (origins.size === 0) origins.add(new URL(req.url).origin)
+  return origins
+}
+
 /** CSRF defence for browser form APIs. Webhooks authenticate with signatures instead. */
 export function checkSameOrigin(req: Request): Response | null {
+  const refuse = json({ error: 'Please submit this form from the Klay website.' }, 403)
+  // Every browser that can reach this endpoint sends Sec-Fetch-Site. When it is
+  // present it is authoritative and unforgeable from script, so anything but a
+  // first-party fetch is refused before the Origin comparison is even reached.
+  const site = req.headers.get('sec-fetch-site')
+  if (site !== null && site !== 'same-origin') return refuse
   const origin = req.headers.get('origin')
-  if (req.headers.get('sec-fetch-site') === 'cross-site' || origin !== new URL(req.url).origin) {
-    return json({ error: 'Please submit this form from the Klay website.' }, 403)
-  }
+  if (origin === null || !allowedOrigins(req).has(origin)) return refuse
   return null
 }
 

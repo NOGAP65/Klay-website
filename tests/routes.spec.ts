@@ -43,7 +43,11 @@ test('only implemented APIs are mapped; missing paths and private build metadata
   const functions = readdirSync('netlify/functions').filter(file => file.endsWith('.ts')).map(file => file.slice(0, -3)).sort();
   const apiRules = rules.filter(rule => rule.from?.startsWith('/api/'));
   expect(apiRules).toEqual([]);
-  expect(functions).toEqual(['create-checkout-session', 'order-status', 'request-quote', 'stripe-webhook']);
+  // csp-report is a collector, not a customer API: it takes browser-generated
+  // violation reports, writes a log line and answers 204 to everything. It is
+  // listed here for the same reason as the others — a new endpoint reachable
+  // from the internet should never appear without this test being edited.
+  expect(functions).toEqual(['create-checkout-session', 'csp-report', 'order-status', 'request-quote', 'stripe-webhook']);
   for (const name of functions) {
     const handler = readFileSync(`netlify/functions/${name}.ts`, 'utf8');
     expect(handler).toContain(`path: '/api/${name}'`);

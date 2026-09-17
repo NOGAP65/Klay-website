@@ -44,9 +44,17 @@ async function send(to: string, subject: string, html: string, replyTo?: string)
   }
 }
 
-/** Escape anything customer-supplied before it goes into an HTML email. */
+/** Escape anything customer-supplied before it goes into an HTML email.
+ *
+ *  Both quote forms are escaped, not just the double. Every interpolation below
+ *  currently lands in a text node, where neither matters — but this helper is
+ *  the one thing standing between customer input and an email client's parser,
+ *  and the day somebody interpolates a value into an attribute is not the day
+ *  to discover it only handled half the cases. Mail clients are also markedly
+ *  less consistent than browsers about unquoted attribute values. */
 const esc = (s: string | null | undefined): string =>
-  (s ?? '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  (s ?? '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
 const row = (label: string, value: string | null | undefined) =>
   `<tr>

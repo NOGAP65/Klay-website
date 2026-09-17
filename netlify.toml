@@ -33,19 +33,76 @@
   included_files = []
 
 # --- security headers --------------------------------------------------------
-# Applied to all responses. CSP is deliberately strict: default-src 'self' with
-# explicit exceptions only for Cloudflare Turnstile (captcha), Stripe, Supabase,
-# and Google Fonts.
+# Applied to all responses.
+#
+# CSP IS AN ALLOWLIST OF EXACTLY THREE OUTSIDE HOSTS, and it is worth being
+# precise about which, because an earlier version of this comment named two that
+# are not in the policy at all:
+#
+#   challenges.cloudflare.com   script-src, connect-src, frame-src — Turnstile
+#   fonts.googleapis.com        style-src  — the font stylesheet
+#   fonts.gstatic.com           font-src   — the woff2 files themselves
+#
+# STRIPE IS NOT IN connect-src AND MUST NOT BE ADDED. The browser never talks to
+# Stripe: it POSTs a configuration to our own function, which opens the Checkout
+# session server-side and returns a URL to navigate to. Navigation is not
+# governed by connect-src, so there is nothing to allow.
+#
+# SUPABASE IS NOT IN connect-src AND MUST NOT BE ADDED EITHER. Nothing in src/
+# imports @supabase/supabase-js — the database is reachable only through the
+# functions, holding the service-role key. If a future change makes the browser
+# want to reach Supabase directly, that is a change to the security model and
+# belongs in review, not in this line.
+#
+# 'unsafe-inline' IN style-src IS LOAD-BEARING AND NOT AN OVERSIGHT. The design
+# system styles components with React inline `style` props, which the browser
+# treats as inline styles. Removing it means moving every one of those to
+# classes. It is the weakest part of this policy; script-src, which is the part
+# that decides whether injected markup can execute, carries no such exception.
+#
+# report-uri IS USED RATHER THAN report-to. The modern Reporting API needs an
+# absolute endpoint URL in a `Reporting-Endpoints` header, and this file is
+# static — it cannot know whether the deploy is the apex domain, www or a
+# preview. report-uri takes a relative path, is honoured by every current
+# browser, and costs nothing to keep until the domain is settled.
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     X-DNS-Prefetch-Control = "off"
+    X-Permitted-Cross-Domain-Policies = "none"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+    # Deny every powerful feature the site does not use, rather than the four it
+    # was most obvious to think of. "Take a photo" in the visualiser uses a file
+    # input with `capture`, which hands off to the OS camera app and is NOT
+    # governed by the camera permission — so camera=() is correct and does not
+    # break it. interest-cohort and browsing-topics opt out of ad topic
+    # inference on customers who never asked to be profiled.
+    Permissions-Policy = "accelerometer=(), ambient-light-sensor=(), autoplay=(self), battery=(), bluetooth=(), browsing-topics=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(self), gamepad=(), geolocation=(), gyroscope=(), hid=(), idle-detection=(), interest-cohort=(), local-fonts=(), magnetometer=(), microphone=(), midi=(), payment=(), picture-in-picture=(), publickey-credentials-get=(), screen-wake-lock=(), serial=(), usb=(), xr-spatial-tracking=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'self'; upgrade-insecure-requests;"
+    # Process isolation. COOP severs any window relationship with a cross-origin
+    # opener, which is what closes the cross-window leak class (XS-Leaks) that
+    # frame-ancestors does not touch. CORP stops another site embedding our
+    # responses as subresources. Origin-Agent-Cluster asks for our own agent
+    # cluster, so a Spectre-style side channel in another origin has less to
+    # read. COEP is deliberately absent: require-corp would break the Turnstile
+    # iframe and the Google Fonts files, and neither is worth losing.
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Resource-Policy = "same-origin"
+    Origin-Agent-Cluster = "?1"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; upgrade-insecure-requests; report-uri /api/csp-report;"
+    # TRIAL, NOT ENFORCEMENT. Trusted Types is the only control that makes DOM
+    # XSS structurally impossible rather than merely absent today — it forces
+    # every assignment to innerHTML and friends through a policy function. src/
+    # contains no such assignment right now (nothing imports dangerouslySet-
+    # InnerHTML), so the site itself is plausibly ready; React's internals and
+    # Cloudflare's api.js are the unknowns, and breaking the captcha would break
+    # every form on the site. Report-Only answers that question from real
+    # traffic at zero risk. Promote it into the policy above once /api/csp-report
+    # has been quiet for a few weeks; it carries only the trial directives, so
+    # anything it reports is about Trusted Types and nothing else.
+    Content-Security-Policy-Report-Only = "require-trusted-types-for 'script'; trusted-types default; report-uri /api/csp-report;"
 
 # Never cache API responses or leak checkout session IDs through referrers.
 [[headers]]
@@ -64,6 +121,22 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# The app shell must always be revalidated. It is the document that names which
+# hashed bundles to fetch, so a cached copy — in a browser, or in some
+# intermediary between the customer and Netlify — keeps pointing at files that
+# the next deploy deleted, and the site breaks for exactly the people whose
+# caches were warmest. It is also the only response that would carry a security
+# header change, so a stale one keeps an old policy alive past the fix.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/404.html"
+  [headers.values]
+    Cache-Control = "no-cache"
 
 # --- routing -----------------------------------------------------------------
 # The four Functions 2.0 handlers own their exact /api/ paths and edge limits.

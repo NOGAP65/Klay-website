@@ -9,7 +9,7 @@
   "scripts": {
     "test:browser": "playwright test",
     "dev": "vite",
-    "build": "vite build && node scripts/emit-robots.mjs",
+    "build": "vite build && node scripts/emit-robots.mjs && node scripts/emit-security-txt.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint src tools --fix",
     "lint:rules": "node tools/eslint-rules/verify.mjs",
