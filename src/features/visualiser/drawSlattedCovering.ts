@@ -1,3 +1,4 @@
+import { drawPlantationFrame } from './plantationFrame';
 import { slattedPlane, venetianSlats, plantationPanels } from './slattedGeometry';
 import { drawSlattedBlade as blade, drawSlattedFrame as beam, fillSlattedFace as fill, slattedPaint as paint } from './slattedSolids';
 import { surfacePath as path } from './slattedSurface';
@@ -45,8 +46,8 @@ function venetian(scene: Scene, options: Options) {
 
 function plantation(scene: Scene, options: Options) {
   const { ctx, plane } = scene;
-  const { panels, stile, rail, hasMidrail } = plantationPanels(plane, options.rollPosition ?? .5);
-  for (const panel of panels) for (const section of panel.sections) {
+  const layout = plantationPanels(plane, options.rollPosition ?? .5);
+  for (const panel of layout.panels) for (const section of panel.sections) {
     ctx.save(); path(ctx, plane.quad([panel.x, section.top, panel.width, section.bottom - section.top])); ctx.clip();
     // Hidden tilt link sits behind the louvres, tucked against the stile.
     fill(ctx, plane.quad([panel.x + panel.width - 8 / plane.widthMm, section.top, 4 / plane.widthMm, section.bottom - section.top]), paint(scene.colour, .7));
@@ -54,14 +55,7 @@ function plantation(scene: Scene, options: Options) {
     blades(scene, section.slats, panel.x - tuck, panel.width + tuck * 2);
     ctx.restore();
   }
-  beam(scene, [0, 0, 1, rail]); beam(scene, [0, 1 - rail, 1, rail]);
-  beam(scene, [0, 0, stile * 1.5, 1]); beam(scene, [1 - stile * 1.5, 0, stile * 1.5, 1]);
-  for (const panel of panels.slice(1)) {
-    beam(scene, [panel.x - stile, rail, stile, 1 - rail * 2]);
-    // The meeting stiles belong to separate hinged panels.
-    fill(ctx, plane.quad([panel.x - stile / 2, rail, 1.5 / plane.widthMm, 1 - rail * 2], 27), paint(scene.colour, .57));
-  }
-  if (hasMidrail) beam(scene, [0, .5 - rail / 2, 1, rail]);
+  drawPlantationFrame(scene, layout);
 }
 
 export function drawSlattedCovering(ctx: CanvasRenderingContext2D, options: Options) {

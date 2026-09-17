@@ -27,6 +27,10 @@ export function slattedPlane(corners: Point[], size = 'medium', photoSize?: Poin
 export type SlattedPlane = ReturnType<typeof slattedPlane>;
 export interface Slat { centre: number; angle: number; widthMm: number; thicknessMm: number }
 export const SLAT_PIVOT_DEPTH_MM = 14;
+// Fixed elliptical profile. Window height changes the number of blades,
+// not their physical width; a small overlap closes the gaps between them.
+export const PLANTATION_BLADE_WIDTH_MM = 89;
+const PLANTATION_MAX_PITCH_MM = 82;
 
 export function venetianSlats(plane: SlattedPlane, options: { position: number; tilt: number }) {
   const widthMm = 50, thicknessMm = 2.8;
@@ -56,10 +60,10 @@ export function plantationPanels(plane: SlattedPlane, tilt: number) {
   const panels = Array.from({ length: count }, (_, index) => ({
     x: stile + panelWidth * index + stile / 2, width: panelWidth - stile,
     sections: sections.map(([top, bottom]) => {
-      const rows = Math.max(3, Math.ceil((bottom - top) * plane.heightMm / 78));
+      const rows = Math.max(3, Math.ceil((bottom - top) * plane.heightMm / PLANTATION_MAX_PITCH_MM));
       return { top, bottom, slats: Array.from({ length: rows }, (_, row): Slat => ({
         centre: top + (row + .5) * (bottom - top) / rows,
-        angle: unitPosition(tilt) * 1.48, widthMm: (bottom - top) * plane.heightMm / rows + 7, thicknessMm: 14,
+        angle: unitPosition(tilt) * 1.48, widthMm: PLANTATION_BLADE_WIDTH_MM, thicknessMm: 14,
       })) };
     }),
   }));

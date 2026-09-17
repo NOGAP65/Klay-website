@@ -23,10 +23,21 @@ A customer supplies a photo and a size band, not surveyed dimensions or camera
 calibration. Nominal widths are 900/1800/2700 mm; the traced homography and
 estimated camera axes determine drop (bounded to 600–3600 mm), accounting for
 side-view foreshortening. UltraSlat preview slats are nominally 50 mm.
-Plantation blades use a 14 mm elliptical thickness and approximately 78 mm pitch,
+Plantation blades use a fixed 89 mm width, 14 mm elliptical thickness and at most 82 mm pitch,
 48 mm stiles and 70 mm rails, with a divider rail above 1750 mm drop. These are
 rendering assumptions, not added purchasable specifications. Actual dimensions,
 panel divisions and product compatibility remain subject to measure.
+
+The available height after the rails determines each bank's row count, rounded
+up so closed blades overlap. Wider openings add panels (maximum nominal 900 mm
+per panel); taller openings add rows. Changing tilt or moving the camera closer
+does not resize the physical blade profile. Without measured dimensions the
+photo and chosen size band determine an illustrative layout, not an order plan.
+
+The plantation frame is one flush face with apertures for the louvre banks.
+Deep returns belong only to the inside of those apertures; the corners and
+divider-rail intersections no longer contain overlapping cuboid end faces.
+Fine butt joints and the meeting line between hinged panels remain visible.
 
 The traced perimeter anchors the front installation plane. Frames no longer
 move away from it when depth is added; blades tuck behind the frame. Venetians

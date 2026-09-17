@@ -165,3 +165,28 @@ test('plantation sections stay elliptical and cast softer overlap shadows as the
   expect(shadowDepth[0], 'Fully separated horizontal blades have no neighbour shadow').toBeLessThan(.01);
   expect(shadowDepth[2], 'Closed overlaps must cast a visible contact shadow').toBeGreaterThan(.1);
 });
+
+test('taller shutters add rows, wider shutters add panels, and photographs do not resize the blade profile', () => {
+  const layout = (size: string, widthMm: number, heightMm: number, pixels = 400) => {
+    const h = pixels * heightMm / widthMm;
+    const plane = slattedPlane([[100, 100], [100 + pixels, 100], [100 + pixels, 100 + h], [100, 100 + h]], size, [1600, 1600]);
+    return plantationPanels(plane, .5);
+  };
+  const rows = (shutter: ReturnType<typeof plantationPanels>) => shutter.panels[0].sections.reduce((sum, section) => sum + section.slats.length, 0);
+  const heights = [700, 1300, 1700, 2200, 2900];
+  const shutters = heights.map(height => layout('medium', 1800, height));
+  shutters.forEach((shutter, i) => {
+    if (i) expect(rows(shutter)).toBeGreaterThan(rows(shutters[i - 1]));
+    for (const panel of shutter.panels) for (const section of panel.sections) {
+      for (const slat of section.slats) expect(slat.widthMm).toBe(89);
+    }
+    expect(rows(layout('medium', 1800, heights[i], 200))).toBe(rows(shutter));
+    expect(rows(layout('medium', 1800, heights[i], 800))).toBe(rows(shutter));
+  });
+  const widths = [['small', 900], ['medium', 1800], ['large', 2700]] as const;
+  widths.forEach(([size, width], i) => {
+    const shutter = layout(size, width, 1500);
+    expect(shutter.panels).toHaveLength(i + 1);
+    expect(rows(shutter)).toBe(rows(layout('small', 900, 1500)));
+  });
+});

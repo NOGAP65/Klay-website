@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
-import sharp from 'sharp';
 
 import { defaultWindowRoom } from '../src/features/visualiser/roomPresets';
 import { slattedPlane, venetianSlats, plantationPanels } from '../src/features/visualiser/slattedGeometry';
 
+import { measureSlattedBands, saveSlattedCloseup } from './helpers/slattedPreview';
 import { portrait } from './helpers/visualiserPhoto';
 
 import type { Point } from '../src/features/visualiser/homography';
@@ -166,23 +166,15 @@ test('plantation fills the sash opening without covering the photographed recess
     expect(Math.max(...difference.trim), 'The photographed recess stays visible; only the existing 8% room dimming is allowed').toBeLessThan(26);
     expect(Math.min(...difference.sash), 'The dark shutter must cover every old sash edge, including left/bottom strips').toBeGreaterThan(40);
   };
-  const closeup = async (name: string) => {
-    const source = await canvas.evaluate((surface: HTMLCanvasElement) => surface.toDataURL().split(',')[1]);
-    const bitmap = sharp(Buffer.from(source, 'base64'));
-    const { width = 1254, height = 1254 } = await bitmap.metadata();
-    await bitmap.extract({ left: Math.round(145 / 1254 * width), top: Math.round(115 / 1254 * height),
-      width: Math.round(970 / 1254 * width), height: Math.round(735 / 1254 * height) })
-      .png().toFile(info.outputPath(`plantation-recess-${name}.png`));
-  };
   await expect(canvas).toHaveAttribute('data-render-ready', 'true');
-  await closeup('half-open');
+  await saveSlattedCloseup(canvas, info, 'plantation-recess-half-open');
   await page.getByRole('button', { name: 'Walnut', exact: true }).click();
   await checkTrim();
   for (const [colour, tilt, name] of [['White', 'Home', 'open'], ['White', 'End', 'closed'], ['Walnut', 'End', 'walnut']]) {
     await page.getByRole('button', { name: colour, exact: true }).click();
     await page.getByRole('slider', { name: 'Slat tilt' }).press(tilt);
     await expect(canvas).toHaveAttribute('data-render-ready', 'true');
-    await closeup(name);
+    await saveSlattedCloseup(canvas, info, `plantation-recess-${name}`);
   }
   await page.getByRole('button', { name: 'Visualise in your own room', exact: true }).click();
   await page.getByRole('button', { name: 'Use Living room', exact: true }).click();
@@ -233,6 +225,38 @@ test('plantation louvers tilt inside their frame and selections survive cart and
   await expect(page.locator('main')).toContainText('Plantation Shutters');
   await expect(page.locator('main')).toContainText('Walnut');
   expect(errors).toEqual([]);
+});
+
+test('plantation size changes add visible rows and keep the frame corners joined', async ({ page }, info) => {
+  await page.goto('/visualiser?category=plantation');
+  const canvas = page.locator('canvas[data-blind-product="plantation"]');
+  await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+  await page.getByRole('button', { name: 'Light Oak', exact: true }).click();
+  await page.getByRole('slider', { name: 'Slat tilt' }).press('Home');
+  for (const size of ['Small to 1m', 'Medium to 2m', 'Large to 3m']) {
+    await page.getByRole('button', { name: size, exact: true }).click();
+    await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+    await saveSlattedCloseup(canvas, info, `plantation-joined-${size.split(' ')[0]}`);
+  }
+  await page.getByRole('button', { name: 'White', exact: true }).click();
+  const corners = await portrait(page, false, { corners: [[.12, .2], [.88, .2], [.88, .8], [.12, .8]], background: '#b400b4' }) as Point[];
+  const rowCounts: number[] = [];
+  for (const size of ['Small to 1m', 'Medium to 2m', 'Large to 3m']) {
+    await page.getByRole('button', { name: size, exact: true }).click();
+    await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+    const dimensions = await canvas.evaluate((surface: HTMLCanvasElement) => [surface.width, surface.height] as Point);
+    const plane = slattedPlane(corners, size.split(' ')[0].toLowerCase(), dimensions);
+    const layout = plantationPanels(plane, 0), panel = layout.panels[0];
+    const scan = Array.from({ length: 1400 }, (_, i) => plane.project(panel.x + panel.width / 2, i / 1399));
+    const cornersToCheck = [panel.x - .003, panel.x + .003, 1 - panel.x - .003, 1 - panel.x + .003]
+      .flatMap(x => [plane.project(x, layout.rail * .3), plane.project(x, 1 - layout.rail * .3)]);
+    const result = await measureSlattedBands(canvas, { scan, cornersToCheck });
+    rowCounts.push(result.bands - (layout.hasMidrail ? 3 : 2));
+    expect(Math.max(...result.corners) - Math.min(...result.corners), 'Frame joints have no overlapping end-face shadows').toBeLessThan(5);
+  }
+  expect(rowCounts[0]).toBeGreaterThan(3);
+  expect(rowCounts[1]).toBeGreaterThan(rowCounts[0]);
+  expect(rowCounts[2]).toBeGreaterThan(rowCounts[1]);
 });
 
 test('Venetian room preview uses photographed materials without a roller underneath', async ({ page }, info) => {
