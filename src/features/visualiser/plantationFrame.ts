@@ -1,5 +1,6 @@
 import { dot3 } from './slattedCamera';
 import { fillSlattedFace as fill, slattedPaint as paint } from './slattedSolids';
+import { surfaceGradient } from './slattedSurface';
 
 import type { Point } from './homography';
 import type { Vector3 } from './slattedCamera';
@@ -39,13 +40,26 @@ function joints(scene: SlattedScene, layout: Layout) {
   ctx.strokeStyle = paint(colour, .83, 1);
   ctx.lineWidth = Math.max(.35, plane.width / plane.widthMm * .6);
   for (const panel of layout.panels) for (const { top, bottom } of panel.sections) {
-    for (const y of [top, bottom]) for (const [x, end] of [[panel.x - layout.stile / 2, panel.x],
-      [panel.x + panel.width, panel.x + panel.width + layout.stile / 2]]) {
+    for (const y of [top, bottom]) for (const [x, end] of [[panel.x - layout.stile, panel.x],
+      [panel.x + panel.width, panel.x + panel.width + layout.stile]]) {
       ctx.beginPath(); ctx.moveTo(...plane.project(x, y)); ctx.lineTo(...plane.project(end, y)); ctx.stroke();
     }
   }
   for (const panel of layout.panels.slice(1)) {
-    fill(ctx, plane.quad([panel.x - layout.stile / 2, layout.rail, 1.5 / plane.widthMm, 1 - layout.rail * 2]), paint(colour, .64));
+    fill(ctx, plane.quad([panel.x - layout.stile - .75 / plane.widthMm, 0, 1.5 / plane.widthMm, 1]), paint(colour, .64));
+  }
+}
+
+function recessContact(scene: SlattedScene) {
+  const { ctx, plane } = scene;
+  const dx = 12 / plane.widthMm, dy = 12 / plane.heightMm;
+  const outside = plane.quad([0, 0, 1, 1]), inside = plane.quad([dx, dy, 1 - dx * 2, 1 - dy * 2]);
+  // The photographed jambs sit in front of the installation plane. Their
+  // contact shade falls onto the shutter, never outside onto the white reveal.
+  for (const [i, strength] of [.22, .12, .08, .16].entries()) {
+    const j = (i + 1) % 4, face = [outside[i], outside[j], inside[j], inside[i]];
+    fill(ctx, face, surfaceGradient(ctx, face, [[0, `rgba(28,24,20,${strength})`],
+      [.35, `rgba(28,24,20,${strength * .3})`], [1, 'rgba(28,24,20,0)']]));
   }
 }
 
@@ -60,4 +74,5 @@ export function drawPlantationFrame(scene: SlattedScene, layout: Layout) {
   for (const box of openings) contour(ctx, plane.quad(box));
   ctx.fillStyle = paint(colour, light(scene, [0, 0, 1]), 1); ctx.fill('evenodd');
   joints(scene, layout);
+  recessContact(scene);
 }

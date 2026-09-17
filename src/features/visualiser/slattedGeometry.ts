@@ -30,6 +30,8 @@ export const SLAT_PIVOT_DEPTH_MM = 14;
 // Fixed elliptical profile. Window height changes the number of blades,
 // not their physical width; a small overlap closes the gaps between them.
 export const PLANTATION_BLADE_WIDTH_MM = 89;
+const PLANTATION_STILE_MM = 40;
+const PLANTATION_RAIL_MM = 80;
 const PLANTATION_MAX_PITCH_MM = 82;
 
 export function venetianSlats(plane: SlattedPlane, options: { position: number; tilt: number }) {
@@ -52,13 +54,13 @@ export function venetianSlats(plane: SlattedPlane, options: { position: number; 
 }
 
 export function plantationPanels(plane: SlattedPlane, tilt: number) {
-  const stile = 48 / plane.widthMm, rail = 70 / plane.heightMm;
+  const stile = PLANTATION_STILE_MM / plane.widthMm, rail = PLANTATION_RAIL_MM / plane.heightMm;
   const count = Math.max(1, Math.min(4, Math.ceil(plane.widthMm / 900)));
-  const panelWidth = (1 - stile * 2) / count;
+  const panelWidth = 1 / count;
   const hasMidrail = plane.heightMm > 1750;
   const sections = hasMidrail ? [[rail, .5 - rail / 2], [.5 + rail / 2, 1 - rail]] : [[rail, 1 - rail]];
   const panels = Array.from({ length: count }, (_, index) => ({
-    x: stile + panelWidth * index + stile / 2, width: panelWidth - stile,
+    x: panelWidth * index + stile, width: panelWidth - stile * 2,
     sections: sections.map(([top, bottom]) => {
       const rows = Math.max(3, Math.ceil((bottom - top) * plane.heightMm / PLANTATION_MAX_PITCH_MM));
       return { top, bottom, slats: Array.from({ length: rows }, (_, row): Slat => ({

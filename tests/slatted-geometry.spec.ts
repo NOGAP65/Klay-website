@@ -190,3 +190,19 @@ test('taller shutters add rows, wider shutters add panels, and photographs do no
     expect(rows(shutter)).toBe(rows(layout('small', 900, 1500)));
   });
 });
+
+test('all plantation sizes retain 89 mm blades, 80 mm rails and 40 mm stiles', () => {
+  for (const plane of cases) {
+    const layout = plantationPanels(plane, .5);
+    expect(layout.stile * plane.widthMm).toBeCloseTo(40, 8);
+    expect(layout.rail * plane.heightMm).toBeCloseTo(80, 8);
+    layout.panels.forEach((panel, i) => {
+      const panelStart = i / layout.panels.length, panelEnd = (i + 1) / layout.panels.length;
+      expect((panel.x - panelStart) * plane.widthMm).toBeCloseTo(40, 8);
+      expect((panelEnd - panel.x - panel.width) * plane.widthMm).toBeCloseTo(40, 8);
+      expect(panel.sections[0].top * plane.heightMm).toBeCloseTo(80, 8);
+      expect((1 - panel.sections.at(-1)!.bottom) * plane.heightMm).toBeCloseTo(80, 8);
+      for (const section of panel.sections) for (const slat of section.slats) expect(slat.widthMm).toBe(89);
+    });
+  }
+});
