@@ -1,14 +1,29 @@
 import { expect, type Page, type Locator } from '@playwright/test';
 import sharp from 'sharp';
 
-export async function portrait(page: Page, tilted = false) {
+export async function portrait(page: Page, tilted = false, trace?: { corners: number[][]; background?: string }) {
   await page.getByRole('button', { name: 'Visualise in your own room', exact: true }).click();
   const chooser = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: 'Upload photo', exact: true }).click();
-  const buffer = await sharp({ create: { width: 800, height: 1200, channels: 3, background: '#b4b4b4' } }).jpeg().toBuffer();
+  const buffer = await sharp({ create: { width: 800, height: 1200, channels: 3, background: trace?.background ?? '#b4b4b4' } }).jpeg().toBuffer();
   await (await chooser).setFiles({ name: 'portrait-room.jpg', mimeType: 'image/jpeg', buffer });
   await expect(page.locator('svg circle[fill="transparent"]').first()).toBeVisible();
-  if (tilted) {
+  if (trace) {
+    const pins = page.locator('svg circle[fill="transparent"]');
+    for (const [index, [px, py]] of trace.corners.entries()) {
+      const pin = pins.nth(index);
+      await pin.scrollIntoViewIfNeeded();
+      const bounds = (await pin.boundingBox())!;
+      const svg = await pin.evaluate(element => {
+        const { x, y, width, height } = (element as SVGCircleElement).ownerSVGElement!.getBoundingClientRect();
+        return { x, y, width, height };
+      });
+      await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(svg.x + px * svg.width, svg.y + py * svg.height, { steps: 4 });
+      await page.mouse.up();
+    }
+  } else if (tilted) {
     const pin = page.locator('svg circle[fill="transparent"]').nth(1);
     await pin.scrollIntoViewIfNeeded();
     const bounds = await pin.boundingBox();
@@ -21,6 +36,15 @@ export async function portrait(page: Page, tilted = false) {
   }
   const corners = await page.locator('svg circle[fill="transparent"]').evaluateAll(elements =>
     elements.slice(0, 4).map(element => [Number(element.getAttribute('cx')), Number(element.getAttribute('cy'))]));
+  if (trace) {
+    const size = await page.locator('svg circle[fill="transparent"]').first().evaluate(element => {
+      const box = (element as SVGCircleElement).ownerSVGElement!.viewBox.baseVal;
+      return [box.width, box.height];
+    });
+    // Mouse coordinates round to CSS pixels; the uploaded bitmap is larger.
+    corners.forEach((point, i) => point.forEach((value, axis) =>
+      expect(Math.abs(value - trace.corners[i][axis] * size[axis]), 'The trace must reach the requested perspective').toBeLessThan(size[axis] * .005)));
+  }
   await page.getByRole('button', { name: 'Confirm outline', exact: true }).click();
   return corners;
 }

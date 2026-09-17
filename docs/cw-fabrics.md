@@ -1,6 +1,6 @@
 # Supplied fabric library
 
-Originals: `public/images/fabrics/Cw_fabrics/` (kept unchanged).
+Originals: `assets-source/fabrics/cw/`.
 Web assets: `public/images/fabrics/cw/`.
 Shared catalogue: `src/features/fabrics/`.
 
@@ -14,8 +14,10 @@ No price tables were changed.
 - ATLAS is for roller blinds, confirmed by the owner on 14 September 2026.
 - Panorama 5% is roller sunscreen, confirmed by the owner. Its eight colours
   are only offered under Sunscreen.
-- Venetian finishes are separated into UltraSlat, Aluminium and Basswood,
-  matching the supplied folders.
+- Venetians offer UltraSlat only, confirmed by the owner on 17 September 2026.
+  Aluminium and Basswood samples and source swatches have been removed. There
+  is no material selector. The plantation renderer retains its separate neutral
+  wood-grain texture for its existing wood finishes.
 - Honeycomb has six named colours in both Blockout and Light Filtering.
   Day & Night uses the corresponding light-filter colour for its upper cells
   and blockout colour for its lower cells. The supplied Sheer Ice sample is
@@ -53,7 +55,7 @@ median of the central sample area, excluding borders. Files retain the supplied
 spelling. Source paths are recorded for every sample.
 
 Verification requires the Klay development server on port 5173 (or `CW_URL`).
-It checks exact asset paths, 183 product configurations, unchanged roller prices,
+It checks exact asset paths, 172 product configurations, unchanged roller prices,
 cart labels, independent windows, desktop/mobile layout, homepage options,
 visualiser texture loading and fallback when a supplied texture cannot load.
 

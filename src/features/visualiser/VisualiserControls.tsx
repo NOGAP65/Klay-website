@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { formatAUD, isBlindType } from '@/core/pricing';
 
 import { ColourSample, radius, tokens, space, type as typeScale } from '@/ds';
-import { ROLLER_HARDWARE, HONEYCOMB_TYPES, VENETIAN_COLLECTIONS, fabricCollections, fabricByName, fabricPalette, fabricScanInset } from '@/features/fabrics';
+import { ROLLER_HARDWARE, HONEYCOMB_TYPES, fabricCollections, fabricByName, fabricPalette, fabricScanInset } from '@/features/fabrics';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '@/features/fabrics';
 import {
   WARDROBE_COLOURS,
@@ -957,13 +957,6 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
               </div>
             </Field>
           )}
-          {store.productCategory === 'venetian' && <Field onDark={onDark} label="Material">
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
-              {VENETIAN_COLLECTIONS.map(material => <Pill key={material} onDark={onDark} label={material}
-                active={fabricByName(store.fabricColour)?.collection === material}
-                onClick={() => store.setFabricColour(fabricPalette('venetian-blinds', undefined, material)[0].name)} />)}
-            </div>
-          </Field>}
           <Field onDark={onDark} label={isSlatted(store.productCategory) ? 'Slat colour' : 'Fabric colour'} caption={selectedColour?.name}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs, marginLeft: 0, paddingRight: 0 }}>
               {palette.map(c => (

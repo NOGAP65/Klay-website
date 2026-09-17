@@ -39,6 +39,7 @@ for (const surface of [{ url: '/visualiser', selector: 'body' }, { url: '/#visua
     await add(5);
     const saved = await cart();
     await page.goto('/cart');
+    await expect(page.locator('main')).toContainText('Walk-in wardrobe — Forma 5');
     await page.reload();
     expect(await cart()).toEqual(saved);
     await expect(page.locator('main')).toContainText('Walk-in wardrobe — Forma 5');

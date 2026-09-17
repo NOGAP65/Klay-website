@@ -30,7 +30,6 @@ export interface RenderedArea {
   fabricColor: string;
   fabricTexture?: string;
   dayColor?: string;
-  material?: string;
   dayTexture?: string;
   windowSize?: string;
   hardwareColor: string;
@@ -1436,7 +1435,6 @@ interface AreaParams {
   windowSize?: string;
   honeycombDayPosition?: number;
   slatTilt?: number;
-  material?: string;
   hardwareColor?: string | null;
   hardwareColourName?: 'white' | 'black' | 'chrome' | 'cream' | 'platinum';
   controlType: string;
@@ -2621,7 +2619,7 @@ const coveredQuadFor = (area: RenderedArea, rollPosition: number): Point[] => {
   }
   if (area.blindType.startsWith('honeycomb-')) return honeycombGeometry(area.corners, rollPosition, { dayNight: area.blindType === 'honeycomb-daynight', size: area.windowSize }).coverage;
   if (area.blindType === 'plantation') return area.corners;
-  if (area.blindType === 'venetian') return venetianSlats(slattedPlane(area.corners, area.windowSize), { position: rollPosition, tilt: 0, material: area.material ?? 'UltraSlat' }).coverage;
+  if (area.blindType === 'venetian') return venetianSlats(slattedPlane(area.corners, area.windowSize), { position: rollPosition, tilt: 0 }).coverage;
   return rollerGeometry(area.corners, rollPosition).coverage;
 };
 
@@ -2670,7 +2668,6 @@ const buildAreaParams = (area: RenderedArea, rollPosition: number, honeycombDayP
   windowSize: area.windowSize,
   honeycombDayPosition,
   slatTilt,
-  material: area.material,
   hardwareColor: area.hardwareColor,
   hardwareColourName: area.hardwareColourName,
   controlType: area.controlType,

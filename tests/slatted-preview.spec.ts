@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+import { slattedPlane, venetianSlats, plantationPanels } from '../src/features/visualiser/slattedGeometry';
+
 import { portrait } from './helpers/visualiserPhoto';
+
+import type { Point } from '../src/features/visualiser/homography';
 
 test.beforeEach(async ({ page }, info) => {
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ body: '', contentType: 'text/css' }));
@@ -16,7 +20,53 @@ test.beforeEach(async ({ page }, info) => {
   });
 });
 
-test('Venetian materials, tilt and stacking work on a tilted uploaded opening', async ({ page }, info) => {
+test('side views keep their fitted edges and shade uniformly along each slat', async ({ page }, info) => {
+  for (const corners of [
+    [[.12, .08], [.85, .22], [.86, .7], [.13, .88]],
+    [[.13, .24], [.86, .06], [.85, .88], [.12, .72]],
+  ]) {
+    await page.goto('/visualiser?category=venetian');
+    const traced = await portrait(page, false, { corners, background: '#b400b4' }) as Point[];
+    const plane = slattedPlane(traced);
+    for (const category of ['venetian', 'plantation']) {
+      if (category === 'plantation') await page.getByRole('button', { name: 'Plantation shutters', exact: true }).click();
+      const canvas = page.locator(`canvas[data-blind-product="${category}"]`);
+      await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+      await page.getByRole('slider', { name: 'Slat tilt' }).press('End');
+      if (category === 'venetian') await page.getByRole('slider', { name: 'Venetian lift' }).press('End');
+      await canvas.screenshot({ path: info.outputPath(`${category}-${corners[0][1]}-angled.png`) });
+      const geometry = category === 'venetian' ? venetianSlats(plane, { position: 1, tilt: 1 })
+        : plantationPanels(plane, 1).panels[0].sections[0];
+      const middle = geometry.slats[Math.floor(geometry.slats.length / 2)];
+      const points = [
+        ...[.2, .4, .6, .8].flatMap(y => [plane.project(.006, y), plane.project(.994, y)]),
+        ...[.2, .4, .6, .8].flatMap(x => [plane.project(x, .006), plane.project(x, .994)]),
+        ...[.21, .31, .41, .61, .71, .81].map(x => plane.project(x, middle.centre, 14)),
+      ];
+      const greens = await canvas.evaluate((surface: HTMLCanvasElement, coordinates) => coordinates.map(([x, y]) =>
+        surface.getContext('2d')!.getImageData(Math.round(x), Math.round(y), 1, 1).data[1]), points);
+      expect(Math.min(...greens.slice(0, 16)), 'No uncovered strip at the perimeter').toBeGreaterThan(45);
+      const slat = greens.slice(16);
+      expect(Math.max(...slat) - Math.min(...slat), 'No diagonal lighting wedge along the slat').toBeLessThan(24);
+    }
+  }
+});
+
+test('shop offers five UltraSlat colours without a material choice', async ({ page }) => {
+  await page.goto('/products?q=venetian');
+  const product = page.locator('.shop-result-card').first();
+  await expect(product).toContainText('UltraSlat');
+  await expect(product.getByRole('button', { name: /^(Aluminium|Basswood|UltraSlat)$/ })).toHaveCount(0);
+  await expect(product.getByRole('button', { name: /^UltraSlat / })).toHaveCount(5);
+  await product.getByRole('button', { name: 'UltraSlat Manuscript', exact: true }).click();
+  await expect(product.locator('canvas[data-fabric-photo="venetian-blinds"]')).toHaveAttribute('data-render-ready', 'true');
+  await product.getByRole('button', { name: 'Add to cart', exact: true }).click();
+  await page.goto('/cart');
+  await expect(page.locator('main')).toContainText('UltraSlat Manuscript');
+  await expect(page.locator('main')).not.toContainText('Material');
+});
+
+test('UltraSlat colours, tilt and stacking work on a tilted uploaded opening', async ({ page }, info) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/visualiser?category=venetian');
@@ -29,13 +79,14 @@ test('Venetian materials, tilt and stacking work on a tilted uploaded opening', 
   }, corners);
   await page.getByRole('slider', { name: 'Venetian lift' }).press('End');
   await page.getByRole('slider', { name: 'Slat tilt' }).press('End');
-  for (const material of ['UltraSlat', 'Basswood', 'Aluminium']) {
-    await page.getByRole('button', { name: material, exact: true }).click();
+  await expect(page.getByRole('button', { name: /^(UltraSlat|Aluminium|Basswood)$/ })).toHaveCount(0);
+  const white = await centre();
+  for (const colour of ['UltraSlat Breeze White', 'UltraSlat Beachshell', 'UltraSlat Manuscript']) {
+    await page.getByRole('button', { name: colour, exact: true }).click();
     await expect(canvas).toHaveAttribute('data-render-ready', 'true');
-    await canvas.screenshot({ path: info.outputPath(`${material}-closed.png`) });
+    await canvas.screenshot({ path: info.outputPath(`${colour}-closed.png`) });
   }
-  await page.getByRole('button', { name: 'Aluminium Jet Black', exact: true }).click();
-  await expect.poll(centre).toBeLessThan(80);
+  await expect.poll(centre).toBeLessThan(white - 5);
   await page.getByRole('slider', { name: 'Venetian lift' }).press('Home');
   await expect.poll(centre).toBeGreaterThan(150);
   await canvas.screenshot({ path: info.outputPath('venetian-stacked.png') });
@@ -45,7 +96,7 @@ test('Venetian materials, tilt and stacking work on a tilted uploaded opening', 
   await page.getByRole('button', { name: 'Add to cart', exact: true }).click();
   await page.goto('/cart');
   await expect(page.locator('main')).toContainText('Venetian Blinds');
-  await expect(page.locator('main')).toContainText('Aluminium Jet Black');
+  await expect(page.locator('main')).toContainText('UltraSlat Manuscript');
   await expect(page.locator('main')).toContainText('Price on measure');
   expect(errors).toEqual([]);
 });
@@ -90,10 +141,9 @@ test('Venetian room preview uses photographed materials without a roller underne
   const canvas = page.locator('canvas[data-blind-product="venetian"]');
   await expect(canvas).toHaveAttribute('data-render-ready', 'true');
   await canvas.screenshot({ path: info.outputPath('venetian-room.png') });
-  await page.getByRole('button', { name: 'Basswood', exact: true }).click();
-  await page.getByRole('button', { name: 'Basswood Walnut', exact: true }).click();
+  await page.getByRole('button', { name: 'UltraSlat Manuscript', exact: true }).click();
   await expect(canvas).toHaveAttribute('data-render-ready', 'true');
-  await canvas.screenshot({ path: info.outputPath('venetian-walnut-room.png') });
+  await canvas.screenshot({ path: info.outputPath('venetian-manuscript-room.png') });
 });
 
 test('homepage grouped navigation switches window products and opens the correct shop families', async ({ page }, info) => {

@@ -28,6 +28,7 @@ try {
       // Roller application confirmed by the owner; opacity mapping is separate.
       product = 'roller-blinds';
     } else if (parts[0] === '2. Venetian Blinds' && parts[2] === 'Colours') {
+      if (parts[1] !== 'UltraSlat') continue;
       product = 'venetian-blinds';
       collection = parts[1];
       colour = title(basename.replace(/^blinds-venetians-icons-(\d-)?/, '').replace(/3$/, ''));

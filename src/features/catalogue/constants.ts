@@ -372,7 +372,7 @@ export const CATALOGUE: CatalogueItem[] = [
     id: 'venetian-blinds',
     name: 'Venetian Blinds',
     group: 'Indoor',
-    tagline: 'Horizontal slats that tilt. Aluminium, timber or faux.',
+    tagline: 'UltraSlat blinds. Precise light control with tilting horizontal slats.',
     to: enquire('Venetian Blinds'),
     glyph: 'venetian-blinds',
     // Each supplied material family has its own colour card.

@@ -13,7 +13,7 @@ export function coloursFor(category: ProductCategory, type = 'blockout', name?: 
   if (category === 'curtain') return CURTAIN_COLOURS;
   if (category === 'plantation') return SLAT_COLOURS;
   if (category === 'honeycomb') return fabricPalette('honeycomb-blinds');
-  if (category === 'venetian') return fabricPalette('venetian-blinds', undefined, fabricByName(name)?.collection);
+  if (category === 'venetian') return fabricPalette('venetian-blinds');
   return rollerPalette(type, name);
 }
 export function windowColour(category: ProductCategory, type: string, name?: string): string {
@@ -24,6 +24,6 @@ export function windowColour(category: ProductCategory, type: string, name?: str
 }
 export function slatTexture(category: ProductCategory, name: string): string | undefined {
   if (category === 'venetian') return fabricByName(name)?.weaveTexture;
-  if (category === 'plantation' && ['Light Oak', 'Walnut'].includes(name)) return fabricByName('Basswood Walnut')?.weaveTexture;
+  if (category === 'plantation' && ['Light Oak', 'Walnut'].includes(name)) return '/images/visualiser/textures/plantation-wood-grain.webp';
   return undefined;
 }

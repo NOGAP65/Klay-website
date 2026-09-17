@@ -1,6 +1,6 @@
 import { blindLabel, sizeLabel } from '@/core/pricing';
 
-import { HONEYCOMB_TYPES, fabricByName } from '@/features/fabrics';
+import { HONEYCOMB_TYPES } from '@/features/fabrics';
 import { wardrobeModelById, wardrobeHeight, walkInSpecifications, handleFinish } from '@/features/joinery';
 
 import { isJoinery, type useVisualiserStore } from './useVisualiserStore';
@@ -50,7 +50,6 @@ export function visualiserQuoteItems(state: VisualiserQuoteConfig): QuoteItem[] 
         { label: 'Window', value: String(index + 1) },
         ...(isHoneycomb ? [{ label: 'Fabric type', value: HONEYCOMB_TYPES.find(type => type.id === window.honeycombType)!.label }] : []),
         { label: 'Fabric', value: window.fabricColour },
-        ...(state.productCategory === 'venetian' ? [{ label: 'Material', value: fabricByName(window.fabricColour)?.collection ?? 'UltraSlat' }] : []),
         ...(!isUnpricedBlind(state.productCategory) ? [{ label: 'Hardware', value: window.hardwareColour }] : []),
         { label: 'Size', value: isCurtain ? window.curtainSize : sizeLabel(window.windowSize) },
         { label: 'Operation', value: isCurtain ? window.curtainOperation : window.operation },

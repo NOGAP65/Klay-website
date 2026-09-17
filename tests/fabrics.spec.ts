@@ -102,7 +102,7 @@ test('roller weave keeps yarn detail without baking scan lighting into the fabri
 test('supplied fabric assets have unique identities and exact deployed paths', async () => {
 const samples: FabricSample[] = JSON.parse(await fs.readFile('src/features/fabrics/samples.json', 'utf8'));
 const files = new Set((await fs.readdir('public', { recursive: true })).map(f => '/' + f.replace(/\\/g, '/')));
-assert.equal(samples.length, 90);
+assert.equal(samples.length, 79);
 assert.equal(new Set(samples.map(s => s.id)).size, samples.length);
 let bytes = 0;
 for (const sample of samples) {
@@ -114,7 +114,7 @@ for (const sample of samples) {
 }
 
 
-console.log('90 supplied samples; ' + bytes + ' asset bytes verified.');
+console.log('79 supplied samples; ' + bytes + ' asset bytes verified.');
 });
 
 function checkColours(item: typeof CATALOGUE[number], initial: Selection, variant: string) {
@@ -151,7 +151,7 @@ test('supplied fabric colours remain valid through catalogue and visualiser sele
       }
     }
   }
-  assert.equal(configurations, 183);
+  assert.equal(configurations, 172);
 });
 
 test('fabric and hardware propagation respect independent windows and product families', () => {

@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 
 import { test, expect } from '@playwright/test';
 
-import { SLAT_COLOURS, VENETIAN_COLLECTIONS, fabricPalette } from '../src/features/fabrics';
+import { SLAT_COLOURS, VENETIAN_COLLECTIONS, fabricPalette, fabricByName } from '../src/features/fabrics';
 import { visualiserCartItems } from '../src/features/visualiser/cartConfiguration';
 import { selectQuoteConfig } from '../src/features/visualiser/quoteConfiguration';
 import { slattedPlane, venetianSlats, plantationPanels, slatProfile } from '../src/features/visualiser/slattedGeometry';
+import { surfaceGradient } from '../src/features/visualiser/slattedSurface';
 import { useVisualiserStore as store } from '../src/features/visualiser/useVisualiserStore';
 
 import type { Point } from '../src/features/visualiser/homography';
@@ -18,12 +19,22 @@ const traces: Point[][] = [
 test.beforeEach(() => store.setState(store.getInitialState(), true));
 const cases = traces.flatMap(trace => ['small', 'medium', 'large'].map(size => slattedPlane(trace, size)));
 
+test('retired Venetian colours cannot re-enter the current configuration', () => {
+  store.getState().setProductCategory('venetian');
+  for (const colour of ['Basswood Walnut', 'Aluminium Frost']) {
+    expect(fabricByName(colour)).toBeUndefined();
+    store.getState().setFabricColour(colour);
+    expect(store.getState().fabricColour).toBe('UltraSlat Coastal White');
+  }
+  expect(fabricPalette('venetian-blinds')).toHaveLength(5);
+});
+
 test('rigid Venetian slats keep their count and collect on the bottom rail throughout lift', () => {
-  for (const { plane, material } of cases.flatMap(plane => VENETIAN_COLLECTIONS.map(material => ({ plane, material })))) {
-    const lowered = venetianSlats(plane, { position: 1, tilt: 1, material });
+  for (const plane of cases) {
+    const lowered = venetianSlats(plane, { position: 1, tilt: 1 });
     let previousBottom = 0;
     for (let step = 0; step <= 100; step++) {
-      const geometry = venetianSlats(plane, { position: step / 100, tilt: .82, material });
+      const geometry = venetianSlats(plane, { position: step / 100, tilt: .82 });
       assert.equal(geometry.slats.length, lowered.slats.length);
       assert.ok(geometry.bottom >= previousBottom);
       assert.ok(geometry.bottom + geometry.rail <= 1.000001);
@@ -38,6 +49,25 @@ test('rigid Venetian slats keep their count and collect on the bottom rail throu
       previousBottom = geometry.bottom;
     }
     expect(lowered.bottom + lowered.rail).toBeCloseTo(1, 10);
+  }
+});
+
+test('front frame remains exactly on every traced edge, with shading perpendicular to the slat', () => {
+  for (const trace of traces) {
+    const plane = slattedPlane(trace);
+    plane.quad([0, 0, 1, 1]).forEach((point, i) => {
+      expect(point[0]).toBeCloseTo(trace[i][0], 7);
+      expect(point[1]).toBeCloseTo(trace[i][1], 7);
+    });
+    const quad = plane.quad([0, .4, 1, .02]);
+    let coordinates: number[] = [];
+    const ctx = { createLinearGradient: (...args: number[]) => {
+      coordinates = args; return { addColorStop: () => {} };
+    } } as unknown as CanvasRenderingContext2D;
+    surfaceGradient(ctx, quad, [[0, '#dddddd'], [1, '#aaaaaa']]);
+    const [x, y, endX, endY] = coordinates;
+    const dx = quad[1][0] - quad[0][0], dy = quad[1][1] - quad[0][1];
+    expect(dx * (endX - x) + dy * (endY - y)).toBeCloseTo(0, 7);
   }
 });
 

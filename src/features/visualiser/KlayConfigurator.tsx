@@ -1228,7 +1228,8 @@ export default function KlayConfigurator({
     if (store.productCategory === seededCategoryRef.current) return;
     const previousCategory = seededCategoryRef.current;
     seededCategoryRef.current = store.productCategory;
-    if (defaultPhotoFor(previousCategory) === defaultPhotoFor(store.productCategory)) return;
+    const isSamePhoto = defaultPhotoFor(previousCategory) === defaultPhotoFor(store.productCategory);
+    if (isSamePhoto && defaultWindowRoom(previousCategory).corners === defaultWindowRoom(store.productCategory).corners) return;
     if (!store.defaultWindowActive) return;
     hasSeededDefaultRef.current = false;
     store.clearTracedAreas();
@@ -1238,7 +1239,7 @@ export default function KlayConfigurator({
     // Left alone, a customer switching to wardrobes got a cupboard standing
     // against a window, which is the first thing the visualiser says about the
     // product.
-    loadFromUrl(defaultPhotoFor(store.productCategory));
+    if (!isSamePhoto) loadFromUrl(defaultPhotoFor(store.productCategory));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.productCategory, store.defaultWindowActive]);
 
@@ -1247,7 +1248,6 @@ export default function KlayConfigurator({
     blindType: store.productCategory === 'honeycomb' ? `honeycomb-${store.honeycombType}` : isSlatted(store.productCategory) ? store.productCategory : store.blindType,
     fabricColor: store.getFabricColor(),
     fabricTexture: isSlatted(store.productCategory) ? slatTexture(store.productCategory, store.fabricColour) : store.productCategory === 'honeycomb' ? fabricByName(store.fabricColour)?.weaveTexture : fabricByName(store.fabricColour)?.renderTexture,
-    material: fabricByName(store.fabricColour)?.collection,
     dayColor: honeycombDaySample(store.fabricColour)?.hex,
     dayTexture: store.productCategory === 'honeycomb' && store.honeycombType === 'daynight' ? honeycombDaySample(store.fabricColour)?.weaveTexture : undefined,
     windowSize: store.windowSize,

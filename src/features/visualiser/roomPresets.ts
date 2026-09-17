@@ -34,8 +34,14 @@ export const WINDOW_ROOMS: Record<'blind' | 'curtain', WindowRoom[]> = {
   ],
 };
 
+// Slatted products fit at the front of the recess. The roller's fabric trace
+// sits further inside, so it must not be reused as the shutter's outer frame.
+const SLATTED_ROOM: WindowRoom = {
+  ...WINDOW_ROOMS.blind[0],
+  corners: [[.1826, .198], [.5909, .247], [.5893, .657], [.1802, .674]],
+};
 export const defaultWindowRoom = (category: ProductCategory): WindowRoom =>
-  WINDOW_ROOMS[category === 'curtain' ? 'curtain' : 'blind'][0];
+  category === 'venetian' || category === 'plantation' ? SLATTED_ROOM : WINDOW_ROOMS[category === 'curtain' ? 'curtain' : 'blind'][0];
 
 export const windowRoomFor = (url: string | null): WindowRoom | undefined =>
   Object.values(WINDOW_ROOMS).flat().find(room => room.url === url);

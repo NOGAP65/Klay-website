@@ -15,14 +15,17 @@ export function slattedPlane(corners: Point[], size = 'medium') {
   const heightMm = Math.max(600, Math.min(3600, widthMm * height / width));
   const transform = computeHomography([[0, 0], [1, 0], [1, 1], [0, 1]], corners);
   const yaw = Math.max(-1, Math.min(1, (distance(tl, bl) - distance(tr, br)) / height * 1.5));
-  const project = (x: number, y: number, depth = 0): Point => {
+  const project = (x: number, y: number, depth = 26): Point => {
     const p = applyHomography(transform, [x, y]);
     const left = applyHomography(transform, [0, y]), right = applyHomography(transform, [1, y]);
     const top = applyHomography(transform, [x, 0]), bottom = applyHomography(transform, [x, 1]);
-    return [p[0] + (right[0] - left[0]) * yaw * depth / widthMm - (bottom[0] - top[0]) * .16 * depth / heightMm,
-      p[1] + (right[1] - left[1]) * yaw * depth / widthMm - (bottom[1] - top[1]) * .16 * depth / heightMm];
+    // The traced perimeter is the FRONT installation plane. Recess the slats
+    // behind it; do not move the outer frame away from the user's four pins.
+    const inset = depth - 26;
+    return [p[0] + (right[0] - left[0]) * yaw * inset / widthMm - (bottom[0] - top[0]) * .16 * inset / heightMm,
+      p[1] + (right[1] - left[1]) * yaw * inset / widthMm - (bottom[1] - top[1]) * .16 * inset / heightMm];
   };
-  const quad = (box: [number, number, number, number], depth = 0): Point[] => {
+  const quad = (box: [number, number, number, number], depth = 26): Point[] => {
     const [x, y, w, h] = box;
     return [project(x, y, depth), project(x + w, y, depth), project(x + w, y + h, depth), project(x, y + h, depth)];
   };
@@ -31,9 +34,8 @@ export function slattedPlane(corners: Point[], size = 'medium') {
 export type SlattedPlane = ReturnType<typeof slattedPlane>;
 export interface Slat { centre: number; angle: number; widthMm: number; thicknessMm: number }
 
-export function venetianSlats(plane: SlattedPlane, options: { position: number; tilt: number; material: string }) {
-  const isMetal = options.material === 'Aluminium';
-  const widthMm = isMetal ? 25 : 50, thicknessMm = isMetal ? .45 : 2.8;
+export function venetianSlats(plane: SlattedPlane, options: { position: number; tilt: number }) {
+  const widthMm = 50, thicknessMm = 2.8;
   const head = 38 / plane.heightMm, rail = 26 / plane.heightMm;
   const available = 1 - head - rail;
   const count = Math.max(8, Math.ceil(available * plane.heightMm / (widthMm * .86)));
@@ -48,7 +50,7 @@ export function venetianSlats(plane: SlattedPlane, options: { position: number; 
     cursor += spacing;
     return { centre, angle: unitPosition(options.tilt) * 1.48 * opening, widthMm, thicknessMm };
   });
-  return { slats, head, rail, bottom: head + travel, coverage: plane.quad([0, 0, 1, head + travel + rail], 12) };
+  return { slats, head, rail, bottom: head + travel, coverage: plane.quad([0, 0, 1, head + travel + rail]) };
 }
 
 export function plantationPanels(plane: SlattedPlane, tilt: number) {

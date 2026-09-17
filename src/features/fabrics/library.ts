@@ -15,7 +15,7 @@ export interface FabricSample {
 
 export const FABRIC_SAMPLES: FabricSample[] = samples;
 export const ROLLER_COLLECTIONS = ['Essence', 'Montecarlo', 'Symphony', 'Urbania', 'Verve'];
-export const VENETIAN_COLLECTIONS = ['UltraSlat', 'Aluminium', 'Basswood'];
+export const VENETIAN_COLLECTIONS = ['UltraSlat'];
 
 // Built once in O(n). Palette/name reads during dragging and rendering are
 // O(1), with stable arrays instead of a new filtered allocation every frame.
