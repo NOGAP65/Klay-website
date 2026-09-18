@@ -15,6 +15,19 @@ export async function doorTexture(url: string, disposables: Disposables) {
   disposables.push(texture); return texture;
 }
 
+function mirrorMaterial(disposables: Disposables) {
+  // A quiet glass sheen without room imagery or reflection render passes.
+  const canvas = document.createElement('canvas'); canvas.width = canvas.height = 128;
+  const context = canvas.getContext('2d')!;
+  const sheen = context.createLinearGradient(0, 128, 128, 0);
+  for (const [stop, colour] of [[0, '#a5b2b5'], [.32, '#ced8d8'], [.48, '#edf2ef'],
+    [.58, '#f5f7f4'], [.72, '#cbd6d7'], [1, '#a2b0b4']] as const) sheen.addColorStop(stop, colour);
+  context.fillStyle = sheen; context.fillRect(0, 0, 128, 128);
+  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false });
+  disposables.push(texture, material); return material;
+}
+
 export async function slidingDoorMaterials(config: SlidingDoorConfig, disposables: Disposables) {
   const finish = slidingMaterial(config.style, config.material);
   const texture = finish.texture ? await doorTexture(finish.texture, disposables) : null;
@@ -28,7 +41,7 @@ export async function slidingDoorMaterials(config: SlidingDoorConfig, disposable
     metal.roughness = isSilver ? .21 : .46;
   };
   paintMetal(config.hardware); disposables.push(board, metal);
-  return { board, metal, paintMetal };
+  return { board, metal, paintMetal, mirror: finish.mirror === 'none' ? null : mirrorMaterial(disposables) };
 }
 
 export function addDoorBox(parent: THREE.Object3D, box: DoorBox, material: THREE.Material, disposables: Disposables) {

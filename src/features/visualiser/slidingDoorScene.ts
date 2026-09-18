@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 
 import { joineryEnvironment } from './joineryEnvironment';
 import { slidingDoorGeometry } from './slidingDoorGeometry';
@@ -23,32 +22,24 @@ function illumination(scene: THREE.Scene, width: number, disposables: Disposable
   disposables.push(key.shadow);
 }
 
-function mirrorPanel(box: { x: number; y: number; z: number; w: number; h: number }, mirrors: Reflector[], disposables: Disposables) {
+function mirrorPanel(box: { x: number; y: number; z: number; w: number; h: number; openingWidth: number }, material: THREE.Material, disposables: Disposables) {
   const geometry = new THREE.PlaneGeometry(box.w / 1000, box.h / 1000);
-  const mirror = new Reflector(geometry, { color: 0xbababa, textureWidth: 512, textureHeight: 512, multisample: 0, clipBias: .003 });
-  // Unsigned-byte buffers also work on older mobile GPUs without renderable
-  // half-float textures. No mutually recursive mirror passes.
-  mirror.getRenderTarget().texture.type = THREE.UnsignedByteType;
+  const uv = geometry.attributes.uv;
+  for (let index = 0; index < uv.count; index++) uv.setX(index, (box.x + uv.getX(index) * box.w) / box.openingWidth);
+  const mirror = new THREE.Mesh(geometry, material);
   mirror.position.set((box.x + box.w / 2) / 1000, (box.y + box.h / 2) / 1000, box.z / 1000);
-  const reflect = mirror.onBeforeRender;
-  mirror.onBeforeRender = (...args) => {
-    const visibility = mirrors.map(other => other.visible);
-    mirrors.forEach(other => { other.visible = false; });
-    try { reflect.apply(mirror, args); }
-    finally { mirrors.forEach((other, index) => { other.visible = visibility[index]; }); }
-  };
-  mirrors.push(mirror); disposables.push(geometry, mirror); return mirror;
+  disposables.push(geometry); return mirror;
 }
 
 function panels(root: THREE.Group, config: SlidingDoorConfig, materials: Awaited<ReturnType<typeof slidingDoorMaterials>>, disposables: Disposables) {
-  const geometry = slidingDoorGeometry(config), mirrors: Reflector[] = [];
+  const geometry = slidingDoorGeometry(config);
   const isShaker = config.style === 'shaker';
   const frameMaterial = isShaker ? materials.board : materials.metal;
   for (const panel of geometry.panels) {
     const { x, y, z, width: w, height: h, thickness: d, stile, rail } = panel;
     const inset = { x: x + stile, y: y + rail, z: z + d - (isShaker ? 11 : 3), w: w - 2 * stile, h: h - 2 * rail };
     addDoorBox(root, { x, y, z, w, h, d: 6 }, materials.board, disposables);
-    if (panel.isMirror) root.add(mirrorPanel(inset, mirrors, disposables));
+    if (panel.isMirror) root.add(mirrorPanel({ ...inset, openingWidth: geometry.widthMm }, materials.mirror!, disposables));
     else addDoorBox(root, { ...inset, z: z + 5, d: inset.z - z - 5 }, materials.board, disposables);
     for (const [sx, sy, sw, sh, isHorizontal] of [[x, y, stile, h, false], [x + w - stile, y, stile, h, false],
       [x + stile, y, w - 2 * stile, rail, true], [x + stile, y + h - rail, w - 2 * stile, rail, true]] as const) {

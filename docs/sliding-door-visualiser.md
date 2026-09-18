@@ -13,7 +13,7 @@ The visualiser and homepage embed offer **Wardrobes → Sliding doors**, with Fr
 
 `SlidingDoorStage` uses the shared `Wardrobe3D` camera, 30-degree starting view, drag/zoom controls, loading overlay and error recovery. `slidingDoorScene` builds the door geometry and recessed room. Existing finish textures provide wood/vinyl detail; eased edges, recessed panels, metal roughness, room lighting and contact shadows provide depth.
 
-Mirrors use Three.js planar reflection cameras, with a photographed opposite room as the backdrop. The reflection moves with the view; the photographed backdrop is an approximation rather than a fully modelled furnished room. Reflection targets use 512px unsigned-byte textures and disable recursive mirror passes. Shadows are computed on the initial scene draw and reused while orbiting. There is no continuous idle render loop. Scene-owned geometry, materials and render targets are disposed when a configuration is replaced. The shared environment is cached per graphics context and disposed on context loss.
+Mirrors have a neutral glass sheen with no reflected room or objects. A small procedural texture runs continuously across the mirror panels, without reflection cameras, offscreen reflection targets or a room-photo download. Shadows are computed on the initial scene draw and reused while orbiting. There is no continuous idle render loop. Scene-owned geometry, materials and textures are disposed when a configuration is replaced. The shared environment is cached per graphics context and disposed on context loss.
 
 The 3D scene requires WebGL. The existing retry screen handles unavailable/lost graphics contexts. Browser profiles do not substitute for testing every physical phone/GPU.
 

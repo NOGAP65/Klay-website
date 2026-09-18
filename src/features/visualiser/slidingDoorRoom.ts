@@ -22,14 +22,5 @@ export async function slidingDoorRoom(root: THREE.Group, dimensions: { widthMm: 
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.rotation.x = -Math.PI / 2; floor.position.set(w / 2000, -.003, 4);
   floor.receiveShadow = true; root.add(floor); disposables.push(floorGeo, floorMat);
-  // A photographed opposite wall furnishes the reflected room. Mirrors still
-  // use a planar reflection camera, so the view moves correctly with orbit.
-  const roomPhoto = await doorTexture('/images/visualiser/rooms/blind-bedroom.webp', disposables);
-  const roomMat = new THREE.MeshBasicMaterial({ map: roomPhoto, color: '#f3f0eb' });
-  const roomWidth = Math.max(9, w / 1000 + 8), roomHeight = roomWidth / 1.5;
-  const roomGeo = new THREE.PlaneGeometry(roomWidth, roomHeight);
-  const room = new THREE.Mesh(roomGeo, roomMat);
-  room.rotation.y = Math.PI; room.position.set(w / 2000, roomHeight / 2, 2.4);
-  root.add(room); disposables.push(roomGeo, roomMat);
   return (hex: string) => wall.color.set(hex);
 }
