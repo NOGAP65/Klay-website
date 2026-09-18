@@ -123,16 +123,13 @@ test('product hardware sits inside the left of the photo and supports touch and 
   expect(errors).toEqual([]);
 });
 
-test('turning the outdoor crank changes the covering and release stops dragging', async ({ page }, info) => {
+test('a straight drag moves the crank and one tap opens the covering', async ({ page }, info) => {
   await page.goto('/visualiser?category=roller-shutter');
   const slider = page.getByRole('slider', { name: 'Outdoor covering position' });
   await slider.press('Home');
-  const box = (await slider.boundingBox())!, cx = box.x + box.width / 2, cy = box.y + box.height * .575;
-  await page.mouse.move(cx + 18, cy); await page.mouse.down();
-  for (let step = 1; step <= 24; step++) {
-    const angle = step / 24 * Math.PI * 2;
-    await page.mouse.move(cx + 18 * Math.cos(angle), cy + 18 * Math.sin(angle));
-  }
+  const box = (await slider.boundingBox())!, cx = box.x + box.width / 2, cy = box.y + 5;
+  await page.mouse.move(cx, cy); await page.mouse.down();
+  await page.mouse.move(cx, cy + box.height / 2, { steps: 6 });
   await page.mouse.up();
   const value = Number(await slider.getAttribute('aria-valuenow'));
   expect(value).toBeGreaterThan(45); expect(value).toBeLessThan(55);
@@ -143,15 +140,41 @@ test('turning the outdoor crank changes the covering and release stops dragging'
   await expect(slider).toHaveAttribute('aria-valuenow', '0');
 });
 
-test('pulling a lift cord down raises the blind', async ({ page }) => {
+test('cord controls use the same simple up-open down-close gesture', async ({ page }) => {
   for (const [category, label] of [['honeycomb', 'Honeycomb position'], ['venetian', 'Venetian lift']]) {
     await page.goto(`/visualiser?category=${category}`);
     const slider = page.getByRole('slider', { name: label, exact: true });
-    await slider.press('End');
+    await slider.press('Home');
     const box = (await slider.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + 10); await page.mouse.down();
     await page.mouse.move(box.x + box.width / 2, box.y + 40, { steps: 6 }); await page.mouse.up();
     const value = Number(await slider.getAttribute('aria-valuenow'));
-    expect(value).toBeGreaterThan(0); expect(value).toBeLessThan(85);
+    expect(value).toBeGreaterThan(15); expect(value).toBeLessThan(100);
   }
+});
+
+test('tap movement can reverse, stop on keyboard input and respect reduced motion', async ({ page }) => {
+  await page.goto('/visualiser?category=roller-shutter');
+  const slider = page.getByRole('slider', { name: 'Outdoor covering position' });
+  const close = page.getByRole('button', { name: 'Close — Outdoor covering position', exact: true });
+  const open = page.getByRole('button', { name: 'Open — Outdoor covering position', exact: true });
+  await slider.press('Home');
+  await close.click();
+  await expect.poll(async () => Number(await slider.getAttribute('aria-valuenow'))).toBeGreaterThan(0);
+  await open.click();
+  await expect(slider).toHaveAttribute('aria-valuenow', '0');
+  await close.click();
+  await slider.press('Home');
+  await page.waitForTimeout(400); // A cancelled 350ms movement must never resume.
+  await expect(slider).toHaveAttribute('aria-valuenow', '0');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await close.click();
+  expect(await slider.getAttribute('aria-valuenow')).toBe('100');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await open.click();
+  await page.getByRole('button', { name: 'Zip screens', exact: true }).click();
+  await expect(page.locator('canvas[data-blind-product="zip-screen"]')).toHaveAttribute('data-render-ready', 'true');
+  const switched = await slider.getAttribute('aria-valuenow');
+  await page.waitForTimeout(400);
+  expect(await slider.getAttribute('aria-valuenow')).toBe(switched);
 });

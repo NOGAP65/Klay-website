@@ -1418,7 +1418,7 @@ function PhotoConfigurator({
   // to the side of the frame where a hand would be, unattached to anything.
   const hasMechanisms = isUnpricedBlind(store.productCategory);
   const sideControl = !showRenderState || isJoinery(store.productCategory) ? null : (
-    <div className={hasMechanisms ? 'preview-mechanisms' : undefined}
+    <div key={hasMechanisms ? `${store.productCategory}-${store.activeAreaId}` : 'standard-pull'} className={hasMechanisms ? 'preview-mechanisms' : undefined}
       style={hasMechanisms ? { '--mechanism-run': `${Math.max(60, Math.min(140, mediaBoxH - 108))}px` } as React.CSSProperties : SIDE_CONTROL_POSITION}>
       {activeOperation === 'motorised' ? <MotorRemote
         isCompact={hasMechanisms}

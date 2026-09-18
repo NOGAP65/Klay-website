@@ -14,7 +14,6 @@ function Crank({ value, metal }: { value: number; metal: string }) {
       <rect x="54" y="80" width="10" height="25" rx="5" fill={metal} stroke="#777" />
     </g>
     <circle cx="36" cy="92" r="3" fill="#777" />
-    <path d="M16 127A25 25 0 0 0 55 127M50 126L56 126L56 133" fill="none" stroke="#eee" strokeWidth="1.5" />
   </g>;
 }
 

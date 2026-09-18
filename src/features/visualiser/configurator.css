@@ -44,15 +44,15 @@
   border: 0;
   border-radius: 5px;
   font: inherit;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: .08em;
+  letter-spacing: .02em;
   text-transform: uppercase;
   color: inherit;
   background: transparent;
   cursor: pointer;
 }
-.mechanism-end span { display: block; padding: 5px 3px; border-radius: 4px; background: rgb(29 29 29 / 88%); }
+.mechanism-end span { display: flex; min-height: 34px; align-items: center; justify-content: center; padding: 5px 2px; border-radius: 4px; background: rgb(29 29 29 / 92%); }
 .mechanism-end:hover span { background: rgb(48 48 48); }
 .mechanism-end:active { transform: translateY(1px); }
 .mechanism-grip {
