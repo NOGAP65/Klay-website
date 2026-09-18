@@ -1,9 +1,5 @@
 # FEATURE FLAGS, KILL SWITCHES AND READY-STYLE CONSTANTS
 
-**18 September 2026 update:** `ROOM_VIEW_READY` has been removed. Wardrobes now
-use the measured room flow documented in [Wardrobes in a customer room](../wardrobe-room-visualiser.md),
-with domain and browser regression tests. The F-1 discussion below is historical.
-
 **Audited 3 September 2026, after the wardrobe path bug** — a defect that sat behind
 `ROOM_VIEW_READY = false` and could not be seen by any check in the project, because nothing
 executed the code. Instance 9 in `docs/runbooks/verifying-source-transforms.md` sets out the class.

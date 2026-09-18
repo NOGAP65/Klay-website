@@ -23,7 +23,10 @@ import type { RenderedArea } from './Canvas2DBlindRenderer';
 
 import './configurator.css';
 
-const LazyWardrobeRoomStage = lazy(() => import('./WardrobeRoomStage'));
+const LazyWardrobeRoomRenderer = lazy(() => import('./WardrobeRoomRenderer'));
+function WardrobeRoomRenderer(props: ComponentProps<typeof LazyWardrobeRoomRenderer>) {
+  return <Suspense fallback={<LoadingIndicator overlay label="Loading preview" />}><LazyWardrobeRoomRenderer {...props}/></Suspense>;
+}
 const LazyWardrobe3D = lazy(() => import('./Wardrobe3D'));
 const LazySlidingDoorStage = lazy(() => import('./SlidingDoorStage'));
 function Wardrobe3D(props: ComponentProps<typeof LazyWardrobe3D>) {
@@ -37,6 +40,18 @@ function Wardrobe3D(props: ComponentProps<typeof LazyWardrobe3D>) {
 /** Caps how tall the media box can get. Width is capped instead of height so
  * the photo's aspect ratio is never violated — see the root style. */
 const MAX_MEDIA_VH = 72;
+
+/** ONE SWITCH FOR THE WARDROBE'S ROOM VIEW, and it is off.
+ *
+ * The composite is built and works — WardrobeRoomRenderer, the seeded alcoves,
+ * the recess shade, the overhang that says a model will not fit. What is not
+ * settled is the trace it depends on: a customer who outlines their whole
+ * 2460mm doorway instead of where the cabinet sits gets a wardrobe scaled by a
+ * fifth and a fit answer that is wrong. That is worse than not offering it.
+ *
+ * Kept as one named constant rather than deleted branches so turning it back on
+ * is a one-line change and the code beneath cannot rot in the meantime. */
+const ROOM_VIEW_READY = false;
 
 // --- Buttons ---------------------------------------------------------------
 // Raised, with real press feedback. Inline styles can't express :hover or
@@ -888,25 +903,15 @@ function ConnectedPullControl({ curtain, run }: { curtain: boolean; run: number 
 
 export default function KlayConfigurator(props: KlayConfiguratorProps = {}) {
   const isSliding = useVisualiserStore(state => state.productCategory === 'wardrobe' && state.wardrobeSliding);
-  const category = useVisualiserStore(state => state.productCategory);
-  const kind = useVisualiserStore(state => state.wardrobeKind);
-  const [roomMode, setRoomMode] = useState(false);
-  useEffect(() => useVisualiserStore.subscribe((next, previous) => {
-    if (next.productCategory !== previous.productCategory || next.wardrobeSliding !== previous.wardrobeSliding) setRoomMode(false);
-  }), []);
-  if (roomMode && category === 'wardrobe' && !isSliding) return <Suspense fallback={<LoadingIndicator label="Loading room preview" />}>
-    <LazyWardrobeRoomStage key={kind} onBack={() => setRoomMode(false)} />
-  </Suspense>;
   return isSliding
     ? <Suspense fallback={<LoadingIndicator label="Loading 3D preview" />}><LazySlidingDoorStage mediaMaxVh={props.mediaMaxVh} /></Suspense>
-    : <PhotoConfigurator {...props} onWardrobeRoom={() => setRoomMode(true)} />;
+    : <PhotoConfigurator {...props} />;
 }
 
 function PhotoConfigurator({
   defaultBlindType,
   mediaMaxVh = MAX_MEDIA_VH,
-  onWardrobeRoom,
-}: KlayConfiguratorProps & { onWardrobeRoom: () => void }) {
+}: KlayConfiguratorProps = {}) {
   const store = useVisualiserStore(useShallow(({ rollPosition: _position, honeycombDayPosition: _dayPosition, slatTilt: _tilt, ...settings }) => settings));
 
   // Before anything else, so the seeded trace and the first render both see
@@ -1293,9 +1298,25 @@ function PhotoConfigurator({
     !isLoadingDefault && !showUploadState && !confirmedArea && !awaitingDefaultSeed;
   const showRenderState = !isLoadingDefault && !showUploadState && !!confirmedArea;
 
-  // The calibrated customer-room flow is isolated from the default 3D scene.
+  /** TURN IT vs SEE IT IN THE ROOM — two different questions, so two views.
+   *
+   * The room composite answers "does this fit my bedroom", and it has to be a
+   * photograph pasted onto a photograph to do that. The 3D view answers "what
+   * IS this thing", which needs the cabinet on its own and turnable, and cannot
+   * be a fixed viewpoint however well composited.
+   *
+   * A WARDROBE IS 3D ONLY, FOR NOW, and the room half is switched off rather
+   * than deleted. WardrobeRoomRenderer, the trace, the recess shade and the
+   * seeded alcoves are all still here and still work; what is not offered is
+   * the button that reaches them, for the reason in the footer note — the
+   * composite is only as good as the trace it is given, and the trace is the
+   * part still being settled.
+   *
+   * So this is `true` for a wardrobe and there is nothing to toggle. Blinds and
+   * curtains never had a 3D view and are untouched. Flip ROOM_VIEW_READY when
+   * the trace is trustworthy and both views come back with their toggle. */
   const isWardrobe = isJoinery(store.productCategory);
-  const wardrobe3D = isWardrobe;
+  const wardrobe3D = isWardrobe && !ROOM_VIEW_READY;
 
   // Footer sits BELOW the canvas rather than floating over it, so "Visualise
   // in your own room" is always reachable while the default window shows.
@@ -1317,9 +1338,20 @@ function PhotoConfigurator({
   ) : showRenderState ? (
     store.defaultWindowActive ? (
       <>
-        {store.productCategory === 'wardrobe' ? (
-          <Button variant="accent" onClick={onWardrobeRoom}>Visualise in your own room</Button>
-        ) : isWardrobe ? (
+        {/* IN YOUR ROOM IS NOT OFFERED FOR WARDROBES YET, and it is announced
+            rather than hidden — see ROOM_VIEW_READY for why it is off and what
+            turning it on takes.
+
+            A disabled button rather than no button, because "coming soon" is
+            information: it tells a customer the thing they are looking for is
+            planned, and it holds the row's shape so nothing moves when it goes
+            live. There is no "Turn it in 3D" beside it any more, because the 3D
+            view is now the only wardrobe view and a toggle with one destination
+            is a button that does nothing.
+
+            Blinds and curtains are untouched: their composite has been in front
+            of customers for months. */}
+        {isWardrobe ? (
           <Button variant="accent" disabled onClick={() => {}}>
             In your room — coming soon
           </Button>
@@ -1546,6 +1578,17 @@ function PhotoConfigurator({
               modelId={store.wardrobeModel}
               colourName={store.wardrobeColour}
               selectedWidthMm={store.wardrobeWidthMm}
+              handleFinish={store.wardrobeHandleFinish}
+              recessed={store.wardrobeRecessed}
+              wallColour={store.wardrobeWallColour}
+            />
+          ) : isJoinery(store.productCategory) && confirmedArea ? (
+            <WardrobeRoomRenderer
+              photoUrl={store.photoUrl!}
+              corners={confirmedArea.corners as [number, number][]}
+              modelId={store.wardrobeModel}
+              colourName={store.wardrobeColour}
+              widthMm={store.wardrobeWidthMm}
               handleFinish={store.wardrobeHandleFinish}
               recessed={store.wardrobeRecessed}
               wallColour={store.wardrobeWallColour}
