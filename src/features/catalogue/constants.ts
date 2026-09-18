@@ -34,6 +34,7 @@
 
 import { fabricPalette } from '@/features/fabrics'
 import { CURTAIN_COLOURS, SLAT_COLOURS } from '@/features/fabrics'
+import { MESH_COLOURS, SHUTTER_COLOURS } from '@/features/fabrics';
 import { WARDROBE_COLOURS } from '@/features/joinery'
 import { FRAMED_DOOR_MATERIALS, SHAKER_DOOR_MATERIALS } from '@/features/joinery'
 
@@ -179,42 +180,7 @@ export const AWNING_COLOURS = [
  * off a supplier's card, and a wrong hex is a customer choosing a colour Klay
  * does not sell. Six, because a woven outdoor mesh is an extruded-yarn product
  * and does not come in a fabric book's worth of shades. */
-export const MESH_COLOURS = [
-  { name: 'Bone', hex: '#DCD7CC' },
-  { name: 'Dune', hex: '#B9AE9B' },
-  { name: 'Gunmetal', hex: '#6E7276' },
-  { name: 'Charcoal', hex: '#4A4C4E' },
-  { name: 'Bracken', hex: '#4B4A3E' },
-  { name: 'Black', hex: '#26282A' },
-]
-
-/** THE POWDER COAT ON A ROLLER SHUTTER.
- *
- * IT IS SOLD IN ONE SLAT, IN A CHOICE OF COLOURS. The card carried
- * "Slat: Aluminium / Insulated", which is two products behind one name and only
- * half true — the slat Klay hangs is a foam-filled aluminium extrusion, so
- * "insulated" is what the product IS rather than an upgrade to choose. What a
- * customer actually chooses is the colour, because a shutter is the most visible
- * thing on the outside of the house: it is a painted box above the window
- * whether it is up or down, and it either matches the roof line or it does not.
- *
- * NEEDS A COMMERCIAL CHECK, in the same class as SLAT_COLOURS, AWNING_COLOURS
- * and MESH_COLOURS. These are the powder coats an extruded shutter range plainly
- * ought to carry rather than a list read off a supplier's chart, and a wrong hex
- * is a customer choosing a colour Klay does not sell. Eight, because a
- * powder-coat line runs to a wall of chips and a card is not a wall: the whites
- * and neutrals a roof line is actually built in, plus the two darks and the mill
- * finish every extruder carries. */
-export const SHUTTER_COLOURS = [
-  { name: 'White', hex: '#F1F0EC' },
-  { name: 'Birch', hex: '#E3DDCE' },
-  { name: 'Sandbank', hex: '#CFC3AC' },
-  { name: 'Paperbark', hex: '#C6B9A4' },
-  { name: 'Dune', hex: '#A99C8B' },
-  { name: 'Woodland Grey', hex: '#54574F' },
-  { name: 'Charcoal', hex: '#44464A' },
-  { name: 'Silver', hex: '#B4B7BA' },
-]
+export { MESH_COLOURS, SHUTTER_COLOURS } from '@/features/fabrics';
 
 /** THE METALWORK ON A FRAMELESS SHOWER SCREEN — the clips or the channel that
  * hold the glass, which on a frameless screen is the only hardware there is.

@@ -7,8 +7,15 @@ import { isUnpricedBlind } from './windowProducts';
 import type { CartItem } from '@/features/cart';
 
 const hardwareLabel = (name: string) => ROLLER_HARDWARE.find(hardware => hardware.id === name)?.label ?? name;
+const windowHardware = (state: VisualiserQuoteConfig, index: number) => {
+  const window = state.windows[index];
+  if (state.productCategory === 'roller-shutter') return window.fabricColour;
+  if (state.productCategory === 'zip-screen') return 'Charcoal';
+  return hardwareLabel(window.hardwareColour);
+};
 const cartTypes = { blind: 'Roller Blind', honeycomb: 'Honeycomb Blinds', curtain: 'Curtains',
   venetian: 'Venetian Blinds', plantation: 'Plantation Shutters',
+  'roller-shutter': 'Roller Shutters', 'zip-screen': 'Zip Guide Systems',
   wardrobe: 'Made to measure', shelving: 'Made to measure' };
 
 /** The basket and direct quote carry the same configuration. Only roller
@@ -30,7 +37,7 @@ export function visualiserCartItems(state: VisualiserQuoteConfig): Omit<CartItem
       blindType: isBlind ? window.blindType : JSON.stringify([item.name, options]),
       fabricColour: value(hasFabric ? 'Fabric' : 'Finish'),
       hardwareColour: hasFabric
-        ? hardwareLabel(window.hardwareColour)
+        ? windowHardware(state, index)
         : value('Hardware'),
       windowSize: isLiftBlind ? window.windowSize : 'medium',
       operation: isLiftBlind ? window.operation : isCurtain ? window.curtainOperation : 'manual',

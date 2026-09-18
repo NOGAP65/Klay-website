@@ -8,11 +8,11 @@ const distance = (a: Point, b: Point) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
 /** Measured order dimensions are unavailable in a size-band preview. These
  * nominal dimensions scale rigid profiles consistently against the trace. */
-export function slattedPlane(corners: Point[], size = 'medium', photoSize?: Point) {
+export function slattedPlane(corners: Point[], size = 'medium', photoSize?: Point, nominalWidthMm?: number) {
   const [tl, tr, br, bl] = corners;
   const width = Math.max(1, (distance(tl, tr) + distance(bl, br)) / 2);
   const height = Math.max(1, (distance(tl, bl) + distance(tr, br)) / 2);
-  const widthMm = size === 'small' ? 900 : size === 'large' ? 2700 : 1800;
+  const widthMm = nominalWidthMm ?? (size === 'small' ? 900 : size === 'large' ? 2700 : 1800);
   const transform = computeHomography([[0, 0], [1, 0], [1, 1], [0, 1]], corners);
   const camera = slattedCamera(transform, corners, widthMm, photoSize);
   const { project, viewAt, light } = camera;

@@ -7,10 +7,10 @@ import { blindGroup, type ProductCategory } from './windowProducts';
 
 const groups: { title: string; choices: { id: ProductCategory; label: string }[] }[] = [
   { title: 'Indoor window coverings', choices: [{ id: 'blind', label: 'Blinds' }, { id: 'curtain', label: 'Curtains' }] },
+  { title: 'Outdoor coverings', choices: [{ id: 'roller-shutter', label: 'Roller shutters' }, { id: 'zip-screen', label: 'Zip screens' }] },
   { title: 'Wardrobes & shelving', choices: [{ id: 'wardrobe', label: 'Wardrobes' }, { id: 'shelving', label: 'Shelving' }] },
 ];
 const shopGroups = [
-  { label: 'Outdoor coverings', to: '/products?area=Outdoor' },
   { label: 'Mirrors & shower screens', to: '/products?type=mirrors&type=shower-screens' },
 ];
 

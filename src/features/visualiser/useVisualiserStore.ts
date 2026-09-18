@@ -1,11 +1,12 @@
 import { create } from 'zustand';
 
 
-import { ROLLER_HARDWARE, rollerColour, HARDWARE_HEX, type HoneycombType } from '@/features/fabrics';
+import { rollerColour, type HoneycombType } from '@/features/fabrics';
 import { wardrobeModelById, DEFAULT_SLIDING_DOOR, reconcileSlidingDoor, type SlidingDoorConfig, type WardrobeKind } from '@/features/joinery';
 
 import { joineryDefaults } from './joineryDefaults';
 import { DEFAULT_WALL_COLOUR } from './wallColours';
+import { windowHardwareHex } from './windowHardware';
 import { priceWindow } from './windowPricing';
 import { coloursFor, windowColour, isUnpricedBlind, type ProductCategory } from './windowProducts';
 
@@ -385,9 +386,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
 
   getHardwareColor: () => {
     const s = get();
-    if (isUnpricedBlind(s.productCategory)) return HARDWARE_HEX.white;
-    return (s.productCategory === 'blind' ? ROLLER_HARDWARE.find(h => h.id === s.hardwareColour)?.hex : undefined)
-      ?? HARDWARE_HEX[s.hardwareColour === 'cream' || s.hardwareColour === 'platinum' ? 'white' : s.hardwareColour];
+    return windowHardwareHex(s.productCategory, s.hardwareColour, s.getFabricColor());
   },
 
   isConfigComplete: () => {

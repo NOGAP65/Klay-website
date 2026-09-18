@@ -2,10 +2,11 @@ import { lazy, Suspense, useEffect, useRef, useState, type ComponentProps } from
 import { useShallow } from 'zustand/react/shallow';
 
 import { LoadingIndicator, radius, tokens, space, type as typeScale } from '@/ds';
-import { fabricByName, honeycombDaySample } from '@/features/fabrics';
+import { honeycombDaySample } from '@/features/fabrics';
 
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
 import { HoneycombLiftControls } from './HoneycombLiftControls';
+import { OutdoorLiftControls } from './OutdoorLiftControls';
 import { exportPreview } from './previewExport';
 import { windowRoomsFor, defaultWindowRoom, windowRoomFor } from './roomPresets';
 import { SlattedLiftControls } from './SlattedLiftControls';
@@ -14,7 +15,7 @@ import { usePhotoUpload } from './usePhotoUpload';
 import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from './useVisualiserStore';
 import WallColourChip from './WallColourChip';
 import { BlindWindowPreview, CurtainWindowPreview } from './WindowPreview';
-import { isSlatted, isUnpricedBlind, slatTexture } from './windowProducts';
+import { isSlatted, isUnpricedBlind, isOutdoor, previewTexture } from './windowProducts';
 
 import type { RenderedArea } from './Canvas2DBlindRenderer';
 
@@ -1116,7 +1117,7 @@ function PhotoConfigurator({
     const colourSlug = store.fabricColour.toLowerCase().replace(/\s+/g, '-');
     const link = document.createElement('a');
     const isCurtain = store.productCategory === 'curtain';
-    const variant = isCurtain ? store.curtainType : store.productCategory === 'honeycomb' ? store.honeycombType : isSlatted(store.productCategory) ? 'slats' : store.blindType;
+    const variant = isCurtain ? store.curtainType : store.productCategory === 'honeycomb' ? store.honeycombType : isSlatted(store.productCategory) || isOutdoor(store.productCategory) ? 'preview' : store.blindType;
     link.download = `klay-${product}-${variant}-${colourSlug}-${isCurtain ? store.curtainSize : store.windowSize}.jpg`;
     link.href = preview;
     link.click();
@@ -1253,9 +1254,9 @@ function PhotoConfigurator({
 
   const canvasTracedAreas: RenderedArea[] = store.tracedAreas.map(a => ({
     ...a,
-    blindType: store.productCategory === 'honeycomb' ? `honeycomb-${store.honeycombType}` : isSlatted(store.productCategory) ? store.productCategory : store.blindType,
+    blindType: store.productCategory === 'honeycomb' ? `honeycomb-${store.honeycombType}` : isSlatted(store.productCategory) || isOutdoor(store.productCategory) ? store.productCategory : store.blindType,
     fabricColor: store.getFabricColor(),
-    fabricTexture: isSlatted(store.productCategory) ? slatTexture(store.productCategory, store.fabricColour) : store.productCategory === 'honeycomb' ? fabricByName(store.fabricColour)?.weaveTexture : fabricByName(store.fabricColour)?.renderTexture,
+    fabricTexture: previewTexture(store.productCategory, store.fabricColour),
     dayColor: honeycombDaySample(store.fabricColour)?.hex,
     dayTexture: store.productCategory === 'honeycomb' && store.honeycombType === 'daynight' ? honeycombDaySample(store.fabricColour)?.weaveTexture : undefined,
     windowSize: store.windowSize,
@@ -1615,6 +1616,7 @@ function PhotoConfigurator({
       {showRenderState && store.productCategory === 'honeycomb' && <HoneycombLiftControls
         showLift={activeOperation === 'manual'} showDay={store.honeycombType === 'daynight'} onInteract={stopAuto} />}
       {showRenderState && isSlatted(store.productCategory) && <SlattedLiftControls onInteract={stopAuto} />}
+      {showRenderState && isOutdoor(store.productCategory) && <OutdoorLiftControls onInteract={stopAuto} />}
 
       {footerButtons && (
         <div

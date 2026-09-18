@@ -6,3 +6,4 @@ export {
 export type { FabricSample, HoneycombType } from './library';
 
 export { RYNAMIC_COLOURS, CURTAIN_COLOURS, SLAT_COLOURS, HARDWARE_HEX, HARDWARE_OPTIONS } from './colourCards';
+export { MESH_COLOURS, SHUTTER_COLOURS } from './outdoor';

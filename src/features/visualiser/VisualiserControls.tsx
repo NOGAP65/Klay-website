@@ -13,10 +13,11 @@ import {
 } from '@/features/joinery';
 import { HANDLE_FINISHES, WALK_IN_HANDLE_FINISHES, handleFinish, walkInSpecifications, walkInLayout } from '@/features/joinery';
 
+import OutdoorControls from './OutdoorControls';
 import SlidingDoorControls from './SlidingDoorControls';
 import { coloursFor, isJoinery, useVisualiserStore, BlindType, CurtainType, CurtainOperation, CurtainMount, CurtainSize } from './useVisualiserStore';
 import WardrobeTypePicker from './WardrobeTypePicker';
-import { WINDOW_STYLES, isSlatted, isUnpricedBlind } from './windowProducts';
+import { WINDOW_STYLES, isSlatted, isUnpricedBlind, isOutdoor } from './windowProducts';
 
 interface VisualiserControlsProps {
   lockedRange?: string; // if passed, hides the blind type row — customer can only configure this type
@@ -535,7 +536,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
       store.setProductCategory('blind');
       store.setBlindType(typeParam);
     }
-    const category = (['curtain', 'wardrobe', 'shelving', 'venetian', 'plantation', 'honeycomb'] as const).find(value => value === categoryParam);
+    const category = (['curtain', 'wardrobe', 'shelving', 'venetian', 'plantation', 'honeycomb', 'roller-shutter', 'zip-screen'] as const).find(value => value === categoryParam);
     if (category) store.setProductCategory(category);
     if (categoryParam === 'wardrobe' && (typeParam === 'framed' || typeParam === 'shaker')) {
       store.showSlidingDoors(); store.setSlidingDoor({ style: typeParam });
@@ -566,6 +567,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
   // to drive, it is built to an opening rather than sold in small/medium/large,
   // and it is quoted on measure — so a price box here would be inventing a
   // number the business has not set.
+  if (isOutdoor(store.productCategory)) return <OutdoorControls onDark={onDark} />;
   if (store.productCategory === 'wardrobe' && store.wardrobeSliding) return <SlidingDoorControls onDark={onDark} />;
   if (isJoinery(store.productCategory)) {
     return (

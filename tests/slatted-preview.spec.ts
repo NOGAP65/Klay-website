@@ -296,10 +296,10 @@ test('homepage grouped navigation switches window products and opens the correct
   await navigation.getByRole('button', { name: 'Curtains', exact: true }).click();
   await expect(panel.locator('canvas[data-render-surface="curtain"]')).toHaveAttribute('data-render-ready', 'true');
   await navigation.screenshot({ path: info.outputPath('visualiser-groups.png') });
-  await navigation.getByRole('link', { name: 'Outdoor coverings Shop →', exact: true }).click();
-  await expect(page).toHaveURL(/area=Outdoor/);
-  await expect(page.locator('.shop-result-card').filter({ hasText: 'Folding Arm Awnings' })).toBeVisible();
-  await page.goBack();
+  for (const [name, category] of [['Roller shutters', 'roller-shutter'], ['Zip screens', 'zip-screen']]) {
+    await navigation.getByRole('button', { name, exact: true }).click();
+    await expect(panel.locator(`canvas[data-blind-product="${category}"]`)).toHaveAttribute('data-render-ready', 'true');
+  }
   await navigation.getByRole('link', { name: 'Mirrors & shower screens Shop →', exact: true }).click();
   await expect(page).toHaveURL(/type=mirrors&type=shower-screens/);
   await expect(page.locator('.shop-result-card').filter({ hasText: 'Mirrors Frameless' })).toBeVisible();

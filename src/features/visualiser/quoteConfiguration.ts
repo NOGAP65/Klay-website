@@ -9,7 +9,7 @@ import { isUnpricedBlind } from './windowProducts';
 import type { QuoteItem } from '@/core/quoteItems';
 
 type State = ReturnType<typeof useVisualiserStore.getState>;
-const productNames = { honeycomb: 'Honeycomb Blinds', venetian: 'Venetian Blinds', plantation: 'Plantation Shutters' };
+const productNames = { honeycomb: 'Honeycomb Blinds', venetian: 'Venetian Blinds', plantation: 'Plantation Shutters', 'roller-shutter': 'Roller Shutters', 'zip-screen': 'Zip Guide Systems' };
 export type VisualiserQuoteConfig = Pick<State, 'productCategory' | 'windows' | 'wardrobeModel'
   | 'wardrobeWidthMm' | 'wardrobeColour' | 'wardrobeHandleFinish' | 'wardrobeSliding' | 'slidingDoor'>;
 
@@ -61,7 +61,7 @@ export function visualiserQuoteItems(state: VisualiserQuoteConfig): QuoteItem[] 
         { label: 'Fabric', value: window.fabricColour },
         ...(!isUnpricedBlind(state.productCategory) ? [{ label: 'Hardware', value: window.hardwareColour }] : []),
         { label: 'Size', value: isCurtain ? window.curtainSize : sizeLabel(window.windowSize) },
-        { label: 'Operation', value: isCurtain ? window.curtainOperation : window.operation },
+        { label: 'Operation', value: state.productCategory === 'roller-shutter' ? (window.operation === 'motorised' ? 'Battery' : 'Crank') : isCurtain ? window.curtainOperation : window.operation },
         ...(isCurtain ? [{ label: 'Mount', value: window.curtainMount }] : []),
       ],
     };

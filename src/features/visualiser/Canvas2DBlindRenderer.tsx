@@ -6,6 +6,7 @@ import { loadImage } from '@/shared';
 
 import { sampleBlindLighting, blindTextureCoordinates, NEUTRAL_BLIND_LIGHT, type BlindLighting } from './blindLighting';
 import { drawHoneycomb } from './drawHoneycomb';
+import { drawOutdoorCovering } from './drawOutdoorCovering';
 import { drawSlattedCovering } from './drawSlattedCovering';
 import { computeHomography, toColumnMajor, Point } from './homography';
 import { honeycombGeometry } from './honeycombGeometry';
@@ -17,7 +18,7 @@ import { rollerGeometry, type RollerGeometry } from './rollerGeometry';
 import { normaliseRollerWeave } from './rollerWeave';
 import { slattedPlane, venetianSlats } from './slattedGeometry';
 import { usePreviewLoad } from './usePreviewLoad';
-import { isSlatted, type ProductCategory } from './windowProducts';
+import { isSlatted, isOutdoor, type ProductCategory } from './windowProducts';
 
 /** One traced, confirmed window area to render — the shape VisualizerConfigurator
  * maps its (store-owned) TracedArea + linked WindowCard into before passing it
@@ -233,7 +234,7 @@ const DUAL_BACK_TEXTURE = getTexturePath('sunscreen');
 /** Every texture path a blind type needs, so the caller can preload them all
  * before drawing. Dual is the only type that needs two. */
 const texturePathsFor = (blindType: string, fabricColor: string): string[] =>
-  isSlatted(blindType) ? [] : blindType.startsWith('honeycomb-') ? [HONEYCOMB_MATERIAL_PHOTO] : blindType === 'dual'
+  isSlatted(blindType) || isOutdoor(blindType) ? [] : blindType.startsWith('honeycomb-') ? [HONEYCOMB_MATERIAL_PHOTO] : blindType === 'dual'
     ? [DUAL_FRONT_TEXTURE, DUAL_BACK_TEXTURE]
     : [getTexturePath(textureKeyFor(blindType, fabricColor))];
 
@@ -1462,6 +1463,10 @@ const drawBlindArea = (
 ) => {
   const { blindType, productCategory } = params;
 
+  if (isOutdoor(blindType)) {
+    drawOutdoorCovering(ctx, { ...params, lighting: lightingFor(photo, W, H, params.corners) });
+    return;
+  }
   if (isSlatted(blindType)) {
     drawSlattedCovering(ctx, { ...params, lighting: lightingFor(photo, W, H, params.corners),
       texture: params.fabricTexture ? fabricImgs.get(params.fabricTexture) : undefined });
@@ -2865,7 +2870,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
         ctx,
         W,
         H,
-        confirmedAreas.map(a => coveredQuadFor(a, rollPosition, [W, H])),
+        confirmedAreas.filter(a => !isOutdoor(a.blindType)).map(a => coveredQuadFor(a, rollPosition, [W, H])),
         rollPosition * (confirmedAreas.some(a => a.blindType === 'honeycomb-daynight') ? 1 - .7 * honeycombDayPosition : confirmedAreas.some(a => a.blindType === 'venetian') ? .15 + .85 * slatTilt : 1),
       );
 
@@ -2918,7 +2923,7 @@ const Canvas2DBlindRenderer: React.FC<Props> = ({
     <canvas
       ref={canvasRef}
       data-render-surface="blind"
-      data-blind-product={tracedAreas.some(area => area.blindType.startsWith('honeycomb-')) ? 'honeycomb' : tracedAreas.find(area => isSlatted(area.blindType))?.blindType ?? 'roller'}
+      data-blind-product={tracedAreas.some(area => area.blindType.startsWith('honeycomb-')) ? 'honeycomb' : tracedAreas.find(area => isSlatted(area.blindType) || isOutdoor(area.blindType))?.blindType ?? 'roller'}
       data-preview-loading={preview.loading}
       data-render-ready={!preview.loading && !preview.failed ? 'true' : 'false'}
       style={{

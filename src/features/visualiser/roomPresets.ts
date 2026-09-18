@@ -7,7 +7,11 @@ export interface WindowRoom {
   corners: [number, number][];
 }
 
-const WINDOW_ROOMS: Record<'blind' | 'curtain' | 'slatted', WindowRoom[]> = {
+const WINDOW_ROOMS: Record<'blind' | 'curtain' | 'slatted' | 'roller-shutter' | 'zip-screen', WindowRoom[]> = {
+  'roller-shutter': [{ url: '/images/visualiser/rooms/roller-shutter-exterior.webp', name: 'Exterior window',
+    corners: [[366 / 1536, 124 / 1024], [1158 / 1536, 124 / 1024], [1158 / 1536, 735 / 1024], [366 / 1536, 735 / 1024]] }],
+  'zip-screen': [{ url: '/images/visualiser/rooms/zip-screen-alfresco.webp', name: 'Garden alfresco',
+    corners: [[134 / 1536, 128 / 1024], [1392 / 1536, 128 / 1024], [1392 / 1536, 793 / 1024], [134 / 1536, 793 / 1024]] }],
   curtain: [
     {
       url: '/images/visualiser/rooms/curtain-shop-room.webp',
@@ -45,6 +49,7 @@ const WINDOW_ROOMS: Record<'blind' | 'curtain' | 'slatted', WindowRoom[]> = {
 };
 
 export function windowRoomsFor(category: ProductCategory): WindowRoom[] {
+  if (category === 'roller-shutter' || category === 'zip-screen') return WINDOW_ROOMS[category];
   if (category === 'plantation' || category === 'venetian') return WINDOW_ROOMS.slatted;
   return WINDOW_ROOMS[category === 'curtain' ? 'curtain' : 'blind'];
 }
