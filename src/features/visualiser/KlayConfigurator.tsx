@@ -1,10 +1,11 @@
-import { lazy, Suspense, useEffect, useRef, useState, type ComponentProps } from 'react';
+import { lazy, Suspense, useEffect, useId, useRef, useState, type ComponentProps } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { LoadingIndicator, radius, tokens, space, type as typeScale } from '@/ds';
 import { honeycombDaySample } from '@/features/fabrics';
 
 import CornerPinOverlay, { CornerPinOverlayHandle, Point } from './CornerPinOverlay';
+import { chainFinish } from './chainFinish';
 import { HoneycombLiftControls } from './HoneycombLiftControls';
 import { OutdoorLiftControls } from './OutdoorLiftControls';
 import { exportPreview } from './previewExport';
@@ -16,6 +17,7 @@ import { useVisualiserStore, isJoinery, BlindType, type ProductCategory } from '
 import WallColourChip from './WallColourChip';
 import { BlindWindowPreview, CurtainWindowPreview } from './WindowPreview';
 import { isSlatted, isUnpricedBlind, isOutdoor, previewTexture } from './windowProducts';
+import { windowHardwareHex } from './windowHardware';
 
 import type { RenderedArea } from './Canvas2DBlindRenderer';
 
@@ -366,34 +368,38 @@ function PullControl({
 function BeadChain({
   value,
   onChange,
+  colour,
   run = CHAIN_H_FALLBACK,
 }: {
   value: number;
   onChange: (v: number) => void;
+  colour: string;
   /** Visible length of the run, in CSS pixels. Sized to the covering's drop by
    * the caller so the hardware stays in proportion to the window. */
   run?: number;
 }) {
+  const id = useId(), beadId = `${id}-bead`, mountId = `${id}-mount`;
+  const finish = chainFinish(colour);
   const xLeft = CHAIN_W / 2 - STRAND_GAP / 2;
   const xRight = CHAIN_W / 2 + STRAND_GAP / 2;
 
   return (
     <PullControl value={value} onChange={onChange} run={run} ariaLabel="Blind position — drag the chain">
       {travel => (
-        <svg width={CHAIN_W} height={CHAIN_TOP + run + 16} style={{ display: 'block', overflow: 'visible' }}>
+        <svg data-chain-colour={colour} width={CHAIN_W} height={CHAIN_TOP + run + 16} style={{ display: 'block', overflow: 'visible', colorScheme: 'only light' }}>
           <defs>
             {/* Across the bead, not down it: a ball catches its highlight on the
                 side facing the window, which is what makes it read as metal
                 rather than as a flat dot. */}
-            <linearGradient id="klay-bead" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#9C9C9C" />
-              <stop offset="30%" stopColor="#FBFBFB" />
-              <stop offset="64%" stopColor="#D2D2D2" />
-              <stop offset="100%" stopColor="#8A8A8A" />
+            <linearGradient id={beadId} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={finish.edge} />
+              <stop offset="30%" stopColor={finish.highlight} />
+              <stop offset="64%" stopColor={finish.base} />
+              <stop offset="100%" stopColor={finish.shadow} />
             </linearGradient>
-            <linearGradient id="klay-chain-mount" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#7E7E7E" />
-              <stop offset="100%" stopColor="#4A4A4A" />
+            <linearGradient id={mountId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={finish.base} />
+              <stop offset="100%" stopColor={finish.shadow} />
             </linearGradient>
           </defs>
 
@@ -404,21 +410,21 @@ function BeadChain({
             width={15}
             height={CHAIN_TOP - 2}
             rx={3.5}
-            fill="url(#klay-chain-mount)"
+            fill={`url(#${mountId})`}
             stroke="rgba(0,0,0,0.3)"
             strokeWidth={0.6}
           />
 
           {/* Cord behind the beads. Without it a fast drag can show daylight
               between beads at the moment the phase wraps. */}
-          <line x1={xLeft} y1={CHAIN_TOP} x2={xLeft} y2={CHAIN_TOP + run} stroke="rgba(90,90,90,0.34)" strokeWidth={0.9} />
-          <line x1={xRight} y1={CHAIN_TOP} x2={xRight} y2={CHAIN_TOP + run} stroke="rgba(90,90,90,0.34)" strokeWidth={0.9} />
+          <line x1={xLeft} y1={CHAIN_TOP} x2={xLeft} y2={CHAIN_TOP + run} stroke={finish.shadow} strokeWidth={0.9} />
+          <line x1={xRight} y1={CHAIN_TOP} x2={xRight} y2={CHAIN_TOP + run} stroke={finish.shadow} strokeWidth={0.9} />
 
           {runYs(travel, run, BEAD_PITCH, BEAD_R).map(y => (
-            <circle key={`l${y}`} cx={xLeft} cy={y} r={BEAD_R} fill="url(#klay-bead)" stroke="rgba(0,0,0,0.22)" strokeWidth={0.4} />
+            <circle key={`l${y}`} cx={xLeft} cy={y} r={BEAD_R} fill={`url(#${beadId})`} stroke="rgba(0,0,0,0.22)" strokeWidth={0.4} />
           ))}
           {runYs(-travel, run, BEAD_PITCH, BEAD_R).map(y => (
-            <circle key={`r${y}`} cx={xRight} cy={y} r={BEAD_R} fill="url(#klay-bead)" stroke="rgba(0,0,0,0.22)" strokeWidth={0.4} />
+            <circle key={`r${y}`} cx={xRight} cy={y} r={BEAD_R} fill={`url(#${beadId})`} stroke="rgba(0,0,0,0.22)" strokeWidth={0.4} />
           ))}
 
           {/* The connector that closes the loop, and the reason the two strands
@@ -429,7 +435,7 @@ function BeadChain({
             width={STRAND_GAP + 5}
             height={7}
             rx={3.5}
-            fill="url(#klay-chain-mount)"
+            fill={`url(#${mountId})`}
             stroke="rgba(0,0,0,0.3)"
             strokeWidth={0.6}
           />
@@ -889,9 +895,10 @@ interface KlayConfiguratorProps {
 function ConnectedPullControl({ curtain, run }: { curtain: boolean; run: number }) {
   const value = useVisualiserStore(s => s.rollPosition);
   const onChange = useVisualiserStore(s => s.setRollPosition);
+  const hardware = useVisualiserStore(s => s.hardwareColour);
   return curtain
     ? <CurtainCord value={value} onChange={onChange} run={run} />
-    : <BeadChain value={value} onChange={onChange} run={run} />;
+    : <BeadChain value={value} onChange={onChange} run={run} colour={windowHardwareHex('blind', hardware, '#ffffff')} />;
 }
 
 export default function KlayConfigurator(props: KlayConfiguratorProps = {}) {
@@ -1532,6 +1539,7 @@ function PhotoConfigurator({
             // on ITS subject rather than leaving them where the last one was.
             key={hookPhotoUrl ?? 'none'}
             ref={overlayRef}
+            photoUrl={store.photoUrl!}
             imageWidth={photoBitmap!.width}
             imageHeight={photoBitmap!.height}
             onConfirm={handleConfirmTrace}

@@ -1,5 +1,7 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
+import { TraceMagnifier } from './TraceMagnifier';
+
 export type Point = [number, number];
 
 export interface CornerPinOverlayHandle {
@@ -7,6 +9,7 @@ export interface CornerPinOverlayHandle {
 }
 
 interface CornerPinOverlayProps {
+  photoUrl: string;
   imageWidth: number;
   imageHeight: number;
   onConfirm: (corners: Point[]) => void;
@@ -100,7 +103,7 @@ const HANDLE_PX = {
 } as const;
 
 const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProps>(
-  ({ imageWidth, imageHeight, onConfirm, initialCornersPct }, ref) => {
+  ({ photoUrl, imageWidth, imageHeight, onConfirm, initialCornersPct }, ref) => {
     // A CALLER MAY SAY WHERE TO START. The supplied wardrobe photographs were
     // shot with the opening dimensioned, so where the alcove is and how wide it
     // is are both known — the pins can open on it rather than on a generic box
@@ -114,6 +117,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
       )
     );
     const activeIndex = useRef<number | null>(null);
+    const [magnifiedIndex, setMagnifiedIndex] = useState<number | null>(null);
     const activeMidpoint = useRef<MidpointId | null>(null);
     const lastMidpointPoint = useRef<Point | null>(null);
     const svgRef = useRef<SVGSVGElement | null>(null);
@@ -173,10 +177,12 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
     );
 
     const handlePinPointerDown = useCallback((index: number) => (e: React.PointerEvent) => {
+      if (!e.isPrimary || e.button !== 0) return;
       e.preventDefault();
       e.stopPropagation();
       (e.target as Element).setPointerCapture(e.pointerId);
       activeIndex.current = index;
+      setMagnifiedIndex(index);
     }, []);
 
     const handleMidpointPointerDown = useCallback((id: MidpointId) => (e: React.PointerEvent) => {
@@ -184,6 +190,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
       e.stopPropagation();
       (e.target as Element).setPointerCapture(e.pointerId);
       activeMidpoint.current = id;
+      setMagnifiedIndex(null);
       lastMidpointPoint.current = toImagePoint(e.clientX, e.clientY);
     }, [toImagePoint]);
 
@@ -209,6 +216,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
     }, [toImagePoint]);
 
     const handlePointerUp = useCallback(() => {
+      setMagnifiedIndex(null);
       activeIndex.current = null;
       activeMidpoint.current = null;
       lastMidpointPoint.current = null;
@@ -221,6 +229,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
     const handlePinTouchStart = useCallback((index: number) => (e: React.TouchEvent) => {
       e.stopPropagation();
       activeIndex.current = index;
+      setMagnifiedIndex(index);
     }, []);
 
     const handleMidpointTouchStart = useCallback((id: MidpointId) => (e: React.TouchEvent) => {
@@ -229,6 +238,18 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
       activeMidpoint.current = id;
       lastMidpointPoint.current = touch ? toImagePoint(touch.clientX, touch.clientY) : null;
     }, [toImagePoint]);
+
+    const nudgeCorner = (index: number, e: React.KeyboardEvent) => {
+      const delta: Record<string, Point> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+      if (!delta[e.key]) return;
+      e.preventDefault();
+      setMagnifiedIndex(index);
+      const [dx, dy] = delta[e.key], step = e.shiftKey ? 10 : 1;
+      setCorners(prev => prev.map((point, i) => i !== index ? point : [
+        Math.max(0, Math.min(imageWidth, point[0] + dx * step)),
+        Math.max(0, Math.min(imageHeight, point[1] + dy * step)),
+      ]));
+    };
 
     const handleSvgTouchMove = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
       const touch = e.touches[0];
@@ -285,7 +306,7 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
           onPointerMove={handleSvgPointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          onPointerLeave={handlePointerUp}
+          onLostPointerCapture={handlePointerUp}
           onTouchMove={handleSvgTouchMove}
           onTouchEnd={handlePointerUp}
           onTouchCancel={handlePointerUp}
@@ -354,6 +375,12 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
                 r={cornerHitRadius}
                 fill="transparent"
                 stroke="none"
+                tabIndex={0}
+                role="button"
+                aria-label={`Trace corner ${i + 1}. Use arrow keys to adjust`}
+                onFocus={() => setMagnifiedIndex(i)}
+                onBlur={() => setMagnifiedIndex(null)}
+                onKeyDown={e => nudgeCorner(i, e)}
                 onPointerDown={handlePinPointerDown(i)}
                 onTouchStart={handlePinTouchStart(i)}
                 style={{ cursor: 'crosshair', touchAction: 'none' }}
@@ -386,6 +413,9 @@ const CornerPinOverlay = forwardRef<CornerPinOverlayHandle, CornerPinOverlayProp
             </g>
           ))}
         </svg>
+        {magnifiedIndex !== null && <TraceMagnifier photoUrl={photoUrl}
+          point={corners[magnifiedIndex]} index={magnifiedIndex} imageWidth={imageWidth}
+          imageHeight={imageHeight} renderedWidth={renderedWidth} />}
       </div>
     );
   }

@@ -15,6 +15,7 @@ import { drawHoneycombTransmission } from './honeycombTransmission';
 import { PreviewStatus } from './PreviewStatus';
 import { drawRollerBrackets } from './rollerBrackets';
 import { rollerGeometry, type RollerGeometry } from './rollerGeometry';
+import { rollerRailWeave } from './rollerRailWeave';
 import { normaliseRollerWeave } from './rollerWeave';
 import { slattedPlane, venetianSlats } from './slattedGeometry';
 import { usePreviewLoad } from './usePreviewLoad';
@@ -1168,27 +1169,6 @@ const drawRollerFallback = (
   ctx.restore();
 };
 
-/** Flat fill — for faces that must not read as curved (bracket plates, end
- * caps). Chrome still gets its metallic gradient. */
-const setHardwareFill = (
-  ctx: CanvasRenderingContext2D,
-  hardwareColourName: 'white' | 'black' | 'chrome' | 'cream' | 'platinum' | undefined,
-  safeHardwareColor: string,
-  gradFrom: Point,
-  gradTo: Point,
-  lighting: BlindLighting = NEUTRAL_BLIND_LIGHT,
-) => {
-  if (hardwareColourName === 'chrome') {
-    const grad = ctx.createLinearGradient(gradFrom[0], gradFrom[1], gradTo[0], gradTo[1]);
-    CHROME_GRADIENT_STOPS.forEach(([stop, colour]) => grad.addColorStop(stop, litHardwareHex(colour,lighting)));
-    ctx.fillStyle = grad;
-  } else if (hardwareColourName === 'white' || hardwareColourName === 'black') {
-    ctx.fillStyle = HARDWARE_FLAT_HEX[hardwareColourName];
-  } else {
-    ctx.fillStyle = safeHardwareColor;
-  }
-};
-
 /** Unit direction along tl->tr plus its perpendicular. */
 const axesFor = (tl: Point, tr: Point): { u: Point; pv: Point } => {
   const dx = tr[0] - tl[0];
@@ -1338,6 +1318,8 @@ const drawBottomRail = (
   fabBR: Point,
   hardwareColourName: 'white' | 'black' | 'chrome' | 'cream' | 'platinum' | undefined,
   safeHardwareColor: string,
+  fabricColor: string,
+  fabricImage: HTMLImageElement | undefined,
   avgW: number,
   yRotation = 0, // window rotation for end cap visibility
   lighting: BlindLighting = NEUTRAL_BLIND_LIGHT,
@@ -1349,41 +1331,34 @@ const drawBottomRail = (
   const midR: Point = [(railTR[0] + fabBR[0]) / 2, (railTR[1] + fabBR[1]) / 2];
   const halfH = Math.max(1, Math.hypot(fabBL[0] - railTL[0], fabBL[1] - railTL[1]) / 2);
   const endScale = Math.max(0.7,Math.min(1.4,Math.hypot(fabBR[0]-railTR[0],fabBR[1]-railTR[1])/(2*halfH)));
-  const base = litHardwareHex(hardwareBaseHex(hardwareColourName, safeHardwareColor),lighting);
+  const base = litHardwareHex(fabricColor, lighting);
 
   ctx.save();
 
-  // --- BODY: cylindrical profile with metallic gradient similar to cassette
-  // but at the smaller 1.8% height. The product photo shows a horizontal
-  // highlight band across the face.
+  // Opaque cloth wraps the weight, even for sunscreen and light-filter fabric.
   const top: Point = [midL[0] + pv[0] * halfH, midL[1] + pv[1] * halfH];
   const bot: Point = [midL[0] - pv[0] * halfH, midL[1] - pv[1] * halfH];
   traceCylinderBody(ctx, midL, midR, halfH, u, pv, endScale);
-  if (hardwareColourName === 'chrome') {
-    setHardwareFill(ctx, hardwareColourName, safeHardwareColor, top, bot, lighting);
-  } else {
-    // Metallic gradient with highlight band in upper portion
-    const g = ctx.createLinearGradient(top[0], top[1], bot[0], bot[1]);
-    g.addColorStop(0, shadeHex(base, -0.06));
-    g.addColorStop(0.16, shadeHex(base, 0.065));  // highlight band
-    g.addColorStop(0.32, shadeHex(base, 0.01));
-    g.addColorStop(0.65, base);
-    g.addColorStop(1, shadeHex(base, -0.16));
-    ctx.fillStyle = g;
-  }
+  const g = ctx.createLinearGradient(top[0], top[1], bot[0], bot[1]);
+  g.addColorStop(0, shadeHex(base, -.06));
+  g.addColorStop(.28, base);
+  g.addColorStop(.65, shadeHex(base, -.03));
+  g.addColorStop(1, shadeHex(base, -.18));
+  ctx.fillStyle = g;
   ctx.fill();
 
   ctx.save();
   traceCylinderBody(ctx, midL, midR, halfH, u, pv, endScale);
   ctx.clip();
+  rollerRailWeave(ctx, fabricImage, { left: midL, right: midR, halfHeight: halfH });
 
-  // --- END CAPS: ALWAYS WHITE regardless of rail color, matching product photo.
+  // Only the end caps carry the hardware finish.
   // TRUE 3D PERSPECTIVE (same logic as cassette):
   // yRot > 0 (viewer to LEFT): see LEFT end cap, right end hidden
   // yRot < 0 (viewer to RIGHT): see RIGHT end cap, left end hidden
   // yRot ≈ 0 (flat): both caps show as small ellipses
   const capW = Math.max(2, scaleToBlind(4, avgW));
-  const endCapColor = litHardwareHex('#F2F1EF',lighting);
+  const endCapColor = litHardwareHex(hardwareBaseHex(hardwareColourName, safeHardwareColor), lighting);
   const isFlat = Math.abs(yRotation) < 0.05;
   const showLeftCap = yRotation > 0.05 || isFlat;   // viewer to LEFT sees left end
   const showRightCap = yRotation < -0.05 || isFlat; // viewer to RIGHT sees right end
@@ -1660,7 +1635,8 @@ const drawBlindArea = (
   if (hasHangingFabric && type !== 'sheer') {
     const railTL = geometry.railL;
     const railTR = geometry.railR;
-    drawBottomRail(ctx, railTL, railTR, fabBL, fabBR, hardwareColourName, safeHardwareColor, avgW, yRotation, lighting);
+    drawBottomRail(ctx, railTL, railTR, fabBL, fabBR, hardwareColourName, safeHardwareColor,
+      fabricColor, fabricImgs.get(params.fabricTexture ?? getTexturePath(type)), avgW, yRotation, lighting);
 
     // --- BOTTOM RAIL DROP SHADOW — the rail hangs in space; it casts a
     // shadow up onto the fabric directly behind it. ---
@@ -1817,7 +1793,8 @@ const drawDualBlindArea = (
   // view behind it was diffused above, for the same reason a standalone
   // sunscreen's is: through a mesh it is a ghost, not a sharp image. ---
   drawFabricLayer(back, DUAL_BACK_TEXTURE, dualBackOpacity(fabricColor), 'sunscreen');
-  drawBottomRail(ctx, back.railL, back.railR, backBL, backBR, hardwareColourName, safeHardwareColor, avgW, yRotation, lighting);
+  drawBottomRail(ctx, back.railL, back.railR, backBL, backBR, hardwareColourName, safeHardwareColor,
+    fabricColor, fabricImgs.get(DUAL_BACK_TEXTURE), avgW, yRotation, lighting);
 
   // --- FRONT LAYER — blockout on the room side, opaque, drawn on top and
   // stopping short so the sunscreen stays visible beneath it. ---
@@ -1883,7 +1860,8 @@ const drawDualBlindArea = (
 
   // --- RAILS — the front layer's rail sits higher; the back layer's rail
   // rides its own bottom edge. Both wind up with their layer. ---
-  drawBottomRail(ctx, front.railL, front.railR, frontBL, frontBR, hardwareColourName, safeHardwareColor, avgW, yRotation, lighting);
+  drawBottomRail(ctx, front.railL, front.railR, frontBL, frontBR, hardwareColourName, safeHardwareColor,
+    fabricColor, fabricImgs.get(params.fabricTexture ?? DUAL_FRONT_TEXTURE), avgW, yRotation, lighting);
   drawRailDropShadow(ctx, front.tangentL, front.tangentR, front.railL, front.railR, leftH);
   drawContactShadow(ctx, backBL, backBR);
 

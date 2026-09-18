@@ -90,7 +90,7 @@ test('front-roll starts unfolding with continuous cloth and a full-size hem outs
         const mid = (a: number[], b: number[]) => a.map((v, i) => (v + b[i]) / 2);
         const cloth = sample(mid(g.tangentL, g.railL), mid(g.tangentR, g.railR));
         const weight = sample(mid(g.railL, g.hemL), mid(g.railR, g.hemR));
-        return cloth < 90 && weight > 170;
+        return cloth < 90 && weight < 90;
       }, { tangentL: geometry.tangentL, tangentR: geometry.tangentR, railL: geometry.railL, railR: geometry.railR, hemL: geometry.hemL, hemR: geometry.hemR })).toBe(true);
       if ([0, 2, 10].includes(position)) await canvas.screenshot({ path: info.outputPath(`${type}-initial-${position}.png`) });
     }

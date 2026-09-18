@@ -1,6 +1,6 @@
 /** The shop photographs share a 900px window. Carry the already dyed, woven
  * cloth over their exposed rear-feed barrel; keep metal on the end fittings
- * and weights. Sampling the finished cloth preserves its photographic light
+ * only. Sampling the finished cloth preserves its photographic light
  * and makes the crown follow every frame of the existing colour transition. */
 export function paintRollerFront(ctx: CanvasRenderingContext2D, layer: HTMLCanvasElement,
   { hardware, isDual }: { hardware: string; isDual: boolean }) {
@@ -46,17 +46,40 @@ export function paintRollerFront(ctx: CanvasRenderingContext2D, layer: HTMLCanva
     ctx.ellipse(x, axle, 1.5, 5.3, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-  if (isDual) {
-    // The raised front layer has its own weight. It is absent from the shared
-    // full-drop hardware mask, so explicitly finish it rather than dyeing it
-    // with the cloth or leaving the photographed silver bar unchanged.
-    ctx.fillRect(left, 296, right - left, 10);
-    const rail = ctx.createLinearGradient(0, 296, 0, 306);
-    rail.addColorStop(0, 'rgba(255,255,255,.08)');
-    rail.addColorStop(.35, 'rgba(0,0,0,0)');
-    rail.addColorStop(1, 'rgba(0,0,0,.2)');
-    ctx.fillStyle = rail;
-    ctx.fillRect(left, 296, right - left, 10);
+  ctx.restore();
+  // Both weights are wrapped in their own layer's finished cloth.
+  paintWrappedRail(ctx, layer, { top: 579, bottom: 588, hardware });
+  if (isDual) paintWrappedRail(ctx, layer, { top: 296, bottom: 306, hardware });
+}
+
+function paintWrappedRail(ctx: CanvasRenderingContext2D, layer: HTMLCanvasElement,
+  { top, bottom, hardware }: { top: number; bottom: number; hardware: string }) {
+  const scale = ctx.canvas.width / 900, left = 155, width = 572;
+  const ink = layer.getContext('2d')!;
+  ink.save();
+  ink.setTransform(1, 0, 0, 1, 0, 0);
+  ink.globalCompositeOperation = 'source-over';
+  ink.clearRect(0, 0, layer.width, layer.height);
+  // Copy a narrow strip above this rail, including the selected supplier weave.
+  ink.drawImage(ctx.canvas, left * scale, (top - 10) * scale, width * scale, 5 * scale,
+    left * scale, top * scale, width * scale, (bottom - top) * scale);
+  ink.restore();
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+  ctx.drawImage(layer, 0, 0);
+  ctx.scale(scale, scale);
+  const curve = ctx.createLinearGradient(0, top, 0, bottom);
+  curve.addColorStop(0, 'rgba(0,0,0,.045)');
+  curve.addColorStop(.3, 'rgba(0,0,0,0)');
+  curve.addColorStop(1, 'rgba(0,0,0,.18)');
+  ctx.fillStyle = curve;
+  ctx.fillRect(left, top, width, bottom - top);
+  ctx.fillStyle = hardware;
+  for (const x of [left, left + width]) {
+    ctx.beginPath();
+    ctx.ellipse(x, (top + bottom) / 2, 1.6, (bottom - top) / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.restore();
 }

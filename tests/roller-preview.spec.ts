@@ -15,7 +15,7 @@ async function band(canvas: Locator, row: number) {
   }, row);
 }
 
-test('shop front-roll uses fabric on the crown and independent hardware on every roller type', async ({ page }, info) => {
+test('shop front-roll wraps the crown and weights in fabric with independent end fittings', async ({ page }, info) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ body: '', contentType: 'text/css' }));
@@ -40,18 +40,18 @@ test('shop front-roll uses fabric on the crown and independent hardware on every
     const darkRoll = await band(canvas, 157);
     // The former white hardware stripe cut across the fabric at y=154.
     expect(await band(canvas, 154)).toBeLessThan(paleRoll - 35);
-    await expect.poll(() => band(canvas, 583)).toBeGreaterThan(160);
-    if (type === 'Dual') expect(await band(canvas, 301)).toBeGreaterThan(160);
+    const darkRail = await band(canvas, 583);
+    const darkFrontRail = await band(canvas, 301);
     await canvas.screenshot({ path: info.outputPath(`${type}-front-roll-dark.png`) });
     await page.getByRole('button', { name: 'Black', exact: true }).click();
-    await expect.poll(() => band(canvas, 583)).toBeLessThan(90);
-    if (type === 'Dual') expect(await band(canvas, 301)).toBeLessThan(90);
+    expect(Math.abs(await band(canvas, 583) - darkRail)).toBeLessThan(2);
+    if (type === 'Dual') expect(Math.abs(await band(canvas, 301) - darkFrontRail)).toBeLessThan(2);
     expect(Math.abs(await band(canvas, 157) - darkRoll)).toBeLessThan(2);
     // A pale cloth with black fittings must have a pale roll, not a black tube.
     await page.getByRole('button', { name: pale, exact: true }).click();
     await expect.poll(() => band(canvas, 157)).toBeGreaterThan(darkRoll + 40);
-    expect(await band(canvas, 583)).toBeLessThan(90);
-    if (type === 'Dual') expect(await band(canvas, 301)).toBeLessThan(90);
+    await expect.poll(() => band(canvas, 583)).toBeGreaterThan(darkRail + 35);
+    if (type === 'Dual') expect(await band(canvas, 301)).toBeGreaterThan(darkFrontRail + 35);
     await canvas.screenshot({ path: info.outputPath(`${type}-front-roll-pale.png`) });
   }
   expect(errors).toEqual([]);
