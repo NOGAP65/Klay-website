@@ -67,8 +67,10 @@ test('homepage honeycomb uses the same room and adds its actual configuration to
   await panel.getByRole('button', { name: 'Honeycomb Dunora', exact: true }).click();
   await expect(panel.locator('canvas[data-blind-product="honeycomb"]')).toHaveAttribute('data-render-ready', 'true');
   const photoBounds = await panel.locator('canvas[data-blind-product="honeycomb"]').boundingBox();
-  const controlBounds = await panel.locator('.honeycomb-lift-controls').boundingBox();
-  expect(controlBounds!.y).toBeGreaterThanOrEqual(photoBounds!.y + photoBounds!.height - 1);
+  const controlBounds = await panel.locator('.preview-mechanisms').boundingBox();
+  expect(controlBounds!.x - photoBounds!.x).toBeLessThan(20);
+  expect(controlBounds!.y).toBeGreaterThanOrEqual(photoBounds!.y);
+  expect(controlBounds!.y + controlBounds!.height).toBeLessThanOrEqual(photoBounds!.y + photoBounds!.height);
   await panel.locator('canvas[data-blind-product="honeycomb"]').screenshot({ path: info.outputPath('room-daynight.png') });
   await panel.getByRole('button', { name: 'Motorised', exact: true }).click();
   await panel.getByRole('button', { name: 'Add to cart', exact: true }).click();
@@ -99,6 +101,6 @@ test('honeycomb deep link, motor controls and missing texture recover without a 
   await page.getByRole('button', { name: 'Close the blind', exact: true }).click();
   await expect.poll(snapshot).toBe(closed);
   await page.getByRole('button', { name: 'Manual', exact: true }).click();
-  await expect(page.getByRole('slider', { name: 'Honeycomb position' })).toHaveValue('100');
+  await expect(page.getByRole('slider', { name: 'Honeycomb position' })).toHaveAttribute('aria-valuenow', '100');
   expect(errors).toEqual([]);
 });

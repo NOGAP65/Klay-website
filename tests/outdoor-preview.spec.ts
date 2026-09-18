@@ -44,6 +44,12 @@ for (const category of ['roller-shutter', 'zip-screen'] as const) {
     expect(Math.abs(await sample(canvas, [.03, .9]) - outside)).toBeLessThanOrEqual(1);
     await canvas.screenshot({ path: info.outputPath(`${category}-open.png`) });
     await page.getByRole('button', { name: category === 'roller-shutter' ? 'Battery' : 'Motorised', exact: true }).click();
+    await expect(page.locator('[data-mechanism="crank"]')).toHaveCount(0);
+    const remoteBox = (await page.locator('.preview-mechanisms').boundingBox())!, imageBox = (await canvas.boundingBox())!;
+    expect(remoteBox.y).toBeGreaterThanOrEqual(imageBox.y);
+    expect(remoteBox.y + remoteBox.height).toBeLessThanOrEqual(imageBox.y + imageBox.height);
+    await page.getByRole('button', { name: 'Close the blind', exact: true }).click();
+    await expect.poll(() => sample(canvas)).toBe(dark);
     await page.getByRole('button', { name: 'Add to cart', exact: true }).click();
     await page.goto('/cart');
     await expect(page.locator('main')).toContainText(category === 'roller-shutter' ? 'Roller Shutters' : 'Zip Guide Systems');
@@ -76,5 +82,76 @@ test('outdoor renderers retain an angled customer trace and export the selected 
     await page.getByRole('button', { name: 'Download', exact: true }).click();
     expect((await download).suggestedFilename()).toContain(category);
     await expect(page.getByRole('button', { name: 'Confirm outline', exact: true })).toHaveCount(0);
+  }
+});
+
+test('product hardware sits inside the left of the photo and supports touch and keyboard', async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const products = [
+    ['roller-shutter', 'crank', 'Outdoor covering position'], ['zip-screen', 'crank', 'Outdoor covering position'],
+    ['honeycomb', 'cord', 'Honeycomb position'], ['venetian', 'wand', 'Slat tilt'], ['plantation', 'louvre', 'Slat tilt'],
+  ];
+  for (const [category, kind, label] of products) {
+    await page.goto(`/visualiser?category=${category}`);
+    const canvas = page.locator(`canvas[data-blind-product="${category}"]`);
+    await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+    const slider = page.getByRole('slider', { name: label, exact: true });
+    await expect(page.locator(`[data-mechanism="${kind}"]`)).toBeVisible();
+    await slider.press('Home');
+    const open = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
+    await slider.press('End');
+    await expect(slider).toHaveAttribute('aria-valuenow', '100');
+    await expect.poll(() => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL())).not.toBe(open);
+    const group = page.locator('.preview-mechanisms');
+    const box = (await group.boundingBox())!, photo = (await canvas.boundingBox())!;
+    expect(box.x - photo.x).toBeGreaterThanOrEqual(0);
+    expect(box.x - photo.x).toBeLessThan(20);
+    expect(box.y).toBeGreaterThanOrEqual(photo.y);
+    expect(box.y + box.height).toBeLessThanOrEqual(photo.y + photo.height);
+    // Real pointer capture, followed by cancellation as when a phone interrupts.
+    const grip = (await slider.boundingBox())!;
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2); await page.mouse.down();
+    await slider.dispatchEvent('pointercancel', { pointerId: 1, isPrimary: true });
+    await page.mouse.move(grip.x, grip.y); await page.mouse.up();
+    await expect(slider).toHaveAttribute('aria-valuenow', '100');
+    await group.screenshot({ path: info.outputPath(`${category}-hardware.png`) });
+  }
+  await page.goto('/visualiser');
+  await expect(page.getByRole('slider', { name: 'Blind position — drag the chain', exact: true })).toBeVisible();
+  await expect(page.locator('.preview-mechanisms')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('turning the outdoor crank changes the covering and release stops dragging', async ({ page }, info) => {
+  await page.goto('/visualiser?category=roller-shutter');
+  const slider = page.getByRole('slider', { name: 'Outdoor covering position' });
+  await slider.press('Home');
+  const box = (await slider.boundingBox())!, cx = box.x + box.width / 2, cy = box.y + box.height * .575;
+  await page.mouse.move(cx + 18, cy); await page.mouse.down();
+  for (let step = 1; step <= 24; step++) {
+    const angle = step / 24 * Math.PI * 2;
+    await page.mouse.move(cx + 18 * Math.cos(angle), cy + 18 * Math.sin(angle));
+  }
+  await page.mouse.up();
+  const value = Number(await slider.getAttribute('aria-valuenow'));
+  expect(value).toBeGreaterThan(45); expect(value).toBeLessThan(55);
+  await page.mouse.move(cx, cy + 80);
+  await expect(slider).toHaveAttribute('aria-valuenow', String(value));
+  const open = page.getByRole('button', { name: 'Open — Outdoor covering position', exact: true });
+  if (info.project.use.hasTouch) await open.tap(); else await open.click();
+  await expect(slider).toHaveAttribute('aria-valuenow', '0');
+});
+
+test('pulling a lift cord down raises the blind', async ({ page }) => {
+  for (const [category, label] of [['honeycomb', 'Honeycomb position'], ['venetian', 'Venetian lift']]) {
+    await page.goto(`/visualiser?category=${category}`);
+    const slider = page.getByRole('slider', { name: label, exact: true });
+    await slider.press('End');
+    const box = (await slider.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + 10); await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2, box.y + 40, { steps: 6 }); await page.mouse.up();
+    const value = Number(await slider.getAttribute('aria-valuenow'));
+    expect(value).toBeGreaterThan(0); expect(value).toBeLessThan(85);
   }
 });

@@ -22,6 +22,10 @@ The physical profiles are illustrative residential references, not an engineerin
 
 ## Verification
 
+Manual outdoor previews now use an illustrated crank on the left edge of the photo. Motorised selections replace it with the existing remote, in a compact case for narrow previews. No operation choices were added. The crank turns with the pointer; keyboard arrows and endpoint buttons give the same bounded travel. Honeycomb and Venetian lift cords pull down to raise; Venetians have a separate tilt wand, and plantations have a hand-operated louvre illustration. Roller blind and curtain controls are unchanged. Vector artwork adds no image downloads or animation loop.
+
+The crank is a preview interaction rather than a supplier-specific part drawing. [Zipscreen lists crank, spring and motorised controls](https://www.zipscreen.com.au/products/zipscreen); the existing Klay manual option is represented by its crank mechanism. [Luxaflex describes lift cords and separate tilt wands](https://www.luxaflex.com.au/brochure/78418923-8cff-42eb-8503-1bee1631fb1b), used here as the interaction reference, not as a change to Klay's UltraSlat range.
+
 `outdoor-geometry.spec.ts` covers constant pitch, travel limits, mesh-to-guide contact and catalogue/cart consistency. `outdoor-preview.spec.ts` covers colour pixels, full travel, preserved surroundings, default-scene switching, angled customer traces, downloads and cart details. Browser profiles include desktop Chromium, iOS WebKit, 320 px Android with WebGL disabled and Chromium forced dark mode. These are browser emulations, not certification of every physical handset.
 
 [Image assets and exact generation prompts](outdoor-visualiser-images.md).

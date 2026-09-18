@@ -618,6 +618,7 @@ function MotorRemote({
   onToggleAuto,
   autoRunning,
   transmitting,
+  isCompact = false,
 }: {
   onOpen: () => void;
   onShut: () => void;
@@ -625,6 +626,7 @@ function MotorRemote({
   onToggleAuto: () => void;
   autoRunning: boolean;
   transmitting: boolean;
+  isCompact?: boolean;
 }) {
   const [shown, setShown] = useState(false);
   useEffect(() => {
@@ -638,8 +640,8 @@ function MotorRemote({
   return (
     <div
       style={{
-        width: 78,
-        padding: '10px 9px 12px',
+        width: isCompact ? 64 : 78,
+        padding: isCompact ? space.xs : '10px 9px 12px',
         borderRadius: 16,
         // Bezel and body: a light top edge, a dark base, and a hairline of
         // white along the very top so the case has a moulded lip.
@@ -654,7 +656,7 @@ function MotorRemote({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 8,
+        gap: isCompact ? space.xxs : 8,
         transformOrigin: 'center bottom',
         transform: shown ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.92)',
         opacity: shown ? 1 : 0,
@@ -1414,22 +1416,25 @@ function PhotoConfigurator({
   // They mount differently because they ARE different things. The chain belongs
   // to the blind and is placed against it. The handset is held, so it sits off
   // to the side of the frame where a hand would be, unattached to anything.
-  const sideControl = !showRenderState || isJoinery(store.productCategory) ? null : activeOperation === 'motorised' ? (
-    <div style={SIDE_CONTROL_POSITION}>
-      <MotorRemote
+  const hasMechanisms = isUnpricedBlind(store.productCategory);
+  const sideControl = !showRenderState || isJoinery(store.productCategory) ? null : (
+    <div className={hasMechanisms ? 'preview-mechanisms' : undefined}
+      style={hasMechanisms ? { '--mechanism-run': `${Math.max(60, Math.min(140, mediaBoxH - 108))}px` } as React.CSSProperties : SIDE_CONTROL_POSITION}>
+      {activeOperation === 'motorised' ? <MotorRemote
+        isCompact={hasMechanisms}
         autoRunning={autoRunning}
         transmitting={motorRunning}
         onOpen={() => { stopAuto(); runMotor(0); }}
         onShut={() => { stopAuto(); runMotor(1); }}
         onStop={stopAuto}
         onToggleAuto={() => (autoRunning ? stopAuto() : startAuto())}
-      />
+      /> : pullRun && !hasMechanisms ? <ConnectedPullControl curtain={store.productCategory === 'curtain'} run={pullRun} /> : null}
+      {store.productCategory === 'honeycomb' && <HoneycombLiftControls
+        showLift={activeOperation === 'manual'} showDay={store.honeycombType === 'daynight'} onInteract={stopAuto} />}
+      {isSlatted(store.productCategory) && <SlattedLiftControls onInteract={stopAuto} />}
+      {isOutdoor(store.productCategory) && <OutdoorLiftControls onInteract={stopAuto} />}
     </div>
-  ) : pullRun && !isUnpricedBlind(store.productCategory) ? (
-    <div style={SIDE_CONTROL_POSITION}>
-      <ConnectedPullControl curtain={store.productCategory === 'curtain'} run={pullRun} />
-    </div>
-  ) : null;
+  );
 
   // The box takes the photo's own shape instead of sitting in a fixed panel
   // and letterboxing the image inside it. Height is capped by capping WIDTH
@@ -1612,11 +1617,6 @@ function PhotoConfigurator({
         </div>
       )}
       </div>
-
-      {showRenderState && store.productCategory === 'honeycomb' && <HoneycombLiftControls
-        showLift={activeOperation === 'manual'} showDay={store.honeycombType === 'daynight'} onInteract={stopAuto} />}
-      {showRenderState && isSlatted(store.productCategory) && <SlattedLiftControls onInteract={stopAuto} />}
-      {showRenderState && isOutdoor(store.productCategory) && <OutdoorLiftControls onInteract={stopAuto} />}
 
       {footerButtons && (
         <div
