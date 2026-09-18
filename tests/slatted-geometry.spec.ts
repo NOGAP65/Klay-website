@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 
 import { test, expect } from '@playwright/test';
 
+import { configuredLine, defaultSelection, fieldsFor } from '../src/features/catalogue/configOptions';
+import { CATALOGUE } from '../src/features/catalogue/constants';
 import { SLAT_COLOURS, VENETIAN_COLLECTIONS, fabricPalette, fabricByName } from '../src/features/fabrics';
 import { visualiserCartItems } from '../src/features/visualiser/cartConfiguration';
 import { plantationBladeLighting } from '../src/features/visualiser/plantationLighting';
@@ -18,6 +20,16 @@ const traces: Point[][] = [
   [[90, 220], [400, 90], [460, 900], [60, 800]],
 ];
 test.beforeEach(() => store.setState(store.getInitialState(), true));
+test('plantation reconciles motorisation out of both window jobs and shop selections', () => {
+  store.getState().setOperation('motorised');
+  store.getState().setProductCategory('plantation');
+  store.getState().setOperation('motorised');
+  expect(store.getState().operation).toBe('manual');
+  expect(store.getState().windows.every(window => window.operation === 'manual')).toBe(true);
+  const product = CATALOGUE.find(item => item.id === 'plantation-shutters')!;
+  expect(fieldsFor(product).some(field => field.id === 'operation')).toBe(false);
+  expect(configuredLine(product, { ...defaultSelection(product), operation: 'motorised' }).operation).toBe('manual');
+});
 const cases = traces.flatMap(trace => ['small', 'medium', 'large'].map(size => slattedPlane(trace, size)));
 
 test('depth matches a pinhole camera at opposite side angles and from above and below', () => {

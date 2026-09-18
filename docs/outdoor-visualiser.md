@@ -7,6 +7,7 @@ Both use the existing local photo-upload, four-corner tracing, Canvas2D, downloa
 ## Mechanics
 
 - Roller shutter: 42 mm nominal slat pitch, moving interlocked slats entering a fixed headbox, rigid bottom rail, matching guides outside the window opening. Slat spacing never compresses as it raises. Headbox and guides use the selected shutter colour.
+- Shutter appearance: shallow asymmetric slat crowns, narrow interlocks, folded housing faces with shared end-cap vertices, and separate wall/contact shadows. Zip-screen appearance is independent of these shutter details.
 - Zip screen: flat translucent mesh retained between side channels, fixed headbox and a moving weight bar. Light mesh scatters more light; dark mesh preserves more garden contrast. The frame stays charcoal because the catalogue offers mesh colour, not a frame-colour configuration.
 - All surfaces project from the customer's traced quadrilateral. Exterior scenery is not dimmed when a screen closes. Mesh detail is bounded to prevent dense moiré and excessive drawing on phones.
 

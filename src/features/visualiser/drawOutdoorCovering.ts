@@ -1,5 +1,6 @@
 import { shutterGeometry, zipGeometry } from './outdoorGeometry';
-import { outdoorBeam as beam, shutterSlat, zipMesh } from './outdoorSurface';
+import { outdoorBeam as beam, zipMesh } from './outdoorSurface';
+import { shutterSlat, shutterWallShadow, shutterGuide, shutterContactShade, shutterHeadbox } from './rollerShutterDetails';
 import { slattedPlane } from './slattedGeometry';
 import { fillSlattedFace as fill, slattedPaint as paint } from './slattedSolids';
 import { surfacePath } from './slattedSurface';
@@ -14,16 +15,17 @@ interface Options {
 }
 function shutter(scene: OutdoorScene, position: number) {
   const { ctx, plane, colour } = scene, g = shutterGeometry(plane, position);
+  shutterWallShadow(scene, g);
   ctx.save(); surfacePath(ctx, plane.quad([0, 0, 1, g.bottom], 8.5)); ctx.clip();
   fill(ctx, plane.quad([0, 0, 1, g.bottom], 8.5), paint(colour, .9));
   for (const y of g.slats) shutterSlat(scene, y, g.pitch);
   ctx.restore();
   beam(scene, [0, g.bottom, 1, g.rail], 17);
+  shutterContactShade(scene, g);
   // Face-mounted outside the opening, so the sill and glazing remain in place.
-  beam(scene, [-g.guide, 0, g.guide, 1]);
-  beam(scene, [1, 0, g.guide, 1]);
-  beam(scene, [-g.guide, -g.head, 1 + 2 * g.guide, g.head], 90);
-  fill(ctx, plane.quad([0, 0, 1, 3 / plane.heightMm], 12), paint(colour, .5));
+  shutterGuide(scene, -g.guide, g.guide);
+  shutterGuide(scene, 1, g.guide);
+  shutterHeadbox(scene, g);
 }
 function zip(scene: OutdoorScene, position: number, hardware: number[]) {
   const { plane } = scene, g = zipGeometry(plane, position), frame = { ...scene, colour: hardware };

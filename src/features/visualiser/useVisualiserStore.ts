@@ -8,7 +8,7 @@ import { joineryDefaults } from './joineryDefaults';
 import { DEFAULT_WALL_COLOUR } from './wallColours';
 import { windowHardwareHex } from './windowHardware';
 import { priceWindow } from './windowPricing';
-import { coloursFor, windowColour, isUnpricedBlind, type ProductCategory } from './windowProducts';
+import { coloursFor, windowColour, windowOperation, isUnpricedBlind, type ProductCategory } from './windowProducts';
 
 import type { BlindType } from '@/core/pricing';
 
@@ -429,8 +429,9 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
       ...(s.defaultWindowActive && s.productCategory !== cat
         ? { rollPosition: cat === 'curtain' ? 0.94 : ['honeycomb', 'venetian'].includes(cat) ? 1 : 0.5 } : {}),
       hardwareColour: reconcileHardware(s.hardwareColour),
+      operation: windowOperation(cat, s.operation),
       fabricColour: reconcile(s.fabricColour, s.blindType),
-      windows: s.windows.map(w => ({ ...w, hardwareColour: reconcileHardware(w.hardwareColour), fabricColour: reconcile(w.fabricColour, w.blindType) })),
+      windows: s.windows.map(w => ({ ...w, operation: windowOperation(cat, w.operation), hardwareColour: reconcileHardware(w.hardwareColour), fabricColour: reconcile(w.fabricColour, w.blindType) })),
     };
   }),
   setBlindType: (type) => set(s => writeThrough({ blindType: type, fabricColour: s.productCategory === 'blind' ? rollerColour(type, s.fabricColour) : s.fabricColour })(s)),
@@ -440,7 +441,7 @@ export const useVisualiserStore = create<VisualiserStore>((set, get) => ({
   setFabricColour: (colour) => set(s => writeThrough({ fabricColour: windowColour(s.productCategory, s.blindType, colour) })(s)),
   setHardwareColour: (colour) => set(writeThrough({ hardwareColour: colour })),
   setWindowSize: (size) => set(writeThrough({ windowSize: size })),
-  setOperation: (op) => set(writeThrough({ operation: op })),
+  setOperation: (op) => set(s => writeThrough({ operation: windowOperation(s.productCategory, op) })(s)),
   setLockedRange: (range) => set({ lockedRange: range }),
   setDefaultWindowActive: (active) => set({ defaultWindowActive: active }),
   setCurtainType: (type) => set(writeThrough({ curtainType: type })),

@@ -19,13 +19,6 @@ export function outdoorBeam(scene: OutdoorScene, box: Box, depth = 22) {
   ctx.lineWidth = Math.max(.35, plane.width / plane.widthMm * .65); ctx.stroke(); ctx.restore();
 }
 
-/** Curve a shutter slat across its height; joins move with the bottom rail. */
-export function shutterSlat(scene: OutdoorScene, y: number, pitch: number) {
-  const { ctx, plane, colour } = scene, quad = plane.quad([0, y, 1, pitch], 8.5);
-  fill(ctx, quad, surfaceGradient(ctx, quad, [[0, paint(colour, .81)], [.09, paint(colour, .98, 4)],
-    [.38, paint(colour, 1, 5)], [.78, paint(colour, .96)], [.96, paint(colour, .86)], [1, paint(colour, .68, 4)]]));
-}
-
 /** Resolve fine mesh to its average opacity at distance. No dense stripes or
  * GPU shaders: a bounded, projected weave is added only above pixel scale. */
 export function zipMesh(scene: OutdoorScene, box: Box) {

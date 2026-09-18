@@ -1,4 +1,4 @@
-import { fabricScanInset } from '@/features/fabrics';
+import { fabricScanRegion } from '@/features/fabrics';
 
 import { paintRollerFront } from './paintRollerFront';
 
@@ -53,9 +53,8 @@ export function paintFabricPhoto(canvas: HTMLCanvasElement, layer: HTMLCanvasEle
   if (images.weave) {
     const tile = document.createElement('canvas');
     tile.width = tile.height = Math.max(32, Math.round(140 * size / Math.max(cssWidth, 140)));
-    const y = fabricScanInset(images.weave.src) * images.weave.naturalHeight;
-    tile.getContext('2d')?.drawImage(images.weave, 0, y, images.weave.naturalWidth,
-      images.weave.naturalHeight - y, 0, 0, tile.width, tile.height);
+    const region = fabricScanRegion(images.weave.src, images.weave.naturalWidth, images.weave.naturalHeight);
+    tile.getContext('2d')?.drawImage(images.weave, ...region, 0, 0, tile.width, tile.height);
     const pattern = ink.createPattern(tile, 'repeat');
     if (pattern) pass(images.mask, 'soft-light', .24, pattern);
     tile.width = tile.height = 0;

@@ -195,7 +195,9 @@ test('plantation fills the sash opening without covering the photographed recess
 test('plantation louvers tilt inside their frame and selections survive cart and theme changes', async ({ page }, info) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/visualiser?category=plantation');
+  await page.goto('/visualiser');
+  await page.getByRole('button', { name: /Motorised/ }).click();
+  await page.getByRole('button', { name: 'Plantation shutters', exact: true }).click();
   const canvas = page.locator('canvas[data-blind-product="plantation"]');
   await expect(canvas).toHaveAttribute('data-render-ready', 'true');
   await canvas.screenshot({ path: info.outputPath('plantation-room.png') });
@@ -216,14 +218,18 @@ test('plantation louvers tilt inside their frame and selections survive cart and
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download', exact: true }).click();
   expect((await download).suggestedFilename()).toContain('plantation');
-  const beforeMotor = await image();
-  await page.getByRole('button', { name: 'Motorised', exact: true }).click();
-  await page.getByRole('button', { name: 'Open the blind', exact: true }).click();
-  await expect.poll(image).not.toBe(beforeMotor);
+  await expect(page.getByRole('button', { name: 'Motorised', exact: true })).toHaveCount(0);
+  const beforeTilt = await image();
+  await page.getByRole('slider', { name: 'Slat tilt' }).press('Home');
+  await expect.poll(image).not.toBe(beforeTilt);
   await page.getByRole('button', { name: 'Add to cart', exact: true }).click();
   await page.goto('/cart');
   await expect(page.locator('main')).toContainText('Plantation Shutters');
   await expect(page.locator('main')).toContainText('Walnut');
+  await expect(page.locator('main')).not.toContainText('Motorised');
+  await page.goto('/products?q=plantation');
+  await expect(page.locator('.shop-result-card').filter({ hasText: 'Plantation Shutters' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Motorised', exact: true })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

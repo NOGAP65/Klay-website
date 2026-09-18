@@ -1,5 +1,7 @@
 import { test, expect, type Locator } from '@playwright/test';
 
+import { portrait } from './helpers/visualiserPhoto';
+
 async function band(canvas: Locator, row: number) {
   return canvas.evaluate((source: HTMLCanvasElement, y) => {
     const ctx = source.getContext('2d')!;
@@ -53,4 +55,43 @@ test('shop front-roll uses fabric on the crown and independent hardware on every
     await canvas.screenshot({ path: info.outputPath(`${type}-front-roll-pale.png`) });
   }
   expect(errors).toEqual([]);
+});
+
+test('Smoky Quartz samples cloth without repeating its pale scan border', async ({ page }, info) => {
+  await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ body: '', contentType: 'text/css' }));
+  await page.goto('/visualiser');
+  const corners = await portrait(page);
+  await page.getByRole('button', { name: 'Symphony', exact: true }).click();
+  const swatch = page.getByRole('button', { name: 'Symphony Smoky Quartz', exact: true });
+  await swatch.click();
+  await expect(swatch).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('slider').press('End');
+  const canvas = page.locator('canvas[data-blind-product="roller"]');
+  await expect(canvas).toHaveAttribute('data-render-ready', 'true');
+  const stripeContrast = () => canvas.evaluate((surface: HTMLCanvasElement, quad) => {
+    const ctx = surface.getContext('2d')!;
+    const columns = Array.from({ length: 201 }, (_, col) => {
+      const u = .08 + .84 * col / 200;
+      let total = 0;
+      for (let row = 0; row < 80; row++) {
+        const v = .18 + .64 * row / 79;
+        const p = [0, 1].map(axis => (quad[0][axis] * (1 - u) + quad[1][axis] * u) * (1 - v)
+          + (quad[3][axis] * (1 - u) + quad[2][axis] * u) * v);
+        // Average yarn-scale highlights; detect a sustained band, not one thread.
+        const pixels = ctx.getImageData(Math.round(p[0]) - 2, Math.round(p[1]), 5, 1).data;
+        total += (pixels[0] + pixels[4] + pixels[8] + pixels[12] + pixels[16]) / 5;
+      }
+      return total / 80;
+    });
+    return Math.max(...columns.slice(1).map((value, i) => Math.abs(value - columns[i])));
+  }, corners);
+  await expect.poll(stripeContrast).toBeLessThan(3);
+  await canvas.screenshot({ path: info.outputPath('smoky-quartz-no-stripe.png') });
+  await page.goto('/products?q=roller+blinds');
+  await page.getByRole('button', { name: 'Symphony', exact: true }).click();
+  await page.getByRole('button', { name: 'Symphony Smoky Quartz', exact: true }).click();
+  const shop = page.locator('canvas[data-fabric-photo="roller-blinds"]');
+  await expect(shop).toHaveAttribute('data-render-ready', 'true');
+  await expect(shop).toHaveAttribute('data-fabric-inset', '0.025');
+  await shop.screenshot({ path: info.outputPath('smoky-quartz-shop.png') });
 });

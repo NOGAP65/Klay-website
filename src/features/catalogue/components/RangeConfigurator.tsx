@@ -25,7 +25,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { ColourSample, radius, tokens, motion, space, type as typeScale, useHover } from '@/ds';
 import { useCartStore } from '@/features/cart';
-import { fabricScanInset } from '@/features/fabrics';
+import { fabricScanCrop } from '@/features/fabrics';
 
 // MOVED HERE FROM features/home, and this is where it belonged all along: it
 // is built from the catalogue's own configOptions, priced by the catalogue's
@@ -278,7 +278,7 @@ function Swatch({
       }}
     >
       <ColourSample colour={choice.hex} texture={choice.texture} mirror={choice.mirror}
-        insetTop={fabricScanInset(choice.texture)} />
+        crop={fabricScanCrop(choice.texture)} />
     </button>
   );
 }

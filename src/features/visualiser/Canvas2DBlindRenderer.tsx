@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 import { tokens } from '@/ds';
-import { HARDWARE_HEX, fabricScanInset } from '@/features/fabrics';
+import { HARDWARE_HEX, fabricScanRegion } from '@/features/fabrics';
 import { loadImage } from '@/shared';
 
 import { sampleBlindLighting, blindTextureCoordinates, NEUTRAL_BLIND_LIGHT, type BlindLighting } from './blindLighting';
@@ -567,8 +567,8 @@ const getOrUploadTexture = (
   potCanvas.height = POT_SIZE;
   const potCtx = potCanvas.getContext('2d', { willReadFrequently: true });
   if (!potCtx) throw new Error('Failed to create texture resampling context');
-  const inset = fabricScanInset(key) * img.naturalHeight;
-  potCtx.drawImage(img, 0, inset, img.naturalWidth, img.naturalHeight - inset, 0, 0, POT_SIZE, POT_SIZE);
+  const region = fabricScanRegion(key, img.naturalWidth, img.naturalHeight);
+  potCtx.drawImage(img, ...region, 0, 0, POT_SIZE, POT_SIZE);
   if (tileable) {
     const scan = potCtx.getImageData(0, 0, POT_SIZE, POT_SIZE);
     normaliseRollerWeave(scan.data, POT_SIZE, POT_SIZE);

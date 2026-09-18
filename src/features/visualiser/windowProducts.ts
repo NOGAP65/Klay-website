@@ -9,6 +9,7 @@ export const isSlatted = (category: string) => category === 'venetian' || catego
 export const isOutdoor = (category: string): category is 'roller-shutter' | 'zip-screen' => category === 'roller-shutter' || category === 'zip-screen';
 export const isUnpricedBlind = (category: string) => category === 'honeycomb' || isSlatted(category) || isOutdoor(category);
 export const blindGroup = (category: ProductCategory): ProductCategory => !isOutdoor(category) && isUnpricedBlind(category) ? 'blind' : category;
+export const windowOperation = (category: ProductCategory, operation: 'manual' | 'motorised') => category === 'plantation' ? 'manual' : operation;
 
 export function coloursFor(category: ProductCategory, type = 'blockout', name?: string): { name: string; hex: string; texture?: string }[] {
   if (category === 'roller-shutter') return SHUTTER_COLOURS;

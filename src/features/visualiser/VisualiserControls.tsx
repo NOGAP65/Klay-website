@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { formatAUD, isBlindType } from '@/core/pricing';
 
 import { ColourSample, radius, tokens, space, type as typeScale } from '@/ds';
-import { ROLLER_HARDWARE, HONEYCOMB_TYPES, fabricCollections, fabricByName, fabricPalette, fabricScanInset } from '@/features/fabrics';
+import { ROLLER_HARDWARE, HONEYCOMB_TYPES, fabricCollections, fabricByName, fabricPalette, fabricScanCrop } from '@/features/fabrics';
 import { HARDWARE_HEX, HARDWARE_OPTIONS } from '@/features/fabrics';
 import {
   WARDROBE_COLOURS,
@@ -332,7 +332,7 @@ function Swatch({
         transition: 'box-shadow 0.2s ease',
       }}
     >
-      <ColourSample colour={hex} texture={texture} insetTop={fabricScanInset(texture)} />
+      <ColourSample colour={hex} texture={texture} crop={fabricScanCrop(texture)} />
     </button>
   );
 }
@@ -1000,7 +1000,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
             </div>
           </Field>
 
-          <Field onDark={onDark} label="Operation">
+          {store.productCategory !== 'plantation' && <Field onDark={onDark} label="Operation">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: space.xs }}>
               {OPERATION_OPTIONS.map(o => (
                 <Pill
@@ -1012,7 +1012,7 @@ export default function VisualiserControls({ lockedRange: lockedRangeProp, compa
                 />
               ))}
             </div>
-          </Field>
+          </Field>}
         </div>
       </section>
 

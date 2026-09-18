@@ -59,10 +59,20 @@ export function fabricByName(name?: string): FabricSample | undefined {
   return name ? names.get(name) : undefined;
 }
 
-/** The Cyclone supplier scan includes a paper header. Sample only the cloth,
- * consistently across swatches, the shop weave and the perspective renderer. */
-export function fabricScanInset(texture?: string): number {
-  return texture && /\/essence-cyclone(?:-texture|-weave)?\.webp$/.test(texture) ? 0.04 : 0;
+const FULL_SCAN = [0, 0, 1, 1] as const;
+const CYCLONE_CLOTH = [0, .04, 1, .96] as const;
+const SMOKY_QUARTZ_CLOTH = [.025, .025, .95, .95] as const;
+/** Only sample cloth: Cyclone has a paper header; Smoky Quartz has a skewed
+ * pale border. Mirroring those borders would repeat a stripe through a blind. */
+export function fabricScanCrop(texture?: string): readonly [number, number, number, number] {
+  if (texture && /\/essence-cyclone(?:-texture|-weave)?\.webp$/.test(texture)) return CYCLONE_CLOTH;
+  if (texture && /\/symphony-smoky-quartz(?:-texture|-weave)?\.webp$/.test(texture)) return SMOKY_QUARTZ_CLOTH;
+  return FULL_SCAN;
+}
+export const fabricScanInset = (texture?: string) => fabricScanCrop(texture)[1];
+export function fabricScanRegion(texture: string, width: number, height: number): [number, number, number, number] {
+  const [x, y, w, h] = fabricScanCrop(texture);
+  return [x * width, y * height, w * width, h * height];
 }
 
 export function rollerPalette(type: string, name?: string): FabricSample[] {

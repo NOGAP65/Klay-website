@@ -584,14 +584,9 @@ const PRODUCT_OPTIONS: Record<string, ProductOptions> = {
     operation: true,
     colourLabel: 'Slat colour',
   },
-  // OPERATION IS BACK ON THE SHUTTER. It came off with the material row, on the
-  // reasoning that a shutter is joinery and joinery has no operation. But a
-  // louvre either tilts by hand or it tilts on a motor, and that is a real
-  // question with a real price behind it. The card now asks the same three
-  // things a venetian does, less the material a shutter never posed.
+  // Klay supplies plantation shutters with manual louvre operation only.
   'plantation-shutters': {
     size: true,
-    operation: true,
     colourLabel: 'Louvre colour',
   },
   curtains: {
@@ -1041,6 +1036,10 @@ const AT_MEASURE = 'Chosen at measure'
  * them expecting a guarantee the cart itself does not make. */
 export type ConfiguredLine = Omit<CartItem, 'id' | 'quantity'>
 
+const operationFor = (item: CatalogueItem, sel: Selection): 'manual' | 'motorised' =>
+  item.id === 'plantation-shutters' ? 'manual' : isOperation(sel.operation)
+    ? sel.operation : OPERATION_COLUMN[sel.operation ?? ''] ?? 'manual'
+
 export const configuredLine = (item: CatalogueItem, sel: Selection): ConfiguredLine => {
   // WITH the selection — the width row's choices depend on the chosen model, and
   // a line built off the unnarrowed list would look its width up in a list the
@@ -1063,9 +1062,7 @@ export const configuredLine = (item: CatalogueItem, sel: Selection): ConfiguredL
     // Pricing's own two words where the product answers in them, and the mapped
     // answer where it does not — a battery shutter is motorised, not manual.
     // See OPERATION_COLUMN.
-    operation: isOperation(sel.operation)
-      ? sel.operation
-      : OPERATION_COLUMN[sel.operation ?? ''] ?? 'manual',
+    operation: operationFor(item, sel),
     price: price ?? 0,
     priceOnMeasure: price === null,
     options: [...fields.map(f => ({

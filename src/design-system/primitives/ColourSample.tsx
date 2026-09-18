@@ -1,9 +1,10 @@
 import { useLayoutEffect, useRef } from 'react';
 
+const FULL_SAMPLE = [0, 0, 1, 1] as const;
 /** Paint pigment as image pixels, which automatic dark themes must not reinterpret
  * as a UI background. The owning button supplies the label and selection ring. */
-export function ColourSample({ colour = '#ffffff', texture, insetTop = 0, mirror }: {
-  colour?: string; texture?: string; insetTop?: number; mirror?: 'none' | 'mixed' | 'all';
+export function ColourSample({ colour = '#ffffff', texture, crop = FULL_SAMPLE, mirror }: {
+  colour?: string; texture?: string; crop?: readonly [number, number, number, number]; mirror?: 'none' | 'mixed' | 'all';
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useLayoutEffect(() => {
@@ -15,8 +16,9 @@ export function ColourSample({ colour = '#ffffff', texture, insetTop = 0, mirror
       ctx.fillStyle = colour;
       ctx.fillRect(0, 0, 64, 64);
       if (image) {
-        const y = image.naturalHeight * insetTop;
-        ctx.drawImage(image, 0, y, image.naturalWidth, image.naturalHeight - y, 0, 0, 64, 64);
+        const [x, y, width, height] = crop;
+        ctx.drawImage(image, x * image.naturalWidth, y * image.naturalHeight,
+          width * image.naturalWidth, height * image.naturalHeight, 0, 0, 64, 64);
       }
       if (mirror && mirror !== 'none') {
         const gradient = ctx.createLinearGradient(0, 20, 64, 44);
@@ -37,7 +39,7 @@ export function ColourSample({ colour = '#ffffff', texture, insetTop = 0, mirror
     image.onload = () => { if (active) paint(image); };
     image.src = texture;
     return () => { active = false; image.onload = null; };
-  }, [colour, texture, insetTop, mirror]);
+  }, [colour, texture, crop, mirror]);
   return <canvas ref={ref} width={64} height={64} aria-hidden="true" data-colour-sample={colour}
     style={{ display: 'block', position: 'absolute', inset: 0, width: '100%', height: '100%',
       borderRadius: 'inherit', pointerEvents: 'none', colorScheme: 'only light', forcedColorAdjust: 'none' }} />;
